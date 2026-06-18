@@ -1,0 +1,1706 @@
+                    7I97T
+       ETHERNET ANALOG SERVO INTERFACE
+
+
+
+
+V1.2
+Table of Contents
+
+    GENERAL . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 1
+
+             DESCRIPTION . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 1
+
+    HARDWARE CONFIGURATION . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 2
+
+             GENERAL . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 2
+             ENCODER INPUT MODE . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 2
+             EXPANSION CONNECTOR 5V POWER . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 3
+             EXPANSION CONNECTOR 5V I/O TOLERANCE . . . . . . . . . . . . . . . . . . . . . . 3
+             P2 PULLUP OR PULLDOWN SELECTION . . . . . . . . . . . . . . . . . . . . . . . . . . . 3
+             RS-422/RS-485 TERMINATION . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 3
+             IP ADDRESS SELECTION . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 4
+
+    CONNECTORS . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 5
+        7I97T CONNECTOR LOCATIONS AND DEFAULT JUMPER POSITIONS . . . 5
+        P3 POWER CONNECTOR PINOUT . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 6
+        P1 JTAG CONNECTOR PINOUT . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 6
+        FRAME GROUND CONNECTION . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 6
+        P2 EXPANSION CONNECTOR . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 7
+        TB1 ENCODER 0 THROUGH 2 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 8
+        TB2 ENCODER 3 THROUGH 5 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 9
+        TB3 ANALOG DRIVE INTERFACE CONNECTOR . . . . . . . . . . . . . . . . . . . . 10
+        TB4 ISOLATED INPUT + RS-422 CONNECTOR . . . . . . . . . . . . . . . . . . . . . . 11
+        TB5 ISOLATED I/O CONNECTOR . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 12
+
+    OPERATION . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 13
+        RS-422/RS-485 INTERFACE . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 13
+        ANALOG SERVO DRIVE INTERFACE . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 14
+        SUGGESTED PWM SETUP . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 14
+        SERVO ENABLE OUTPUTS . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 14
+        ENCODER INTERFACE . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 14
+        MAXIMUM ENCODER COUNT RATE . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 14
+        BOARD STATUS LEDS . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 15
+        I/O STATUS LEDS . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 15
+        ISOLATED I/O . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 15
+        ISOLATED INPUT CHARACTERISTICS . . . . . . . . . . . . . . . . . . . . . . . . . . . . 16
+        MPG ENCODER INPUTS . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 16
+        ISOLATED OUTPUT CHARACTERISTICS . . . . . . . . . . . . . . . . . . . . . . . . . . 16
+
+
+
+
+                                                                                                                              iii
+Table of Contents
+    HOST INTERFACE . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 17
+         FPGA . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 17
+         IP ADDRESS SELECTION . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 17
+         HOST COMMUNICATION . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 17
+         UDP . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 17
+         LBP16 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 17
+         WINDOWS ARP ISSUES . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 17
+         CONFIGURATION . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 18
+               FALLBACK . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 18
+         EEPROM LAYOUT . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 19
+         CONFIGURATION FILE FORMAT . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 21
+         MESAFLASH . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 22
+         FREE MEMORY SPACE . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 22
+         FALLBACK INDICATION . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 22
+         FAILURE TO CONFIGURE . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 22
+         CLOCK SIGNALS . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 22
+         LOGIC POWER . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 23
+         PULLUP RESISTORS . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 23
+         EXPANSION CONNECTOR I/O LEVELS . . . . . . . . . . . . . . . . . . . . . . . . . . . . 23
+         EXPANSION CONNECTOR STARTUP I/O VOLTAGE . . . . . . . . . . . . . . . . . 23
+
+
+
+
+                                                                                                                            iv
+Table of Contents
+    REFERENCE INFORMATION                     . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 24
+
+        LBP16
+             GENERAL . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 24
+             LBP16 COMMANDS . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 24
+             INFO AREA . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 25
+             INFO AREA MEMSIZES FORMAT . . . . . . . . . . . . . . . . . . . . . . . . . . . 25
+             INFO AREA MEMRANGES FORMAT . . . . . . . . . . . . . . . . . . . . . . . . . 26
+             INFO AREA ACCESS . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 27
+             7I97T SUPPORTED MEMORY SPACES . . . . . . . . . . . . . . . . . . . . . . 28
+             SPACE0: HOSTMOT2 REGISTERS . . . . . . . . . . . . . . . . . . . . . . . . . . 28
+             SPACE1: ETHERNET CHIP ACCESS . . . . . . . . . . . . . . . . . . . . . . . . . 30
+             SPACE2: ETHERNET EEPROM CHIP ACCESS . . . . . . . . . . . . . . . . 30
+             ETHERNET EEPROM LAYOUT . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 31
+             SPACE3: FPGA FLASH EEPROM CHIP ACCESS . . . . . . . . . . . . . . . 33
+             FLASH MEMORY REGISTERS . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 33
+             SPACE4: LBP TIMER/UTIL REGISTERS . . . . . . . . . . . . . . . . . . . . . . 36
+             SPACE6: LBP STATUS/CONTROL REGISTERS . . . . . . . . . . . . . . . . 37
+             MEMORY SPACE 6 LAYOUT . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 37
+             ERROR REGISTER FORMAT . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 38
+             SPACE7: LBP READ ONLY INFORMATION . . . . . . . . . . . . . . . . . . . . 39
+             MEMORY SPACE 7 LAYOUT . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 39
+             ELBPCOM . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 40
+
+        SPECIFICATIONS . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 41
+        DRAWINGS . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 43
+
+
+
+
+                                                                                                                            v
+GENERAL
+DESCRIPTION
+            The 7I97T is a Ethernet connected motion control interface designed for retrofits,
+    interfacing up to six axis of analog servo motor drives. Six +-10V anaog outputs are
+    provided along with six quadrature encoder inputs. The 7I97T also has 16 isolated inputs
+    plus 6 isolated outputs for general purpose I/O use. I/O expansion includes a RS-422/RS-
+    485 serial port and a parallel expansion port compatible with Mesa 25 pin daughtercards
+    and standard parallel port breakouts.
+
+          In addition to the general purpose I/O, each analog output channel has a drive
+    enable output.
+
+           16 isolated inputs are provided for general control use including limit switch and
+    control panel inputs. Inputs operate with 4V to 36V DC and can have a positive or negative
+    common for sourcing or sinking input applications. 8 inputs can be used to support up to
+    4 quadrature MPGs. Six 36V 2A isolated outputs allow sinking, sourcing combinations of
+    both.
+
+           One RS-422/RS-485 interface is provided for I/O expansion via a serial I/O
+    daughtercard. In addition to the on card I/O, A FPGA expansion connector compatible with
+    Mesa's 25 pin daughtercards or standard parallel port breakout boards allow almost
+    unlimited I/O options including additional quadrature or absolute encoder inputs, step/dir
+    or PWM/dir outputs, and field I/O expansion to hundreds of I/O of points. All field wiring
+    is terminated in pluggable 3.5 mm screw terminal blocks.
+
+
+
+
+                                                                             7I97T 1
+HARDWARE CONFIGURATION
+GENERAL
+          Hardware setup jumper positions assume that the 7I97T card is oriented in an
+   upright position, that is, with the host interface RJ-45 connector pointing towards the left.
+
+
+
+ENCODER INPUT MODE
+          The 7I97Ts high speed encoder inputs can be programmed for differential or single
+   ended mode operation. When the jumpers are in the right hand position, the encoder input
+   is mode is differential. When the jumpers are are in the left hand position, the encoder
+   input mode is single ended or "TTL". Normally all three jumpers per encoder are set to the
+   same mode but they can be set differently.
+
+
+
+   CHANNEL              QUAD-A JPR           QUAD-B JPR            INDEX-Z JPR
+
+   ENCODER 0            W19                  W17                   W15
+
+   ENCODER 1            W13                  W9                    W7
+
+   ENCODER 2            W5                   W3                    W1
+
+   ENCODER 3            W20                  W18                   W16
+
+   ENCODER 4            W14                  W10                   W8
+
+   ENCODER 5            W6                   W4                    W2
+
+
+
+
+                                                                              7I97T 2
+HARDWARE CONFIGURATION
+EXPANSION CONNECTOR 5V POWER
+           The 7I97T has the option to supply 5V power to the breakout board connected to
+    its expansion connector (P2).
+
+           This option should only be enabled for Mesa breakout boards or boards specifically
+    wired to accept 5V power on DB25 pins 22 through 25. When the option is disabled DB25
+    pins 22 through 25 are grounded. Jumper W22 controls the breakout power option.
+
+    JUMPER       POS                  FUNCTION
+
+    W22          UP                   5V BREAKOUT POWER ENABLED
+    W22          DOWN                 5V BREAKOUT POWER DISABLED (DEFAULT)
+5V TOLERANCE
+           The FPGA used on the 7I97T has a 4.65V absolute maximum input voltage
+    specification. To allow interfacing with 5V inputs, the 7I97T has bus switches on all I/O
+    pins. The bus switches work by turning off when the input voltage exceeds a preset
+    threshold. The bus switches also allow the I/O pins to be pulled up to 5V when used as
+    inputs or outputs in the open drain mode.
+
+P2 PULLUP OR PULLDOWN SELECTION
+          Jumper W21 selects whether the I/O pins on P2 have pullup or pulldown resistors.
+    When W21 is in the UP position, the I/O pins of P2 have pullup resistors. When W21is in
+    the DOWN position, the I/O pins of P2 have pulldown resistors.
+
+    JUMPER              POS           FUNCTION
+    W21                 UP            PULLUP TO 5V
+    W21                 DOWN          PULLDOWN TO 0V
+
+RS-422/RS-485 TERMINATION
+           7I97T cards have an option to remove the termination on the RS-422/RS-485 port.
+    This helps improve noise immunity on slow RS-485 links like MODBUS. W23 determines
+    the termination.
+
+    JUMPER              POS           FUNCTION
+    W23                 LEFT          TERMINATION ENABLED (RS-422, SSERIAL)
+    W23                 RIGHT         TERMINATION DISABLED (MODBUS ETC)
+
+
+
+
+                                                                            7I97T 3
+HARDWARE CONFIGURATION
+IP ADDRESS SELECTION
+          The 7I97T has four options for selecting its IP address. These options are selected
+    by Jumpers W11 and W12.
+
+    W11          W12                  IP ADDRESS
+
+    DOWN         DOWN                 FIXED 192.168.1.121               (DEFAULT)
+
+    DOWN         UP                   FIXED FROM EEPROM
+
+    UP           DOWN                 BOOTP
+
+    UP           UP                   FIXED 192.168.1.121 + FALLBACK
+
+
+
+    Note: The as shipped default EEPROM IP address is 10.10.10.10. This can be changed
+    via the mesaflash utility
+
+
+
+
+                                                                            7I97T 4
+CONNECTORS
+ 7I97T CONNECTOR LOCATIONS AND DEFAULT JUMPER POSITIONS
+
+
+
+
+               NOTE: BLACK SQUARES INDICATE PIN 1
+
+
+
+
+                                                    7I97T 5
+CONNECTORS
+P3 POWER CONNECTOR PINOUT
+          P3 is the 7I97Ts 5V power connector. Do not supply any voltage other than 5V
+    to P3! P3 is a 3.5MM plug-in screw terminal block. P3 pinout is as follows:
+
+    PIN   FUNCTION
+
+    1     +5V           TOP, SQUARE PAD
+
+    2     GND           BOTTOM, ROUND PAD
+
+P1 JTAG CONNECTOR PINOUT
+           P1 is a JTAG programming connector. This is normally used only for debugging or
+    if both EEPROM configurations have been corrupted. In case of corrupted EEPROM
+    contents the EEPROM can be re-programmed Efinix’s stand alone programming tool.
+
+    P1 JTAG CONNECTOR PINOUT
+
+    PIN   FUNCTION PIN         FUNCTION
+
+    1     TMS           2      TDI
+
+    3     TDO           4      GND
+
+    5     TCK           6      GND
+
+    7     /RESET        8      GND
+
+    9     /SS           10     +3.3V
+
+
+
+FRAME GROUND
+           The top left mounting hole (near the Ethernet jack) is the frame ground connection.
+    This should be grounded to earth/frame ground for best ESD/EMI resistance.
+
+
+
+
+                                                                             7I97T 6
+CONNECTORS
+P2 EXPANSION CONNECTOR
+           The 7I97T has a 26 pin header to allow I/O expansion beyond the built in I/O on the
+    7I97T card. This I/O can include step/dir channels, more encoders, etc. This header has
+    a pin-out that matches standard parallel port breakout cards and Mesa’s 25 pin FPGA
+    daughtercards, when terminated with a DB25 connector.
+
+    P2 PIN       DB25 PIN      P1 FUNC              P2 PIN        DB25 PIN      P2 FUNC
+
+    1            1             IO34                 2             14            IO35
+
+    3            2             IO36                 4             15            IO37
+
+    5            3             IO38                 6             16            IO39
+
+    7            4             IO40                 8             17            IO41
+
+    9            5             IO42                 10            18            GND
+
+    11           6             IO43                 12            19            GND
+
+    13           7             IO44                 14            20            GND
+
+    15           8             IO45                 16            21            GND
+
+    17           9             IO46                 18            22            GND / 5V
+
+    19           10            IO47                 20            23            GND / 5V
+
+    21           11            IO48                 22            24            GND or 5V
+
+    23           12            IO49                 24            25            GND or 5V
+
+    25           13            IO50                 26            XX            GND or 5V
+
+
+
+    P2 header pins 18,20,22,24,26 ( DB25 pins 22 through 25) can be tied to ground or 5V,
+    depending on W22 position.
+
+
+
+
+                                                                             7I97T 7
+CONNECTORS
+TB1 ENCODER 0 THROUGH 2
+          TB1 is the 7I97Ts encoder 0 through 2 connector. Each encoder interface uses 8
+    pins TB1 is a 24 pin 3.5 MM pluggable terminal block with supplied with three eight pin
+    removable screw terminal plugs.
+
+    TB1 PIN      FUNCTION            DIR
+    1            QA0                 TO 7I97T
+    2            /QA0                TO 7I97T
+    3            GND                 FROM 7I97T
+    4            QB0                 TO 7I97T
+    5            /QB0                TO 7I97T
+    6            +5V                 FROM 7I97T
+    7            IDX0                TO 7I97T
+    8            /IDX0               TO 7I97T
+    9            QA1                 TO 7I97T
+    10           /QA1                TO 7I97T
+    11           GND                 FROM 7I97T
+    12           QB1                 TO 7I97T
+    13           /QB1                TO 7I97T
+    14           +5V                 FROM 7I97T
+    15           IDX1                TO 7I97T
+    16           /IDX1               TO 7I97T
+    17           QA2                 TO 7I97T
+    18           /QA2                TO 7I97T
+    19           GND                 FROM 7I97T
+    20           QB2                 TO 7I97T
+    21           /QB2                TO 7I97T
+    22           +5V                 FROM 7I97T
+    23           IDX2                TO 7I97T
+    24           /IDX2               TO 7I97T
+
+
+
+
+                                                                          7I97T 8
+CONNECTORS
+TB2 ENCODER 3 THROUGH 5
+           TB2 is the 7I97Ts encoder 3 through 5 connector. Each encoder interface uses 8
+    pins. TB2 is a 24 pin 3.5 MM pluggable terminal block supplied with three eight pin
+    removable screw terminal plugs.
+
+    TB2 PIN      FUNCTION           DIR
+
+    1            QA3                TO 7I97T
+    2            /QA3               TO 7I97T
+    3            GND                FROM 7I97T
+    4            QB3                TO 7I97T
+    5            /QB3               TO 7I97T
+    6            +5V                FROM 7I97T
+    7            IDX3               TO 7I97T
+    8            /IDX3              TO 7I97T
+    9            QA4                TO 7I97T
+    10           /QA4               TO 7I97T
+    11           GND                FROM 7I97T
+    12           QB4                TO 7I97T
+    13           /QB4               TO 7I97T
+    14           +5V                FROM 7I97T
+    15           IDX4               TO 7I97T
+    16           /IDX4              TO 7I97T
+    17           QA5                TO 7I97T
+    18           /QA5               TO 7I97T
+    19           GND                FROM 7I97T
+    20           QB5                TO 7I97T
+    21           /QB5               TO 7I97T
+    22           +5V                FROM 7I97T
+    23           IDX5               TO 7I97T
+    24           /IDX5              TO 7I97T
+
+
+
+                                                                         7I97T 9
+CONNECTORS
+TB3 ANALOG DRIVE INTERFACE
+           TB3 is the 7I97Ts analog drive interface connector. It has both the +-10V analog
+    outputs and the drive enable connections. Each drive interface uses 4 pins. TB3 is a 24
+    pin 3.5 MM pluggable terminal block supplied with six four pin removable screw terminal
+    plugs.
+
+    TB3 PIN      SIGNAL              DIRECTION
+
+    1            ENA0-               FROM 7I97T
+    2            ENA0+               FROM 7I97T
+    3            GND                 FROM 7I97T
+    4            AOUT0               FROM 7I97T
+    5            ENA1-               FROM 7I97T
+    6            ENA1+               FROM 7I97T
+    7            GND                 FROM 7I97T
+    8            AOUT1               FROM 7I97T
+    9            ENA2-               FROM 7I97T
+    10           ENA2+               FROM 7I97T
+    11           GND                 FROM 7I97T
+    12           AOUT2               FROM 7I97T
+    13           ENA3-               FROM 7I97T
+    14           ENA3+               FROM 7I97T
+    15           GND                 FROM 7I97T
+    16           AOUT3               FROM 7I97T
+    17           ENA4-               FROM 7I97T
+    18           ENA4+               FROM 7I97T
+    19           GND                 FROM 7I97T
+    20           AOUT4               FROM 7I97T
+    21           ENA5-               FROM 7I97T
+    22           ENA5+               FROM 7I97T
+    23           GND                 FROM 7I97T
+    24           AOUT5               FROM 7I97T
+
+
+                                                                          7I97T 10
+CONNECTORS
+TB4 ISOLATED INPUT + RS-422 CONNECTOR
+            TB4 is the 7I97Ts isolated input, RS-422/RS-485 port, aux 5V input connector. TB4
+    is a 24 pin 3.5 MM pluggable terminal block supplied with two six pin terminal plugs for the
+    isolated inputs, one eight pin terminal plug for the RS-422 interface, and a four pin terminal
+    plug for the aux 5V power.
+
+    TB4 PIN       SIGNAL                DIRECTION
+
+    1             IN0                          TO 7I97T
+    2             IN1                          TO 7I97T
+    3             IN COMMON 0,1                TO 7I97T
+    4             IN2                          TO 7I97T
+    5             IN3                          TO 7I97T
+    6             IN COMMON 2,3                TO 7I97T
+    7             IN4                          TO 7I97T
+    8             IN5                          TO 7I97T
+    9             IN COMMON 4,5                TO 7I97T
+    10            IN6                          TO 7I97T
+    11            IN7                          TO 7I97T
+    12            IN COMMON 6,7                TO 7I97T
+    13            GND                          FROM 7I97T
+    14            GND                          FROM 7I97T
+    15            RS-422/485 RX+               TO 7I97T
+    16            RS-422/485 RX-               TO 7I97T
+    17            RS-422/485 TX+               FROM 7I97T
+    18            RS-422/485 TX-               FROM 7I97T
+    19            +5VP                         FROM 7I97T
+    20            +5VP                         FROM 7I97T
+    21            +5V                          TO 7I97T
+    22            +5V                          TO 7I97T
+    23            GND                          TO 7I97T
+    24            GND                          TO 7I97T
+
+
+                                                                                7I97T 11
+CONNECTORS
+TB5 I/O
+           TB5 is the 7I97Ts isolated input and isolated output connector. TB5 is a 24 pin 3.5
+     MM pluggable terminal block supplied with four six pin removable screw terminal plugs.
+
+     TB5 PIN      SIGNAL                      DIRECTION
+
+     1            IN8                         TO 7I97T
+     2            IN9                         TO 7I97T
+     3            IN COMMON 8,9               TO 7I97T
+     4            IN10                        TO 7I97T
+     5            IN11                        TO 7I97T
+     6            IN COMMON 10,11             TO 7I97T
+     7            IN12                        TO 7I97T
+     8            IN13                        TO 7I97T
+     9            IN COMMON 12,13             TO 7I97T
+     10           IN14                        TO 7I97T
+     11           IN15                        TO 7I97T
+     12           IN COMMON 14,15             TO 7I97T
+     13           OUT0-                       FROM 7I97T
+     14           OUT0+                       FROM 7I97T
+     15           OUT1-                       FROM 7I97T
+     16           OUT1+                       FROM 7I97T
+     17           OUT2-                       FROM 7I97T
+     18           OUT2+                       FROM 7I97T
+     19           OUT3-                       FROM 7I97T
+     20           OUT3+                       FROM 7I97T
+     21           OUT4-                       FROM 7I97T
+     22           OUT4+                       FROM 7I97T
+     23           OUT5-                       FROM 7I97T
+     24           OUT5+                       FROM 7I97T
+
+
+
+
+                                                                             7I97T 12
+OPERATION
+RS-422/RS-485 INTERFACE
+            The 7I97T has one RS-422/RS-485 interface available on TB4. This interface is
+    intended for I/O expansion with Mesa SSERIAL devices. The easiest way to make a cable
+    for interfacing the 7I97T to these devices is to take a standard CAT5 or CAT6 cable, cut
+    it in half, and wire the individual wires to the 7I97T screw terminals. The following chart
+    gives the CAT5 to 7I97T screw terminal connections with EIA/TIA 568B colors:
+
+    TB4 PIN      SIGNAL        DIRECTION            CAT5 PIN      CAT5 568B COLOR
+
+    13           GND           FROM 7I97T                  4             BLUE
+
+    14           GND           FROM 7I97T                  5             BLUE / WHITE
+
+    15           RX+           TO 7I97T                    6             GREEN
+
+    16           RX-           TO 7I97T                    3             GREEN / WHITE
+
+    17           TX+           FROM 7I97T                  2             ORANGE
+
+    18           TX-           FROM 7I97T                  1             ORANGE / WHITE
+
+    19           +5V           FROM 7I97T                  7             BROWN /WHITE
+
+    20           +5V           FROM 7I97T                  8             BROWN
+
+           For 2 wire RS-485 applications, TX+ must be connected to RX+ and TX- must be
+    connected to RX-. For slow RS-485 applications, termination should be disabled (W23
+    right)
+
+
+
+
+                                                                             7I97T 13
+OPERATION
+ANALOG SERVO DRIVE INTERFACE
+           The 7I97T provides six channels of +-10V analog servo interface on connector TB3.
+    Minimum load resistance is 2K Ohms. Normally analog servo drives use differential inputs
+    to avoid ground loops. Suggested wiring is shielded twisted pair with7I97T AOUTN to drive
+    AIN+, 7I97T GNDN (adjacent to AOUTN) to drive AIN- as the twisted pair and 7I97T
+    GNDN connected to the shield at the 7I97T end only. The drives common or GND signal
+    should be connected to the 7I97T power GND with a separate wire.
+
+SUGGESTED PWM SETUP
+            The 7I97T analog outputs are generated by PWM signals. For the best combination
+    of linearity, resolution, and ripple it is suggested to use 40 KHz as the PWM frequency for
+    LinuxCNC 2.9.1 or earlier and 75 KHz PWM frequency with dither enabled for LinuxCNC
+    2.9.2 and later. Offset PWM mode must be enabled for correct bipolar output.
+
+SERVO ENABLE OUTPUTS
+           Six uncommitted OPTO coupler outputs are available for drive enable. Four of
+    these outputs (ENA0 through ENA3) are switched in common while ENA4 and ENA5 can
+    be independently switched for spindle applications. The ENA outputs are floating switches
+    so can be used for active high and active low drive enables. Output rating of the switches
+    is 50 mA max at 100VDC max . Note that the enable outputs are polarized and can be
+    damaged with reverse polarity. For active high drive enables, ENAN+ should go to the
+    appropriate positive power supply and ENAN- to the drive enable input. For active low
+    enable drives, ENAN+ should go the the drive enable and ENAN- to control power ground.
+
+ENCODER INTERFACE
+           The 7I97T provides six channels of quadrature encoder interface with index.
+    Encoder inputs can be programmed for differential or single ended encoders. The encoder
+    interface also provides short circuit protected 5V power to the encoders. When used with
+    single ended encoders, the ENCA+, ENCB+ and IDX+ signals are wired to the encoder
+    and the ENCA-,ENCB-, and IDX- terminal left unconnected.
+
+MAXIMUM ENCODER COUNT RATE
+           The 7I97T uses multiplexed encoder signals to save FPGA pins. The multiplexing
+    rate will determine the maximum encoder count rate. Default multiplexing rate with
+    HostMot2 firmware is ClockLow /16,or approximately 6 MHz giving a resolvable count rate
+    of 3 MHz.The maximum count rate can be increased by increasing the muxed encoder
+    sample rate.
+
+
+
+
+                                                                             7I97T 14
+OPERATION
+BOARD STATUS LEDS
+           The 7I97T has nine LEDS for card status monitoring. The color, function and
+    locations are as follows:
+
+    LED          COLOR                FUNCTION                    OK            LOCATION
+
+    CR7          RED                  FPGA /INIT                  OFF           TOP LEFT
+
+    CR8          RED                  FPGA /DONE                  OFF           TOP LEFT
+
+    CR9          YELLOW               5V LOGIC POWER              ON            TOP LEFT
+
+    CR16         GREEN                USER LED3                   ANY           TOP LEFT
+
+    CR17         GREEN                USER LED2                   ANY           TOP LEFT
+
+    CR22         GREEN                USER LED1                   ANY           TOP LEFT
+
+    CR24         GREEN                USER LED0                   ANY           TOP LEFT
+
+    CR23         YELLOW               ANALOG -12V OK              ON            CENTER
+
+    CR27         YELLOW               ANALOG +16V OK              ON            CENTER
+
+          In normal operation CR7 and CR7 will be off. If either is on after power-up there is
+    a problem with configuring the FPGA. CR9 (5V power LED), CR23 and CR27 (analog
+    power) LEDs should be on. The green user LEDs default function is to count received
+    Ethernet packets but their function can be changed with mesaflash to user accessible
+    HostMot2 LEDs if desired.
+
+I/O STATUS LEDS
+          In addition to the board status LEDs, each isolated input and output has an
+    associated yellow LED that illuminates when the input or output is active.
+
+ISOLATED I/O
+           The 7I97T has 16 isolated inputs and 6 isolated outputs. The inputs are organized
+    as 8 groups, each with a pair of inputs and a common pin. This common pin must be
+    connected to ground for active high inputs, and connected to the I/O power for active low
+    inputs. The separate commons allow mixed voltage and mixed sinking and sourcing inputs.
+    The 6 isolated outputs are completely floating switches so can be used for pull-up/pull-
+    down and mixed voltage switching.
+
+
+
+                                                                             7I97T 15
+OPERATION
+ISOLATED INPUT CHARACTERISTICS
+           The isolated inputs use opto-isolators with a 4.7K input series resistance. This
+    results in an approximate current draw of 5 mA at 24V. The inputs will operate with +-4V
+    to +-36V signals relative to input common. Isolated inputs are relatively slow and not suited
+    for signals faster than about 5 KHz. Each input pair has a separate common connection
+    to allow mixing of sinking/sourcing and mixed supply voltages.
+
+            For PNP type sensors or switches with a common positive, the input common pin
+    for a given input pair is grounded.
+
+           For NPN type sensors or switches with a common ground, the input common for a
+    given input pair is connected to +5 to +36V and the input pins are grounded to activate an
+    input.
+
+MPG ENCODER INPUTS
+           Standard 7I97T firmware provides 4 quadrature MPG encoder inputs on isolated
+    inputs 0 through 7. Since the input threshold on isolated inputs is about 3V, its best to use
+    sinking inputs (with the input common terminal tied to +5V) with TTL output level MPGs.
+
+    INPUT         ENCODER              INPUT          ENCODER
+
+    0             QUADA-0              4              QUADA-2
+
+    1             QUADB-0              5              QUADB-2
+
+    2             QUADA-1              6              QUADA-3
+
+    3             QUADB-1              7              QUADB-3
+
+ISOLATED OUTPUT CHARACTERISTICS
+            The 6 isolated outputs use full floating MOSFET switches ( a DC Solid State Relay
+    or SSR ) and can be used just like a switch or relay contact. Maximum voltage is 36 VDC
+    and maximum load current is 2A. Inductive loads must have a flyback diode. The output
+    polarity must be observed (reversed outputs will be stuck-on).
+
+           Note: The 7I97T isolated outputs are not short circuit protected so a current
+    limited power supply or a 2A to 5A fuse should be used in the power source that
+    supplies the outputs.
+
+
+
+
+                                                                               7I97T 16
+HOST INTERFACE
+FPGA
+             The 7I97T uses a Efinix T20F256C4 FPGA.
+
+IP ADDRESS SELECTION
+               Initial communication with the 7I97T requires knowing its IP address. The 7I97T has
+      3 IP address options: Default, EEPROM, and Bootp, selected by jumpers W11 and W12.
+      Default IP address is always 192.168.1.121. The EEPROM IP address is set by writing
+      Ethernet EEPROM locations 0x20 and 0X22. BootP allows the 7I97T address to be set by
+      a DHCP/ BootP server. If BootP is chosen, the 7I97T will retry BootP requests at a ~1 Hz
+      rate if the BootP server does not respond.
+
+HOST COMMUNICATION
+              The 7I97T standard firmware is designed for low overhead real time communication
+      with a host controller so implements a very simple set of IPV4 operations. These operations
+      include ARP reply, ICMP echo reply, and UDP packet receive/send for host data
+      communications. UDP is used so that the 7I97T can be used on a standard network with
+      standard tools for non-real time applications. No fragmentation is allowed so maximum
+      packet size is 1500 bytes.
+
+UDP
+           All 7I97T Ethernet communication is done via UDP packets. The 7I97T socket
+      number for UDP data communication is 27181. Read data is routed to the requesters port
+      number. Under UDP, a simple register access protocol is used. This protocol is called
+      LBP16.
+
+LBP16
+              LBP16 allows read and write access to up to eight separate address spaces with
+      different sizes and characteristics. Current firmware uses seven of these spaces. For
+      efficiency, LBP16 allows access to blocks of registers at sequential increasing addresses.
+      (Block transfers)
+
+WINDOWS ARP ISSUES
+              The Windows XP and earlier TCP stack has a characteristic that causes it to drop
+      outgoing UDP packets when refreshing its ARP cache. Because of this you must either
+      verify packet transmission via echoing data from the 7I97T for every transaction (reading
+      RXUDPCount is suggested) and retrying failed transactions, or alternatively, setting up a
+      static entry for the 7I97T in the ARP table. This is done with windows ARP command.
+
+
+
+
+                                                                                7I97T 17
+HOST INTERFACE
+CONFIGURATION
+          The 7I97T is configured at power up by a SPI FLASH memory. This flash memory
+   is an 16M bit chip that has space for two configuration files. Since all Ethernet logic on the
+   7I97T is in the FPGA, a problem with configuration means that Ethernet access will not be
+   possible. For this reason there are backup methods to recover from FPGA boot failures.
+
+   FALLBACK
+          The 7I97T flash memory normally contains two configuration file images, A user
+   image and a fallback image. If the primary user configuration is corrupted, the FPGA will
+   load the fallback configuration so the flash memory image can be repaired remotely without
+   having to resort to switching memories or JTAG programming.
+
+   FORCE FALLBACK
+          In addition, if the built-in fallback scheme fails to operate, you can force load the
+   fallback configuration by setting the IP address jumpers W11,W12 both to the "up"
+   positions. See the failure to configure section.
+
+
+
+
+                                                                              7I97T 18
+HOST INTERFACE
+EEPROM LAYOUT
+          The EEPROM used on the 7I97T for configuration storage is the M25P16. The
+   M25P16 is a 16 M bit (2 M byte) EEPROM with 32 64K byte sectors. Configuration files are
+   stored on sector boundaries to allow individual configuration file erasing and updating.
+   Standard EEPROM sector layout is as follows:
+
+          0x000000                   FALLBACK CONFIGURATION BLOCK 0
+
+          0x010000                   FALLBACK CONFIGURATION BLOCK 1
+
+          0x020000                   FALLBACK CONFIGURATION BLOCK 2
+
+          0x030000                   FALLBACK CONFIGURATION BLOCK 3
+
+          0x040000                   FALLBACK CONFIGURATION BLOCK 4
+
+          0x050000                   FALLBACK CONFIGURATION BLOCK 5
+
+          0x060000                   FALLBACK CONFIGURATION BLOCK 6
+
+          0x070000                   FALLBACK CONFIGURATION BLOCK 7
+
+          0x080000                   FALLBACK CONFIGURATION BLOCK 8
+
+          0x090000                   FALLBACK CONFIGURATION BLOCK 9
+
+          0x0A0000                   FALLBACK CONFIGURATION BLOCK 10
+
+          0x0B0000                   FALLBACK CONFIGURATION BLOCK 11
+
+          0x0C0000                              UNUSED/FREE
+
+          0x0D0000                              UNUSED/FREE
+
+          0x0E0000                              UNUSED/FREE
+
+          0x0F0000                              UNUSED/FREE
+
+
+
+
+                                                                         7I97T 19
+HOST INTERFACE
+EEPROM LAYOUT
+
+
+        0x100000   USER CONFIGURATION BLOCK 0
+
+        0x110000   USER CONFIGURATION BLOCK 1
+
+        0x120000   USER CONFIGURATION BLOCK 2
+
+        0x130000   USER CONFIGURATION BLOCK 3
+
+        0x140000   USER CONFIGURATION BLOCK 4
+
+        0x150000   USER CONFIGURATION BLOCK 5
+
+        0x160000   USER CONFIGURATION BLOCK 6
+
+        0x170000   USER CONFIGURATION BLOCK 7
+
+        0x180000   USER CONFIGURATION BLOCK 8
+
+        0x190000   USER CONFIGURATION BLOCK 9
+
+        0x1A0000   USER CONFIGURATION BLOCK 10
+
+        0x1B0000   USER CONFIGURATION BLOCK 11
+
+        0x1C0000          UNUSED/FREE
+
+        0x1D0000          UNUSED/FREE
+
+        0x1E0000          UNUSED/FREE
+
+        0x1F0000          UNUSED/FREE
+
+
+
+
+                                                 7I97T 20
+HOST INTERFACE
+CONFIGURATION FILE FORMAT
+          The 7I97T uses configuration files for an Efinix T20F256 FPGA and must not be
+    programed with configuration files designed for the 7I97.
+
+           WARNING: Never write a configuration file that is not designed for a 7I97T into
+    the 7I97Ts EEPROM as this can possibly "brick" the 7I97T card and require the card
+    to be returned to Mesa for repair. In addition, never write a user configuration to the
+    fallback location, and never write a fallback configuration to the user area.
+
+MESAFLASH
+           Linux utility program mesaflash is provided to write configuration files to the 7I97T
+    EEPROM. These files depend on a simple SPI interface built into both the standard user
+    FPGA bitfiles and the fallback bitfile. Mesaflash version 3.5.3 or later must be used to
+    program the 7I97T. Typically you do not need to change the default firmware supplied with
+    the 7I97T, unless you are adding a parallel daughtercard or need specific special functions.
+
+
+          If mesaflash is run with a Bhelp command line argument it will print usage
+    information.
+
+    The following examples assume the target 7I97T is using the EEPROM IP address of
+    10.10.10.10.
+    mesaflash --device 7I97T --addr 10.10.10.10 --write FPGAFILE.BIN
+    Writes a standard configuration file: FPGAFILE.BIN to the user area of the EEPROM.
+    mesaflash --device 7I97T --addr 10.10.10.10 -reload
+    Reloads the FPGA from the user area of the EEPROM
+    mesaflash --device 7I97T --addr 10.10.10.10 --verify FPGAFILE.BIN
+    Verifies a standard configuration FPGAFILE.BIN with the user area of the EEPROM
+    mesaflash --device 7I97T --addr 10.10.10.10 --readhmid
+    Prints the modules and pinout of the currently loaded 7I97T firmware.
+    mesaflash --device 7I97T --addr 10.10.10.10 --set ip=10.10.10.15
+    Changes the EEPROM IP address of the 7I97T:
+    mesaflash --device 7I97T --addr 10.10.10.10 --set ledmode=1
+    Changes the User LED mode from the normal count RX packet mode to Hostmot2 mode.
+
+
+
+
+                                                                              7I97T 21
+HOST INTERFACE
+FREE FLASH MEMORY SPACE
+           Six 64K byte blocks of flash memory space are free when both user and fallback
+    configurations are installed on the 7I97T.
+
+FALLBACK INDICATION
+            Mesa’s supplied fallback configurations blink the red INIT LED on the top right hand
+    side of the card if the primary configuration fails and the fallback configuration loaded
+    successfully. If this happens it means the user configuration is corrupted or not a proper
+    configuration for the 7I97Ts FPGA. This can be fixed by running the configuration utility and
+    re-writing the user configuration.
+
+FAILURE TO CONFIGURE
+            The 7I97T should configure its FPGA within a fraction of a second of power
+    application. If the FPGA card fails to configure, the red /DONE LED CR8 will remain
+    illuminated. If this happens, the first thing to try is setting the IP address select option
+    jumpers to the UP,UP positions. This will force a boot from the fallback memory location,
+    and should allow reprogramming of the user configuration. Note that the card IP address
+    is fixed at 192.168.1.121 when the IP select jumpers are in the UP,UP setting. If this fails,
+    the 7I97Ts EEPROM must be re-programmed via the JTAG connector or (faster) JTAG
+    FPGA load followed by Ethernet EEPROM update.
+
+CLOCK SIGNALS
+           The 7I97T has a single 50 MHz clock signal from an on card crystal oscillator. The
+    clock a can be multiplied and divided by the FPGAs clock generator block to generate a
+    wide range of internal clock signals. The 50 MHz clock is also used to generate the 25MHz
+    clock for the Ethernet interface chip.
+
+
+
+
+                                                                              7I97T 22
+HOST INTERFACE
+LOGIC POWER
+           5V logic power for the host interface FPGA, expansion connectors, RS-422 and
+    encoder connections and step/dir connections can be provided at connector P3, or
+    alternatively TB4.
+
+PULLUP/PULLDOWN RESISTORS
+          All I/O pins are provided with pull-up or pulldown resistors to allow connection to
+    open drain, open collector, or OPTO devices. These resistors have a value of 4.7K so have
+    a maximum pull-up/pulldown current of ~1.07 mA at 5V
+
+IO LEVELS
+           The FPGA used on the 7I97T has programmable I/O levels for interfacing with
+    different logic families. The 7I97T does not support use of the I/O standards that require
+    input reference voltages. All standard Mesa configurations use LVTTL levels.
+
+           Note that even though the 7I97T can tolerate 5V signal inputs, its outputs will not
+    swing to 5V. The outputs are push pull CMOS that will drive to the output supply rail of
+    3.3V. This is sufficient for TTL compatibility but may cause problems with some types of
+    loads. For example when driving an LED that has its anode connected to 5V, in such
+    devices as OPTO isolators and I/O module rack SSRs, the 3.3V high level may not
+    completely turn the LED off. To avoid this problem, either drive loads that are ground
+    referred, Use 3.3V as the VCC for VCC referred loads, or use open drain mode.
+
+STARTUP I/O VOLTAGE
+            After power-up or system reset and before the the FPGA is configured, the pull-
+    up/pulldown resistors will pull all I/O signals to a high or low level. If the FPGA is used for
+    motion control or controlling devices that could present a hazard when enabled, external
+    circuitry should be designed so that this initial state set by the pullup/pulldown resistors
+    results in a safe condition.
+
+
+
+
+                                                                                7I97T 23
+REFERENCE INFORMATION
+LBP16
+    GENERAL
+        LBP16 is the simple register access protocol used by the 7I97T for all Ethernet
+    communications.
+
+    LBP16 COMMANDS
+           LBP16 is a simple remote register access protocol to allow efficient register access
+    over the Ethernet link. All LBP16 commands are 16 bits in length and have the following
+    structure:
+
+        15   14   13    12    11    10    9     8     7     6     5     4     3     2     1     0
+        W    A    C     M     M     M     S     S     I     N     N     N     N     N     N     N
+
+
+    W        Is the write bit (1 means write, 0 means read)
+
+    A        Is the includes Address bit. If this is '1' the command is followed by a 16 bit address
+             and the address pointer is loaded with this address. if this is 0 the current address
+             pointer for the memory space is used. Each memory space has its own address
+             pointer.
+
+    C        Indicates if memory space itself (C=’0') or associated info area for the memory will
+             be accessed (C= ‘1')
+
+    M        Is the 3 bit memory space specifier 000b through 111b
+
+    S        Is the transfer element size specifier (00b = 8 bits, 01b = 16 bits 10b = 32 bits and
+             11b = 64 bits)
+
+    I        Is the Increment address bit. if this is '1' the address pointer is incremented by the
+             element transfer size (in bytes) after every transfer ('0' is useful for FIFO transfers)
+
+    N        Is the transfer count in units of the selected size. 1 through 127. A transfer count of
+             0 is an error.
+
+          LBP16 read commands are followed by the 16 bit address (if the A bit is set). LBP16
+    Write commands are followed by the address (if bit A is set) and the data to be written.
+    LBP16 Addresses are always byte addresses. LBP data and addresses are little endian so
+    must be sent LSB first.
+
+
+
+
+                                                                                  7I97T 24
+REFERENCE INFORMATION
+LBP16
+    INFO AREA
+            There are eight possible memory spaces in LBP16. Each memory space has an
+    associated read only info area. The first entry has a cookie to verify correct access. The
+    next two entries in the info area are the MemSizes word and the MemRanges word. Only
+    16 bit read access is allowed to the info area.
+
+          0000              COOKIE = 0X5A0N WHERE N = ADDRESS SPACE 0..7
+          0002                                       MEMSIZES
+          0004                                      MEMRANGES
+          0006                                    ADDRESS POINTER
+          0008                                     SPACENAME 0,1
+          000A                                     SPACENAME 2,3
+          000C                                     SPACENAME 4,5
+          000E                                     SPACENAME 6,7
+
+
+    INFO AREA MEMSIZES FORMAT
+     15   14     13   12    11    10    9     8     7    6     5     4     3     2     1    0
+     W    T      T    T     T     T     T     T     X    X     X     X     A     A     A    A
+
+
+    W      Memory space is Writeable
+
+    T      Is type: 01 = Register, 02 = Memory, 0E = EEPROM, 0F = Flash
+
+    A      Is access types (bit 0 = 8 bit, bit 1 = 16 bit etc)so for example 0x06 means 16 bit and
+           32 bit operations allowed
+
+
+
+
+                                                                               7I97T 25
+REFERENCE INFORMATION
+LBP16
+    INFO AREA MEMRANGES FORMAT
+     15   14    13   12    11   10    9    8    7     6    5     4    3     2    1     0
+     E    E     E    E     E    P     P    P    P     P    S     S    S     S    S     S
+
+
+    E     Is erase block size
+
+    P     Is Page size
+
+    S     Ps address range
+
+    Ranges are 2^E, 2^P, 2^S. All sizes and ranges are in bytes. E and P are 0 for non-flash
+    memory
+
+
+
+
+                                                                          7I97T 26
+REFERENCE INFORMATION
+LBP16
+    INFO_AREA ACCESS
+           As discussed above, all memory spaces have an associated information area that
+    describes the memory space. Information area data is all 16 bits and read-only.The hex
+    command examples below are written in LSB first order for convenience. In the hex
+    command examples, the NN is the count/increment field of the LBP16 command and the
+    LLHH is the low and high bytes of the address.
+
+    Ispace 0 read with address      NN61LLHH            HostMot2 space
+
+    Ispace 0 read                   NN21
+
+
+
+    Ispace 1 read with address      NN65LLHH            Ethernet chip space
+
+    Ispace 1 read                   NN25
+
+
+
+    Ispace 2 read with address      NN69LLHH            Ethernet EEPROM space
+
+    Ispace 2 read                   NN29
+
+
+
+    Ispace 3 read with address      NN6DLLHH            FPGA flash space
+
+    Ispace 3 read                   NN2D
+
+
+
+    Ispace 6 read with address      NN79LLHH            LBP16 R/W space
+
+    Ispace 6 read                   NN39
+
+
+
+    Ispace 7 read with address      NN7DLLHH            LBP16 R/O space
+
+    Ispace 7 read                   NN3D
+
+
+
+
+                                                                         7I97T 27
+REFERENCE INFORMATION
+LBP16
+    7I97T SUPPORTED MEMORY SPACES
+           The 7I97T firmware supports 6 address spaces. These will be described individually
+    with example hexadecimal commands. The hex command examples below are written in
+    LSB first order for convenience. In the hex command examples, the NN is the
+    count/increment field of the LBP16 command and the LLHH is the low and high bytes of the
+    address.
+
+    SPACE 0: HOSTMOT2 REGISTERS
+           This address space is the most important as it gives access to the FPGA I/O. This
+    is a 64K byte address range space with 32 bit R/W access.
+
+    Space 0 read with address        NN42LLHH
+
+    Space 0 write with address       NNC2LLHH
+
+    Space 0 read                     NN02
+
+    Space 0 write                    NN82
+
+
+
+
+                                                                           7I97T 28
+REFERENCE INFORMATION
+LBP16
+    SPACE 0: HOSTMOT2 REGISTERS
+    Example: read first 5 entries in hostmot2 IDROM:
+
+    85420004
+
+    85                   ; 85 == NN = 5 | Inc bit (0x80) so address is incremented after each
+                         access
+
+    42                   ; Read from space 0 with address included after command
+
+    00                   ; LSB of address (IDROM starts at 0x0400)
+
+    04                   ; MSB of address (IDROM starts at 0x0400)
+
+    Example: write 4 GPIO ports starting at 0x1000:
+
+    84C20010AAAAAAAABBBBBBBBCCCCCCCCDDDDDDDD
+
+    84                   ; 84 == NN = 4 | Inc bit so address is incremented after each access
+
+    C2                   ; Write to space 0 with address included after command
+
+    00                   ; LSB of address (GPIO starts at 0x1000)
+
+    10                   ; MSB of address (GPIO starts at 0x1000)
+
+    AAAAAAAA             ; 32 bit data for GPIO port 0 at 0x1000
+
+    BBBBBBBB             ; 32 bit data for GPIO port 0 at 0x1004
+
+    CCCCCCCC             ; 32 bit data for GPIO port 0 at 0x1008
+
+    DDDDDDDD             ; 32 bit data for GPIO port 0 at 0x100C
+
+    Note like all LBP16 data, write data is LS byte first
+
+
+
+
+                                                                           7I97T 29
+REFERENCE INFORMATION
+LBP16
+    SPACE 1: ETHERNET CHIP ACCESS
+          Space 1 allows access to the KSZ8851-16 registers for debug purposes. All
+    accesses are 16 bit.
+
+    Space 1 read with address       NN45LLHH
+
+    Space 1 write with address      NNC5LLHH
+
+    Space 1 read                    NN05
+
+    Space 1 write                   NN85
+
+    Example: read Ethernet chip CIDER register: 0145C000
+
+    01                 ; = NN = read 1 16 bit value
+
+    45                 ; read space 1 with address included
+
+    C0                 ; LSB of CIDER address
+
+    00                 ; MSB of CIDER address
+
+
+
+    SPACE 2: ETHERNET EEPROM CHIP ACCESS
+           This space is used to store the Ethernet MAC address, card name, and EEPROM
+    settable IP address. The Ethernet EEPROM space is accessed as 16 bit data. The first
+    0x20 bytes are read only and the remaining 0x60 bytes are read/write.
+
+    Space 2 read with address       NN49LLHH
+
+    Space 2 write with address      NNC9LLHH
+
+    Space 2 read                    NN09
+
+    Space 2 write                   NN89
+
+
+
+
+                                                                       7I97T 30
+REFERENCE INFORMATION
+LBP16
+    SPACE2: ETHERNET EEPROM CHIP ACCESS
+           Writes and erases require that the EEPROMWEna be set to 5A02. Note that
+    EEPROMWEna is cleared at the end of every LPB packet so the write EEPROMWEna
+    command needs to prepended to all EEPROM write and erase packets. For EEPROM write
+    operations a LBP16 read operation should follow the write(s) for host synchronization.
+
+    Example: write EEPROM IP address with 192:168.0.32 (C0:A8:0:20 in hex)
+
+    01D91A00025A                    Enable EEPROM area writes
+
+    82C920002000A8C0                Write 2 words to 0020 : C0A80020 (with inc). Note this
+                                    must be in the same packet and the EEPROMWEna
+                                    write
+
+    ETHERNET EEPROM LAYOUT
+    ADDRESS DATA
+
+    0000         Reserved RO
+
+    0002         MAC address LS Word RO
+
+    0004         MAC address Mid Word RO
+
+    0006         MAC address MS Word RO
+
+    0008         Reserved RO
+
+    000A         Reserved RO
+
+    000C         Reserved RO
+
+    000E         Unused RO
+
+
+
+
+                                                                         7I97T 31
+REFERENCE INFORMATION
+LBP16
+    ETHERNET EEPROM LAYOUT
+    ADDRESS DATA
+
+    0010      CardNameChar-0,1 RO
+
+    0012      CardNameChar-2,3 RO
+
+    0014      CardNameChar-4,5 RO
+
+    0016      CardNameChar-6,7 RO
+
+    0018      CardNameChar-8,9 RO
+
+    001A      CardNameChar-10,11 RO
+
+    001C      CardNameChar-12,13 RO
+
+    001E      CardNameChar-14,15 RO
+
+    0020      EEPROM IP address LS word RW
+
+    0022      EEPROM IP address MS word RW
+
+    0024      EEPROM Netmask LS word RW (V16 and > firmware)
+
+    0026      EEPROM Netmask MS word RW (V16 and > firmware)
+
+    0028      DEBUG LED Mode (LS bit determines HostMot2 (0) or debug(1)) RW
+
+    002A      Reserved RW
+
+    002C      Reserved RW
+
+    002E      Reserved RW
+
+    0030..007E Unused RW
+
+
+
+
+                                                                 7I97T 32
+REFERENCE INFORMATION
+LBP16
+    SPACE 3: FPGA FLASH EEPROM CHIP ACCESS
+          Space 3 allows access to the FPGAs configuration flash memory. All flash memory
+    access is 32 bit. Flash memory access is different from other memory spaces in that it is
+    done indirectly via a 32 bit address pointer and 32 bit data port.
+
+    Space 3 read with address         NN4ELLHH
+
+    Space 3 write with address        NNCELLHHDDDDDDDD
+
+    Space 3 read NN0E
+
+    Space 3 write NN8E
+
+    FLASH MEMORY REGISTERS
+         Flash memory spaces have only 4 accessible registers:
+
+    ADDRESS      DATA
+
+    0000         FL_ADDR              32 bit flash address register
+
+    0004         FL_DATA              32 bit flash data register
+
+    0008         FL_ID                32 bit read only flash ID register
+
+    000C         SEC_ERASE            32 bit write only sector erase register
+
+           Unlike other memory spaces, flash memory space is accessed indirectly by writing
+    the address register (FL_ADDR) and then reading or writing the data (FL_DATA). The flash
+    byte address is automatically incremented by 4 each data access.
+
+           Note that reads can read all of flash memory with consecutive read operations but
+    write operations can only write a flash page worth of data before the page write must be
+    started. Also unless you are doing partial page writes, page write should always start on a
+    page boundary.
+
+          The page write is started by writing the flash address, reading the flash address,
+    reading flash data, reading flash ID or issuing a erase sector command. For host
+    synchronization, a read operation should follow every sector erase or page write.
+
+
+
+
+                                                                                7I97T 33
+REFERENCE INFORMATION
+LBP16
+    SPACE 3: FPGA FLASH EEPROM CHIP ACCESS
+        Example: read 1024 bytes (0100h doublewords) of flash space at address 00123456:
+
+    01CE000056341200             Write FL_ADDR (0000) with pointer (0x00123456)
+
+    404E0400                     Issue read command (FL_DATA = 0004) With count of 0x40
+                                 double words (256 bytes). Note do not use LBP16 increment
+                                 bit! Flash address always autoincremented
+
+    400E                         Next 0x40 doublewords = 256 bytes
+
+    400E                         Next 0x40 doublewords = 256 bytes
+
+    400E                         Next 0x40 doublewords = 256 bytes
+
+             Note that this is close to the maximum reads allowed in a single LBP packet (~1450
+    bytes)
+
+          Writes and erases require that the EEPROMWEna be set to 5A03. Note that
+    EEPROMWEna is cleared at the end of every LPB packet so the write EEPROMWEna
+    command needs to prepended to all flash write and erase packets. The following is written
+    on separate lines for clarity but must all be in one packet for correct operation.
+
+    Example: Write a 256 byte page of flash memory starting at 0xC000:
+
+    01D91A00035A                 Write EEPROMWEna with 0x5A03
+
+    01CE000000C00000             Write flash address
+
+    40CE0400                     Issue write flash data command with count
+
+    12345678                     Doubleword 0
+
+    ABCD8888                     Doubleword 1
+
+    ...
+
+    FFFFFFFF                     Doubleword 63 (= 256 bytes)
+
+    014E0000                     Read new address to commit write and so some data is
+                                 returned for host synchronization (so host waits for write to
+                                 complete)
+
+
+                                                                             7I97T 34
+REFERENCE INFORMATION
+LBP16
+    SPACE 3: FPGA FLASH EEPROM CHIP ACCESS
+        Example: Erase flash sector 0x00010000:
+
+    01D91A00035A          Write EEPROMWEna with 0x5A03
+
+    01CE000000000100      Write flash address with 0x 00010000
+
+    01CE0C0000000000      Write sector erase command (with dummy 32 bit data = 0)
+
+    014E0000              Read flash address for host synchronization (this will echo the
+                          address _after_ the sector is erased)
+
+
+
+
+                                                                       7I97T 35
+REFERENCE INFORMATION
+LBP16
+    SPACE 4 LBP TIMER/UTILITY AREA
+          Address space 4 is for read/write access to LBP specific timing registers. All memory
+    space 4 access is 16 bit.
+
+    Space 4 read with address          NN51LLHH
+
+    Space 4 write with address         NND1LLHHDDDD
+
+    Space 4 read                       NN11
+
+    Space 4 write                      NN91DDDD
+
+    MEMORY SPACE 4 LAYOUT:
+    ADDRESS DATA
+
+    0000           uSTimeStampReg
+
+    0002           WaituSReg
+
+    0004           HM2Timeout
+
+    0006           WaitForHM2RefTime
+
+    0008           WaitForHM2Timer1
+
+    000A           WaitForHM2Timer2
+
+    000C           WaitForHM2Timer3
+
+    000E           WaitForHM2Timer4
+
+    0010..001E Scratch registers for any use
+
+           The uSTimeStamp register reads the free running hardware microsecond timer. It
+    is useful for timing internal 7I97T operations. Writes to the uSTimeStamp register are a no-
+    op. The WaituS register delays processing for the specified number of microseconds when
+    written, (0 to 65535 uS) reads return the last wait time written. The HM2TimeOut register
+    sets the timeout value for all WaitForHM2 times (0 to 65536 uS).
+
+           All the WaitForHM2Timer registers wait for the rising edge of the specified timer or
+    reference output when read or written, write data is don’t care, and reads return the wait
+    time in uS. The HM2TimeOut register places an upper bound on how long the WaitForHM2
+    operations will wait. HM2Timeouts set the HM2TImeout error bit in the error register.
+
+                                                                              7I97T 36
+REFERENCE INFORMATION
+LBP16
+    SPACE 6 LBP STATUS/CONTROL AREA
+           Address space 6 is for read/write access to LBP specific control, status, and error
+    registers. All memory space 6 access is 16 bit. The RXUDPCount and TXUDPCount can
+    be used as sequence numbers to verify packet reception and transmission.
+
+    Space 6 read with address         NN59LLHH
+
+    Space 6 write with address        NND9LLHHDDDD
+
+    Space 6 read                      NN19
+
+    Space 6 write                     NN99DDDD
+
+    MEMORY SPACE 6 LAYOUT:
+    ADDRESS DATA
+
+    0000           ErrorReg
+
+    0002           LBPParseErrors
+
+    0004           LBPMemErrors
+
+    0006           LBPWriteErrors
+
+    0008           RXPktCount
+
+    000A           RXUDPCount
+
+    000C           RXBadCount
+
+    000E           TXPktCount
+
+    00010          TXUDPCount
+
+    00012          TXBadCount
+
+
+
+
+                                                                            7I97T 37
+REFERENCE INFORMATION
+LBP16
+    MEMORY SPACE 6 LAYOUT:
+    ADDRESS DATA
+
+    0014     LEDMode           If LSb is 0, LEDs are "owned" by HostMot2,
+                               otherwise LEDs are local debug LEDs
+
+    0016     DebugLEDPtr       What variable in space 6 local debug LEDs show
+                               (default is RXPktCount).
+
+    0018     Scratch           Can be used for sequence numbers
+
+    001A     EEPROMWEna        Must be set to 5A0N to enable EEPROM or flash
+                               writes or erases (N is memory space of EEPROM
+                               or flash) Note that this is cleared at the end of
+                               every packet.
+
+    001C     LBPReset          Setting this to a non-zero value will do a full reset
+                               of the LBP16 firmware. The 7I97T will read ita IP
+                               address jumpers and re-assign its IP address.
+                               The 7I97T will be unresponsive for as much as ½
+                               of a second after this command.
+
+    001E     FPGAICAP          FPGA ICAP-16 register to allow remote FPGA
+                               reload and other low level FPGA access.
+
+    ERROR REGISTER FORMAT
+    BIT      ERROR
+
+    0        LBPParseError
+
+    1        LBPMemError
+
+    2        LBPWriteError
+
+    3        RXPacketErr
+
+    4        TXPacketErr
+
+    5        HM2TimeOutError
+
+    6..15    Reserved
+
+
+
+
+                                                                7I97T 38
+REFERENCE INFORMATION
+LBP16
+    SPACE 7: LBP READ ONLY AREA
+          Memory space 7 is used for read only card information. Memory space 7 is accessed
+    as 16 bit data.
+
+    Space 7 read with address         NN5DLLHH
+
+    Space 7 read                      NN1D
+
+    MEMORY SPACE 7 LAYOUT:
+    ADDRESS DATA
+
+    0000           CardNameChar-0,1
+
+    0002           CardNameChar-2,3
+
+    0004           CardNameChar-4,5
+
+    0006           CardNameChar-6,7
+
+    0008           CardNameChar-8,9
+
+    000A           CardNameChar-10,11
+
+    000C           CardNameChar-12.13
+
+    000E           CardNameChar-14,15
+
+    0010           LBPVersion
+
+    0012           FirmwareVersion
+
+    0014           Option Jumpers
+
+    0016           Reserved
+
+    0018           RecvStartTS               1 uSec timestamps
+
+    001A           RecvDoneTS                For performance monitoring
+
+    001C           SendStartTS               Send timestamps are
+
+    001E           SendDoneTS                from previous packet
+
+
+                                                                          7I97T 39
+REFERENCE INFORMATION
+LBP16
+    ELBPCOM
+           ELBPCOM is a very simple demo program in Python (2.x) to allow simple checking
+    of LBP16 host communication to the 7I97T. ELBPCOM accepts hexadecimal LBP16
+    commands and data and returns hexadecimal results. Note that the timeout value will need
+    to be increased to about 2 seconds to try flash sector erase commands.
+
+    import socket
+    s = socket.socket(socket.AF_INET,socket.SOCK_DGRAM,0)
+    sip = "192.168.1.121"
+    sport = 27181
+    s.settimeout(.2)
+    while(2 >0):
+     sdata = raw_input ('>')
+     sdata = sdata.decode('hex')
+     s.sendto(sdata,(sip,sport))
+     try:
+      data,addr = s.recvfrom(1280)
+      print ('>'),data.encode('hex')
+     except socket.timeout:
+      print ('No answer')
+
+
+    Sample run:
+
+    >01420001                               ; read hostmot2 cookie at 0x100
+    > fecaaa55                              ; 7I97T returns 0x55AACAFE
+
+    >82492000                               ; read EEPROM IP address at 0x0020
+    > 450a5863                              ; 63:58:0A:45 = 99.88.10.69
+                                            ;(for example)
+
+    >01D91A00025A82C920000100a8C0 ; write EEPROM IP address
+                                  ;(at 0x0020) with
+                                  ; C0:A8:0:1 = 192.168.0.1
+
+
+
+
+                                                                          7I97T 40
+REFERENCE INFORMATION
+SPECIFICATIONS
+                                    MIN        MAX          NOTES
+
+    GENERAL
+
+         HOST SUPPLY VOLTAGE 5V     4.75 VDC   5.25 VDC
+
+         5V CURRENT                 ----       750 mA       No ext load .
+
+    ANALOG OUTPUTS
+
+         OUTPUT ACCURACY            -0.8       +0.8         %FS
+
+         OUTPUT CURRENT             ----       5            mA
+
+         OUTPUT RESOLUTION          ----       15           Bits
+
+         RIPPLE AND NOISE           -0.1       +0.1         %FS
+
+    ISOLATED INPUTS
+
+         INPUT RANGE                +-4V       +-36V
+
+         INPUT RESISTANCE           4.7K       5K
+
+         INPUT ISOLATION VOLTAGE    ----       100          VDC
+
+         MAXIMUM INPUT FREQUENCY    ----       5            KHz
+
+    ISOLATED OUTPUTS
+
+         OUTPUT SWITCHED VOLTAGE    0V         +36V
+
+         OUTPUT SWITCHED CURRENT    ----       2A
+
+         OUTPUT RESISTANCE          ----       75           mOhm
+
+         OUTPUT ISOLATION VOLTAGE   ----       100          VDC
+
+         MAXIMUM OUTPUT FREQUENCY   ----       5            KHz
+
+
+
+
+                                                          7I97T 41
+REFERENCE INFORMATION
+SPECIFICATIONS
+                                         MIN     MAX      NOTES
+
+    HIGH SPEED ENCODER INPUTS
+
+         INPUT COMMON MODE RANGE         -7      +12      Volts
+
+         INPUT TTL MODE THRESHOLD        1.4     1.8      Volts
+
+         DIFFERENTIAL MODE IMPEDANCE     110     120      Ohms
+
+         COUNT RATE                      ----    3        MHz
+
+    RS-422/RS485 INTERFACE
+
+         MAXIMUM DATA RATE               ----    5        MBIT/S
+
+         INPUT COMMON MODE RANGE         -7      +12      Volts
+
+         INPUT TERMINATION RESISTOR      118     122      Ohm
+
+         OUTPUT LOW     (24 mA sink)     ----    .8       Volts
+
+         OUTPUT HIGH    (24 mA source)   VCC-2   ----     Volts
+
+    EXPANSION I/O
+
+         OUTPUT VOLTAGE LOW              ----    .4V      8 mA sink
+
+         OUTPUT VOLTAGE HIGH             2.4V    ----     8 mA source
+
+    ENVIRONMENTAL
+
+         TEMPERATURE -C VERSION          0oC     70oC
+
+
+
+
+                                                        7I97T 42
+REFERENCE INFORMATION
+DRAWINGS
+
+
+
+
+                        7I97T 43
+7I97T 44
+

@@ -1,0 +1,398 @@
+7I85S MANUAL
+8 differential output plus 4 channel encoder interface
+
+
+
+
+V1.8
+This page intentionally almost blank
+Table of Contents
+    GENERAL . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 1
+
+             DESCRIPTION . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 1
+
+    HARDWARE CONFIGURATION . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 2
+
+             DEFAULT CONFIGURATION . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 2
+             TTL/RS-422 ENCODER SELECTION . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 2
+             CABLE POWER SELECTION . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 2
+
+    CONNECTORS . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 3
+
+             CONNECTOR LOCATIONS AND DEFAULT JUMPERS . . . . . . . . . . . . . . . . . 3
+             CONTROLLER CONNECTOR . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 4
+             5V POWER . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 5
+             ENCODER CONNECTOR TB3 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 6
+             ENCODER /OUTPUT CONNECTOR TB2 . . . . . . . . . . . . . . . . . . . . . . . . . . . . 7
+             OUTPUT CONNECTOR TB1 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 8
+
+    OPERATION
+
+             5V POWER . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 9
+             ENCODER INPUT CIRCUITRY . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 9
+             MAXIMUM ENCODER COUNT RATE . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 10
+             INTERFACING WITH MESA SERIAL DEVICES . . . . . . . . . . . . . . . . . . . . . . 10
+             DIFFERENTIAL OUTPUT DRIVE . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 11
+             STARTUP OUTPUT POLARITY AND STATE . . . . . . . . . . . . . . . . . . . . . . . . 11
+
+    SPECIFICATIONS . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 12
+    DRAWINGS . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 13
+
+
+
+
+                                                                                                                              iii
+GENERAL
+DESCRIPTION
+            The 7I85S is a eight channel differential output plus four channel encoder interface
+    for Mesas 25 pin Anything I/O series of FPGA interface cards. The 7I85S is designed for
+    motion control applications. A common usage of the 7I85S would be connecting up to four
+    STEP/DIR or PWM/DIR interfaced drives to the buffered 5V differential outputs and up
+    to four encoders with index to the 7I85Ss encoder inputs. One full duplex RS-422 channel
+    is provided for I/O expansion.
+
+          Encoder inputs can be TTL or differential on a per input basis. The 7I85S can also
+    supply 5V power to encoders..
+
+           The controller connection is a DB25F connector that matches the pinout of Mesa's
+    25 pin Anything I/O cards. All buffered I/O is terminated with 3.5 mm pluggable screw
+    terminals (supplied)
+
+
+
+
+                                                                              7I85S 1
+HARDWARE CONFIGURATION
+GENERAL
+           Hardware setup jumper positions assume that the 7I85S card is oriented in an
+    upright position, that is, with the DB25F controller connector on the left hand side.
+
+DEFAULT CONFIGURATION
+          JUMPER               FUNCTION                    DEFAULT SETTING
+
+          W3                   CABLE/AUX 5V POWER UP = CABLE 5V POWER
+          W9,W11,W13           ENCODER 0                   ALL DOWN = RS-422
+          W5,W6,W7             ENCODER 1                   ALL DOWN = RS-422
+          W1, W2, W4           ENCODER 2                   ALL DOWN = RS-422
+          W8,W10,W12           ENCODER 3                   ALL DOWN = RS-422
+
+
+
+TTL/RS-422 ENCODER SELECTION
+           Each 7I85S encoder channel has a selectable TTL or RS-422 (differential) encoder
+    input conditioning. Conditioning type is determined by setting groups of 3 jumpers to the
+    up or down position. When the jumpers are in the "UP" position, TTL inputs are selected,
+    When the jumpers are in the "DOWN" position, RS-422 inputs are selected. Note these
+    sets of three jumpers are in physical proximity to the terminal block encoder connections.
+
+CABLE POWER
+          The 7I85S can get its logic power from the host FPGA card or from P1. W3
+    determines if the 7I85S gets its 5V logic power from the host FPGA card or P1.
+
+          If W3 is in the ‘UP’ position, host FPGA power is used and the host FPGA card
+    must be jumpered to supply 5V to the daughtercard.
+
+           If W3 is in the ‘DOWN’ position, 5V power must be supplied to the 7I85S via P1 and
+    the 7I85S grounds the 4 DB25 signals used for host 5V power. In this case the FPGA card
+    must be jumpered so that it does not supply power to the daughtercard.
+
+
+
+
+                                                                             7I85S 2
+CONNECTORS
+CONNECTOR LOCATIONS AND DEFAULT JUMPER POSITIONS
+
+
+
+
+                Note: TB1,TB2,TB3 Pin 1 is marked with square and ‘1'
+
+
+
+
+                                                                7I85S 3
+CONNECTORS
+CONTROLLER CONNECTOR
+          Female 25 pin DB-25F P1 is the host interface connector. This connects to the host
+   interface FPGA card via a IEEE-1284 male-male DB-25 cable.
+
+   DB-25 PIN    FPGA PRIM I/O        FPGA SEC I/O        FUNCTION
+   1            IO0                  IO17                SRX0
+   14           IO1                  IO18                STX0
+   2            IO2                  IO19                TX6
+   15           IO3                  IO20                TX7
+   3            IO4                  IO21                TX4
+   16           IO5                  IO22                TX5
+   4            IO6                  IO23                TX2
+   17           IO7                  IO24                TX3
+   5            IO8                  IO25                TX0
+   6            IO9                  IO26                TX1
+   7            IO10                 IO27                ENCMUX
+   8            IO11                 IO28                MENCA0
+   9            IO12                 IO29                MENCB0
+   10           IO13                 IO30                MIDX0
+   11           IO14                 IO31                MENCA1
+   12           IO15                 IO32                MENCB1
+   13           IO16                 IO33                MIDX1
+
+        Pins 18, 19, 20, and 21 are ground. Pins 22, 23, 24 and 25 are either ground or 5V
+   depending on jumper W3 (ground if W3 "DOWN", 5V if W3 "UP").
+
+
+
+
+                                                                           7I85S 4
+CONNECTORS
+5V POWER
+          2 pin pluggable terminal P1 can be used to supply 5V power to the I/O terminals on
+   the7I85S. This is suggested for applications where the encoders or remote serial cards
+   draw more current than can be supplied via the host interface cable. P1 has the following
+   pinout:
+
+   PIN   FUNCTION
+   1     GND
+   2     +5V
+
+
+
+
+                                                                           7I85S 5
+CONNECTORS
+ENCODER CONNECTOR TB3
+   Connector TB3 is a 3.5MM pluggable screw terminal block with encoder channels 0
+   through 2:
+
+   TB3 PIN      FUNCTION            DIR
+   1            QA0                 TO 7I85S
+   2            /QA0                TO 7I85S
+   3            GND                 FROM 7I85S
+   4            QB0                 TO 7I85S
+   5            /QB0                TO 7I85S
+   6            +5V                 FROM 7I85S
+   7            IDX0                TO 7I85S
+   8            /IDX0               TO 7I85S
+   9            QA1                 TO 7I85S
+   10           /QA1                TO 7I85S
+   11           GND                 FROM 7I85S
+   12           QB1                 TO 7I85S
+   13           /QB1                TO 7I85S
+   14           +5V                 FROM 7I85S
+   15           IDX1                TO 7I85S
+   16           /IDX1               TO 7I85S
+   17           QA2                 TO 7I85S
+   18           /QA2                TO 7I85S
+   19           GND                 FROM 7I85S
+   20           QB2                 TO 7I85S
+   21           /QB2                TO 7I85S
+   22           +5V                 FROM 7I85S
+   23           IDX2                TO 7I85S
+   24           /IDX2               TO 7I85S
+   Note that actual signal functions depend on FPGA configuration.
+
+
+
+                                                                     7I85S 6
+CONNECTORS
+ENCODER/OUTPUT CONNECTOR TB2
+   Connector TB2 is a 3.5MM pluggable screw terminal block with the following pinout:
+
+   TB2 PIN      FUNCTION            DIR
+
+   1            QA3                 TO 7I85S
+   2            /QA3                TO 7I85S
+   3            GND                 FROM 7I85S
+   4            QB3                 TO 7I85S
+   5            /QB3                TO 7I85S
+   6            +5V                 FROM 7I85S
+   7            IDX3                TO 7I85S
+   8            /IDX3               TO 7I85S
+   9            GND                 FROM 7I85S
+   10           GND                 FROM 7I85S
+   11           TX0,STEP0-          FROM 7I85S
+   12           /TX0,STEP0+         FROM 7I85S
+   13           TX1,DIR0-           FROM 7I85S
+   14           /TX1,DIR0+          FROM 7I85S
+   15           +5V                 FROM 7I85S
+   16           +5V                 FROM 7I85S
+   17           GND                 FROM 7I85S
+   18           GND                 FROM 7I85S
+   19           TX2,STEP1-          FROM 7I85S
+   20           /TX2,STEP1+         FROM 7I85S
+   21           TX3,DIR1-           FROM 7I85S
+   22           /TX3,DIR1+          FROM 7I85S
+   23           +5V                 FROM 7I85S
+   24           +5V                 FROM 7I85S
+   Note that actual signal functions depend on FPGA configuration.
+
+
+
+                                                                        7I85S 7
+CONNECTORS
+OUTPUT/SERIAL CONNECTOR TB1
+    Connector TB1 is a 3.5MM pluggable screw terminal block with the following pinout:
+
+    TB1 PIN      FUNCTION            DIR
+    1            GND                 FROM 7I85S
+    2            GND                 FROM 7I85S
+    3            TX4,STEP2-          FROM 7I85S
+    4            /TX4,STEP2+         FROM 7I85S
+    5            TX5,DIR2-           FROM 7I85S
+    6            /TX5,DIR2+          FROM 7I85S
+    7            +5V                 FROM 7I85S
+    8            +5V                 FROM 7I85S
+    9            GND                 FROM 7I85S
+    10           GND                 FROM 7I85S
+    11           TX6,STEP3-          FROM 7I85S
+    12           /TX6,STEP3+         FROM 7I85S
+    13           TX7,DIR3-           FROM 7I85S
+    14           /TX7,DIR3+          FROM 7I85S
+    15           +5V                 FROM 7I85S
+    16           +5V                 FROM 7I85S
+    17           GND                 FROM 7I85S
+    18           GND                 FROM 7I85S
+    19           SRX0                TO 7I85S
+    20           /SRX0               TO 7I85S
+    21           STX0                FROM 7I85S
+    22           /STX0               FROM 7I85S
+    23           +5V                 FROM 7I85S
+    24           +5V                 FROM 7I85S
+    Note that actual signal functions depend on FPGA configuration.
+
+
+
+
+                                                                         7I85S 8
+OPERATION
+5V POWER
+           The 7I85S requires ~200 mA of 5V power for operation. This power will increase
+    based on the number of terminated differential outputs used, up to a maximum of ~300 mA
+    of local logic power. Encoder power and device power must be added to this figure for total
+    power draw
+
+          Power for the 7I85S logic is normally supplied from the host interface but can also
+    be supplied via P1, the 5V power connector. .
+
+           The 5V power to I/O connectors TB1, TB2, and TB3 each pass through a 1.1A PTC
+    device before being routed to the I/O terminals. This limits the I/O power supplied by TB1,
+    TB2, and TB3 to ~640 mA each in 0 to 70C ambients.
+
+ENCODER INPUT CIRCUIT
+           The 7I85S input circuit is different depending on whether TTL or RS-422 encoder
+    types have been selected. In TTL mode the input circuit on the encoder QA, QB, and IDX
+    inputs drive one input of the RS-422 differential receiver, and the other receiver input is
+    terminated to a 1.6V (TTL threshold) reference voltage. In RS-422 mode, the input consists
+    of a 120 Ohm termination resistor and a 26LS32 RS-422 differential receiver.
+
+            When TTL encoders are used, they connect to the ‘True’ input of the differential
+    pair, for example a TTL encoder for channel 2 would connect to QA2, QB2 and IDX2, while
+    the /QA2, /QB2, and /IDX2 terminals would be left open.
+
+           Fine print: normally the input mode jumpers would always be moved as a sets of
+    three to select TTL or RS-422 mode for individual encoders, however it is possible to
+    select TTL or RS-422 mode for each encoder signal, for example if a encoder had a
+    differential A, B but TTL index, the input circuit can accommodate this. The three input
+    mode select jumpers are in bottom to top order: QA, QB, IDX.
+
+
+
+
+                                                                             7I85S 9
+OPERATION
+MAXIMUM ENCODER COUNT RATE
+            The 7I85S uses multiplexed encoder signals to save interface pins. The multiplexing
+    rate will determine the maximum encoder count rate. Default multiplexing rate with
+    HostMot2 firmware is ClockLow / 8,or approximately 4 or 6 MHz, giving a resolvable count
+    rate of 2 to 3 MHz. Multiplexing rate can be increased if desired but high multiplex rates
+    will require short cables between the FPGA controller card and the 7I85S due to signal
+    integrity and time-of-flight considerations. Maximum practical multiplex rate is
+    approximately 12 MHz (and 6 MHz count rates). Encoder count rate is further limited by
+    HostMot2s input filtering to ~5 to ~8 million counts per second (encoder filtering off) and
+    ~1 to ~1.6 million counts per second (encoder filtering on).
+
+INTERFACING WITH MESA SERIAL DEVICES
+           The 7I85S serial port is intended to be a general purpose RS-422 serial interface
+    but can easily interface to MESA’s serial I/O devices that use RS-422 communication and
+    RJ45/CAT5 cable for the serial interface. These devices include the 7I64 Isolated I/O
+    interface, the 8I20 3 phase drive, the 7I66 isolated I/O interface, the 7I69 TTL I/O interface
+    and the 7I73 pendant interface. The easiest way to make a cable for interfacing the 7I85
+    to these devices is to take a standard CAT5 or CAT6 cable, cut it in half, and wire the
+    individual wires to the 7I85 screw terminals. The following chart gives the CAT5 to 7I85
+    screw terminal connections (EIA/TIA 568B colors shown):
+
+    TB1 PIN       7I85S SIGNAL          DIRECTION            CAT5 PIN       CAT5 568B COLOR
+    17            GND                   FROM 7I85S           4              BLUE
+    18            GND                   FROM 7I85S           5              BLUE / WHITE
+    19            SRX+                  TO 7I85S             6              GREEN
+    20            SRX-                  TO 7I85S             3              GREEN / WHITE
+    21            STX+                  FROM 7I85S           2              ORANGE
+    22            STX-                  FROM 7I85S           1              ORANGE / WHITE
+    23            +5V                   FROM 7I85S           7              BROWN / WHITE
+    24            +5V                   FROM 7I85S           8              BROWN
+
+
+
+
+                                                                                7I85S 10
+OPERATION
+DIFFERENTIAL OUTPUT DRIVE
+           The 7I85S outputs are designed to drive singly terminated RS-422 lines or remote
+    opto-isolator diodes. Maximum output drive is 35 mA. The 7I85S outputs can be used
+    individually for interfacing single ended loads.
+
+STARTUP OUTPUT POLARITY AND STATE
+           When 7I85S outputs are used for drive enables or other safety related controls its
+    very important that the startup state disables the external equipment.
+
+            The differential outputs are polarized such that the TXN pins are inverted from the
+    FPGA pins and the /TXN pins are non inverting. This may seem a little backwards but it’s
+    an artifact of the communication oriented background of the 7I85S. Since the FPGA cards
+    outputs are high at startup, the TXN pins will be low at startup (and therefore suitable for
+    active high enables). The /TXN pins will be high at startup (and suitable for active low
+    enables).
+
+
+
+
+                                                                              7I85S 11
+SPECIFICATIONS
+
+                                                    MIN       MAX      UNITS
+
+   5V POWER SUPPLY                                  4.75      5.25     VDC
+
+   5V POWER CONSUMPTION                             ---       300      mA
+
+   (all outputs loaded with 130 ohm terminations)
+
+   (no external encoder or serial 5V load)
+
+   5V CURRENT TO EACH I/O CONNECTOR                 ---       640      mA
+
+   MAXIMUM DATA OUTPUT RATE                         ---       10       MBIT/S
+
+   RS-422 OUTPUT LOW                                C         .8       Volts
+
+   (24 mA sink current)
+
+   RS-422 OUTPUT HIGH                               VCC-2.5   C        Volts
+
+   (24 mA source current)
+
+   ENC INPUT COMMON MODE RANGE                      -7        +12      Volts
+
+   ENC INPUT TTL MODE THRESHOLD                     1.4       1.8      Volts
+                                                                       o
+   OPERATING TEMP.                                  0         +70      C
+
+
+
+
+                                                                     7I85S 12
+DRAWINGS
+
+
+
+
+           7I85S 13
+

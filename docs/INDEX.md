@@ -86,6 +86,9 @@ The structured docs that organize the cabinet's wiring. These are the main worki
 | [mesa_7c81_manual.pdf](mesa_7c81_manual.pdf) | [text](text/mesa_7c81_manual.txt) | 25 pages. Mesa 7C81 anything-I/O (Raspberry Pi GPIO) |
 | [mesa_7i76_manual.pdf](mesa_7i76_manual.pdf) | [text](text/mesa_7i76_manual.txt) | 58 pages. Mesa 7I76 step/dir daughter card |
 | [mesa_7i77_manual.pdf](mesa_7i77_manual.pdf) | [text](text/mesa_7i77_manual.txt) | 61 pages. Mesa 7I77 ±10V servo daughter card (analog servo systems) |
+| [mesa_7i97t_manual.pdf](mesa_7i97t_manual.pdf) | [text](text/mesa_7i97t_manual.txt) | 45 pages. Mesa 7I97T standalone Ethernet analog servo interface (6× ±10V, 6× encoder, 16 in, 6 out). **+5V powered** via P3. Connectors: P3 (5V), P2 (DB25 expansion for 7I85), TB1/TB2 (encoders), TB3 (analog out), TB4 (isolated in + sserial RJ45 to 7I84), TB5 (isolated I/O). |
+| [mesa_7i84_manual.pdf](mesa_7i84_manual.pdf) | [text](text/mesa_7i84_manual.txt) | 52 pages. Mesa 7I84 sserial I/O expansion (32 in, 16 out). RS-422 logic power (+5V, 30mA) comes from sserial RJ45 cable; TB1 needs external **5-32V field power** (VFIELDA, VFIELDB, VIN) for the field I/O drivers. |
+| [mesa_7i85s_manual.pdf](mesa_7i85s_manual.pdf) | [text](text/mesa_7i85s_manual.txt) | 14 pages. Mesa 7I85S step/dir daughter card (4× step/dir, 4× encoder). DB25 to 7I97T's P2 expansion port. Default W3=UP → expects +5V from host card via DB25. **Default conflict with 7I97T**: 7I97T's W22 default DOWN disables breakout 5V; either flip 7I97T W22 UP, or flip 7I85S W3 DOWN and supply external +5V on P1. |
 
 See [`mesa/`](mesa/) folder for additional notes, store pages, and shopping list.
 
