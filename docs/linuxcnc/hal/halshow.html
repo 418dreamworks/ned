@@ -1,0 +1,438 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
+<title>Halshow</title>
+<link rel="stylesheet" href="..//asciidoc.css" type="text/css" />
+
+
+<link rel="stylesheet" href="..//linuxcnc.css" type="text/css" />
+<script type="text/javascript" src="..//asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install(2);
+/*]]>*/
+</script>
+</head>
+<body class="book">
+<div id="header">
+<h1>Halshow</h1>
+<div id="toc">
+  <div id="toctitle">Table of Contents</div>
+  <noscript><p><b>JavaScript must be enabled in your browser to display the table of contents.</b></p></noscript>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph" id="cha:halshow"><p>The script <code>halshow</code> can help you find your way around a running HAL.
+It displays chosen HAL values and updates them continuously.</p></div>
+<div class="paragraph"><p>This is a very specialized system and it must connect to a working HAL.
+It cannot run standalone because it relies on the ability of HAL to "introspect" and report what it knows of itself through the halcmd interface library.
+When the configuration of LinuxCNC changes, so will the output of halshow be different, too.</p></div>
+<div class="paragraph"><p>As we will soon see, this ability of HAL to document itself is one key to establish an effective CNC system.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_starting_halshow">1. Starting Halshow</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Halshow is available</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+in the AXIS menu under Machine/Show HAL Configuration,
+</p>
+</li>
+<li>
+<p>
+in the TkLinuxCNC menu under Scripts/HAL Show,
+</p>
+</li>
+<li>
+<p>
+in GMOCCAPY on the settings page.
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p><code>halshow</code> can also be started from a terminal command line and specify formats for integer and float items (pins or signals) and identify a saved watchlist file to use:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ halshow --help
+Usage:
+  halshow [Options] [watchfile]
+  Options:
+           --help    (this help)
+           --fformat format_string_for_float
+           --iformat format_string_for_int
+           --noprefs don't use preference file to save settings
+
+Notes:
+       Create watchfile in halshow using: 'File/Save Watch List'.
+       LinuxCNC must be running for standalone usage.</code></pre>
+</div></div>
+<div class="paragraph"><p>Example to limit number of decimal points for floats and use a file named my.halshow in the current directory:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ halshow  --fformat "%.5f" ./my.halshow</code></pre>
+</div></div>
+<div class="paragraph"><p>For more information regarding the format, please refer to <a href="https://www.tcl.tk/man/tcl/TclCmd/format.html">the Tcl format man page</a>.</p></div>
+<div class="imageblock" id="cap:halshow-layout" style="text-align:center;">
+<div class="content">
+<figure>
+<img src="images/halshow-layout.png" alt="Halshow Layout"/>
+<figcaption class="title"> Figure 1. Halshow Layout</figcaption>
+</figure>
+</div>
+</div>
+<div class="paragraph"><p>At the left of its display as shown in above figure is a tree view, resembling what you may have seen as file browsers.
+At the right is a tabbed notebook with tabs for show, watch and settings.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_hal_tree_area">2. HAL Tree Area</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_filter_tree">2.1. Filter Tree</h3>
+<div class="paragraph"><p>Per default this entry filters the tree by pin names or tree-nodes by a regular expression.
+For example, entering "lim-sw" would filter the tree to the following:</p></div>
+<div class="listingblock">
+<div class="title">Filtering tree for pin names with the substring "lim-sw".</div>
+<div class="content">
+<pre><code>joint.0.neg-lim-sw-in
+joint.0.pos-lim-sw-in
+joint.1.neg-lim-sw-in
+joint.1.pos-lim-sw-in
+joint.2.neg-lim-sw-in
+joint.3.pos-lim-sw-in</code></pre>
+</div></div>
+<div class="paragraph"><p>If you would like to display all <code>joint.0</code>-related, you have to click the settings icon and select "Full path".
+Pay attention to escape the regex special characters, so you have to enter "joint\.1\." to explicitly request the dot and not also find joint 10.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_tree">2.2. Tree</h3>
+<div class="paragraph"><p>The tree shows all of the major parts of a HAL.
+In front of each is a small plus (+) or minus (-) sign in a box to expand or collapse the corresponding section of the tree.</p></div>
+<div class="paragraph"><p>You can also expand or collapse the tree display using the Tree View menu at the upper left edge of the display.</p></div>
+<div class="paragraph"><p>Under <em>Tree View</em> you will find:
+<em>Expand All</em>, <em>Collapse All</em>; <em>Expand Pins</em>, <em>Expand Parameters</em>, <em>Expand Signals</em>; and <em>Reload tree view</em>.
+<em>Reload tree view</em> is useful when new components are loaded during runtime and should be displayed.</p></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_hal_show_area">3. HAL Show Area</h2>
+<div class="sectionbody">
+<div class="imageblock" id="fig:halshow-show-tab" style="text-align:center;">
+<div class="content">
+<figure>
+<img src="images/halshow-show-tab.png" alt="Halshow: Show Tab"/>
+<figcaption class="title"> Figure 2. Halshow: Show Tab</figcaption>
+</figure>
+</div>
+</div>
+<div class="paragraph"><p>Clicking on the node name, "Components" in the tree for example, will show you (under the "Show" tab) all that HAL knows about the contents of that node.
+Figure <a href="halshow.html#fig:halshow-show-tab">Halshow Show Tab</a> shows a list exactly like you will see if you click the "Components" name.
+The information display is exactly like those shown in traditional text based HAL analysis tools.
+The advantage here is that we have mouse click access, access that can be as broad or as focused as you need.</p></div>
+<div class="paragraph"><p>If we take a closer look at the tree display we can see that the six major parts of a HAL can all be expanded at least one level.
+As these levels are expanded you can get more focused with the reply when you click on the rightmost tree node.
+You will find that there are some HAL pins and parameters that show more than one reply.
+This is due to the nature of the search routines in halcmd itself.
+If you search one pin you may get two, like this:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>Component Pins:
+Owner  Type  Dir  Value  Name
+06     bit    -W   TRUE  parport.0.pin-10-in
+06     bit    -W  FALSE  parport.0.pin-10-in-not</code></pre>
+</div></div>
+<div class="paragraph"><p>The second pin&#8217;s name contains the complete name of the first.</p></div>
+<div class="sidebarblock">
+<div class="content">
+<div class="title">New in 2.9</div>
+<div class="paragraph"><p>Selected text inside the Show tab can be copied by right-click or CTRL-C.<br />
+The Show area allows to add pins from selected text by using the right-click menu.
+All valid pins that are enclosed in the selection are added to the Watch tab.</p></div>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_watch_tab_area">4. Watch Tab Area</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Clicking the watch tab produces a blank canvas.
+You can add signals and pins to this canvas and watch their values.
+You can add signals or pins when the watch tab is displayed by clicking on the name of it in the tree view.</p></div>
+<div class="sidebarblock">
+<div class="content">
+<div class="title">New in 2.9</div>
+<div class="paragraph"><p>You can also add all sub-items of this node by selecting that in the right click menu (see figure <a href="halshow.html#fig:halshow-watch-tab-1">Halshow Watch Tab</a>).</p></div>
+</div></div>
+<div class="paragraph"><p>The following figure shows this canvas with several pins.</p></div>
+<div class="imageblock" id="fig:halshow-watch-tab-1" style="text-align:center;">
+<div class="content">
+<figure>
+<img src="images/halshow-watch-tab-1.png" alt="Halshow Watch Tab"/>
+<figcaption class="title"> Figure 3. Halshow: Watch Tab</figcaption>
+</figure>
+</div>
+</div>
+<div class="paragraph"><p><em>Watch</em> displays bit type (binary) values using colored circles representing LEDs.
+They show as dark red when a bit signal or pin is false, and as light yellow whenever that signal is true.
+If you select a pin or signal that is not a bit type (binary) signal, <em>watch</em> will show it as a numerical value.
+Pins are displayed in black, signals in blue and parameters in brown.</p></div>
+<div class="paragraph"><p><em>Watch</em> will quickly allow you to test switches or see the effect of changes that you make to LinuxCNC while using the graphical interface.
+<em>Watch&#8217;s</em> refresh rate is a bit slow to see stepper pulses, but you can use it for these if you move an axis very slowly or in very small increments of distance.</p></div>
+<div class="sidebarblock">
+<div class="content">
+<div class="title">New in 2.9</div>
+<div class="paragraph"><p>The pins and signals that are writable have buttons for manipulation on the right side.
+Pins that are linked to a signal have disabled buttons.
+To set these values, the corresponding pin has to be unlinked from the signal.
+That can be done by right-click on the signal name and select "Unlink pin", see <a href="halshow.html#cap:watch-tab-context-menu">Watch Tach Context Menu</a>.</p></div>
+<div class="paragraph"><p>The watch list will be saved automatically on exit.
+If you don&#8217;t want Halshow to save your watchlist, it can be disabled in the <a href="halshow.html#sec:halshow-settings">Settings</a>.</p></div>
+</div></div>
+<div class="paragraph"><p><strong>Context Menu</strong></p></div>
+<div class="sidebarblock">
+<div class="content">
+<div class="title">New in 2.9</div>
+<div class="paragraph"><p>The context menu allows further:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Copy the pin name to clipboard
+</p>
+</li>
+<li>
+<p>
+Set a value
+</p>
+</li>
+<li>
+<p>
+Unlink a pin (if linked to a signal)
+</p>
+</li>
+<li>
+<p>
+Show apin in the Tree view (highlights the pin, doesn&#8217;t scroll to the position)
+</p>
+</li>
+<li>
+<p>
+Remove a pin from the list
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="imageblock" id="cap:watch-tab-context-menu" style="text-align:center;">
+<div class="content">
+<figure>
+<img src="images/halshow-5.png" alt="Halshow: Watch Tab Context Menu"/>
+<figcaption class="title"> Figure 4. Halshow: Watch Tab Context Menu</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_command_entry">5. Command Entry</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>In the lower part is an entry box to test HAL commands.
+The commands you enter here and the effect that they have on the running HAL are not saved.
+They will persist as long as LinuxCNC remains up but are gone as soon as LinuxCNC is.</p></div>
+<div class="sidebarblock">
+<div class="content">
+<div class="title">New in 2.9</div>
+<div class="paragraph"><p>The command entry has a BASH-like history (during the session), so you can restore inserted commands with the arrow up key.</p></div>
+</div></div>
+<div class="paragraph"><p>The entry box labeled "HAL Command:" will accept any of the commands listed for halcmd. These include:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>loadrt</code>, <code>unloadrt</code> (load/unload real-time module)
+</p>
+</li>
+<li>
+<p>
+<code>loadusr</code>, <code>unloadusr</code> (load/unload non-realtime component)
+</p>
+</li>
+<li>
+<p>
+<code>addf</code>, <code>delf</code> (add/delete a function to/from a real-time thread)
+</p>
+</li>
+<li>
+<p>
+<code>net</code> (create a connection between two or more items)
+</p>
+</li>
+<li>
+<p>
+<code>setp</code> (set parameter (or pin) to a value)
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>This little editor will enter a command any time you press <em>enter</em> or push the execute button.
+An error message from halcmd will be shown when these commands are not properly formed.
+If you are not certain how to set up a proper command, you&#8217;ll need to read again the documentation on halcmd and the specific modules that you are working with.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:halshow-settings">6. Settings</h2>
+<div class="sectionbody">
+<div class="sidebarblock">
+<div class="content">
+<div class="title">New in 2.9</div>
+<div class="paragraph"><p>The geometry of the window and the settings are saved in a file in the configuration directory on exit.
+If that path cannot be determined, they are stored in the home directory.
+The path will be displayed in the settings page.
+You can omit using the preferences file by calling halshow with the command line argument <code>--no-prefs</code>.<br />
+The further settings should be self-explaining.</p></div>
+</div></div>
+<div class="imageblock" id="cap:halshow-settings" style="text-align:center;">
+<div class="content">
+<figure>
+<img src="images/halshow-settings.png" alt="Halshow Settings"/>
+<figcaption class="title"> Figure 5. Halshow Settings</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_tutorial">7. Example/Tutorial</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Let&#8217;s use this editor to add a differential module to a HAL and connect it to axis position so that we could see the rate of change in position, i.e., acceleration.
+We first need to load a HAL component named ddt, add it to the servo thread, then connect it to the position pin of a joint.
+Once that is done we can find the output of the differentiator in halscope. So let&#8217;s go.</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #0000FF">loadrt</span></span> <span style="font-weight: bold"><span style="color: #000000">ddt</span></span></tt></pre></div></div>
+<div class="paragraph"><p>Now look at the components node and you should see ddt in there someplace.</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #000000">Loaded</span></span> <span style="font-weight: bold"><span style="color: #000000">HAL</span></span> <span style="font-weight: bold"><span style="color: #000000">Components</span></span>:
+<span style="font-weight: bold"><span style="color: #000000">ID</span></span> <span style="font-weight: bold"><span style="color: #000000">Type</span></span>        <span style="font-weight: bold"><span style="color: #000000">Name</span></span>
+<span style="color: #993399">10</span> <span style="font-weight: bold"><span style="color: #000000">User</span></span> <span style="font-weight: bold"><span style="color: #000000">halcmd29800</span></span>
+<span style="color: #993399">09</span> <span style="font-weight: bold"><span style="color: #000000">User</span></span> <span style="font-weight: bold"><span style="color: #000000">halcmd29374</span></span>
+<span style="color: #993399">08</span>   <span style="font-weight: bold"><span style="color: #000000">RT</span></span>         <span style="font-weight: bold"><span style="color: #000000">ddt</span></span>
+<span style="color: #993399">06</span>   <span style="font-weight: bold"><span style="color: #000000">RT</span></span> <span style="font-weight: bold"><span style="color: #000000">hal_parport</span></span>
+<span style="color: #993399">05</span>   <span style="font-weight: bold"><span style="color: #000000">RT</span></span>    <span style="font-weight: bold"><span style="color: #000000">scope_rt</span></span>
+<span style="color: #993399">04</span>   <span style="font-weight: bold"><span style="color: #000000">RT</span></span>     <span style="font-weight: bold"><span style="color: #000000">stepgen</span></span>
+<span style="color: #993399">03</span>   <span style="font-weight: bold"><span style="color: #000000">RT</span></span>      <span style="font-weight: bold"><span style="color: #000000">motmod</span></span>
+<span style="color: #993399">02</span> <span style="font-weight: bold"><span style="color: #000000">User</span></span>   <span style="font-weight: bold"><span style="color: #000000">iocontrol</span></span></tt></pre></div></div>
+<div class="paragraph"><p>Sure enough, there it is. Notice that its ID is 08.
+Next we need to find out what functions are available with it so we look at functions:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>Exported Functions:
+Owner  CodeAddr      Arg  FP Users Name
+  08   E0B97630 E0DC7674 YES     0 ddt.0
+  03   E0DEF83C 00000000 YES     1 motion-command-handler
+  03   E0DF0BF3 00000000 YES     1 motion-controller
+  06   E0B541FE E0DC75B8  NO     1 parport.0.read
+  06   E0B54270 E0DC75B8  NO     1 parport.0.write
+  06   E0B54309 E0DC75B8  NO     0 parport.read-all
+  06   E0B5433A E0DC75B8  NO     0 parport.write-all
+  05   E0AD712D 00000000  NO     0 scope.sample
+  04   E0B618C1 E0DC7448 YES     1 stepgen.capture-position
+  04   E0B612F5 E0DC7448  NO     1 stepgen.make-pulses
+  04   E0B614AD E0DC7448 YES     1 stepgen.update-freq</code></pre>
+</div></div>
+<div class="paragraph"><p>Here we look for owner #08 and see a function named <code>ddt.0</code>.
+We should be able to add <code>ddt.0</code> to the servo thread and it will do its math each time the servo thread is updated.
+Once again we look up the addf command and find that it uses three arguments like this:</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #0000FF">addf</span></span> &lt;<span style="font-weight: bold"><span style="color: #000000">functname</span></span>&gt; &lt;<span style="font-weight: bold"><span style="color: #000000">threadname</span></span>&gt; [&lt;<span style="font-weight: bold"><span style="color: #000000">position</span></span>&gt;]</tt></pre></div></div>
+<div class="paragraph"><p>We already know the functname=ddt.0 so let&#8217;s get the thread name right by expanding the thread node in the tree.
+Here we see two threads, servo-thread and base-thread.
+The position of <code>ddt.0</code> in the thread is not critical.
+So we add the function <code>ddt.0</code> to the servo-thread:</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #0000FF">addf</span></span> <span style="color: #009900">ddt.0</span> <span style="font-weight: bold"><span style="color: #000000">servo-thread</span></span></tt></pre></div></div>
+<div class="paragraph"><p>This is just for viewing, so we leave position blank and get the last position in the thread.
+The following figure shows the state of halshow after this command has been issued.</p></div>
+<div class="imageblock" id="fig:halshow-addf-command" style="text-align:center;">
+<div class="content">
+<figure>
+<img src="images/halshow-2.png" alt="Addf command"/>
+<figcaption class="title"> Figure 6. Addf command</figcaption>
+</figure>
+</div>
+</div>
+<div class="paragraph"><p>Next we need to connect ddt to something.
+But how do we know what pins are available?
+The answer is to look under pins.
+There we find <code>ddt</code> and see this:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>Component Pins:
+Owner Type  Dir Value       Name
+08    float R-  0.00000e+00 ddt.0.in
+08    float -W  0.00000e+00 ddt.0.out</code></pre>
+</div></div>
+<div class="paragraph"><p>That looks easy enough to understand, but what signal or pin do we want to to connect to it?
+It could be an axis pin, a stepgen pin, or a signal.
+We see this when we look at <code>joint.0</code>:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>Component Pins:
+Owner Type  Dir Value       Name
+03    float -W  0.00000e+00 joint.0.motor-pos-cmd ==&gt; Xpos-cmd</code></pre>
+</div></div>
+<div class="paragraph"><p>So it looks like Xpos-cmd should be a good signal to use.
+Back to the editor where we enter the following command:</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #0000FF">linksp</span></span> <span style="font-weight: bold"><span style="color: #000000">Xpos-cmd</span></span> <span style="color: #009900">ddt.0.in</span></tt></pre></div></div>
+<div class="paragraph"><p>Now if we look at the <code>Xpos-cmd</code> signal using the tree node we&#8217;ll see what we&#8217;ve done:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>Signals:
+Type Value Name
+float 0.00000e+00 Xpos-cmd
+&lt;== joint.0.motor-pos-cmd
+==&gt; ddt.0.in
+==&gt; stepgen.0.position-cmd</code></pre>
+</div></div>
+<div class="paragraph"><p>We see that this signal comes from <code>joint.o.motor-pos-cmd</code> and goes to both <code>ddt.0.in</code> and <code>stepgen.0.position-cmd</code>.
+By connecting our block to the signal we have avoided any complications with the normal flow of this motion command.</p></div>
+<div class="paragraph"><p>The HAL Show Area uses <code>halcmd</code> to discover what is happening in a running HAL.
+It gives you complete information about what it has discovered.
+It also updates as you issue commands from the little editor panel to modify that HAL.
+There are times when you want a different set of things displayed without all of the information available in this area.
+That is where the HAL Watch Area is of value.</p></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated
+ 2025-12-15 07:42:37 MST
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
+<title>Halui Examples</title>
+<link rel="stylesheet" href="..//asciidoc.css" type="text/css" />
+
+
+<link rel="stylesheet" href="..//linuxcnc.css" type="text/css" />
+<script type="text/javascript" src="..//asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install(2);
+/*]]>*/
+</script>
+</head>
+<body class="book">
+<div id="header">
+<h1>Halui Examples</h1>
+<div id="toc">
+  <div id="toctitle">Table of Contents</div>
+  <noscript><p><b>JavaScript must be enabled in your browser to display the table of contents.</b></p></noscript>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph" id="cha:halui-examples"><p>For any Halui examples to work you need to add the following line to the [HAL]
+section of the ini file.</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #0000FF">HALUI </span></span><span style="font-weight: bold"><span style="color: #000000">=</span></span><span style="color: #009900"> halui</span></tt></pre></div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:halui-remote-start">1. Remote Start</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>To connect a remote program start button to LinuxCNC you use the
+<code>halui.program.run</code> pin and the <code>halui.mode.auto</code> pin.
+You have to ensure that it is OK to run first by using the
+<code>halui.mode.is-auto</code> pin. You do this with an <code>and2</code>
+component. The following figure shows how this is done.
+When the Remote Run Button is pressed it is connected to
+both <code>halui.mode.auto</code> and <code>and2.0.in0</code>. If it is OK for
+auto mode the pin <code>halui.mode.is-auto</code> will be on.
+If both the inputs to the <code>and2.0</code> component are on the
+<code>and2.0.out</code> will be on and this will start the program.</p></div>
+<div class="imageblock">
+<div class="content">
+<figure>
+<img src="images/remote-start.png" alt="Remote Start Example"/>
+<figcaption class="title"> Figure 1. Remote Start Example</figcaption>
+</figure>
+</div>
+</div>
+<div class="paragraph"><p>The hal commands needed to accomplish the above are:</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #0000FF">net</span></span> <span style="font-weight: bold"><span style="color: #000000">program-start-btn</span></span> <span style="color: #009900">halui.mode.auto</span> <span style="color: #009900">and2.0.in0</span> <span style="color: #990000">&lt;=</span> &lt;<span style="font-weight: bold"><span style="color: #000000">your</span></span> <span style="font-weight: bold"><span style="color: #000000">input</span></span> <span style="font-weight: bold"><span style="color: #000000">pin</span></span>&gt;
+<span style="font-weight: bold"><span style="color: #0000FF">net</span></span> <span style="font-weight: bold"><span style="color: #000000">program-run-ok</span></span> <span style="color: #009900">and2.0.in1</span> <span style="color: #990000">&lt;=</span> <span style="color: #009900">halui.mode.is-auto</span>
+<span style="font-weight: bold"><span style="color: #0000FF">net</span></span> <span style="font-weight: bold"><span style="color: #000000">remote-program-run</span></span> <span style="color: #009900">halui.program.run</span> <span style="color: #990000">&lt;=</span> <span style="color: #009900">and2.0.out</span></tt></pre></div></div>
+<div class="paragraph"><p>Notice on line one that there are two reader pins, this can also be split
+up to two lines like this:</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #0000FF">net</span></span> <span style="font-weight: bold"><span style="color: #000000">program-start-btn</span></span> <span style="color: #009900">halui.mode.auto</span> <span style="color: #990000">&lt;=</span> &lt;<span style="font-weight: bold"><span style="color: #000000">your</span></span> <span style="font-weight: bold"><span style="color: #000000">input</span></span> <span style="font-weight: bold"><span style="color: #000000">pin</span></span>&gt;
+<span style="font-weight: bold"><span style="color: #0000FF">net</span></span> <span style="font-weight: bold"><span style="color: #000000">program-start-btn</span></span> <span style="color: #009900">and2.0.in0</span></tt></pre></div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pause_amp_resume">2. Pause &amp; Resume</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>This example was developed to allow LinuxCNC to move a
+rotary axis on a signal from an external machine.
+The coordination between the two systems will be
+provided by two Halui components:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>halui.program.is-paused</code>
+</p>
+</li>
+<li>
+<p>
+<code>halui.program.resume</code>
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>In your customized HAL file, add the following
+two lines that will be connected to your I/O to turn
+on the program pause or to resume when the external
+system wants LinuxCNC to continue.</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #0000FF">net</span></span> <span style="font-weight: bold"><span style="color: #000000">ispaused</span></span> <span style="color: #009900">halui.program.is</span> <span style="font-weight: bold"><span style="color: #000000">paused</span></span> <span style="color: #990000">=&gt;</span> "<span style="font-weight: bold"><span style="color: #000000">your</span></span> <span style="font-weight: bold"><span style="color: #000000">output</span></span> <span style="font-weight: bold"><span style="color: #000000">pin</span></span>"
+<span style="font-weight: bold"><span style="color: #0000FF">net</span></span> <span style="font-weight: bold"><span style="color: #000000">resume</span></span> <span style="color: #009900">halui.program.resume</span> <span style="color: #990000">&lt;=</span> "<span style="font-weight: bold"><span style="color: #000000">your</span></span> <span style="font-weight: bold"><span style="color: #000000">input</span></span> <span style="font-weight: bold"><span style="color: #000000">pin</span></span>"</tt></pre></div></div>
+<div class="paragraph"><p>Your input and output pins are connected to the pins
+wired to the other controller. They may be parallel port
+pins or any other I/O pins that you have access to.</p></div>
+<div class="paragraph"><p>This system works in the following way. When an M0 is
+encountered in your G-code, the <code>halui.program.is-paused</code>
+signal goes true. This turns on your output pin so that
+the external controller knows that LinuxCNC is paused.</p></div>
+<div class="paragraph"><p>To resume the LinuxCNC G-code program, when the external controller
+is ready it will make its output true. This will signal
+LinuxCNC that it should resume executing G-code.</p></div>
+<div class="paragraph"><p>Difficulties in timing</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+The "resume" input return signal should not be
+  longer than the time required to get the G-code
+  running again.
+</p>
+</li>
+<li>
+<p>
+The "is-paused" output should no longer be active
+  by the time the "resume" signal ends.
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>These timing problems could be avoided by using
+ClassicLadder to activate the "is-paused" output via a
+monostable timer to deliver one narrow output pulse.
+The "resume" pulse could also be received via a monostable timer.</p></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated
+ 2025-12-15 07:42:37 MST
+</div>
+</div>
+</body>
+</html>

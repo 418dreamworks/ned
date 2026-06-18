@@ -1,75 +1,60 @@
 # Mesa / LinuxCNC Shopping List
 
-## Confirmed Orders
+**Architecture decision (2026-06-17):** going with the **7I97T + 7I85S + 7I84U
+Ethernet route**. The earlier RPi5 + 7C81 + 7i77U + 7i76U **SPI plan is dropped**
+— do not order those cards. See `docs/wiring_to_hal_guide.md` "Mesa Hardware
+Target" for the I/O surface this provides.
+
+**Build order:** Phase 1 is a LinuxCNC config that reproduces *everything the
+existing Fagor machine does today* — X-gantry (X + W tandem), Y cross, Z, the
+spindle/VFD, and the full drawbar tool-change + toolsetter + sensors. The swivel
+head (A/C) and workholding rotaries are later phases and are parked at the bottom
+of this list.
+
+## Confirmed / Already Have
 - ISO30 spindle (3.2 kW, ER20) — ordered
-- Yaskawa analog drives — vendor confirmed availability
+- Mollom G75-2T-7R5-G-B spindle VFD — replacing the Saftronics VG5 (see `docs/mollom_facts.md`)
+- Yaskawa analog drives — vendor confirmed availability (swivel-head phase)
 
-## Mesa Cards — To Order
-| Item | Source | Price | Stock | Notes |
-|------|--------|-------|-------|-------|
-| 7C81 | mesanet.com | $89 | In stock (24) | SPI FPGA motherboard for RPi 5 |
-| 7i77U | mesanet.com / mesaus.com | $229 | Out of stock — check restock | Analog servo daughter card for slot 1. 6x ±10V, 6x encoder, 32 in, 16 out. U version has universal outputs (500mA, built-in flyback) |
-| 7i76U | mesanet.com | $149 | TBD | Step/dir daughter card for slot 2. 5x step/dir for workholding rotaries + future stepper expansion |
-| 1.5" RPI GPIO cable (x2) | mesanet.com | TBD | TBD | SPI cable from RPi to 7C81. Must be under 2 inches. One per daughter card connection |
+## Mesa Cards — Ethernet Route (Phase 1)
+| Item | Price | Role |
+|------|-------|------|
+| **7I97T** | $279 | Main Ethernet FPGA card (`hm2_eth`). 6× analog ±10 V out (pwmgen→analog), 6× encoder in, 16 isolated DI, 6 isolated DO, 1 Smart Serial port, 1 DB25 expansion port. Carries the 4 axis velocity commands + spindle. |
+| **7I85S** | $69 | Step/dir daughter card on the 7I97T's DB25 port. +4 encoder inputs, 8 differential outputs (= 4 step/dir pairs) for the future workholding rotaries, 1 RS-422. |
+| **7I84U** | $79 | Digital I/O expansion over Smart Serial (RJ45). +32 isolated DI, +16 universal isolated DO (5–28 VDC, 500 mA). Carries the bulk of the cabinet's sensor/solenoid I/O. |
 
-## RPi 5 Setup
-| Item | Source | Price | Notes |
-|------|--------|-------|-------|
-| RPi 5 | Amazon/etc | ~$80 | 8GB recommended |
-| NVMe hat for RPi 5 | Amazon/etc | ~$15-25 | M.2 adapter board |
-| NVMe SSD (128GB+) | Amazon/etc | ~$15-25 | M.2 2230 or 2242 |
-| Standoffs | Amazon/etc | ~$5 | For stacking 7C81 + RPi + NVMe |
+**~$427** for the three cards.
 
-## Swivel Head Drives — Yaskawa Sigma-X (analog ±10V, no brake)
-| Item | Model | Notes |
-|------|-------|-------|
-| 2x Servo motors | SGMXJ-04AUA6SC2 (400W) or SGMXJ-08AUA6SC2 (750W) | 200V, 26-bit encoder, key+tap shaft, oil seal, NO brake, Σ-7 compatible. Pick capacity based on swivel head flange pattern (60mm for 400W, 80mm for 750W). No brake = simpler wiring |
-| 2x Servo drives | SGDXS-2R8A00A0008 (for 400W) or SGDXS-5R5A00A0008 (for 750W) | 200V single-phase input, analog/pulse train interface. Configure for analog velocity mode. Connects to Mesa 7i77U ch5+ch6 via ±10V |
+**I/O surface:** 6 analog ±10 V (4 axes + spindle + spare), 10 encoder inputs,
+4 step/dir, 48 digital inputs, 22 digital outputs.
 
-## Workholding Rotaries (comes with steppers)
+## Control PC
 | Item | Notes |
 |------|-------|
-| 2x NEMA 34 worm gear + 4-jaw chuck assembly | 20:1 self-locking worm, ~70-85 Nm output, 100 RPM max output, dual-shaft preferred for future encoder option |
-| 2x Stepper drives | Included with assembly, step/dir interface |
-| Control | Connects to Mesa 7i76U ch1+ch2 via step/dir/enable |
+| LinuxCNC PC + dedicated NIC | `hm2_eth` needs a dedicated Ethernet port to the 7I97T (no switch in between). The existing Pi can serve as the control PC if a dedicated wired link is given to the Mesa card and networking moves to WiFi; otherwise a small x86 PC with two NICs. **Decide before wiring.** |
 
 ## Spindle VFD
-| Item | Source | Price | Notes |
-|------|--------|-------|-------|
-| 240V single-phase input VFD | TBD | TBD | Matched to 3.2 kW spindle. Must accept 240V single-phase |
+| Item | Notes |
+|------|-------|
+| Mollom G75-2T-7R5-G-B | Already on hand. ±10 V speed ref on AI2, FWD/REV on S1/S2, fault on RY1, running on Y1. Full migration wiring + parameters in `docs/mollom_facts.md`. No HAL change vs the VG5 if the R1 polarity-translator relay is in place. |
 
-## Architecture
-```
-RPi 5
-├── GPIO (SPI) → 7C81 FPGA motherboard
-│   ├── Slot 1 (P1): 7i77U — analog servo (6 axes)
-│   │   ├── Ch1 ±10V → SDSM (X)
-│   │   ├── Ch2 ±10V → SDSM (Y1)
-│   │   ├── Ch3 ±10V → SDSM (Y2)
-│   │   ├── Ch4 ±10V → SDSM (Z)
-│   │   ├── Ch5 ±10V → SGDXS (A — swivel head)
-│   │   ├── Ch6 ±10V → SGDXS (C — swivel head)
-│   │   ├── Enc 1-4 ← SDSM encoders (X, Y1, Y2, Z)
-│   │   ├── Enc 5-6 ← Yaskawa encoders (A, C)
-│   │   ├── MPG encoder ← pendant handwheel
-│   │   ├── 32 digital inputs ← limits, e-stop, pendant switches
-│   │   └── 16 digital outputs → drive enables, relays, VFD
-│   ├── Slot 2 (P2): 7i76U — step/dir (5 channels)
-│   │   ├── Ch1 step/dir/ena → Stepper drive (Rotary 1 — workholding)
-│   │   ├── Ch2 step/dir/ena → Stepper drive (Rotary 2 — workholding)
-│   │   └── Ch3-5: spare (future stepper axes)
-│   └── Slot 3 (P7): free — future expansion
-└── WiFi → network file transfer from CAM computer
-```
+---
 
-## LinuxCNC Kinematics
-- 6 main machine axes on 7i77U ±10V closed-loop via encoders (X, Y1, Y2, Z, A, C)
-- Y1/Y2 configured as gantry slave pair
-- 2 workholding rotaries on 7i76U step/dir, open-loop (self-locking worm + massive torque margin)
-- RTCP enabled for swivel head (A, C) tool tip following
+## Later Phases (parked — not Phase 1)
 
-## Questions for Mesa (call)
-1. Do 7i77U/7i76U plug directly into 7C81's 26-pin headers? Any adapter cables needed?
-2. When will 7i77U be back in stock?
-3. RPi 5 compatibility confirmed with 7C81?
-4. Can 7i77U + 7i76U run simultaneously on same 7C81 without issues?
+### Swivel Head Drives — Yaskawa Sigma-X (analog ±10 V, no brake)
+| Item | Model | Notes |
+|------|-------|-------|
+| 2× Servo motors | SGMXJ-04AUA6SC2 (400 W) or SGMXJ-08AUA6SC2 (750 W) | 200 V, 26-bit encoder, key+tap shaft, oil seal, NO brake, Σ-7 compatible. Capacity by swivel-head flange (60 mm/400 W, 80 mm/750 W). |
+| 2× Servo drives | SGDXS-2R8A00A0008 (400 W) or SGDXS-5R5A00A0008 (750 W) | 200 V single-phase, analog/pulse interface. Analog velocity mode. A/C axes → 7I97T analog ch5/ch6 ±10 V. |
+
+### Workholding Rotaries (steppers included)
+| Item | Notes |
+|------|-------|
+| 2× NEMA 34 worm gear + 4-jaw chuck | 20:1 self-locking worm, ~70–85 Nm, 100 RPM max output, dual-shaft for future encoder. |
+| 2× Stepper drives | Included. step/dir interface → 7I85S step/dir pairs 1–2. |
+
+### Future LinuxCNC Kinematics (with swivel head)
+- Phase 1: `trivkins coordinates=XYZX` — X is a gantry (joints 0 + 3 = X1 + W), Y, Z. 4 analog servos closed-loop on encoders.
+- Later: add A + C swivel-head servos (analog ±10 V on 7I97T ch5/ch6), enable RTCP for tool-tip following.
+- Later: 2 workholding rotaries on 7I85S step/dir, open-loop (self-locking worm + torque margin).

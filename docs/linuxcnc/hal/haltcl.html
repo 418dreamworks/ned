@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
+<title>HALTCL Files</title>
+<link rel="stylesheet" href="..//asciidoc.css" type="text/css" />
+
+
+<link rel="stylesheet" href="..//linuxcnc.css" type="text/css" />
+<script type="text/javascript" src="..//asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install(2);
+/*]]>*/
+</script>
+</head>
+<body class="book">
+<div id="header">
+<h1>HALTCL Files</h1>
+<div id="toc">
+  <div id="toctitle">Table of Contents</div>
+  <noscript><p><b>JavaScript must be enabled in your browser to display the table of contents.</b></p></noscript>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph" id="cha:haltcl"><p>halcmd excels in specifying components and connections but these scripts offer no computational capabilities.
+As a result, INI files are limited in the clarity and brevity that is possible with higher level languages.</p></div>
+<div class="paragraph"><p>The haltcl facility provides a means to use Tcl scripting and its features for computation, looping, branching, procedures, etc. in INI files.
+To use this functionality, you use the Tcl language and the extension .tcl for HAL files.</p></div>
+<div class="paragraph"><p>The .tcl extension is understood by the main script (<code>linuxcnc</code>) that processes INI files.
+Haltcl files are identified in the the HAL section of INI files (just like HAL files).</p></div>
+<div class="listingblock">
+<div class="title">Example</div>
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #000000">[HAL]</span></span>
+<span style="font-weight: bold"><span style="color: #0000FF">HALFILE </span></span><span style="font-weight: bold"><span style="color: #000000">=</span></span><span style="color: #009900"> conventional_file.hal</span>
+<span style="font-weight: bold"><span style="color: #0000FF">HALFILE </span></span><span style="font-weight: bold"><span style="color: #000000">=</span></span><span style="color: #009900"> tcl_based_file.tcl</span></tt></pre></div></div>
+<div class="paragraph"><p>With appropriate care, HAL and Tcl files can be intermixed.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_compatibility">1. Compatibility</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>The halcmd language used in HAL files has a simple syntax that is actually a subset of the more powerful general-purpose Tcl scripting language.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_haltcl_commands">2. Haltcl Commands</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Haltcl files use the Tcl scripting language augmented with the specific commands of the LinuxCNC hardware abstraction layer (HAL).
+The HAL-specific commands are:</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #0000FF">addf</span></span>, <span style="font-weight: bold"><span style="color: #0000FF">alias</span></span>,
+<span style="font-weight: bold"><span style="color: #0000FF">delf</span></span>, <span style="font-weight: bold"><span style="color: #0000FF">delsig</span></span>,
+<span style="font-weight: bold"><span style="color: #0000FF">getp</span></span>, <span style="font-weight: bold"><span style="color: #0000FF">gets</span></span>
+<span style="font-weight: bold"><span style="color: #0000FF">ptype</span></span>,
+<span style="font-weight: bold"><span style="color: #0000FF">stype</span></span>,
+<span style="font-weight: bold"><span style="color: #0000FF">help</span></span>,
+<span style="font-weight: bold"><span style="color: #0000FF">linkpp</span></span>, <span style="font-weight: bold"><span style="color: #0000FF">linkps</span></span>, <span style="font-weight: bold"><span style="color: #0000FF">linksp</span></span>, <span style="font-weight: bold"><span style="color: #0000FF">list</span></span>, <span style="font-weight: bold"><span style="color: #0000FF">loadrt</span></span>, <span style="font-weight: bold"><span style="color: #0000FF">loadusr</span></span>, <span style="font-weight: bold"><span style="color: #0000FF">lock</span></span>,
+<span style="font-weight: bold"><span style="color: #0000FF">net</span></span>, <span style="font-weight: bold"><span style="color: #0000FF">newsig</span></span>,
+<span style="font-weight: bold"><span style="color: #0000FF">save</span></span>, <span style="font-weight: bold"><span style="color: #0000FF">setp</span></span>, <span style="font-weight: bold"><span style="color: #0000FF">sets</span></span>, <span style="font-weight: bold"><span style="color: #0000FF">show</span></span>, <span style="font-weight: bold"><span style="color: #0000FF">source</span></span>, <span style="font-weight: bold"><span style="color: #0000FF">start</span></span>, <span style="font-weight: bold"><span style="color: #0000FF">status</span></span>, <span style="font-weight: bold"><span style="color: #0000FF">stop</span></span>,
+<span style="font-weight: bold"><span style="color: #0000FF">unalias</span></span>, <span style="font-weight: bold"><span style="color: #0000FF">unlinkp</span></span>, <span style="font-weight: bold"><span style="color: #0000FF">unload</span></span>, <span style="font-weight: bold"><span style="color: #0000FF">unloadrt</span></span>, <span style="font-weight: bold"><span style="color: #0000FF">unloadusr</span></span>, <span style="font-weight: bold"><span style="color: #0000FF">unlock</span></span>,
+<span style="font-weight: bold"><span style="color: #0000FF">waitusr</span></span></tt></pre></div></div>
+<div class="paragraph"><p>Two special cases occur for the <em>gets</em> and <em>list</em> commands due to conflicts with Tcl builtin commands.
+For haltcl, these commands must be preceded with the keyword <em>hal</em>:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>halcmd   haltcl
+------   ------
+gets     hal gets
+list     hal list</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_haltcl_ini_file_variables">3. Haltcl INI-file variables</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>INI file variables are accessible by both <code>halcmd</code> and <code>haltcl</code> but with differing syntax.
+LinuxCNC INI files use SECTION and ITEM specifiers to identify configuration items:</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #000000">[SECTION_A]</span></span>
+<span style="font-weight: bold"><span style="color: #0000FF">ITEM1 </span></span><span style="font-weight: bold"><span style="color: #000000">=</span></span><span style="color: #009900"> value_1</span>
+<span style="font-weight: bold"><span style="color: #0000FF">ITEM2 </span></span><span style="font-weight: bold"><span style="color: #000000">=</span></span><span style="color: #009900"> value_2</span>
+<span style="font-weight: bold"><span style="color: #0000FF">...</span></span>
+<span style="font-weight: bold"><span style="color: #000000">[SECTION_B]</span></span>
+<span style="font-weight: bold"><span style="color: #0000FF">...</span></span></tt></pre></div></div>
+<div class="paragraph"><p>The INI file values are accessible by text substitution in HAL files using the form:</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #008080">[SECTION]ITEM</span></span></tt></pre></div></div>
+<div class="paragraph"><p>The same INI file values are accessible in Tcl files using the form of a Tcl global array variable:</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="color: #009900">$::SECTION</span><span style="color: #990000">(</span>ITEM<span style="color: #990000">)</span></tt></pre></div></div>
+<div class="paragraph"><p>For example, an INI file item like:</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #000000">[JOINT_0]</span></span>
+<span style="font-weight: bold"><span style="color: #0000FF">MAX_VELOCITY </span></span><span style="font-weight: bold"><span style="color: #000000">=</span></span><span style="color: #009900"> 4</span></tt></pre></div></div>
+<div class="paragraph"><p>is expressed as   <code>[JOINT_0]MAX_VELOCITY</code>  in HAL files for halcmd<br />
+and as            <code>$::JOINT_0(MAX_VELOCITY)</code> in Tcl files for haltcl.</p></div>
+<div class="paragraph"><p>Because INI files can repeat the same ITEM in the same SECTION multiple times, <code>$::SECTION(ITEM)</code> is actually a Tcl list of each individual value.</p></div>
+<div class="paragraph"><p>When there is just one value and it is a simple value (all values that are just letters and numbers without whitespace are in this group),
+then it is possible to treat <code>$::SECTION(ITEM)</code> as though it is not a list.</p></div>
+<div class="paragraph"><p>When the value could contain special characters (quote characters, curly-brace characters, embedded whitespace, and other characters that have special meaning in Tcl)
+then it is necessary to distinguish between the list of values and the initial (and possibly only) value in the list.</p></div>
+<div class="paragraph"><p>In Tcl, this is written <code>[lindex $::SECTION(ITEM) 0]</code>.</p></div>
+<div class="paragraph"><p>For example: given the following INI values</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #000000">[HOSTMOT2]</span></span>
+<span style="font-weight: bold"><span style="color: #0000FF">DRIVER</span></span><span style="font-weight: bold"><span style="color: #000000">=</span></span><span style="color: #009900">hm2_eth</span>
+<span style="font-weight: bold"><span style="color: #0000FF">IPADDR</span></span><span style="font-weight: bold"><span style="color: #000000">=</span></span><span style="color: #009900">"10.10.10.10"</span>
+<span style="font-weight: bold"><span style="color: #0000FF">BOARD</span></span><span style="font-weight: bold"><span style="color: #000000">=</span></span><span style="color: #009900">7i92</span>
+<span style="font-weight: bold"><span style="color: #0000FF">CONFIG</span></span><span style="font-weight: bold"><span style="color: #000000">=</span></span><span style="color: #009900">"num_encoders=0 num_pwmgens=0 num_stepgens=6"</span></tt></pre></div></div>
+<div class="paragraph"><p>And this loadrt command:</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt>loadrt <span style="color: #009900">$::HOSTMOT2</span><span style="color: #990000">(</span>DRIVER<span style="color: #990000">)</span> board_ip<span style="color: #990000">=</span><span style="color: #009900">$::HOSTMOT2</span><span style="color: #990000">(</span>IPADDR<span style="color: #990000">)</span> config<span style="color: #990000">=</span><span style="color: #009900">$::HOSTMOT2</span><span style="color: #990000">(</span>CONFIG<span style="color: #990000">)</span></tt></pre></div></div>
+<div class="paragraph"><p>Here is the actual command that is run:</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #0000FF">loadrt</span></span> <span style="font-weight: bold"><span style="color: #000000">hm2_eth</span></span> <span style="font-weight: bold"><span style="color: #000000">board_ip</span></span><span style="color: #990000">=</span>{"<span style="color: #993399">10.10</span>.<span style="color: #993399">10.10</span>"} <span style="font-weight: bold"><span style="color: #000000">config</span></span><span style="color: #990000">=</span>{"<span style="font-weight: bold"><span style="color: #000000">num_encoders</span></span><span style="color: #990000">=</span><span style="color: #993399">0</span> <span style="font-weight: bold"><span style="color: #000000">num_pwmgens</span></span><span style="color: #990000">=</span><span style="color: #993399">0</span> <span style="font-weight: bold"><span style="color: #000000">num_stepgens</span></span><span style="color: #990000">=</span><span style="color: #993399">6</span>"}</tt></pre></div></div>
+<div class="paragraph"><p>This fails because loadrt does not recognize the braces.</p></div>
+<div class="paragraph"><p>So to get the values just as entered in the INI file, re-write the loadrt line like this:</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt>loadrt <span style="color: #009900">$::HOSTMOT2</span><span style="color: #990000">(</span>DRIVER<span style="color: #990000">)</span> board_ip<span style="color: #990000">=[</span><span style="font-weight: bold"><span style="color: #0000FF">lindex</span></span> <span style="color: #009900">$::HOSTMOT2</span><span style="color: #990000">(</span>IPADDR<span style="color: #990000">)</span> <span style="color: #993399">0</span><span style="color: #990000">]</span> config<span style="color: #990000">=[</span><span style="font-weight: bold"><span style="color: #0000FF">lindex</span></span> <span style="color: #009900">$::HOSTMOT2</span><span style="color: #990000">(</span>CONFIG<span style="color: #990000">)</span> <span style="color: #993399">0</span><span style="color: #990000">]</span></tt></pre></div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_converting_hal_files_to_tcl_files">4. Converting HAL files to Tcl files</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Existing HAL files can be converted to Tcl files by hand editing to adapt to the differences mentioned above.
+The process can be automated with scripts that convert using these substitutions.</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>[SECTION]ITEM ---&gt; $::SECTION(ITEM)
+gets          ---&gt; hal gets
+list          ---&gt; hal list</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_haltcl_notes">5. Haltcl Notes</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>In haltcl, the value argument for the <em>sets</em> and <em>setp</em> commands is implicitly treated as an expression in the Tcl language.</p></div>
+<div class="listingblock">
+<div class="title">Example</div>
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-style: italic"><span style="color: #9A1900"># set gain to convert deg/sec to units/min for JOINT_0 radius</span></span>
+setp scale<span style="color: #990000">.</span><span style="color: #993399">0</span><span style="color: #990000">.</span>gain <span style="color: #993399">6.28</span><span style="color: #990000">/</span><span style="color: #993399">360.0</span><span style="color: #990000">*</span><span style="color: #009900">$::JOINT_0</span><span style="color: #990000">(</span>radius<span style="color: #990000">)*</span><span style="color: #993399">60.0</span></tt></pre></div></div>
+<div class="paragraph"><p>Whitespace in the bare expression is not allowed, use quotes for that:</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt>setp scale<span style="color: #990000">.</span><span style="color: #993399">0</span><span style="color: #990000">.</span>gain <span style="color: #FF0000">"6.28 / 360.0 * $::JOINT_0(radius) * 60.0"</span></tt></pre></div></div>
+<div class="paragraph"><p>In other contexts, such as <em>loadrt</em>, you must explicitly use the Tcl expr command ([expr {}]) for computational expressions.</p></div>
+<div class="listingblock">
+<div class="title">Example</div>
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt>loadrt motion base_period<span style="color: #990000">=[</span><span style="font-weight: bold"><span style="color: #0000FF">expr</span></span> <span style="color: #FF0000">{</span><span style="color: #993399">500000000</span><span style="color: #990000">/</span><span style="color: #009900">$::TRAJ</span><span style="color: #990000">(</span>MAX_PULSE_RATE<span style="color: #990000">)</span><span style="color: #FF0000">}</span><span style="color: #990000">]</span></tt></pre></div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_haltcl_examples">6. Haltcl Examples</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Consider the topic of <em>stepgen headroom</em>.
+Software <code>stepgen</code> runs best with an acceleration constraint that is "a bit higher" than the one used by the motion planner.
+So, when using <code>halcmd</code> files, we force INI files to have a manually calculated value.</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #000000">[JOINT_0]</span></span>
+<span style="font-weight: bold"><span style="color: #0000FF">MAXACCEL </span></span><span style="font-weight: bold"><span style="color: #000000">=</span></span><span style="color: #009900"> 10.0</span>
+<span style="font-weight: bold"><span style="color: #0000FF">STEPGEN_MAXACCEL </span></span><span style="font-weight: bold"><span style="color: #000000">=</span></span><span style="color: #009900"> 10.5</span></tt></pre></div></div>
+<div class="paragraph"><p>With <code>haltcl</code>, you can use Tcl commands to do the computation and eliminate the <code>STEPGEN_MAXACCEL</code> INI file item altogether:</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt>setp stepgen<span style="color: #990000">.</span><span style="color: #993399">0</span><span style="color: #990000">.</span>maxaccel <span style="color: #009900">$::JOINT_0</span><span style="color: #990000">(</span>MAXACCEL<span style="color: #990000">)*</span><span style="color: #993399">1.05</span></tt></pre></div></div>
+<div class="paragraph"><p>Another <code>haltcl</code> feature is looping and testing.
+For example, many simulator configurations use "core_sim.hal" or "core_sim9.hal" HAL files.
+These differ because of the requirement to connect more or fewer axes.
+The following haltcl code would work for any combination of axes in a trivkins machine.</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-style: italic"><span style="color: #9A1900"># Create position, velocity and acceleration signals for each axis</span></span>
+<span style="font-weight: bold"><span style="color: #0000FF">set</span></span> ddt <span style="color: #993399">0</span>
+<span style="font-weight: bold"><span style="color: #0000FF">for</span></span> <span style="color: #FF0000">{</span><span style="font-weight: bold"><span style="color: #0000FF">set</span></span> jnum <span style="color: #993399">0</span><span style="color: #FF0000">}</span> <span style="color: #FF0000">{</span><span style="color: #009900">$jnum</span> <span style="color: #990000">&lt;</span> <span style="color: #009900">$::KINS</span><span style="color: #990000">(</span>JOINTS<span style="color: #990000">)</span><span style="color: #FF0000">}</span> <span style="color: #FF0000">{</span><span style="font-weight: bold"><span style="color: #0000FF">incr</span></span> jnum<span style="color: #FF0000">}</span> <span style="color: #FF0000">{</span>
+  <span style="font-style: italic"><span style="color: #9A1900"># 'list pin' returns an empty list if the pin doesn't exist</span></span>
+  <span style="font-weight: bold"><span style="color: #0000FF">if</span></span> <span style="color: #FF0000">{</span><span style="color: #990000">[</span>hal <span style="font-weight: bold"><span style="color: #0000FF">list</span></span> pin joint<span style="color: #990000">.</span><span style="color: #009900">${jnum}</span><span style="color: #990000">.</span>motor<span style="color: #990000">-</span>pos<span style="color: #990000">-</span>cmd<span style="color: #990000">]</span> <span style="color: #990000">==</span> <span style="color: #FF0000">{}}</span> <span style="color: #FF0000">{</span>
+    <span style="font-weight: bold"><span style="color: #0000FF">continue</span></span>
+  <span style="color: #FF0000">}</span>
+  net <span style="color: #009900">${jnum}</span>pos joint<span style="color: #990000">.</span><span style="color: #009900">${jnum}</span><span style="color: #990000">.</span>motor<span style="color: #990000">-</span>pos<span style="color: #990000">-</span>cmd <span style="color: #990000">=&gt;</span> joint<span style="color: #990000">.</span><span style="color: #009900">$axno</span><span style="color: #990000">.</span>motor<span style="color: #990000">-</span>pos<span style="color: #990000">-</span>fb <span style="color: #990000">\</span>
+                                             <span style="color: #990000">=&gt;</span> ddt<span style="color: #990000">.</span><span style="color: #009900">$ddt</span><span style="color: #990000">.</span><span style="font-weight: bold"><span style="color: #0000FF">in</span></span>
+  net <span style="color: #009900">${axis}</span>vel <span style="color: #990000">&lt;=</span> ddt<span style="color: #990000">.</span><span style="color: #009900">$ddt</span><span style="color: #990000">.</span>out
+  <span style="font-weight: bold"><span style="color: #0000FF">incr</span></span> ddt
+  net <span style="color: #009900">${axis}</span>vel <span style="color: #990000">=&gt;</span> ddt<span style="color: #990000">.</span><span style="color: #009900">$ddt</span><span style="color: #990000">.</span><span style="font-weight: bold"><span style="color: #0000FF">in</span></span>
+  net <span style="color: #009900">${axis}</span>acc <span style="color: #990000">&lt;=</span> ddt<span style="color: #990000">.</span><span style="color: #009900">$ddt</span><span style="color: #990000">.</span>out
+  <span style="font-weight: bold"><span style="color: #0000FF">incr</span></span> ddt
+<span style="color: #FF0000">}</span>
+<span style="font-weight: bold"><span style="color: #0000FF">puts</span></span> <span style="color: #990000">[</span>show sig <span style="color: #990000">*</span>vel<span style="color: #990000">]</span>
+<span style="font-weight: bold"><span style="color: #0000FF">puts</span></span> <span style="color: #990000">[</span>show sig <span style="color: #990000">*</span>acc<span style="color: #990000">]</span></tt></pre></div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_haltcl_interactive">7. Haltcl Interactive</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>The <code>halrun</code> command recognizes haltcl files.
+With the -T option, haltcl can be run interaactively as a Tcl interpreter.
+This capability is useful for testing and for standalone HAL applications.</p></div>
+<div class="listingblock">
+<div class="title">Example</div>
+<div class="content">
+<pre><code>$ halrun -T haltclfile.tcl</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_haltcl_distribution_examples_sim">8. Haltcl Distribution Examples (sim)</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>The configs/sim/axis/simtcl directory includes an INI file that uses a .tcl file to demonstrate a haltcl configuration in conjunction with the usage of twopass processing.
+The example shows the use of Tcl procedures, looping, the use of comments and output to the terminal.</p></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated
+ 2024-09-20 13:42:29 MDT
+</div>
+</div>
+</body>
+</html>

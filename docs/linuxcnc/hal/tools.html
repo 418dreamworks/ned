@@ -1,0 +1,542 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
+<title>HAL Tools</title>
+<link rel="stylesheet" href="..//asciidoc.css" type="text/css" />
+
+
+<link rel="stylesheet" href="..//linuxcnc.css" type="text/css" />
+<script type="text/javascript" src="..//asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install(2);
+/*]]>*/
+</script>
+</head>
+<body class="book">
+<div id="header">
+<h1>HAL Tools</h1>
+<div id="toc">
+  <div id="toctitle">Table of Contents</div>
+  <noscript><p><b>JavaScript must be enabled in your browser to display the table of contents.</b></p></noscript>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="sec:halcmd">1. Halcmd</h2>
+<div class="sectionbody">
+<div class="paragraph"><p><code>halcmd</code> is a command line tool for manipulating the HAL.
+There is a rather complete man page for <a href="../man/man1/halcmd.1.html"><code>halcmd</code></a>, which will be installed if you have installed LinuxCNC from either source or a package.
+The manpage provides usage info:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>man halcmd</code></pre>
+</div></div>
+<div class="paragraph"><p>If you have compiled LinuxCNC for "run-in-place", you must source
+the rip-environment script to make the man page available:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>cd toplevel_directory_for_rip_build
+. scripts/rip-environment
+man halcmd</code></pre>
+</div></div>
+<div class="paragraph"><p>The <a href="tutorial.html#cha:hal-tutorial">HAL Tutorial</a> has a number of examples of halcmd
+usage, and is a good tutorial for <code>halcmd</code>.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:halmeter">2. Halmeter</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Halmeter is a <em>voltmeter</em> for the HAL.
+It lets you look at a pin, signal, or parameter, and displays the current value of that item.
+It is pretty simple to use.
+Start it by typing <code>halmeter</code> in an X windows shell.
+Halmeter is a GUI application.
+It will pop up a small window, with two buttons labeled "Select" and "Exit".
+Exit is easy - it shuts down the program.
+Select pops up a larger window, with three tabs. One tab lists all the pins currently defined in the HAL.
+The next lists all the signals, and the last tab lists all the parameters.
+Click on a tab, then click on a pin/signal/parameter.
+Then click on "OK".
+The lists will disappear, and the small window will display the name and value of the selected item.
+The display is updated approximately 10 times per second.
+If you click "Accept" instead of "OK",
+the small window will display the name and value of the selected item,
+but the large window will remain on the screen.
+This is convenient if you want to look at a number of different items quickly.</p></div>
+<div class="paragraph"><p>You can have many halmeters running at the same time, if you want to monitor several items.
+If you want to launch a halmeter without tying up a shell window, type <code>halmeter &amp;</code> to run it in the background.
+You can also make halmeter start displaying a specific item immediately, by adding <code>pin|sig|par[am] _&lt;name&gt;_</code> to the command line.
+It will display the pin, signal, or parameter <em>&lt;name&gt;</em> as soon as it starts - if there is no such item, it will simply start normally.
+And finally, if you specify an item to display, you can add <code>-s</code> before the <code>pin|sig|param</code> to tell halmeter to use a small window.
+The item name will be displayed in the title bar instead of under the value, and there will be no buttons.
+Useful when you want a lot of meters in a small amount of screen space.</p></div>
+<div class="paragraph"><p>Refer to <a href="tutorial.html#sec:tutorial-halmeter">Halmeter Tutorial</a> section for more information.</p></div>
+<div class="paragraph"><p><code>halmeter</code> can be loaded from a terminal or from AXIS. <code>halmeter</code> is faster than <code>halshow</code> at displaying values.
+<code>halmeter</code> has two windows, one to pick the pin, signal, or parameter to monitor and one that displays the value.
+Multiple ``halmeter``s can be open at the same time.
+If you use a script to open multiple ``halmeter``s you can set the position of each one with <code>-g X Y</code> relative to the upper left corner of your screen.
+For example:</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #0000FF">loadusr</span></span> <span style="font-weight: bold"><span style="color: #000000">halmeter</span></span> <span style="font-weight: bold"><span style="color: #000000">pin</span></span> <span style="color: #009900">hm2.0.stepgen.00.velocity-fb</span> -<span style="font-weight: bold"><span style="color: #000000">g</span></span> <span style="color: #993399">0</span> <span style="color: #993399">500</span></tt></pre></div></div>
+<div class="paragraph"><p>See the man page for more options and the section <a href="tools.html#sec:halmeter">Halmeter</a>.</p></div>
+<div class="imageblock">
+<div class="content">
+<figure>
+<img src="images/hal-meter01.png" alt="Halmeter selection window"/>
+<figcaption class="title"> Figure 1. Halmeter selection window</figcaption>
+</figure>
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<figure>
+<img src="images/hal-meter02.png" alt="Halmeter watch window"/>
+<figcaption class="title"> Figure 2. Halmeter watch window</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_halshow">3. Halshow</h2>
+<div class="sectionbody">
+<div class="paragraph"><p><code>halshow</code> (<a href="halshow.html#cha:halshow">complete usage description</a>) can be started from the command line
+to show details for selected components, pins, parameters, signals, functions, and threads of a running HAL.
+The WATCH tab provides a continuous display of selected pin, parameters, and signal items.
+The File menu provides buttons to save the watch items to a watch list and to load an existing watch list.
+The watch list items can also be loaded automatically on startup.
+For command line usage:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>halshow --help
+Usage:
+  halshow [Options] [watchfile]
+  Options:
+           --help    (this help)
+           --fformat format_string_for_float
+           --iformat format_string_for_int
+
+Notes:
+  Create watchfile in halshow using: 'File/Save Watch List'.
+  LinuxCNC must be running for standalone usage.</code></pre>
+</div></div>
+<div class="imageblock" style="text-align:center;">
+<div class="content">
+<figure>
+<img src="images/halshow-4.png" alt="Halshow Watch Tab"/>
+<figcaption class="title"> Figure 3. Halshow Watch Tab</figcaption>
+</figure>
+</div>
+</div>
+<div class="paragraph"><p>A watchfile created using the <em>File/Save Watch List</em> menu item is formatted as a single line with tokens "pin+", "param+", "sig=+",
+followed by the appropriate pin, param, or signal name.
+The token-name pairs are separated by a space character.</p></div>
+<div class="listingblock">
+<div class="title">Single Line Watchfile Example</div>
+<div class="content">
+<pre><code>pin+joint.0.pos-hard-limit pin+joint.1.pos-hard-limit sig+estop-loop</code></pre>
+</div></div>
+<div class="paragraph"><p>A watchfile created using the <em>File/Save Watch List (multiline)</em> menu item is formatted with separate lines for each item identified with token-name pairs as described above.</p></div>
+<div class="listingblock">
+<div class="title">Separated Lines Watchfile Example</div>
+<div class="content">
+<pre><code>pin+joint.0.pos-hard-limit
+pin+joint.1.pos-hard-limit
+sig+estop-loop</code></pre>
+</div></div>
+<div class="paragraph"><p>When loading a watchfile with the <em>File/Load Watch List</em> menu item, the token-name pairs may appear as single or multiple lines.
+Blank lines and lines beginning with a # character are ignored.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:halscope">4. Halscope</h2>
+<div class="sectionbody">
+<div class="paragraph"><p><code>Halscope</code> is an <em>oscilloscope</em> for the HAL. It lets you capture the value of pins, signals, and parameters as a function of time.
+Complete operating instructions should be located here eventually.
+For now, refer to section  <a href="tutorial.html#sec:tutorial-halscope">Halscope</a> in the tutorial chapter, which explains the basics.</p></div>
+<div class="paragraph"><p>The halscope "File" menu selector provides buttons to save a configuration or open a previously saved configuration.
+When halscope is terminated, the last configuration is saved in a file named autosave.halscope.</p></div>
+<div class="paragraph"><p>Configuration files may also be specified when starting halscope from the commandline.
+Commandline help (<code>-h</code>) usage:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>halscope -h
+Usage:
+  halscope [-h] [-i infile] [-o outfile] [num_samples]</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_sim_pin">5. Sim Pin</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>sim_pin is a command line utility to display and update any number of writable pins, parameters or signals.</p></div>
+<div class="listingblock">
+<div class="title">sim_pin Usage</div>
+<div class="content">
+<pre><code>Usage:
+        sim_pin [Options] name1 [name2 ...] &amp;
+
+Options:
+        --help                (this text)
+        --title title_string  (window title, default: sim_pin)
+
+Note:  LinuxCNC (or a standalone HAL application) must be running
+        A named item can specify a pin, param, or signal
+        The item must be writable, e.g.:
+          pin:    IN or I/O (and not connected to a signal with a writer)
+          param:  RW
+          signal: connected to a writable pin
+
+        HAL item types bit,s32,u32,float are supported.
+
+        When a bit item is specified, a pushbutton is created
+        to manage the item in one of three manners specified
+        by radio buttons:
+            toggle: Toggle value when button pressed
+            pulse:  Pulse item to 1 once when button pressed
+            hold:   Set to 1 while button pressed
+        The bit pushbutton mode can be specified on the command
+        line by formatting the item name:
+            namei/mode=[toggle | pulse | hold]
+        If the mode begins with an uppercase letter, the radio
+        buttons for selecting other modes are not shown</code></pre>
+</div></div>
+<div class="paragraph"><p>For complete information, see the man page:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>man sim_pin</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title">sim_pin Example (with LinuxCNC running)</div>
+<div class="content">
+<pre><code>halcmd loadrt mux2 names=example; halcmd net sig_example example.in0
+sim_pin example.sel example.in1 sig_example &amp;</code></pre>
+</div></div>
+<div class="imageblock">
+<div class="content">
+<figure>
+<img src="images/sim_pin.png" alt="sim_pin Window"/>
+<figcaption class="title"> Figure 4. sim_pin Window</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_simulate_probe">6. Simulate Probe</h2>
+<div class="sectionbody">
+<div class="paragraph"><p><code>simulate_probe</code> is a simple GUI to simulate activation of the pin motion.probe-input.
+Usage:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>simulate_probe &amp;</code></pre>
+</div></div>
+<div class="imageblock">
+<div class="content">
+<figure>
+<img src="images/simulate_probe.png" alt="simulate_probe Window"/>
+<figcaption class="title"> Figure 5. simulate_probe Window</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_hal_histogram">7. HAL Histogram</h2>
+<div class="sectionbody">
+<div class="paragraph"><p><code>hal-histogram</code> is a command line utility to display histograms for HAL pins.</p></div>
+<div class="literalblock">
+<div class="title">Usage:</div>
+<div class="content">
+<pre><code>   hal-histogram --help | -?
+or
+   hal-histogram [Options] [pinname]</code></pre>
+</div></div>
+<div class="tableblock">
+<table rules="all" class="tableblock"
+width="100%"
+frame="border"
+cellspacing="0" cellpadding="4">
+<caption class="title">Table 1. Options:</caption>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+<thead>
+<tr>
+<th align="left" valign="top">Option     </th>
+<th align="left" valign="top">Value    </th>
+<th align="left" valign="top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left" valign="top"><p class="table">--minvalue</p></td>
+<td align="left" valign="top"><p class="table">minvalue</p></td>
+<td align="left" valign="top"><p class="table">minimum bin, default: 0</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">--binsize</p></td>
+<td align="left" valign="top"><p class="table">binsize</p></td>
+<td align="left" valign="top"><p class="table">binsize, default: 100</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">--nbins</p></td>
+<td align="left" valign="top"><p class="table">nbins</p></td>
+<td align="left" valign="top"><p class="table">number of bins, default: 50</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><p class="table"></p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">--logscale</p></td>
+<td align="left" valign="top"><p class="table">0/1</p></td>
+<td align="left" valign="top"><p class="table">y axis log scale, default: 1</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">--text</p></td>
+<td align="left" valign="top"><p class="table">note</p></td>
+<td align="left" valign="top"><p class="table">text display, default: ""</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">--show</p></td>
+<td align="left" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><p class="table">show count of undisplayed nbins, default off</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">--verbose</p></td>
+<td align="left" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><p class="table">progress and debug, default off</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="olist arabic"><div class="title">Notes:</div><ol class="arabic">
+<li>
+<p>
+LinuxCNC (or another HAL application) must be running.
+</p>
+</li>
+<li>
+<p>
+If no pinname is specified, default is: <code>motion-command-handler.time</code>.
+</p>
+</li>
+<li>
+<p>
+This app may be opened for 5 pins.
+</p>
+</li>
+<li>
+<p>
+Pintypes float, s32, u32, bit are supported.
+</p>
+</li>
+<li>
+<p>
+The pin must be associated with a thread supporting floating point.
+    For a base thread, this may require using <code>loadrt motmod ... base_thread_fp=1</code> .
+</p>
+</li>
+</ol></div>
+<div class="imageblock">
+<div class="content">
+<figure>
+<img src="images/hal-histogram.png" alt="hal-histogram Window"/>
+<figcaption class="title"> Figure 6. hal-histogram Window</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_halreport">8. Halreport</h2>
+<div class="sectionbody">
+<div class="paragraph"><p><code>halreport</code> is a command-line utility that generates a report about HAL connections for a running LinuxCNC (or other HAL) application.
+The report shows all signal connections and flags potential problems.
+Information included:</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+System description and kernel version.
+</p>
+</li>
+<li>
+<p>
+Signals and all connected output, io, and input pins.
+</p>
+</li>
+<li>
+<p>
+Each pin&#8217;s component_function, thread, and addf-order.
+</p>
+</li>
+<li>
+<p>
+Non-realtime component pins having non-ordered functions.
+</p>
+</li>
+<li>
+<p>
+Identification of unknown functions for unhandled components.
+</p>
+</li>
+<li>
+<p>
+Signals   with no output.
+</p>
+</li>
+<li>
+<p>
+Signals   with no inputs.
+</p>
+</li>
+<li>
+<p>
+Functions with no addf.
+</p>
+</li>
+<li>
+<p>
+Warning tags for components marked as deprecated/obsolete in docs.
+</p>
+</li>
+<li>
+<p>
+Real names for pins that use alias names.
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>The report can be generated from the command line and directed to an output file (or stdout if no outfilename is specified):</p></div>
+<div class="listingblock">
+<div class="title">halreport Usage</div>
+<div class="content">
+<pre><code>Usage:
+  halreport -h | --help (this help)
+or
+  halreport [outfilename]</code></pre>
+</div></div>
+<div class="paragraph"><p>To generate the report for every LinuxCNC startup, include halreport and an output filename as an [APPLICATIONS]APP entry in the INI file.</p></div>
+<div class="listingblock">
+<div class="title">halreport Example</div>
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #000000">[APPLICATIONS]</span></span>
+<span style="font-weight: bold"><span style="color: #0000FF">APP </span></span><span style="font-weight: bold"><span style="color: #000000">=</span></span><span style="color: #009900"> halreport /tmp/halreport.txt</span></tt></pre></div></div>
+<div class="paragraph"><p>The function addf-ordering can be important for servo loops where the sequence of the functions computed at each servo period is important.
+Typically, the order is:</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+Read input pins,
+</p>
+</li>
+<li>
+<p>
+do the motion command-handler and motion-controller functions,
+</p>
+</li>
+<li>
+<p>
+perform pid calculations, and finally
+</p>
+</li>
+<li>
+<p>
+write output pins.
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>For each signal in a critical path, the addf-order of the output pin should be numerically lower than the addf-order of the critical input pins that it connects to.</p></div>
+<div class="paragraph"><p>For routine signal paths that handle switch inputs, non-realtime pins, etc., the addf-ordering is often not critical.
+Moreover, the timing of non-realtime pin value changes cannot be controlled or guaranteed at the intervals typically employed for HAL threads.</p></div>
+<div class="paragraph"><p>Example report file excerpts showing a pid loop for a hostmot2 stepgen operated in velocity mode on a trivkins machine with <code>joint.0</code> corresponding to the X axis coordinate:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>SIG:    pos-fb-0
+  OUT:    h.00.position-fb                     hm2_7i92.0.read        servo-thread 001
+          (=hm2_7i92.0.stepgen.00.position-fb)
+    IN:     X_pid.feedback                     X_pid.do-pid-calcs     servo-thread 004
+    IN:     joint.0.motor-pos-fb               motion-command-handler servo-thread 002
+            ....................               motion-controller      servo-thread 003
+...
+SIG:    pos-cmd-0
+  OUT:    joint.0.motor-pos-cmd                motion-command-handler servo-thread 002
+          .....................                motion-controller      servo-thread 003
+    IN:     X_pid.command                      X_pid.do-pid-calcs     servo-thread 004
+...
+SIG:    motor-cmd-0
+  OUT:    X_pid.output                         X_pid.do-pid-calcs     servo-thread 004
+    IN:     h.00.velocity-cmd                  hm2_7i92.0.write       servo-thread 008
+            (=hm2_7i92.0.stepgen.00.velocity-cmd)</code></pre>
+</div></div>
+<div class="paragraph"><p>In the example above, the HALFILE uses halcmd aliases to simplify pin names for an hostmot2 FPGA board with commands like:</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #0000FF">alias</span></span> <span style="font-weight: bold"><span style="color: #000000">pin</span></span> <span style="color: #009900">hm2_7i92.0.stepgen.00.position-fb</span> <span style="font-weight: bold"><span style="color: #000000">h</span></span>.<span style="color: #993399">00</span>.<span style="font-weight: bold"><span style="color: #000000">position-fb</span></span></tt></pre></div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph"><p>Questionable component function detection may occur for</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+unsupported (deprecated) components,
+</p>
+</li>
+<li>
+<p>
+user-created components that use multiple functions or unconventional function naming, or
+</p>
+</li>
+<li>
+<p>
+GUI-created non-realtime components that lack distinguishing characteristics such as a prefix based on the GUI program name.
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>Questionable functions are tagged with a question mark "?".</p></div>
+</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">Component pins that cannot be associated with a known thread function report the function as "Unknown".</td>
+</tr></table>
+</div>
+<div class="paragraph"><p><code>halreport</code> generates a connections report (without pin types, and current values) for a running HAL application to aid in designing and verifying connections.
+This helps with the understanding what the source of a pin value is.
+Use this information with applications like <code>halshow</code>, <code>halmeter</code>, <code>halscope</code> or the  <code>halcmd  show</code> command in a terminal.</p></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated
+ 2025-12-15 07:42:37 MST
+</div>
+</div>
+</body>
+</html>

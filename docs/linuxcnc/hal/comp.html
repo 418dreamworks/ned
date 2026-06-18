@@ -1,0 +1,1093 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
+<title>HAL Component Generator</title>
+<link rel="stylesheet" href="..//asciidoc.css" type="text/css" />
+
+
+<link rel="stylesheet" href="..//linuxcnc.css" type="text/css" />
+<script type="text/javascript" src="..//asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install(2);
+/*]]>*/
+</script>
+</head>
+<body class="book">
+<div id="header">
+<h1>HAL Component Generator</h1>
+<div id="toc">
+  <div id="toctitle">Table of Contents</div>
+  <noscript><p><b>JavaScript must be enabled in your browser to display the table of contents.</b></p></noscript>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="cha:hal-component-generator">1. Introduction</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>This section introduces to the compilation HAL components, i.e. the addition of some machinists' knowledge on how to deal with the machine.
+It should be noted that such components do not necessarily deal with the hardware directly.
+They often do, but not necessarily, e.g. there could be a component to convert between imperial and metric scales,
+so this section does not require to dive into the interaction with hardware.</p></div>
+<div class="paragraph"><p>Writing a HAL component can be a tedious process, most of it in setup calls to <em>rtapi_</em> and <em>hal_</em> functions and associated error checking.
+<em>halcompile</em> will write all this code for you, automatically.
+Compiling a HAL component is also much easier when using <em>halcompile</em>, whether the component is part of the LinuxCNC source tree, or outside it.</p></div>
+<div class="paragraph"><p>For instance, when coded in C, a simple component such as "ddt" is around 80 lines of code.
+The equivalent component is very short when written using the <em>halcompile</em> preprocessor:</p></div>
+<div class="listingblock" id="code:simple-comp-example">
+<div class="title">Simple Component Example</div>
+<div class="content">
+<pre><code>component ddt "Compute the derivative of the input function";
+pin in float in;
+pin out float out;
+variable double old;
+function _;
+license "GPL"; // indicates GPL v2 or later
+;;
+float tmp = in;
+out = (tmp - old) / fperiod;
+old = tmp;</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_installing">2. Installing</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>To compile a component, if a packaged version of LinuxCNC is used,
+development packages have to be installed using either Synaptic from the main menu <em>System -&gt; Administration -&gt; Synaptic package manager</em>
+or by running one of the following commands in a terminal window:</p></div>
+<div class="listingblock">
+<div class="title">Installation of Development packages for LinuxCNC</div>
+<div class="content">
+<pre><code>sudo apt install linuxcnc-dev
+# or
+sudo apt install linuxcnc-uspace-dev</code></pre>
+</div></div>
+<div class="paragraph"><p>Another method is using the Synaptic package manager, from the Applications menu, to install the <code>linuxcnc-dev</code> or <code>linuxcnc-uspace-dev</code> packages.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_compiling">3. Compiling</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_inside_the_source_tree">3.1. Inside the source tree</h3>
+<div class="paragraph"><p>Place the <code>.comp</code> file in the source directory <code>linuxcnc/src/hal/components</code> and re-run <code>make</code>.
+<em>Comp</em> files are automatically detected by the build system.</p></div>
+<div class="paragraph"><p>If a <code>.comp</code> file is a driver for hardware, it may be placed in <code>linuxcnc/src/hal/drivers</code>
+and will be built unless LinuxCNC is configured as a non-realtime simulator.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_realtime_components_outside_the_source_tree">3.2. Realtime components outside the source tree</h3>
+<div class="paragraph"><p><em>halcompile</em> can process, compile, and install a realtime component in a single step,
+placing <code>rtexample.ko</code> in the LinuxCNC realtime module directory:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>[sudo] halcompile --install rtexample.comp</code></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">sudo (for root permission) is needed when using LinuxCNC from a deb package install.
+When using a Run-In-Place (RIP) build, root privileges should not be needed.</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>Or, it can process and compile in one step, leaving <code>example.ko</code> (or <code>example.so</code> for the simulator) in the current directory:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>halcompile --compile rtexample.comp</code></pre>
+</div></div>
+<div class="paragraph"><p>Or it can simply process, leaving <code>example.c</code> in the current directory:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>halcompile rtexample.comp</code></pre>
+</div></div>
+<div class="paragraph"><p><em>halcompile</em> can also compile and install a component written in C, using the <code>--install</code> and <code>--compile</code> options shown above:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>[sudo] halcompile --install rtexample2.c</code></pre>
+</div></div>
+<div class="paragraph"><p>man-format documentation can also be created from the information in the declaration section:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>halcompile --document -o example.9 rtexample.comp</code></pre>
+</div></div>
+<div class="paragraph"><p>The resulting manpage, <em>example.9</em> can be viewed with</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>man ./example.9</code></pre>
+</div></div>
+<div class="paragraph"><p>or copied to a standard location for manual pages.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_non_realtime_components_outside_the_source_tree">3.3. Non-realtime components outside the source tree</h3>
+<div class="paragraph"><p><em>halcompile</em> can process, compile, install, and document non-realtime components:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>halcompile non-rt-example.comp
+halcompile --compile non-rt-example.comp
+[sudo] halcompile --install non-rt-example.comp
+halcompile --document non-rt-example.comp</code></pre>
+</div></div>
+<div class="paragraph"><p>For some libraries (for example modbus) it might be necessary to add extra compiler and linker arguments to enable the compiler to find and link the libraries.
+In the case of .comp files this can be done via "option" statements in the <code>.comp</code> file.
+For <code>.c</code> files this is not possible so the <code>--extra-compile-args</code> and <code>--extra-link-args</code> parameters can be used instead.
+As an example, this command line can be used to compile the <code>vfdb_vfd.c</code> component out-of-tree.</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>halcompile --userspace --install --extra-compile-args="-I/usr/include/modbus" --extra-link-args="-lm -lmodbus -llinuxcncini" vfdb_vfd.c</code></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">The effect of using both command-line and in-file extra-args is undefined.</td>
+</tr></table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_using_a_component">4. Using a Component</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Components need to be loaded and added to a thread before it can be employed.
+The provided functionality can then be invoked directly and repeatedly by one of the threads
+or it is called by other components that have their own respective triggers.</p></div>
+<div class="listingblock">
+<div class="title">Example HAL script for installing a component (ddt) and executing it every millisecond.</div>
+<div class="content">
+<pre><code>loadrt threads name1=servo-thread period1=1000000
+loadrt ddt
+addf ddt.0 servo-thread</code></pre>
+</div></div>
+<div class="paragraph"><p>More information on <code>loadrt</code> and <code>addf</code> can be found in the
+<a href="basic-hal.html#cha:basic-hal-reference">HAL Basics</a>.</p></div>
+<div class="paragraph"><p>To test your component you can follow the examples in the <a href="tutorial.html#cha:hal-tutorial">HAL Tutorial</a>.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_definitions">5. Definitions</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<strong>component</strong> - A component is a single real-time module, which is loaded with <code>Halcmd loadrt</code>.
+  One <code>.comp</code> file specifies one component. The component name and file name must match.
+</p>
+</li>
+<li>
+<p>
+<strong>instance</strong> - A component can have zero or more instances.
+  Each instance of a component is created equal (they all have the same pins, parameters,
+  functions, and data) but behave independently when their pins, parameters, and data have different values.
+</p>
+</li>
+<li>
+<p>
+<strong>singleton</strong> - It is possible for a component to be a "singleton", in which case exactly one instance is created.
+  It seldom makes sense to write a <em>singleton</em> component, unless there can literally only be a single object of that kind in the system
+  (for instance, a component whose purpose is to provide a pin with the current UNIX time, or a hardware driver for the internal PC speaker).
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_instance_creation">6. Instance creation</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>For a singleton, the one instance is created when the component is loaded.</p></div>
+<div class="paragraph"><p>For a non-singleton, the <em>count</em> module parameter determines how many numbered instances are created.
+If <em>count</em> is not specified, the <em>names</em> module parameter determines how many named instances are created.
+If neither <em>count</em> nor <em>names</em> is specified, a single numbered instance is created.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implicit_parameters">7. Implicit Parameters</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Functions are implicitly passed the <em>period</em> parameter which is the time in nanoseconds of the last period to execute the component.
+Functions which use floating-point can also refer to <em>fperiod</em> which is the floating-point time in seconds, or (period*1e-9).
+This can be useful in components that need the timing information.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_syntax">8. Syntax</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>A <code>.comp</code> file consists of a number of declarations, followed by <code>;;</code> on a line of its own, followed by C code implementing the module&#8217;s functions.</p></div>
+<div class="paragraph"><p>Declarations include:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<em>component HALNAME (DOC);</em>
+</p>
+</li>
+<li>
+<p>
+<em>pin PINDIRECTION TYPE HALNAME ([SIZE]|[MAXSIZE: CONDSIZE]) (if CONDITION) (= STARTVALUE) (DOC) ;</em>
+</p>
+</li>
+<li>
+<p>
+<em>param PARAMDIRECTION TYPE HALNAME ([SIZE]|[MAXSIZE: CONDSIZE]) (if CONDITION) (= STARTVALUE) (DOC) ;</em>
+</p>
+</li>
+<li>
+<p>
+<em>function HALNAME (fp | nofp) (DOC);</em>
+</p>
+</li>
+<li>
+<p>
+<em>option OPT (VALUE);</em>
+</p>
+</li>
+<li>
+<p>
+<em>variable CTYPE STARREDNAME ([SIZE]);</em>
+</p>
+</li>
+<li>
+<p>
+<em>description DOC;</em>
+</p>
+</li>
+<li>
+<p>
+<em>examples DOC;</em>
+</p>
+</li>
+<li>
+<p>
+<em>notes DOC;</em>
+</p>
+</li>
+<li>
+<p>
+<em>see_also DOC;</em>
+</p>
+</li>
+<li>
+<p>
+<em>license LICENSE;</em>
+</p>
+</li>
+<li>
+<p>
+<em>author AUTHOR;</em>
+</p>
+</li>
+<li>
+<p>
+<em>include HEADERFILE;</em>
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>Parentheses indicate optional items. A vertical bar indicates alternatives.
+Words in <em>CAPITALS</em> indicate variable text, as follows:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<em>NAME</em> - A standard C identifier
+</p>
+</li>
+<li>
+<p>
+<em>STARREDNAME</em> - A C identifier with zero or more * before it.
+  This syntax can be used to declare instance variables that are pointers.
+  Note that because of the grammar, there may not be whitespace between the * and the variable name.
+</p>
+</li>
+<li>
+<p>
+<em>HALNAME</em> - An extended identifier.
+  When used to create a HAL identifier, any underscores are replaced with dashes, and any trailing dash or period is removed,
+  so that "this_name_" will be turned into "this-name", and if the name is "_", then a trailing period is removed as well,
+  so that "function _" gives a HAL function name like "component.&lt;num&gt;" instead of "component.&lt;num&gt;."
+</p>
+<div class="paragraph"><p>If present, the prefix <em>hal_</em> is removed from the beginning of the component name when creating pins, parameters and functions.</p></div>
+</li>
+</ul></div>
+<div class="paragraph"><p>In the HAL identifier for a pin or parameter, # denotes an array item, and must be used in conjunction with a <em>[SIZE]</em> declaration.
+The hash marks are replaced with a 0-padded number with the same length as the number of # characters.</p></div>
+<div class="paragraph"><p>When used to create a C identifier, the following changes are applied to the HALNAME:</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+Any "#" characters, and any ".", "_" or "-" characters immediately before them, are removed.
+</p>
+</li>
+<li>
+<p>
+Any remaining "." and "-" characters are replaced with "_".
+</p>
+</li>
+<li>
+<p>
+Repeated "_" characters are changed to a single "\_" character.
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>A trailing "_" is retained, so that HAL identifiers which would otherwise collide with reserved names or keywords (e.g., <em>min</em>) can be used.</p></div>
+<div class="tableblock">
+<table rules="all" class="tableblock"
+width="90%"
+frame="border"
+cellspacing="0" cellpadding="4">
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+<thead>
+<tr>
+<th align="left" valign="top">HALNAME </th>
+<th align="left" valign="top"> C Identifier </th>
+<th align="left" valign="top"> HAL Identifier</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left" valign="top"><p class="table">x_y_z</p></td>
+<td align="left" valign="top"><p class="table">x_y_z</p></td>
+<td align="left" valign="top"><p class="table">x-y-z</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">x-y.z</p></td>
+<td align="left" valign="top"><p class="table">x_y_z</p></td>
+<td align="left" valign="top"><p class="table">x-y.z</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">x_y_z_</p></td>
+<td align="left" valign="top"><p class="table">x_y_z_</p></td>
+<td align="left" valign="top"><p class="table">x-y-z</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">x.##.y</p></td>
+<td align="left" valign="top"><p class="table">x_y(MM)</p></td>
+<td align="left" valign="top"><p class="table">x.MM.z</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">x.##</p></td>
+<td align="left" valign="top"><p class="table">x(MM)</p></td>
+<td align="left" valign="top"><p class="table">x.MM</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<em>if CONDITION</em> - An expression involving the variable <em>personality</em> which is nonzero when the pin or parameter should be created.
+</p>
+</li>
+<li>
+<p>
+<em>SIZE</em> - A number that gives the size of an array. The array items are numbered from 0 to <em>SIZE</em>-1.
+</p>
+</li>
+<li>
+<p>
+<em>MAXSIZE : CONDSIZE</em> - A number that gives the maximum size of the array,
+  followed by an expression involving the variable <em>personality</em> and which always evaluates to less than <em>MAXSIZE</em>.
+  When the array is created its size will be <em>CONDSIZE</em>.
+</p>
+</li>
+<li>
+<p>
+<em>DOC</em> - A string that documents the item. String can be a C-style "double quoted" string, like:
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>"Selects the desired edge: TRUE means falling, FALSE means rising"</code></pre>
+</div></div>
+<div class="paragraph"><p>or a Python-style "triple quoted" string, which may include embedded newlines and quote characters, such as:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>"""The effect of this parameter, also known as "the orb of zot",
+will require at least two paragraphs to explain.
+
+Hopefully these paragraphs have allowed you to understand "zot"
+better."""</code></pre>
+</div></div>
+<div class="paragraph"><p>Or a string may be preceded by the literal character <em>r</em>, in which case the string is interpreted like a Python raw-string.</p></div>
+<div class="paragraph"><p>The documentation string is in "groff -man" format.
+For more information on this markup format, see <em>groff_man(7)</em>.
+Remember that <em>halcompile</em> interprets backslash escapes in strings, so for instance to set the italic font for the word <em>example</em>, write:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>"\\fIexample\\fB"</code></pre>
+</div></div>
+<div class="paragraph"><p>In this case, r-strings are particularly useful, because the backslashes in an r-string need not be doubled:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>r"\fIexample\fB"</code></pre>
+</div></div>
+</li>
+<li>
+<p>
+<em>TYPE</em> - One of the HAL types: <em>bit</em>, <em>signed</em>, <em>unsigned</em>, or <em>float</em>.
+  The old names <em>s32</em> and <em>u32</em> may also be used, but <em>signed</em> and <em>unsigned</em> are preferred.
+</p>
+</li>
+<li>
+<p>
+<em>PINDIRECTION</em> - One of the following: <em>in</em>, <em>out</em>, or <em>io</em>.
+  A component sets a value for an <em>out</em> pin, it reads a value from an <em>in</em> pin, and it may read or set the value of an <em>io</em> pin.
+</p>
+</li>
+<li>
+<p>
+<em>PARAMDIRECTION</em> - One of the following: <em>r</em> or <em>rw</em>. A component sets a value for a <em>r</em> parameter, and it may read or set the value of a <em>rw</em> parameter.
+</p>
+</li>
+<li>
+<p>
+<em>STARTVALUE</em> - Specifies the initial value of a pin or parameter.
+  If it is not specified, then the default is <em>0</em> or <em>FALSE</em>, depending on the type of the item.
+</p>
+</li>
+<li>
+<p>
+<em>HEADERFILE</em> - The name of a header file, either in double-quotes (<code>include "myfile.h";</code>) or in angle brackets (<code>include &lt;systemfile.h&gt;;</code>).
+  The header file will be included (using C&#8217;s #include) at the top of the file, before pin and parameter declarations.
+</p>
+</li>
+</ul></div>
+<div class="sect2">
+<h3 id="_hal_functions">8.1. HAL functions</h3>
+<div class="ulist"><ul>
+<li>
+<p>
+<em>fp</em> - Indicates that the function performs floating-point calculations.
+</p>
+</li>
+<li>
+<p>
+<em>nofp</em> - Indicates that it only performs integer calculations.
+  If neither is specified, <em>fp</em> is assumed.
+  Neither <em>halcompile</em> nor gcc can detect the use of floating-point calculations in functions that are tagged <em>nofp</em>,
+  but the use of such operations results in undefined behavior.
+</p>
+</li>
+</ul></div>
+</div>
+<div class="sect2">
+<h3 id="_options">8.2. Options</h3>
+<div class="paragraph"><p>The currently defined options are:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<em>option singleton yes</em> - (default: no)
+  Do not create a <em>count</em> module parameter, and always create a single instance.
+  With <em>singleton</em>, items are named <em>component-name.item-name</em> and without <em>singleton</em>, items for numbered instances are named <em>component-name.&lt;num&gt;.item-name</em>.
+</p>
+</li>
+<li>
+<p>
+<em>option default_count number</em> - (default: 1)
+  Normally, the module parameter <em>count</em> defaults to 1. If specified, the <em>count</em> will default to this value instead.
+</p>
+</li>
+<li>
+<p>
+<em>option count_function yes</em> - (default: no)
+  Normally, the number of instances to create is specified in the module parameter <em>count</em>;
+  if <em>count_function</em> is specified, the value returned by the function <em>int get_count(void)</em> is used instead, and the <em>count</em> module parameter is not defined.
+</p>
+</li>
+<li>
+<p>
+<em>option rtapi_app no</em> - (default: yes)
+  Normally, the functions <code>rtapi_app_main()</code> and <code>rtapi_app_exit()</code> are automatically defined.
+  With <em>option rtapi_app no</em>, they are not, and must be provided in the C code.
+  Use the following prototypes:
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>`int rtapi_app_main(void);`
+
+`void rtapi_app_exit(void);`</code></pre>
+</div></div>
+<div class="paragraph"><p>When implementing your own <code>rtapi_app_main()</code>, call the function <code>int export(char *prefix, long extra_arg)</code> to register the pins, parameters, and functions for <code>prefix</code>.</p></div>
+</li>
+<li>
+<p>
+<em>option data TYPE</em> - (default: none) <strong>deprecated</strong><br />
+  If specified, each instance of the component will have an associated data block of type <em>TYPE</em> (which can be a simple type like <em>float</em> or the name of a type created with <em>typedef</em>).
+  In new components, <em>variable</em> should be used instead.
+</p>
+</li>
+<li>
+<p>
+<em>option extra_setup yes</em> - (default: no)<br />
+  If specified, call the function defined by <em>EXTRA_SETUP</em> for each instance.
+  If using the automatically defined <em>rtapi_app_main</em>, <em>extra_arg</em> is the number of this instance.
+</p>
+</li>
+<li>
+<p>
+<em>option extra_cleanup yes</em> - (default: no)<br />
+  If specified, call the function defined by <em>EXTRA_CLEANUP</em> from the automatically defined <em>rtapi_app_exit</em> or,
+  in case of a detected error, in the automatically defined <em>rtapi_app_main</em>.
+</p>
+</li>
+<li>
+<p>
+<em>option userspace yes</em> - (default: no)<br />
+  If specified, this file describes a non-realtime (formerly known as "userspace") component, rather than a regular (i.e., realtime) one.
+  A non-realtime component may not have functions defined by the <em>function</em> directive.
+  Instead, after all the instances are constructed, the C function <code>void user_mainloop(void);</code> is called.
+  When this function returns, the component exits.
+  Typically, <em>user_mainloop()</em> will use <em>FOR_ALL_INSTS()</em> to perform the update action for each instance, then sleep for a short time.
+  Another common action in <em>user_mainloop()</em> may be to call the event handler loop of a GUI toolkit.
+</p>
+</li>
+<li>
+<p>
+<em>option userinit yes</em> - (default: no)<br />
+  This option is ignored if the option <em>userspace</em> (see above) is set to <em>no</em>.
+  If <em>userinit</em> is specified, the function <em>userinit(argc,argv)</em> is called before <em>rtapi_app_main()</em> (and thus before the call to <em>hal_init()</em> ).
+  This function may process the commandline arguments or take other actions.
+  Its return type is <em>void</em>; it may call <em>exit()</em> if it wishes to terminate rather than create a HAL component (e.g., because the commandline arguments were invalid).
+</p>
+</li>
+<li>
+<p>
+<em>option extra_link_args "&#8230;"</em> - (default: "")
+   This option is ignored if the option <em>userspace</em> (see above) is set to <em>no</em>.
+   When linking a non-realtime component, the arguments given are inserted in the link line.
+   Note that because compilation takes place in a temporary directory,
+   "-L." refers to the temporary directory and not the directory where the .comp source file resides.
+   This option can be set in the halcompile command-line with -extra-link-args="-L&#8230;..".
+   This alternative provides a way to set extra flags in cases where the input file is a .c file rather than a .comp file.
+</p>
+</li>
+<li>
+<p>
+<em>option extra_compile_args "&#8230;"</em> - (default: "")
+   This option is ignored if the option <em>userspace</em> (see above) is set to <em>no</em>.
+   When compiling a non-realtime component, the arguments given are inserted in the compiler command line.
+   If the input file is a .c file this option can be set in the halcompile command-line with --extra-compile-args="-I&#8230;..".
+   This alternative provides a way to set extra flags in cases where the input file is a .c file rather than a .comp file.
+</p>
+</li>
+<li>
+<p>
+<em>option homemod yes</em> - (default: no)<br />
+  Module is a custom Homing module loaded using <code>[EMCMOT]HOMEMOD=</code><em>modulename</em> .
+</p>
+</li>
+<li>
+<p>
+<em>option tpmod yes</em> - (default: no)<br />
+  Module is a custom Trajectory Planning (tp) module loaded using <code>[TRAJ]TPMOD=</code><em>modulename</em> .
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>If an option&#8217;s VALUE is not specified, then it is equivalent to specifying <em>option … yes</em>.<br />
+The result of assigning an inappropriate value to an option is undefined.<br />
+The result of using any other option is undefined.<br /></p></div>
+</div>
+<div class="sect2">
+<h3 id="_license_and_authorship">8.3. License and Authorship</h3>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>LICENSE</code> - Specify the license of the module for the documentation and for the MODULE_LICENSE() module declaration.
+  For example, to specify that the module&#8217;s license is GPL v2 or later:
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><code>`license "GPL"; // indicates GPL v2 or later`</code></pre>
+</div></div>
+<div class="paragraph"><p>For additional information on the meaning of MODULE_LICENSE() and additional license identifiers,
+see <em>&lt;linux/module.h&gt;</em> or the manual page <em>rtapi_module_param(3)</em>.</p></div>
+<div class="paragraph"><p>This declaration is <strong>required</strong>.</p></div>
+</li>
+<li>
+<p>
+<code>AUTHOR</code> - Specify the author of the module for the documentation.
+</p>
+</li>
+</ul></div>
+</div>
+<div class="sect2">
+<h3 id="_per_instance_data_storage">8.4. Per-instance data storage</h3>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>variable CTYPE STARREDNAME; +
+  variable CTYPE STARREDNAME[SIZE]; +
+  variable CTYPE STARREDNAME = DEFAULT; +
+  variable CTYPE STARREDNAME[SIZE] = DEFAULT;</code>
+</p>
+<div class="paragraph"><p>Declare a per-instance variable <em>STARREDNAME</em> of type <em>CTYPE</em>,
+optionally as an array of <em>SIZE</em> items, and optionally with a default value <em>DEFAULT</em>.
+Items with no <em>DEFAULT</em> are initialized to all-bits-zero.
+<em>CTYPE</em> is a simple one-word C type, such as <code>float</code>, <code>u32</code>, <code>s32</code>, <code>int</code>, etc.
+Access to array variables uses square brackets.</p></div>
+</li>
+</ul></div>
+<div class="paragraph"><p>If a variable is to be of a pointer type, there may not be any space between the "*" and the variable name.
+Therefore, the following is acceptable:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>variable int *example;</code></pre>
+</div></div>
+<div class="paragraph"><p>But the following are not:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>variable int* badexample;
+variable int * badexample;</code></pre>
+</div></div>
+</div>
+<div class="sect2">
+<h3 id="_comments">8.5. Comments</h3>
+<div class="paragraph"><p>C++-style one-line comments (<code>//...</code>) and
+C-style multi-line comments (<code>/* ... */</code>)
+are both supported in the declaration section.</p></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_restrictions">9. Restrictions</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Though HAL permits a pin, a parameter, and a function to have the same name, <em>halcompile</em> does not.</p></div>
+<div class="paragraph"><p>Variable and function names that can not be used or are likely to cause problems include:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Anything beginning with <em><em>_comp</em></em>.
+</p>
+</li>
+<li>
+<p>
+<em>comp_id</em>
+</p>
+</li>
+<li>
+<p>
+<em>fperiod</em>
+</p>
+</li>
+<li>
+<p>
+<em>rtapi_app_main</em>
+</p>
+</li>
+<li>
+<p>
+<em>rtapi_app_exit</em>
+</p>
+</li>
+<li>
+<p>
+<em>extra_setup</em>
+</p>
+</li>
+<li>
+<p>
+<em>extra_cleanup</em>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_convenience_macros">10. Convenience Macros</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Based on the items in the declaration section, <em>halcompile</em> creates a C structure called <code>struct __comp_state</code>.
+However, instead of referring to the members of this structure (e.g., <code>*(inst-&gt;name)</code>),
+they will generally be referred to using the macros below.
+The details of <code>struct __comp_state</code> and these macros may change from one version of <em>halcompile</em> to the next.</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>FUNCTION(`__name__</code>)` - Use this macro to begin the definition of a realtime function, which was previously declared with <em>function NAME</em>.
+  The function includes a parameter <em>period</em> which is the integer number of nanoseconds between calls to the function.
+</p>
+</li>
+<li>
+<p>
+<code>EXTRA_SETUP()</code> - Use this macro to begin the definition of the function called to perform extra setup of this instance.
+  Return a negative Unix <em>errno</em> value to indicate failure (e.g., <em>return -EBUSY</em> on failure to reserve an I/O port), or 0 to indicate success.
+</p>
+</li>
+<li>
+<p>
+<code>EXTRA_CLEANUP()</code> - Use this macro to begin the definition of the function called to perform extra cleanup of the component.
+  Note that this function must clean up all instances of the component, not just one.
+  The "pin_name", "parameter_name", and "data" macros may not be used here.
+</p>
+</li>
+<li>
+<p>
+<em>pin_name</em> or <em>parameter_name</em> - For each pin <em>pin_name</em> or param <em>parameter_name</em>
+  there is a macro which allows the name to be used on its own to refer to the pin or parameter.
+  When <em>pin_name</em> or <em>parameter_name</em> is an array, the macro is of the form <em>pin_name(idx)</em> or <em>param_name(idx)</em>,
+  where <em>idx</em>  is the index into the pin array. When the array is a variable-sized array,
+  it is only legal to refer to items up to its <em>condsize</em>.
+</p>
+<div class="paragraph"><p>When the item is a conditional item, it is only legal to refer to it when its <em>condition</em> evaluated to a nonzero value.</p></div>
+</li>
+<li>
+<p>
+<em>variable_name</em> - For each variable <em>variable_name</em> there is a macro which allows the name to be used on its own to refer to the variable.
+  When <em>variable_name</em> is an array, the normal C-style subscript is used: <em>variable_name[idx]</em>.
+</p>
+</li>
+<li>
+<p>
+<em>data</em> - If "option data" is specified, this macro allows access to the instance data.
+</p>
+</li>
+<li>
+<p>
+<em>fperiod</em> - The floating-point number of seconds between calls to this realtime function.
+</p>
+</li>
+<li>
+<p>
+<code>FOR_ALL_INSTS() {</code>&#8230;<code>}</code> - For non-realtime components.
+  This macro iterates over all the defined instances.
+  Inside the body of the loop, the <em>pin_name</em>, <em>parameter_name</em>, and <em>data</em> macros work as they do in realtime functions.
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_components_with_one_function">11. Components with one function</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>If a component has only one function and the string <code>"FUNCTION"</code> does not appear anywhere after <code>;;</code>,
+then the portion after <code>;;</code> is all taken to be the body of the component&#8217;s single function.
+See the <a href="#code:simple-comp-example">Simple Comp</a> for an example of this.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_component_personality">12. Component Personality</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>If a component has any pins or parameters with an "if condition" or "[maxsize : condsize]", it is called a component with <em>personality</em>.
+The <em>personality</em> of each instance is specified when the module is loaded. <em>Personality</em> can be used to create pins only when needed.
+For instance, personality is used in the <em>logic</em> component,
+to allow for a variable number of input pins to each logic gate and to allow for a selection of any of the basic boolean logic functions <em>and</em>, <em>or</em>, and <em>xor</em>.</p></div>
+<div class="paragraph"><p>The default number of allowed <em>personality</em> items is a compile-time setting (64).
+The default applies to numerous components included in the distribution that are built using halcompile.</p></div>
+<div class="paragraph"><p>To alter the allowed number of personality items for user-built components, use the <em>--personality</em> option with halcompile.
+For example, to allow up to 128 personality times:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>  [sudo] halcompile --personality=128 --install ...</code></pre>
+</div></div>
+<div class="paragraph"><p>When using components with personality, normal usage is to specify a personality item for <strong>each</strong> specified component instance.
+Example for 3 instances of the logic component:</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #0000FF">loadrt</span></span> <span style="font-weight: bold"><span style="color: #000000">logic</span></span> <span style="font-weight: bold"><span style="color: #000000">names</span></span><span style="color: #990000">=</span><span style="font-weight: bold"><span style="color: #000000">and4</span></span>,<span style="font-weight: bold"><span style="color: #000000">or3</span></span>,<span style="font-weight: bold"><span style="color: #000000">nand5</span></span>, <span style="font-weight: bold"><span style="color: #000000">personality</span></span><span style="color: #990000">=</span><span style="color: #993399">0x104</span>,<span style="color: #993399">0x203</span>,<span style="color: #993399">0x805</span></tt></pre></div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">If a loadrt line specifies more instances than personalities,
+the instances with unspecified personalities are assigned a personality of 0.
+If the requested number of instances exceeds the number of allowed personalities,
+personalities are assigned by indexing modulo the number of allowed personalities.
+A message is printed denoting such assignments.</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_examples">13. Examples</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_constant">13.1. constant</h3>
+<div class="paragraph"><p>Note that the declaration "function _" creates functions named "constant.0", etc.
+The file name must match the component name.</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="color: #008080">component</span> constant<span style="color: #990000">;</span>
+pin out <span style="color: #008080">float</span> out<span style="color: #990000">;</span>
+param r <span style="color: #008080">float</span> value <span style="color: #990000">=</span> <span style="color: #993399">1.0</span><span style="color: #990000">;</span>
+<span style="color: #008080">function</span> _<span style="color: #990000">;</span>
+license <span style="color: #FF0000">"GPL"</span><span style="color: #990000">;</span> <span style="font-style: italic"><span style="color: #9A1900">// indicates GPL v2 or later</span></span>
+<span style="color: #990000">;;</span>
+<span style="font-weight: bold"><span style="color: #000000">FUNCTION</span></span><span style="color: #990000">(</span>_<span style="color: #990000">)</span> <span style="color: #FF0000">{</span> out <span style="color: #990000">=</span> value<span style="color: #990000">;</span> <span style="color: #FF0000">}</span></tt></pre></div></div>
+</div>
+<div class="sect2">
+<h3 id="_sincos">13.2. sincos</h3>
+<div class="paragraph"><p>This component computes the sine and cosine of an input angle in radians.
+It has different capabilities than the "sine" and "cosine" outputs of siggen,
+because the input is an angle, rather than running freely based on a "frequency" parameter.</p></div>
+<div class="paragraph"><p>The pins are declared with the names <em>sin_</em> and <em>cos_</em> in the source code so that they do not interfere with the functions <em>sin()</em> and <em>cos()</em>.
+The HAL pins are still called <em>sincos.&lt;num&gt;.sin</em>.</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="color: #008080">component</span> sincos<span style="color: #990000">;</span>
+pin out <span style="color: #008080">float</span> sin_<span style="color: #990000">;</span>
+pin out <span style="color: #008080">float</span> cos_<span style="color: #990000">;</span>
+pin in <span style="color: #008080">float</span> theta<span style="color: #990000">;</span>
+<span style="color: #008080">function</span> _<span style="color: #990000">;</span>
+license <span style="color: #FF0000">"GPL"</span><span style="color: #990000">;</span> <span style="font-style: italic"><span style="color: #9A1900">// indicates GPL v2 or later</span></span>
+<span style="color: #990000">;;</span>
+<span style="font-weight: bold"><span style="color: #000080">#include</span></span> <span style="color: #FF0000">&lt;rtapi_math.h&gt;</span>
+<span style="font-weight: bold"><span style="color: #000000">FUNCTION</span></span><span style="color: #990000">(</span>_<span style="color: #990000">)</span> <span style="color: #FF0000">{</span> sin_ <span style="color: #990000">=</span> <span style="font-weight: bold"><span style="color: #000000">sin</span></span><span style="color: #990000">(</span>theta<span style="color: #990000">);</span> cos_ <span style="color: #990000">=</span> <span style="font-weight: bold"><span style="color: #000000">cos</span></span><span style="color: #990000">(</span>theta<span style="color: #990000">);</span> <span style="color: #FF0000">}</span></tt></pre></div></div>
+</div>
+<div class="sect2">
+<h3 id="_out8">13.3. out8</h3>
+<div class="paragraph"><p>This component is a driver for a <em>fictional</em> card called "out8", which has 8 pins of digital output which are treated as a single 8-bit value.
+There can be a varying number of such cards in the system, and they can be at various addresses.
+The pin is called <em>out_</em> because <em>out</em> is an identifier used in <em>&lt;asm/io.h&gt;</em>.
+It illustrates the use of <em>EXTRA_SETUP</em> and <em>EXTRA_CLEANUP</em> to request an I/O region and then free it in case of error or when the module is unloaded.</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="color: #008080">component</span> out8<span style="color: #990000">;</span>
+pin out <span style="color: #008080">unsigned</span> out_ <span style="color: #FF0000">"Output value; only low 8 bits are used"</span><span style="color: #990000">;</span>
+param r <span style="color: #008080">unsigned</span> ioaddr<span style="color: #990000">;</span>
+
+<span style="color: #008080">function</span> _<span style="color: #990000">;</span>
+
+<span style="color: #008080">option</span> count_function<span style="color: #990000">;</span>
+<span style="color: #008080">option</span> extra_setup<span style="color: #990000">;</span>
+<span style="color: #008080">option</span> extra_cleanup<span style="color: #990000">;</span>
+option <span style="color: #008080">constructable</span> no<span style="color: #990000">;</span>
+
+license <span style="color: #FF0000">"GPL"</span><span style="color: #990000">;</span> <span style="font-style: italic"><span style="color: #9A1900">// indicates GPL v2 or later</span></span>
+<span style="color: #990000">;;</span>
+<span style="font-weight: bold"><span style="color: #000080">#include</span></span> <span style="color: #FF0000">&lt;asm/io.h&gt;</span>
+
+<span style="font-weight: bold"><span style="color: #000080">#define</span></span> MAX <span style="color: #993399">8</span>
+<span style="color: #009900">int</span> io<span style="color: #990000">[</span>MAX<span style="color: #990000">]</span> <span style="color: #990000">=</span> <span style="color: #FF0000">{</span><span style="color: #993399">0</span><span style="color: #990000">,</span><span style="color: #FF0000">}</span><span style="color: #990000">;</span>
+<span style="font-weight: bold"><span style="color: #000000">RTAPI_MP_ARRAY_INT</span></span><span style="color: #990000">(</span>io<span style="color: #990000">,</span> MAX<span style="color: #990000">,</span> <span style="color: #FF0000">"I/O addresses of out8 boards"</span><span style="color: #990000">);</span>
+
+<span style="color: #009900">int</span> <span style="font-weight: bold"><span style="color: #000000">get_count</span></span><span style="color: #990000">(</span><span style="color: #009900">void</span><span style="color: #990000">)</span> <span style="color: #FF0000">{</span>
+    <span style="color: #009900">int</span> i <span style="color: #990000">=</span> <span style="color: #993399">0</span><span style="color: #990000">;</span>
+    <span style="font-weight: bold"><span style="color: #0000FF">for</span></span><span style="color: #990000">(</span>i<span style="color: #990000">=</span><span style="color: #993399">0</span><span style="color: #990000">;</span> i<span style="color: #990000">&lt;</span>MAX <span style="color: #990000">&amp;&amp;</span> io<span style="color: #990000">[</span>i<span style="color: #990000">];</span> i<span style="color: #990000">++)</span> <span style="color: #FF0000">{</span> <span style="font-style: italic"><span style="color: #9A1900">/* Nothing */</span></span> <span style="color: #FF0000">}</span>
+    <span style="font-weight: bold"><span style="color: #0000FF">return</span></span> i<span style="color: #990000">;</span>
+<span style="color: #FF0000">}</span>
+
+<span style="font-weight: bold"><span style="color: #000000">EXTRA_SETUP</span></span><span style="color: #990000">()</span> <span style="color: #FF0000">{</span>
+    <span style="font-weight: bold"><span style="color: #0000FF">if</span></span><span style="color: #990000">(!</span><span style="font-weight: bold"><span style="color: #000000">rtapi_request_region</span></span><span style="color: #990000">(</span>io<span style="color: #990000">[</span>extra_arg<span style="color: #990000">],</span> <span style="color: #993399">1</span><span style="color: #990000">,</span> <span style="color: #FF0000">"out8"</span><span style="color: #990000">))</span> <span style="color: #FF0000">{</span>
+        <span style="font-style: italic"><span style="color: #9A1900">// set this I/O port to 0 so that EXTRA_CLEANUP does not release the IO</span></span>
+        <span style="font-style: italic"><span style="color: #9A1900">// ports that were never requested.</span></span>
+        io<span style="color: #990000">[</span>extra_arg<span style="color: #990000">]</span> <span style="color: #990000">=</span> <span style="color: #993399">0</span><span style="color: #990000">;</span>
+        <span style="font-weight: bold"><span style="color: #0000FF">return</span></span> <span style="color: #990000">-</span>EBUSY<span style="color: #990000">;</span>
+    <span style="color: #FF0000">}</span>
+    ioaddr <span style="color: #990000">=</span> io<span style="color: #990000">[</span>extra_arg<span style="color: #990000">];</span>
+    <span style="font-weight: bold"><span style="color: #0000FF">return</span></span> <span style="color: #993399">0</span><span style="color: #990000">;</span>
+<span style="color: #FF0000">}</span>
+
+<span style="font-weight: bold"><span style="color: #000000">EXTRA_CLEANUP</span></span><span style="color: #990000">()</span> <span style="color: #FF0000">{</span>
+    <span style="color: #009900">int</span> i<span style="color: #990000">;</span>
+    <span style="font-weight: bold"><span style="color: #0000FF">for</span></span><span style="color: #990000">(</span>i<span style="color: #990000">=</span><span style="color: #993399">0</span><span style="color: #990000">;</span> i <span style="color: #990000">&lt;</span> MAX <span style="color: #990000">&amp;&amp;</span> io<span style="color: #990000">[</span>i<span style="color: #990000">];</span> i<span style="color: #990000">++)</span> <span style="color: #FF0000">{</span>
+        <span style="font-weight: bold"><span style="color: #000000">rtapi_release_region</span></span><span style="color: #990000">(</span>io<span style="color: #990000">[</span>i<span style="color: #990000">],</span> <span style="color: #993399">1</span><span style="color: #990000">);</span>
+    <span style="color: #FF0000">}</span>
+<span style="color: #FF0000">}</span>
+
+<span style="font-weight: bold"><span style="color: #000000">FUNCTION</span></span><span style="color: #990000">(</span>_<span style="color: #990000">)</span> <span style="color: #FF0000">{</span> <span style="font-weight: bold"><span style="color: #000000">outb</span></span><span style="color: #990000">(</span>out_<span style="color: #990000">,</span> ioaddr<span style="color: #990000">);</span> <span style="color: #FF0000">}</span></tt></pre></div></div>
+</div>
+<div class="sect2">
+<h3 id="_hal_loop">13.4. hal_loop</h3>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="color: #008080">component</span> hal_loop<span style="color: #990000">;</span>
+pin out <span style="color: #008080">float</span> example<span style="color: #990000">;</span></tt></pre></div></div>
+<div class="paragraph"><p>This fragment of a component illustrates the use of the <em>hal_</em> prefix in a component name.</p></div>
+<div class="paragraph"><p><code>loop</code> is a common name, and the <code>hal_</code> prefix avoids potential name collisions with other unrelated software.  For example, on RTAI realtime systems realtime code runs in the kernel, so if the component were named just <code>loop</code> it could easily conflict with the standard <code>loop</code> kernel module.</p></div>
+<div class="paragraph"><p>When loaded, <em>halcmd show comp</em> will show a component called <em>hal_loop</em>.
+However, the pin shown by <em>halcmd show pin</em> will be <em>loop.0.example</em>, not <em>hal-loop.0.example</em>.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_arraydemo">13.5. arraydemo</h3>
+<div class="paragraph"><p>This realtime component illustrates use of fixed-size arrays:</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="color: #008080">component</span> arraydemo <span style="color: #FF0000">"4-bit Shift register"</span><span style="color: #990000">;</span>
+pin in <span style="color: #008080">bit</span> in<span style="color: #990000">;</span>
+pin out <span style="color: #008080">bit</span> out<span style="color: #990000">-</span># <span style="color: #990000">[</span><span style="color: #993399">4</span><span style="color: #990000">];</span>
+function <span style="color: #008080">_</span> nofp<span style="color: #990000">;</span>
+license <span style="color: #FF0000">"GPL"</span><span style="color: #990000">;</span> <span style="font-style: italic"><span style="color: #9A1900">// indicates GPL v2 or later</span></span>
+<span style="color: #990000">;;</span>
+<span style="color: #009900">int</span> i<span style="color: #990000">;</span>
+<span style="font-weight: bold"><span style="color: #0000FF">for</span></span><span style="color: #990000">(</span>i<span style="color: #990000">=</span><span style="color: #993399">3</span><span style="color: #990000">;</span> i<span style="color: #990000">&gt;</span><span style="color: #993399">0</span><span style="color: #990000">;</span> i<span style="color: #990000">--)</span> <span style="font-weight: bold"><span style="color: #000000">out</span></span><span style="color: #990000">(</span>i<span style="color: #990000">)</span> <span style="color: #990000">=</span> <span style="font-weight: bold"><span style="color: #000000">out</span></span><span style="color: #990000">(</span>i<span style="color: #990000">-</span><span style="color: #993399">1</span><span style="color: #990000">);</span>
+<span style="font-weight: bold"><span style="color: #000000">out</span></span><span style="color: #990000">(</span><span style="color: #993399">0</span><span style="color: #990000">)</span> <span style="color: #990000">=</span> in<span style="color: #990000">;</span></tt></pre></div></div>
+</div>
+<div class="sect2">
+<h3 id="_rand">13.6. rand</h3>
+<div class="paragraph"><p>This non-realtime component changes the value on its output pin to a new random value in the range (0,1) about once every 1&#8239;ms.</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="color: #008080">component</span> rand<span style="color: #990000">;</span>
+<span style="color: #008080">option</span> userspace<span style="color: #990000">;</span>
+
+pin out <span style="color: #008080">float</span> out<span style="color: #990000">;</span>
+license <span style="color: #FF0000">"GPL"</span><span style="color: #990000">;</span> <span style="font-style: italic"><span style="color: #9A1900">// indicates GPL v2 or later</span></span>
+<span style="color: #990000">;;</span>
+<span style="font-weight: bold"><span style="color: #000080">#include</span></span> <span style="color: #FF0000">&lt;unistd.h&gt;</span>
+
+<span style="color: #009900">void</span> <span style="font-weight: bold"><span style="color: #000000">user_mainloop</span></span><span style="color: #990000">(</span><span style="color: #009900">void</span><span style="color: #990000">)</span> <span style="color: #FF0000">{</span>
+    <span style="font-weight: bold"><span style="color: #0000FF">while</span></span><span style="color: #990000">(</span><span style="color: #993399">1</span><span style="color: #990000">)</span> <span style="color: #FF0000">{</span>
+        <span style="font-weight: bold"><span style="color: #000000">usleep</span></span><span style="color: #990000">(</span><span style="color: #993399">1000</span><span style="color: #990000">);</span>
+        <span style="font-weight: bold"><span style="color: #000000">FOR_ALL_INSTS</span></span><span style="color: #990000">()</span> out <span style="color: #990000">=</span> <span style="font-weight: bold"><span style="color: #000000">drand48</span></span><span style="color: #990000">();</span>
+    <span style="color: #FF0000">}</span>
+<span style="color: #FF0000">}</span></tt></pre></div></div>
+</div>
+<div class="sect2">
+<h3 id="_logic_using_personality">13.7. logic (using personality)</h3>
+<div class="paragraph"><p>This realtime component shows how to use "personality" to create variable-size arrays and optional pins.</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="color: #008080">component</span> logic <span style="color: #FF0000">"LinuxCNC HAL component providing experimental logic functions"</span><span style="color: #990000">;</span>
+pin in <span style="color: #008080">bit</span> in<span style="color: #990000">-</span>##<span style="color: #990000">[</span><span style="color: #993399">16</span> <span style="color: #990000">:</span> personality <span style="color: #990000">&amp;</span> <span style="color: #993399">0xff</span><span style="color: #990000">];</span>
+pin out bit and <span style="color: #008080">if</span> personality <span style="color: #990000">&amp;</span> <span style="color: #993399">0x100</span><span style="color: #990000">;</span>
+pin out bit or <span style="color: #008080">if</span> personality <span style="color: #990000">&amp;</span> <span style="color: #993399">0x200</span><span style="color: #990000">;</span>
+pin out bit xor <span style="color: #008080">if</span> personality <span style="color: #990000">&amp;</span> <span style="color: #993399">0x400</span><span style="color: #990000">;</span>
+function <span style="color: #008080">_</span> nofp<span style="color: #990000">;</span>
+description <span style="color: #FF0000">"""</span>
+<span style="color: #FF0000">Experimental general 'logic function' component.  Can perform 'and', 'or'</span>
+<span style="color: #FF0000">and 'xor' of up to 16 inputs.  Determine the proper value for 'personality'</span>
+<span style="color: #FF0000">by adding:</span>
+<span style="color: #FF0000">.IP </span><span style="color: #CC33CC">\\</span><span style="color: #FF0000">(bu 4</span>
+<span style="color: #FF0000">The number of input pins, usually from 2 to 16</span>
+<span style="color: #FF0000">.IP </span><span style="color: #CC33CC">\\</span><span style="color: #FF0000">(bu</span>
+<span style="color: #FF0000">256 (0x100)  if the 'and' output is desired</span>
+<span style="color: #FF0000">.IP </span><span style="color: #CC33CC">\\</span><span style="color: #FF0000">(bu</span>
+<span style="color: #FF0000">512 (0x200)  if the 'or' output is desired</span>
+<span style="color: #FF0000">.IP </span><span style="color: #CC33CC">\\</span><span style="color: #FF0000">(bu</span>
+<span style="color: #FF0000">1024 (0x400)  if the 'xor' (exclusive or) output is desired"""</span><span style="color: #990000">;</span>
+license <span style="color: #FF0000">"GPL"</span><span style="color: #990000">;</span> <span style="font-style: italic"><span style="color: #9A1900">// indicates GPL v2 or later</span></span>
+<span style="color: #990000">;;</span>
+<span style="font-weight: bold"><span style="color: #000000">FUNCTION</span></span><span style="color: #990000">(</span>_<span style="color: #990000">)</span> <span style="color: #FF0000">{</span>
+    <span style="color: #009900">int</span> i<span style="color: #990000">,</span> a<span style="color: #990000">=</span><span style="color: #993399">1</span><span style="color: #990000">,</span> o<span style="color: #990000">=</span><span style="color: #993399">0</span><span style="color: #990000">,</span> x<span style="color: #990000">=</span><span style="color: #993399">0</span><span style="color: #990000">;</span>
+    <span style="font-weight: bold"><span style="color: #0000FF">for</span></span><span style="color: #990000">(</span>i<span style="color: #990000">=</span><span style="color: #993399">0</span><span style="color: #990000">;</span> i <span style="color: #990000">&lt;</span> <span style="color: #990000">(</span>personality <span style="color: #990000">&amp;</span> <span style="color: #993399">0xff</span><span style="color: #990000">);</span> i<span style="color: #990000">++)</span> <span style="color: #FF0000">{</span>
+        <span style="font-weight: bold"><span style="color: #0000FF">if</span></span><span style="color: #990000">(</span><span style="font-weight: bold"><span style="color: #000000">in</span></span><span style="color: #990000">(</span>i<span style="color: #990000">))</span> <span style="color: #FF0000">{</span> o <span style="color: #990000">=</span> <span style="color: #993399">1</span><span style="color: #990000">;</span> x <span style="color: #990000">=</span> <span style="color: #990000">!</span>x<span style="color: #990000">;</span> <span style="color: #FF0000">}</span>
+        <span style="font-weight: bold"><span style="color: #0000FF">else</span></span> <span style="color: #FF0000">{</span> a <span style="color: #990000">=</span> <span style="color: #993399">0</span><span style="color: #990000">;</span> <span style="color: #FF0000">}</span>
+    <span style="color: #FF0000">}</span>
+    <span style="font-weight: bold"><span style="color: #0000FF">if</span></span><span style="color: #990000">(</span>personality <span style="color: #990000">&amp;</span> <span style="color: #993399">0x100</span><span style="color: #990000">)</span> and <span style="color: #990000">=</span> a<span style="color: #990000">;</span>
+    <span style="font-weight: bold"><span style="color: #0000FF">if</span></span><span style="color: #990000">(</span>personality <span style="color: #990000">&amp;</span> <span style="color: #993399">0x200</span><span style="color: #990000">)</span> or <span style="color: #990000">=</span> o<span style="color: #990000">;</span>
+    <span style="font-weight: bold"><span style="color: #0000FF">if</span></span><span style="color: #990000">(</span>personality <span style="color: #990000">&amp;</span> <span style="color: #993399">0x400</span><span style="color: #990000">)</span> xor <span style="color: #990000">=</span> x<span style="color: #990000">;</span>
+<span style="color: #FF0000">}</span></tt></pre></div></div>
+<div class="paragraph"><p>A typical load line for this component might be</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #0000FF">loadrt</span></span> <span style="font-weight: bold"><span style="color: #000000">logic</span></span> <span style="font-weight: bold"><span style="color: #000000">count</span></span><span style="color: #990000">=</span><span style="color: #993399">3</span> <span style="font-weight: bold"><span style="color: #000000">personality</span></span><span style="color: #990000">=</span><span style="color: #993399">0x102</span>,<span style="color: #993399">0x305</span>,<span style="color: #993399">0x503</span></tt></pre></div></div>
+<div class="paragraph"><p>which creates the following pins:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+A 2-input AND gate: <code>logic.0.and</code>, <code>logic.0.in-00</code>, <code>logic.0.in-01</code>
+</p>
+</li>
+<li>
+<p>
+5-input AND and OR gates: <code>logic.1.and</code>, <code>logic.1.or</code>, <code>logic.1.in-00</code>, <code>logic.1.in-01</code>, <code>logic.1.in-02</code>, <code>logic.1.in-03</code>, <code>logic.1.in-04</code>,
+</p>
+</li>
+<li>
+<p>
+3-input AND and XOR gates: <code>logic.2.and</code>, <code>logic.2.xor</code>, <code>logic.2.in-00</code>, <code>logic.2.in-01</code>, <code>logic.2.in-02</code>
+</p>
+</li>
+</ul></div>
+</div>
+<div class="sect2">
+<h3 id="_general_functions">13.8. General Functions</h3>
+<div class="paragraph"><p>This example shows how to call functions from the main function.
+It also shows how to pass reference of HAL pins to those functions.</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="color: #008080">component</span> example<span style="color: #990000">;</span>
+pin in <span style="color: #008080">s32</span> in<span style="color: #990000">;</span>
+pin out <span style="color: #008080">bit</span> out1<span style="color: #990000">;</span>
+pin out <span style="color: #008080">bit</span> out2<span style="color: #990000">;</span>
+
+<span style="color: #008080">function</span> _<span style="color: #990000">;</span>
+license <span style="color: #FF0000">"GPL"</span><span style="color: #990000">;</span>
+<span style="color: #990000">;;</span>
+
+<span style="font-style: italic"><span style="color: #9A1900">// general pin set true function</span></span>
+<span style="color: #009900">void</span> <span style="font-weight: bold"><span style="color: #000000">set</span></span><span style="color: #990000">(</span><span style="color: #008080">hal_bit_t</span> <span style="color: #990000">*</span>p<span style="color: #990000">)</span><span style="color: #FF0000">{</span>
+    <span style="color: #990000">*</span>p <span style="color: #990000">=</span> <span style="color: #993399">1</span><span style="color: #990000">;</span>
+<span style="color: #FF0000">}</span>
+
+<span style="font-style: italic"><span style="color: #9A1900">// general pin set false function</span></span>
+<span style="color: #009900">void</span> <span style="font-weight: bold"><span style="color: #000000">unset</span></span><span style="color: #990000">(</span><span style="color: #008080">hal_bit_t</span> <span style="color: #990000">*</span>p<span style="color: #990000">)</span><span style="color: #FF0000">{</span>
+    <span style="color: #990000">*</span>p <span style="color: #990000">=</span> <span style="color: #993399">0</span><span style="color: #990000">;</span>
+<span style="color: #FF0000">}</span>
+
+<span style="font-style: italic"><span style="color: #9A1900">//main function</span></span>
+<span style="font-weight: bold"><span style="color: #000000">FUNCTION</span></span><span style="color: #990000">(</span>_<span style="color: #990000">)</span> <span style="color: #FF0000">{</span>
+    <span style="font-weight: bold"><span style="color: #0000FF">if</span></span> <span style="color: #990000">(</span>in <span style="color: #990000">&lt;</span> <span style="color: #993399">0</span><span style="color: #990000">)</span><span style="color: #FF0000">{</span>
+        <span style="font-weight: bold"><span style="color: #000000">set</span></span><span style="color: #990000">(&amp;</span>out1<span style="color: #990000">);</span>
+        <span style="font-weight: bold"><span style="color: #000000">unset</span></span><span style="color: #990000">(&amp;</span>out2<span style="color: #990000">);</span>
+    <span style="color: #FF0000">}</span><span style="font-weight: bold"><span style="color: #0000FF">else</span></span> <span style="font-weight: bold"><span style="color: #0000FF">if</span></span> <span style="color: #990000">(</span>in <span style="color: #990000">&gt;</span><span style="color: #993399">0</span><span style="color: #990000">)</span><span style="color: #FF0000">{</span>
+        <span style="font-weight: bold"><span style="color: #000000">unset</span></span><span style="color: #990000">(&amp;</span>out2<span style="color: #990000">);</span>
+        <span style="font-weight: bold"><span style="color: #000000">set</span></span><span style="color: #990000">(&amp;</span>out2<span style="color: #990000">);</span>
+    <span style="color: #FF0000">}</span><span style="font-weight: bold"><span style="color: #0000FF">else</span></span><span style="color: #FF0000">{</span>
+        <span style="font-weight: bold"><span style="color: #000000">unset</span></span><span style="color: #990000">(&amp;</span>out1<span style="color: #990000">);</span>
+        <span style="font-weight: bold"><span style="color: #000000">unset</span></span><span style="color: #990000">(&amp;</span>out2<span style="color: #990000">);</span>
+    <span style="color: #FF0000">}</span>
+<span style="color: #FF0000">}</span></tt></pre></div></div>
+<div class="paragraph"><p>This component uses two general function to manipulate a HAL bit pin referenced to it.</p></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_command_line_usage">14. Command Line Usage</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>The halcompile man page gives details for invoking <code>halcompile</code>.</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ man halcompile</code></pre>
+</div></div>
+<div class="paragraph"><p>A brief summary of halcompile usage is given by:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ halcompile --help</code></pre>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated
+ 2025-12-15 07:42:37 MST
+</div>
+</div>
+</body>
+</html>

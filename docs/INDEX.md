@@ -3,6 +3,7 @@
 Everything documentation-related lives in this folder. Conventions:
 - All PDFs are texified — searchable plain-text extracts in `text/`.
 - Mesa LinuxCNC stuff is in `mesa/` (the one subfolder that's worth its own).
+- LinuxCNC software docs (HAL manual + man pages) are mirrored offline in `linuxcnc/`.
 - Everything else is flat in `docs/`.
 
 When a new manual or doc arrives in `/unsorted/`, move it here.
@@ -47,6 +48,7 @@ The structured docs that organize the cabinet's wiring. These are the main worki
 | [`wiring_to_hal_guide.md`](wiring_to_hal_guide.md) | Translation guide from the wiring docs to LinuxCNC HAL. For future Claude/human collaborators planning the migration to Mesa cards. |
 | [`fagor_8055_axes.md`](fagor_8055_axes.md) | Fagor 8055 AXES module — X8 (analog), X9 (inputs), X10 (outputs + few inputs), pin-by-pin |
 | [`fagor_8055_io.md`](fagor_8055_io.md) | Fagor 8055 separate I/O module (X1, X2) — wires connected but no OEM PLC reference |
+| [`pendant.md`](pendant.md) | Pendant (X6) — MPG handwheel (OLM 01 2DZ1 11A) + axis-select button + e-stop; cable/conductor trace and X6 pin map |
 | [`vg5_vfd.md`](vg5_vfd.md) | Saftronics VG5 VFD terminal wiring (legacy, being removed) |
 | [`mollom_g75_vfd.md`](mollom_g75_vfd.md) | Mollom G75 VFD terminal wiring (replacement, planned) |
 | [`mollom_facts.md`](mollom_facts.md) | Mollom G75 spec sheet, model decoding, single-phase derated setup, migration plan |
@@ -91,6 +93,16 @@ The structured docs that organize the cabinet's wiring. These are the main worki
 | [mesa_7i85s_manual.pdf](mesa_7i85s_manual.pdf) | [text](text/mesa_7i85s_manual.txt) | 14 pages. Mesa 7I85S step/dir daughter card (4× step/dir, 4× encoder). DB25 to 7I97T's P2 expansion port. Default W3=UP → expects +5V from host card via DB25. **Default conflict with 7I97T**: 7I97T's W22 default DOWN disables breakout 5V; either flip 7I97T W22 UP, or flip 7I85S W3 DOWN and supply external +5V on P1. |
 
 See [`mesa/`](mesa/) folder for additional notes, store pages, and shopping list.
+
+## LinuxCNC Software Docs (offline mirror)
+
+Mirror of the LinuxCNC HAL manual and the card-driver man pages, for building
+`ned`'s HAL/INI config offline. See [`linuxcnc/README.md`](linuxcnc/README.md) for the full file list.
+
+| Folder | What it covers |
+|---|---|
+| [`linuxcnc/hal/`](linuxcnc/) | The whole HAL Manual section (intro, basic-hal, tutorial, rtcomps, components, examples, …). Each page as `.md` (grep-able) + `.html` (raw). |
+| [`linuxcnc/man/`](linuxcnc/man/) | `hostmot2.9` + `hm2_eth.9` — authoritative Mesa pin/parameter names. The 7I97 ±10 V outputs are `pwmgen` instances (PWM→analog), not a dedicated analog module. |
 
 ## Manuals — Spindle / Tooling
 

@@ -1,0 +1,467 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
+<title>Parallel Port Driver</title>
+<link rel="stylesheet" href="..//asciidoc.css" type="text/css" />
+
+
+<link rel="stylesheet" href="..//linuxcnc.css" type="text/css" />
+<script type="text/javascript" src="..//asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install(2);
+/*]]>*/
+</script>
+</head>
+<body class="book">
+<div id="header">
+<h1>Parallel Port Driver</h1>
+<div id="toc">
+  <div id="toctitle">Table of Contents</div>
+  <noscript><p><b>JavaScript must be enabled in your browser to display the table of contents.</b></p></noscript>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph" id="cha:parport"><p>The hal_parport component is a driver for the traditional PC parallel port.
+The port has a total of 17 physical pins. The original parallel port divided those pins into three groups: data, control, and status.
+The data group consists of 8 output pins, the control group consists of 4 pins, and the status group consists of 5 input pins.</p></div>
+<div class="paragraph"><p>In the early 1990s, the bidirectional parallel port was introduced, which allows the data group to be used for output or input.
+The HAL driver supports the bidirectional port, and allows the user to set the data group as either input or output.
+If configured as <em>out</em>, a port provides a total of 12 outputs and 5 inputs. If configured as <em>in</em>, it provides 4 outputs and 13 inputs.</p></div>
+<div class="paragraph"><p>In some parallel ports, the control group pins are open collectors, which may also be driven low by an external gate.
+On a board with open collector control pins. If configured as <em>x</em>, it provides 8 outputs, and 9 inputs.</p></div>
+<div class="paragraph"><p>In some parallel ports, the control group has push-pull drivers and cannot be used as an input.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="title">HAL and Open Collectors</div>
+<div class="paragraph"><p>HAL cannot automatically determine if the <em>x</em> mode bidirectional pins are actually open collectors (OC).
+If they are not, they cannot be used as inputs, and attempting to drive them LOW from an external source can damage the hardware.</p></div>
+<div class="paragraph"><p>To determine whether your port has <em>open collector</em> pins, load hal_parport in <em>x</em> mode.
+With no device attached, HAL should read the pin as TRUE.
+Next, insert a 470&#8239;Ω resistor from one of the control pins to GND.
+If the resulting voltage on the control pin is close to 0&#8239;V, and HAL now reads the pin as FALSE, then you have an OC port.
+If the resulting voltage is far from 0&#8239;V, or HAL does not read the pin as FALSE, then your port cannot be used in <em>x</em> mode.</p></div>
+<div class="paragraph"><p>The external hardware that drives the control pins should also use open collector gates, e.g. 74LS05.</p></div>
+<div class="paragraph"><p>On some computers, BIOS settings may affect whether <em>x</em> mode can be used. <em>SPP</em> mode is most likely to work.</p></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>No other combinations are supported, and a port cannot be changed from input to output once the driver is installed.</p></div>
+<div class="paragraph"><p>The parport driver can control up to 8 ports (defined by MAX_PORTS in hal_parport.c).
+The ports are numbered starting at zero.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_loading">1. Loading</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>The hal_parport driver is a real time component so it must be loaded into the real time thread with <em>loadrt</em>.
+The configuration string describes the parallel ports to be used, and (optionally) their types.
+If the configuration string does not describe at least one port, it is an error.</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #0000FF">loadrt</span></span> <span style="font-weight: bold"><span style="color: #000000">hal_parport</span></span> <span style="font-weight: bold"><span style="color: #000000">cfg</span></span><span style="color: #990000">=</span>"<span style="font-weight: bold"><span style="color: #000000">port</span></span> [<span style="font-weight: bold"><span style="color: #000000">type</span></span>] [<span style="font-weight: bold"><span style="color: #000000">port</span></span> [<span style="font-weight: bold"><span style="color: #000000">type</span></span>] ...]"</tt></pre></div></div>
+<div class="paragraph"><div class="title">Specifying the Port</div><p>Numbers below 16 refer to parallel ports detected by the system.
+This is the simplest way to configure the <code>hal_parport</code> driver and cooperates with the Linux parport_pc driver if it is loaded.
+A port of 0 is the first parallel port detected on the system, 1 is the next and so on.</p></div>
+<div class="paragraph"><div class="title">Basic configuration</div><p>This will use the first parallel port Linux detects:</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #0000FF">loadrt</span></span> <span style="font-weight: bold"><span style="color: #000000">hal_parport</span></span> <span style="font-weight: bold"><span style="color: #000000">cfg</span></span><span style="color: #990000">=</span>"<span style="color: #993399">0</span>"</tt></pre></div></div>
+<div class="paragraph"><div class="title">Using the Port Address</div><p>Instead, the port address may be specified using the hex notation with the <em>0x</em> prefix.</p></div>
+<div class="paragraph"><p>The config string represents the hexadecimal address of the port, optionally followed by a direction, all repeated for each port.
+The directions are <em>in</em>, <em>out</em>, or <em>x</em>, and determine the direction of the physical pins 2 to 9 of the D-Sub 25 connector.
+If the direction is not specified, the data group will by default be configured as outputs. For example:</p></div>
+<div class="listingblock">
+<div class="title">Command to load the real-time module <em>hal_partport</em> with the additional <em>&lt;config-string&gt;</em> to specify the port at which the parallel-port card is expected.</div>
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #0000FF">loadrt</span></span> <span style="font-weight: bold"><span style="color: #000000">hal_parport</span></span> <span style="font-weight: bold"><span style="color: #000000">cfg</span></span><span style="color: #990000">=</span>"<span style="color: #993399">0x278</span> <span style="color: #993399">0x378</span> <span style="font-weight: bold"><span style="color: #000000">in</span></span> <span style="color: #993399">0x20A0</span> <span style="font-weight: bold"><span style="color: #000000">out</span></span>"</tt></pre></div></div>
+<div class="paragraph"><p>This example installs the drivers for a port 0x0278, with pins 2 to 9 as outputs (by default, since neither <em>in</em> nor <em>out</em> is specified),
+a port 0x0378, with pins 2 to 9 as inputs and a 0x20A0 port, with pins 2 to 9 explicitly specified as outputs.
+Note that you must know the base address of the parallel ports to configure the drivers correctly.
+For ISA bus ports, this is usually not a problem,  since the ports are almost always at a well-known address, such as 0x278 or 0x378 which are typically configured in the BIOS.
+The addresses of PCI bus cards are usually found with <code>lspci -v</code> in an <em>I/O ports</em> line, or in a kernel message after running <code>sudo modprobe -a parport_pc</code>.
+There is no default address, so if <code>&lt;config-string&gt;</code> does not contain at least one address, it is an error.</p></div>
+<div class="imageblock" id="fig:parport-block-diag">
+<div class="content">
+<figure>
+<img src="images/parport-block-diag.png" alt="Parport block diagram"/>
+<figcaption class="title"> Figure 1. Parport block diagram</figcaption>
+</figure>
+</div>
+</div>
+<div class="paragraph"><div class="title">Type</div><p>For each parallel port handled by the hal_parport driver, a <em>type</em> can optionally be specified.
+The type is one of <em>in</em>, <em>out</em>, <em>epp</em>, or <em>x</em>.</p></div>
+<div class="tableblock">
+<table rules="all" class="tableblock"
+width="50%"
+frame="border"
+cellspacing="0" cellpadding="4">
+<caption class="title">Table 1. Parallel Port Direction</caption>
+<col width="14%" />
+<col width="28%" />
+<col width="28%" />
+<col width="28%" />
+<thead>
+<tr>
+<th align="right" valign="top">Pin </th>
+<th align="center" valign="top">in  </th>
+<th align="center" valign="top">out/epp </th>
+<th align="center" valign="top">x</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="right" valign="top"><p class="table">1</p></td>
+<td align="center" valign="top"><p class="table">out</p></td>
+<td align="center" valign="top"><p class="table">out</p></td>
+<td align="center" valign="top"><p class="table">in</p></td>
+</tr>
+<tr>
+<td align="right" valign="top"><p class="table">2</p></td>
+<td align="center" valign="top"><p class="table">in</p></td>
+<td align="center" valign="top"><p class="table">out</p></td>
+<td align="center" valign="top"><p class="table">out</p></td>
+</tr>
+<tr>
+<td align="right" valign="top"><p class="table">3</p></td>
+<td align="center" valign="top"><p class="table">in</p></td>
+<td align="center" valign="top"><p class="table">out</p></td>
+<td align="center" valign="top"><p class="table">out</p></td>
+</tr>
+<tr>
+<td align="right" valign="top"><p class="table">4</p></td>
+<td align="center" valign="top"><p class="table">in</p></td>
+<td align="center" valign="top"><p class="table">out</p></td>
+<td align="center" valign="top"><p class="table">out</p></td>
+</tr>
+<tr>
+<td align="right" valign="top"><p class="table">5</p></td>
+<td align="center" valign="top"><p class="table">in</p></td>
+<td align="center" valign="top"><p class="table">out</p></td>
+<td align="center" valign="top"><p class="table">out</p></td>
+</tr>
+<tr>
+<td align="right" valign="top"><p class="table">6</p></td>
+<td align="center" valign="top"><p class="table">in</p></td>
+<td align="center" valign="top"><p class="table">out</p></td>
+<td align="center" valign="top"><p class="table">out</p></td>
+</tr>
+<tr>
+<td align="right" valign="top"><p class="table">7</p></td>
+<td align="center" valign="top"><p class="table">in</p></td>
+<td align="center" valign="top"><p class="table">out</p></td>
+<td align="center" valign="top"><p class="table">out</p></td>
+</tr>
+<tr>
+<td align="right" valign="top"><p class="table">8</p></td>
+<td align="center" valign="top"><p class="table">in</p></td>
+<td align="center" valign="top"><p class="table">out</p></td>
+<td align="center" valign="top"><p class="table">out</p></td>
+</tr>
+<tr>
+<td align="right" valign="top"><p class="table">9</p></td>
+<td align="center" valign="top"><p class="table">in</p></td>
+<td align="center" valign="top"><p class="table">out</p></td>
+<td align="center" valign="top"><p class="table">out</p></td>
+</tr>
+<tr>
+<td align="right" valign="top"><p class="table">10</p></td>
+<td align="center" valign="top"><p class="table">in</p></td>
+<td align="center" valign="top"><p class="table">in</p></td>
+<td align="center" valign="top"><p class="table">in</p></td>
+</tr>
+<tr>
+<td align="right" valign="top"><p class="table">11</p></td>
+<td align="center" valign="top"><p class="table">in</p></td>
+<td align="center" valign="top"><p class="table">in</p></td>
+<td align="center" valign="top"><p class="table">in</p></td>
+</tr>
+<tr>
+<td align="right" valign="top"><p class="table">12</p></td>
+<td align="center" valign="top"><p class="table">in</p></td>
+<td align="center" valign="top"><p class="table">in</p></td>
+<td align="center" valign="top"><p class="table">in</p></td>
+</tr>
+<tr>
+<td align="right" valign="top"><p class="table">13</p></td>
+<td align="center" valign="top"><p class="table">in</p></td>
+<td align="center" valign="top"><p class="table">in</p></td>
+<td align="center" valign="top"><p class="table">in</p></td>
+</tr>
+<tr>
+<td align="right" valign="top"><p class="table">14</p></td>
+<td align="center" valign="top"><p class="table">out</p></td>
+<td align="center" valign="top"><p class="table">out</p></td>
+<td align="center" valign="top"><p class="table">in</p></td>
+</tr>
+<tr>
+<td align="right" valign="top"><p class="table">15</p></td>
+<td align="center" valign="top"><p class="table">in</p></td>
+<td align="center" valign="top"><p class="table">in</p></td>
+<td align="center" valign="top"><p class="table">in</p></td>
+</tr>
+<tr>
+<td align="right" valign="top"><p class="table">16</p></td>
+<td align="center" valign="top"><p class="table">out</p></td>
+<td align="center" valign="top"><p class="table">out</p></td>
+<td align="center" valign="top"><p class="table">in</p></td>
+</tr>
+<tr>
+<td align="right" valign="top"><p class="table">17</p></td>
+<td align="center" valign="top"><p class="table">out</p></td>
+<td align="center" valign="top"><p class="table">out</p></td>
+<td align="center" valign="top"><p class="table">in</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="paragraph"><p>If the type is not specified, the default is <em>out</em>.</p></div>
+<div class="paragraph"><p>A type of <em>epp</em> is the same as <em>out</em>, but the hal_parport driver requests that the port switch into EPP mode.
+The hal_parport driver does <strong>not</strong> use the EPP bus protocol,
+but on some systems EPP mode changes the electrical characteristics of the port in a way that may make some marginal hardware work better.
+The Gecko G540&#8217;s charge pump is known to require this on some parallel ports.</p></div>
+<div class="paragraph"><p>See the Note above about mode <em>x</em>.</p></div>
+<div class="paragraph"><div class="title">Example with two parallel ports</div><p>This will enable two system-detected parallel ports, the first in output mode and the second in input mode:</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #0000FF">loadrt</span></span> <span style="font-weight: bold"><span style="color: #000000">hal_parport</span></span> <span style="font-weight: bold"><span style="color: #000000">cfg</span></span><span style="color: #990000">=</span>"<span style="color: #993399">0</span> <span style="font-weight: bold"><span style="color: #000000">out</span></span> <span style="color: #993399">1</span> <span style="font-weight: bold"><span style="color: #000000">in</span></span>"</tt></pre></div></div>
+<div class="paragraph"><div class="title">Parport R/W Functions</div><p>You must also direct LinuxCNC to run the <em>read</em> and <em>write</em> functions.</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #0000FF">addf</span></span> <span style="color: #009900">parport.0.read</span> <span style="font-weight: bold"><span style="color: #000000">base-thread</span></span>
+<span style="font-weight: bold"><span style="color: #0000FF">addf</span></span> <span style="color: #009900">parport.0.write</span> <span style="font-weight: bold"><span style="color: #000000">base-thread</span></span></tt></pre></div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pci_port_address">2. PCI Port Address</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>One good PCI parport card is made with the Netmos 9815 chipset.
+It has good +5&#8239;V signals, and can come in a single or dual ports.</p></div>
+<div class="paragraph"><p>To find the I/O addresses for PCI cards open a terminal window and use the list pci command:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>lspci -v</code></pre>
+</div></div>
+<div class="paragraph"><p>Look for the entry with "Netmos" in it. Example of a 2-port card:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>0000:01:0a.0 Communication controller: \
+      Netmos Technology PCI 9815 Multi-I/O Controller (rev 01)
+Subsystem: LSI Logic / Symbios Logic 2POS (2 port parallel adapter)
+Flags: medium devsel, IRQ 5
+I/O ports at b800 [size=8]
+I/O ports at bc00 [size=8]
+I/O ports at c000 [size=8]
+I/O ports at c400 [size=8]
+I/O ports at c800 [size=8]
+I/O ports at cc00 [size=16]</code></pre>
+</div></div>
+<div class="paragraph"><p>From experimentation, I&#8217;ve found the first port (the on-card port) uses the third address listed (c000),
+and the second port (the one that attaches with a ribbon cable) uses the first address listed (b800).
+The following example shows the onboard parallel port and a PCI parallel port using the default out direction.</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #0000FF">loadrt</span></span> <span style="font-weight: bold"><span style="color: #000000">hal_parport</span></span> <span style="font-weight: bold"><span style="color: #000000">cfg</span></span><span style="color: #990000">=</span>"<span style="color: #993399">0x378</span> <span style="color: #993399">0xc000</span>"</tt></pre></div></div>
+<div class="paragraph"><p>Please note that your values will differ.
+The Netmos cards are Plug-N-Play, and might change their settings depending on which slot you put them into,
+so if you like to <em>get under the hood</em> and re-arrange things, be sure to check these values before you start LinuxCNC.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">3. Pins</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<code>parport.&lt;p&gt;.pin-`__&lt;n&gt;__</code>-out` (bit) Drives a physical output pin.
+</p>
+</li>
+<li>
+<p>
+<code>parport.&lt;p&gt;.pin-`__&lt;n&gt;__</code>-in` (bit) Tracks a physical input pin.
+</p>
+</li>
+<li>
+<p>
+<code>parport.&lt;p&gt;.pin-`__&lt;n&gt;__</code>-in-not` (bit) Tracks a physical input pin, but inverted.
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>For each pin, <em>&lt;p&gt;</em> is the port number, and <em>&lt;n&gt;</em> is the physical pin number in the 25 pin D-shell connector.</p></div>
+<div class="paragraph"><p>For each physical output pin, the driver creates a single HAL pin, for example: <code>parport.0.pin-14-out</code>.</p></div>
+<div class="paragraph"><p>For each physical input pin, the driver creates two HAL pins, for example: <code>parport.0.pin-12-in</code> and <code>parport.0.pin-12-in-not</code>.</p></div>
+<div class="paragraph"><p>The <code>-in</code> HAL pin is TRUE if the physical pin is high, and FALSE if the physical pin is low.
+The <code>-in-not</code> HAL pin is inverted and is FALSE if the physical pin is high.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parameters">4. Parameters</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<code>parport.`__&lt;p&gt;__</code>.pin-<code>__&lt;n&gt;__</code>-out-invert` (bit) Inverts an output pin.
+</p>
+</li>
+<li>
+<p>
+<code>parport.`__&lt;p&gt;__</code>.pin-<code>__&lt;n&gt;__</code>-out-reset` (bit) (only for <code>-out</code> pins) TRUE if this pin should be reset when the <code>-reset</code> function is executed.
+</p>
+</li>
+<li>
+<p>
+<code>parport.`__&lt;p&gt;__</code>.reset-time` (U32) The time (in nanoseconds) between a pin is set by <code>-write</code> and reset by the <code>-reset</code> function if it is enabled.
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>The <code>-invert</code>  parameter determines whether an output pin is active high or active low.
+If <code>-invert</code> is FALSE, setting the HAL <code>-out</code> pin TRUE drives the physical pin high, and FALSE drives it low.
+If <code>-invert</code> is TRUE, then setting the HAL <code>-out</code> pin TRUE will drive the physical pin low.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sub:parport-functions">5. Functions</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<code>parport.`__&lt;p&gt;__</code>.read` (funct) Reads physical input pins of port number <em>&lt;p&gt;</em> and updates HAL <code>-in</code> and <code>-in-not</code> pins.
+</p>
+</li>
+<li>
+<p>
+<code>parport.read-all</code> (funct) Reads physical input pins of all ports and updates HAL <code>-in</code> and <code>-in-not</code> pins.
+</p>
+</li>
+<li>
+<p>
+<code>parport.`__&lt;p&gt;__</code>.write` (funct) Reads HAL <code>-out</code> pins of port number <em>&lt;p&gt;</em> and updates that port&#8217;s physical output pins.
+</p>
+</li>
+<li>
+<p>
+<code>parport.write-all</code> (funct) Reads HAL <code>-out</code> pins of all ports and updates all physical output pins.
+</p>
+</li>
+<li>
+<p>
+<code>parport.`__&lt;p&gt;__</code>.reset` (funct) Waits until <code>reset-time</code> has elapsed since the associated <code>write</code>, then resets pins to values indicated by <code>-out-invert</code> and <code>-out-invert</code> settings.
+  <code>reset</code> must be later in the same thread as <code>write</code>.
+  If <code>-reset</code> is TRUE, then the <code>reset</code> function will set the pin to the value of <code>-out-invert</code>.
+  This can be used in conjunction with stepgen&#8217;s <em>doublefreq</em> to produce one step per period.
+  The <a href="rtcomps.html#sec:stepgen">stepgen stepspace</a> for that pin must be set to 0 to enable doublefreq.
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>The individual functions are provided for situations where one port needs to be updated in a very fast thread, but other ports can be updated in a slower thread to save CPU time.
+It is probably not a good idea to use both an <code>-all</code> function and an individual function at the same time.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_common_problems">6. Common problems</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>If loading the module reports</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>insmod: error inserting '/home/jepler/emc2/rtlib/hal_parport.ko':
+-1 Device or resource busy</code></pre>
+</div></div>
+<div class="paragraph"><p>then ensure that the standard kernel module <em>parport_pc</em>  is not loaded <span class="footnote"><br />[In the LinuxCNC packages for Ubuntu,
+the file /etc/modprobe.d/emc2 generally prevents <em>parport_pc</em> from being automatically loaded.]<br /></span> and that no other device in the system has claimed the I/O ports.</p></div>
+<div class="paragraph"><p>If the module loads but does not appear to function, then the port address is incorrect.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_using_doublestep">7. Using DoubleStep</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>To setup DoubleStep on the parallel port you must add the function parport.n.reset after parport.n.write and configure stepspace to 0 and the reset time wanted.
+So that step can be asserted on every period in HAL and then toggled off by parport after being asserted for time specified by <code>parport.`__n__</code>.reset-time`.</p></div>
+<div class="paragraph"><p>For example:</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #0000FF">loadrt</span></span> <span style="font-weight: bold"><span style="color: #000000">hal_parport</span></span> <span style="font-weight: bold"><span style="color: #000000">cfg</span></span><span style="color: #990000">=</span>"<span style="color: #993399">0x378</span> <span style="font-weight: bold"><span style="color: #000000">out</span></span>"
+<span style="font-weight: bold"><span style="color: #0000FF">setp</span></span> <span style="color: #009900">parport.0.reset-time</span> <span style="color: #993399">5000</span>
+<span style="font-weight: bold"><span style="color: #0000FF">loadrt</span></span> <span style="font-weight: bold"><span style="color: #000000">stepgen</span></span> <span style="font-weight: bold"><span style="color: #000000">step_type</span></span><span style="color: #990000">=</span><span style="color: #993399">0</span>,<span style="color: #993399">0</span>,<span style="color: #993399">0</span>
+<span style="font-weight: bold"><span style="color: #0000FF">addf</span></span> <span style="color: #009900">parport.0.read</span> <span style="font-weight: bold"><span style="color: #000000">base-thread</span></span>
+<span style="font-weight: bold"><span style="color: #0000FF">addf</span></span> <span style="color: #009900">stepgen.make-pulses</span> <span style="font-weight: bold"><span style="color: #000000">base-thread</span></span>
+<span style="font-weight: bold"><span style="color: #0000FF">addf</span></span> <span style="color: #009900">parport.0.write</span> <span style="font-weight: bold"><span style="color: #000000">base-thread</span></span>
+<span style="font-weight: bold"><span style="color: #0000FF">addf</span></span> <span style="color: #009900">parport.0.reset</span> <span style="font-weight: bold"><span style="color: #000000">base-thread</span></span>
+<span style="font-weight: bold"><span style="color: #0000FF">addf</span></span> <span style="color: #009900">stepgen.capture-position</span> <span style="font-weight: bold"><span style="color: #000000">servo-thread</span></span>
+...
+<span style="font-weight: bold"><span style="color: #0000FF">setp</span></span> <span style="color: #009900">stepgen.0.steplen</span> <span style="color: #993399">1</span>
+<span style="font-weight: bold"><span style="color: #0000FF">setp</span></span> <span style="color: #009900">stepgen.0.stepspace</span> <span style="color: #993399">0</span></tt></pre></div></div>
+<div class="paragraph"><p>More information on DoubleStep can be found on the
+<a href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl?TweakingSoftwareStepGeneration">wiki</a>.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:probe_parport">8. probe_parport</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>In today&#8217;s PCs, parallel ports may require a plug and play (PNP) configuration before they can be used.
+The kernel module <em>probe_parport</em> configures all PNP ports present.
+It must be loaded before <em>hal_parport</em>. On machines without a PNP port, it can be loaded but will have no effect.</p></div>
+<div class="sect2">
+<h3 id="_installing_probe_parport">8.1. Installing probe_parport</h3>
+<div class="paragraph"><p>If, when <code>parport_pc</code> kernel module is loaded with command:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>sudo modprobe -a parport_pc; sudo rmmod parport_pc</code></pre>
+</div></div>
+<div class="paragraph"><p>Linux kernel outputs a message similar to:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>parport: PnPBIOS parport detected.</code></pre>
+</div></div>
+<div class="paragraph"><p>Then use of this module will probably be necessary.</p></div>
+<div class="paragraph"><p>Finally, HAL parport components should be loaded:</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.9
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #0000FF">loadrt</span></span> <span style="font-weight: bold"><span style="color: #000000">probe_parport</span></span>
+<span style="font-weight: bold"><span style="color: #0000FF">loadrt</span></span> <span style="font-weight: bold"><span style="color: #000000">hal_parport</span></span> ...</tt></pre></div></div>
+</div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated
+ 2024-09-20 13:42:29 MDT
+</div>
+</div>
+</body>
+</html>

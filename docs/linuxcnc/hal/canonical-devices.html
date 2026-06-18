@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
+<title>Canonical Device Interfaces</title>
+<link rel="stylesheet" href="..//asciidoc.css" type="text/css" />
+
+
+<link rel="stylesheet" href="..//linuxcnc.css" type="text/css" />
+<script type="text/javascript" src="..//asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install(2);
+/*]]>*/
+</script>
+</head>
+<body class="book">
+<div id="header">
+<h1>Canonical Device Interfaces</h1>
+<div id="toc">
+  <div id="toctitle">Table of Contents</div>
+  <noscript><p><b>JavaScript must be enabled in your browser to display the table of contents.</b></p></noscript>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="cha:hal-canonical-device-interfaces">1. Introduction</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>The following sections show the pins, parameters, and functions that are supplied by "canonical devices".
+All HAL device drivers should supply the same pins and parameters, and implement the same behavior.</p></div>
+<div class="paragraph"><p>Note that only the <code>_&lt;io-type&gt;_</code> and <code>_&lt;specific-name&gt;_</code> fields are defined for a canonical device.
+The <code>_&lt;device-name&gt;</code>, <code>_&lt;device-num&gt;_</code>, and <code>_&lt;chan-num&gt;_</code> fields are set based on the characteristics of the real device.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:hal-cdi:digital-in">2. Digital Input</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>The canonical digital input (I/O type field: <code>digin</code>) is quite simple.</p></div>
+<div class="sect2">
+<h3 id="sub:hal-cdi:di:pins">2.1. Pins</h3>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+(bit) <strong>in</strong>
+</dt>
+<dd>
+<p>
+State of the hardware input.
+</p>
+</dd>
+<dt class="hdlist1">
+(bit) <strong>in-not</strong>
+</dt>
+<dd>
+<p>
+Inverted state of the input.
+</p>
+</dd>
+</dl></div>
+</div>
+<div class="sect2">
+<h3 id="sub:hal-cdi:di:parameters">2.2. Parameters</h3>
+<div class="paragraph"><p>None</p></div>
+</div>
+<div class="sect2">
+<h3 id="sub:hal-cdi:di:functions">2.3. Functions</h3>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+(funct) <strong>read</strong>
+</dt>
+<dd>
+<p>
+Read hardware and set <code>in</code> and <code>in-not</code> HAL pins.
+</p>
+</dd>
+</dl></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:hal-cdi:digital-out">3. Digital Output</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>The canonical digital output (I/O type field: <code>digout</code>) is also very simple.</p></div>
+<div class="sect2">
+<h3 id="sub:hal-cdi:do:pins">3.1. Pins</h3>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+(bit) <strong>out</strong>
+</dt>
+<dd>
+<p>
+Value to be written (possibly inverted) to the hardware output.
+</p>
+</dd>
+</dl></div>
+</div>
+<div class="sect2">
+<h3 id="sub:hal-cdi:do:parameters">3.2. Parameters</h3>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+(bit) <strong>invert</strong>
+</dt>
+<dd>
+<p>
+If TRUE, <strong>out</strong> is inverted before writing to the hardware.
+</p>
+</dd>
+</dl></div>
+</div>
+<div class="sect2">
+<h3 id="sub:hal-cdi:do:functions">3.3. Functions</h3>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+(funct) <strong>write</strong>
+</dt>
+<dd>
+<p>
+Read <strong>out</strong> and <strong>invert</strong>, and set hardware output accordingly.
+</p>
+</dd>
+</dl></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:hal-cdi:analog-in">4. Analog Input</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>The canonical analog input (I/O type: <code>adcin</code>).
+This is expected to be used for analog to digital converters, which convert e.g. voltage to a continuous range of values.</p></div>
+<div class="sect2">
+<h3 id="sub:hal-cdi:ai:pins">4.1. Pins</h3>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+(float) <strong>value</strong>
+</dt>
+<dd>
+<p>
+The hardware reading, scaled according to the <strong>scale</strong> and <strong>offset</strong> parameters.<br />
+  <strong>value</strong> = ((input reading, in hardware-dependent units) * <strong>scale</strong>) - <strong>offset</strong>
+</p>
+</dd>
+</dl></div>
+</div>
+<div class="sect2">
+<h3 id="sub:hal-cdi:ai:parameters">4.2. Parameters</h3>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+(float) <strong>scale</strong>
+</dt>
+<dd>
+<p>
+The input voltage (or current) will be multiplied by <strong>scale</strong> before being output to <strong>value</strong>.
+</p>
+</dd>
+<dt class="hdlist1">
+(float) <strong>offset</strong>
+</dt>
+<dd>
+<p>
+This will be subtracted from the hardware input voltage (or current) after the scale multiplier has been applied.
+</p>
+</dd>
+<dt class="hdlist1">
+(float) <strong>bit_weight</strong>
+</dt>
+<dd>
+<p>
+The value of one least significant bit (LSB). This is effectively the granularity of the input reading.
+</p>
+</dd>
+<dt class="hdlist1">
+(float) <strong>hw_offset</strong>
+</dt>
+<dd>
+<p>
+The value present on the input when 0 Volts is applied to the input pin(s).
+</p>
+</dd>
+</dl></div>
+</div>
+<div class="sect2">
+<h3 id="sub:hal-cdi:ai:functions">4.3. Functions</h3>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+(funct) <strong>read</strong>
+</dt>
+<dd>
+<p>
+Read the values of this analog input channel.  This may be used for individual channel reads, or it may cause all channels to be read.
+</p>
+</dd>
+</dl></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:hal-cdi:analog-out">5. Analog Output</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>The canonical analog output (I/O Type: <strong>adcout</strong>).
+This is intended for any kind of hardware that can output a more-or-less continuous range of values.
+Examples are digital to analog converters or PWM generators.</p></div>
+<div class="sect2">
+<h3 id="sub:hal-cdi:ao:pins">5.1. Pins</h3>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+(float) <strong>value</strong>
+</dt>
+<dd>
+<p>
+The value to be written. The actual value output to the hardware will depend on the scale and offset parameters.
+</p>
+</dd>
+<dt class="hdlist1">
+(bit) <strong>enable</strong>
+</dt>
+<dd>
+<p>
+If false, then output 0 to the hardware, regardless of the <strong>value</strong> pin.
+</p>
+</dd>
+</dl></div>
+</div>
+<div class="sect2">
+<h3 id="sub:hal-cdi:ao:parameters">5.2. Parameters</h3>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+(float) <strong>offset</strong>
+</dt>
+<dd>
+<p>
+This will be added to the <strong>value</strong> before the hardware is updated.
+</p>
+</dd>
+<dt class="hdlist1">
+(float) <strong>scale</strong>
+</dt>
+<dd>
+<p>
+This should be set so that an input of 1 on the <strong>value</strong> pin will cause the analog output pin to read 1 volt.
+</p>
+</dd>
+<dt class="hdlist1">
+(float) <strong>high_limit</strong> (optional)
+</dt>
+<dd>
+<p>
+When calculating the value to output to the hardware,
+  if <strong>value</strong> + <strong>offset</strong> is greater than <strong>high_limit</strong>, then <strong>high_limit</strong> will be used instead.
+</p>
+</dd>
+<dt class="hdlist1">
+(float) <strong>low_limit</strong> (optional)
+</dt>
+<dd>
+<p>
+When calculating the value to output to the hardware,
+  if <strong>value</strong> + <strong>offset</strong> is less than <strong>low_limit</strong>, then <strong>low_limit</strong> will be used instead.
+</p>
+</dd>
+<dt class="hdlist1">
+(float) <strong>bit_weight</strong> (optional)
+</dt>
+<dd>
+<p>
+The value of one least significant bit (LSB), in volts (or mA, for current outputs).
+</p>
+</dd>
+<dt class="hdlist1">
+(float) <strong>hw_offset</strong>  (optional)
+</dt>
+<dd>
+<p>
+The actual voltage (or current) that will be output if 0 is written to the hardware.
+</p>
+</dd>
+</dl></div>
+</div>
+<div class="sect2">
+<h3 id="sub:hal-cdi:ao:functions">5.3. Functions</h3>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+(funct) <strong>write</strong>
+</dt>
+<dd>
+<p>
+  This causes the calculated value to be output to the hardware.
+  If enable is false, then the output will be 0, regardless of <strong>value</strong>, <strong>scale</strong>, and <strong>offset</strong>.
+  The meaning of "0" is dependent on the hardware.
+  For example, a bipolar 12-bit A/D may need to write 0x1FF (mid scale) to the D/A get 0 volts from the hardware pin.
+  If enable is true, read scale, offset and value and output to the adc (<strong>scale</strong> * <strong>value</strong>) + <strong>offset</strong>.
+  If enable is false, then output 0.
+</p>
+</dd>
+</dl></div>
+</div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated
+ 2025-12-15 07:42:37 MST
+</div>
+</div>
+</body>
+</html>
