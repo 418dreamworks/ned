@@ -1,0 +1,1634 @@
+===== PAGE 433 =====
+
+                                                                                          16.2      Freezing the angular transformation
+
+                                                                                                 Freezing the angular transformation is a special way to make movements along the angular axis,
+                                                                                                 but programming it in the Cartesian system. The angular transformation cannot be "frozen"
+                                                                                                 (suspended) while jogging.
+
+                                                                                                 The angular transformation is "frozen" (suspended) using function G46 whose programming format
+                                                                                                 is:
+                                                                                                    G46 S2
+
+
+ 16.                                                                                             Programming movements after "freezing" the angular transformation.
+                                                                                                 If an angular transformation is "frozen" (suspended), only the coordinate of the angular axis must
+
+
+
+
+        ANGULAR TRANSFORMATION OF AN INCLINE AXIS
+                                                    Freezing the angular transformation
+                                                                                                 be programmed in the motion block. If the coordinate of the orthogonal axis is programmed, the
+                                                                                                 movement is carried out according to the normal angular transformation.
+
+                                                                                                 Canceling the freezing of a transformation.
+                                                                                                 The "freezing" of an angular transformation is canceled after a reset or an M30. Turning the
+                                                                                                 transformation on (G46 S1) also cancels the "freezing".
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·434·
+===== PAGE 434 =====
+
+
+                                             APPENDIX
+
+
+    A. ISO code programming............................................................................ 437
+    B. Program control instructions.................................................................... 439
+    C. Summary of internal CNC variables........................................................ 443
+    D. Key code .................................................................................................. 451
+    E. Programming assistance screens of the system. ...................................... 461
+    F. Maintenance............................................................................................. 465
+
+
+
+
+                                                                                                                         CNC 8055
+                                                                                                                         CNC 8055i
+
+
+
+                                                                                                                          SOFT: V01.6X
+
+
+
+
+                                                                                                                             ·435·
+===== PAGE 435 =====
+
+
+
+                                        ISO CODE PROGRAMMING
+
+
+
+  Function       M    D     V                                     Meaning                       Section
+     G00         *    ?     *     Rapid traverse                                                  6.1
+     G01         *    ?     *     Linear interpolation                                            6.2
+     G02         *          *     Clockwise circular (helical) interpolation                    6.3 / 6.7
+     G03
+     G04
+                 *          *     Counterclockwise circular (helical) interpolation
+                                  Dwell/interruption of block preparation
+                                                                                                6.3 / 6.7
+                                                                                                7.1 / 7.2
+                                                                                                                A.
+
+                                                                                                                 ISO code programming
+     G05         *    ?     *     Round corner                                                   7.3.2
+     G06                    *     Circle center in absolute coordinates                           6.4
+     G07         *    ?           Square corner                                                  7.3.1
+     G08                    *     Arc tangent to previous path.                                   6.5
+     G09                    *     Arc defined by three points                                     6.6
+     G10         *     *          Mirror image cancellation                                       7.5
+     G11         *          *     Mirror image on X axis                                          7.5
+     G12         *          *     Mirror image on Y axis                                          7.5
+     G13         *          *     Mirror image on Z axis                                          7.5
+     G14         *          *     Mirror image in the programmed directions                       7.5
+     G15         *          *     Longitudinal axis selection                                     8.2
+     G16         *          *     Main plane selection by two addresses and longitudinal axis     3.2
+     G17         *    ?     *     Main plane X-Y and longitudinal Z                               3.2
+     G18         *    ?     *     Main plane Z-X and longitudinal Y                               3.2
+     G19         *          *     Main plane Y-Z and longitudinal X                               3.2
+     G20                          Definition of lower work zone limits                           3.7.1
+     G21                          Definition of upper work zone limits.                          3.7.1
+     G22                    *     Enable/disable work zones.                                     3.7.2
+     G28         *          *     Second spindle selection                                        5.4
+     G29         *     *          Main spindle selection                                          5.4
+  G28-G29                   *     Axis toggle                                                     7.5
+     G30         *          *     Spindle synchronization (offset)                                5.5
+     G32         *          *     Feedrate "F" as an inverted function of time.                   6.15
+     G33         *          *     Electronic threading                                            6.12
+     G34                          Variable-pitch threading                                        6.13
+     G36                    *     Controlled corner rounding                                      6.10
+     G37                    *     Tangential entry                                                6.8
+     G38                    *     Tangential exit                                                 6.9
+     G39                    *     Chamfer                                                         6.11
+     G40         *     *          Cancellation of tool radius compensation                        8.1
+     G41         *          *     Left-hand tool radius compensation                              8.1
+    G41 N        *          *     Collision detection                                             8.3
+     G42         *          *     Right-hand tool radius compensation                             8.1
+    G42 N        *          *     Collision detection                                             8.3
+     G43         *    ?     *     Tool length compensation                                        8.2
+     G44         *    ?           Cancellation of tool length compensation                        8.2
+     G45         *          *     Tangential control (G45)                                        6.16
+     G47                    *     Tool movement according to the tool coordinate system.          15.2
+     G48         *          *     TCP transformation                                              15.3
+     G49         *          *     Inclined plane definition                                       15.1
+     G50         *          *     Controlled corner rounding                                     7.3.3      CNC 8055
+     G51         *          *     Look-Ahead                                                      7.4
+     G52                    *     Movement until making contact                                   6.14
+                                                                                                            CNC 8055i
+     G53                    *     Programming with respect to machine zero                        4.3
+     G54         *          *     Absolute zero offset 1                                         4.4.2
+     G55         *          *     Absolute zero offset 2                                         4.4.2
+                                                                                                            ·M· & ·EN· MODELS
+     G56         *          *     Absolute zero offset 3                                         4.4.2
+                                                                                                              SOFT: V01.6X
+     G57         *          *     Absolute zero offset 4                                         4.4.2
+     G58         *          *     Additive zero offset 1                                         4.4.2
+     G59         *          *     Additive zero offset 2                                         4.4.2
+     G60                    *     Multiple machining in a straight line                           10.1
+
+
+                                                                                                                 ·437·
+===== PAGE 436 =====
+
+
+                                    Function   M   D   V                                   Meaning                                Section
+                                      G61              *   Multiple machining in a rectangular pattern                              10.2
+                                      G62              *   Grid pattern canned cycle                                                10.3
+                                      G63              *   Multiple machining in a circular pattern                                 10.4
+                                      G64              *   Multiple machining in an arc                                             10.5
+                                      G65              *   Machining programmed with an arc-chord                                   10.6
+                                      G66              *   Irregular pocket canned cycle                                         11.1 / 11.2
+                                      G67              *   Irregular pocket roughing                                               11.1.2
+                                      G68              *   Irregular pocket finishing                                              11.1.3
+
+ A.                                   G69
+                                      G70
+                                               *
+                                               *   ?
+                                                       *
+                                                       *
+                                                           Drilling canned cycle with variable peck
+                                                           Programming in inches
+                                                                                                                                    9.6
+                                                                                                                                    3.3
+
+
+
+
+             ISO code programming
+                                      G71      *   ?       Programming in millimeters                                               3.3
+                                      G72      *       *   General and specific scaling factor                                      7.6
+                                      G73      *       *   Pattern rotation                                                         7.7
+                                      G74              *   Home search                                                              4.2
+                                      G75              *   Probing move until touching                                              12.1
+                                      G76              *   Probing move while touching                                              12.1
+                                      G77      *       *   Axis coupling (slaving)                                                 7.8.1
+                                     G77S      *       *   Spindle synchronization                                                  5.5
+                                      G78      *   *       Cancellation of axis coupling (slaving)                                 7.8.2
+                                     G78S      *   *       Cancellation of spindle synchronization                                  5.5
+                                      G79                  Canned cycle parameter modification                                     9.2.1
+                                      G80      *   *       Canned cycle cancellation                                                9.3
+                                      G81      *       *   Drilling canned cycle                                                    9.7
+                                      G82      *       *   Drilling canned cycle with dwell                                         9.8
+                                      G83      *       *   Deep-hole drilling canned cycle with constant peck                       9.9
+                                      G84      *       *   Tapping canned cycle                                                     9.10
+                                      G85      *       *   Reaming canned cycle                                                     9.11
+                                      G86      *       *   Boring canned cycle with withdrawal in G00                               9.12
+                                      G87      *       *   Rectangular pocket canned cycle.                                         9.13
+                                      G88      *       *   Circular pocket canned cycle                                             9.14
+                                      G89      *       *   Boring canned cycle with withdrawal in G01                               9.15
+                                      G90      *   ?       Absolute programming:                                                    3.4
+                                      G91      *   ?   *   Incremental programming                                                  3.4
+                                      G92                  Coordinate preset / spindle speed limit                                 4.4.1
+                                      G93                  Polar origin preset                                                      4.5
+                                      G94      *   ?       Feedrate in millimeters (inches) per minute                             5.2.1
+                                      G95      *   ?   *   Feedrate in millimeters (inches) per revolution.                        5.2.2
+                                      G96      *       *   Constant cutting point speed                                            5.2.3
+                                      G97      *   *       Constant tool center speed                                              5.2.4
+                                      G98      *   *       Withdrawal to the starting plane at the end of the canned cycle          9.5
+                                      G99      *       *   Withdrawal to the reference plane at the end of the canned cycle         9.5
+                                     G145      *       *   Temporary cancellation of tangential control                             6.17
+
+                                        M means modal, i.e. the G function, once programmed, remains active until another incompatible
+                                        G function is programmed or until an M02, M30, EMERGENCY or RESET is executed or the CNC
+                                        is turned off and back on.
+
+                                        D means BY DEFAULT, i.e. they will be assumed by the CNC when it is powered on, after executing
+                                        M02, M30 or after EMERGENCY or RESET.
+
+                                        In those cases indicated by ?, it should be understood that the DEFAULT of these G functions
+                                        depends on the setting of the general machine parameters of the CNC.
+CNC 8055
+                                        The letter V means that the G code is displayed next to the current machining conditions in the
+CNC 8055i                               execution and simulation modes.
+
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·438·
+===== PAGE 437 =====
+
+
+
+                             PROGRAM CONTROL INSTRUCTIONS
+
+
+        Display instructions.
+
+                                                                                                       ( section 14.2 )
+
+ (ERROR integer, "error text")
+    Stops the execution of the program and displays the indicated error.
+
+ (MSG "message")
+    Displays the indicated message.
+                                                                                                                               B.
+
+
+                                                                                                                                Program control instructions
+ (DGWZ expression 1, ..... expression 6)
+    Define the graphics area.
+
+
+        Enabling and disabling instructions.
+
+                                                                                                       ( section 14.3 )
+
+ (ESBLK and DSBLK)
+    The CNC executes all the blocks between ESBLK and DSBLK as if it were a single block.
+
+ (ESTOP and DSTOP)
+    Enabling (ESTOP) and disabling (DSTOP) of the Stop key and the external Stop signal (PLC).
+
+ (EFHOLD and DFHOLD)
+    Enabling (EFHOLD) and disabling (DFHOLD) of the Feed-hold input (PLC).
+
+
+        Flow control instructions.
+
+                                                                                                       ( section 14.4 )
+
+ ( GOTO N(expression) )
+     It causes a jump within the same program, to the block defined by the label N(expression).
+
+ ( RPT N(expression), N(expression), P(expression) )
+     It repeats the execution of the portion of the program between the blocks defined by means of the labels
+     N(expression).
+
+ (IF condition <action1> ELSE <action2>)
+     It analyzes the given condition that must be a relational expression. If the condition is true (result equal to 1),
+     <action1> will be executed, otherwise (result equal to 0) <action2> will be executed.
+
+
+        Subroutine instructions.
+
+                                                                                                       ( section 14.5 )
+
+ (SUB integer)
+    Subroutine definition.
+
+ ( RET )
+     End of subroutine.
+
+ ( CALL (expression) )
+     Call to a subroutine.
+
+ (PCALL (expression), (assignment instruction), (assignment instruction),...) )
+                                                                                                                           CNC 8055
+    Call to a subroutine. In addition, using assignment instructions, it is possible to initialize up to a maximum of 26   CNC 8055i
+    local parameters of this subroutine.
+
+ (MCALL (expression), (assignment instruction), (assignment instruction),...) )
+    Same as the PCALL instruction, but making the indicated subroutine modal.
+                                                                                                                           ·M· & ·EN· MODELS
+                                                                                                                             SOFT: V01.6X
+ ( MDOFF )
+    Cancellation of modal subroutine.
+
+
+
+
+                                                                                                                                ·439·
+===== PAGE 438 =====
+
+                                                   Probe related instructions.
+
+                                                                                                                                                 ( section 14.6 )
+
+                                            (PROBE (expression), (assignment instruction), (assignment instruction),...) )
+                                               It executes a probing canned cycle initializing its parameters by means of assignment instructions.
+
+
+                                                   Interruption-subroutine instructions.
+
+                                                                                                                                                 ( section 14.7 )
+
+ B.                                         ( REPOS X, Y, Z, .... )
+                                                It must always be used inside an interruption subroutine and facilitates the repositioning of the machine axes to
+
+
+
+
+             Program control instructions
+                                                the point of interruption.
+
+
+                                                   Program instructions.
+
+                                                                                                                                                 ( section 14.8 )
+
+                                            ( EXEC P(expression), (directory) )
+                                                Starts program execution.
+
+                                            ( MEXEC P(expression), (directory) )
+                                               Starts program execution in modal mode.
+
+                                            ( OPEN P(expression), (destination directory), A/D, "program comment" )
+                                                It begins editing a new program being possible to associate a comment with the program.
+
+                                            ( WRITE <block text> )
+                                               It adds, after the last block of the program which began to be edited by means of the mnemonic OPEN P, the
+                                               information contained in <block text> as a new program block.
+
+
+                                                   Kinematics related instructions.
+
+                                                                                                                                                 ( section 14.9 )
+
+                                            ( INIPAR )
+                                                 Validates the machine parameters modified from the OEM subroutine that defines the kinematics.
+
+
+                                                   Screen customizing instructions.
+
+                                                                                                                                                ( section 14.10 )
+
+                                            ( PAGE (expression) )
+                                                The screen displays the indicated user page number (0-255) or system page (1000).
+
+                                            ( SYMBOL (expression 1), (expression 2), (expression 3) )
+                                                The screen displays the symbol (0-255) indicated by the expression 1.
+                                                Its position on the screen is defined by expression 2 (row, 0-639) and by expression 3 (column 0-335).
+
+                                            (IB (expression) = INPUT "text", format)
+                                                It displays the text indicated in the data input window and stores in the input variable (IBn) the data entered by
+                                                the user.
+
+                                            ( ODW (expression 1), (expression 2), (expression 3) )
+                                                It defines and draws a white window on the screen (1 row and 14 columns).
+                                                Its position on screen is defined by expression 2 (row) and by expression 3 (column).
+
+CNC 8055                                    ( DW(expression 1) = (expression 2), DW (expression 3) = (expression 4), ... )
+CNC 8055i                                       It displays in the windows indicated by the value of the expression 1, 3,.. , the numerical data indicated by the
+                                                expression 2,4,..
+
+                                            (SK (expression 1) = "text1" (expression 2) = "text 2", .... )
+                                               It defines and displays the new softkey menu indicated.
+·M· & ·EN· MODELS
+  SOFT: V01.6X                              ( WKEY )
+                                               It stops the execution of the program until a key is pressed.
+
+
+
+
+     ·440·
+===== PAGE 439 =====
+
+
+                                                                                                        ( section 14.10 )
+
+ ( WBUF "text", (expression) )
+    It adds the text and value of the expression, once it has been evaluated, to the block that is being edited and within
+    the data entry window.
+
+ ( WBUF )
+    Enters the block being edited into memory. It can only be used in the screen customizing program to be executed
+    in the Editing mode.
+
+ ( SYSTEM )
+     It ends the execution of the user screen customizing program and returns to the corresponding standard menu
+     of the CNC.
+                                                                                                                                 B.
+
+
+                                                                                                                                  Program control instructions
+
+
+
+
+                                                                                                                             CNC 8055
+                                                                                                                             CNC 8055i
+
+
+
+                                                                                                                             ·M· & ·EN· MODELS
+                                                                                                                               SOFT: V01.6X
+
+
+
+
+                                                                                                                                  ·441·
+===== PAGE 440 =====
+
+
+
+
+ B.
+
+
+             Program control instructions
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·442·
+===== PAGE 441 =====
+
+
+
+                        SUMMARY OF INTERNAL CNC VARIABLES.
+
+
+           • The R symbol indicates that the variable can be read.
+           • The W symbol indicates that the variable can be modified.
+
+        Variables associated with tools.
+Variable
+TOOL
+TOD
+                       CNC
+                        R
+                        R
+                                  PLC
+                                  R
+                                  R
+                                        DNC
+
+
+                                        R
+                                         R    Number of the active tool.
+                                              Number of active tool offset.
+                                                                                                          ( section 13.2.2 )
+                                                                                                                                   C.
+
+
+
+                                                                                                                                    Summary of internal CNC variables.
+NXTOOL                  R         R      R    Number of the next requested tool waiting for M06.
+NXTOD                   R         R     R     Number of the next tool’s offset.
+TMZPn                   R         R      -    (n) tool’s position in the tool magazine.
+TLFDn                  R/W        R/W    -    (n) tool’s offset number.
+TLFFn                  R/W        R/W    -    (n) tool’s family code.
+TLFNn                  R/W        R/W    -    Nominal life assigned to tool (n).
+TLFRn                  R/W        R/W    -    Real life value of tool (n).
+TMZTn                  R/W        R/W    -    Contents of tool magazine position (n).
+HTOR                   R/W        R     R     Tool radius being used by the CNC to do the calculations.
+TORn                   R/W        R/W    -    Tool radius value of offset (n).
+TOLn                   R/W        R/W    -    Tool length value of offset (n).
+TOIn                   R/W        R/W    -    Tool radius wear of offset (n).
+TOKn                   R/W        R/W    -    Tool length wear of offset (n).
+
+
+        Variables associated with zero offsets.
+Variable               CNC        PLC   DNC                                                               ( section 13.2.3 )
+ORG(X-C)                R         R      -    Active zero offset on the selected axis. The value of the additive offset
+                                              indicated by the PLC is not included.
+PORGF                   R          -     R    Abscissa coordinate value of polar origin.
+PORGS                   R          -     R    Ordinate coordinate value of polar origin.
+ORG(X-C)n              R/W        R/W   R     Zero offset (n) value of the selected axis.
+PLCOF(X-C)             R/W        R/W   R     Value of the additive zero offset activated via PLC.
+ADIOF(X-C)              R         R     R     Value for the selected axis of the zero offset with additive handwheel.
+
+
+        Variables associated with function G49
+        Variables associated with the definition of function G49.
+
+Variable               CNC        PLC   DNC                                                               ( section 13.2.4 )
+ORGROX                  R         R      R    X coordinate of the new part zero with respect to home.
+ORGROY                  R         R      R    Y coordinate of the new part zero with respect to home.
+ORGROZ                  R         R     R     Z coordinate of the new part zero with respect to home.
+ORGROA                  R         R      R    Value assigned to parameter A.
+ORGROB                  R         R     R     Value assigned to parameter B.
+ORGROC                  R         R     R     Value assigned to parameter C.
+ORGROI                  R         R     R     Value assigned to parameter I.
+ORGROJ                  R         R     R     Value assigned to parameter J.
+ORGROK                  R         R     R     Value assigned to parameter K.
+                                                                                                                               CNC 8055
+ORGROQ                  R         R     R     Value assigned to parameter Q.
+ORGROR                  R         R     R     Value assigned to parameter R.
+                                                                                                                               CNC 8055i
+ORGROS                  R         R     R     Value assigned to parameter S.
+GTRATY                  R         R      R    Type of G49 programmed.
+
+        Variables updated by the CNC once function G49 is executed.                                                            ·M· & ·EN· MODELS
+                                                                                                                                 SOFT: V01.6X
+TOOROF                 R/W        R/W   R/W   Position to be occupied by the spindle's main rotary axis.
+TOOROS                 R/W        R/W   R/W   Position to be occupied by the spindle's 2nd rotary axis.
+
+
+
+
+                                                                                                                                    ·443·
+===== PAGE 442 =====
+
+                                                         Variables associated with machine parameters.
+                                                  Variable          CNC    PLC   DNC                                                             ( section 13.2.5 )
+                                                  MPGn                R     R      -   Value assigned to general machine parameter (n).
+                                                  MP(X-C)n            R     R      -   Value assigned to (X-C) axis machine parameter (n).
+                                                  MPSn                R     R      -   Value assigned to machine parameter (n) of the main spindle.
+                                                  MPSSn               R     R      -   Value assigned to machine parameter (n) of the second spindle.
+                                                  MPASn               R     R      -   Value assigned to machine parameter (n) of the auxiliary spindle.
+                                                  MPLCn               R     R      -   Value assigned to machine parameter (n) of the PLC.
+
+ C.                                                      Variables associated with work zones.
+
+
+
+
+             Summary of internal CNC variables.
+                                                  Variable          CNC    PLC   DNC                                                             ( section 13.2.6 )
+                                                  FZONE               R    R/W    R    Status of work zone 1.
+                                                  FZLO(X-C)           R    R/W    R    Work zone 1. Lower limit along the selected axis (X/C).
+                                                  FZUP(X-C)           R    R/W    R    Work zone 1. Upper limit along the selected axis (X-C).
+                                                  SZONE               R    R/W    R    Status of work zone 2.
+                                                  SZLO(X-C)           R    R/W    R    Work zone 2. Lower limit along the selected axis (X/C).
+                                                  SZUP(X-C)           R    R/W    R    Work zone 2. Upper limit along the selected axis (X-C).
+                                                  TZONE               R    R/W    R    Status of work zone 3.
+                                                  TZLO(X-C)           R    R/W    R    Work zone 3. Lower limit along the selected axis (X/C).
+                                                  TZUP(X-C)           R    R/W    R    Work zone 3. Upper limit along the selected axis (X-C).
+                                                  FOZONE              R    R/W    R    Status of work zone 4.
+                                                  FOZLO(X-C)          R    R/W    R    Work zone 4. Lower limit along the selected axis (X/C).
+                                                  FOZUP(X-C)          R    R/W    R    Work zone 4. Upper limit along the selected axis (X-C).
+                                                  FIZONE              R    R/W    R    Status of work zone 5.
+                                                  FIZLO(X-C)          R    R/W    R    Work zone 5. Lower limit along the selected axis (X/C).
+                                                  FIZUP(X-C)          R    R/W    R    Work zone 5. Upper limit along the selected axis (X-C).
+
+
+                                                         Feedrate related variables.
+                                                  Variable          CNC    PLC   DNC                                                             ( section 13.2.7 )
+                                                  FREAL               R     R     R    Real feedrate of the CNC in mm/min or inch/min.
+                                                  FREAL(X-C)          R     R     R    Actual (real) CNC feedrate of the selected axis.
+                                                  FTEO/X-C)           R     R     R    Theoretical CNC feedrate of the selected axis.
+
+                                                         Variables associated with function G94.
+                                                  FEED                R     R     R    Active feedrate at the CNC in mm/min or inch/min.
+                                                  DNCF                R     R    R/W Feedrate selected via DNC.
+                                                  PLCF                R    R/W    R    Feedrate selected via PLC.
+                                                  PRGF                R     R     R    Feedrate selected by program.
+
+                                                         Variables associated with function G94.
+                                                  FPREV               R     R     R    Active feedrate at CNC, in m/rev or inch/rev.
+                                                  DNCFPR              R     R    R/W Feedrate selected via DNC.
+                                                  PLCFPR              R    R/W    R    Feedrate selected via PLC.
+                                                  PRGFPR              R     R     R    Feedrate selected by program.
+
+                                                         Variables associated with function G94.
+                                                  PRGFIN              R     R     R    Feedrate selected by program, in 1/min.
+CNC 8055
+                                                         Variables associated with feedrate override (%)
+CNC 8055i
+                                                  FRO                 R     R     R    Feedrate Override (%) active at the CNC.
+                                                  PRGFRO            R/W     R     R    Override (%) selected by program.
+                                                  DNCFRO              R     R    R/W Override (%) selected via DNC.
+·M· & ·EN· MODELS                                 PLCFRO              R    R/W    R    Override (%) selected via PLC.
+  SOFT: V01.6X
+                                                  CNCFRO              R     R     R    Override (%) selected from the front panel knob.
+                                                  PLCCFR              R    R/W    R    Override (%) of the PLC execution channel.
+
+
+
+
+     ·444·
+===== PAGE 443 =====
+
+        Coordinate related variables.
+Variable               CNC        PLC   DNC                                                            ( section 13.2.8 )
+PPOS(X-C)               R          -     -    Programmed theoretical position value (coordinate).
+POS(X-C)                R         R     R     Machine coordinates. Real coordinates of the tool base.
+TPOS(X-C)               R         R     R     Machine coordinates. Theoretical coordinates of the tool base.
+APOS(X-C)               R         R     R     Part coordinates. Real coordinates of the tool base.
+ATPOS(X-C)              R         R     R     Part coordinates. Theoretical coordinates of the tool base.
+DPOS(X-C)               R         R     R     Theoretical position of the probe when the probe touched the part.
+FLWE(X-C)
+DEFLEX
+                        R
+                        R
+                                  R
+                                  R     R
+                                         R    Following error of the indicated axis.
+                                              Probe deflection along X axis.
+                                                                                                                                C.
+DEFLEY                  R         R     R     Probe deflection along Y axis.
+
+
+
+
+                                                                                                                                 Summary of internal CNC variables.
+DEFLEZ                  R         R     R     Probe deflection along Z axis.
+DIST(X-C)              R/W        R/W   R     Distance traveled by the indicated axis.
+LIMPL(X-C)             R/W        R/W   R     Second upper travel limit.
+LIMMI(X-C)             R/W        R/W   R     Second lower travel limit.
+DPLY(X-C)               R         R     R     Coordinate of the selected axis displayed on the screen.
+DRPO(X-C)               R         R     R     Position indicated by the Sercos drive of the selected axis.
+GPOS(X-C)n p            R          -     -    Coordinate of the selected axis, programmed in the (n) block of the program
+                                              (p).
+
+
+        Variables associated with electronic handwheels.
+Variable               CNC        PLC   DNC                                                            ( section 13.2.9 )
+HANPF                   R         R      -    Pulses received from 1st handwheel since the CNC was turned on.
+HANPS                   R         R      -    Pulses received from 2nd handwheel since the CNC was turned on.
+HANPT                   R         R      -    Pulses received from 3rd handwheel since the CNC was turned on.
+HANPFO                  R         R      -    Pulses received from 4th handwheel since the CNC was turned on.
+HANDSE                  R         R           For handwheels with a selector button, it indicates whether that button has
+                                              been pressed or not.
+HANFCT                  R         R/W    R    Multiplying factor different for each handwheel (when having several).
+HBEVAR                  R         R/W   R     HBE handwheel. Reading enabled, axis being jogged and multiplying factor
+                                              (x1, x10, x100).
+MASLAN                 R/W        R/W   R/W   Linear path angle for "Path handwheel" or "Path Jog" mode.
+MASCFI                 R/W        R/W   R/W   Arc center coordinates for "Path handwheel mode" or "Path jog".
+MASCSE                 R/W        R/W   R/W   Arc center coordinates for "Path handwheel mode" or "Path jog".
+
+
+        Feedback related variables.
+Variable               CNC        PLC   DNC                                                           ( section 13.2.10 )
+ASIN(X-C)               R         R     R     A signal of the CNC's sinusoidal feedback for the selected axis.
+BSIN(X-C)               R         R     R     B signal of the CNC's sinusoidal feedback for the selected axis.
+ASINS                   R         R     R     "A" signal of the CNC's sinusoidal feedback for the spindle.
+BSINS                   R         R     R     "B" signal of the CNC's sinusoidal feedback for the spindle.
+SASINS                  R         R     R     "A" signal of the CNC sinusoidal feedback for the second spindle.
+SBSINS                  R         R     R     "B" signal of the CNC sinusoidal feedback for the second spindle.
+
+
+        Variables associated with the main spindle.
+Variable               CNC        PLC   DNC                                                           ( section 13.2.11 )
+SREAL                   R         R     R     Real spindle speed
+FTEOS                   R         R      R    Theoretical spindle speed.
+                                                                                                                            CNC 8055
+                                                                                                                            CNC 8055i
+        Variables associated with spindle speed.
+SPEED                   R         R     R     Active spindle speed at the CNC.
+DNCS                    R         R     R/W   Spindle speed selected via DNC.
+PLCS                    R         R/W   R     Spindle speed selected via PLC.                                               ·M· & ·EN· MODELS
+                                                                                                                              SOFT: V01.6X
+PRGS                    R         R     R     Spindle speed selected by program.
+
+
+
+
+                                                                                                                                 ·445·
+===== PAGE 444 =====
+
+                                                          Variables associated with the spindle override.
+                                                  SSO                   R     R         R   Spindle Speed Override (%) active at the CNC.
+                                                  PRGSSO              R/W     R         R   Override (%) selected by program.
+                                                  DNCSSO                R     R     R/W Override (%) selected via DNC.
+                                                  PLCSSO                R    R/W        R   Override (%) selected via PLC.
+                                                  CNCSSO                R     R         R   Spindle Speed Override (%) selected from front panel.
+
+                                                          Speed limit related variables.
+
+
+ C.                                               SLIMIT
+                                                  DNCSL
+                                                  PLCSL
+                                                                        R
+                                                                        R
+                                                                        R
+                                                                              R
+                                                                              R
+                                                                             R/W
+                                                                                        R   Spindle speed limit active at the CNC.
+                                                                                    R/W Spindle speed limit selected via DNC.
+                                                                                        R   Spindle speed limit selected via PLC.
+
+
+
+
+             Summary of internal CNC variables.
+                                                  PRGSL                 R     R         R   Spindle speed limit selected by program.
+                                                  MDISL                 R    R/W        R   Maximum machining spindle speed.
+
+                                                          Position related variables.
+                                                  POSS                  R     R         R   Real Spindle position.
+                                                                                            Reading from the PLC in ten-thousandths of a degree (within ±999999999)
+                                                                                            and from the CNC in degrees (within ±99999.9999).
+                                                  RPOSS                 R     R         R   Real Spindle position.
+                                                                                            Reading from the PLC in ten-thousandths of a degree (between -3600000
+                                                                                            and 3600000) and from the CNC in degrees (between -360 and 360).
+                                                  TPOSS                 R     R         R   Theoretical spindle position.
+                                                                                            Reading from the PLC in ten-thousandths of a degree (within ±999999999)
+                                                                                            and from the CNC in degrees (within ±99999.9999).
+                                                  RTPOSS                R     R         R   Theoretical spindle position.
+                                                                                            Reading from the PLC in ten-thousandths of a degree (between 0 and
+                                                                                            3600000) and from the CNC in degrees (between 0 and 360).
+                                                  DRPOS                 R     R         R   Position indicated by the Sercos drive.
+                                                  PRGSP                 R     R         R   Position programmed in M19 via program for the main spindle.
+
+                                                          Variables related to the following error.
+                                                  FLWES                 R     R         R   Spindle following error.
+                                                  SYNCER                R     R         R   Error of second spindle (synchronized) following the main spindle.
+
+
+                                                          Variables associated with the second spindle.
+                                                  Variable            CNC    PLC    DNC                                                           ( section 13.2.12 )
+                                                  SSREAL                R     R         R   Real spindle speed
+                                                  SFTEOS                R     R         R   Theoretical spindle speed.
+
+                                                          Variables associated with spindle speed.
+                                                  SSPEED                R     R         R   Active spindle speed at the CNC.
+                                                  SDNCS                 R     R     R/W Spindle speed selected via DNC.
+                                                  SPLCS                 R    R/W        R   Spindle speed selected via PLC.
+                                                  SPRGS                 R     R         R   Spindle speed selected by program.
+
+                                                          Variables associated with the spindle override.
+                                                  SSSO                  R     R         R   Spindle Speed Override (%) active at the CNC.
+                                                  SPRGSO              R/W     R         R   Override (%) selected by program.
+                                                  SDNCSO                R     R     R/W Override (%) selected via DNC.
+                                                  SPLCSO                R    R/W        R   Override (%) selected via PLC.
+CNC 8055
+                                                  SCNCSO                R     R         R   Spindle Speed Override (%) selected from front panel.
+CNC 8055i
+                                                          Speed limit related variables.
+                                                  SSLIMI                R     R         R   Spindle speed limit active at the CNC.
+                                                  SDNCSL                R     R     R/W Spindle speed limit selected via DNC.
+·M· & ·EN· MODELS
+  SOFT: V01.6X                                    SPLCSL                R    R/W        R   Spindle speed limit selected via PLC.
+                                                  SPRGSL                R     R         R   Spindle speed limit selected by program.
+
+
+
+
+     ·446·
+===== PAGE 445 =====
+
+        Position related variables.
+SPOSS                   R         R      R    Real Spindle position.
+                                              Reading from the PLC in ten-thousandths of a degree (within ±999999999)
+                                              and from the CNC in degrees (within ±99999.9999).
+SRPOSS                  R         R      R    Real Spindle position.
+                                              Reading from the PLC in ten-thousandths of a degree (between -3600000
+                                              and 3600000) and from the CNC in degrees (between -360 and 360).
+STPOSS                  R         R      R    Theoretical spindle position.
+                                              Reading from the PLC in ten-thousandths of a degree (within ±999999999)
+
+SRTPOS                  R         R      R
+                                              and from the CNC in degrees (within ±99999.9999).
+                                              Theoretical spindle position.
+                                              Reading from the PLC in ten-thousandths of a degree (between 0 and
+                                                                                                                                  C.
+
+
+
+                                                                                                                                   Summary of internal CNC variables.
+                                              3600000) and from the CNC in degrees (between 0 and 360).
+SDRPOS                  R         R      R    Position indicated by the Sercos drive.
+SPRGSP                  R         R      R    Position programmed in M19 via program for the second spindle.
+
+        Variables related to the following error.
+SFLWES                  R         R      R    Spindle following error.
+
+
+        Variables associated with the live tool.
+Variable              CNC     PLC       DNC                                                             ( section 13.2.13 )
+ASPROG                  R         R      -    Speed programmed in M45 S (within the associated subroutine).
+
+
+        PLC related variables.
+Variable               CNC        PLC   DNC                                                             ( section 13.2.14 )
+PLCMSG                  R          -     R    Number of the active PLC message with the highest priority.
+PLCIn                  R/W         -     -    32 PLC inputs starting from (n).
+PLCOn                  R/W         -     -    32 PLC outputs starting from (n).
+PLCMn                  R/W         -     -    32 PLC marks starting from (n).
+PLCRn                  R/W         -     -    (n) Register.
+PLCTn                  R/W         -     -    Indicated (n) Timer’s count.
+PLCCn                  R/W         -     -    Indicated (n) Counter’s count.
+PLCMMn                 R/W         -     -    Modifies the (n) mark of the PLC.
+
+
+        Variables associated with local and global parameters.
+Variable               CNC        PLC   DNC                                                             ( section 13.2.15 )
+GUP n                    -        R/W    -    Global parameter (P100-P299) (n).
+LUP (a,b)                -        R/W    -    Indicated local (P0-P25) parameter (b) of the nesting level (a).
+CALLP                   R          -     -    Indicates which local parameters have been defined by means of a PCALL
+                                              or MCALL instruction (calling a subroutine).
+
+
+        Sercos variables.
+Variable               CNC        PLC   DNC                                                             ( section 13.2.16 )
+SETGE(X-C)              W         W      -    Gear ratio and parameter set of the (X-C) axis drive.
+SETGES                  W         W      -    Gear ratio and parameter set of the main spindle.
+SSETGS                  W         W      -    Gear ratio and parameter set of the second spindle.
+SVAR(X-C) id           R/W         -     -    Sercos variable sercos for the (X-C) axis "id".
+SVARS id               R/W         -     -    Sercos variable sercos for the main spindle "id".
+SSVARS id              R/W         -     -    Sercos variable sercos for the second spindle "id".
+                                                                                                                              CNC 8055
+TSVAR(X-C) id           R          -     -    Third attribute of the sercos variable for the (X-C) axis "id".                 CNC 8055i
+TSVARS id               R          -     -    Third attribute of the sercos variable for the main spindle "id".
+TSSVAR id               R          -     -    Third attribute of the sercos variable for the second spindle "id".
+
+                                                                                                                              ·M· & ·EN· MODELS
+                                                                                                                                SOFT: V01.6X
+
+
+
+
+                                                                                                                                   ·447·
+===== PAGE 446 =====
+
+                                                          Software & hardware configuration variables.
+                                                  Variable         CNC    PLC    DNC                                                            ( section 13.2.17 )
+                                                  HARCON             R       R    R    It indicates, with bits, the CNC's hardware configuration.
+                                                  HARCOA             R       R    R    It indicates, with bits, the CNC's hardware configuration.
+                                                  IDHARH             R       R    R    Hardware identifier (8 least significant bits).
+                                                  IDHARL             R       R    R    Hardware identifier (4 most significant bits).
+                                                  SOFCON             R       R    R    Software version of the CNC (bits 15-0) and HD (bits 31-16)
+                                                  HDMEGA             R       R    R    Hard disk size (in megabytes).
+
+ C.                                               KEYIDE
+                                                  MODEL
+                                                                     R
+                                                                     R
+                                                                             R
+                                                                             R
+                                                                                  R
+                                                                                  R
+                                                                                       Keyboard code, according to the auto-identification system.
+                                                                                       It identifies the CNC model, mill or lather.
+
+
+
+
+             Summary of internal CNC variables.
+                                                          Variables associated with telediagnosis.
+                                                  Variable         CNC    PLC    DNC                                                            ( section 13.2.18 )
+                                                  HARSWA             R       R    R    Hardware configuration.
+                                                  HARSWB             R       R    R    Hardware configuration.
+                                                  HARTST             R       R    R    Hardware test.
+                                                  MEMTST             R       R    R    Memory test.
+                                                  NODE               R       R    R    Node number in the Sercos ring.
+                                                  VCHECK             R       R    R    Software version checksum.
+                                                  IONODE             R       R    R    Position of the "ADDRESS" switch of the I/O CAN bus.
+                                                  IOSLOC             R       R    R    Number of local I/O available.
+                                                  IOSREM             R       R    R    Number of remote I/O available.
+
+
+                                                          Operating-mode related variables.
+                                                  Variable         CNC    PLC    DNC                                                            ( section 13.2.19 )
+                                                  OPMODE             R       R    R    Operating mode.
+                                                  OPMODA             R       R    R    Operating mode when working in the main channel.
+                                                  OPMODB             R       R    R    Type of simulation.
+                                                  OPMODC             R       R    R    Axes selected by handwheel.
+
+
+                                                          Other variables.
+                                                  Variable         CNC    PLC    DNC                                                            ( section 13.2.20 )
+                                                  NBTOOL             R       -    R    Number of the tool being managed..
+                                                  PRGN               R       R    R    Number of the program in execution.
+                                                  BLKN               R       R    R    Label number of the last executed block.
+                                                  GSn                R       -    -    Status of the indicated G function (n).
+                                                  GGSA               -       R    R    Status of functions G00 thru G24.
+                                                  GGSB               -       R    R    Status of functions G25 thru G49.
+                                                  GGSC               -       R    R    Status of functions G50 thru G74.
+                                                  GGSD               -       R    R    Status of functions G75 thru G99.
+                                                  MSn                R       -    -    Status of the indicated M function (n)
+                                                  GMS                -       -    R    Status of M functions: M (0..6, 8, 9, 19, 30, 41..44).
+                                                  PLANE              R       R    R    Abscissa and ordinate axes of the active plane.
+                                                  LONGAX             R       R    R    Axis affected by the tool length compensation (G15).
+                                                  MIRROR             R       R    R    Active mirror images.
+                                                  SCALE              R       R    R    General scaling factor applied. Reading from the PLC in ten-thousandths.
+CNC 8055                                          SCALE(X-C)         R       R    R    Scaling Factor applied only to the indicated axis. Reading from the PLC in
+                                                                                       ten-thousandths.
+CNC 8055i
+                                                  ORGROT             R       R    R    Rotation angle (G73) of the coordinate system.
+                                                  ROTPF              R       -    -    Abscissa of rotation center.
+                                                  ROTPS              R       -    -    Ordinate of rotation center.
+·M· & ·EN· MODELS                                 PRBST              R       R    R    Returns probe status.
+  SOFT: V01.6X                                    CLOCK              R       R    R    System clock in seconds.
+                                                  TIME               R       R   R/W Time in Hours, minutes and seconds.
+                                                  DATE               R       R   R/W Date in Year-Month-Day format
+                                                  TIMER             R/W   R/W    R/W Clock activated by PLC, in seconds.
+
+
+
+     ·448·
+===== PAGE 447 =====
+
+
+Variable               CNC        PLC   DNC                                                              ( section 13.2.20 )
+CYTIME                  R         R     R     Time to execute a part in hundredths of a second.
+PARTC                  R/W        R/W   R/W   Parts counter of the CNC.
+FIRST                   R         R      R    First time a program is executed.
+KEY                    R/W        R/W   R/W   keystroke code.
+KEYSRC                 R/W        R/W   R/W   Source of the keys.
+ANAIn                   R         R     R     Voltage (in volts) of the indicated analog input (n).
+ANAOn                  R/W        R/W   R/W   Voltage (in volts) to apply to the indicated output (n).
+CNCERR
+PLCERR
+DNCERR
+                         -
+                         -
+                         -
+                                  R
+
+
+                                  R
+                                   -
+                                         R
+                                         R
+                                         -
+                                              Active CNC error number.
+                                              Active PLC error number.
+                                              Number of the error generated during DNC communications.
+                                                                                                                                   C.
+
+
+
+                                                                                                                                    Summary of internal CNC variables.
+AXICOM                  R         R     R     Pairs of axes switched with function G28.
+TANGAN                  R         R     R     Angular position with respect to the path (G45).
+TPIOUT(X-C)             R         R      R    Output of the PI of the tandem master axis in rpm.
+DNCSTA                   -        R      -    DNC transmission status.
+TIMEG                   R         R     R     Remaining time to finish the dwell block (in hundredths of a second).
+SELPRO                 R/W        R/W   R     When having two probe inputs, it selects the active input.
+DIAM                   R/W        R/W    R    It changes the programming mode for X axis coordinates between radius
+                                              and diameter.
+PRBMOD                 R/W        R/W   R     Indicates whether a probing error must be displayed or not.
+RIP                     R         R      R    Linear theoretical feedrate resulting from the next loop (in mm/min).
+TEMPIn                  R         R     R     It returns the temperature in tenths of a degree detected by the PT100.
+TIPPRB                  R         R      R    PROBE cycle being executed.
+TIPDIG                  R         R      R    DIGIT cycle being executed.
+PANEDI                  R         R     R     WINDRAW55 application. Number of screen being executed.
+DATEDI                  R         R      R    WINDRAW55 application. Number of element (item) being executed.
+FBDIF(X-C)              R         R     R     For monitoring the difference between the coordinates (position values) of
+                                              the first and second feedback on the oscilloscope
+CYCLEV                  R         R     R     It indicates on the conversational model, the tab number being displayed
+                                              at a particular moment.
+CYCEDI                  R         R     R     It indicates on the conversational model, the cycle or screen number being
+                                              displayed at a particular moment.
+DISBLO                  R         R     R     It indicates the value of the total programmed distance in blocks with look-
+                                              ahead.
+MIXPO(X..C)             R         R     R     Variable that indicates the axis position with the combined feedback.
+FLWAC(X..C)             R         R     R     Variable that indicates the real error considering the second feedback.
+
+
+
+
+                  The "KEY" variable can be "written" at the CNC only via the user channel.
+                  The "NBTOOL" variable can only be used within the tool change subroutine.
+
+
+
+
+                                                                                                                               CNC 8055
+                                                                                                                               CNC 8055i
+
+
+
+                                                                                                                               ·M· & ·EN· MODELS
+                                                                                                                                 SOFT: V01.6X
+
+
+
+
+                                                                                                                                    ·449·
+===== PAGE 448 =====
+
+
+
+
+ C.
+
+
+
+             Summary of internal CNC variables.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·450·
+===== PAGE 449 =====
+
+
+
+                                    KEY CODE
+
+
+        Alpha-numeric keyboard and monitor
+
+
+
+
+                                                   D.
+                                                    Key code
+
+
+
+
+                                               CNC 8055
+                                               CNC 8055i
+
+
+
+                                               ·M· & ·EN· MODELS
+                                                 SOFT: V01.6X
+
+
+
+
+                                                    ·451·
+===== PAGE 450 =====
+
+
+
+
+ D.
+             Key code
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·452·
+===== PAGE 451 =====
+
+        Alphanumeric operator panel
+
+
+
+
+                                          D.
+                                           Key code
+
+
+
+
+                                      CNC 8055
+                                      CNC 8055i
+
+
+
+                                      ·M· & ·EN· MODELS
+                                        SOFT: V01.6X
+
+
+
+
+                                           ·453·
+===== PAGE 452 =====
+
+                        MC operator panel
+
+
+
+
+ D.
+             Key code
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·454·
+===== PAGE 453 =====
+
+
+
+
+                                      D.
+                                       Key code
+
+
+
+
+                                  CNC 8055
+                                  CNC 8055i
+
+
+
+                                  ·M· & ·EN· MODELS
+                                    SOFT: V01.6X
+
+
+
+
+                                       ·455·
+===== PAGE 454 =====
+
+
+
+
+ D.
+             Key code
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·456·
+===== PAGE 455 =====
+
+        MCO/TCO operator panel
+
+
+
+
+                                      D.
+                                       Key code
+
+
+
+
+                                  CNC 8055
+                                  CNC 8055i
+
+
+
+                                  ·M· & ·EN· MODELS
+                                    SOFT: V01.6X
+
+
+
+
+                                       ·457·
+===== PAGE 456 =====
+
+                        Alphanumeric keyboard
+
+
+
+
+ D.
+             Key code
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·458·
+===== PAGE 457 =====
+
+        11" LCD Monitor
+
+
+
+
+                                      D.
+                                       Key code
+
+
+
+
+                                  CNC 8055
+                                  CNC 8055i
+
+
+
+                                  ·M· & ·EN· MODELS
+                                    SOFT: V01.6X
+
+
+
+
+                                       ·459·
+===== PAGE 458 =====
+
+
+
+
+ D.
+             Key code
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·460·
+===== PAGE 459 =====
+
+
+
+           PROGRAMMING ASSISTANCE SCREENS OF THE SYSTEM.
+
+
+        These screens (pages) may be displayed using the high level instruction "PAGE". They all belong
+        to the CNC system and are used as help screens of the corresponding functions.
+
+        Syntax-graphics help screens
+        Page 1000                 Additional preparatory functions G00-G09.
+        Page 1001
+        Page 1002
+                                  Additional preparatory functions G10-G19.
+                                  Additional preparatory functions G20-G44.
+                                                                                                              E.
+
+
+
+
+                                                                                                               Programming assistance screens of the system.
+        Page 1003                 Additional preparatory functions G53-G59.
+        Page 1004                 Additional preparatory functions G60-G69.
+        Page 1005                 Additional preparatory functions G70-G79.
+        Page 1006                 Additional preparatory functions G80-G89.
+        Page 1007                 Additional preparatory functions G90-G99.
+        Page 1008                 Auxiliary (miscellaneous) M functions.
+        Page 1009                 Auxiliary (miscellaneous) M functions with the "next page" symbol.
+        Page 1010                 Same as number 250 of the directory if there is one.
+        Page 1011                 Same as number 251 of the directory if there is one.
+        Page 1012                 Same as number 252 of the directory if there is one.
+        Page 1013                 Same as number 253 of the directory if there is one.
+        Page 1014                 Same as number 254 of the directory if there is one.
+        Page 1015                 Same as number 255 of the directory if there is one.
+        Page 1016                 High level language dictionary (from A to G).
+        Page 1017                 High level language dictionary (from H to N).
+        Page 1018                 High level language dictionary (from O to S).
+        Page 1019                 High level language dictionary (from T to Z).
+        Page 1020                 Variables that may be accessed through high level language (part 1).
+        Page 1021                 Variables that may be accessed through high level language (part 2).
+        Page 1022                 Variables that may be accessed through high level language (part 3).
+        Page 1023                 Variables that may be accessed through high level language (part 4).
+        Page 1024                 Variables that may be accessed through high level language (part 5).
+        Page 1025                 Variables that may be accessed through high level language (part 6).
+        Page 1026                 Variables that may be accessed through high level language (part 7).
+        Page 1027                 Variables that may be accessed through high level language (part 8).
+        Page 1028                 Variables that may be accessed through high level language (part 9).
+        Page 1029                 Variables that may be accessed through high level language (part 10).
+        Page 1030                 Variables that may be accessed through high level language (part 11).
+        Page 1031                 Variables that may be accessed through high level language (part 12).
+        Page 1032                 Math operators.
+                                                                                                          CNC 8055
+                                                                                                          CNC 8055i
+
+
+
+                                                                                                          ·M· & ·EN· MODELS
+                                                                                                            SOFT: V01.6X
+
+
+
+
+                                                                                                               ·461·
+===== PAGE 460 =====
+
+                                                             Syntax help: ISO language
+                                                             Page 1033       Program block structure.
+                                                             Page 1034       Positioning and linear interpolation: G00, G01 (part 1).
+                                                             Page 1035       Positioning and linear interpolation: G00, G01 (part 2).
+                                                             Page 1036       Circular-helical interpolation: G02, G03 (part 1).
+                                                             Page 1037       Circular-helical interpolation: G02, G03 (part 2).
+                                                             Page 1038       Circular-helical interpolation: G02, G03 (part 3).
+
+ E.                                                          Page 1039
+                                                             Page 1040
+                                                                             Tangent circular path: G08 (part 1).
+                                                                             Tangent circular path: G08 (part 2).
+
+
+
+
+             Programming assistance screens of the system.
+                                                             Page 1041       Circular path through 3 points: G09 (part 1).
+                                                             Page 1042       Circular path through 3 points: G09 (part 2).
+                                                             Page 1043       Electronic threading: G33
+                                                             Page 1044       Rounding: G36.
+                                                             Page 1045       Tangential entry: G37.
+                                                             Page 1046       Tangential exit: G38.
+                                                             Page 1047       Chamfer: G39.
+                                                             Page 1048       Dwell/interruption of block preparation: G04, G04K.
+                                                             Page 1049       Square/round corner: G07, G05.
+                                                             Page 1050       Mirror image: G11, G12, G13, G14.
+                                                             Page 1051       Programming of planes and longitudinal axis: G16, G17, G18, G19, G15.
+                                                             Page 1052       Work zones: G21, G22.
+                                                             Page 1053       Tool radius compensation: G40, G41, G42.
+                                                             Page 1054       Tool length compensation: G43, G44.
+                                                             Page 1055       Zero offsets.
+                                                             Page 1056       Millimeters/inches G71, G70.
+                                                             Page 1057       Scaling factor: G72.
+                                                             Page 1058       Coordinate rotation: G73.
+                                                             Page 1059       Home search: G74.
+                                                             Page 1060       Probing: G75.
+                                                             Page 1061       Electronic axis slaving: G77, G78
+                                                             Page 1062       Absolute/incremental: G90, G91.
+                                                             Page 1063       Coordinate preset and Polar origin: G92, G93.
+                                                             Page 1064       Feedrate programming: G94, G95.
+                                                             Page 1065       Preparatory G functions associated with the canned cycles: G79, G80, G98
+                                                                             and G99.
+                                                             Page 1066       Programming of auxiliary functions F, S, T and D.
+                                                             Page 1067       Auxiliary (miscellaneous) M function programming.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·462·
+===== PAGE 461 =====
+
+        Syntax help: CNC tables
+        Page 1090                 Tool offset table.
+        Page 1091                 Tool table.
+        Page 1092                 Tool magazine table
+        Page 1093                 Miscellaneous (M) function table.
+        Page 1094                 Zero offset table.
+        Page 1095                 Leadscrew error compensation tables.
+        Page 1096
+        Page 1097
+                                  Cross compensation table.
+                                  Machine parameters.
+                                                                                                    E.
+
+
+
+
+                                                                                                     Programming assistance screens of the system.
+        Page 1098                 User parameter tables.
+        Page 1099                 Password table.
+
+        Syntax help: High level language
+        Page 1100                 ERROR and MSG instructions.
+        Page 1101                 GOTO and RPT instructions.
+        Page 1102                 OPEN and WRITE instructions.
+        Page 1103                 SUB and RET instructions.
+        Page 1104                 CALL, PCALL, MCALL, MDOFF and PROBE instructions.
+        Page 1105                 DSBLK, ESBLK, DSTOP, ESTOP, DFHOLD and EFHOLD instructions.
+        Page 1106                 IF instruction.
+        Page 1107                 Assignment blocks.
+        Page 1108                 Math expressions.
+        Page 1109                 PAGE instruction.
+        Page 1110                 ODW instruction.
+        Page 1111                 DW instruction.
+        Page 1112                 IB instruction.
+        Page 1113                 SK instruction.
+        Page 1114                 WKEY and SYSTEM instructions.
+        Page 1115                 KEYSRC instruction.
+        Page 1116                 WBUF instruction.
+        Page 1117                 SYMBOL instruction.
+
+
+
+
+                                                                                                CNC 8055
+                                                                                                CNC 8055i
+
+
+
+                                                                                                ·M· & ·EN· MODELS
+                                                                                                  SOFT: V01.6X
+
+
+
+
+                                                                                                     ·463·
+===== PAGE 462 =====
+
+                                                             Syntax help: Canned cycles
+                                                             Page 1070       Multiple machining in a straight line: G60.
+                                                             Page 1071       Multiple machining in a rectangular pattern: G61.
+                                                             Page 1072       Grid pattern canned cycle: G62.
+                                                             Page 1073       Multiple machining in a circular pattern: G63.
+                                                             Page 1074       Multiple machining in an arc: G64.
+                                                             Page 1075       Machining programmed with an arc-chord: G65.
+
+ E.                                                          Page 1076
+                                                             Page 1077
+                                                                             Irregular pocket canned cycle: G66.
+                                                                             Irregular pocket roughing: G67.
+
+
+
+
+             Programming assistance screens of the system.
+                                                             Page 1078       Irregular pocket finishing: G68.
+                                                             Page 1079       Deep hole drilling canned cycle with variable peck: G69.
+                                                             Page 1080       Drilling canned cycle: G81.
+                                                             Page 1081       Drilling canned cycle with dwell: G82.
+                                                             Page 1082       Deep-hole drilling canned cycle with constant peck: G83.
+                                                             Page 1083       Tapping canned cycle: G84.
+                                                             Page 1084       Reaming canned cycle: G85.
+                                                             Page 1085       Boring canned cycle with withdrawal in G00: G86.
+                                                             Page 1086       Rectangular pocket canned cycle: G87.
+                                                             Page 1087       Circular pocket canned cycle: G88.
+                                                             Page 1088       Boring canned cycle with withdrawal in G01: G89.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·464·
+===== PAGE 463 =====
+
+
+
+                                                MAINTENANCE
+
+
+        Cleaning
+        The accumulated dirt inside the unit may act as a screen preventing the proper dissipation of the
+        heat generated by the internal circuitry which could result in a harmful overheating of the CNC and,
+        consequently, possible malfunctions.
+
+        On the other hand, accumulated dirt can sometimes act as an electrical conductor and short-circuit
+        the internal circuitry, especially under high humidity conditions.                                                       F.
+        To clean the operator panel and the monitor, a smooth cloth should be used which has been dipped
+
+
+                                                                                                                                  Maintenance
+        into de-ionized water and /or non abrasive dish-washer soap (liquid, never powder) or 75º alcohol.
+
+        Do not use highly compressed air to clean the unit because it could generate electrostatic
+        discharges.
+
+        The plastics used on the front panel are resistant to :
+          • Grease and mineral oils.
+          • Bases and bleach.
+          • Dissolved detergents.
+          • Alcohol.
+
+
+                  Fagor Automation shall not be held responsible for any material or physical damage derived from the
+                  violation of these basic safety requirements.
+                  To check the fuses, first unplug the unit from mains If the CNC does not turn on when flipping the power
+                  switch, check that the fuses are the right ones and they are in good condition.
+                  Avoid solvents. The action of solvents such as chlorine hydrocarbons, benzole, esters and ether may
+                  damage the plastics used to make the front panel of the unit.
+                  Do not get into the inside of the unit. Only personnel authorized by Fagor Automation may manipulate
+                  the inside of this unit.
+                  Do not handle the connectors with the unit connected to main AC power. Before handling these
+                  connectors (I/O, feedback, etc.), make sure that the unit is not connected to main AC power.
+
+
+
+
+                                                                                                                             CNC 8055
+                                                                                                                             CNC 8055i
+
+
+
+                                                                                                                             ·M· & ·EN· MODELS
+                                                                                                                               SOFT: V01.6X
+
+
+
+
+                                                                                                                                  ·465·
+===== PAGE 464 =====
+
+
+
+
+ F.
+             Maintenance
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·466·
+===== PAGE 465 =====
+
+
+
+
+                                    F.
+
+
+
+
+                                  CNC 8055
+                                  CNC 8055i
+
+
+
+                                   SOFT: V01.6X
+
+
+
+
+                                      ·467·
+===== PAGE 466 =====
+
+
+
+
+F.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·468·
+===== PAGE 467 =====

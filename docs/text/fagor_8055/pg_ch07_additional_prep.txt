@@ -1,0 +1,1165 @@
+===== PAGE 105 =====
+
+                                                                                     Example:
+
+                                                                                     The following program blocks are performed in a section with G41 compensation.
+                                                                                        ...
+                                                                                            N10 X50 Y80
+                                                                                            N15 G04
+                                                                                        /1 N17 M10
+                                                                                            N20 X50 Y50
+                                                                                            N30 X80 Y50
+                                                                                        ...
+
+ 7.                                                                                  Block N15 interrupts block preparation and the execution of block N10 will finish at point A.
+
+
+
+
+        ADDITIONAL PREPARATORY FUNCTIONS
+                                           Interruption of block preparation (G04)
+
+
+
+                                                                                     Once the execution of block N15 has been carried out, the CNC continues preparing blocks starting
+                                                                                     from block N17.
+
+                                                                                     As the next point corresponding to the compensated path is point "B", the CNC will move the tool
+                                                                                     to this point, executing path "A-B".
+
+
+
+
+                                                                                     As you can see, the resulting path is not the required one, so we recommend avoiding the use of
+                                                                                     function G04 in sections which work with compensation.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·106·
+===== PAGE 106 =====
+
+7.1.1        G04 K0: Block preparation interruption and coordinate update
+
+        The function associated with G04 K0 may be used to update the coordinates of the axes of the
+        channel after finishing particular PLC routines.
+
+        The PLC routines that require updating the coordinates of the axes of the channel are the following:
+          • PLC routine using the SWITCH* marks.
+          • PLC routines where an axis goes into DRO mode and then back into normal axis mode during
+            the execution of part programs.
+
+        G04 operation:
+                                                                                                                                                       7.
+              Function            Description
+
+
+
+
+                                                                                                                    ADDITIONAL PREPARATORY FUNCTIONS
+                                                                                                                                                       Interruption of block preparation (G04)
+              G04                 Interrupts block preparation.
+
+              G04 K50             It executes a dwell 50 hundredths of a second.
+
+              G04 K0 or G04 K     It interrupts block preparation and updates the CNC coordinates to the current
+                                  position.
+                                  (G4 K0 works in the CNC and PLC channel).
+
+
+
+
+                                                                                                                   CNC 8055
+                                                                                                                   CNC 8055i
+
+
+
+                                                                                                                   ·M· & ·EN· MODELS
+                                                                                                                     SOFT: V01.6X
+
+
+
+
+                                                                                                                                                       ·107·
+===== PAGE 107 =====
+
+                                                           7.2      Dwell (G04 K)
+
+                                                                 A dwell can be programmed via function G04 K.
+
+                                                                 The dwell value is programmed in hundredths of a second via format K5 (1..99999).
+
+                                                                 Example:
+                                                                    G04 K50        ; Dwell of 50 hundredths of a second (0.5 seconds)
+                                                                    G04 K200       ; Dwell of 200 hundredths of a second (2 seconds)
+
+
+ 7.                                                              Function G04 K is not modal, so it should be programmed whenever a dwell is required. Function
+                                                                 G04 K can be programmed as G4 K.
+
+
+
+
+        ADDITIONAL PREPARATORY FUNCTIONS
+                                           Dwell (G04 K)
+                                                                 The dwell is executed at the beginning of the block in which it is programmed.
+                                                                 Note: When programming G04 K0 or G04 K, instead of applying a delay, it only interrupts block
+                                                                       preparation and it will refresh the coordinates. See "7.1.1 G04 K0: Block preparation
+                                                                       interruption and coordinate update" on page 107.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·108·
+===== PAGE 108 =====
+
+7.3          Working with square (G07) and round (G05,G50) corners
+
+7.3.1        G07 (square corner)
+
+        When working in G07 (square corner) the CNC does not start executing the following program block
+        until the position programmed in the current block has been reached.
+
+        The CNC considers that the programmed position has been reached when the axis is within the
+        "INPOSW" (in-position zone or dead band) from the programmed position.
+
+                                                                                                                                               7.
+
+
+
+
+                                                                                                            ADDITIONAL PREPARATORY FUNCTIONS
+
+
+                                                                                                                                               Working with square (G07) and round (G05,G50) corners
+                                                                   G91 G01 G07 Y70 F100
+                                                                   X90
+
+
+
+
+        The theoretical and real profile coincide, obtaining square corners, as seen in the figure.
+
+        Function G07 is modal and incompatible with G05, G50 and G51. Function G07 can be programmed
+        as G7.
+
+        On power-up, after executing M02, M30 or after EMERGENCY or RESET, the CNC assumes code
+        G05 or G07 depending on how the general machine parameter "ICORNER" is set.
+
+
+
+
+                                                                                                           CNC 8055
+                                                                                                           CNC 8055i
+
+
+
+                                                                                                           ·M· & ·EN· MODELS
+                                                                                                             SOFT: V01.6X
+
+
+
+
+                                                                                                                                               ·109·
+===== PAGE 109 =====
+
+                                                                                                   7.3.2      G05 (round corner)
+
+                                                                                                           When working in G05 (round corner), the CNC starts executing the following block of the program
+                                                                                                           as soon as the theoretical interpolation of the current block has concluded. It does not wait for the
+                                                                                                           axes to physically reach the programmed position.
+
+                                                                                                           The distance prior to the programmed position where the CNC starts executing the next block
+                                                                                                           depends on the actual axis feedrate.
+
+
+
+ 7.
+
+
+
+
+        ADDITIONAL PREPARATORY FUNCTIONS
+
+
+                                           Working with square (G07) and round (G05,G50) corners
+                                                                                                                                                                       G91 G01 G05 Y70 F100
+                                                                                                                                                                       X90
+
+
+
+
+                                                                                                           Via this function round corners can be obtained, as shown in the figure.
+
+                                                                                                           The difference between the theoretical and real profiles depends on the programmed feedrate value
+                                                                                                           "F". The higher the feedrate, the greater the difference between both profiles.
+
+                                                                                                           Function G05 is modal and incompatible with G07, G50 and G51. Function G05 can be programmed
+                                                                                                           as G5.
+
+                                                                                                           On power-up, after executing M02, M30 or after EMERGENCY or RESET, the CNC assumes code
+                                                                                                           G05 or G07 depending on how the general machine parameter "ICORNER" is set.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·110·
+===== PAGE 110 =====
+
+7.3.3        Controlled round corner (G50)
+
+        When working in G50 (controlled round corner); once the theoretical interpolation of the current
+        block has concluded, the CNC waits for the axis to enter the area defined by machine parameter
+        "INPOSW2" and it then starts executing the following block of the program.
+
+
+
+
+                                                                                                                                                7.
+                                                                  G91 G01 G50 Y70 F100
+
+
+
+
+                                                                                                             ADDITIONAL PREPARATORY FUNCTIONS
+
+
+                                                                                                                                                Working with square (G07) and round (G05,G50) corners
+                                                                  X90
+
+
+
+
+        Function G50 assures that the difference between the theoretical and actual paths stays smaller
+        than what was set by machine parameter "INPOSW2".
+
+        On the other hand, when working in G05, the difference between the theoretical and real profiles
+        depends on the programmed feedrate value "F". The higher the feedrate, the greater the difference
+        between both profiles.
+
+        Function G50 is modal and incompatible with G07, G05 and G51.
+
+        On power-up, after executing M02, M30 or after EMERGENCY or RESET, the CNC assumes code
+        G05 or G07 depending on how the general machine parameter "ICORNER" is set.
+
+
+
+
+                                                                                                            CNC 8055
+                                                                                                            CNC 8055i
+
+
+
+                                                                                                            ·M· & ·EN· MODELS
+                                                                                                              SOFT: V01.6X
+
+
+
+
+                                                                                                                                                ·111·
+===== PAGE 111 =====
+
+                                                              7.4      Look-ahead (G51)
+
+                                                                    Programs consisting of very small movement blocks (CAM, digitizing, etc.) tend to run very slowly.
+                                                                    Those programs may be executed at high machining speed using the "Look-Ahead" function.
+
+                                                                    The look-ahead function analyzes in advance the path to be machined (up to 75 blocks) in order
+                                                                    to calculate the maximum feedrate for each section of the path. This function provides smoother
+                                                                    and faster machining in programs with very small movements, even in the order of microns.
+
+                                                                    When operating with "Look-Ahead", it is a good idea to adjust the axes so their following error (lag)
+
+ 7.                                                                 is as small as possible because the contouring error will be at least equal to the minimum following
+                                                                    error.
+
+
+
+
+        ADDITIONAL PREPARATORY FUNCTIONS
+                                           Look-ahead (G51)
+                                                                    Programming format:
+                                                                    The programming format is:
+                                                                       G51 [A] E B
+
+                                                                            A (0-255)      It is optional and it defines the percentage of acceleration to be applied.
+                                                                                           When not programmed or programmed with a "0" value, the CNC assumes the
+                                                                                           acceleration value set by machine parameter for each axis.
+
+                                                                            E (5.5)        Maximum contouring error.
+                                                                                           The lower this parameter value is, the lower the machining feedrate will be.
+
+                                                                            B (0-180)      It makes it possible to machine square corners using the Look-ahead function.
+                                                                                           It indicates the angular value (in degrees) of the programmed corners, below which,
+                                                                                           the machining operation will be carried out in square corner mode.
+
+
+
+                                                                                                Block I
+
+
+                                                                                                                                 Block I+1
+                                                                                                              B
+
+
+
+                                                                    Parameter "A" permits using a standard working acceleration and another one to be used when
+                                                                    executing with Look-Ahead.
+
+                                                                    If parameter "B" is not programmed, the square corner management at the corners is canceled.
+
+                                                                    The square-corner management at the corners is valid for the look-ahead algorithm with jerk
+                                                                    management and for the look-ahead algorithm without jerk management.
+
+                                                                    Considerations for execution:
+                                                                    When calculating the feedrate, the CNC takes the following into account:
+                                                                     • The programmed feedrate.
+                                                                     • The curvature and the corners.
+                                                                     • The maximum feedrate of the axes.
+                                                                     • The maximum accelerations.
+                                                                     • The jerk.
+
+                                                                    If any of the circumstances listed below occurs while executing with Look-Ahead, the CNC slows
+                                                                    down to "0" at the previous block and it recovers the machining conditions for Look-Ahead in the
+CNC 8055                                                            next motion block.
+CNC 8055i                                                            • Motionless block.
+                                                                     • Execution of auxiliary functions (M, S, T).
+                                                                     • Single block execution mode.
+                                                                     • MDI mode.
+·M· & ·EN· MODELS
+  SOFT: V01.6X                                                       • Tool inspection mode.
+
+                                                                    If a Cycle Stop, Feed-Hold, etc. occurs while executing in Look-Ahead mode, the machine may not
+                                                                    stop at the current block, several additional blocks will be necessary to stop with the permitted
+                                                                    deceleration.
+
+
+     ·112·
+===== PAGE 112 =====
+
+        To prevent motionless blocks from causing a square-corner effect, change bit 0 of general machine
+        parameter MANTFCON (P189).
+
+        Function properties:
+        Function G51 is modal and incompatible with G05, G07 and G50. Should any of them be
+        programmed, function G51 will be canceled and the new one will be selected.
+
+        Function G51 must be programmed alone in a block and there must be no more information in that
+        block.
+
+        On power-up, after executing an M02, M30, of after an EMERGENCY or RESET, the CNC will cancel
+        G51, if it was active, and it will assume G05 or G07 according to the setting of general machine
+        parameter "ICORNER".
+                                                                                                                                                7.
+
+
+
+
+                                                                                                             ADDITIONAL PREPARATORY FUNCTIONS
+                                                                                                                                                Look-ahead (G51)
+        On the other hand, the CNC will issue Error 7 (Incompatible G functions) when programming any
+        of the following functions while G51 is active:
+             G33                  Electronic threading.
+             G34                  Variable-pitch threading.
+             G52                  Movement until making contact.
+             G95                  Feedrate per revolution.
+
+
+
+
+                                                                                                            CNC 8055
+                                                                                                            CNC 8055i
+
+
+
+                                                                                                            ·M· & ·EN· MODELS
+                                                                                                              SOFT: V01.6X
+
+
+
+
+                                                                                                                                                ·113·
+===== PAGE 113 =====
+
+                                                              7.4.1      Advanced look-ahead algorithm (integrating Fagor filters)
+
+                                                                      This mode is indicated when machining accuracy is required, especially if Fagor filters have been
+                                                                      set for the axes by machine parameters.
+
+                                                                      The advanced look-ahead algorithm calculates the feedrates at the corners so as to take the effect
+                                                                      of those filters into consideration. When programming G51 E, the contouring errors when machining
+                                                                      corners will be closer to the value programmed in that G51 function depending on the filters.
+
+                                                                      To activate the advanced look-ahead algorithm, use bit 15 of g.m.p. LOOKATYP (P160).
+
+ 7.                                                                   Considerations
+
+
+
+
+        ADDITIONAL PREPARATORY FUNCTIONS
+                                           Look-ahead (G51)
+                                                                       • If there are no Fagor filters set by machine parameters in the axes of the main channel, activating
+                                                                         the advanced look-ahead algorithm will internally activate FIR filters of the 5th order and a
+                                                                         frequency of 30 Hz in all the axes of the channel.
+                                                                       • If there are Fagor filters set by machine parameters, activating the advanced look-ahead
+                                                                         algorithm will keep the values of those filters as long as their frequency is not higher than 30Hz
+                                                                         If their frequency is higher than 30 Hz, it will assume the values of 5th order and a frequency
+                                                                         of 30 Hz.
+                                                                         If there are several filters defined in the axes of the channel, the one with the lowest frequency
+                                                                         will be assumed as long as it is not higher than 30Hz.
+                                                                       • Even if the advanced look-ahead algorithm (using Fagor filters) is active with bit 15 of g.m.p.
+                                                                         LOOKATYP (P160), it will not start working in the following cases:
+                                                                            If g.m.p. IPOTIME (P73) = 1.
+                                                                            If a.m.p. SMOTIME (P58) of any of the axes of the main channel is other than 0.
+                                                                            If any of the axes of the main channel has defined by parameter a non-Fagor type filter, a.m.p.
+                                                                             TYPE (P71) is other than 2.
+                                                                         In these cases, when activating G51, the CNC will issue the corresponding error message.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·114·
+===== PAGE 114 =====
+
+7.4.2        Look-ahead operation with Fagor filters active
+
+        This option makes it possible to use Fagor filters with Look-ahead (not advanced look-ahead
+        algorithm). It will only be considered if the advanced look-ahead algorithm is deactivated; that is,
+        if bit 15 of g.m.p. LOOKATYP (P160) = 0.
+
+        To activate/deactivate this option, use bit 13 of g.m.p. LOOKATYP (P160).
+
+
+
+        Effect of Fagor filters when machining circles
+                                                                                                                                                   7.
+        When machining circles, the error will be smaller when using Fagor filters than without using these
+
+
+
+
+                                                                                                                ADDITIONAL PREPARATORY FUNCTIONS
+                                                                                                                                                   Look-ahead (G51)
+        filters:
+
+
+                                                 Programmed movement.
+
+                                                Real (actual) movement using Fagor filters.
+
+
+                                                Real (actual) movement without using Fagor filters.
+
+
+
+
+                                                                                                               CNC 8055
+                                                                                                               CNC 8055i
+
+
+
+                                                                                                               ·M· & ·EN· MODELS
+                                                                                                                 SOFT: V01.6X
+
+
+
+
+                                                                                                                                                   ·115·
+===== PAGE 115 =====
+
+                                                                                    7.5      Mirror image (G10, G11. G12, G13, G14)
+
+                                                                                          The functions to activate the mirror image are the following.
+                                                                                             G10:            Cancel mirror image.
+                                                                                             G11:            Mirror image on X axis.
+                                                                                             G12:            Mirror image on the Y axis.
+                                                                                             G13:            Mirror image on the Z axis
+
+
+ 7.                                                                                          G14:
+
+                                                                                          Examples:
+                                                                                                             Mirror image on any axis (X..C), or in several at the same time.
+
+
+
+
+        ADDITIONAL PREPARATORY FUNCTIONS
+                                           Mirror image (G10, G11. G12, G13, G14)
+                                                                                             G14 W
+                                                                                             G14 X Z A B
+
+                                                                                          When the CNC works with mirror images, it executes the movements programmed in the axes that
+                                                                                          have mirror image selected, with the sign changed.
+
+
+
+
+                                                                                                   The following subroutine defines the machining of part "a".
+                                                                                                       G91 G01 X30 Y30 F100
+                                                                                                       Y60
+                                                                                                       X20 Y-20
+                                                                                                       X40
+                                                                                                       G02 X0 Y-40 I0 J-20
+                                                                                                       G01 X-60
+                                                                                                       X-30 Y-30
+
+                                                                                                   The programming of all parts would be :
+                                                                                                       Execution of subroutine            ; Machines "a".
+                                                                                                       G11                                ; Mirror image on X axis.
+                                                                                                       Execution of subroutine            ; Machines "b".
+                                                                                                       G10 G12                            ; Mirror image on the Y axis.
+                                                                                                       Execution of subroutine            ; Machines "c".
+                                                                                                       G11                                ; Mirror image on X and Y axes.
+                                                                                                       Execution of subroutine            ; Machines "d".
+                                                                                                       M30                                ; End of program
+
+
+                                                                                          Functions G11, G12, G13, and G14 are modal and incompatible with G10.
+
+                                                                                          G11, G12, and G13 can be programmed in the same block, because they are not incompatible with
+CNC 8055                                                                                  each other. Function G14 must be programmed alone in the block.
+CNC 8055i                                                                                 If function G73 (pattern rotation) is also active in a mirror image program, the CNC first applies the
+                                                                                          mirror image function and then the pattern rotation.
+
+                                                                                          If while one of the mirror imaging functions (G11, G12, G13, and G14) is active, a new coordinate
+                                                                                          origin (part zero) is preset with G92, this new origin will not be affected by the mirror imaging function.
+·M· & ·EN· MODELS
+  SOFT: V01.6X                                                                            On power-up, after executing M02, M30 or after EMERGENCY or RESET, the CNC assumes code
+                                                                                          G10.
+
+
+
+
+     ·116·
+===== PAGE 116 =====
+
+7.6          Scaling factor (G72)
+
+        By using function G72 you can enlarge or reduce programmed parts.
+
+        In this way, you can produce families of parts which are similar in shape but of different sizes with
+        a single program.
+
+        Function G72 should be programmed on its own in a block. There are two formats for programming
+        G72 :
+          • Scaling factor applied to all axes.
+          • Scaling factor applied to one or more axes.                                                                                             7.
+
+
+
+
+                                                                                                                 ADDITIONAL PREPARATORY FUNCTIONS
+                                                                                                                                                    Scaling factor (G72)
+
+
+
+
+                                                                                                                CNC 8055
+                                                                                                                CNC 8055i
+
+
+
+                                                                                                                ·M· & ·EN· MODELS
+                                                                                                                  SOFT: V01.6X
+
+
+
+
+                                                                                                                                                    ·117·
+===== PAGE 117 =====
+
+                                                                  7.6.1      Scaling factor applied to all axes.
+
+                                                                          The programming format is:
+                                                                             G72 S5.5
+
+                                                                          Following G72 all coordinates programmed are multiplied by the value of the scaling factor defined
+                                                                          by S until a new G72 scaling factor definition is read or the definition is canceled.
+
+
+                                                                                  Programming example (starting point X-30 Y10)
+
+ 7.
+
+
+
+
+        ADDITIONAL PREPARATORY FUNCTIONS
+                                           Scaling factor (G72)
+
+
+
+
+                                                                                  The following subroutine defines the machining of the part.
+                                                                                     G90 X-19 Y0
+                                                                                     G01 X0 Y10 F150
+                                                                                     G02 X0 Y-10 I0 J-10
+                                                                                     G01 X-19 Y0
+
+                                                                                  The programming of the parts would be :
+                                                                                     Execution of subroutine Machines "a".
+                                                                                     G92 X-79 Y-30             ; Coordinate preset
+                                                                                                               (zero offset)
+                                                                                     G72 S2                    ; Applies a scaling factor of 2
+                                                                                     Execution of subroutine Machines "b".
+                                                                                     G72 S1                    ; Cancel the scaling factor
+                                                                                     M30                       ; End of program
+
+
+
+
+                                                                                  Examples of application of the scaling factor.
+
+
+
+
+                                                                                  G90 G00 X0 Y0                            G90 G00 X20 Y20
+                                                                                  N10 G91 G01 X20 Y10                      N10 G91 G01 X-10
+                                                                                  Y10                                      Y-20 X-10
+                                                                                  X-10                                     X20 Y10
+                                                                                  N20 X-10 Y-20                            N20 Y10
+                                                                                  ; Scaling factor                         ; Scaling factor
+CNC 8055                                                                          G72 S0.5                                 G72 S0.5
+CNC 8055i                                                                         ; Repeats from block 10 to block 20      ; Repeats from block 10 to block 20
+                                                                                  (RPT N10,20)                             (RPT N10,20)
+                                                                                  M30                                      M30
+
+
+·M· & ·EN· MODELS                                                         Function G72 is modal and is cancelled when another scaling factor with a value of S1 is
+  SOFT: V01.6X
+                                                                          programmed, or on power-up, after executing M02, M30 or after EMERGENCY or RESET.
+
+
+
+
+     ·118·
+===== PAGE 118 =====
+
+7.6.2        Scaling factor applied to one or more axes.
+
+        The programming format is:
+             G72 X...C 5.5
+
+        After G72 the axis or axes and the required scaling factor are programmed.
+
+        All blocks programmed after G72 are treated by the CNC as follows :
+         1. The CNC calculates the movement of all the axes in relation to the programmed path and
+            compensation.
+         2. It then applies the scaling factor indicated to the calculated movement of the corresponding axis
+            or axes.
+                                                                                                                                                      7.
+
+
+
+
+                                                                                                                   ADDITIONAL PREPARATORY FUNCTIONS
+                                                                                                                                                      Scaling factor (G72)
+        If the scaling factor is applied on one or more axes, the CNC will apply the scaling factor indicated
+        both to the movement of the corresponding axis or axes and to their feedrate.
+
+        If, within the same program, both scaling factor types are applied, the one applied to all the axes
+        and the one for one or several axes, the CNC applies a scaling factor equal to the product of the
+        two scaling factors programmed for this axis to the axis or axes affected by both types.
+
+        Function G72 is modal and will be cancelled when the CNC is turned on, after executing M02, M30
+        or after an EMERGENCY or RESET.
+
+
+
+        i         This type of scaling factor is ignored when simulating without moving the axes.
+
+
+
+
+                  Application of the scaling factor to a plane axis, working with tool radius compensation.
+
+
+
+
+                  As it can be observed, the tool path does not coincide with the required path, as the scaling
+                  factor is applied to the calculated movement.
+
+
+
+
+                                                                                                                  CNC 8055
+                                                                                                                  CNC 8055i
+
+
+
+                                                                                                                  ·M· & ·EN· MODELS
+                                                                                                                    SOFT: V01.6X
+
+
+
+
+                                                                                                                                                      ·119·
+===== PAGE 119 =====
+
+                                                                  If a scaling factor equal to 360/2R is applied to a rotary axis, R being the radius of the cylinder on
+                                                                  which you wish to machine, this axis can be considered linear, and any figure with tool radius
+                                                                  compensation can be programmed on the cylindrical surface.
+
+
+
+
+ 7.
+
+
+
+
+        ADDITIONAL PREPARATORY FUNCTIONS
+                                           Scaling factor (G72)
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·120·
+===== PAGE 120 =====
+
+7.7          Pattern rotation (G73)
+
+        Function G73 enables you to turn the system of coordinates, taking either the coordinates origin
+        or the programmed rotation center as the active rotation center.
+
+        The format which defines the rotation is the following :
+             G73 Q+/5.5 I±5.5 J±5.5
+
+        Where:
+
+             Q
+
+             I, J
+                          Indicates the rotation angle in degrees.
+
+                          The are optional and define the abscissa and ordinate respectively of the rotation center. If
+                                                                                                                                                              7.
+
+
+
+
+                                                                                                                           ADDITIONAL PREPARATORY FUNCTIONS
+                                                                                                                                                              Pattern rotation (G73)
+                          they are not defined, the coordinate origin will be taken as the rotation center.
+
+        The "I" and "J" values are defined in absolute coordinates and referred to the coordinate origin of
+        the work plane. These coordinates are affected by the active scaling factor and mirror images.
+
+
+
+
+        You should remember that G73 is incremental i.e. the different Q values programmed add up.
+
+
+
+
+        Function G73 should be programmed on its own in a block.
+
+
+
+
+                                                                                                                          CNC 8055
+                                                                                                                          CNC 8055i
+
+
+
+                                                                                                                          ·M· & ·EN· MODELS
+                                                                                                                            SOFT: V01.6X
+
+
+
+
+                                                                                                                                                              ·121·
+===== PAGE 121 =====
+
+
+
+                                                                            Assuming that the starting point is X0 Y0, you get :
+
+
+
+
+ 7.
+
+
+
+
+        ADDITIONAL PREPARATORY FUNCTIONS
+                                           Pattern rotation (G73)
+
+
+                                                                            N10 G01 X21 Y0 F300           ; Positioning at starting point
+                                                                            G02 Q0 I5 J0
+                                                                            G03 Q0 I5 J0
+                                                                            Q180 I-10 J0
+                                                                            N20 G73 Q45                   ; Coordinate rotation
+                                                                            (RPT N10, N20) N7             ; Repeat from block 10 to 20 seven times
+                                                                            M30                           ; End of program
+
+
+                                                                    In a program which rotates the coordinate system, if any mirror image function is also active the CNC
+                                                                    first applies the mirror image function and then the turn.
+
+                                                                    The pattern rotation function can be cancelled either by programming G72 (on its own, without angle
+                                                                    value) or via G16, G17, G18, or G19, or on power-up, after executing M02, M30 or after
+                                                                    EMERGENCY or RESET.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·122·
+===== PAGE 122 =====
+
+7.8          Electronic axis coupling/uncoupling
+
+        The CNC enables two or more axes to be coupled together. The movement of all axes is
+        subordinated to the movement of the axis to which they were coupled.
+
+        There are three possible ways of coupling axes :
+          • Mechanical coupling. This is imposed by the manufacturer of the machine, and is selected via
+            the axis machine parameter "GANTRY".
+          • By PLC. This enables the coupling and uncoupling of each axis through logic input on the CNC
+            "SYNCHRO1", "SYNCHRO2", "SYNCHRO3", "SYNCHRO4", and "SYNCHRO5". Each axis is
+            coupled to the one indicated in the axis machine parameter "SYNCHRO".
+          • By program. This enables electronic coupling and uncoupling between two or more axes,
+                                                                                                                                               7.
+
+
+
+                                                                                                                                               Electronic axis coupling/uncoupling
+
+
+                                                                                                            ADDITIONAL PREPARATORY FUNCTIONS
+            through functions G77 and G78.
+
+
+
+
+                                                                                                           CNC 8055
+                                                                                                           CNC 8055i
+
+
+
+                                                                                                           ·M· & ·EN· MODELS
+                                                                                                             SOFT: V01.6X
+
+
+
+
+                                                                                                                                               ·123·
+===== PAGE 123 =====
+
+                                                                                 7.8.1      Electronic axis coupling, slaving, (G77)
+
+                                                                                         Function G77 allows the selection of both the master axis and the slaved axis (axes). The
+                                                                                         programming format is as follows :
+                                                                                            G77 <Axis 1> <Axis 2> <Axis 3> <Axis 4> <Axis 5>
+                                                                                            Where <Axis 2>, <Axis 3>, <Axis 4> and <Axis 5> will indicate the axes to be coupled to <Axis
+                                                                                            1>. You have to define <Axis 1> and <Axis 2>, the programming of the rest of the axes being
+                                                                                            optional.
+
+
+ 7.                                                                                      Example:
+                                                                                            G77 X Y U     ; Couples the Y and U axes to the X axis
+
+
+
+
+                                           Electronic axis coupling/uncoupling
+
+
+        ADDITIONAL PREPARATORY FUNCTIONS
+                                                                                         The following rules should be observed when slaving axes electronically:
+                                                                                          • You may use one or two different electronic couplings.
+                                                                                            G77 X Y U     ; Couples the Y and U axes to the X axis
+                                                                                            G77 V Z       ; Couples the Z axis to the V axis.
+                                                                                          • You cannot couple one axis to two others at the same time.
+                                                                                            G77 V Y       ; Couples the Y axis to the V axis.
+                                                                                            G77 X Y       ; Gives an error signal, because the Y axis is coupled to the V axis.
+                                                                                          • You can couple several axes to one in successive steps.
+                                                                                            G77 X Z       ; Couples the Z axis to the X axis.
+                                                                                            G77 X U       ; Couples the U axis to the X axis —> Z U coupled to X.
+                                                                                            G77 X Y       ; Couples the Y axis to the X axis —>Y Z U coupled to X.
+                                                                                          • A pair of axes which are already coupled to each other cannot be coupled to another axis.
+                                                                                            G77 Y U       ; Couples the U axis to the Y axis.
+                                                                                            G77 X Y       ; Issues an error because Y axis is coupled to U axis.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·124·
+===== PAGE 124 =====
+
+7.8.2        Cancellation of the electronic axis coupling, slaving, (G78)
+
+        Function G78 enables you to uncouple all the axes that are coupled (slaved), or only uncouple
+        indicated axes.
+
+             G78                                        Uncouples all slaved axes.
+
+             G78 <Axis1> <Axis2> <Axis3> <Axis4>        Only uncouples the indicated axes.
+
+
+        Example.
+             G77 X Y U        ; Couples the Y and U axes to the X axis                                                                      7.
+             G77 V Z          ; Couples the Z axis to the V axis
+
+
+
+
+                                                                                                                                            Electronic axis coupling/uncoupling
+
+
+                                                                                                         ADDITIONAL PREPARATORY FUNCTIONS
+             G78 Y            ; Uncouples Y axis, but U stays coupled to X and Z to V.
+             G78              ; Uncouples all axes
+
+
+
+
+                                                                                                        CNC 8055
+                                                                                                        CNC 8055i
+
+
+
+                                                                                                        ·M· & ·EN· MODELS
+                                                                                                          SOFT: V01.6X
+
+
+
+
+                                                                                                                                            ·125·
+===== PAGE 125 =====
+
+                                                                 7.9      Axes toggle G28-G29
+
+                                                                       With this feature, on machines having two machining tables, it is possible to use a single part-
+                                                                       program to make the same parts on both tables.
+
+
+
+
+ 7.
+
+
+
+
+        ADDITIONAL PREPARATORY FUNCTIONS
+                                           Axes toggle G28-G29
+                                                                       With function G28 the axes can be toggled from one to the other in such way that after that instruction
+                                                                       all the movements associated with the first axis next to G28 will take place on the second axis next
+                                                                       to G28 and vice versa.
+
+                                                                       Programming format:
+                                                                          G28 (axis 1) (axis 2)
+
+                                                                       To cancel the toggle, execute function G29 followed by one of the axes to be toggled back. Up to
+                                                                       three pairs of axes may be toggled at the same time.
+
+                                                                       The main axes cannot be toggled while the C axis is active on a lathe.
+
+                                                                       On power-up, after executing an M30 or after an emergency or reset, the axes are toggled back as
+                                                                       long as G48 or G49 is not active.
+
+                                                                       Example. Let us suppose that the part program is defined for table 1.
+                                                                       1. Execute the part-program on table 1
+                                                                       2. G28 BC. Toggle the "B" and "C" axes
+                                                                       3. Zero offset for machining on table 2.
+                                                                       4. Execute the part-program.
+                                                                             It will be executed on table 2.
+                                                                             In the meantime, replace the part made on table 1 with a new one.
+                                                                       5. G29 B. Toggle the BC axes back.
+                                                                       6. Cancel zero offset to machine on table 1.
+                                                                       7. Execute the part-program.
+                                                                             It will be executed on table 1.
+                                                                             In the meantime, replace the part made on table 2 with a new one.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·126·
+===== PAGE 126 =====
+
+
+                                                                                 8
+  The CNC has a tool offset table, its number of components being defined via the general machine
+  parameter "NTOFFSET". The following is specified for each tool offset:
+   • Tool radius in work units in R±5.5 format.
+   • Tool length in work units in L±5.5 format.
+   • Wear of tool radius, in work units, in I±5.5 format. The CNC adds this value to the theoretical
+     radius (R) to calculate the real radius (R+I).
+   • Wear of tool length, in work units, in K±5.5 format. The CNC adds this value to the theoretical
+     length (L) to calculate the real length (L+K).
+
+  When tool radius compensation is required (G41 or G42), the CNC applies the sum of R+I values
+  of the selected tool offset as the compensation value.
+
+  When tool length compensation is required (G43), the CNC applies the sum of L+K values of the
+  selected tool offset as the compensation value.
+
+
+
+
+                                                                                                       CNC 8055
+                                                                                                       CNC 8055i
+
+
+
+                                                                                                       ·M· & ·EN· MODELS
+                                                                                                         SOFT: V01.6X
+
+
+
+
+                                                                                                            ·127·
+===== PAGE 127 =====
+
+                                                                       8.1      Tool radius compensation (G40, G41, G42)
+
+                                                                             In normal milling operations, it is necessary to calculate and define the path of the tool taking its
+                                                                             radius into account so that the required dimensions of the part are achieved.
+
+                                                                             Tool radius compensation allows the direct programming of part contouring and of the tool radius
+                                                                             without taking the dimensions of the tool into account.
+
+                                                                             The CNC automatically calculates the path the tool should follow based on the contour of the part
+                                                                             and the tool radius value stored in the tool offset table.
+
+ 8.                                                                          There are three preparatory functions for tool radius compensation:
+                                                                                G40: Cancellation of tool radius compensation
+
+
+
+
+        TOOL COMPENSATION
+
+
+
+
+                            Tool radius compensation (G40, G41, G42)
+                                                                                G41: Tool radius compensation to the left of the part.
+                                                                                G42: Tool radius compensation to the right of the part.
+
+
+
+
+                                                                                G41     The tool is to the left of the part, depending on the machining direction.
+                                                                                G42     The tool is to the right of the part, depending on the machining direction.
+
+                                                                             Tool values R, L, I, K should be stored in the tool offset table before starting machining, or should
+                                                                             be loaded at the beginning of the program via assignments to variables TOR, TOL, TOI, TOK.
+
+                                                                             Once the plane in which compensation will be applied has been chosen via codes G16, G17, G18,
+                                                                             or G19, this is put into effect by G41 or G42, assuming the value of the tool offset selected via code
+                                                                             D, or (in its absence) by the tool offset shown in the tool table for the selected tool (T).
+
+                                                                             Functions G41 and G42 are modal and incompatible to each other. They are cancelled by G40, G04
+                                                                             (interruption of block preparation), G53 (programming with reference to machine zero), G74 (home
+                                                                             search), machining canned cycles (G81, G82, G83, G84, G85, G86, G87, G88, G89) and also on
+                                                                             power-up, after executing M02, M30 or after EMERGENCY or RESET.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·128·

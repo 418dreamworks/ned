@@ -1,0 +1,1060 @@
+===== PAGE 201 =====
+
+                                                                          10.1      G60: Multiple machining in a straight line
+
+                                                                                 The programming format is as follows:
+
+                                                                                     G60 A      XI     PQRSTUV
+                                                                                                XK
+                                                                                                IK
+
+
+
+
+ 10.
+
+
+
+                             G60: Multiple machining in a straight line
+        MULTIPLE MACHINING
+
+
+
+
+                                                                            [ A±5.5 ] Angle of the path
+
+                                                                                 Defines the angle that forms the machining path with the abscissa axis. It is expressed in degrees
+                                                                                 and if not programmed, the value A=0 will be taken.
+
+                                                                            [ X5.5 ] Path length
+
+                                                                                 Defines the length of the machining path.
+
+                                                                            [ I5.5 ] Step between machining operations.
+
+                                                                                 Defines the pass between machining operations.
+
+                                                                            [ K5 ] Number of machining operations.
+
+                                                                                 Defines the number of total machining operations in the section, including the machining definition
+                                                                                 point.
+
+                                                                                 Due to the fact that machining may be defined with any two points of the X I K group, the CNC allows
+                                                                                 the following definition combinations: XI, XK, IK.
+
+                                                                                 Nevertheless, if format XI is defined, care should be taken to ensure that the number of machining
+                                                                                 operations is an integer number, otherwise the CNC will show the corresponding error code.
+
+                                                                            [ P Q R S T U V ] Points where no drilling takes place
+
+                                                                                 These parameters are optional and are used to indicate at which points or between which of those
+                                                                                 programmed points it is not required to machine.
+
+                                                                                 Thus, programming P7 indicates that it is not required to do machining at point 7, and programming
+                                                                                 Q10.013 indicates that machining is not required from point 10 to 13, or expressed in another way,
+                                                                                 that no machining is required at points 10, 11, 12 and 13.
+
+                                                                                 When it is required to define a group of points (Q10.013), care should be taken to define the final
+                                                                                 point with three digits, as if Q10.13 is programmed, multiple machining understands Q10.130.
+
+                                                                                 The programming order for these parameters is P Q R S T U V, it also being necessary to maintain
+CNC 8055                                                                         the order in which the points assigned to these are numbered, i.e., the numbering order of the points
+CNC 8055i                                                                        assigned to Q must be greater than that assigned to P and less than that assigned to R.
+
+                                                                                 Example:
+                                                                                    Correct programming           P5.006 Q12.015 R20.022
+
+·M· & ·EN· MODELS                                                                   Wrong programming             P5.006 Q20.022 R12.015
+  SOFT: V01.6X
+                                                                                 If these parameters are not programmed, the CNC understands that it must perform machining at
+                                                                                 all the points along the programmed path.
+
+
+
+
+     ·202·
+===== PAGE 202 =====
+
+10.1.1       Basic operation
+
+         1. Multiple machining calculates the next point of those programmed where it is wished to machine.
+         2. Rapid traverse (G00) to this point.
+         3. Multiple machining will perform the canned cycle or modal subroutine selected after this
+            movement.
+         4. The CNC will repeat steps 1-2-3 until the programmed path has been completed.
+             After completing multiple machining, the tool will be positioned at the last point along the
+             programmed path where machining was performed.
+
+        Programming example assuming that the work plane is formed by the X and Y axes, that the Z axis
+                                                                                                                                    10.
+        is the longitudinal axis and that the starting point is X0 Y0 Z0:
+
+
+
+
+                                                                                                                                    G60: Multiple machining in a straight line
+                                                                                                               MULTIPLE MACHINING
+
+
+
+
+              ; Canned cycle positioning and definition.
+              G81 G98 G00 G91 X200 Y300 Z-8 I-22 F100 S500
+              ; Defines multiple machining.
+              G60 A30 X1200 I100 P2.003 Q6 R12
+              ; Cancels the canned cycle.
+              G80
+              ; Positioning.
+              G90 X0 Y0
+              ; End of program.
+              M30
+
+
+        It is also possible to write the multiple machining definition block in the following ways:
+             G60 A30 X1200 K13 P2.003 Q6 R12
+             G60 A30 I100 K13 P2.003 Q6 R12
+
+
+
+
+                                                                                                              CNC 8055
+                                                                                                              CNC 8055i
+
+
+
+                                                                                                              ·M· & ·EN· MODELS
+                                                                                                                SOFT: V01.6X
+
+
+
+
+                                                                                                                                    ·203·
+===== PAGE 203 =====
+
+                                                                                10.2      G61: Multiple machining in a rectangular pattern
+
+                                                                                       The programming format is as follows:
+
+                                                                                           G61 A B    XI     YJ     PQRSTUV
+                                                                                                      XK     YD
+                                                                                                      IK     JD
+
+
+
+
+ 10.
+
+
+
+
+                             G61: Multiple machining in a rectangular pattern
+        MULTIPLE MACHINING
+
+
+
+
+                                                                                  [ A±5.5 ] Angle of the path with respect to the abscissa axis
+
+                                                                                       Defines the angle that forms the machining path with the abscissa axis. It is expressed in degrees
+                                                                                       and if not programmed, the value A=0 will be taken.
+
+                                                                                  [ B±5.5 ] Angle between paths
+
+                                                                                       Defines the angle formed by the two machining paths. It is expressed in degrees and if not
+                                                                                       programmed, the value B=90 will be taken.
+
+                                                                                  [ X5.5 ] Length of the path along the abscissa axis
+
+                                                                                       Defines the length of the machining path according to the abscissa axis.
+
+                                                                                  [ I5.5 ] Machining pass along the abscissa axis
+
+                                                                                       Defines the pass between machining operations along the abscissa axis.
+
+                                                                                  [ K5 ] Number of machining operations along the abscissa axis
+
+                                                                                       Defines the total number of machining operations in the abscissa axis, including the machining
+                                                                                       definition point.
+
+                                                                                       Due to the fact that machining may be defined according to the abscissa axis with any two points
+                                                                                       of the X I K group, the CNC allows the following definition combinations: XI, XK, IK.
+
+                                                                                       Nevertheless, if format XI is defined, care should be taken to ensure that the number of machining
+                                                                                       operations is an integer number, otherwise the CNC will show the corresponding error code.
+
+                                                                                  [ Y5.5 ] Length of the path along the ordinate axis
+
+                                                                                       Defines the length of the machining path according to the ordinate axis.
+
+                                                                                  [ J5.5 ] Machining pass along the ordinate axis
+CNC 8055
+                                                                                       Defines the pass between machining operations according to the ordinate axis.
+CNC 8055i
+                                                                                  [ D5 ] Number of machining operations along the ordinate axis
+
+                                                                                       Defines the total number of machining operations in the ordinate axis, including the machining
+                                                                                       definition point.
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+                                                                                       Due to the fact that machining may be defined according to the ordinate axis with any two points
+                                                                                       of the Y J D group, the CNC allows the following definition combinations: YJ, YD, JD.
+
+                                                                                       Nevertheless, if format YJ is defined, care should be taken to ensure that the number of machining
+                                                                                       operations is an integer number, otherwise the CNC will show the corresponding error code.
+
+
+     ·204·
+===== PAGE 204 =====
+
+    [ P Q R S T U V ] Points where no drilling takes place
+
+        These parameters are optional and are used to indicate at which points or between which of those
+        programmed points it is not required to machine.
+
+        Thus, programming P7 indicates that it is not required to do machining at point 7, and programming
+        Q10.013 indicates that machining is not required from point 10 to 13, or expressed in another way,
+        that no machining is required at points 10, 11, 12 and 13.
+        When it is required to define a group of points (Q10.013), care should be taken to define the final
+        point with three digits, as if Q10.13 is programmed, multiple machining understands Q10.130.
+
+        The programming order for these parameters is P Q R S T U V, it also being necessary to maintain
+        the order in which the points assigned to these are numbered, i.e., the numbering order of the points
+                                                                                                                                      10.
+        assigned to Q must be greater than that assigned to P and less than that assigned to R.
+
+
+
+
+                                                                                                                                      G61: Multiple machining in a rectangular pattern
+                                                                                                                 MULTIPLE MACHINING
+        Example:
+             Correct programming         P5.006 Q12.015 R20.022
+             Wrong programming           P5.006 Q20.022 R12.015
+
+        If these parameters are not programmed, the CNC understands that it must perform machining at
+        all the points along the programmed path.
+
+
+
+
+                                                                                                                CNC 8055
+                                                                                                                CNC 8055i
+
+
+
+                                                                                                                ·M· & ·EN· MODELS
+                                                                                                                  SOFT: V01.6X
+
+
+
+
+                                                                                                                                      ·205·
+===== PAGE 205 =====
+
+                                                                                10.2.1     Basic operation
+
+                                                                                         1. Multiple machining calculates the next point of those programmed where it is wished to machine.
+                                                                                         2. Rapid traverse (G00) to this point.
+                                                                                         3. Multiple machining will perform the canned cycle or modal subroutine selected after this
+                                                                                            movement.
+                                                                                         4. The CNC will repeat steps 1-2-3 until the programmed path has been completed.
+                                                                                           After completing multiple machining, the tool will be positioned at the last point along the
+
+ 10.                                                                                       programmed path where machining was performed.
+
+                                                                                     Programming example assuming that the work plane is formed by the X and Y axes, that the Z axis
+                                                                                     is the longitudinal axis and that the starting point is X0 Y0 Z0:
+
+
+
+
+                             G61: Multiple machining in a rectangular pattern
+        MULTIPLE MACHINING
+
+
+
+
+                                                                                            ; Canned cycle positioning and definition.
+                                                                                            G81 G98 G00 G91 X100 Y150 Z-8 I-22 F100 S500
+                                                                                            ; Defines multiple machining.
+                                                                                            G61 X700 I100 Y180 J60 P2.005 Q9.011
+                                                                                            ; Cancels the canned cycle.
+                                                                                            G80
+                                                                                            ; Positioning.
+                                                                                            G90 X0 Y0
+                                                                                            ; End of program.
+                                                                                            M30
+
+
+                                                                                     It is also possible to write the multiple machining definition block in the following ways:
+                                                                                           G61 X700 K8 J60 D4 P2.005 Q9.011
+                                                                                           G61 I100 K8 Y180 D4 P2.005 Q9.011
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·206·
+===== PAGE 206 =====
+
+10.3         G62: Multiple machining in a grid pattern.
+
+        The programming format is as follows:
+
+             G62 A B      XI      YJ   PQRSTUV
+                          XK      YD
+                          IK      JD
+
+
+
+
+                                                                                                                                   10.
+
+
+
+                                                                                                                                   G62: Multiple machining in a grid pattern.
+                                                                                                              MULTIPLE MACHINING
+
+
+
+
+    [ A±5.5 ] Angle of the path with respect to the abscissa axis
+
+        Defines the angle that forms the machining path with the abscissa axis. It is expressed in degrees
+        and if not programmed, the value A=0 will be taken.
+
+    [ B±5.5 ] Angle between paths
+
+        Defines the angle formed by the two machining paths. It is expressed in degrees and if not
+        programmed, the value B=90 will be taken.
+
+    [ X5.5 ] Length of the path along the abscissa axis
+
+        Defines the length of the machining path according to the abscissa axis.
+
+    [ I5.5 ] Machining pass along the abscissa axis
+
+        Defines the pass between machining operations along the abscissa axis.
+
+    [ K5 ] Number of machining operations along the abscissa axis
+        Defines the total number of machining operations in the abscissa axis, including the machining
+        definition point.
+
+        Due to the fact that machining may be defined according to the abscissa axis with any two points
+        of the X I K group, the CNC allows the following definition combinations: XI, XK, IK.
+
+        Nevertheless, if format XI is defined, care should be taken to ensure that the number of machining
+        operations is an integer number, otherwise the CNC will show the corresponding error code.
+
+    [ Y5.5 ] Length of the path along the ordinate axis
+
+        Defines the length of the machining path according to the ordinate axis.
+
+    [ J5.5 ] Machining pass along the ordinate axis
+
+        Defines the pass between machining operations according to the ordinate axis.                        CNC 8055
+                                                                                                             CNC 8055i
+    [ D5 ] Number of machining operations along the ordinate axis
+
+        Defines the total number of machining operations in the ordinate axis, including the machining
+        definition point.
+                                                                                                             ·M· & ·EN· MODELS
+        Due to the fact that machining may be defined according to the ordinate axis with any two points       SOFT: V01.6X
+        of the Y J D group, the CNC allows the following definition combinations: YJ, YD, JD.
+
+        Nevertheless, if format YJ is defined, care should be taken to ensure that the number of machining
+        operations is an integer number, otherwise the CNC will show the corresponding error code.
+
+
+
+                                                                                                                                   ·207·
+===== PAGE 207 =====
+
+                                                                          [ P Q R S T U V ] Points where no drilling takes place
+
+                                                                             These parameters are optional and are used to indicate at which points or between which of those
+                                                                             programmed points it is not required to machine.
+
+                                                                             Thus, programming P7 indicates that it is not required to do machining at point 7, and programming
+                                                                             Q10.013 indicates that machining is not required from point 10 to 13, or expressed in another way,
+                                                                             that no machining is required at points 10, 11, 12 and 13.
+                                                                             When it is required to define a group of points (Q10.013), care should be taken to define the final
+                                                                             point with three digits, as if Q10.13 is programmed, multiple machining understands Q10.130.
+
+ 10.                                                                         The programming order for these parameters is P Q R S T U V, it also being necessary to maintain
+                                                                             the order in which the points assigned to these are numbered, i.e., the numbering order of the points
+                                                                             assigned to Q must be greater than that assigned to P and less than that assigned to R.
+
+
+
+
+                             G62: Multiple machining in a grid pattern.
+        MULTIPLE MACHINING
+                                                                             Example:
+                                                                                Correct programming           P5.006 Q12.015 R20.022
+                                                                                Wrong programming             P5.006 Q20.022 R12.015
+
+                                                                             If these parameters are not programmed, the CNC understands that it must perform machining at
+                                                                             all the points along the programmed path.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·208·
+===== PAGE 208 =====
+
+10.3.1       Basic operation
+
+         1. Multiple machining calculates the next point of those programmed where it is wished to machine.
+         2. Rapid traverse (G00) to this point.
+         3. Multiple machining will perform the canned cycle or modal subroutine selected after this
+            movement.
+         4. The CNC will repeat steps 1-2-3 until the programmed path has been completed.
+             After completing multiple machining, the tool will be positioned at the last point along the
+             programmed path where machining was performed.
+
+        Programming example assuming that the work plane is formed by the X and Y axes, that the Z axis
+                                                                                                                                    10.
+        is the longitudinal axis and that the starting point is X0 Y0 Z0:
+
+
+
+
+                                                                                                                                    G62: Multiple machining in a grid pattern.
+                                                                                                               MULTIPLE MACHINING
+
+
+
+
+              ; Canned cycle positioning and definition.
+              G81 G98 G00 G91 X100 Y150 Z-8 I-22 F100 S500
+              ; Defines multiple machining.
+              G62 X700 I100 Y180 J60 P2.005 Q9.011 R15.019
+              ; Cancels the canned cycle.
+              G80
+              ; Positioning.
+              G90 X0 Y0
+              ; End of program.
+              M30
+
+
+        It is also possible to write the multiple machining definition block in the following ways:
+             G62 X700 K8 J60 D4 P2.005 Q9.011 R15.019
+             G62 I100 K8 Y180 D4 P2.005 Q9.011 R15.019
+
+
+
+
+                                                                                                              CNC 8055
+                                                                                                              CNC 8055i
+
+
+
+                                                                                                              ·M· & ·EN· MODELS
+                                                                                                                SOFT: V01.6X
+
+
+
+
+                                                                                                                                    ·209·
+===== PAGE 209 =====
+
+                                                                             10.4      G63: Multiple machining in a circular pattern
+
+                                                                                    The programming format is as follows:
+
+                                                                                        G63 X Y    I   CFPQRSTUV
+                                                                                                   K
+
+
+
+
+ 10.
+
+
+
+                             G63: Multiple machining in a circular pattern
+        MULTIPLE MACHINING
+
+
+
+
+                                                                               [ X±5.5 ] Distance from the first machining point to the center along the abscissa axis
+
+                                                                                    Defines the distance from the starting point to the center along the abscissa axis.
+
+                                                                               [ Y±5.5 ] Distance from the first machining point to the center along the ordinate axis
+
+                                                                                    Defines the distance from the starting point to the center along the ordinate axis.
+
+                                                                                    With parameters X and Y the center of the circle is defined in the same way that I and J do this in
+                                                                                    circular interpolations (G02, G03).
+
+                                                                               [ I±5.5 ] Angular pass between machining operations
+
+                                                                                    Defines the angular pass between machining operations. When moving from point to point in G00
+                                                                                    or G01, the sign indicates the direction, "+" counterclockwise, "-" clockwise.
+
+                                                                               [ K5 ] Total number of machining operations
+
+                                                                                    Defines the total number of machining operations along the circle, including the machining definition
+                                                                                    point.
+
+                                                                                    It will be enough to program I or K in the multiple machining definition block. Nevertheless, if K is
+                                                                                    programmed in a multiple machining operation in which movement between points is made in G00
+                                                                                    or G01, machining will be done counterclockwise.
+
+                                                                               [ C 0/1/2/3 ] Type of move from point to point
+
+                                                                                    Indicates how movement is made between machining points. If it is not programmed, the value C=0
+                                                                                    will be taken.
+                                                                                       C=0:            Movement is made in rapid feedrate (G00).
+                                                                                       C=1:            Movement is made in linear interpolation (G01).
+                                                                                       C=2:            Movement is made in clockwise circular interpolation (G02)
+                                                                                       C=3:            Movement is made in counterclockwise circular interpolation (G03)
+CNC 8055
+CNC 8055i                                                                      [ F5.5 ] Feedrate to move from point to point
+
+                                                                                    Defines the feedrate that is used for moving from point to point. Obviously, it will only apply for "C"
+                                                                                    values other than zero. If it is not programmed, the value F0 will be taken, maximum feedrate selected
+                                                                                    by the "MAXFEED" axis machine parameter.
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·210·
+===== PAGE 210 =====
+
+    [ P Q R S T U V ] Points where no drilling takes place
+
+        These parameters are optional and are used to indicate at which points or between which of those
+        programmed points it is not required to machine.
+
+        Thus, programming P7 indicates that it is not required to do machining at point 7, and programming
+        Q10.013 indicates that machining is not required from point 10 to 13, or expressed in another way,
+        that no machining is required at points 10, 11, 12 and 13.
+        When it is required to define a group of points (Q10.013), care should be taken to define the final
+        point with three digits, as if Q10.13 is programmed, multiple machining understands Q10.130.
+
+        The programming order for these parameters is P Q R S T U V, it also being necessary to maintain
+        the order in which the points assigned to these are numbered, i.e., the numbering order of the points
+                                                                                                                                      10.
+        assigned to Q must be greater than that assigned to P and less than that assigned to R.
+
+
+
+
+                                                                                                                                      G63: Multiple machining in a circular pattern
+                                                                                                                 MULTIPLE MACHINING
+        Example:
+             Correct programming         P5.006 Q12.015 R20.022
+             Wrong programming           P5.006 Q20.022 R12.015
+
+        If these parameters are not programmed, the CNC understands that it must perform machining at
+        all the points along the programmed path.
+
+
+
+
+                                                                                                                CNC 8055
+                                                                                                                CNC 8055i
+
+
+
+                                                                                                                ·M· & ·EN· MODELS
+                                                                                                                  SOFT: V01.6X
+
+
+
+
+                                                                                                                                      ·211·
+===== PAGE 211 =====
+
+                                                                             10.4.1     Basic operation
+
+                                                                                      1. Multiple machining calculates the next point of those programmed where it is wished to machine.
+                                                                                      2. Movement at the feedrate programmed by "C" (G00,G01,G02 or G03) to this point.
+                                                                                      3. Multiple machining will perform the canned cycle or modal subroutine selected after this
+                                                                                         movement.
+                                                                                      4. The CNC will repeat steps 1-2-3 until the programmed path has been completed.
+                                                                                        After completing multiple machining, the tool will be positioned at the last point along the
+
+ 10.                                                                                    programmed path where machining was performed.
+
+                                                                                  Programming example assuming that the work plane is formed by the X and Y axes, that the Z axis
+                                                                                  is the longitudinal axis and that the starting point is X0 Y0 Z0:
+
+
+
+
+                             G63: Multiple machining in a circular pattern
+        MULTIPLE MACHINING
+
+
+
+
+                                                                                         ; Canned cycle positioning and definition.
+                                                                                         G81 G98 G01 G91 X280 Y130 Z-8 I-22 F100 S500
+                                                                                         ; Defines multiple machining.
+                                                                                         G63 X200 Y200 I30 C1 F200 P2.004 Q8
+                                                                                         ; Cancels the canned cycle.
+                                                                                         G80
+                                                                                         ; Positioning.
+                                                                                         G90 X0 Y0
+                                                                                         ; End of program.
+                                                                                         M30
+
+
+                                                                                  It is also possible to write the multiple machining definition block in the following ways:
+                                                                                        G63 X200 Y200 K12 C1 F200 P2.004 Q8
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·212·
+===== PAGE 212 =====
+
+10.5         G64: Multiple machining in an arc
+
+        The programming format is as follows:
+
+             G64 X Y B            I   CFPQRSTUV
+                                  K
+
+
+
+
+                                                                                                                                        10.
+
+
+                                                                                                                                        G64: Multiple machining in an arc
+                                                                                                                   MULTIPLE MACHINING
+
+
+
+    [ X±5.5 ] Distance from the first machining point to the center along the abscissa axis
+
+        Defines the distance from the starting point to the center along the abscissa axis.
+
+    [ Y±5.5 ] Distance from the first machining point to the center along the ordinate axis
+
+        Defines the distance from the starting point to the center along the ordinate axis.
+
+        With parameters X and Y the center of the circle is defined in the same way that I and J do this in
+        circular interpolations (G02, G03).
+
+    [ B5.5 ] Angular travel
+
+        Defines the angular stroke of the machining path and is expressed in degrees.
+
+    [ I±5.5 ] Angular pass between machining operations
+
+        Defines the angular pass between machining operations. When moving from point to point in G00
+        or G01, the sign indicates the direction, "+" counterclockwise, "-" clockwise.
+
+    [ K5 ] Total number of machining operations
+        Defines the total number of machining operations along the circle, including the machining definition
+        point.
+
+        It will be enough to program I or K in the multiple machining definition block. Nevertheless, if K is
+        programmed in a multiple machining operation in which movement between points is made in G00
+        or G01, machining will be done counterclockwise.
+
+    [ C 0/1/2/3 ] Type of move from point to point
+
+        Indicates how movement is made between machining points. If it is not programmed, the value C=0
+        will be taken.
+             C=0:             Movement is made in rapid feedrate (G00).
+             C=1:             Movement is made in linear interpolation (G01).
+             C=2:             Movement is made in clockwise circular interpolation (G02)                          CNC 8055
+             C=3:             Movement is made in counterclockwise circular interpolation (G03)                   CNC 8055i
+    [ F5.5 ] Feedrate to move from point to point
+
+        Defines the feedrate that is used for moving from point to point. Obviously, it will only apply for "C"
+        values other than zero. If it is not programmed, the value F0 will be taken, maximum feedrate selected    ·M· & ·EN· MODELS
+                                                                                                                    SOFT: V01.6X
+        by the "MAXFEED" axis machine parameter.
+
+
+
+
+                                                                                                                                        ·213·
+===== PAGE 213 =====
+
+                                                                 [ P Q R S T U V ] Points where no drilling takes place
+
+                                                                    These parameters are optional and are used to indicate at which points or between which of those
+                                                                    programmed points it is not required to machine.
+
+                                                                    Thus, programming P7 indicates that it is not required to do machining at point 7, and programming
+                                                                    Q10.013 indicates that machining is not required from point 10 to 13, or expressed in another way,
+                                                                    that no machining is required at points 10, 11, 12 and 13.
+                                                                    When it is required to define a group of points (Q10.013), care should be taken to define the final
+                                                                    point with three digits, as if Q10.13 is programmed, multiple machining understands Q10.130.
+
+ 10.                                                                The programming order for these parameters is P Q R S T U V, it also being necessary to maintain
+                                                                    the order in which the points assigned to these are numbered, i.e., the numbering order of the points
+                                                                    assigned to Q must be greater than that assigned to P and less than that assigned to R.
+
+
+
+
+                             G64: Multiple machining in an arc
+        MULTIPLE MACHINING
+                                                                    Example:
+                                                                       Correct programming           P5.006 Q12.015 R20.022
+                                                                       Wrong programming             P5.006 Q20.022 R12.015
+
+                                                                    If these parameters are not programmed, the CNC understands that it must perform machining at
+                                                                    all the points along the programmed path.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·214·
+===== PAGE 214 =====
+
+10.5.1       Basic operation
+
+         1. Multiple machining calculates the next point of those programmed where it is wished to machine.
+         2. Movement at the feedrate programmed by "C" (G00,G01,G02 or G03) to this point.
+         3. Multiple machining will perform the canned cycle or modal subroutine selected after this
+            movement.
+         4. The CNC will repeat steps 1-2-3 until the programmed path has been completed.
+             After completing multiple machining, the tool will be positioned at the last point along the
+             programmed path where machining was performed.
+
+        Programming example assuming that the work plane is formed by the X and Y axes, that the Z axis
+                                                                                                                                    10.
+        is the longitudinal axis and that the starting point is X0 Y0 Z0:
+
+
+
+
+                                                                                                                                    G64: Multiple machining in an arc
+                                                                                                               MULTIPLE MACHINING
+
+
+
+
+              ; Canned cycle positioning and definition.
+              G81 G98 G01 G91 X280 Y130 Z-8 I-22 F100 S500
+              ; Defines multiple machining.
+              G64 X200 Y200 B225 I45 C3 F200 P2
+              ; Cancels the canned cycle.
+              G80
+              ; Positioning.
+              G90 X0 Y0
+              ; End of program.
+              M30
+
+
+        It is also possible to write the multiple machining definition block in the following ways:
+             G64 X200 Y200 B225 K6 C3 F200 P2
+
+
+
+
+                                                                                                              CNC 8055
+                                                                                                              CNC 8055i
+
+
+
+                                                                                                              ·M· & ·EN· MODELS
+                                                                                                                SOFT: V01.6X
+
+
+
+
+                                                                                                                                    ·215·
+===== PAGE 215 =====
+
+                                                                           10.6      G65: Machining programmed with an arc-chord
+
+                                                                                  This function allows activated machining to be performed at a point programmed by means of an
+                                                                                  arc chord. Only one machining operation will be performed, its programming format being:
+
+                                                                                      G65 X Y    A   CF
+                                                                                                 I
+
+
+
+
+ 10.
+
+
+
+
+                             G65: Machining programmed with an arc-chord
+        MULTIPLE MACHINING
+
+
+
+
+                                                                             [ X±5.5 ] Distance from the first machining point to the center along the abscissa axis
+
+                                                                                  Defines the distance from the starting point to the center along the abscissa axis.
+
+                                                                             [ Y±5.5 ] Distance from the first machining point to the center along the ordinate axis
+
+                                                                                  Defines the distance from the starting point to the center along the ordinate axis.
+
+                                                                                  With parameters X and Y the center of the circle is defined in the same way that I and J do this in
+                                                                                  circular interpolations (G02, G03).
+
+                                                                             [ A±5.5 ] Angle of the chord
+
+                                                                                  Defines the angle formed by the perpendicular bisector of the chord with the abscissa axis and is
+                                                                                  expressed in degrees.
+
+                                                                             [ I±5.5 ] Angular pass between machining operations
+
+                                                                                  Defines the chord length. When moving from point to point in G00 or G01, the sign indicates the
+                                                                                  direction, "+" counterclockwise, "-" clockwise.
+
+                                                                             [ C0/1/2/3 ] Type of move from point to point
+
+                                                                                  Indicates how movement is made between machining points. If it is not programmed, the value C=0
+                                                                                  will be taken.
+                                                                                     C=0:            Movement is made in rapid feedrate (G00).
+                                                                                     C=1:            Movement is made in linear interpolation (G01).
+                                                                                     C=2:            Movement is made in clockwise circular interpolation (G02)
+                                                                                     C=3:            Movement is made in counterclockwise circular interpolation (G03)
+
+                                                                             [ F5.5 ] Feedrate to move from point to point
+
+                                                                                  Defines the feedrate that is used for moving from point to point. Obviously, it will only apply for "C"
+CNC 8055                                                                          values other than zero. If it is not programmed, the value F0 will be taken, maximum feedrate selected
+CNC 8055i                                                                         by the "MAXFEED" axis machine parameter.
+
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·216·
+===== PAGE 216 =====
+
+10.6.1       Basic operation
+
+         1. Multiple machining calculates the next point of those programmed where it is wished to machine.
+         2. Movement at the feedrate programmed by "C" (G00,G01,G02 or G03) to this point.
+         3. Multiple machining will perform the canned cycle or modal subroutine selected after this
+            movement.
+             After completing multiple machining, the tool will be positioned at the programmed point.
+
+        Programming example assuming that the work plane is formed by the X and Y axes, that the Z axis
+        is the longitudinal axis and that the starting point is X0 Y0 Z0:
+                                                                                                                                    10.
+
+
+
+
+                                                                                                                                    G65: Machining programmed with an arc-chord
+                                                                                                               MULTIPLE MACHINING
+                                                               444
+                                                                   .7   5
+
+
+
+
+              ; Canned cycle positioning and definition.
+              G81 G98 G01 G91 X890 Y500 Z-8 I-22 F100 S500
+              ; Defines multiple machining.
+              G65 X-280 Y-40 A60 C1 F200
+              ; Cancels the canned cycle.
+              G80
+              ; Positioning.
+              G90 X0 Y0
+              ; End of program.
+              M30
+
+
+        It is also possible to write the multiple machining definition block in the following ways:
+             G65 X-280 Y-40 I444.75 C1 F200
+
+
+
+
+                                                                                                              CNC 8055
+                                                                                                              CNC 8055i
+
+
+
+                                                                                                              ·M· & ·EN· MODELS
+                                                                                                                SOFT: V01.6X
+
+
+
+
+                                                                                                                                    ·217·
+===== PAGE 217 =====
+
+
+
+
+ 10.
+
+
+
+
+                             G65: Machining programmed with an arc-chord
+        MULTIPLE MACHINING
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·218·
+===== PAGE 218 =====
+CYCLE
+
+                                                                                  11
+  What is an irregular pocket with islands?
+
+  A pocket with islands is composed by an external contour or profile and a series of internal contours
+  or profiles called islands.
+
+
+
+
+            (1) Outside contour or profile of the pocket.
+            (2) Inside contour or profile of the pocket.
+
+
+  There are two types of pockets with islands, namely 2D and 3D pockets.
+
+  2D pocket:
+  In a 2D pocket, all the walls of the outside profile and of the islands are vertical. To define the contours
+  of a 2D pocket, the plane profile for all the contours must be defined.
+
+
+
+
+  3D pocket:
+  In a 3D pocket, one, several or all the walls of the outside pocket and/or of the islands are not vertical.
+  To define the contours of a 2D pocket, the plane profile and the depth profile for all the contours
+  must be defined (even if they are vertical).
+
+
+
+
+                                                                                                                 CNC 8055
+                                                                                                                 CNC 8055i
+
+
+
+                                                                                                                 ·M· & ·EN· MODELS
+                                                                                                                   SOFT: V01.6X
+
+
+
+
+                                                                                                                      ·219·
+===== PAGE 219 =====
+
+
+
+
+ 11.
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+                                                    (A) Plane profile.                               (B) Depth profile.
+
+
+
+
+                                        Programming the irregular pocket canned cycle
+
+                                        The call function for a 2D or 3D irregular pocket canned cycle is G66. The machining of a pocket
+                                        may consist of the following operations, each one is programmed with its relevant ·G· function.
+
+                                         Function                        Machining operation                                      Pocket
+
+                                         G69 G81 G82 G83                 Drilling operation, prior to machining.                  2D
+
+                                         G67                             Roughing operation.                                      2D / 3D
+
+                                         G67                             Semi-finishing operation.                                3D
+
+                                         G68                             Finishing operation.                                     2D / 3D
+
+                                        G66 defines the operations that make up the machining of the pocket and where they are defined
+                                        in the program. This function also indicates where the various profiles of the pocket are defined.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·220·

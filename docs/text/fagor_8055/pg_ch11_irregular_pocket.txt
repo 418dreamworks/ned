@@ -1,0 +1,3451 @@
+===== PAGE 220 =====
+
+11.1         2D pockets
+
+        The G66 function is not modal, therefore it must be programmed whenever it is required to perform
+        a 2D pocket. In a block defining an irregular pocket canned cycle, no other function can be
+        programmed, its structure definition being:
+             G66 D H R I F K S E Q
+
+    D (0-9999) / H (0-9999) Drilling operation
+
+        Label number of the first block (D) and last block (H) defining the drilling operation.
+          • When not setting (H) only block (D) is executed.
+          • When not setting (D) there is no drilling operation.
+                                                                                                                                                11.
+                                                                                                                                                2D pockets
+
+
+
+
+                                                                                                                IRREGULAR POCKET CANNED CYCLE
+    R (0-9999) / I (0-9999) Roughing operation
+
+        Label number of the first block (R) and last block (I) defining the roughing operation.
+          • When not setting (I) only block (r) is executed.
+          • When not setting (R) there is no roughing operation.
+
+    F (0-9999) / K (0-9999) Finishing operation
+
+        Label number of the first block (F) and last block (K) defining the finishing operation.
+          • When not setting (K) only block (F) is executed.
+          • When not setting (F) there is no finishing operation.
+
+    S (0-9999) / E (0-9999) Geometric description of the profiles
+
+        Label number of the first block (S) and last block (E) defining the geometry of the profiles forming
+        the pocket. Both parameters must be set.
+
+    Q (0-999999) Program that contains the definition of the geometrical description of the profiles
+
+        Number of the program containing the geometry definition, parameters S and E. If it is in the same
+        program, (Q) need not be defined.
+
+        Programming example:
+
+              ; Initial positioning.
+              G00 G90 X100 Y200 Z50 F5000 T1 D2
+              M06
+              ; Definition of irregular pocket canned cycle.
+              G66 D100 R200 I210 F300 S400 E500
+              ; End of program.
+              M30
+
+              ; Defines the drilling operation.
+              N100 G81...
+              ; Roughing operation.
+              N200...
+              G67...
+              N210 ...
+              ; Finishing operation.
+              N300 G68...
+              ; Geometrical description.
+              N400 G0 G90 X300 Y50 Z3
+              ...                                                                                              CNC 8055
+              ...
+                                                                                                               CNC 8055i
+              N500 G2 G6 X300 Y50 I150 J0
+
+
+
+
+                                                                                                               ·M· & ·EN· MODELS
+                                                                                                                 SOFT: V01.6X
+
+
+
+
+                                                                                                                                                ·221·
+===== PAGE 221 =====
+
+                                                     Basic operation
+
+                                                     1. Drilling operation. Only if it has been programmed.
+                                                       After analyzing the geometry of the pocket with islands, the tool radius and the angle of the path
+                                                       programmed in the roughing operation, the CNC will calculate the coordinates of the point where
+                                                       the selected drilling operation must be performed.
+                                                     2. Roughing operation. Only if it has been programmed.
+                                                       It consists of several surface milling passes, until the total depth programmed has been reached.
+
+ 11.                                                   On each surface milling pass, the steps below will be followed depending on the type of
+                                                       machining that has been programmed:
+
+
+
+
+                                        2D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+                                                       Case A:
+                                                       When the machining paths are linear and maintain a certain angle with the abscissa axis.
+                                                       It first contours the external profile of the part. If the finishing operation has been selected on
+                                                       the cycle call, this contouring is performed leaving the finishing stock programmed for the
+                                                       finishing pass.
+
+
+
+
+                                                       Next the milling operation, with the programmed feed and steps. If, while milling, an island is run
+                                                       into for the first time, it will be contoured.
+
+
+
+
+                                                       After the contouring and the remaining times, the tool will pass over the island, withdrawing along
+                                                       the longitudinal axis, to the reference plane, and will continue machining once the island has
+                                                       been cleared.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·222·
+===== PAGE 222 =====
+
+             Case B:
+             When the machining paths are concentric.
+             The roughing operation is carried out along paths concentric to the profile. The machining will
+             be done as fast as possible avoiding (when possible) going over the islands.
+
+
+
+
+                                                                                                                                                11.
+                                                                                                                                                2D pockets
+
+
+
+
+                                                                                                                IRREGULAR POCKET CANNED CYCLE
+         3. Finishing operation. Only if it has been programmed.
+             This operation can be done on a single pass or on several, as well as following the profiles in
+             the programmed direction or in the opposite.
+             The CNC will machine both the external profile and the islands, making tangential approaches
+             and exits to these with a constant surface speed.
+
+        Reference coordinates:
+        In the pocket canned cycle with islands, there are four coordinates along the longitudinal axis
+        (selected with G15), which, due to their importance, are discussed below:
+         1. Initial plane coordinate. This coordinate is given by the position which the tool occupies when
+            the cycle is called.
+         2. Coordinate of the reference plane. This represents an approach coordinate to the part, and must
+            be programmed in absolute coordinates.
+         3. Part surface coordinate. This is programmed in absolute coordinates and in the first profile
+            definition block.
+         4. Machining depth coordinate. It must be programmed in absolute values.
+
+
+
+        Conditions after finishing the cycle
+
+        Once the canned cycle has ended, the active feedrate will be the last one programmed, i.e. the one
+        corresponding to the roughing operation or the finishing operation. The CNC will assume functions
+        G00, G40 and G90.
+
+
+
+
+                                                                                                               CNC 8055
+                                                                                                               CNC 8055i
+
+
+
+                                                                                                               ·M· & ·EN· MODELS
+                                                                                                                 SOFT: V01.6X
+
+
+
+
+                                                                                                                                                ·223·
+===== PAGE 223 =====
+
+                                                     11.1.1   Drilling operation
+
+                                                          This operation is optional and in order to be executed it is necessary to also program a roughing
+                                                          operation.
+
+                                                          It is mainly used when the tool programmed in the roughing operation does not machine along the
+                                                          longitudinal axis, allowing, by means of this operation, the access of this tool to the surface to be
+                                                          roughed off.
+
+                                                          It will be programmed in a block which will need to bear a label number in order to indicate to the
+
+ 11.                                                      canned cycle the block where the drilling operation is defined.
+
+                                                               ; Definition of irregular pocket canned cycle.
+
+
+
+                                        2D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+                                                               G66 D100 R200 F300 S400 E500
+                                                               ; Defines the drilling operation.
+                                                               N100 G81...
+
+
+                                                          The drilling canned cycles that can be programmed are:
+                                                              G69            Deep hole drilling canned cycle with variable peck.
+                                                              G81            Drilling canned cycle.
+                                                              G82            Drilling cycle with dwell.
+                                                              G83            Deep-hole drilling canned cycle with constant peck.
+
+                                                          When defining the drilling operation, the corresponding definition parameters must be programmed
+                                                          together with the required function.
+
+                                                          In a block of this type, only cycle definition parameters must be programmed, without defining XY
+                                                          positioning, as the canned cycle itself will calculate the coordinate of the point or points to be drilled
+                                                          according to the programmed profile and the roughing angle.
+
+                                                          After the definition parameters, auxiliary F S T D M functions can be programmed, if so wished. No
+                                                          M function can be programmed if it has an associated subroutine.
+
+                                                          It is possible to program the M06 function in this block (if it does not have an associated subroutine),
+                                                          to make the tool change. Otherwise, the CNC will show the corresponding error. If the M06 has an
+                                                          associated subroutine, the drilling tool "T" must be selected before calling the cycle.
+
+                                                               N100 G69 G98 G91 Z-4 I-90 B1.5 C0.5 D2 H2 J4 K100 F500 S3000 M3
+                                                               N120 G81 G99 G91 Z-5 I-30 F400 S2000 T3 D3 M3
+                                                               N220 G82 G99 G91 Z-5 I-30 K100 F400 S2000 T2 D2 M6
+                                                               N200 G83 G98 G91 Z-4 I-5 J6 T2 D4
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·224·
+===== PAGE 224 =====
+
+11.1.2       Roughing operation
+
+        This is the main operation in the machining of an irregular pocket, and its programming is optional.
+
+        This operation will be performed keeping the square corner mode (G07) or round corner mode (G05)
+        that is currently active. However, the canned cycle will assign the G07 format to the necessary
+        movements.
+
+        It will be programmed in a block which will need to bear a label number in order to indicate to the
+        canned cycle the block where the roughing operation is defined.
+
+              ; Definition of irregular pocket canned cycle.
+              G66 D100 R200 F300 S400 E500
+                                                                                                                                                 11.
+                                                                                                                                                 2D pockets
+
+
+
+
+                                                                                                                 IRREGULAR POCKET CANNED CYCLE
+              ; Definition of the roughing operation.
+              N200 G67...
+
+
+        The function for the roughing operation is G67 and its programming format:
+             G67 A B C I R K V Q F S T D M
+
+    [ A±5.5 ] Angle of the path with respect to the abscissa axis
+
+        It defines the angle of the machining path with respect to the abscissa axis.
+
+
+
+
+        If parameter "A" is not programmed, the roughing operation is carried out following concentric paths.
+        It will be machined as fast as possible since it does not have to go over the islands.
+
+
+
+
+                                                                                                                CNC 8055
+                                                                                                                CNC 8055i
+
+
+
+                                                                                                                ·M· & ·EN· MODELS
+                                                                                                                  SOFT: V01.6X
+
+
+
+
+                                                                                                                                                 ·225·
+===== PAGE 225 =====
+
+                                                     [ B±5.5 ] Pass depth
+
+                                                        Defines the machining pass along the longitudinal axis (depth of the roughing pass). It must be
+                                                        defined and it must have a value other than 0; otherwise, the roughing operation will be canceled.
+                                                         • If programmed with a positive sign, all the roughing will be performed with the same machining
+                                                           pass, and the canned cycle calculates a pass equal to or smaller than the programmed pass.
+                                                         • If programmed with a negative sign, all the roughing will be performed with the programmed
+                                                           pass, and the canned cycle will adjust the last pass to obtain the total programmed depth.
+
+
+
+ 11.
+                                        2D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+                                                     [ C5.5 ] Milling pass
+
+                                                        Defines the milling pass in roughing along the main plane, the entire pocket being performed with
+                                                        the given pass, and the canned cycle adjusts the last milling pass.
+
+
+
+
+                                                        If not programmed or programmed with a 0 value, it assumes a value of 3/4 of the diameter of the
+                                                        selected tool. If programmed with a value greater than the tool diameter, the CNC issues the relevant
+                                                        error message.
+
+                                                     [ I±5.5 ] Pocket depth
+
+                                                        Defines the total depth of the pocket and is programmed in absolute coordinates. It must be
+                                                        programmed.
+
+                                                     [ R±5.5 ] Reference plane
+
+                                                        Defines the reference plane coordinate and is programmed in absolute coordinates. It must be
+                                                        programmed.
+
+
+
+
+                                                     [ K1 ] Type of profile intersection
+
+                                                        Defines the type of profile intersection to be used.
+CNC 8055
+CNC 8055i                                                   K=0              Profile basic intersection
+                                                            K=1              Profile advanced intersection.
+
+                                                        If not programmed, a value of 0 is assumed. Both types of intersection are described later on.
+
+·M· & ·EN· MODELS                                    [ V5.5 ] Penetration feedrate
+  SOFT: V01.6X
+                                                        Defines the tool penetrating feedrate.
+
+                                                        If not programmed or programmed with a 0 value, it assumes 50% of the feedrate in the plane (F).
+
+
+
+     ·226·
+===== PAGE 226 =====
+
+    [ Q5.5 ] Penetrating angle
+
+        Optional. Tool penetration angle.
+
+
+
+
+                                                                                                                                             11.
+                                                                                                                                             2D pockets
+
+
+
+
+                                                                                                             IRREGULAR POCKET CANNED CYCLE
+        If not programmed or programming the value of 90, it means that the penetration is vertical. When
+        programming a value lower than 0 or greater than 90, it issues the error "wrong parameter value
+        in canned cycle".
+
+    [ F5.5 ] Machining feedrate
+
+        Optional. It sets the machining feedrate in the plane.
+
+    [ S5.5 ] Spindle speed
+
+        Optional. It sets the spindle speed.
+
+    [ T4 ] Tool number
+        Defines the tool used for the roughing operation. It must be programmed.
+
+    [ D4 ] Tool offset
+
+        Optional. Defines the tool offset number.
+
+    [ M ] Auxiliary (miscellaneous) functions
+
+        Optional. Up to 7 miscellaneous M functions can be programmed.
+
+        This operation allows M06 with an associated subroutine to be defined, and the tool change is
+        performed before beginning the roughing operation.
+
+
+
+
+                                                                                                            CNC 8055
+                                                                                                            CNC 8055i
+
+
+
+                                                                                                            ·M· & ·EN· MODELS
+                                                                                                              SOFT: V01.6X
+
+
+
+
+                                                                                                                                             ·227·
+===== PAGE 227 =====
+
+                                                     11.1.3     Finishing operation
+
+                                                          This operation is optional.
+
+                                                          It will be programmed in a block that will need to bear a label number in order to indicate to the canned
+                                                          cycle the block where the finishing operation is defined.
+
+                                                                 ; Definition of irregular pocket canned cycle.
+                                                                 G66 D100 R200 F300 S400 E500
+                                                                 ; Defines the finishing operation.
+
+ 11.                                                             N300 G68...
+
+
+
+
+                                        2D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+                                                          The function for the finishing operation is G68 and its programming format:
+                                                                G68 B L Q I R K V F S T D M
+
+                                                       [ B±5.5 ] Pass depth
+
+                                                          Defines the machining pass along the longitudinal axis (depth of the finishing pass).
+                                                              • If it is programmed with a value of 0, the CNC will perform a single finishing pass with the total
+                                                                depth of the pocket.
+                                                              • If programmed with a positive sign, all the roughing will be performed with the same machining
+                                                                pass, and the canned cycle calculates a pass equal to or lower than the programmed pass.
+                                                              • If programmed with a negative sign, all the roughing will be performed with the programmed
+                                                                pass, and the canned cycle will adjust the last pass to obtain the total programmed depth.
+
+
+
+
+                                                       [ L±5.5 ] Lateral finishing stock
+
+                                                          Defines the value of the finishing stock left on the side walls of the pocket before the finishing
+                                                          operation.
+
+
+
+
+                                                              • If programmed with a positive value, the finishing pass will be carried out in square corner (G07).
+                                                              • If a negative value is programmed, the finishing pass will be carried out in G5 (round corner).
+                                                              • If not programmed or programmed with a 0 value, the cycle does not run the finishing pass.
+
+CNC 8055                                               [ Q 0/1/2 ] Direction of the finishing pass
+CNC 8055i                                                 Indicates the direction of the finishing pass on the outside profile. The finishing pass on the islands
+                                                          is always run in the opposite direction.
+                                                                Q=0            The finishing pass is carried out in the same direction as the outside profile was
+                                                                               programmed.
+·M· & ·EN· MODELS
+  SOFT: V01.6X                                                  Q=1            The finishing pass is carried out in the opposite direction to the one programmed.
+                                                                Q=2            Reserved.
+
+                                                          Any other value will generate the corresponding error message. If parameter "Q" is not programmed,
+                                                          the cycle assumes Q0.
+
+
+     ·228·
+===== PAGE 228 =====
+
+    [ I±5.5 ] Pocket depth
+
+        Defines the total depth of the pocket and is programmed in absolute coordinates.
+          • If the island has a roughing operation, it is not necessary to define this parameter since it has
+            been programmed in that operation. However, if programmed in both operations, the canned
+            cycle will assume the particular depth indicated for each operation.
+          • If the island has no roughing operation, it is necessary to define this parameter.
+
+    [ R±5.5 ] Reference plane
+
+        Defines the reference plane coordinate and is programmed in absolute coordinates.
+          • If the island has a roughing operation, it is not necessary to define this parameter since it has
+                                                                                                                                                  11.
+            been programmed in that operation. However, if programmed in both operations, the canned
+
+
+                                                                                                                                                  2D pockets
+
+
+
+
+                                                                                                                  IRREGULAR POCKET CANNED CYCLE
+            cycle will assume the particular depth indicated for each operation.
+          • If the island has no roughing operation, it is necessary to define this parameter.
+
+
+
+
+    [ K1 ] Type of profile intersection
+        Defines the type of profile intersection to be used.
+             K=0              Profile basic intersection
+             K=1              Profile advanced intersection.
+
+        If the island has a roughing operation, it is not necessary to define this parameter since it has been
+        programmed in that operation. However, if programmed in both operations, the canned cycle will
+        assume the one defined for the roughing operation.
+
+        If no roughing operation has been defined and this parameter is not programmed, the canned cycle
+        will assume a K0 value. Both types of intersection are described later on.
+
+    [ V5.5 ] Penetration feedrate
+
+        Defines the tool penetrating feedrate.
+
+        If not programmed or programmed with a 0 value, it assumes 50% of the feedrate in the plane (F).
+
+    [ F5.5 ] Machining feedrate
+
+        Optional. It sets the machining feedrate in the plane.
+
+    [ S5.5 ] Spindle speed
+
+        Optional. It sets the spindle speed.
+
+    [ T4 ] Tool number
+
+        Defines the tool used for the roughing operation. It must be programmed.
+
+    [ D4 ] Tool offset
+
+        Optional. Defines the tool offset number.
+                                                                                                                 CNC 8055
+    [ M ] Auxiliary (miscellaneous) functions
+                                                                                                                 CNC 8055i
+        Optional. Up to 7 miscellaneous M functions can be programmed.
+
+        This operation allows M06 with an associated subroutine to be defined, and the tool change is
+        performed before beginning the roughing operation.
+                                                                                                                 ·M· & ·EN· MODELS
+                                                                                                                   SOFT: V01.6X
+
+
+
+
+                                                                                                                                                  ·229·
+===== PAGE 229 =====
+
+                                                     11.1.4     Profile programming syntax
+
+                                                          When outside and inside profiles of an irregular pocket are programmed the following programming
+                                                          rules must be followed: The canned cycle will verify all these geometry rules before beginning to
+                                                          make the pocket adapting the profile of the pocket to them and displaying the error message when
+                                                          necessary.
+                                                              • All types of programmed profiles must be closed. The following examples cause a geometry
+                                                                error.
+
+
+ 11.
+                                        2D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+                                                              • No profile must intersect itself. The following examples cause a geometry error.
+
+
+
+
+                                                              • When more than one outside profile has been programmed, the canned cycle assumes the one
+                                                                occupying the largest surface.
+
+
+
+
+                                                              • It is not required to program inside profiles. Should these be programmed, they must be partially
+                                                                or totally internal with respect to the outside profile. Some examples are given below.
+
+
+
+
+                                                              • An internal profile totally contained within another internal profile cannot be programmed. In this
+                                                                case, only the most external profile will be considered.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·230·
+===== PAGE 230 =====
+
+11.1.5       Profile intersection
+
+        In order to facilitate the programming of profiles, the canned cycle allows the profiles to intersect
+        one another and the external profile.
+
+        The two available types of intersection can be selected by parameter "K"
+
+
+
+        Basic profile intersection (K=0)
+
+        When selecting this type, the following profile intersecting rules are to be followed:                                                      11.
+                                                                                                                                                    2D pockets
+
+
+
+
+                                                                                                                    IRREGULAR POCKET CANNED CYCLE
+          • The intersection of islands generates a new inside profile which is their Boolean union.
+
+
+
+
+          • The intersection between an internal and an external profile generates a new external profile
+            as a result of the difference between the external and the internal profiles.
+
+
+
+
+          • If there is an inside profile which has an intersection with another inside profile and with the
+            external profile, the canned cycle first makes the intersection between the inside profiles and
+            then the intersection of these with the external profile.
+
+
+
+
+          • As a result of the intersection of the inside profiles with the outside one, a single pocket will be
+            obtained which corresponds to the outside profile having the largest surface. The rest will be
+            ignored.
+
+
+
+
+          • If the finishing operation has been programmed, the profile of the resulting pocket must comply
+            with all the tool compensation rules, since if a profile is programmed which cannot be machined
+            by the programmed finishing tool, the CNC will show the corresponding error.
+                                                                                                                   CNC 8055
+                                                                                                                   CNC 8055i
+
+
+
+                                                                                                                   ·M· & ·EN· MODELS
+                                                                                                                     SOFT: V01.6X
+
+
+
+
+                                                                                                                                                    ·231·
+===== PAGE 231 =====
+
+                                                     Advanced profile intersection (K=1)
+
+                                                     When selecting this type, the following profile intersecting rules are to be followed:
+                                                     1. The initial point of each contour determines the section to be selected.
+                                                        In a profile intersection, each contour is divided into several lines that could be grouped as:
+                                                           Lines external to the other contour.
+                                                           Lines internal to the other contour.
+
+
+ 11.                                                    This type of profile intersection selects in each contour the group of lines where the profile
+                                                        defining point is included.
+                                                        The following example shows the explained selection process. The solid lines indicate the lines
+
+
+                                        2D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+                                                        external to the other contour and the dashes indicate the internal lines. The initial point of each
+                                                        contour is indicated with an "x".
+
+
+
+
+                                                        Examples of profile intersections:
+
+
+                                                                 Boolean addition
+
+
+
+
+                                                                 Boolean subtraction
+
+
+
+
+                                                                 Boolean intersection
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·232·
+===== PAGE 232 =====
+
+         2. The programming sequence for the different profiles is determinant when having an intersection
+            of more than 3 profiles.
+             The profile intersection process is performed according to the order in which the profiles have
+             been programmed. This way, the result of the intersection between the first two will be intersected
+             with the third one and so forth.
+             The initial point of the resulting profiles always coincides with the initial point that defined the
+             first profile.
+
+
+
+
+                                                                                                                                                     11.
+                                                                                                                                                     2D pockets
+
+
+
+
+                                                                                                                     IRREGULAR POCKET CANNED CYCLE
+
+
+
+
+        Resulting profile
+
+        Once the profiles of the pocket and islands have been obtained, the canned cycle calculates the
+        remaining profiles according to the radius of the roughing tool and the programmed finishing stock.
+
+        It may occur that in this process intersections are obtained which do not appear among the
+        programmed profiles.
+                                                                                                                    CNC 8055
+                                                                                                                    CNC 8055i
+
+
+
+                                                                                                                    ·M· & ·EN· MODELS
+                                                                                                                      SOFT: V01.6X
+
+
+
+
+        If there is an area in which the roughing tool cannot pass, when the intersection is made between
+        the offset of the profiles, several pockets will be obtained as a result, all of which will be machined.
+
+                                                                                                                                                     ·233·
+===== PAGE 233 =====
+
+
+
+
+ 11.
+                                        2D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·234·
+===== PAGE 234 =====
+
+11.1.6        Profile programming syntax
+
+        The outside profile and the inside profiles or islands which are programmed must be defined by
+        simple geometrical elements such as straight lines or arcs.
+
+        The first definition block (where the external profile starts) and the last (where the last profile defined
+        ends) must be provided with the block label number. These label numbers will indicate the beginning
+        and end of the profile geometry definition for the profiles that make up the pocket.
+
+               ; Definition of irregular pocket canned cycle.
+               G66 D100 R200 F300 S400 E500
+               ; Geometrical description.
+               N400 G0 G90 X300 Y50 Z3
+                                                                                                                                                            11.
+                                                                                                                                                            2D pockets
+
+
+
+
+                                                                                                                            IRREGULAR POCKET CANNED CYCLE
+               ...
+               N500 G2 G6 X300 Y50 I150 J0
+
+
+        The profile programming syntax must follow these rules:
+            • The external profile must begin in the first definition block of the geometric description of the part
+              profiles. This block will be assigned a label number in order to indicate canned cycle G66 the
+              beginning of the geometric description.
+            • The part surface coordinate will be programmed in this block.
+            • All the internal profiles which are required may be programmed, one after the other. Each of these
+              must commence with a block containing the G00 function (indicating the beginning of the profile).
+
+                   Care must be taken to program G01, G02 or G03 in the block following the definition of the beginning,
+        i          as G00 is modal, thus preventing the CNC from interpreting the following blocks as the beginnings
+                   of a new profile.
+
+            • Once the definition of the profiles has been completed, a label number must be assigned to the
+              last block programmed, in order to indicate the canned cycle G66 the end of the geometric
+              description.
+
+               G0 G17 G90 X-350 Y0 Z50
+               ; Definition of irregular pocket canned cycle.
+               G66 D100 R200 F300 S400 E500
+               G0 G90 X0 Y0 Z50
+               M30
+
+               ; Defines the first profile.
+               N400 G0 G90 X-260 Y-190 Z4.5
+               --- --- --- ---
+               ; Defines another profile.
+               G0 X230 Y170
+               G1 --- ---
+               --- --- --- ---
+               ; Defines another profile.
+               G0 X-120 Y90
+               G2 --- ---
+               --- --- --- ---
+               ; End of geometric description.
+               N500 G1 X-120 Y90
+
+
+            • Profiles are described as programmed paths, it being possible to include corner rounding,
+              chamfers, etc., following the syntax rules defined for this purpose.
+            • The profile description must not contain: mirror images, scaling factor changes, pattern rotation,           CNC 8055
+              zero offsets, etc.                                                                                           CNC 8055i
+            • It must not contain high level blocks such as jumps, calls to subroutines or parametric
+              programming.
+            • It must not contain other canned cycles.
+                                                                                                                           ·M· & ·EN· MODELS
+                                                                                                                             SOFT: V01.6X
+
+
+
+
+                                                                                                                                                            ·235·
+===== PAGE 235 =====
+
+                                                     In addition to the G00 function, which has a special meaning, the irregular pocket canned cycle
+                                                     allows the use of the following functions for the definition of profiles.
+                                                        G01           Linear interpolation.
+                                                        G02           Clockwise circular interpolation.
+                                                        G03           Counterclockwise circular interpolation.
+                                                        G06           Circle center in absolute coordinates.
+                                                        G08           Arc tangent to previous path.
+
+
+ 11.                                                    G09
+                                                        G36
+                                                                      Three point arc.
+                                                                      Automatic radius blend.
+                                                        G39           Chamfer.
+
+
+                                        2D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+                                                        G53           Programming with respect to home.
+                                                        G70           Programming in inches.
+                                                        G71           Programming in millimeters.
+                                                        G90           Absolute programming.
+                                                        G91           Incremental programming.
+                                                        G93           Polar origin preset.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·236·
+===== PAGE 236 =====
+
+11.1.7       Errors
+
+        The CNC will issue the following errors:
+
+    ERROR 1023                    G67. Tool radius too large.
+
+        When selecting a wrong roughing tool.
+
+    ERROR 1024                    G68. Tool radius too large.
+
+        When selecting a wrong finishing tool.
+
+    ERROR 1025                    A tool with no radius has been programmed
+                                                                                                                                             11.
+                                                                                                                                             2D pockets
+
+
+
+
+                                                                                                             IRREGULAR POCKET CANNED CYCLE
+        When using a tool with "0" radius while machining a pocket.
+
+    ERROR 1026                    A step has been programmed that is larger than the tool diameter
+
+        When parameter "C" of the roughing operation is greater than the diameter of the roughing tool.
+
+    ERROR 1041                    Mandatory parameter not programmed in canned cycle
+
+        It comes up in the following instances:
+          • When parameters "I" and "R" have not been programmed in the roughing operation.
+          • When not using a roughing operation and not programming the "I" and "R" parameters for the
+            finishing operation.
+
+    ERROR 1042                    Wrong parameter value in the canned cycle)
+
+        It comes up in the following instances:
+          • When parameter "Q" of the finishing operation has the wrong value.
+          • When parameter "B" of the finishing operation has a "0" value.
+          • When parameter "J" of the finishing operation has been programmed with a value greater than
+            the finishing tool radius.
+
+    ERROR 1044                    The plane profile intersects itself in an irregular pocket with islands
+
+        It comes up when any of the plane profiles of the programmed contours intersects itself.
+
+    ERROR 1046                    Wrong tool position before the canned cycle
+
+        It comes up when calling the G66 cycle if the tool is positioned between the reference plane and
+        the depth coordinate (bottom) of any of the operations.
+
+    ERROR 1047                    Open plane profile in an irregular pocket with islands
+
+        It comes up when any of the programmed contours does not begin and end at the same point. It
+        may be because G1 has not been programmed after the beginning, with G0, on any of the profiles.
+
+    ERROR 1048                    Part surface coordinate not programmed in pocket with islands
+
+        It comes up when the first point of the geometry does not include the pocket top coordinate.
+
+    ERROR 1049                    Wrong reference plane coordinate for the canned cycle
+
+        It comes up when the coordinate of the reference plane is located between the part's "top" and
+        "bottom" in any of the operations.
+
+    ERROR 1084                    Arc programmed wrong.
+                                                                                                            CNC 8055
+        It comes up when any of the paths programmed in the geometry definition of the pocket is wrong.     CNC 8055i
+
+
+
+                                                                                                            ·M· & ·EN· MODELS
+                                                                                                              SOFT: V01.6X
+
+
+
+
+                                                                                                                                             ·237·
+===== PAGE 237 =====
+
+                                                     ERROR 1227              Wrong profile intersection in a pocket with islands
+
+                                                       It comes up in the following instances:
+                                                        • When two plane profiles have a common section (drawing on the left).
+                                                        • When the initial points of two profiles in the main plane coincide (drawing on the right).
+
+
+
+
+ 11.
+                                        2D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·238·
+===== PAGE 238 =====
+
+11.1.8       Programming examples
+
+        Programming example ·1·
+        Programming example, without automatic tool changer
+
+
+
+
+                                                                                                                 11.
+                                                                                                                 2D pockets
+
+
+
+
+              ; Tool dimensions.                                                 IRREGULAR POCKET CANNED CYCLE
+              (TOR1=5, TOI1=0, TOL1=25, TOK1=0)
+              (TOR2=3, TOI2=0, TOL2=20, TOK2=0)
+              (TOR3=5, TOI3=0, TOL3=25, TOK3=0)
+
+              ; Initial positioning and programming of a pocket with islands.
+              G0 G17 G43 G90 X0 Y0 Z25 S800
+              G66 D100 R200 F300 S400 E500
+              M30
+
+              ; Definition of drilling operation.
+              N100 G81 Z5 I-40 T3 D3 M6
+
+              ; Definition of roughing operation.
+              N200 G67 B20 C8 I-40 R5 K0 V100 F500 T1 D1 M6
+
+              ; Definition of finishing operation.
+              N300 G68 B0 L0.5 Q0 V100 F300 T2 D2 M6
+
+              ; Definition of pocket profiles.
+              N400 G0 G90 X-260 Y-190 Z0
+              ; External contour.
+              G1 X-200 Y30
+              X-200 Y210
+              G2 G6 X-120 Y290 I-120 J210
+              G1 X100 Y170
+              G3 G6 X220 Y290 I100 J290
+              G1 X360 Y290
+              G1 X360 Y-10
+              G2 G6 X300 Y-70 I300 J-10
+              G3 G6 X180 Y-190 I300 J-190
+              G1 X-260 Y-190
+
+              ; Contour of the first island.
+              G0 X230 Y170
+              G1 X290 Y170
+              G1 X230 Y50
+                                                                                CNC 8055
+              G1 X150 Y90                                                       CNC 8055i
+              G3 G6 X230 Y170 I150 J170
+
+              ; Contour of the second island.
+              G0 X-120 Y90
+              G1 X20 Y90                                                        ·M· & ·EN· MODELS
+                                                                                  SOFT: V01.6X
+              G1 X20 Y-50
+              G1 X-120 Y-50
+
+              ; End of contour definition.
+              N500 G1 X-120 Y90
+
+
+
+                                                                                                                 ·239·
+===== PAGE 239 =====
+
+                                                     Programming example ·2·
+                                                     Programming example, with automatic tool changer. The "x" of the figure indicates the initial points
+                                                     of each profile:
+
+
+
+
+ 11.
+                                        2D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+                                                         ; Tool dimensions.
+                                                         (TOR1=9, TOI1=0, TOL1=25, TOK1=0)
+                                                         (TOR2=3.6, TOI2=0, TOL2=20, TOK2=0)
+                                                         (TOR3=9, TOI3=0, TOL3=25, TOK3=0)
+
+                                                         ; Initial positioning and programming of a pocket with islands.
+                                                         G0 G17 G43 G90 X0 Y0 Z25 S800
+                                                         G66 D100 R200 F300 S400 E500
+                                                         M30
+
+                                                         ; Definition of drilling operation.
+                                                         N100 G81 Z5 I-40 T3 D3 M6
+
+                                                         ; Definition of roughing operation.
+                                                         N200 G67 B10 C5 I-40 R5 K1 V100 F500 T1 D1 M6
+
+                                                         ; Definition of finishing operation.
+                                                         N300 G68 B0 L0.5 Q1 V100 F300 T2 D2 M6
+
+                                                         ; Definition of pocket profiles.
+                                                         N400 G0 G90 X-300 Y50 Z3
+
+                                                         ; External contour.
+                                                         G1 Y190
+                                                         G2 G6 X-270 Y220 I-270 J190
+                                                         G1 X170
+                                                         X300 Y150
+                                                         Y50
+                                                         G3 G6 X300 Y-50 I300 J0
+                                                         G1 G36 R50 Y-220
+                                                         X -30
+                                                         G39 R50 X-100 Y-150
+                                                         X-170 Y-220
+                                                         X-270
+                                                         G2 G6 X-300 Y-190 I-270 J-190
+                                                         G1 Y-50
+CNC 8055                                                 X-240
+CNC 8055i                                                Y50
+                                                         X-300
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·240·
+===== PAGE 240 =====
+
+
+              ; Contour of the first island.
+              G0 X-120 Y80
+              G2 G6 X-80 Y80 I-100 J80; (Contour a)
+              G1 Y-80
+              G2 G6 X-120 Y-80 I-100 J-80
+              G1 Y80
+              G0 X-40 Y0; (Contour b)
+              G2 G6 X-40 Y0 I-100 J0
+              G0 X-180 Y20; (Contour c)
+              G1 X-20
+              G2 G6 X-20 Y-20 I-20 J0
+              G1 X-180
+              G2 G6 X-180 Y20 I-180 J0
+                                                                                       11.
+                                                                                       2D pockets
+
+
+
+
+                                                       IRREGULAR POCKET CANNED CYCLE
+              ; Contour of the second island.
+              G0 X150 Y140
+              G1 X170 Y110; (Contour d)
+              Y -110
+              X150 Y-140
+              X130 Y-110
+              Y110
+              X150 Y140
+              G0 X110 Y0; (Contour e)
+
+              ; End of contour definition.
+              N500 G2 G6 X110 Y0 I150 J0
+
+
+
+
+                                                      CNC 8055
+                                                      CNC 8055i
+
+
+
+                                                      ·M· & ·EN· MODELS
+                                                        SOFT: V01.6X
+
+
+
+
+                                                                                       ·241·
+===== PAGE 241 =====
+
+                                                     11.2      3D pockets
+
+                                                            The cycle calling function G66 is not modal; therefore, it must be programmed every time a 3D pocket
+                                                            is to be executed.
+
+                                                            In a block defining an irregular pocket canned cycle, no other function can be programmed, its
+                                                            structure definition being:
+                                                               G66 R I C J F K S E
+
+                                                       R (0-9999) / I (0-9999) Roughing operation
+ 11.                                                        Label number of the first block (R) and last block (I) defining the roughing operation.
+                                                             • When not setting (I) only block (r) is executed.
+
+
+                                        3D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+                                                             • When not setting (R) there is no roughing operation.
+
+                                                       C (0-9999) / J (0-9999) Semi-finishing operation
+
+                                                            Label number of the first block (C) and last block (J) defining the semi-finishing operation.
+                                                             • When not setting "J" only block "c" is executed.
+                                                             • When not setting (C) there is no semi-finishing operation.
+
+                                                       F (0-9999) / K (0-9999) Finishing operation
+
+                                                            Label number of the first block (F) and last block (K) defining the finishing operation.
+                                                             • When not setting (K) only block (F) is executed.
+                                                             • When not setting (F) there is no finishing operation.
+
+                                                       S (0-9999) / E (0-9999) Geometric description of the profiles
+
+                                                            Label number of the first block (S) and last block (E) defining the geometry of the profiles forming
+                                                            the pocket. Both parameters must be set.
+
+                                                            Programming example:
+
+                                                                ; Initial positioning.
+                                                                G00 G90 X100 Y200 Z50 F5000 T1 D2
+                                                                M06
+                                                                ; Definition of irregular pocket canned cycle.
+                                                                G66 R100 C200 J210 F300 S400 E500
+                                                                ; End of program.
+                                                                M30
+
+                                                                ; Roughing operation.
+                                                                N100 G67...
+                                                                ; Semi-finishing operation.
+                                                                N200...
+                                                                G67...
+                                                                N210 ...
+                                                                ; Finishing operation.
+                                                                N300 G68...
+                                                                ; Geometrical description.
+                                                                N400 G0 G90 X300 Y50 Z3
+                                                                ...
+                                                                ...
+                                                                N500 G2 G6 X300 Y50 I150 J0
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·242·
+===== PAGE 242 =====
+
+        Basic operation
+
+         1. Roughing operation. Only if it has been programmed.
+             It consists of several surface milling passes, until the total depth programmed has been reached.
+             On each surface milling pass, the steps below will be followed depending on the type of
+             machining that has been programmed:
+
+             Case A:
+             When the machining paths are linear and maintain a certain angle with the abscissa axis.
+             It first contours the external profile of the part. If the finishing operation has been selected on
+             the cycle call, this contouring is performed leaving the finishing stock programmed for the
+                                                                                                                                                    11.
+                                                                                                                                                    3D pockets
+
+
+
+
+                                                                                                                    IRREGULAR POCKET CANNED CYCLE
+             finishing pass.
+
+
+
+
+             Next the milling operation, with the programmed feed and steps. If, while milling, an island is run
+             into for the first time, it will be contoured.
+
+
+
+
+             After the contouring and the remaining times, the tool will pass over the island, withdrawing along
+             the longitudinal axis, to the reference plane, and will continue machining once the island has
+             been cleared.
+
+
+
+
+                                                                                                                   CNC 8055
+                                                                                                                   CNC 8055i
+
+
+
+                                                                                                                   ·M· & ·EN· MODELS
+                                                                                                                     SOFT: V01.6X
+
+
+
+
+                                                                                                                                                    ·243·
+===== PAGE 243 =====
+
+                                                       Case B:
+                                                       When the machining paths are concentric.
+                                                       The roughing operation is carried out along paths concentric to the profile. The machining will
+                                                       be done as fast as possible avoiding (when possible) going over the islands.
+
+
+
+
+ 11.
+                                        3D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+                                                     2. Semi-finishing operation. Only if it has been programmed.
+                                                       After the roughing, some ridges appear on the external profile as well as on the islands
+                                                       themselves as shown in the illustration below:
+
+
+
+
+                                                       With the semi-finishing operation, it is possible to minimize these ridges by running several
+                                                       contouring passes at different depths.
+
+
+
+
+                                                     3. Finishing operation. Only if it has been programmed.
+                                                       It runs consecutive finishing passes in 3D. Either inward or outward machining direction may
+                                                       be selected or both may be alternated.
+
+
+
+
+                                                       The CNC will machine both the external profile and the islands, making tangential approaches
+                                                       and exits to these with a constant surface speed.
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·244·
+===== PAGE 244 =====
+
+        Conditions after finishing the cycle:
+        Once the canned cycle has ended, the active feedrate will be the last one programmed, i.e. the one
+        corresponding to the roughing operation or the finishing operation. The CNC will assume functions
+        G00, G40 and G90.
+
+        Reference coordinates:
+        In the pocket canned cycle with islands, there are four coordinates along the longitudinal axis
+        (selected with G15), which, due to their importance, are discussed below:
+         1. Initial plane coordinate. This coordinate is given by the position which the tool occupies when
+            the cycle is called.
+         2. Coordinate of the reference plane. This represents an approach coordinate to the part, and must
+                                                                                                                                               11.
+                                                                                                                                               3D pockets
+
+
+
+
+                                                                                                               IRREGULAR POCKET CANNED CYCLE
+            be programmed in absolute coordinates.
+         3. Part surface coordinate. This is programmed in absolute coordinates and in the first profile
+            definition block.
+         4. Machining depth coordinate. It must be programmed in absolute values.
+
+
+
+
+                                                                                                              CNC 8055
+                                                                                                              CNC 8055i
+
+
+
+                                                                                                              ·M· & ·EN· MODELS
+                                                                                                                SOFT: V01.6X
+
+
+
+
+                                                                                                                                               ·245·
+===== PAGE 245 =====
+
+                                                     11.2.1     Roughing operation
+
+                                                          This is the main operation in the machining of an irregular pocket, and its programming is optional.
+
+                                                          It will be programmed in a block which will need to bear a label number in order to indicate to the
+                                                          canned cycle the block where the roughing operation is defined.
+
+                                                                 ; Definition of irregular pocket canned cycle.
+                                                                 G66 R100 C200 F300 S400 E500
+                                                                 ; Definition of the roughing operation.
+
+ 11.                                                             N100 G67...
+
+
+
+
+                                        3D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+                                                          The function for the roughing operation is G67 and it cannot be executed independently from the
+                                                          G66.
+
+                                                          Its programming format is:
+                                                                G67 A B C I R V F S T D M
+
+                                                       [ A±5.5 ] Angle of the path with respect to the abscissa axis
+
+                                                          It defines the angle of the machining path with respect to the abscissa axis.
+
+
+
+
+                                                          If parameter "A" is not programmed, the roughing operation is carried out following concentric paths.
+                                                          It will be machined as fast as possible since it does not have to go over the islands.
+
+
+
+
+                                                       [ B±5.5 ] Pass depth
+
+                                                          Defines the machining pass along the longitudinal axis (depth of the roughing pass). It must be
+                                                          defined and it must have a value other than 0; otherwise, the roughing operation will be canceled.
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+                                                              • If programmed with a positive sign, all the roughing will be performed with the same machining
+                                                                pass, and the canned cycle calculates a pass equal to or smaller than the programmed pass.
+
+
+     ·246·
+===== PAGE 246 =====
+
+          • If programmed with a negative sign, all the roughing will be performed with the programmed
+            pass, and the canned cycle will adjust the last pass to obtain the total programmed depth.
+
+        If done with B(+), the ridges will appear only on the pocket walls; but, if done with B(-), they could
+        also show up above the islands.
+
+
+
+
+                                                                                                                                                  11.
+                                                                                                                                                  3D pockets
+
+
+
+
+                                                                                                                  IRREGULAR POCKET CANNED CYCLE
+    [ C5.5 ] Milling pass
+
+        Defines the milling pass in roughing along the main plane, the entire pocket being performed with
+        the given pass, and the canned cycle adjusts the last milling pass.
+
+
+
+
+        If not programmed or programmed with a 0 value, it assumes a value of 3/4 of the diameter of the
+        selected tool.
+
+        If programmed with a value greater than the tool diameter, the CNC issues the relevant error
+        message.
+
+    [ I±5.5 ] Pocket depth
+
+        Defines the total depth of the pocket and is programmed in absolute coordinates. It must be
+        programmed.
+
+    [ R±5.5 ] Reference plane
+        Defines the reference plane coordinate and is programmed in absolute coordinates. It must be
+        programmed.
+
+
+
+
+    [ V5.5 ] Penetration feedrate
+
+        Defines the tool penetrating feedrate.                                                                   CNC 8055
+        If not programmed or programmed with a 0 value, it assumes 50% of the feedrate in the plane (F).
+                                                                                                                 CNC 8055i
+
+    [ F5.5 ] Machining feedrate
+
+        Optional. It sets the machining feedrate in the plane.
+                                                                                                                 ·M· & ·EN· MODELS
+                                                                                                                   SOFT: V01.6X
+    [ S5.5 ] Spindle speed
+
+        Optional. It sets the spindle speed.
+
+
+
+
+                                                                                                                                                  ·247·
+===== PAGE 247 =====
+
+                                                     [ T4 ] Tool number
+
+                                                        Defines the tool used for the roughing operation. It must be programmed.
+
+                                                     [ D4 ] Tool offset
+
+                                                        Optional. Defines the tool offset number.
+
+                                                     [ M ] Auxiliary (miscellaneous) functions
+
+                                                        Optional. Up to 7 miscellaneous M functions can be programmed.
+
+ 11.                                                    This operation allows M06 with an associated subroutine to be defined, and the tool change is
+                                                        performed before beginning the roughing operation.
+
+
+
+                                        3D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·248·
+===== PAGE 248 =====
+
+11.2.2       Semi-finishing operation
+
+        This operation is optional.
+
+        It will be programmed in a block which will need to bear a label number in order to indicate to the
+        canned cycle the block where the roughing operation is defined.
+
+              ; Definition of irregular pocket canned cycle.
+              G66 R100 C200 F300 S400 E500
+              ; Definition of the semi-finish operation.
+              N200 G67...
+                                                                                                                                                11.
+                                                                                                                                                3D pockets
+
+
+
+
+                                                                                                                IRREGULAR POCKET CANNED CYCLE
+        The function for the semi-finishing operation is G67 and it cannot be executed independently from
+        the G66.
+
+        Both the roughing and the semi-finishing operations are defined with G67; but, in different blocks.
+        It is function G66 who indicates which is which by means of parameters "R" and "C".
+
+        Its programming format is:
+             G67 B I R V F S T D M
+
+    [ B±5.5 ] Pass depth
+
+        Defines the machining step along the longitudinal axis (semi-finishing pass). It must be programmed
+        and with a value other than "0". Otherwise, the semi-finishing operation will be canceled.
+
+
+
+
+          • If programmed with a positive sign, the whole semi-finish operation will be carried out with the
+            same machining pass and the canned cycle will calculate a pass equal or smaller than the one
+            programmed.
+          • If programmed with a negative sign, the whole semi-finish operation will be run with the
+            programmed pass. The canned cycle will adjust the last pass to obtain the total programmed
+            depth.
+
+    [ I±5.5 ] Pocket depth
+
+        Defines the total depth of the pocket and is programmed in absolute coordinates.
+
+        If there is a roughing operation and it is not programmed, the CNC takes the value defined for the
+        roughing operation.
+
+        If there is no roughing operation, it must be programmed.
+
+    [ R±5.5 ] Reference plane
+
+        Defines the reference plane coordinate and is programmed in absolute coordinates.
+
+        If there is a roughing operation and it is not programmed, the CNC takes the value defined for the
+        roughing operation.
+
+        If there is no roughing operation, it must be programmed.
+
+    [ V5.5 ] Penetration feedrate                                                                              CNC 8055
+                                                                                                               CNC 8055i
+        Defines the tool penetrating feedrate.
+
+        If not programmed or programmed with a 0 value, it assumes 50% of the feedrate in the plane (F).
+
+    [ F5.5 ] Machining feedrate                                                                                ·M· & ·EN· MODELS
+                                                                                                                 SOFT: V01.6X
+        Optional. It sets the machining feedrate in the plane.
+
+
+
+
+                                                                                                                                                ·249·
+===== PAGE 249 =====
+
+                                                     [ S5.5 ] Spindle speed
+
+                                                        Optional. It sets the spindle speed.
+
+                                                     [ T4 ] Tool number.
+
+                                                        Defines the tool used for the semi-finishing operation. It must be programmed.
+
+                                                     [ D4 ] Tool offset
+
+                                                        Optional. Defines the tool offset number.
+
+ 11.                                                 [ M ] Auxiliary (miscellaneous) functions
+
+                                                        Optional. Up to 7 miscellaneous M functions can be programmed.
+
+
+                                        3D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+                                                        This operation allows M06 with an associated subroutine to be defined, and the tool change is
+                                                        performed before beginning the semi-finishing operation.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·250·
+===== PAGE 250 =====
+
+11.2.3       Finishing operation
+
+        This operation is optional.
+
+        It will be programmed in a block that will need to bear a label number in order to indicate to the canned
+        cycle the block where the finishing operation is defined.
+
+              ; Definition of irregular pocket canned cycle.
+              G66 R100 C200 F300 S400 E500
+              ; Defines the finishing operation.
+              N300 G68...
+                                                                                                                                                     11.
+                                                                                                                                                     3D pockets
+
+
+
+
+                                                                                                                     IRREGULAR POCKET CANNED CYCLE
+        The function for the finishing operation is G68 and it cannot be executed independently from the G66.
+
+        Its programming format is:
+             G68 B L Q J I R V F S T D M
+
+    [ B5.5 ] Drilling peck (step)
+
+        Defines the pass in the plane between two 3D paths of the finishing operation. It must be defined
+        and with a value other than "0".
+
+
+
+
+    [ L±5.5 ] Lateral finishing stock
+
+        Defines the value of the finishing stock on the side walls of the pocket left by the roughing and semi-
+        finishing operations. There is no finishing stock left on top of the islands nor on the bottom of the
+        pocket.
+
+        If programmed with a positive value, the finishing pass will be carried out in square corner (G07).
+        If a negative value is programmed, the finishing pass will be carried out in G5 (round corner). If not
+        programmed, the cycle assumes "L0".
+
+
+
+
+    [ Q 0/1/2 ] Direction of the finishing pass
+
+        Indicates the direction of the finishing pass.
+             Q= 1:            All the passes will be inward from the top of the pocket to its bottom
+             Q= 2:            All the passes will be outward from the bottom of the pocket to the top.
+             Q=0:             Alternating direction for every 2 consecutive paths.                                  CNC 8055
+        Any other value will generate the corresponding error message. If parameter "Q" is not programmed,          CNC 8055i
+        the cycle assumes Q0.
+
+
+
+                                                                                                                    ·M· & ·EN· MODELS
+                                                                                                                      SOFT: V01.6X
+
+
+
+
+                                                                                                                                                     ·251·
+===== PAGE 251 =====
+
+                                                     [ J5.5 ] Tool tip radius
+
+                                                        Indicates the tool tip radius and, therefore, the type of finishing tool being used.
+
+                                                        Depending on the radius assigned to the tool in the tool offset table (of the CNC variables: "TOR"
+                                                        + "TOI") and the value of assigned to this parameter, three tool types may be defined.
+                                                            FLAT           If J is not programmed or J = 0.
+                                                            SPHERICAL If J = R.
+                                                            TORIC          If J other than 0 and J smaller than R.
+
+ 11.
+                                        3D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+                                                     [ I±5.5 ] Pocket depth
+
+                                                        Defines the total depth of the pocket and is programmed in absolute coordinates.
+                                                          • If defined, the cycle will take it into account during the finishing operation.
+                                                          • If not defined and the pocket has a roughing operation, the cycle will assume the value defined
+                                                            for the roughing operation.
+                                                          • If not defined and the pocket has no roughing operation, but it has a semi-finishing operation,
+                                                            the cycle will assume the one define in the semi-finishing operation.
+                                                          • If the pocket has neither roughing nor semi-finishing operation, this parameter must be defined.
+
+                                                     [ R±5.5 ] Reference plane
+
+                                                        Defines the reference plane coordinate and is programmed in absolute coordinates.
+                                                          • If defined, the cycle will take it into account during the finishing operation.
+                                                          • If not defined and the pocket has a roughing operation, the cycle will assume the value defined
+                                                            for the roughing operation.
+                                                          • If not defined and the pocket has no roughing operation, but it has a semi-finishing operation,
+                                                            the cycle will assume the one define in the semi-finishing operation.
+                                                          • If the pocket has neither roughing nor semi-finishing operation, this parameter must be defined.
+
+                                                     [ V5.5 ] Penetration feedrate
+
+                                                        Defines the tool penetrating feedrate.
+
+                                                        If not programmed or programmed with a 0 value, it assumes 50% of the feedrate in the plane (F).
+
+                                                     [ F5.5 ] Machining feedrate
+
+                                                        Optional. It sets the machining feedrate in the plane.
+
+                                                     [ S5.5 ] Spindle speed
+
+                                                        Optional. It sets the spindle speed.
+CNC 8055
+                                                     [ T4 ] Tool number
+CNC 8055i
+                                                        Defines the tool used for the finishing operation. It must be programmed.
+
+                                                     [ D4 ] Tool offset
+·M· & ·EN· MODELS                                       Optional. Defines the tool offset number.
+  SOFT: V01.6X
+
+                                                     [ M ] Auxiliary (miscellaneous) functions
+
+                                                        Optional. Up to 7 miscellaneous M functions can be programmed.
+
+
+
+     ·252·
+===== PAGE 252 =====
+
+        This operation allows M06 with an associated subroutine to be defined, and the tool change is
+        performed before beginning the finishing operation.
+
+
+
+
+                                                                                                                                         11.
+                                                                                                                                         3D pockets
+
+
+
+
+                                                                                                         IRREGULAR POCKET CANNED CYCLE
+
+
+
+
+                                                                                                        CNC 8055
+                                                                                                        CNC 8055i
+
+
+
+                                                                                                        ·M· & ·EN· MODELS
+                                                                                                          SOFT: V01.6X
+
+
+
+
+                                                                                                                                         ·253·
+===== PAGE 253 =====
+
+                                                     11.2.4   Geometry of the contours or profiles
+
+                                                          To define the contours of a 2D pocket, the plane profile (3) and the depth profile (4) for all the contours
+                                                          must be defined (even if they are vertical).
+
+
+
+
+ 11.
+                                        3D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+
+
+
+
+                                                          Since the canned cycle applies the same depth profile to the whole contour, the same start point
+                                                          must be used to define the plane profile as for the depth profile.
+
+
+
+
+                                                          3D contours with more than one depth profile are also possible. These contours are called
+                                                          "composite 3D profiles" and will be described later on.
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·254·
+===== PAGE 254 =====
+
+11.2.5       Profile programming syntax
+
+        When programming inside or outside contours of an irregular 3D pocket (with islands) , the following
+        rules must be complied with:
+         1. The profile in the main plane indicates the shape of the contour.
+             Since a 3D contour has an infinite number of different profiles (1 per each depth coordinate),
+             the following must be programmed:
+               For the outside contour of the pocket, the one for the surface coordinate (1).
+               For the inside contours: the one corresponding to the base or bottom (2).
+                                                                                                                                                11.
+                                                                                                                                                3D pockets
+
+
+
+
+         2. The profile in the plane must be closed (same starting and end points) and it must not intersect    IRREGULAR POCKET CANNED CYCLE
+            itself. Examples:
+
+
+
+
+             The following examples cause a geometry error.
+
+
+
+
+         3. The depth profile (vertical cross section) must be programmed with any of the axes of the active
+            plane. If the active plane is the XY and the perpendicular axis is the Z axis, one must program:
+            G16XZ or G16YZ.
+             All profiles, plane and depth, must start with the definition of the plane containing it.
+
+              G16 XY ; Beginning of the outside profile definition.
+              ; - - Plane profile definition - -
+              G16 XZ
+              ; - - Depth profile definition - -
+
+              G16 XY ; Beginning of the island definition.
+              ; - - Plane profile definition - -
+              G16 XZ
+              ; - - Depth profile definition - -
+                                                                                                               CNC 8055
+                                                                                                               CNC 8055i
+
+
+
+                                                                                                               ·M· & ·EN· MODELS
+                                                                                                                 SOFT: V01.6X
+
+
+
+
+                                                                                                                                                ·255·
+===== PAGE 255 =====
+
+                                                     4. The depth profile must be defined after having defined the plane profile.
+                                                       The beginning points of the plane profile and depth profile must be the same one.
+                                                       Nevertheless, the depth profile must be programmed:
+                                                          For the outside contour of the pocket starting from the top or surface coordinate (1).
+                                                          For the inside contours, islands, starting from the bottom or base coordinate (2).
+
+
+
+
+ 11.
+                                        3D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+                                                     5. The depth profile must be open and without direction changes along its path. In other words,
+                                                        it cannot zig-zag.
+
+
+
+
+                                                       The following examples cause a geometry error.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·256·
+===== PAGE 256 =====
+
+        Programming example. 3D pocket without islands.
+
+
+
+
+                                                                                                  11.
+                                                                                                  3D pockets
+
+
+
+
+                                                                  IRREGULAR POCKET CANNED CYCLE
+              (TOR1=2.5,TOL1=20,TOI1=0,TOK1=0)
+              G17 G0 G43 G90 Z50 S1000 M4
+              G5
+              ; Defines the 3D pocket.
+              G66 R200 C250 F300 S400 E500
+              M30
+
+              ; Roughing operation.
+              N200 G67 B5 C4 I-30 R5 V100 F400 T1 D1 M6
+              ; Semi-finishing operation.
+              N250 G67 B2 I-30 R5 V100 F550 T2 D1 M6
+              ; Finishing operation.
+              N300 G68 B1.5 L0.75 Q0 I-30 R5 V80 F275 T3 D1 M6
+
+              ; Definition of pocket geometry.
+              N400 G17
+              ; Plane profile.
+              G90 G0 X10 Y30 Z0
+              G1 Y90
+              X130
+              Y10
+              X10
+              Y30
+              ; Depth profile.
+              G16
+              G0 X10 Z0
+              N500 G3 X40 Z-30 I30 K0
+
+
+
+
+                                                                 CNC 8055
+                                                                 CNC 8055i
+
+
+
+                                                                 ·M· & ·EN· MODELS
+                                                                   SOFT: V01.6X
+
+
+
+
+                                                                                                  ·257·
+===== PAGE 257 =====
+
+                                                     Programming examples. Profile definition.
+
+                                                     Pyramid island
+
+
+                                                                                                 ; Plane profile
+                                                                                                 G17
+                                                                                                 G0 G90 X17 Y4
+                                                                                                 G1 X30
+                                                                                                 G1 Y30
+
+ 11.                                                                                             G1 X4
+                                                                                                 G1 Y4
+                                                                                                 G1 X17
+
+
+
+                                        3D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+                                                                                                 ; Depth profile
+                                                                                                 G16 YZ
+                                                                                                 G0 G90 Y4 Z4
+                                                                                                 G1 Y17 Z35
+
+
+
+
+                                                     Conic island
+
+
+                                                                                                 ; Plane profile
+                                                                                                 G17
+                                                                                                 G0 G90 X35 Y8
+                                                                                                 G2 X35 Y8 I0 J27
+
+                                                                                                 ; Depth profile
+                                                                                                 G16 YZ
+                                                                                                 G0 G90 Y8 Z14
+                                                                                                 G1 Y35 Z55
+
+
+
+
+                                                     Semi-spherical island
+
+
+                                                                                                 ; Plane profile
+                                                                                                 G17
+                                                                                                 G0 G90 X35 Y8
+                                                                                                 G2 X35 Y8 I0 J27
+
+                                                                                                 ; Depth profile
+                                                                                                 G16 YZ
+                                                                                                 G0 G90 Y8 Z14
+                                                                                                 G2 Y35 Z41 R27
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·258·
+===== PAGE 258 =====
+
+        Programming example. 3D pocket without islands.
+
+
+
+
+                                                                                                11.
+                                                                                                3D pockets
+
+
+
+
+                                                                IRREGULAR POCKET CANNED CYCLE
+              (TOR1=2.5,TOL1=20,TOI1=0,TOK1=0)
+              G17 G0 G43 G90 Z50 S1000 M4
+              G5
+              ; Defines the 3D pocket.
+              G66 R200 C250 F300 S400 E500
+              M30
+              ; Roughing operation.
+              N200 G67 B5 C4 I9 R25 V100 F400 T1D1 M6
+              ; Semi-finishing operation.
+              N250 G67 B2 I9 R25 V100 F550 T2D1 M6
+              ; Finishing operation.
+              N300 G68 B1.5 L0.75 Q0 I9 R25 V50 F275 T3D1 M6
+              ; Definition of pocket geometry.
+              N400 G17
+              ; External contour. Plane profile.
+              G90 G0 X10 Y30 Z24
+              G1 Y50
+              X70
+              Y10
+              X10
+              Y30
+              ; Depth profile.
+              G16 XZ
+              G0 X10 Z24
+              G1 X15 Z9
+              ; Island definition. Plane profile.
+              G17
+              G90 G0 X30 Y30
+              G2 X30 Y30 I10 K0
+              ; Depth profile.
+              G16 XZ
+              G90 G0 X30 Z9
+              N500 G1 X35 Z20
+
+
+
+                                                               CNC 8055
+                                                               CNC 8055i
+
+
+
+                                                               ·M· & ·EN· MODELS
+                                                                 SOFT: V01.6X
+
+
+
+
+                                                                                                ·259·
+===== PAGE 259 =====
+
+                                                     11.2.6     Composite 3D profiles
+
+                                                          A composite 3D profile is a 3D contour with more than one depth profile.
+
+
+
+
+ 11.
+                                        3D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+                                                          It is defined by means of the intersection of several contours with different depth profiles.
+
+                                                          Each contour is defined by a profile in the plane and a depth profile. All the contours must meet the
+                                                          following conditions:
+                                                              • The plane profile must contain the corresponding sides completely.
+                                                              • Only a depth profile per contour must be defined.
+                                                              • The plane profile and the depth profile of the contour gathering several sides must start at the
+                                                                same point.
+
+                                                          The resulting plane profile will be formed by the intersection of the plane profiles of each element
+                                                          or contour.
+
+
+
+
+                                                          Each wall of the resulting profile will assume the corresponding depth profile.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·260·
+===== PAGE 260 =====
+
+        Profile intersection syntax
+
+        The plane profile intersecting rules are:
+         1. At a profile intersection, each contour is divided into several lines which could be grouped as:
+               Lines external to the other contour.
+               Lines internal to the other contour.
+             The starting point of each contour (x) determines the group of lines to be selected.
+             The following example shows the explained selection process. The solid lines indicate the lines
+             external to the other contour and the dashes indicate the internal lines.                                                          11.
+                                                                                                                                                3D pockets
+
+
+
+
+                                                                                                                IRREGULAR POCKET CANNED CYCLE
+             Examples of profile intersections:
+
+
+                       Boolean addition
+
+
+
+
+                       Boolean subtraction
+
+
+
+
+                       Boolean intersection
+
+
+
+
+                                                                                                               CNC 8055
+                                                                                                               CNC 8055i
+
+
+
+                                                                                                               ·M· & ·EN· MODELS
+                                                                                                                 SOFT: V01.6X
+
+
+
+
+                                                                                                                                                ·261·
+===== PAGE 261 =====
+
+                                                     2. The programming sequence for the different profiles is determinant when having an intersection
+                                                        of more than 3 profiles.
+                                                       The profile intersection process is performed according to the order in which the profiles have
+                                                       been programmed. This way, the result of the intersection between the first two will be intersected
+                                                       with the third one and so forth.
+                                                       The initial point of the resulting profiles always coincides with the initial point that defined the
+                                                       first profile.
+
+
+
+
+ 11.
+                                        3D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·262·
+===== PAGE 262 =====
+
+11.2.7       Profile stacking
+
+        When 2 or more profiles stack on top of each other, the following considerations must be taken into
+        account.
+
+
+
+                     For clarity sakes, refer to the drawing on the right
+                     that consists of 2 stacked profiles: 1 and 2.
+
+
+
+                                                                                                                                                  11.
+                                                                                                                                                  3D pockets
+
+
+
+
+                                                                                                                  IRREGULAR POCKET CANNED CYCLE
+        The base coordinate of the top profile (2) must coincide with the surface coordinate of the bottom
+        profile (1).
+
+
+
+
+        If there is a gap between them, the cycle will consider that they are 2 different profiles and it will
+        eliminate the top profile when executing the bottom one.
+
+
+
+
+        If the profiles mix, the canned cycle will make a groove around the top profile when running the
+        finishing pass.
+
+
+
+
+                                                                                                                 CNC 8055
+                                                                                                                 CNC 8055i
+
+
+
+                                                                                                                 ·M· & ·EN· MODELS
+                                                                                                                   SOFT: V01.6X
+
+
+
+
+                                                                                                                                                  ·263·
+===== PAGE 263 =====
+
+                                                     11.2.8     Profile programming syntax
+
+                                                          The outside profile and the inside profiles or islands which are programmed must be defined by
+                                                          simple geometrical elements such as straight lines or arcs.
+
+                                                          The first definition block (where the external profile starts) and the last (where the last profile defined
+                                                          ends) must be provided with the block label number. These label numbers will indicate the beginning
+                                                          and end of the profile geometry definition for the profiles that make up the pocket.
+
+                                                                 ; Definition of irregular pocket canned cycle.
+
+ 11.                                                             G66 R100 C200 F300 S400 E500
+                                                                 ; Geometrical description.
+                                                                 N400 G17
+
+
+
+                                        3D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+                                                                 ...
+                                                                 N500 G2 G6 X300 Y50 I150 J0
+
+
+                                                          The profile programming syntax must follow these rules:
+                                                              • The first profile defining block must have a label number to indicate to the G66 canned cycle
+                                                                the beginning of the geometry description.
+                                                              • First, the outside pocket contour must be defined and, then, the contour of each island.
+                                                                When a contour has more than one depth profile, the contours must be defined one by one
+                                                                indicating, on each one, the plane profile and, then, its depth profile.
+                                                              • The first profile defining block of the plane profile as well as that of the depth profile must contain
+                                                                function G00 (indicative of the beginning of the profile).
+                                                                Care must be taken to program G01, G02 or G03 in the block following the definition of the
+                                                                beginning, as G00 is modal, thus preventing the CNC from interpreting the following blocks as
+                                                                the beginnings of a new profile.
+                                                              • The last profile defining block must have a label number to indicate to the G66 canned cycle the
+                                                                end of the geometry description.
+
+                                                                 ; Definition of irregular pocket canned cycle.
+                                                                 G66 R200 C250 F300 S400 E500
+
+                                                                 ; Beginning of the definition of pocket geometry.
+                                                                 N400 G17
+                                                                 ; External contour. Plane profile.
+                                                                 G0 G90 X5 Y-26 Z0
+                                                                 --- --- --- ---
+                                                                 ; Depth profile.
+                                                                 G16 XZ
+                                                                 G0 --- ---
+                                                                 --- --- --- ---
+                                                                 ; Island definition
+                                                                 G17
+                                                                 ; Plane profile.
+                                                                 G0 X30 Y-6
+                                                                 --- --- --- ---
+                                                                 ; Depth profile.
+                                                                 G16 XZ
+                                                                 G0
+                                                                 --- --- --- ---
+                                                                 ; End of geometric description.
+                                                                 N500G3 Y-21 Z0 J-5 K0
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·264·
+===== PAGE 264 =====
+
+          • Profiles are described as programmed paths, it being possible to include corner rounding,
+            chamfers, etc., following the syntax rules defined for this purpose.
+          • The profile description must not contain: mirror images, scaling factor changes, pattern rotation,
+            zero offsets, etc.
+          • It must not contain high level blocks such as jumps, calls to subroutines or parametric
+            programming.
+          • It must not contain other canned cycles.
+
+        In addition to the G00 function, which has a special meaning, the irregular pocket canned cycle
+        allows the use of the following functions for the definition of profiles.
+             G01              Linear interpolation.                                                                                               11.
+             G02              Clockwise circular interpolation.
+
+
+                                                                                                                                                  3D pockets
+
+
+
+
+                                                                                                                  IRREGULAR POCKET CANNED CYCLE
+             G03              Counterclockwise circular interpolation.
+             G06              Circle center in absolute coordinates.
+             G08              Arc tangent to previous path.
+             G09              Three point arc.
+             G16              Main plane selection by two addresses and longitudinal axis.
+             G17              Main plane X-Y and longitudinal Z.
+             G18              Main plane Z-X and longitudinal Y.
+             G19              Main plane Y-Z and longitudinal X.
+             G36              Automatic radius blend.
+             G39              Chamfer.
+             G53              Programming with respect to home.
+             G70              Programming in inches.
+             G71              Programming in millimeters.
+             G90              Absolute programming.
+             G91              Incremental programming.
+             G93              Polar origin preset.
+
+
+
+
+                                                                                                                 CNC 8055
+                                                                                                                 CNC 8055i
+
+
+
+                                                                                                                 ·M· & ·EN· MODELS
+                                                                                                                   SOFT: V01.6X
+
+
+
+
+                                                                                                                                                  ·265·
+===== PAGE 265 =====
+
+                                                     11.2.9   Programming examples
+
+                                                          Programming example ·1·
+
+
+
+
+ 11.
+                                        3D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE                     In this example, the island has 3 types of depth profiles: A, B and C. 3 contours are used to define
+                                                          the island: A-type contour, B-type contour and C-type contour.
+
+
+
+
+                                                              ; Tool dimensions.
+                                                              (TOR1=2.5,TOL1=20,TOI1=0,TOK1=0)
+
+                                                              ; Initial positioning and definition of the 3D pocket.
+                                                              G17 G0 G43 G90 Z50 S1000 M4
+                                                              G5
+                                                              G66 R200 C250 F300 S400 E500
+                                                              M30
+
+                                                              ; Definition of roughing operation.
+                                                              N200 G67 B5 C4 I-20 R5 V100 F400 T1D1 M6
+
+                                                              ; Definition of the semi-finishing operation
+                                                              N250 G67 B2 I-20 R5 V100 F550 T2D1 M6
+
+                                                              ; Definition of finishing operation.
+                                                              N300 G68 B1.5 L0.75 Q0 I-20 R5 V80 F275 T3 D1 M6
+
+                                                              ; Definition of pocket geometry. Blocks N400 through N500.
+CNC 8055                                                      N400 G17
+
+CNC 8055i                                                     ; Definition of A-type contour. Plane profile.
+                                                              G0 G90 X50 Y90 Z0
+                                                              G1 X0
+                                                              Y10
+·M· & ·EN· MODELS                                             X100
+  SOFT: V01.6X                                                Y90
+                                                              X50
+
+
+
+
+     ·266·
+===== PAGE 266 =====
+
+
+              ; Depth profile.
+              G16 YZ
+              G0 G90 Y90 Z0
+              G1 Z-20
+
+              ; Definition of B-type contour. Plane profile.
+              G17
+              G0 G90 X10 Y50
+              G1 Y100
+              X-10
+              Y0
+              X10
+                                                                                                11.
+                                                                                                3D pockets
+
+
+
+
+                                                                IRREGULAR POCKET CANNED CYCLE
+              Y50
+
+              ; Depth profile.
+              G16 XZ
+              G0 G90 X10 Z0
+              G1 X20 Z-20
+
+              ; Definition of C-type contour. Plane profile.
+              G17
+              G0 G90 X90 Y50
+              G1 Y100
+              X110
+              Y0
+              X90
+              Y50
+
+              ; Depth profile.
+              G16 XZ
+              G0 G90 X90 Z0
+              N500 G2 X70 Z-20 I-20 K0
+
+
+
+
+                                                               CNC 8055
+                                                               CNC 8055i
+
+
+
+                                                               ·M· & ·EN· MODELS
+                                                                 SOFT: V01.6X
+
+
+
+
+                                                                                                ·267·
+===== PAGE 267 =====
+
+                                                     Programming example ·2·
+
+
+
+
+ 11.
+                                        3D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+                                                     In this example, the island has 3 types of depth profiles: A, B and C. 3 contours are used to define
+                                                     the island: A-type contour, B-type contour and C-type contour.
+
+
+
+
+                                                         ; Tool dimensions.
+                                                         (TOR1=7.5,TOI1=0,TOR2=5,TOI2=0,TOR3=2.5,TOI3=0)
+
+                                                         ; Initial positioning and definition of the 3D pocket.
+                                                         G17 G0 G43 G90 Z50 S1000 M4
+                                                         G5
+                                                         G66 R200 C250 F300 S400 E500
+                                                         M30
+
+                                                         ; Definition of roughing operation.
+                                                         N200 G67 B7 C14 I-25 R3 V100 F500 T1 D1 M6
+
+                                                         ; Definition of the semi-finishing operation
+                                                         N250 G67 B3 I-25 R3 V100 F625 T2 D2 M6
+
+                                                         ; Definition of finishing operation.
+                                                         N300 G68 B1 L1 Q0 J0 I-25 R3 V100 F350 T3 D3 M6
+
+                                                         ; Definition of pocket geometry. Blocks N400 through N500.
+                                                         N400 G17
+
+CNC 8055                                                 ; Definition of outside contour. Plane profile.
+CNC 8055i                                                G0 G90 X0 Y0 Z0
+                                                         G1 X150
+                                                         Y100
+                                                         X0
+                                                         Y0
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+                                                         ; Depth profile.
+                                                         G16 XZ
+                                                         G0 G90 X0 Z0
+                                                         G1 X10 Z-10
+
+
+
+     ·268·
+===== PAGE 268 =====
+
+
+              ; Definition of A-type contour. Plane profile.
+              G17
+              G0 G90 X50 Y30
+              G1 X70
+              Y70
+              X35
+              Y30
+              X50
+
+              ; Depth profile.
+              G16 YZ
+              G0 G90 Y30 Z-25
+                                                                                                11.
+                                                                                                3D pockets
+
+
+
+
+                                                                IRREGULAR POCKET CANNED CYCLE
+              G2 Y50 Z-5 J20 K0
+
+              ; Definition of B-type contour. Plane profile.
+              G17
+              G0 G90 X40 Y50
+              G1 Y25
+              X65
+              Y75
+              X40
+              Y50
+
+              ; Depth profile.
+              G16 XZ
+              G0 G90 X40 Z-25
+              G1 Z-5
+
+              ; Definition of C-type contour. Plane profile.
+              G17 G90 X80 Y40
+              G0 X96
+              G1 Y60
+              X60
+              Y40
+              X80
+
+              ; Depth profile.
+              G16 YZ
+              G0 G90 Y40 Z-25
+              N500 G2 Y50 Z-15 J10 K0
+
+
+
+
+                                                               CNC 8055
+                                                               CNC 8055i
+
+
+
+                                                               ·M· & ·EN· MODELS
+                                                                 SOFT: V01.6X
+
+
+
+
+                                                                                                ·269·
+===== PAGE 269 =====
+
+                                                     Programming example ·3·
+
+
+
+
+ 11.
+                                        3D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE                In this example, the island has 3 types of depth profiles: A, B and C. 3 contours are used to define
+                                                     the island: A-type contour, B-type contour and C-type contour.
+
+
+
+
+                                                         ; Tool dimensions.
+                                                         (TOR1=4,TOI1=0,TOR2=2.5,TOI2=0)
+
+                                                         ; Initial positioning and definition of the 3D pocket.
+                                                         G17 G0 G43 G90 Z25 S1000 M3
+                                                         G66 R200 C250 F300 S400 E500
+                                                         M30
+
+                                                         ; Definition of roughing operation.
+                                                         N200 G67 B5 C4 I-20 R5 V100 F700 T1 D1 M6
+
+                                                         ; Definition of the semi-finishing operation
+                                                         N250 G67 B2 I-20 R5 V100 F850 T1 D1 M6
+
+CNC 8055                                                 ; Definition of finishing operation.
+CNC 8055i                                                N300 G68 B1.5 L0.25 Q0 I-20 R5 V100 F500 T2 D2 M6
+
+                                                         ; Definition of pocket geometry. Blocks N400 through N500.
+                                                         N400 G17
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·270·
+===== PAGE 270 =====
+
+
+              ; Definition of outside contour. Plane profile.
+              G0 G90 X0 Y0 Z0
+              G1 X105
+              Y62
+              X0
+              Y0
+
+              ; Depth profile.
+              G16 XZ
+              G0 X0 Z0
+              G2 X5 Z-5 I0 K-5
+              G1 X7.5 Z-20
+                                                                                                 11.
+                                                                                                 3D pockets
+
+
+
+
+                                                                 IRREGULAR POCKET CANNED CYCLE
+              ; Definition of A-type contour. Plane profile.
+              G17
+              G90 G0 X37 Y19
+              G2 I0 J12
+
+              ; Depth profile.
+              G16 YZ
+              G0 Y19 Z-20
+              G1 Z-16
+              G2 Y31 Z-4 R12
+
+              ; Definition of B-type contour. Plane profile.
+              G17
+              G90 G0 X60 Y37
+              G1 X75
+              Y25
+              X40
+              Y37
+
+              ; Depth profile.
+              G16 YZ
+              G0 Y37 Z-20
+              G1 Z-13
+              G3 Y34 Z-10 J-3 K0
+
+              ; Definition of C-type contour. Plane profile.
+              G17
+              G0 X70 Y31
+              G1 Y40
+              X80
+              Y20
+              X70
+              Y31
+
+              ; Depth profile.
+              G16 XZ
+              G0 X70 Z-20
+              N500 G1 X65 Z-10
+
+
+
+
+                                                                CNC 8055
+                                                                CNC 8055i
+
+
+
+                                                                ·M· & ·EN· MODELS
+                                                                  SOFT: V01.6X
+
+
+
+
+                                                                                                 ·271·
+===== PAGE 271 =====
+
+                                                     Programming example ·4·
+
+
+
+
+ 11.
+                                        3D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+                                                     To define the island 10 contours are used as shown here:
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·272·
+===== PAGE 272 =====
+
+
+
+
+                                                                                                            11.
+                                                                                                            3D pockets
+
+
+
+
+                                                                            IRREGULAR POCKET CANNED CYCLE
+
+              ; Tool dimensions.
+              (TOR1=4,TOI1=0,TOR2=2.5,TOI2=0)
+
+              ; Initial positioning and definition of the 3D pocket.
+              G17 G0 G43 G90 Z25 S1000 M3
+              G66 R200 C250 F300 S400 E500
+              M30
+
+              ; Definition of roughing operation.
+              N200 G67 B5 C0 I-30 R5 V100 F700 T1 D1 M6
+
+              ; Definition of the semi-finishing operation
+              N250 G67 B1.15 I-29 R5 V100 F850 T1 D1 M6
+
+              ; Definition of finishing operation.
+              N300 G68 B1.5 L0.25 Q0 I-30 R5 V100 F500 T2 D2 M6
+
+              ; Definition of pocket geometry. Blocks N400 through N500.
+              N400 G17
+
+              ; Definition of outside contour. Plane profile.
+              G90 G0 X-70 Y20 Z0
+              G1 X70
+              Y-90
+              X-70
+              Y20
+
+              ; Definition of contour 1. Plane profile.
+              G17
+              G90 G0 X42.5 Y5
+              G1 G91 X-16
+              Y-60                                                         CNC 8055
+              X32
+              Y60
+                                                                           CNC 8055i
+              X-16
+
+              ; Depth profile.
+              G16 YZ                                                       ·M· & ·EN· MODELS
+              G0 G90 Y5 Z-30                                                 SOFT: V01.6X
+
+              G3 Y-25 Z0 J-30 K0
+
+
+
+
+                                                                                                            ·273·
+===== PAGE 273 =====
+
+
+                                                     ; Definition of contour 2.
+                                                     G17
+                                                     G0 X27.5 Y-25
+                                                     G1 G91 Y31
+                                                     G1 X-2
+                                                     Y-62
+                                                     X2
+                                                     Y31
+
+
+
+ 11.                                                 ; Depth profile.
+                                                     G16 XZ
+                                                     G0 G90 X27.5 Z-30
+
+
+
+                                        3D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+                                                     G1 Z0
+
+                                                     ; Definition of contour 3.
+                                                     G17
+                                                     G0 X57.5 Y-25
+                                                     G1 G91 Y-31
+                                                     X2
+                                                     Y62
+                                                     X-2
+                                                     Y-31
+
+                                                     ; Depth profile.
+                                                     G16 XZ
+                                                     G0 G90 X57.5 Z-30
+                                                     G1 Z0
+
+                                                     ; Definition of contour 4.
+                                                     G17
+                                                     G0 X0 Y-75
+                                                     G1 G91 X-31
+                                                     Y-2
+                                                     X62
+                                                     Y2
+                                                     X-31
+
+                                                     ; Depth profile.
+                                                     G16 YZ
+                                                     G0 G90 Y-75 Z-30
+                                                     G1 Z0
+
+                                                     ; Definition of contour 5.
+                                                     G17
+                                                     G0 X-30 Y-60
+                                                     G1 G91 Y-16
+                                                     X60
+                                                     Y32
+                                                     X-60
+                                                     Y-16
+
+                                                     ; Depth profile.
+                                                     G16 XZ
+                                                     G0 G90 X-30 Z-30
+                                                     G2 X0 Z0 I30 K0
+
+CNC 8055                                             ; Definition of contour 6.
+CNC 8055i                                            G17
+                                                     G0 X0 Y-45
+                                                     G1 G91 X31
+                                                     Y2
+                                                     X-62
+·M· & ·EN· MODELS
+                                                     Y-2
+  SOFT: V01.6X
+                                                     X31
+
+
+
+
+     ·274·
+===== PAGE 274 =====
+
+
+              ; Depth profile.
+              G16 YZ
+              G0 G90 Y-45 Z-30
+              G1 Z0
+
+              ; Definition of contour 7.
+              G17
+              G0 X-57.5 Y-25
+              G1 G91 Y31
+              X-2
+              Y-62
+              X2
+                                                                             11.
+                                                                             3D pockets
+
+
+
+
+                                             IRREGULAR POCKET CANNED CYCLE
+              Y31
+
+              ; Depth profile.
+              G16 XZ
+              G0 G90 X-57.5 Z-30
+              G1 Z0
+
+              ; Definition of contour 8.
+              G17
+              G0 X-42.5 Y5
+              G1 G91 X-16
+              Y-60
+              X32
+              Y60
+              X-16
+
+              ; Depth profile.
+              G16 YZ
+              G0 G90 Y5 Z-30
+              G3 Y-25 Z0 J-30 K0
+
+              ; Definition of contour 9.
+              G17
+              G0 X-27.5 Y-25
+              G1 G91 Y-31
+              X2
+              Y62
+              X-2
+              Y-31
+
+              ; Depth profile.
+              G16 XZ
+              G0 G90 X27.5 Z-30
+              G1 Z0
+
+              ; Definition of contour 10.
+              G17
+              G0 X0 Y0
+              G1 X-28
+              Y-50
+              X28
+              Y0
+              X0
+
+              ; Depth profile.              CNC 8055
+              G16 YZ                        CNC 8055i
+              G0 Y0 Z-30
+              N500 G3 Y-25 Z-5 J-25 K0
+
+
+                                            ·M· & ·EN· MODELS
+                                              SOFT: V01.6X
+
+
+
+
+                                                                             ·275·
+===== PAGE 275 =====
+
+                                                     Programming example ·5·
+
+
+
+
+ 11.
+                                        3D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE                In this example, the island has 2 types of depth profiles: A and B. 2 contours are used to define the
+                                                     island: the low contour (A-type) and the high contour (B-type).
+
+
+
+
+                                                         ; Tool dimensions.
+                                                         (TOR1=2.5,TOL1=20,TOI1=0,TOK1=0)
+
+                                                         ; Initial positioning and definition of the 3D pocket.
+                                                         G17 G0 G43 G90 Z50 S1000 M4
+                                                         G5
+                                                         G66 R200 C250 F300 S400 E500
+                                                         M30
+
+                                                         ; Definition of roughing operation.
+                                                         N200 G67 B5 C4 I-25 R5 V100 F400 T1 D1 M6
+
+                                                         ; Definition of the semi-finishing operation
+                                                         N250 G67 B2 I-25 R5 V100 F550 T2 D1 M6
+
+                                                         ; Definition of finishing operation.
+                                                         N300 G68 B1.5 L0.75 Q0 I-25 R5 V100 F275 T3 D1 M6
+
+                                                         ; Definition of pocket geometry. Blocks N400 through N500.
+                                                         N400 G17
+
+                                                         ; Definition of outside contour. Plane profile.
+                                                         G90 G0 X5 Y-26 Z0
+CNC 8055                                                 G1 Y25
+                                                         X160
+CNC 8055i
+                                                         Y-75
+                                                         X5
+                                                         Y-26
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·276·
+===== PAGE 276 =====
+
+
+              ; Definition of the low (A-type) contour. Plane profile.
+              G17
+              G90 G0 X30 Y-6
+              G1 Y-46
+              X130
+              Y-6
+              X30
+
+              ; Depth profile.
+              G16 XZ
+              G0 X30 Z-25
+              G1 Z-20
+                                                                                                           11.
+                                                                                                           3D pockets
+
+
+
+
+                                                                           IRREGULAR POCKET CANNED CYCLE
+              G2 X39 Z-11 I9 K0
+
+              ; Definition of the high (B-type) contour. Plane profile.
+              G17
+              G90 G0 X80 Y-16
+              G2 I0 J-10
+
+              ; Depth profile.
+              G16 YZ
+              G0 Y-16 Z-11
+              G1 Y-16 Z-5
+              N500 G3 Y-21 Z0 J-5 K0
+
+
+
+
+                                                                          CNC 8055
+                                                                          CNC 8055i
+
+
+
+                                                                          ·M· & ·EN· MODELS
+                                                                            SOFT: V01.6X
+
+
+
+
+                                                                                                           ·277·
+===== PAGE 277 =====
+
+                                                     11.2.10 Errors
+
+                                                          The CNC will issue the following errors:
+
+                                                       ERROR 1025              A tool with no radius has been programmed
+
+                                                          It comes up when using a tool with "0" radius while machining a 3D pocket.
+
+                                                       ERROR 1026              A step has been programmed that is larger than the tool diameter
+
+
+ 11.                                                      When parameter "C" of the roughing operation is greater than the diameter of the roughing tool.
+
+                                                       ERROR 1041              Mandatory parameter not programmed in canned cycle
+
+
+
+                                        3D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+                                                          It comes up in the following instances:
+                                                           • When parameters "I" and "R" have not been programmed in the roughing operation.
+                                                           • When not using a roughing operation and not programming the "I" and "R" parameters for the
+                                                             semi-finishing operation.
+                                                           • When not using a semi-finishing operation and not programming the "I" and "R" parameters for
+                                                             the finishing operation.
+                                                           • When parameter "B" has not been programmed in the finishing operation.
+
+                                                       ERROR 1042              Wrong parameter value in the canned cycle)
+
+                                                          It comes up in the following instances:
+                                                           • When parameter "Q" of the finishing operation has the wrong value.
+                                                           • When parameter "B" of the finishing operation has a "0" value.
+                                                           • When parameter "J" of the finishing operation has been programmed with a value greater than
+                                                             the finishing tool radius.
+
+                                                       ERROR 1043               Wrong depth profile in pocket with islands
+
+                                                          It comes up in the following instances:
+                                                           • When the depth profiles of 2 sections of the same contour (simple or composite) cross each other
+                                                           • When the finishing operation cannot be performed with the programmed tool. A typical case is
+                                                             a spherical mold with a non-spherical tool (parameter "J" not equal to the radius).
+
+                                                       ERROR 1044              The plane profile intersects itself in an irregular pocket with islands
+
+                                                          It comes up when any of the plane profiles of the programmed contours intersects itself.
+
+                                                       ERROR 1046              Wrong tool position before the canned cycle
+
+                                                          It comes up when calling the G66 cycle if the tool is positioned between the reference plane and
+                                                          the depth coordinate (bottom) of any of the operations.
+
+                                                       ERROR 1047               Open plane profile in an irregular pocket with islands
+
+                                                          It comes up when any of the programmed contours does not begin and end at the same point. It
+                                                          may be because G1 has not been programmed after the beginning, with G0, on any of the profiles.
+
+                                                       ERROR 1048              Part surface coordinate not programmed in pocket with islands
+
+                                                          It comes up when the first point of the geometry does not include the pocket top coordinate.
+
+                                                       ERROR 1049              Wrong reference plane coordinate for the canned cycle
+CNC 8055                                                  It comes up when the coordinate of the reference plane is located between the part's "top" and
+CNC 8055i                                                 "bottom" in any of the operations.
+
+                                                       ERROR 1084              Arc programmed wrong.
+
+                                                          It comes up when any of the paths programmed in the geometry definition of the pocket is wrong.
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+                                                       ERROR 1227               Wrong profile intersection in a pocket with islands
+
+                                                          It comes up in the following instances:
+                                                           • When two plane profiles have a common section (drawing on the left).
+
+
+
+     ·278·
+===== PAGE 278 =====
+
+          • When the initial points of two profiles in the main plane coincide (drawing on the right).
+
+
+
+
+                                                                                                                                          11.
+                                                                                                                                          3D pockets
+
+
+
+
+                                                                                                          IRREGULAR POCKET CANNED CYCLE
+
+
+
+
+                                                                                                         CNC 8055
+                                                                                                         CNC 8055i
+
+
+
+                                                                                                         ·M· & ·EN· MODELS
+                                                                                                           SOFT: V01.6X
+
+
+
+
+                                                                                                                                          ·279·
+===== PAGE 279 =====
+
+
+
+
+ 11.
+                                        3D pockets
+
+
+
+
+        IRREGULAR POCKET CANNED CYCLE
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·280·
+===== PAGE 280 =====
+
+
+                                                                            12
+  The CNC has two probe inputs, one for TTL-type 5Vdc signals and another for 24 Vdc signals.
+
+  The connection of the different types of probes to these inputs are explained in the appendix to the
+  Installation manual.
+
+  This control allows the following operations to be performed, by using probes:
+   • Programming probing blocks with functions G75 and G76.
+   • Execution of the various tool calibration, part-measurement and part centering cycles by means
+     of high-level language programming.
+
+
+
+
+                                                                                                         CNC 8055
+                                                                                                         CNC 8055i
+
+
+
+                                                                                                         ·M· & ·EN· MODELS
+                                                                                                           SOFT: V01.6X
+
+
+
+
+                                                                                                              ·281·

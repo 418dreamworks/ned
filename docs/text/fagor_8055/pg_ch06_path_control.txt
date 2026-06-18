@@ -1,0 +1,1336 @@
+===== PAGE 81 =====
+
+                                                    6.2      Linear interpolation (G01)
+
+                                                          The movements programmed after G01 are executed according to a straight line and at the
+                                                          programmed feedrate "F".
+
+                                                          When two or three axes move simultaneously the resulting path is a straight line between the starting
+                                                          point and the final point.
+
+                                                          The machine moves according to this path to the programmed feedrate "F". The CNC calculates
+                                                          the feedrates of each axis so that the resulting path is the "F" value programmed.
+
+ 6.
+
+
+                       Linear interpolation (G01)
+        PATH CONTROL
+
+
+
+
+                                                                  G01 G90 X650 Y400 F150
+
+
+                                                          The programmed feedrate "F" may vary between 0% and 120% via the switch located on the Control
+                                                          Panel of the CNC, or by selecting between 0% and 255% from the PLC, or via the DNC or the
+                                                          program.
+
+                                                          The CNC, however, is equipped with the general machine parameter "MAXFOVR" to limit maximum
+                                                          feedrate variation.
+
+                                                          With this CNC, it is possible to program a positioning-only axis in a linear interpolation block. The
+                                                          CNC will calculate the feedrate for this positioning-only axis so it reaches the target coordinate at
+                                                          the same time as the interpolating axes.
+
+                                                          Function G01 is modal and incompatible with G00, G02, G03, G33 and G34. Function G01 can be
+                                                          programmed as G1.
+
+                                                          On power-up, after executing M02, M30 or after EMERGENCY or RESET, the CNC assumes code
+                                                          G00 or G01, depending on how general machine parameter "IMOVE" has been set.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·82·
+===== PAGE 82 =====
+
+6.3          Circular interpolation (G02, G03)
+
+        There are two ways of carrying out circular interpolation:
+             G02: Clockwise circular interpolation
+             G03: Counterclockwise circular interpolation
+
+        Movements programmed after G02 and G03 are executed in the form of a circular path and at the
+        programmed feedrate "F".
+
+        Clockwise (G02) and counterclockwise (G03) definitions are established according to the system
+        of coordinates shown below:                                                                                                6.
+
+
+                                                                                                                                   Circular interpolation (G02, G03)
+                                                                                                                    PATH CONTROL
+
+
+
+
+        This system of coordinates refers to the movement of the tool on the part.
+
+        Circular interpolation can only be executed on a plane. The form of definition of circular interpolation
+        is as follows :
+
+
+
+        Cartesian coordinates
+
+        The coordinates of the endpoint of the arc and the position of the center with respect to the starting
+        point are defined according to the axes of the work plane.
+
+        The center coordinates are defined in radius by the letters I, J, or K, each one of these being
+        associated to the axes as follows: When not defining the center coordinates, the CNC assumes that
+        their value is zero.
+
+
+
+
+                                                                 Axes X, U, A           ==>   I
+
+                                                                 Axes Y, V, B           ==>   J
+
+                                                                 Axes Z, W, C           ==>   K
+
+
+
+
+        Programming format:                                                                                        CNC 8055
+                                                                                                                   CNC 8055i
+             Plane XY:            G02(G03)   X±5.5            Y±5.5             I±6.5             J±6.5
+
+             Plane ZX:            G02(G03)   X±5.5            Z±5.5             I±6.5             K±6.5
+
+             Plane YZ:            G02(G03)   Y±5.5            Z±5.5             J±6.5             K±6.5            ·M· & ·EN· MODELS
+                                                                                                                     SOFT: V01.6X
+
+
+
+
+                                                                                                                                            ·83·
+===== PAGE 83 =====
+
+                                                           The programming order of the axes is always maintained regardless of the plane selected,, as are
+                                                           the respective center coordinates.
+
+                                                               Plane AY:       G02(G03)          Y±5.5          A±5.5           J±6.5             I±6.5
+
+                                                               Plane XU:       G02(G03)          X±5.5          U±5.5           I±6.5             I±6.5
+
+
+
+
+                                                           Polar coordinates
+
+ 6.                                                        It is necessary to define the angle to be traveled Q and the distance from the starting point to the
+                                                           center (optional), according to the axes of the work plane.
+
+
+
+
+                       Circular interpolation (G02, G03)
+        PATH CONTROL
+                                                           The center coordinates are defined by the letters I, J, or K, each one of these being associated to
+                                                           the axes as follows:
+
+                                                               Axes X, U, A          ==>     I
+
+                                                               Axes Y, V, B          ==>     J
+
+                                                               Axes Z, W, C          ==>     K
+
+                                                           If the center of the arc is not defined, the CNC will assume that it coincides with the current polar
+                                                           origin.
+
+                                                           Programming format:
+
+                                                               Plane XY:      G02(G03)       Q±5.5          I±6.5          J±6.5
+
+                                                               Plane ZX:      G02(G03)       Q±5.5          I±6.5          K±6.5
+
+                                                               Plane YZ:      G02(G03)       Q±5.5          J±6.5          K±6.5
+
+
+
+
+                                                           Cartesian coordinates with radius programming
+
+                                                           The coordinates of the endpoint of the arc and radius R are defined.
+
+                                                           Programming format:
+
+                                                               Plane XY:      G02(G03)       X±5.5          Y±5.5          R±6.5
+
+                                                               Plane ZX:      G02(G03)       X±5.5          Z±5.5          R±6.5
+
+                                                               Plane YZ:      G02(G03)       Y±5.5          Z±5.5          R±6.5
+
+                                                           If a complete circle is programmed, with radius programming, the CNC will show the corresponding
+                                                           error, as infinite solutions exist.
+
+                                                           If an arc is less than 180o, the radius is programmed with a plus sign, and a minus sign if it is more
+                                                           than 180o.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·84·
+===== PAGE 84 =====
+
+
+
+
+                                                                                                                              6.
+
+
+                                                                                                                              Circular interpolation (G02, G03)
+                                                                                                               PATH CONTROL
+        If P0 is the starting point and P1 the endpoint, there are 4 arcs which have the same value passing
+        through both points.
+
+        Depending on the circular interpolation G02 or G03, and on the radius sign, the relevant arc is
+        defined. Thus the programming format of the sample arcs is as follows:
+             Arc 1            G02 X.. Y.. R- ..
+             Arc 2            G02 X.. Y.. R+..
+             Arc 3            G03 X.. Y.. R+..
+             Arc 4            G03 X.. Y.. R- ..
+
+
+
+        Execution of the circular interpolation
+
+        The CNC calculates, depending on the programmed arc, the radii of the starting point and endpoint.
+        Although both of them should be "exactly" the same, general parameter "CIRINERR" allows a
+        certain calculation tolerance by establishing the maximum difference between these two radii. When
+        exceeding this value, the CNC will issue the corresponding error message.
+
+        In all these programming cases, the CNC checks that the center or radius coordinates do not exceed
+        214748.3647mm. Otherwise, the CNC will display the corresponding error.
+
+        The programmed feedrate "F" may vary between 0% and 120% via the switch located on the Control
+        Panel of the CNC, or by selecting between 0% and 255% from the PLC, or via the DNC or the
+        program.
+
+        The CNC, however, is equipped with the general machine parameter "MAXFOVR" to limit maximum
+        feedrate variation.
+
+        If the general machine parameter "PORGMOVE" has been selected and a circular interpolation
+        (G02 or G03) is programmed, the CNC assumes the center of the arc to be a new polar origin.
+
+        Functions G02 and G03 are modal and incompatible both among themselves and with G00, G01,
+        G33 and G34. Functions G02 and G03 can be programmed as G2 and G3.
+
+        Also, function G74 (home search) and G75 (probing) cancel the G02 and G03 functions.
+
+        On power-up, after executing M02, M30 or after EMERGENCY or RESET, the CNC assumes code
+        G00 or G01, depending on how general machine parameter "IMOVE" has been set.
+
+                                                                                                              CNC 8055
+                                                                                                              CNC 8055i
+
+
+
+                                                                                                              ·M· & ·EN· MODELS
+                                                                                                                SOFT: V01.6X
+
+
+
+
+                                                                                                                                       ·85·
+===== PAGE 85 =====
+
+                                                           Programming examples
+
+
+
+
+ 6.
+
+
+                       Circular interpolation (G02, G03)
+        PATH CONTROL                                       Various programming modes are analyzed below, point X60 Y40 being the starting point.
+
+                                                           Cartesian coordinates:
+                                                                 G90 G17 G03 X110 Y90 I0 J50
+                                                                 X160 Y40 I50 J0
+
+                                                           Polar coordinates:
+                                                                 G90 G17 G03 Q0 I0 J50
+                                                                 Q-90 I50 J0
+
+                                                           or:
+                                                                 G93 I60 J90             ; Define Polar center
+                                                                 G03 Q0
+                                                                 G93 I160 J90            ; Define new Polar center
+                                                                 Q-90
+
+                                                           Cartesian coordinates with radius programming:
+                                                                 G90 G17 G03 X110 Y90 R50
+                                                                 X160 Y40 R50
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·86·
+===== PAGE 86 =====
+
+        Programming of a (complete) circle in just one block:
+
+
+
+
+                                                                                                                   6.
+
+
+                                                                                                                   Circular interpolation (G02, G03)
+                                                                                                    PATH CONTROL
+        Various programming modes analyzed below, point X170 Y80 being the starting Point.
+
+        Cartesian coordinates:
+              G90 G17 G02 X170 Y80 I-50 J0
+
+        or:
+              G90 G17 G02 I-50 J0
+
+        Polar coordinates.
+              G90 G17 G02 Q36 0I-50 J0
+
+        or:
+              G93 I120 J80                ; Define Polar center
+              G02 Q360
+
+        Cartesian coordinates with radius programming:
+              A complete circle cannot be programmed as there is an infinite range of solutions.
+
+
+
+
+                                                                                                   CNC 8055
+                                                                                                   CNC 8055i
+
+
+
+                                                                                                   ·M· & ·EN· MODELS
+                                                                                                     SOFT: V01.6X
+
+
+
+
+                                                                                                                            ·87·
+===== PAGE 87 =====
+
+                                                                                           6.4      Circular interpolation with absolute arc center coordinates (G06)
+
+                                                                                                 By adding function G06 to a circular interpolation block you can program the coordinates of the
+                                                                                                 center of the arc (I,J, or K) in absolute coordinates i.e. with respect to the zero origin and not to the
+                                                                                                 beginning of the arc.
+
+                                                                                                 Function G06 is not modal, so it should be programmed any time the coordinates of the center of
+                                                                                                 the arc are required in absolute coordinates. G06 can be programmed as G6.
+
+
+
+ 6.
+
+
+
+
+                       Circular interpolation with absolute arc center coordinates (G06)
+        PATH CONTROL
+
+
+
+
+                                                                                                 Various programming modes are analyzed below, point X60 Y40 being the starting point.
+
+                                                                                                 Cartesian coordinates:
+                                                                                                    G90 G17 G06 G03 X110 Y90 I60 J90
+                                                                                                    G06 X160 Y40 I160 J90
+
+                                                                                                 Polar coordinates:
+                                                                                                    G90 G17 G06 G03 Q0 I60 J90
+                                                                                                    G06 Q-90 I160 J90
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·88·
+===== PAGE 88 =====
+
+6.5          Arc tangent to previous path (G08)
+
+        Via function G08 you can program an arc tangential to the previous path without having to program
+        the coordinates (I.J &K) of the center.
+
+        Only the coordinates of the endpoint of the arc are defined, either in polar coordinates or in Cartesian
+        coordinates according to the axes of the work plane.
+
+
+
+
+                                                                                                                                               6.
+
+
+                                                                                                                                               Arc tangent to previous path (G08)
+                                                                                                                                PATH CONTROL
+
+
+
+
+        Supposing that the starting point is X0 Y40, you wish to program a straight line, then an arc tangential
+        to the line and finally an arc tangential to the previous one.
+
+             G90 G01 X70
+
+             G08 X90 Y60                   ; Arc tangent to previous path.
+
+             G08 X110 Y60                  ; Arc tangent to previous path.
+
+        Function G08 is not modal, so it should always be programmed if you wish to execute an arc
+        tangential to the previous path. Function G08 can be programmed as G8.
+
+        Function G08 enables the previous path to be a straight line or an arc and does not alter its history.
+        The same function G01, G02 or G03 stays active after the block is finished.
+
+                  When using function G08 it is not possible to execute a complete circle, as an infinite range of solutions
+                  exists. The CNC displays the corresponding error code.
+
+
+
+
+                                                                                                                               CNC 8055
+                                                                                                                               CNC 8055i
+
+
+
+                                                                                                                               ·M· & ·EN· MODELS
+                                                                                                                                 SOFT: V01.6X
+
+
+
+
+                                                                                                                                                        ·89·
+===== PAGE 89 =====
+
+                                                           6.6      Arc defined by three points (G09)
+
+                                                                 Through function G09 you can define an arc by programming the endpoint and an intermediate point
+                                                                 (the starting point of the arc is the starting point of the movement). In other words, instead of
+                                                                 programming the coordinates of the center, you program any intermediate point.
+
+                                                                 The endpoint of the arc is defined in Cartesian or polar coordinates, and the intermediate point is
+                                                                 always defined in Cartesian coordinates by the letters I,J, or K, each one being associated to the
+                                                                 axes as follows:
+
+
+ 6.                                                                  Axes X, U, A
+
+                                                                     Axes Y, V, B
+                                                                                        ==>
+
+                                                                                        ==>
+                                                                                                 I
+
+                                                                                                 J
+
+
+
+
+                       Arc defined by three points (G09)
+        PATH CONTROL
+                                                                     Axes Z, W, C       ==>      K
+
+                                                                 In Cartesian coordinates:
+
+                                                                     G17              G09              X±5.5             Y±5.5             I±5.5             J±5.5
+
+                                                                 Polar coordinates:
+
+                                                                     G17              G09              R±5.5             Q±5.5             I±5.5             J±5.5
+
+                                                                 Example:
+
+
+
+
+                                                                 Being initial point X-50 Y0.
+                                                                    G09 X35 Y20 I-15 J25
+
+                                                                 Function G09 is not modal, so it should always be programmed if you wish to execute an arc defined
+                                                                 by three points. Function G09 can be programmed as G9.
+
+                                                                 When G09 is programmed it is not necessary to program the direction of movement (G02 or G03).
+
+                                                                 Function G09 does not alter the history of the program. The same G01, G02 or G03 function stays
+                                                                 active after finishing the block.
+
+                                                                         Function G09 may not be used to programmed a full circle because all three points must be different.
+                                                                         The CNC displays the corresponding error code.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·90·
+===== PAGE 90 =====
+
+6.7          Helical interpolation
+
+        A helical interpolation consists in a circular interpolation in the work plane while moving the rest of
+        the programmed axes.
+
+
+
+
+                                                                                                                                  6.
+
+                                                                                                                                  Helical interpolation
+                                                                                                                   PATH CONTROL
+
+        The helical interpolation is programmed in a block where the circular interpolation must be
+        programmed by means of functions: G02, G03, G08 or G09.
+             G02 X Y I J Z
+             G02 X Y R Z A
+             G03 Q I J A B
+             G08 X Y Z
+             G09 X Y I J Z
+
+        If the helical interpolation is supposed to make more than one turn, the linear movement of another
+        axis must also be programmed (one axis only).
+
+        On the other hand, the pitch along the linear axis must also be set (format 5.5) by means of the I,
+        J and K letters. Each one of these letters is associated with the axes as follows:
+
+             Axes X, U, A         ==>    I
+
+             Axes Y, V, B         ==>    J
+
+             Axes Z, W, C         ==>    K
+
+
+             G02 X Y I J Z K
+             G02 X Y R Z K
+             G03 Q I J A I
+             G08 X Y B J
+             G09 X Y I J Z K
+
+
+                    Example:
+
+                         Z
+                                                         Programming a helical interpolation
+                                    (X, Y)
+                                                 Y       where the starting point is X0 Y0 Z0.
+
+                                                         As the example shows, it is not necessary
+                                  Z=18                   to program the last point (X, Y):
+                                                             G03 I15 J0 Z18 K5
+                                             5
+
+
+                                                                                                                  CNC 8055
+                                                     X
+                                                                                                                  CNC 8055i
+                        15
+
+
+
+        It is now possible to program helical interpolations while Look Ahead is active (G51). Thanks to this,    ·M· & ·EN· MODELS
+        CAN/CAM programs that contain this type of paths may be executed while look-ahead is active.                SOFT: V01.6X
+
+
+
+
+                                                                                                                                       ·91·
+===== PAGE 91 =====
+
+                                                                                          6.8      Tangential entry at the beginning of a machining operation (G37)
+
+                                                                                                Via function G37 you can tangentially link two paths without having to calculate the intersection
+                                                                                                points.
+
+                                                                                                Function G37 is not modal, so it should always be programmed if you wish to start a machining
+                                                                                                operation with tangential entry:
+
+
+
+
+ 6.
+
+
+
+
+                       Tangential entry at the beginning of a machining operation (G37)
+        PATH CONTROL
+
+
+
+
+                                                                                                If the starting point is X0 Y30 and you wish to machine an arc (the path of approach being straight)
+                                                                                                you should program:
+                                                                                                   G90 G01 X40
+                                                                                                   G02 X60 Y10 I20 J0
+
+                                                                                                If, however, in the same example you require the entrance of the tool to the part to be machined
+                                                                                                tangential to the path and describing a radius of 5 mm, you should program:
+
+
+
+
+                                                                                                   G90 G01 G37 R5 X40
+                                                                                                   G02 X60 Y10 I20 J0
+
+                                                                                                As can be seen in the figure, the CNC modifies the path so that the tool starts to machine with a
+                                                                                                tangential entry to the part.
+
+                                                                                                You have to program Function G37 plus value R in the block which includes the path you want to
+                                                                                                modify.
+CNC 8055                                                                                        R5.5 should appear in all cases following G37, indicating the radius of the arc which the CNC enters
+CNC 8055i                                                                                       to obtain tangential entry to the part. This R value must always be positive.
+
+                                                                                                Function G37 should only be programmed in the block which includes a straight-line movement (G00
+                                                                                                or G01). If you program in a block which includes circular movement (G02 or G03), the CNC displays
+                                                                                                the corresponding error.
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·92·
+===== PAGE 92 =====
+
+6.9          Tangential exit at the end of a machining operator (G38)
+
+        Function G38 enables the ending of a machining operation with a tangential exit of the tool. The
+        path should be in a straight line (G00 or G01). Otherwise, the CNC will display the corresponding
+        error.
+
+        Function G38 is not modal, so it should be programmed whenever a tangential exit of the tool is
+        required.
+
+        Value R 5.5 should always appear after G38. It also indicates the radius of the arc which the CNC
+        applies to get a tangential exit from the part. This R value must always be positive.
+                                                                                                                            6.
+
+
+
+
+                                                                                                                            Tangential exit at the end of a machining operator (G38)
+                                                                                                             PATH CONTROL
+
+
+
+
+        If the starting point is X0 Y30 and you wish to machine an arc (with the approach and exit paths
+        in a straight line), you should program :
+             G90 G01 X40
+             G02 X80 I20 J0
+             G00 X120
+
+        If, however, in the same example you wish the exit from machining to be done tangentially and
+        describing a radius of 5 mm, you should program :
+             G90 G01 X40
+             G02 G38 R5 X80 I20 J0
+             G00 X120
+
+
+
+
+                                                                                                            CNC 8055
+                                                                                                            CNC 8055i
+
+
+
+                                                                                                            ·M· & ·EN· MODELS
+                                                                                                              SOFT: V01.6X
+
+
+
+
+                                                                                                                                           ·93·
+===== PAGE 93 =====
+
+                                                      6.10      Automatic radius blend (G36)
+
+                                                             In milling operations, it is possible to round a corner via function G36 with a determined radius,
+                                                             without having to calculate the center nor the start and end points of the arc.
+
+                                                             Function G36 is not modal, so it should be programmed whenever controlled corner rounding is
+                                                             required.
+
+                                                             This function should be programmed in the block in which the movement the end you want to round
+                                                             is defined.
+
+ 6.                                                          The R5.5 value should always follow G36. It also indicates the rounding radius which the CNC
+                                                             applies to get the required corner rounding. This R value must always be positive.
+
+
+
+
+                       Automatic radius blend (G36)
+        PATH CONTROL
+                                                                                                               G90 G01 G36 R5 X35 Y60
+                                                                                                               X50 Y0
+
+
+
+
+                                                                                                               G90 G03 G36 R5 X50 Y50 I0 J30
+                                                                                                               G01 X50 Y0
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·94·
+===== PAGE 94 =====
+
+6.11         Chamfer (G39)
+
+        In machining operations it is possible (using G39) to chamfer corners between two straight lines,
+        without having to calculate intersection points.
+
+        Function G39 is not modal, so it should be programmed whenever the chamfering of a corner is
+        required.
+
+        This function should be programmed in the block in which the movement whose end you want to
+        chamfer is defined.
+        The R5.5 value should always follow G39. It also indicates the distance from the end of the
+        programmed movement as far as the point where you wish to carry out the chamfering. This R value
+                                                                                                                            6.
+        must always be positive.
+
+
+
+                                                                                                                            Chamfer (G39)
+                                                                                                             PATH CONTROL
+                                                         G90 G01 G39 R15 X35 Y60
+                                                         X50 Y0
+
+
+
+
+                                                                                                            CNC 8055
+                                                                                                            CNC 8055i
+
+
+
+                                                                                                            ·M· & ·EN· MODELS
+                                                                                                              SOFT: V01.6X
+
+
+
+
+                                                                                                                               ·95·
+===== PAGE 95 =====
+
+                                         6.12      Threading (G33)
+
+                                                If the machine spindle is equipped with a rotary encoder, you can thread with a tool tip via function
+                                                G33.
+
+                                                Although this threading is often done along the entire length of an axis, the CNC enables threading
+                                                to be done interpolating more than one axis at a time.
+
+                                                Programming format:
+                                                   G33 X.....C L Q
+
+ 6.                                                     X...C ±5.5    End point of the thread
+
+
+
+
+        PATH CONTROL   Threading (G33)
+                                                        L 5.5         Thread pitch
+
+                                                        Q ±3.5        Optional. It indicates the spindle angular position (±359.9999) of the thread's starting
+                                                                      point. If not programmed, a value of 0 is assumed.
+
+
+                                                Some points to consider:
+                                                Whenever G33 is executed, if s.m.p. M19TYPE (P43) =0, and before making the thread, the CNC
+                                                references the spindle (home search).
+
+                                                Spindle machine parameter M19TYPE (P43) must be set to "1" in order to be able to program
+                                                parameter Q (angular spindle position).
+
+                                                When executing function G33 Q (s.m.p. M19TYPE (P43) =1), spindle had to be homed after the last
+                                                power-up and before executing the thread.
+
+                                                When executing function G33 Q (s.m.p. M19TYPE (P43) =1) and s.m.p. DECINPUT (P31) =NO,
+                                                no home search is needed because the spindle will be homed automatically after power-up when
+                                                turning the spindle in M3 or in M4 for the first time.
+
+                                                This search will be carried out at the feedrate set by s.m.p. REFEED2 (P35). After finding home,
+                                                the spindle will speed up or slow down to the programmed speed without stopping.
+
+                                                If the spindle has motor feedback with a SINCOS encoder (without reference mark), the home
+                                                search will be done directly at the programmed S speed without going through the speed set by
+                                                s.m.p. REFEED2.
+
+                                                If after power-up, an M19 is executed before an M3 or M4, that M19 will be executed without homing
+                                                the spindle when executing the first M3 or M4.
+
+                                                If the feedback device does not have the reference mark synchronized, the home search in M3 might
+                                                not coincide with the home search in M4. This does not happen with FAGOR feedback.
+
+                                                If the threads are blended together in round corner, only the first one can have an entry angle (Q).
+
+                                                While function G33 is active, neither the programmed feedrate "F" nor the programmed Spindle
+                                                speed "S" can be varied. They will both be set to 100%.
+
+                                                Function G33 is modal and incompatible with G00, G01, G02, G03, G34 and G75.
+
+                                                On power-up, after executing M02, M30 or after EMERGENCY or RESET, the CNC assumes code
+                                                G00 or G01, depending on how general machine parameter "IMOVE" has been set.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·96·
+===== PAGE 96 =====
+
+        Example:
+        We would like to a make a thread in a single pass in X0 Y0 Z0, with a depth of 100 mm and a pitch
+        of 5 mm using a threadcutting tool located in Z10.
+
+
+                                  G90 G0 X Y Z            ; Positioning
+
+                                  G33 Z -100 L5           ; Threading
+
+                                  M19                     ; Spindle orientation
+
+                                  G00 X3                  ; Cutter withdrawal                                               6.
+
+                                                                                                             PATH CONTROL   Threading (G33)
+                                  Z30                     ; Withdrawal (exit the hole)
+
+
+
+
+                                                                                                            CNC 8055
+                                                                                                            CNC 8055i
+
+
+
+                                                                                                            ·M· & ·EN· MODELS
+                                                                                                              SOFT: V01.6X
+
+
+
+
+                                                                                                                                ·97·
+===== PAGE 97 =====
+
+                                                      6.13      Variable pitch threads (G34)
+
+                                                             To make variable-pitch threads, the spindle of the machine must have a rotary encoder.
+
+                                                             Although this threading is often done along the entire length of an axis, the CNC enables threading
+                                                             to be done interpolating more than one axis at a time.
+
+                                                             Programming format:
+                                                                G34 X.....C L Q K
+
+
+ 6.                                                                  X...C ±5.5
+
+                                                                     L 5.5
+                                                                                    End point of the thread
+
+                                                                                    Thread pitch
+
+
+
+
+                       Variable pitch threads (G34)
+        PATH CONTROL
+                                                                     Q ±3.5         Optional. It indicates the spindle angular position (±359.9999) of the thread's starting
+                                                                                    point. If not programmed, a value of "0" is assumed.
+
+                                                                     K ±5.5         Thread pitch increase or decrease per spindle turn.
+
+
+                                                             Some points to consider:
+                                                             Whenever G34 is executed and before making the thread, the CNC references the spindle (home
+                                                             search) and positions the spindle at the angular position indicated by parameter Q.
+
+                                                             Parameter "Q" is available when spindle machine parameter "M19TYPE" has been set to "1".
+
+                                                             When working in round corner mode (G05), it is possible to blend different threads in the same part.
+
+                                                             While function G34 is active, neither the programmed feedrate "F" nor the programmed Spindle
+                                                             speed "S" can be varied. They will both be set to 100%.
+
+                                                             Function G34 is modal and incompatible with G00, G01, G02, G03, G33 and G75.
+
+                                                             On power-up, after executing M02, M30 or after EMERGENCY or RESET, the CNC assumes code
+                                                             G00 or G01, depending on how general machine parameter "IMOVE" has been set.
+
+                                                             Blending a fixed-pitch thread (G33) with a variable-pitch thread (G34).
+
+                                                             The starting thread pitch (L) of the G34 must coincide with the thread pitch of the G33.
+
+                                                             The pitch increase in the first turn of the spindle in variable pitch will be half and increment (K/2)
+                                                             and in the rest of the turns it will be the full increment K.
+
+                                                             Blending a variable-pitch thread (G34) with a fixed-pitch thread.
+
+                                                             It is used to finish a variable-pitch thread (G34) with a portion of the thread keeping the final pitch
+                                                             of the previous thread.
+
+                                                             Since it is very complicated to calculate the final thread pitch, the fixed-pitch thread is not
+                                                             programmed with G33 but with G34 ... L0 K0. The CNC calculates the pitch.
+
+                                                             Blending two variable-pitch threads (G34).
+
+                                                             Two variable-pitch threads (G34) cannot be blended together.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·98·
+===== PAGE 98 =====
+
+6.14         Move to hardstop (G52)
+
+        By means of function G52 it is possible to program the movement of an axis until running into an
+        object. This feature may be interesting for forming machines, live tailstocks, bar feeders, etc.
+
+        The programming format is:
+             G52 X..C ±5.5
+
+        After G52, program the desired axis as well as the target coordinate of the move.
+
+        The axis will move towards the programmed target coordinate until running into something. If the
+        axis reaches the programmed target coordinate without running into the hardstop it will stop.                      6.
+        Function G52 is not modal; therefore, it must be programmed every time this operation is to be
+
+
+
+
+                                                                                                                           Move to hardstop (G52)
+                                                                                                            PATH CONTROL
+        carried out.
+
+        Also, it assumes functions G01 and G40 modifying the program history. It is incompatible with
+        functions G00, G02, G03, G33, G34, G41, G42, G75 and G76.
+
+
+
+
+                                                                                                           CNC 8055
+                                                                                                           CNC 8055i
+
+
+
+                                                                                                           ·M· & ·EN· MODELS
+                                                                                                             SOFT: V01.6X
+
+
+
+
+                                                                                                                                 ·99·
+===== PAGE 99 =====
+
+                                                                            6.15      Feedrate "F" as an inverted function of time (G32)
+
+                                                                                   There are instances when it is easier to define the time required by the various axes of the machine
+                                                                                   to reach the target point instead of defining a common feedrate for all of them.
+
+                                                                                   A typical case may be when a linear axis (X, Y, Z) has to move together (interpolated) with a rotary
+                                                                                   axis programmed in degrees.
+
+                                                                                   Function G32 indicates that the "F" functions programmed next set the time it takes to reach the
+                                                                                   target point.
+
+ 6.                                                                                In order for a greater value of "F" to indicate a greater feedrate, the value assigned to "F" is defined
+                                                                                   as "Inverted function of time" and it is assumed as the activation of this feature.
+
+
+
+
+        PATH CONTROL
+
+
+
+
+                       Feedrate "F" as an inverted function of time (G32)
+                                                                                      "F" units: 1/min
+                                                                                      Example: G32 X22 F4
+                                                                                      indicates that the movement must be executed in 1/4 minute; i.e. in 0.25 minutes.
+
+                                                                                   Function G32 is modal and incompatible with G94 and G95.
+
+                                                                                   On power-up, after executing M02, M30 or after an Emergency or Reset, the CNC assumes G94
+                                                                                   or G95 depending on the setting of general machine parameter "IFFED".
+
+                                                                                   Some points to consider:
+                                                                                   The CNC variable PROGFIN will show the feedrate programmed as an inverted function of time and
+                                                                                   variable FEED will show the resulting feedrate in mm/min or inches/min.
+
+                                                                                   If the resulting feedrate of any axis exceeds the maximum value set by machine parameter
+                                                                                   "MAXFEED", the CNC will apply this maximum value.
+
+                                                                                   The programmed "F" is ignored on G00 movements. All the movements will be carried out at the
+                                                                                   feedrate set by axis machine parameter "G00FEED".
+
+                                                                                   When programming "F0" the movement will be carried out at the feedrate set by axis machine
+                                                                                   parameter "MAXFEED".
+
+                                                                                   Function G32 may be programmed and executed in the PLC channel.
+
+                                                                                   Function G32 is canceled in JOG mode.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·100·
+===== PAGE 100 =====
+
+6.16         Tangential control (G45)
+
+        With the "Tangential control" feature, the axis may maintain the same orientation with respect to the
+        programmed path.
+
+
+
+
+                                                                                                                                           6.
+
+                                                                                                                                           Tangential control (G45)
+                                                                                                                            PATH CONTROL
+                          Orientation parallel to the path               Orientation perpendicular to the path
+
+
+
+        The path is defined by the axes of the active plane. The axis maintaining the orientation must be
+        a rotary rollover axis (A, B or C).
+
+        Programming format:
+             G45 Axis Angle
+
+                  Axis            Axis maintaining the orientation (A, B or C).
+
+                  Angle           Indicates the angular position in degrees with respect to the path (±359.9999). If not
+                                  programmed, "0" will be assumed.
+
+
+
+
+        To cancel this function, program G45 alone (without defining the axis).
+
+        Every time G45 (tangential control) is activated, the CNC acts as follows:
+         1. Positions the tangential axis, with respect to the first section in the programmed position.
+
+
+
+
+         2. The interpolation of the plane axes starts once the tangential axis has been positioned.
+         3. The orientation of the tangential axis is maintained in linear sections whereas in circular
+            interpolations the programmed orientation is maintained throughout the whole travel.
+
+
+
+
+                                                                                                                           CNC 8055
+                                                                                                                           CNC 8055i
+
+
+
+                                                                                                                           ·M· & ·EN· MODELS
+                                                                                                                             SOFT: V01.6X
+
+
+
+
+                                                                                                                                           ·101·
+===== PAGE 101 =====
+
+                                                  4. If the joint of sections requires a new orientation of the tangential axis, the following takes place:
+                                                      ·1· Ends the current section.
+                                                      ·2· Orients the tangential axis with respect to the next section.
+                                                      ·3· Resumes the execution.
+
+
+
+
+ 6.
+                                                     When working in round corner (G05), the tool orientation is not maintained at the corners since
+
+
+
+
+                       Tangential control (G45)
+        PATH CONTROL
+                                                     it begins before ending the current section.
+                                                     It is recommended to work in square corner (G07). However, to work in round corner (G05),
+                                                     function G36 (automatic radius blend) should be used in order to also maintain tool orientation
+                                                     at the corners.
+                                                  4. To cancel this function, program G45 alone (without defining the axis).
+
+                                                  Even when the tangential axis takes the same orientation by programming 90° or -270°, the turning
+                                                  direction in a direction change depends on the programmed value.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·102·
+===== PAGE 102 =====
+
+6.16.1       Considerations about the G45 function
+
+        Tangential control, G45, is optional. It can only be executed in the main channel and is compatible
+        with:
+          • Tool radius and length compensation (G40, 41, 42, 43, 44).
+          • Mirror image (G10, 11, 12, 13 14).
+          • Gantry axes , including the gantry axis associated with the tangential rotary axis.
+
+        The maximum feedrate while orienting the tangential axis is defined by machine parameter
+        MAXFEED for that axis.
+
+        While tangential control is active, tool inspection is also possible. When accessing tool inspection,
+                                                                                                                                 6.
+
+                                                                                                                                 Tangential control (G45)
+                                                                                                                  PATH CONTROL
+        the tangential control is deactivated, the axes are free and when quitting tool inspection, tangential
+        control may be activated again.
+
+        While in JOG mode, tangential control may be activated in MDI mode and the axes may be moved
+        by programming blocks in MDI.
+
+        Tangential control is canceled when jogging the axes with the jog keys (not in MDI). Once the
+        movement is over, tangential control is recovered.
+
+        Likewise, the following is NOT possible:
+          • To define as tangential axis, one of the plane axes, the longitudinal axis or any other axis which
+            is not rotary.
+          • To jog the tangential axis in JOG mode or by program using another G code while tangential
+            control is active.
+          • Inclined planes.
+
+        The TANGAN variable is read-only, from the CNC, PLC and DNC, associated with function G45.
+        It indicates the angular position, in degrees, referred to the programmed path.
+
+        Also, general logic output TANGACT (M5558) indicates to the PLC that function G45 is active.
+
+        Function G45 is modal and is canceled when executing G45 alone (without defining the axis), on
+        power-up, after executing an M02 or M30 or after an EMERGENCY or RESET.
+
+
+
+
+                                                                                                                 CNC 8055
+                                                                                                                 CNC 8055i
+
+
+
+                                                                                                                 ·M· & ·EN· MODELS
+                                                                                                                   SOFT: V01.6X
+
+
+
+
+                                                                                                                                 ·103·
+===== PAGE 103 =====
+
+                                                                            6.17      G145. Temporary cancellation of tangential control
+
+                                                                                   Function G145 may be used to cancel the tangential control (G415) temporarily:
+
+
+                                                                                   G145 K0
+
+                                                                                   It cancels the tangential control temporarily. Function G45 stays in the history and the new function
+                                                                                   G145 comes up in it.
+
+
+ 6.                                                                                If no G45 has been programmed, G145 is ignored. If K is not programmed, K0 will be assumed.
+
+
+                                                                                   G145 K1
+
+
+
+
+                       G145. Temporary cancellation of tangential control
+        PATH CONTROL
+                                                                                   It resumes the tangential control of the axis with the angle it had before it was canceled. Then, G145
+                                                                                   disappears from history.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·104·
+===== PAGE 104 =====
+FUNCTIONS
+
+                                                                                         7
+7.1      Interruption of block preparation (G04)
+
+      The CNC reads up to 20 blocks ahead of the one it is executing, with the aim of calculating
+      beforehand the path to be followed.
+
+      Each block is evaluated (in its absence) at the time it is read, but if you wish to evaluate it at the
+      time of execution of the block you use function G04.
+
+      This function holds up the preparation of blocks and waits for the block in question to be executed
+      in order to start the preparation of blocks once more.
+
+      A case in point is the evaluation of the "status of block-skip inputs" which is defined in the block
+      header.
+
+      Example:
+         .
+         .
+            G04                 ;Interrupts block preparation
+         /1 G01 X10 Y20         ;Jump condition "/1"
+         .
+         .
+
+      Function G04 is not modal, so it should be programmed whenever you wish to interrupt block
+      preparation.
+
+      It should be programmed on its own and in the block previous to the one in which the evaluation
+      in execution is required. Function G04 can be programmed as G4.
+
+      Every time G04 is programmed, active radius and length compensation are cancelled.
+
+      For this reason, care needs to be taken when using this function, because if it is introduced between
+      machining blocks which work with compensation, unwanted profiles may be produced.
+
+
+
+
+                                                                                                               CNC 8055
+                                                                                                               CNC 8055i
+
+
+
+                                                                                                               ·M· & ·EN· MODELS
+                                                                                                                 SOFT: V01.6X
+
+
+
+
+                                                                                                                    ·105·

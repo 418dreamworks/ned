@@ -1,0 +1,2689 @@
+===== PAGE 472 =====
+
+  /FEEDHOL (M5002)
+
+     When the PLC sets this signal low, the CNC stops the axes (maintaining spindle rotation). When
+     the signal returns to the high logic level, the movement of the axes continues.
+
+     If the /FEEDHOL signal is activated (0V) in a block without motion, the CNC will continue the
+     execution of the program until detecting a block with motion.
+
+          Example
+          ( ) = /FEEDHOL
+               There is always permission to move the axes.
+
+
+  /XFERINH (M5003)
+                                                                                                                                                      12.
+
+
+
+                                                                                                                       LOGIC CNC INPUTS AND OUTPUTS
+                                                                                                                                                      General logic inputs
+     If the PLC sets this signal low, the CNC prevents the following block from starting, but finishes the
+     one it is executing. When the signal returns to high logic level, the CNC continues to execute the
+     program.
+
+          Example
+          ( ) = /XFERINH
+               There is always permission to execute the next block.
+
+
+  CYSTART (M5007)
+
+     If the START key is pressed on the front panel of the CNC, this is indicated to the PLC by means
+     of the general logic output START.
+
+     If the PLC program considers that there is nothing to prevent the part program from being executed,
+     the CYSTART signal must be set at a high logic level, thus beginning the execution of the program.
+
+     The CNC will indicate by means of the general logic output INCYCLE that the program is being
+     executed. As of that moment the CYSTART can return to low logic level.
+
+          Example
+          START AND (rest of conditions) = CYSTART
+             When the cycle START key is pressed, the CNC activates the general logic output START. The PLC
+             must check that the rest of the conditions (hydraulic, safety devices, etc.) are met before setting the
+             general input CYSTART high in order to start executing the program
+
+
+  SBLOCK (M5008)
+
+     When the PLC sets this signal high, the CNC changes to the single block execution mode.
+
+     The treatment this signal receives is similar to that given to the "single block" softkey.
+
+  MANRAPID (M5009)
+
+     If the PLC sets this signal at a high logic level, the CNC selects rapid feed for all the movements
+     executed in JOG mode.
+
+     When the signal returns to a low logic level, the movements executed in JOG mode are made at
+     the previously-selected feedrate.
+
+     The treatment which this signal receives is similar to that given to the rapid feedrate key on the control
+     panel.
+
+     The EXRAPID (M5057) signal is similar, but for movements in execution mode.
+
+  OVRCAN (M5010)
+
+     If the PLC sets this signal at a high logic level, the CNC selects 100% feedrate override, irrespective           CNC 8055
+     of whether this is selected by the PLC, DNC, program or by the front panel switch.
+                                                                                                                       CNC 8055i
+     While the OVERCAN signal is activated (logic 1), the CNC will apply in each mode 100 % of the
+     feedrate corresponding to that mode.
+
+                                                                                                                              SOFT: V01.6X
+
+
+
+
+                                                                                                                                                      ·473·
+===== PAGE 473 =====
+
+                                                             LATCHM (M5011)
+
+                                                               This allows the type of JOG key operation to be selected in JOG mode.
+
+                                                               If the PLC sets this signal low, the axes will only move while the corresponding JOG key is pressed.
+
+                                                               If the PLC sets this signal at a high logic level, the axes will move from the moment the corresponding
+                                                               JOG key is pressed until the STOP key or other JOG key is pressed. In this case, the movement
+                                                               will be transferred to that indicated by the new key.
+
+                                                             MACHMOVE (M5012)
+
+12.                                                            When working with coordinate transformation of inclined planes, the axes movements are made with
+                                                               respect to the axes of the part
+
+
+
+
+       LOGIC CNC INPUTS AND OUTPUTS
+                                      General logic inputs
+                                                               To make the jogging movements by handwheel or keyboard along the axes of the machine, use
+                                                               G53 or activate the general CNC input "MACHMOVE (M5012) at the PLC.
+                                                                  MACHMOVE = 0           The movements coincide with the axes of the part.
+                                                                  MACHMOVE = 1           The movements coincide with the axes of the machine.
+
+                                                               See the chapter on "Coordinate Transformation" in the programming manual.
+
+                                                             ACTGAIN2 (M5013)
+
+                                                               The axes and the spindle can have 3 sets of gains and accelerations.
+
+                                                               By default, the first set is always assumed. The one indicated by the a.m.p. and s.m.p.: ACCTIME
+                                                               (P18), PROGAIN (P23), DERGAIN (P24) and FFGAIN (P25).
+
+                                                               g.m.p. ACTGAIN2 (P108) indicates with which functions or in which mode the second set is applied,
+                                                               the one set by a.m.p. ACCTIME2 (P59), PROGAIN2 (P60), DERGAIN2 (P61) and FFGAIN2 (P62)
+                                                               or s.m.p. ACCTIME2 (P47), PROGAIN2 (P48), DERGAIN2 (P49) and FFGAIN2 (P50).
+
+                                                               The gains and accelerations can also be changed from the PLC regardless of the active operating
+                                                               mode or function. To do this, use general input ACTGAIN2 (M5013).
+                                                                  ACTGAIN2 (M5013) = 0           The CNC assumes the first set.
+                                                                  ACTGAIN2 (M5013) = 1           The CNC assumes the 2nd set.
+
+                                                                       The change of gains and accelerations is always made at the beginning of the block.
+                                                                       When working in round corner (G5), the change does not take place until G07 is
+                                                                       programmed.
+
+
+
+                                                             RESETIN (M5015)
+
+                                                               This signal will be treated by the CNC when the JOG mode is selected and there is no movement
+                                                               of the axes or when a program to be executed is selected and it is not running.
+
+                                                               When there is a rising edge (leading edge) of this signal (change from low to high) the CNC assumes
+                                                               the initial machining conditions selected by the machine parameter.
+
+                                                               The CNC will indicate by means of the general logic output RESETOUT that this function has been
+                                                               selected.
+
+                                                               The treatment received by this signal is similar to that given to the RESET key on the front panel.
+
+                                                             AUXEND (M5016)
+
+                                                               This signal is used in the execution of auxiliary functions M, S and T, to tell the CNC that the PLC
+                                                               is executing them.
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·474·
+===== PAGE 474 =====
+
+     It operates in the following way:
+      1. Once the block has been analyzed and after sending the corresponding values in the variables
+         "MBCD1-7", "SBCD", "TBCD" and "T2BCD", the CNC will tell the PLC by means of the general
+         logic outputs "MSTROBE", "SSTROBE", "TSTROBE" and "T2STROBE" that the required
+         auxiliary functions must be executed.
+
+
+
+
+                                                                                                                                              12.
+
+
+
+                                                                                                               LOGIC CNC INPUTS AND OUTPUTS
+      2. When the PLC detects that one of the STROBE signals is active, it must deactivate the general                                        General logic inputs
+         logic input "AUXEND" to tell the CNC that the execution of the corresponding function or
+         functions is starting.
+      3. The PLC will execute all the auxiliary functions required, it being necessary to analyze the
+         "MSTROBE", "SSTROBE", "TSTROBE", "T2STROBE" general logic outputs and the "MBCD1-
+         7", "SBCD", "TBCD" and "T2BCD" variables in order to do this.
+         Once this has been executed the PLC must activate the general logic input "AUXEND" to indicate
+         to the CNC that the processing of the required functions was completed.
+      4. Once the general "AUXEND" input is activated, the CNC will require that this signal be kept active
+         for a time period greater than the value given to the g.m.p. MINAENDW (P30).
+         This way, erroneous interpretations of this signal by the CNC due to an improper PLC program
+         logic are avoided .
+      5. Once the period of time MINAENDW has elapsed with the general input "AUXEND" at a high
+         logic level, the CNC will deactivate the general logic outputs "MSTROBE", "SSTROBE",
+         "TSTROBE", "T2STROBE" to tell the PLC that the execution of the required auxiliary function
+         or functions has been completed.
+
+  TIMERON (M5017)
+
+     The CNC is provided with a timer which can be enabled and disabled. By means of this logic CNC
+     input, it will be enabled (timing) when the PLC sets the signal TIMERON at a high logic level.
+
+     This general purpose timer can be accessed by means of the internal variable TIMER. An application
+     of this timer is to monitor tool life.
+
+  TREJECT (M5018)
+
+     The PLC sets this signal at a high logic level in order to tell the CNC to reject the tool in use, even
+     though it may not have come to the end of its service life. An important application is to replace the
+     tool when the PLC detects that it is broken.
+
+  PANELOFF (M5019)
+
+     The PLC sets this signal high in order to tell the CNC that the front panel keyboard (monitor with
+     keyboard) and the keyboard of the operator panel of the CNC are deactivated.
+
+     It is recommended to change the state of this mark by means of an accessible external input since
+     the PLC will not stop and the CNC will receive the error message in each new PLC cycle scan; thus
+     preventing access to any of the PLC modes.
+                                                                                                               CNC 8055
+  TOOLMOVE (M5021)
+                                                                                                               CNC 8055i
+     When working with coordinate transformation of inclined planes, the axes movements are made with
+     respect to the axes of the part
+
+     To make the jogging movements by handwheel or keyboard along the axes of the machine, use
+     G47 or activate the general CNC input "TOOLMOVE (M5021) at the PLC.                                              SOFT: V01.6X
+
+         TOOLMOVE = 0          The movements coincide with the axes of the part.
+         TOOLMOVE = 1          The movements coincide with the axes of the tool.
+
+     See the chapter on "Coordinate Transformation" in the programming manual.
+
+
+                                                                                                                                              ·475·
+===== PAGE 475 =====
+
+                                                             PLCABORT (M5022)
+
+                                                                The PLC sets this signal high to indicate to the CNC that it must stop the PLC axes. It also cancels
+                                                                the rest of the movement and the possible blocks that might have been sent from the PLC.
+
+                                                                Once this process is ended, the CNC automatically deactivates this signals.
+
+                                                                The following example shows how the axes controlled by the PLC may be moved by means of
+                                                                external push-buttons.
+
+                                                                    Example
+
+12.                                                                 The PLC will order to move the "C" axis by 1 meter every time the "C+" button is pressed, but stopping
+                                                                    it when this key is released.
+                                                                    DEF CPLUS I2
+
+
+
+
+       LOGIC CNC INPUTS AND OUTPUTS
+                                      General logic inputs
+                                                                        Symbol to define the "C+" push button.
+                                                                    DFU CPLUS =CNCEX (G91 G1 C1000 F3000, M1)
+                                                                        Pressing the button commands it to move 1000 mm.
+                                                                    DFD CPLUS = SET PLCABORT
+                                                                        Releasing the button aborts the movement.
+
+
+                                                                On power-up, the CNC sets this mark to "0".
+
+                                                             PLCREADY (M5023)
+
+                                                                This mark indicates the PLC status.
+                                                                   PLCREADY = 0           PLC stopped.
+                                                                   PLCREADY = 1           PLC in execution (running).
+
+                                                                If this mark is set to 0. The PLC program will stop.
+
+                                                                This mark MUST be set to 1 so the CNC allows the spindle and/or the axes to be moved. Otherwise,
+                                                                it will issue the corresponding error message.
+
+                                                             INT1 (M5024)              INT2 (M5025)                INT3 (M5026)                INT4 (M5027)
+
+                                                                The PLC sets one of these signals to logic state "1" to "tell" the CNC to interrupt the execution of
+                                                                the currently running program and jump to execute the interruption subroutine whose number is
+                                                                indicated in the general machine parameter "INT1SUB" (P35), "INT2SUB" (P36), "INT3SUB" (P37)
+                                                                or "INT4SUB" (P38) respectively.
+
+                                                                All these inputs have the same priority and are active by level (not by flank or edge). Only the first
+                                                                one being detected high ("1") will be attended to.
+
+                                                                The status of these signals "INT1", "INT2", "INT3", "INT4" are not stored; therefore, it is
+                                                                recommended to activate these marks at the PLC by means of an instruction of the "=SET" type.
+                                                                These marks will be deactivated automatically when starting the execution of the corresponding
+                                                                subroutine.
+
+                                                                An interruption subroutine cannot, in turn, be interrupted.
+
+                                                             BLKSKIP1 (M5028)
+
+                                                                The PLC sets this signal at a high logic level to tell the CNC that the block skip condition "/ or /1"
+                                                                is met, therefore, the blocks which have this block skip condition will not be executed.
+
+                                                             BLKSKIP2 (M5029)
+
+                                                                The PLC sets this signal at a high logic level to tell the CNC that the block skip condition "/ or /2"
+                                                                is met, therefore, the blocks which have this block skip condition will not be executed.
+CNC 8055
+                                                             BLKSKIP3 (M5030)
+CNC 8055i
+                                                                The PLC sets this signal at a high logic level to tell the CNC that the block skip condition "/ or /3"
+                                                                is met, therefore, the blocks which have this block skip condition will not be executed.
+
+                                                             M01STOP (M5031)
+ SOFT: V01.6X
+                                                                The PLC sets this signal at a high logic level to tell the CNC to stop the execution of the part program
+                                                                when the auxiliary (miscellaneous) M01 function is executed.
+
+
+
+
+    ·476·
+===== PAGE 476 =====
+
+  TOOLINSP (M5050)
+
+     The CNC takes into consideration this input in MC, MCO, TC and TCO modes.
+
+     It indicates whether the "T" key must be pressed or not after executing the operation or the part in
+     order to inspect the tool.
+        TOOLINSP = 0            The tool inspection mode is available when interrupting the execution.
+        TOOLINSP = 1            To access the tool inspection mode, first interrupt the execution and then
+                                press the "T" key.
+
+  RETRACE (M5051)
+
+     The CNC takes into account this input when retracing is available, g.m.p. RETRACAC other than
+                                                                                                                                                    12.
+
+
+
+                                                                                                                     LOGIC CNC INPUTS AND OUTPUTS
+                                                                                                                                                    General logic inputs
+     zero. The retracing function may also be activated while function G51 (look-ahead) is active.
+     If while executing a part-program the PLC sets this signal high, retracing is activated. The CNC
+     interrupts program execution and starts executing backwards what has been done so far.
+
+     When the PLC sets this signal back low, retracing is canceled. The CNC starts executing forward
+     what was done backwards and it will go on to execute the part of the program that was not machined.
+
+     Retracing executes backwards the current block plus the last blocks that were already executed.
+
+     The retracing function ends in the following cases:
+      • When retracing the 100 previous blocks on the FL model or the 200 previous blocks on the Power
+        model.
+      • When retraced all the way to the beginning of the program.
+      • When retracing up to block G51 (activating the look-ahead function).
+      • When finding a block that contains an M function (only if RETRACAC = 1).
+      • When finding a block that contains an S or a T function.
+      • When finding a high-level language block.
+
+     In all cases, the CNC activates the RETRAEND (M5522) signal to let the PLC know that all possible
+     blocks have been executed.
+
+     While the retracing function is active, neither tool inspection nor MDI operations are possible.
+
+     The Retracing function cannot be activated while a canned cycle is active.
+
+             When working with G51 active, it must be borne in mind several blocks may go by from the moment
+             the RETRACE mark is activated until the machine starts retracing. Besides,the look-ahead
+             calculations will be different when going in one direction and returning; therefore, both paths might
+             not be exactly the same.
+
+  ACTLIM2 (M5052)
+
+     The PLC sets this signal high to "tell" to the CNC to activate the second travel limits set by means
+     of variables LIMPL(X-C) and LIMMI(X-C).
+
+     The second travel limit of each axis will be taken into account if the first one has been set using a.m.p.
+     LIMIT+ (P5) and LIMIT- (P6).
+
+  HNLINARC (M5053)
+
+     This signal is used when either the "path handwheel" or "path jog" work mode has been selected
+     using general input "MASTRHND (M5054)". It allows selecting the type of movement.
+        M5053 = 0               Linear Path.
+        M5053 = 1               Circular path..
+                                                                                                                     CNC 8055
+     For a linear path, the path angle must be indicated by the MASLAN variable and for an arc, the center           CNC 8055i
+     coordinates must be indicated by the MASCFI and MASCSE variables
+
+     Variables MASLAN, MASCFI and MASCSE may be read and written from the CNC, DNC and PLC.
+
+                                                                                                                            SOFT: V01.6X
+
+
+
+
+                                                                                                                                                    ·477·
+===== PAGE 477 =====
+
+                                                             MASTRHND (M5054)
+
+                                                               The PLC sets this signal high to "tell" the CNC to activate the "path handwheel" or the "path jog"
+                                                               mode.
+                                                                   M5054 = 0              Normal work mode with handwheels or jog keys.
+                                                                   M5054 = 1              "Path handwheel" or "path jog" function on.
+
+                                                             CAXSEROK (M5055)
+
+                                                               It must be used on the lathe model, when the "C" axis and the spindle share the same drive. See
+
+12.                                                            "7.12 Digital servo (CAN or Sercos)" on page 357.
+
+                                                               The PLC sets this signal high to let the CNC know that the drive is ready to work as a "C" axis.
+
+
+
+
+       LOGIC CNC INPUTS AND OUTPUTS
+                                      General logic inputs
+                                                             EXRAPID (M5057)
+
+                                                               The CNC only takes this signal into account if parameter RAPIDEN has been set to ·1· or ·2·.
+
+                                                               If the PLC sets this signal high, the programmed movements are executed as follows.
+                                                                   RAPIDEN = 1            When the mark is activated, the programmed movements are executed
+                                                                                          in rapid. There is no need to press the "rapid" key.
+                                                                   RAPIDEN = 2            When the mark is activated, the "rapid" key is enabled. The key must be
+                                                                                          pressed to make movements in rapid; in other words, both the key and the
+                                                                                          mark must be active.
+
+                                                               When the signal is set back low, the movements are executed at the programmed feedrate.
+                                                               The treatment which this signal receives is similar to that given to the rapid feedrate key on the control
+                                                               panel.
+
+                                                               The MANRAPID (M5009) signal is similar, but for movements in jog mode.
+
+                                                             FLIMITAC (M5058)
+
+                                                               When the PLC sets this signal high, it limits the feedrate of each axis to the value set by its
+                                                               a.m.p."FLIMIT (P75)". When this limit is canceled, the CNC recovers the programmed feedrate.
+
+                                                             SLIMITAC (M5059)
+
+                                                               When the PLC sets this signal high, it limits the spindle speed to the value set by its s.m.p. "SLIMIT
+                                                               (P66)". When this limit is canceled, the CNC recovers the programmed turning speed.
+
+                                                               When the spindle is controlled by the PLC by means of the PLCCNTL mark, this limit is ignored.
+
+                                                             BLOABOR (M5060)
+
+                                                               When the PLC sets this mark high, the CNC ends the movement in progress and starts executing
+                                                               the next block. If the interrupted block had M functions to be executed after the block, they will be
+                                                               executed before going on to the next block.
+
+                                                               This mark only affects the execution in automatic mode and the simulation with motion.
+
+                                                               This mark does not stay active after the execution. Once executed, the CNC deactivates it. Likewise,
+                                                               if they are activated in a block that does not accept them, they will also be deactivated; they do not
+                                                               stay active for the next block.
+
+                                                               These marks affect the following functions.
+                                                                 • It affect motion blocks G0, G1, G2, G3.
+                                                                 • They affect the dwell programmed with G4.
+CNC 8055                                                         • It affects the look-ahead. In this type of programs with very small blocks, it is not possible to stop
+                                                                   at the same block where the "BLOABOR" mark is detected. In these cases, it will be canceled
+CNC 8055i                                                          at the block where the axis is fully decelerated.
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·478·
+===== PAGE 478 =====
+
+     These marks do not affect the following functions.
+      • It does not affect motionless blocs, which will be executed.
+      • It does not affect the M functions that are executed after the block. These functions are always
+        executed, even if the movement of the block is interrupted.
+      • It does affect not affect threading blocks G33. Nor does it affect the regular tapping or rigid tapping
+        cycles regardless of the value of parameter STOPTAP.
+      • It does not affect spindle positioning blocks M19. If the spindle positioning is in a block containing
+        axis movement, it aborts the movement of the axes, but it completes the positioning of the
+        spindle.
+      • It does not interrupt the execution of function G74 (home search).
+      • It has no effect when tangential control is active.
+                                                                                                                                                 12.
+
+
+
+                                                                                                                  LOGIC CNC INPUTS AND OUTPUTS
+                                                                                                                                                 General logic inputs
+     Considerations for the execution
+     These marks do not affect block preparation. When canceling the execution of a block, the next
+     movement is carried out up to the prepared target coordinates; no preparation is done.
+
+     On the other hand, only the programmed axes are involved in the next movement. The rest of the
+     axes are ignored, even if there is a real difference in position because the previous block has been
+     aborted.
+
+
+
+
+                                  Path 1                                   Path 2
+
+                 The solid lines represent the programmed paths and the dashed lines the real paths,
+                 after activating the BLOABOR mark.
+
+
+     If a block is aborted and then the RETRACE function is activated, the retraced path (backwards)
+     will not be the same as the one traveled forward. The two paths will not coincide either when aborting
+     a block while the RETRACE function is active.
+
+  ACTGAINT (M5063)
+
+     The axes and the spindle can have 3 sets of gains and accelerations.
+
+     By default, the first set is always assumed. The one indicated by the a.m.p. and s.m.p.: ACCTIME
+     (P18), PROGAIN (P23), DERGAIN (P24) and FFGAIN (P25).
+
+     g.m.p. g.m.p. ACTGAINT (P185) indicates with which functions or in which mode the third set is
+     applied, the one set by a.m.p. ACCTIMET (P92), PROGAINT (P93), DERGAINT (P94) and
+     FFGAINT (P95) or s.m.p. ACCTIMET (P81), PROGAINT (P82), DERGAINT (P83) and FFGAINT
+     (P84).
+
+     The gains and accelerations can also be changed from the PLC regardless of the active operating
+     mode or function. To do this, use general input ACTGAINT (M5063).
+        ACTGAINT (M5063) = 1           The CNC assumes the third set.
+
+             The change of gains and accelerations is always made at the beginning of the block.                  CNC 8055
+             When working in round corner (G5), the change does not take place until G07 is programmed.
+                                                                                                                  CNC 8055i
+
+
+
+                                                                                                                         SOFT: V01.6X
+
+
+
+
+                                                                                                                                                 ·479·
+===== PAGE 479 =====
+
+                                                             SKIPCYCL (M5064)
+
+                                                               During the drilling, tapping and rigid tapping cycles of the mill model CNC, it is now possible to
+                                                               withdraw the tool to the starting plane and, once there, stop the spindle.
+
+                                                               Once the withdrawal is completed, the user may finish the hole, go to the next hole or go into tool
+                                                               inspection.
+
+                                                               General logic input SKIPCYCL (M5064) is used to go to the next hole, once the withdrawal is
+                                                               completed.
+
+
+12.                                                          RETRACYC (M5065)
+
+                                                               During the drilling, tapping and rigid tapping cycles of the mill model CNC, it is now possible to
+                                                               withdraw the tool to the starting plane and, once there, stop the spindle.
+
+
+
+
+       LOGIC CNC INPUTS AND OUTPUTS
+                                      General logic inputs
+                                                               Once the withdrawal is completed, the user may finish the hole, go to the next hole or go into tool
+                                                               inspection.
+
+                                                               The PLC activates this mark and the CNC cancels it automatically once the Z axis stopped and
+                                                               before beginning to retract.
+
+                                                             SETTMEM (M5066)
+
+                                                               PLC mark used by the OEM to activate an error message during tool change. When this mark is
+                                                               activated, the CNC activates the TMINEM mark.
+
+                                                             RESTMEM (5067)
+                                                               PLC mark that may be used to cancel the error state of the CNC. This mark is activated when the
+                                                               user confirms that the tool magazine has been inspected and that everything is OK to continue
+                                                               working.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·480·
+===== PAGE 480 =====
+
+12.2      Axis logic inputs.
+
+       There are several groups of logic inputs (LIMIT, DECEL, etc.) which refer to the possible axes of
+       the machine by means of digits 1 through 7 (LIMIT+2, DECEL1,etc.) or using the axis name
+       (LIMIT+X, DECELZ, etc.).
+
+       The marks of the axes that do not exist in the machine parameters assume the value of the M2045
+       mark, that's always set to 0.
+
+       When monitoring the PLC program, it shows the edited marks, either with a letter or with a number.
+       However, the resource windows created from monitoring will replace the marks with axis names by
+       the marks with axis numbers. For example:
+          SERVOXON by SERVO1ON
+                                                                                                                                                12.
+
+
+
+                                                                                                                 LOGIC CNC INPUTS AND OUTPUTS
+                                                                                                                                                Axis logic inputs.
+          SERVOZON by SERVO2ON if there is no Y axis, but there are X and Z axes.
+
+       Mnemonics using numbers 1 through 7.
+       These signals are numbered as the logic order of the axes; it is not related to the values assigned
+       to g.m.p. AXIS1 (P0) through AXIS8 (P7).
+
+       For example, if the CNC controls the X, Y, Z, B, C and U axis, the order will be: X, Y, Z, U, B, C and,
+       therefore:
+
+           LIMIT+1, LIMIT-1, DECEL1, etc.                for the X axis:
+
+           LIMIT+2, LIMIT-2, DECEL2, etc.                for the Y axis:
+
+           LIMIT+3, LIMIT-3, DECEL3, etc.                for the Z axis:
+
+           LIMIT+4, LIMIT-4, DECEL4, etc.                for the U axis:
+
+           LIMIT+5, LIMIT-5, DECEL5, etc.                for the B axis
+
+           LIMIT+6, LIMIT-6, DECEL6, etc.                for the C axis:
+
+
+       Mnemonics using the axis name
+       The mnemonics of the signals refer to the axis name.
+
+       Mnemonics with axis names offer the advantage that if an axis is eliminated, the PLC program will
+       still be consistent with the rest of the axes.
+
+  LIMIT+1 (M5100)            LIMIT-1 (M5101)            LIMIT+2 (M5150)            LIMIT-2 (M5151)
+  LIMIT+3 (M5200)            LIMIT-3 (M5201)            LIMIT+4 (M5250)            LIMIT-4 (M5251)
+  LIMIT+5 (M5300)            LIMIT-5 (M5301)            LIMIT+6 (M5350)            LIMIT-6 (M5351)
+  LIMIT+7 (M5400)            LIMIT-7 (M5401)
+
+       The PLC sets these signals at a high logic level in order to tell the CNC that the corresponding axis
+       has overrun the end of its range of movement in the positive (+) or negative (-) direction indicated
+       by the limit switch.
+
+       In this case, the CNC stops axis feed and spindle rotation and displays the corresponding error on
+       screen.
+
+       In manual (JOG) operating mode the axis which has overrun its range of travel can be moved in
+       the correct direction in order to place it within the correct range of travel.
+
+  DECEL1 (M5102)             DECEL2 (M5152)             DECEL3 (M5202)             DECEL4 (M5252)
+  DECEL5 (M5302)             DECEL6 (M5352)             DECEL7 (M5402)
+
+       These signals are used by the CNC when machine reference search is made.
+
+       If the PLC sets one of these signals high, this indicates to the CNC that the machine reference search    CNC 8055
+       switch of the corresponding axis has been pressed.                                                        CNC 8055i
+       When this signal is activated in the machine reference search mode, the CNC decelerates the axis,
+       changing the rapid approach feedrate indicated by the a.m.p. "REFEED1", with the slow feedrate
+       indicated by the a.m.p. "REFEED2". After decelerating it accepts the following reference signal from
+       the corresponding axis feedback system as being valid.                                                           SOFT: V01.6X
+
+
+
+
+                                                                                                                                                ·481·
+===== PAGE 481 =====
+
+                                                           INHIBIT1 (M5103)          INHIBIT2 (M5153)           INHIBIT3 (M5203)           INHIBIT4 (M5253)
+                                                           INHIBIT5 (M5303)          INHIBIT6 (M5353)           INHIBIT7 (M5403)
+
+                                                              The PLC sets one of these signals at a high logic level in order to tell the CNC to prevent any
+                                                              movement of the corresponding axis. This movement will continue when the PLC sets this signal
+                                                              at the low logic level once more.
+
+                                                              If the inhibited axis is moving together with other axes, all these stop moving until the signal returns
+                                                              to the low logic level.
+
+                                                           MIRROR1 (M5104)           MIRROR2 (M5154)            MIRROR3 (M5204)            MIRROR4 (M5254)
+
+12.                                                        MIRROR5 (M5304)           MIRROR6 (M5354)            MIRROR7 (M5404)
+
+                                                              If the PLC sets one of these signals at a high logic level, the CNC applies mirror image to the
+
+
+
+
+       LOGIC CNC INPUTS AND OUTPUTS
+                                      Axis logic inputs.
+                                                              movement of the corresponding axis.
+
+                                                              It must be borne in mind that if this signal is activated during a programmed movement, the CNC
+                                                              will only apply mirror image to the movement, not to the final coordinate.
+
+
+
+
+                                                                                                                            N00 G01 X0 Y0 F1000
+                                                                                                                            N10 G01 X70 Y42
+                                                                                                                            N20 G01 X100 Y60
+                                                                                                                            N30 M30
+
+
+
+
+                                                              If, when executing the programmed movement in block N20 the signal corresponding to the X axis
+                                                              "MIRROR1" is active, the CNC will apply mirror image to the remaining movement in X.
+
+                                                              This way, the new end of travel point will be X40 Y60.
+
+                                                              By means of the activation of these signals, symmetrical parts can be executed by using a single
+                                                              program, for example, soles of shoes.
+
+                                                              In order to obtain the same effect as functions G11, G12, G13 and G14, it is necessary for the
+                                                              corresponding axis or axes to be positioned at part zero when these signals are activated.
+
+                                                           SWITCH1 (M5105)           SWITCH2 (M5155)            SWITCH3 (M5205)            SWITCH4 (M5255)
+                                                           SWITCH5 (M5305)           SWITCH6 (M5355)            SWITCH7 (M5405)
+
+                                                              When having 2 axes controlled by the same servo drive, this mark may be used to toggle the velocity
+                                                              commands between the two axes.
+
+                                                              See "7.13 Axes (2) controlled by a single drive" on page 362.
+
+                                                           DRO1 (M5106)              DRO2 (M5156)               DRO3 (M5206)               DRO4 (M5256)
+                                                           DRO5 (M5306)              DRO6 (M5356)               DRO7 (M5406)
+
+                                                              These inputs, together with the corresponding "SERVOON" inputs make it possible to operate with
+                                                              the axes as DRO.
+
+                                                              In order for the axis to work in DRO mode, its "DRO" input must be high and its corresponding
+                                                              "SERVOON" input must be low.
+
+CNC 8055                                                      When an axis works as a DRO, the positioning loop is open and its following error is ignored while
+                                                              in motion
+CNC 8055i
+                                                              If the DRO signal is brought back low, the axis will no longer behave as a DRO and the CNC will
+                                                              take as position value its current position assigning a 0 value to the following error.
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·482·
+===== PAGE 482 =====
+
+  SERVO1ON (M5107)         SERVO2ON (M5157)           SERVO3ON (M5207)           SERVO4ON (M5257)
+  SERVO5ON (M5307)         SERVO6ON (M5357)           SERVO7ON (M5407)
+
+     When one of these signals is set high, the CNC closes the positioning loop of the corresponding axis.
+
+     If set low, the CNC does not close the position loop of the axis. Any position deviation is stored as
+     following error, thus when the signal gets back high, the axis moves to return to position
+
+     These signals are controlled by the PLC and when the positioning loop is to be closed, they will be
+     processed by the CNC according to the value given to machine parameter "DWELL" (P17) for the
+     axes.
+
+     DWELL = 0                                                                                                                                12.
+
+
+
+                                                                                                               LOGIC CNC INPUTS AND OUTPUTS
+                                                                                                                                              Axis logic inputs.
+     When a.m.p. DWELL (P17) for the axis to be moved is set to 0, the CNC will check the status of
+     the SERVOON signal at the time when the ENABLE must be output.
+
+
+
+
+     If the SERVOON signal is high, the CNC allows the movement of this axis by activating the ENABLE
+     signal and providing the required velocity command output.
+
+     On the other hand, if the SERVOON signal is low or if it changes during the movement of the axes,
+     the CNC stops the axes feed and the spindle rotation displaying the corresponding error message.
+
+     DWELL<>0
+     When a.m.p. DWELL (P17) for the axis to be moved is set to other than "0", the CNC will check the
+     status of the SERVOON signal at the time when the ENABLE must be output.
+
+     When this signal (SERVOON) is high, the CNC allows the movement of the axis by activating the
+     ENABLE signal and providing the required velocity command output.
+
+     On the other hand, if the SERVOON signal is low, the CNC activates the ENABLE signal and after
+     "waiting" for a time period indicated in DWELL, it checks again the status of the SERVOON signal.
+     If it is high, the required spindle velocity command will be output. If low, the CNC will stop the axes
+     feed and the spindle rotation displaying the corresponding error message.
+
+
+
+
+     Also, if the SERVOON signal changes states during the movement of the axis, the CNC stops the
+     axes feed and the spindle rotation displaying the corresponding error message.
+
+                                                                                                               CNC 8055
+                                                                                                               CNC 8055i
+
+
+
+                                                                                                                      SOFT: V01.6X
+
+
+
+
+                                                                                                                                              ·483·
+===== PAGE 483 =====
+
+                                                           AXIS+1 (M5108)           AXIS-1 (M5109)             AXIS+2 (M5158)             AXIS-2 (M5159)
+                                                           AXIS+3 (M5208)           AXIS-3 (M5209)             AXIS+4 (M5258)             AXIS-4 (M5259)
+                                                           AXIS+5 (M5308)           AXIS-5 (M5309)             AXIS+6 (M5358)             AXIS-6 (M5359)
+                                                           AXIS+7 (M5408)           AXIS-7 (M5409)
+
+                                                             The CNC uses these signals when working in the manual (JOG) operating mode.
+
+                                                             If the PLC sets one of these signals high, the CNC will move the corresponding axis in the direction
+                                                             indicated, positive (+) or negative (-). This movement will be performed at the feedrate override %
+                                                             currently selected.
+
+
+12.                                                          The treatment which these signals receive is similar to that given to the JOG keys of the operator
+                                                             panel.
+
+
+
+
+       LOGIC CNC INPUTS AND OUTPUTS
+                                      Axis logic inputs.
+                                                           SPENA1 (M5110)           DRENA1 (M5111)             SPENA2 (M5160)             DRENA2 (M5161)
+                                                           SPENA3 (M5210)           DRENA3 (M5211)             SPENA4 (M5260)             DRENA4 (M5261)
+                                                           SPENA5 (M5310)           DRENA5 (M5311)             SPENA6 (M5360)             DRENA6 (M5361)
+                                                           SPENA7 (M5410)           DRENA7 (M5411)             SPENA8 (M6110)             DRENA8 (M6111)
+                                                           SPENA9 (M6160)           DRENA9 (M6161)
+
+                                                             The CNC uses these signals when communicating with the drive via Sercos or via Can. Every time
+                                                             the PLC sets one of these signals high, the CNC lets the corresponding drive know about it.
+
+                                                             These signals correspond to the "speed enable" and "drive enable" signals of the drive. The drive
+                                                             manual describes how the two signals work, however, remember the following:
+                                                               • Both signals must be initialized low when powering up the PLC.
+                                                               • For normal drive operation, both signals must be set high.
+                                                               • A down flank (trailing edge) of the DRENA signal (drive enable) turns off the power circuit of the
+                                                                 drive and the motor loses its torque. In this situation, the motor is no longer governed and it will
+                                                                 stop when its kinetic energy runs out. (Stop by friction).
+                                                               • A trailing edge of the SPENA signal (speed enable) switches the "internal velocity reference"
+                                                                 to "0" rpm and brakes the motor while maintaining its torque. Once the motor has stopped, the
+                                                                 drive's power circuit is turned off and the motor has no torque.
+
+                                                             When using Sercos, when an emergency occurs at the CNC, the SPENA signals of the axes and
+                                                             the spindle are disabled and the drive brakes using the emergency ramps.
+
+                                                           SYNCHRO1 (M5112)         SYNCHRO2 (M5162)           SYNCHRO3 (M5212)           SYNCHRO4 (M5262)
+                                                           SYNCHRO5 (M5312)         SYNCHRO6 (M5362)           SYNCHRO7 (M5412)
+
+                                                             The PLC sets one of these signals high to synchronize the corresponding axis to the axis defined
+                                                             by the a.m.p. "SYNCHRO".
+
+                                                           ELIMINA1 (M5113)         ELIMINA2 (M5163)           ELIMINA3 (M5213)           ELIMINA4 (M5263)
+                                                           ELIMINA5 (M5313)         ELIMINA6 (M5363)           ELIMINA7 (M5413)
+
+                                                             If the PLC sets one these signals high, the CNC does not display the corresponding axis but keeps
+                                                             controlling it. Same as when setting a.m.p. DFORMAT (P1) =3.
+
+                                                             The ELIMINA mark can be activated and deactivated at any time and it also cancels the feedback
+                                                             alarms which the machine parameter does not do.
+
+                                                             When the axis is controlled via Sercos and the PLC sets the relevant ELIMINA signal high, the
+                                                             commands to park that axis are generated automatically via Sercos. The drive of that axis will not
+                                                             issue, for example, when removing the feedback, the CNC will not issue a feedback error.
+
+                                                           SMOTOF1 (M5114)          SMOTOF2 (M5154)            SMOTOF3 (M5214)            SMOTOF4 (M5254)
+                                                           SMOTOF5 (M5314)          SMOTOF6 (M5354)            SMOTOF7 (M5414)
+
+CNC 8055                                                     The SMOTIME (P58) filter set for each axis with parameter P58 can be canceled from the PLC a.m.p.
+                                                             SMOTIME (P58).
+CNC 8055i
+                                                             This SMOTIME filter will be activated or deactivated at the beginning of the block. If one of these
+                                                             logic inputs is activated or deactivated while the CNC is overlapping blocks being executed in round
+                                                             corner, it will be ignored until that operation is finished.
+ SOFT: V01.6X
+                                                           LIM1OFF (M5115)          LIM2OFF (M5165)            LIM3OFF (M5215)            LIM4OFF (M5265)
+                                                           LIM5OFF (M5315)          LIM6OFF (M5365)            LIM7OFF (M5415)
+
+                                                             The PLC sets one of these signals high so that the CNC ignores the software limits of the
+                                                             corresponding axis.
+
+
+
+    ·484·
+===== PAGE 484 =====
+
+  MANINT1 (M5116)         MANINT2 (M5166)           MANINT3 (M5216)           MANINT4 (M5266)
+  MANINT5 (M5316)         MANINT6 (M5366)           MANINT7 (M5416)
+
+     The PLC sets one of these signals high to activate the additive handwheel on each axis. Only one
+     additive handwheel may be enabled at a time. If there are more than one mark active, only the first
+     one will be attended to.
+
+     When a program is in execution and the mark associated with an axis is activated, it calculates the
+     movement to be applied to that axis according to the resolution of the handwheel.
+
+  DIFFCOM1 (M5117)        DIFFCOM2 (M5167)          DIFFCOM3 (M5217)          DIFFCOM4 (M5267)
+  DIFFCOM5 (M5317)        DIFFCOM6 (M5367)          DIFFCOM7 (M5417)
+
+     Depending on the logic level of these signals, it corrects the theoretical difference between the
+                                                                                                                                           12.
+
+
+
+                                                                                                            LOGIC CNC INPUTS AND OUTPUTS
+                                                                                                                                           Axis logic inputs.
+     master and the slave of a Gantry pair after homing both axes of that pair of axes.
+
+     The theoretical difference between the master and the slave is corrected as follows:
+      • With the leading edge (up flank) of DIFFCOMaxis while SERVOaxisON = 1.
+      • With the leading edge (up flank) of SERVOaxisON while DIFFCOMaxis = 1.
+        In this case, to correct the theoretical difference between master and slave, both the master and
+        the slave axes must be set as Gantry axis or as DRO axis. Otherwise, the upflank of the
+        SERVOaxisON mark corrects the following error of the slave axis.
+
+
+
+
+                                                                                                            CNC 8055
+                                                                                                            CNC 8055i
+
+
+
+                                                                                                                   SOFT: V01.6X
+
+
+
+
+                                                                                                                                           ·485·
+===== PAGE 485 =====
+
+                                                              12.3      Spindle logic inputs.
+
+                                                                     This CNC can handle 2 spindles: a main spindle and a second spindle. They both can be operative
+                                                                     simultaneously, but only one can be controlled at a time. This selection can be made via part-
+                                                                     program by means of functions G28 and G29.
+
+                                                                LIMIT+S (M5450)             LIMIT-S (M5451)             Main spindle
+                                                                LIMIT+S2 (M5475)            LIMIT-S2 (M5476)            Second spindle
+
+                                                                     The CNC uses this signal while searching home when the spindle changes to working in closed loop
+
+12.                                                                  (M19). The CNC only considers the signals for the currently selected spindle.
+
+                                                                     The PLC sets one of the signals high to tell the CNC that the spindle has overrun its range of travel
+
+
+
+
+       LOGIC CNC INPUTS AND OUTPUTS
+                                      Spindle logic inputs.
+                                                                     in the positive (+) or negative (-) direction.
+
+                                                                     In this case, the CNC stops axis feed and spindle rotation and displays the corresponding error on
+                                                                     screen.
+
+                                                                DECELS (M5452)              Main spindle
+                                                                DECELS2 (M5477)             Second spindle
+
+                                                                     The CNC uses this signal while searching home when the spindle changes to working in closed loop
+                                                                     (M19). The CNC only considers the signals for the currently selected spindle.
+
+                                                                     The PLC sets this signal high to indicate to the CNC that the reference search switch is pressed.
+
+                                                                     When this signal is activated in the reference search mode the CNC decelerates the spindle,
+                                                                     changing the rapid approach speed indicated by the s.m.p. REFEED1 (P34), with the slow feedrate
+                                                                     indicated by the s.m.p. REFEED2 (P35). After decelerating, it accepts the following reference signal
+                                                                     from the spindle feedback systems as being valid.
+
+                                                                SPDLEINH (M5453)            Main spindle
+                                                                SPDLEIN2 (M5478)            Second spindle
+
+                                                                     The CNC considers these 2 signals at all times so both spindles can be controlled by the PLC.
+
+                                                                     When the PLC sets this signal high, the CNC outputs a zero velocity command for the spindle.
+
+                                                                SPDLEREV (M5454)            Main spindle
+                                                                SPDLERE2 (M5479)            Second spindle
+
+                                                                     The CNC considers these 2 signals at all times so both spindles can be controlled by the PLC.
+
+                                                                     When the PLC sets this signal high, the CNC reverses the programmed spindle turning direction.
+
+                                                                     If while being this signal high, a block containing an M3 or M4 is executed, the spindle will start turning
+                                                                     in the opposite direction.
+
+                                                                SMOTOFS (M5455)             Main spindle
+                                                                SMOTOFS2 (M5480)            Second spindle
+
+                                                                     The SMOTIME (P46) filter set for the main and second spindles with parameter P46 can be canceled
+                                                                     from the PLC. SMOTIME (P46).
+                                                                     This SMOTIME filter will be activated or deactivated at the beginning of the block. If one of these
+                                                                     logic inputs is activated or deactivated while the CNC is overlapping blocks being executed in round
+                                                                     corner, it will be ignored until that operation is finished.
+
+                                                                SERVOSON (M5457)            Main spindle
+                                                                SERVOSO2 (M5482)            Second spindle
+
+CNC 8055                                                             These signals are controlled by the PLC and the CNC will process them only when the spindle is
+                                                                     working in closed loop (M19). Its treatment depends on the value assigned to s.m.p. DWELL (P17).
+CNC 8055i
+                                                                     DWELL = 0
+                                                                     If s.m.p. DWELL (P17) has been set to "0", the CNC will check the status of the SERVOSON signal
+ SOFT: V01.6X                                                        at the time when the ENABLE signal is to be output.
+
+                                                                     If the SERVOSON signal is high, the CNC will allow the spindle to rotate by activating the ENABLE
+                                                                     signal and providing the required velocity command output.
+
+
+
+
+    ·486·
+===== PAGE 486 =====
+
+
+
+
+     On the other hand, if the SERVOSON signal is low or if it changes to low during the rotation of the
+     spindle, the CNC will stop the axes feed and the spindle rotation displaying the corresponding error
+                                                                                                                                             12.
+     message.
+
+
+
+
+                                                                                                              LOGIC CNC INPUTS AND OUTPUTS
+                                                                                                                                             Spindle logic inputs.
+     DWELL<>0
+     If s.m.p. DWELL (P17) has been set to other than "0", the CNC will check the status of the
+     SERVOSON signal at the time when the ENABLE signal is to be output.
+
+     If the SERVOSON signal is high, the CNC will allow the spindle to rotate by activating the ENABLE
+     signal and providing the required velocity command output.
+
+     On the other hand, if the SERVOSON signal is low, the CNC will activate the ENABLE signal and,
+     after waiting for a time period indicated by the value given to "DWELL", the CNC checks the
+     SERVOSON signal again. If it is high, the required spindle velocity command will be output. If low,
+     the CNC will stop the axes feed and the spindle rotation displaying the corresponding error message.
+
+
+
+
+     Also, if it changes to low during the rotation of the spindle, the CNC will stop the axes feed and the
+     spindle rotation displaying the corresponding error message.
+
+  GEAR1 (M5458) GEAR2 (M5459)               GEAR3 (M5460)         GEAR4 (M5461) Main spindle
+  GEAR12 (M5483) GEAR22 (M5484)             GEAR32 (M5485)        GEAR42 (M5486) Second spindle
+
+     The PLC uses these signals to indicate to the CNC which spindle gear is currently selected (high
+     logic level). The CNC only considers the signals for the currently selected spindle.
+
+     When any of the miscellaneous functions M41, M42, M43 or M44 is programmed, the CNC will "tell"
+     the PLC so it selects the desired gear even if it is already selected.
+
+     When working with automatic gear changer, the CNC will check the currently selected gear
+     (GEAR1... GEAR4) and if it does not match the selected speed, the CNC will let the PLC know using
+     the relevant auxiliary function (M41, M42, M43 or M44) to select it.
+
+     Once the PLC selects the proper gear, it indicates it to the CNC by means of the logic input
+     corresponding to the spindle (GEAR1 ...). GEAR4).
+
+     The spindle gear change depends on the setting of functions M41 through M44 in the M function
+     table:
+                                                                                                              CNC 8055
+     The M41, M42, M43 or M44 function uses the "AUXEND" signal:                                              CNC 8055i
+     The CNC indicates to the PLC the selected gear M41, M42, M43 or M44 in one of the registers
+     "MBCD1" through "MBCD7" and it activates the "MSTROBE" signal to let the PLC "know" that it must
+     execute it.
+                                                                                                                     SOFT: V01.6X
+     When the PLC detects the activation of the "MSTROBE" signal it must deactivate the general logic
+     input "AUXEND" to "tell" the CNC that the execution of the gear change has started.
+
+     Once executed this function, the PLC will inform the CNC that the new gear has been selected by
+     means of the logic input corresponding to the spindle ("GEAR1".... "GEAR4").
+
+
+
+                                                                                                                                             ·487·
+===== PAGE 487 =====
+
+                                                                The PLC, then, activates the logic input "AUXEND" to "tell" the CNC that the execution of the gear
+                                                                change has been completed.
+
+
+
+
+12.
+
+
+
+       LOGIC CNC INPUTS AND OUTPUTS
+                                      Spindle logic inputs.
+                                                                Once the general "AUXEND" input is activated, the CNC will require that this signal be kept active
+                                                                for a time period greater than the value given to the g.m.p. MINAENDW (P30).
+
+                                                                This way, erroneous interpretations of this signal by the CNC due to an improper PLC program logic
+                                                                are avoided .
+
+                                                                Once the "MINAENDW" time has elapsed with the "AUXEND" general input kept high, the CNC will
+                                                                check whether the new spindle gear has been selected by verifying that the corresponding input
+                                                                (GEAR1... GEAR4) is set high.
+
+                                                                If it is, it will cancel the general logic output "MSTROBE" to "tell" the PLC that the gear change has
+                                                                finished and if the corresponding input (GEAR1... GEAR4) is not selected, the CNC will stop the
+                                                                axes feed and the spindle rotation displaying the corresponding error message.
+
+                                                                If the M41, M42, M43 or M44 function does not use the "AUXEND" signal:
+                                                                 • The CNC indicates to the PLC the selected gear M41, M42, M43 or M44 in one of the registers
+                                                                   "MBCD1" through "MBCD7" and it activates the "MSTROBE" signal to let the PLC "know" that
+                                                                   it must execute it.
+                                                                 • The CNC will keep the general logic output "MSTROBE" active during the time indicated by
+                                                                   means of g.m.p. MINAENDW (P30).
+                                                                 • After this time, the CNC will check whether the new spindle gear has been physically selected
+                                                                   by verifying that the corresponding GEAR input (GEAR1... GEAR4) is set high.
+                                                                 • If it is not selected, the CNC will stop the axes feed and the spindle rotation displaying the
+                                                                   corresponding error message.
+
+                                                              SPENAS (M5462)          DRENAS (M5463)             Main spindle
+                                                              SPENAS2 (M5487)         DRENAS2 (M5488)            Second spindle
+
+                                                                The CNC uses these signals when communicating with the drive via Sercos or via Can. Every time
+                                                                the PLC sets one of these signals high, the CNC lets the corresponding drive know about it.
+
+                                                                These signals correspond to the "speed enable" and "drive enable" signals of the drive. The drive
+                                                                manual describes how the two signals work, however, remember the following:
+                                                                 • Both signals must be initialized low when powering up the PLC.
+                                                                 • For normal drive operation, both signals must be set high.
+                                                                 • A down flank (trailing edge) of the DRENA signal (drive enable) turns off the power circuit of the
+                                                                   drive and the motor loses its torque. In this situation, the motor is no longer governed and it will
+                                                                   stop when its kinetic energy runs out. (Stop by friction).
+                                                                 • A trailing edge of the SPENA signal (speed enable) switches the "internal velocity reference"
+                                                                   to "0" rpm and brakes the motor while maintaining its torque. Once the motor has stopped, the
+CNC 8055                                                           drive's power circuit is turned off and the motor has no torque.
+CNC 8055i                                                       When using Sercos, when an emergency occurs at the CNC, the SPENA signals of the axes and
+                                                                the spindle are disabled and the drive brakes using the emergency ramps.
+
+                                                              PLCFM19 (M5464)         M19FEED (R505)             Main spindle
+ SOFT: V01.6X                                                 PLCFM192 (M5489)        M19FEED2 (R507)            Second spindle
+
+                                                                The CNC only considers the signals for the currently selected spindle.
+
+                                                                The PLC uses the "PLCM19" signal to indicate to the CNC the positioning and rapid synchronized
+                                                                speed value to assume when operating in closed loop (M19).
+
+
+
+    ·488·
+===== PAGE 488 =====
+
+     When this input is low, the CNC assumes the value set by s.m.p. REFEED1 (P34).
+
+     When this input is high, the CNC assumes the value set by the spindle input register "M19FEED"
+     (R505).
+
+     The "M19FEED" value is given in 0.0001º/min.
+
+  PLCCNTL (M5465)          Main spindle
+  PLCCNTL2 (M5490)         Second spindle
+
+     The CNC considers these 2 signals at all times so both spindles can be controlled by the PLC. This
+     is used to tell the CNC that the spindle is controlled directly by the PLC (high logic level).
+
+     It is used, for example, for oscillating the spindle during a gear change or for changing tools.
+                                                                                                                                         12.
+
+
+
+                                                                                                          LOGIC CNC INPUTS AND OUTPUTS
+                                                                                                                                         Spindle logic inputs.
+     The following example shows how a new spindle speed is selected involving a gear change.
+
+
+
+
+     After analyzing the block and detecting the gear change the CNC indicates this to the PLC in one
+     of the "MBCD1-7" registers (M41 to M44) and will activate the general logic output "MSTROBE" to
+     tell the PLC that it must execute it.
+
+     The PLC will deactivate the logic input AUXEND to tell the CNC that the treatment of the auxiliary
+     function is starting.
+
+     After calculating the value corresponding to the residual velocity command S for the gear change,
+     the PLC will indicate this to the CNC by means of the register "SANALOG", afterwards setting the
+     signal "PLCCNTL" at a high logic level.
+
+     At this time the CNC will output the velocity command indicated in the register SANALOG.
+
+     Once the requested gear change has been made, the new active speed will be indicated to the CNC
+     (spindle logic inputs GEAR1 to GEAR4).
+
+     In order to give the control of the spindle back to the CNC, the signal "PLCCNTL" must be set low.
+     Finally, the PLC will activate the logic input AUXEND once more to tell the CNC that the execution
+     of the auxiliary function has been completed.
+
+  SANALOG (R504)           Main spindle
+  SANALOG2 (R506)          Second spindle
+
+     The CNC considers these 2 signals at all times so both spindles can be controlled by the PLC. The
+     PLC will indicate by means of this 32 bit register the spindle velocity command which the CNC must
+     send out when it is controlled by the PLC.
+
+     SANALOG=32767 corresponds to an analog command of 10 V.
+
+     (10/32767) 0.305185 millivolts of analog command correspond to SANALOG=1.
+
+     This way, for 4V of velocity command, the following must be programmed:
+        SANALOG = (4x32767)/10 = 13107                                                                    CNC 8055
+     For -4V of analog command, the following must be programmed:                                         CNC 8055i
+        SANALOG = (-4x32767)/10 = -13107
+
+     When working with SERCOS, the values of drive parameters SP20 and SP21 are taken into account.
+     This way, the following value is assigned to the velocity command (corresponding FTEO): SP21 *
+                                                                                                                 SOFT: V01.6X
+     10 / SP20 rpm.
+
+
+
+
+                                                                                                                                         ·489·
+===== PAGE 489 =====
+
+                                                              ELIMIS (M5456)          Main spindle
+                                                              ELIMIS2 (M5481)         Second spindle
+
+                                                                If the PLC sets one these signals high, the CNC does not display the corresponding spindle but
+                                                                keeps controlling it. Same as when setting a.m.p. DFORMAT (P1) =4.
+
+                                                                This mark can be activated and deactivated at any time and it also cancels the feedback alarms
+                                                                which the machine parameter does not do.
+                                                                When the spindle is controlled via Sercos and the PLC sets this signal high, the commands to park
+                                                                the axis are generated automatically via Sercos. The drive of that spindle will not issue, for example,
+
+12.                                                             when removing the feedback, the CNC will not issue a feedback error.
+
+                                                              PLCM3 (M5070)           PLCM4 (M5071)              PLCM5 (M5072)              Main spindle
+
+
+
+
+       LOGIC CNC INPUTS AND OUTPUTS
+                                      Spindle logic inputs.
+                                                              PLCM3SP2 (M5073)        PLCM4SP2 (M5074)           PLCM5SP2 (M5075)           Second spindle
+
+                                                                These marks may be used to execute functions M3, M4 and M5 from the PLC. Executing these M
+                                                                functions from the PLC is similar to doing it from the main channel; i.e. besides acting upon the
+                                                                spindle command, it changes the execution history.
+
+                                                                The same PLC operation that handles the execution from the main channel also serves for this
+                                                                execution mode, that does it through PLC marks.
+
+                                                                The names of the marks of the first spindle will be as follows:
+                                                                  • To execute function M3: PLCM3.
+                                                                  • To execute function M4: PLCM4.
+                                                                  • To execute function M5: PLCM5.
+
+                                                                When having two spindles, the marks of the first spindle will be called in one of the following ways:
+                                                                  • To execute function M3: PLCM3 or PLCM3SP1.
+                                                                  • To execute function M4: PLCM4 or PLCM4SP1.
+                                                                  • To execute function M5: PLCM5 or PLCM5SP1.
+
+                                                                The marks of the second spindle will be called as follows:
+                                                                  • To execute function M3: PLCM3SP2.
+                                                                  • To execute function M4: PLCM4SP2.
+                                                                  • To execute function M5: PLCM5SP2.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·490·
+===== PAGE 490 =====
+
+12.4      Logic inputs of the auxiliary spindle
+
+  SPENAAS (M5449)             DRENAAS (M5448)
+
+       The CNC uses these signals when communicating with the drive via Sercos or via Can. Every time
+       the PLC sets one of these signals high, the CNC lets the corresponding drive know about it.
+
+       These signals correspond to the "speed enable" and "drive enable" signals of the drive. The drive
+       manual describes how the two signals work, however, remember the following:
+        • Both signals must be initialized low when powering up the PLC.
+        • For normal drive operation, both signals must be set high.
+        • A down flank (trailing edge) of the DRENA signal (drive enable) turns off the power circuit of the
+                                                                                                                                                 12.
+
+
+
+                                                                                                                                                 Logic inputs of the auxiliary spindle
+                                                                                                                  LOGIC CNC INPUTS AND OUTPUTS
+          drive and the motor loses its torque. In this situation, the motor is no longer governed and it will
+          stop when its kinetic energy runs out. (Stop by friction).
+        • A trailing edge of the SPENA signal (speed enable) switches the "internal velocity reference"
+          to "0" rpm and brakes the motor while maintaining its torque. Once the motor has stopped, the
+          drive's power circuit is turned off and the motor has no torque.
+
+       When using Sercos, when an emergency occurs at the CNC, the SPENA signals of the axes and
+       the spindle are disabled and the drive brakes using the emergency ramps.
+
+  PLCCNTAS (M5056)
+
+       It is used to "tell" the CNC that the auxiliary spindle is controlled directly by the PLC (active high).
+
+  SANALOAS (R509)
+       With this 32-bit register, the PLC will "tell" the CNC what spindle velocity command to output when
+       the auxiliary spindle is controlled by the PLC or via Sercos.
+
+       A 10 V of analog command corresponds to SANALOAS=32767.
+
+       SANALOAS=1 corresponds (10/32767) 0.305185 millivolts of analog command.
+
+       This way, for 4V of velocity command, the following must be programmed:
+          SANALOAS = (4x32767)/10 = 13107
+
+       For -4V of analog command, the following must be programmed:
+          SANALOAS = (-4x32767)/10 = -13107
+
+  ELIMIAS (M5062)
+
+       If the PLC sets this signal high, the CNC does not display the corresponding spindle but keeps
+       controlling it. This mark may be activated and deactivated any time and it also cancels the feedback
+       alarms.
+
+  PLCM45 (M5076)
+
+       This PLC mark may be used to stop the auxiliary spindle.
+
+  PLCM45S (M5077)
+
+       This PLC mark may be used to start the auxiliary spindle.
+
+
+
+
+                                                                                                                  CNC 8055
+                                                                                                                  CNC 8055i
+
+
+
+                                                                                                                         SOFT: V01.6X
+
+
+
+
+                                                                                                                                                 ·491·
+===== PAGE 491 =====
+
+                                                                     12.5      Key inhibiting logic inputs.
+
+                                                                       KEYDIS1 (R500)                KEYDIS2 (R501)            KEYDIS3 (R502)            KEYDIS4 (R503)
+                                                                       KEYDIS5 (R508)
+
+                                                                            The PLC can individually inhibit the operation of the panel keys, setting the corresponding bit of these
+                                                                            32-bit registers high. The appendix of this manual shows, for each keyboard, which key each bit
+                                                                            corresponds to. See "Key inhibiting codes" on page 675.
+
+                                                                            Register KEYDIS4 disables the positions of the feedrate override switch (feedrate % selector).
+
+12.                                                                         Register KEYDIS5 disables the specific keys for the conversational models.
+
+
+                                                                                Register       Bit         Inhibited key            Register      Bit          Inhibited key
+
+
+
+
+       LOGIC CNC INPUTS AND OUTPUTS
+                                      Key inhibiting logic inputs.
+                                                                              KEYDIS4           0         Handwheel x100          KEYDIS4          16     Feedrate override 60%
+                                                                              KEYDIS4           1         Handwheel x10           KEYDIS4          17     Feedrate override 70%
+                                                                              KEYDIS4           2          Handwheel x1           KEYDIS4          18     Feedrate override 80%
+
+                                                                              KEYDIS4           3            Jog 10000            KEYDIS4          19    Feedrate override 90%
+                                                                              KEYDIS4           4             Jog 1000            KEYDIS4          20    Feedrate override 100%
+                                                                              KEYDIS4           5              Jog 100            KEYDIS4          21    Feedrate override 110%
+
+                                                                              KEYDIS4           6              Jog 10             KEYDIS4          22    Feedrate override 120%
+                                                                              KEYDIS4           7               Jog 1             KEYDIS4          23
+                                                                              KEYDIS4           8       Feedrate override 0%      KEYDIS4          24
+
+                                                                              KEYDIS4           9      Feedrate override 2%       KEYDIS4          25
+                                                                              KEYDIS4          10      Feedrate override 4%       KEYDIS4          26
+                                                                              KEYDIS4          11      Feedrate override 10%      KEYDIS4          27
+
+                                                                              KEYDIS4          12      Feedrate override 20%      KEYDIS4          28
+                                                                              KEYDIS4          13      Feedrate override 30%      KEYDIS4          29
+
+                                                                              KEYDIS4          14      Feedrate override 40%      KEYDIS4          30
+                                                                              KEYDIS4          15      Feedrate override 50%      KEYDIS4          31
+
+
+                                                                            Should one of the inhibited positions of the feedrate override switch be selected, the CNC will take
+                                                                            the value corresponding to the nearest uninhibited position below it. If all of them are inhibited, the
+                                                                            lowest will be taken (0%).
+
+                                                                            For example, if only positions 110% and 120% of the switch are allowed and position 50% is selected,
+                                                                            the CNC will take a value of 0%.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·492·
+===== PAGE 492 =====
+
+12.6      Logic inputs of the PLC channel
+
+       To govern the axes managed by PLC.
+
+  /FEEDHOP (M5004)
+
+       It is similar to general logic input /FEEDHOL (M5002), but for the PLC channel.
+
+       When the PLC sets this signal low, the CNC stops the axes (maintaining spindle rotation). When
+       the signal returns to the high logic level, the movement of the PLC axes continues.
+       This input must always be defined in the PLC program.
+                                                                                                                                                12.
+  /XFERINP (M5005)
+
+
+
+
+                                                                                                                 LOGIC CNC INPUTS AND OUTPUTS
+                                                                                                                                                Logic inputs of the PLC channel
+       It is similar to general logic input /XFERINH (M5003), but for the PLC channel.
+
+       If the PLC sets this signal low, the CNC prevents the following block from starting, but finishes the
+       one it is executing. When the signal returns to high logic level, the CNC continues to execute the
+       program.
+
+       This input must always be defined in the PLC program.
+
+  AUXENDP (M5006)
+
+       It is similar to general logic input AUXEND (M5016), but for the PLC channel.
+
+       This signal is used in the execution of auxiliary M functions to tell the CNC that the PLC is executing
+       them.
+
+       It operates in the following way:
+       1. Once the block has been analyzed and after passing the corresponding values in variables
+          "MBCD1-7", the CNC will tell the PLC through the general logic output "MSTROBEP" that the
+          required auxiliary function or functions must be executed.
+
+
+
+
+       2. When the PLC detects the activation of the "MSTROBEP" signal it must deactivate the general
+          logic input "AUXENDP" to "tell" the CNC that the execution of the function has started.
+       3. The PLC will execute all the required auxiliary functions analyzing general logic output
+          "MSTROBEP" and variables "MBCDP1" through "MBCDP7" (R565 through R571).
+          Once this has been executed the PLC must activate the general logic input "AUXENDP" to
+          indicate to the CNC that the processing of the required functions was completed.
+       4. Once the general "AUXENDP" input is activated, the CNC will require that this signal be kept
+          active for a time period greater than the value given to the g.m.p. MINAENDW (P30).
+          This way, erroneous interpretations of this signal by the CNC due to an improper PLC program
+          logic are avoided .
+       5. Once the period of time MINAENDW has elapsed with the general input "AUXENDP" at a high
+                                                                                                                 CNC 8055
+          logic level, the CNC will deactivate the general logic output "MSTROBEP" to tell the PLC that
+          the execution of the required auxiliary function or functions has been completed.                      CNC 8055i
+
+
+
+                                                                                                                        SOFT: V01.6X
+
+
+
+
+                                                                                                                                                ·493·
+===== PAGE 493 =====
+
+                                                                        BLOABORP (M5061)
+
+                                                                          It is similar to general logic input BLOABOR (M5060), but for the PLC channel.
+
+                                                                          When the PLC sets this mark high, the CNC ends the movement in progress and starts executing
+                                                                          the next block. If the interrupted block had M functions to be executed after the block, they will be
+                                                                          executed before going on to the next block.
+
+                                                                          This mark only affects the execution in automatic mode and the simulation with motion.
+
+                                                                          This mark does not stay active after the execution. Once executed, the CNC deactivates it. Likewise,
+                                                                          if they are activated in a block that does not accept them, they will also be deactivated; they do not
+12.                                                                       stay active for the next block.
+
+                                                                          These marks affect the following functions.
+
+
+
+
+       LOGIC CNC INPUTS AND OUTPUTS
+                                      Logic inputs of the PLC channel
+                                                                           • It affect motion blocks G0, G1, G2, G3.
+                                                                           • They affect the dwell programmed with G4.
+                                                                           • It affects the look-ahead. In this type of programs with very small blocks, it is not possible to stop
+                                                                             at the same block where the "BLOABOR" mark is detected. In these cases, it will be canceled
+                                                                             at the block where the axis is fully decelerated.
+
+                                                                          These marks do not affect the following functions.
+                                                                           • It does not affect motionless blocs, which will be executed.
+                                                                           • It does not affect the M functions that are executed after the block. These functions are always
+                                                                             executed, even if the movement of the block is interrupted.
+                                                                           • It does affect not affect threading blocks G33. Nor does it affect the regular tapping or rigid tapping
+                                                                             cycles regardless of the value of parameter STOPTAP.
+                                                                           • It does not affect spindle positioning blocks M19. If the spindle positioning is in a block containing
+                                                                             axis movement, it aborts the movement of the axes, but it completes the positioning of the
+                                                                             spindle.
+                                                                           • It has no effect when tangential control is active.
+
+                                                                          Considerations for the execution
+                                                                          These marks do not affect block preparation. When canceling the execution of a block, the next
+                                                                          movement is carried out up to the prepared target coordinates; no preparation is done.
+
+                                                                          On the other hand, only the programmed axes are involved in the next movement. The rest of the
+                                                                          axes are ignored, even if there is a real difference in position because the previous block has been
+                                                                          aborted.
+
+
+
+
+                                                                                                       Path 1                                   Path 2
+
+                                                                                      The solid lines represent the programmed paths and the dashed lines the real paths,
+                                                                                      after activating the BLOABORP mark.
+
+
+                                                                          If a block is aborted and then the RETRACE function is activated, the retraced path (backwards)
+CNC 8055                                                                  will not be the same as the one traveled forward. The two paths will not coincide either when aborting
+                                                                          a block while the RETRACE function is active.
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·494·
+===== PAGE 494 =====
+
+12.7      General logic outputs
+
+  CNCREADY (M5500)
+
+       The CNC activates and maintains this signal high if the autotest which the CNC makes when it is
+       powered up has not detected any problem. Should any hardware error be detected (RAM, over-
+       temperature, etc.) this signal is set low.
+
+           Example
+           CNCREADY AND (rest of conditions) = O1
+              The emergency output O1 of the PLC must be normally high. Should any problem come up on CNC
+              power-up (CNCREADY), emergency output O1 must be set low (0V).                                                                           12.
+
+
+
+                                                                                                                        LOGIC CNC INPUTS AND OUTPUTS
+                                                                                                                                                       General logic outputs
+  START (M5501)
+
+       The CNC sets this signal high in order to tell the PLC that the START key on the front panel has
+       been pressed.
+
+       If the PLC program considers that there is nothing to prevent the part program from starting, it must
+       set the general logic input CYSTART at a high logic level, thereby starting the execution of the
+       program.
+
+       When the CNC detects an up flank (logic level change from low to high) at the CYSTART signal,
+       it reset the START signal to low.
+
+           Example
+           START AND (rest of conditions) = CYSTART
+              When the cycle START key is pressed, the CNC activates the general logic output START. The PLC
+              must check that the rest of the conditions (hydraulic, safety devices, etc.) are met before setting the
+              general input CYSTART high in order to start executing the program
+
+
+  FHOUT (M5502)
+
+       The CNC sets this signal high in order to tell the PLC that the execution of the program is stopped
+       due to one of the following causes:
+        • Because the CONTROL PANEL STOP key has been pressed.
+        • Because the general logic input /STOP has been set low, even though later it has returned high.
+        • Because the general logic input /FEEDHOL is low.
+
+  RESETOUT (M5503)
+
+       The CNC sets this signal high for 100 milliseconds, in order to tell the PLC that it is under initial
+       conditions because the Reset key on the front panel has been pressed or because the general logic
+       input RESETIN has been activated.
+
+  LOPEN (M5506)
+
+       The CNC sets this signal high in order to tell the PLC that the positioning loop of the axes is open
+       since an error has occurred.
+
+
+
+
+                                                                                                                        CNC 8055
+                                                                                                                        CNC 8055i
+
+
+
+                                                                                                                               SOFT: V01.6X
+
+
+
+
+                                                                                                                                                       ·495·
+===== PAGE 495 =====
+
+                                                              /ALARM (M5507)
+
+                                                                The CNC sets this signal low in order to tell the PLC that an alarm or emergency condition has been
+                                                                detected. This signal will be set high once again, once the message from the CNC has been
+                                                                eliminated and the cause of the alarm has disappeared.
+
+
+
+
+12.
+
+
+
+       LOGIC CNC INPUTS AND OUTPUTS
+                                      General logic outputs
+
+
+
+
+                                                                Likewise, while this signal is low, the CNC keeps the emergency output active (low).
+                                                                    8055 CNC       Pin 2 of connector X10 of the –Axes– module or –Axes Vpp– module.
+                                                                    8055i CNC.     Pin 2 of connector X2
+
+                                                                     Example
+                                                                     /ALARM AND (other conditions) = O1
+                                                                        The emergency output O1 of the PLC must be normally high. If an alarm or an emergency is detected
+                                                                        at the CNC, the emergency output O1 must be set low (0V).
+
+
+                                                              MANUAL (M5508)
+
+                                                                The CNC sets this signal high to tell the PLC that the JOG (Manual) operating mode is selected.
+
+                                                              AUTOMAT (M5509)
+
+                                                                The CNC sets this signal high to tell the PLC that the automatic operating mode is selected.
+
+                                                              MDI (M5510)
+
+                                                                The CNC sets this signal high to tell the PLC that the MDI mode (manual data input) is selected
+                                                                in one of the operating modes (JOG, automatic, etc).
+
+                                                              SBOUT (M5511)
+
+                                                                The CNC sets this signal high to tell the PLC that the single block execution mode is selected.
+
+                                                              CUSTOM (M5512)
+
+                                                                It indicates to the CNC which work mode is currently selected:
+                                                                    CUSTOM = 0             M or T work mode.
+                                                                    CUSTOM = 1             MC, MCO, TC or TCO work mode.
+
+CNC 8055                                                        When having 2 keyboards, this variable may be used in the PLC in the following cases:
+CNC 8055i                                                         • To govern the keyboard switching board.
+                                                                  • To know the source of the keys and inhibit the desired keys.
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·496·
+===== PAGE 496 =====
+
+  INCYCLE (M5515)
+
+     The CNC sets this signal high while executing a block or moving an axis.
+
+     Once the execution of the program has been requested by the PLC to the CNC by means of the
+     logic input CYSTART, the latter will indicate that it is being executed by setting the INCYCLE signal
+     high.
+
+     This signal is maintained high until the CNC finishes the part program or when this is stopped by
+     means of the STOP key on the CONTROL PANEL or the general logic input /STOP.
+
+     If the CNC is in the single block execution mode, the INCYCLE signal is set low as soon as the block
+     execution is concluded.
+
+     If the CNC is in JOG mode, the INCYCLE signal is set low as soon as the position indicated has
+                                                                                                                                             12.
+
+
+
+                                                                                                              LOGIC CNC INPUTS AND OUTPUTS
+                                                                                                                                             General logic outputs
+     been reached.
+
+     If the CNC is in JOG mode and the axes are being jogged, the "INCYCLE" signal goes high while
+     any of the jog keys are pressed.
+
+  RAPID (M5516)
+
+     The CNC sets this signal high to tell the PLC that a rapid positioning (G00) is being executed.
+
+  TAPPING (M5517)
+
+     The CNC sets this signal high to tell the PLC that a tapping canned cycle is being executed (G84).
+
+  THREAD (M5518)
+
+     The CNC sets this signal high to tell the PLC that a threading block is being executed (G33).
+
+  PROBE (M5519)
+
+     The CNC sets this signal high to tell the PLC that a probing movement is being executed (G75/G76).
+
+  ZERO (M5520)
+
+     The CNC sets this signal high to tell the PLC that a machine reference search is being executed
+     (G74).
+
+  RIGID (M5521)
+
+     This output is only available on the mill model. The CNC set this signal high to indicate to the PLC
+     that a RIGID TAPPING operation (G84) is being performed.
+
+  RETRAEND (M5522)
+
+     The CNC sets this signal high to indicate to the "PLC" that while retracing is active all the possible
+     blocks have been retraced.
+
+     For further information, see general input "RETRACE (M5051)".
+
+  CSS (M5523)
+
+     This output is only available on the lathe model. The CNC sets this signal high to tell the PLC that
+     the constant cutting speed function is selected (G96).
+
+
+
+
+                                                                                                              CNC 8055
+                                                                                                              CNC 8055i
+
+
+
+                                                                                                                     SOFT: V01.6X
+
+
+
+
+                                                                                                                                             ·497·
+===== PAGE 497 =====
+
+                                                              SELECT0 (M5524)              SELECT1 (M5525)               SELECT2 (M5526)        SELECT3 (M5527)
+                                                              SELECT4 (M5528)              SELECT5 (M5529)               SELECT6 (M5530)        SELECT7 (M5531)
+                                                              SELECTOR (R564)
+
+                                                                The CNC uses these signals to indicate to the PLC the position selected at each keyboard switch.
+                                                                   SELECTOR It indicates the position currently selected.
+                                                                   SELECT            It indicates the value applied by the CNC.
+
+                                                                Usually, the two values coincide, except when a position has been selected which has been disabled
+                                                                with the KEYDIS4 input (R503). If while being the 60% and 120% inhibited, the 100% position is
+
+12.                                                             selected, SELECTOR will show the selected position (100%) and SELECT will show the value being
+                                                                applied (50%).
+
+
+
+
+       LOGIC CNC INPUTS AND OUTPUTS
+                                      General logic outputs
+                                                                                                                SELECTOR(3)   SELECTOR(2)   SELECTOR(1)     SELECTOR(0)
+                                                                                                                  SELECT3       SELECT2       SELECT1         SELECT0
+
+                                                                                Handwheel x100                       0             0             0                   0
+
+                                                                                Handwheel x10                        0             0             0                   1
+
+                                                                                Handwheel x1                         0             0             1                   0
+
+                                                                                JOG 10000                            0             0             1                   1
+
+                                                                                JOG 1000                             0             1             0                   0
+
+                                                                                JOG 100                              0             1             0                   1
+
+                                                                                JOG 10                               0             1             1                   0
+
+                                                                                JOG 1                                0             1             1                   1
+
+                                                                                Continuous JOG                       1             0             0                   0
+
+                                                                                                                SELECTOR(7)   SELECTOR(6)   SELECTOR(5)     SELECTOR(4)
+                                                                                                                  SELECT7       SELECT6       SELECT5         SELECT4
+
+                                                                               Feedrate override 0%                  0             0             0                   0
+                                                                               Feedrate override 2%                  0             0             0                   1
+                                                                               Feedrate override 4%                  0             0             1                   0
+                                                                               Feedrate override10%                  0             0             1                   1
+                                                                               Feedrate override 20%                 0             1             0                   0
+                                                                               Feedrate override 30%                 0             1             0                   1
+                                                                               Feedrate override 40%                 0             1             1                   0
+                                                                               Feedrate override 50%                 0             1             1                   1
+                                                                               Feedrate override 60%                 1             0             0                   0
+                                                                               Feedrate override 70%                 1             0             0                   1
+                                                                               Feedrate override 80%                 1             0             1                   0
+                                                                               Feedrate override 90%                 1             0             1                   1
+                                                                               Fe e d r a t e o v e r r i d e        1             1             0                   0
+                                                                               100%
+
+                                                                               Fe e d r a t e o v e r r i d e        1             1             0                   1
+                                                                               110%
+
+                                                                               Fe e d r a t e o v e r r i d e        1             1             1                   0
+                                                                               120%
+
+
+CNC 8055
+                                                              MSTROBE (M5532)
+CNC 8055i
+                                                                The CNC sets this signal high to tell the PLC that it must execute the auxiliary M function or functions
+                                                                which are indicated in registers "MBCD1" to "MBCD7" (R550 to R556).
+
+                                                              SSTROBE (M5533)
+ SOFT: V01.6X
+                                                                This signal is used when using a spindle operating with BCD coded S signal. s.m.p. SPDLTYPE (P0).
+
+                                                                The CNC sets this signal high to tell the PLC that it must execute the auxiliary S function which is
+                                                                indicated in the register "SBCD" (R557).
+
+
+
+    ·498·
+===== PAGE 498 =====
+
+  TSTROBE (M5534)
+
+     The CNC sets this signal high to tell the PLC that it must execute the auxiliary S function which is
+     indicated in the register "TBCD" (R558).
+
+     In this register the CNC will tell the PLC the position of the magazine where the selected tool is.
+
+     If g.m.p. RANDOMTC (P25) has been set so it is not a random tool magazine, the magazine pocket
+     position coincides with the tool number.
+
+  T2STROBE (M5535)
+
+     This register is used when a special tool change has been made, family code or 200 or with
+     machining centers with a non-random tool magazine (g.m.p. RANDOMTC (P25). RANDOMTC
+                                                                                                                                                12.
+     P25).
+
+
+
+
+                                                                                                                 LOGIC CNC INPUTS AND OUTPUTS
+                                                                                                                                                General logic outputs
+     The CNC sets this signal high to tell the PLC that it must execute a second auxiliary T function
+     indicated in the register "T2BCD" (R559).
+
+     In this register the CNC indicates to the PLC the position of the magazine in which the tool which
+     was on the spindle must be placed.
+
+  S2MAIN (M5536)
+
+     It indicates which spindle is controlled by the CNC. This selection can be made via part-program
+     by means of functions G28 and G29.
+
+     If the CNC controls the main spindle S2MAIN is low.
+
+     If the CNC controls the second spindle S2MAIN is high.
+
+  ADVINPOS (M5537)
+
+     It is used on punch presses that have an eccentric cam as a punching system.
+
+     The CNC sets this signal high a specific time period before the axes reach position. This time is set
+     by g.m.p. ANTIME (P69).
+
+     This reduces idle time, thus increasing the number of punches per minute.
+
+  INTEREND (M5538)          INPOS (M5539)
+
+     The CNC uses these two signals to let the PLC "know" that the theoretical interpolation between
+     axes has been completed (INTEREND) and that all the axes involved in the interpolation are in
+     position (INPOS).
+
+     The CNC sets the "INTEREND" signal high when the interpolation is ended being low while in
+     execution.
+
+     When the CNC verifies that all the axes have been within the dead band (in position zone INPOSW
+     P19) for a time period indicated in the a.m.p INPOTIME (P20), it will consider that all of them are
+     in position and it will inform the PLC by setting the logic output "INPOS" high.
+
+     The logic output "INTEREND" can be used when it is required to activate mechanisms before the
+     axes reach their position.
+
+  DM00 (M5547)
+
+     The CNC sets this signal high to tell the PLC that the auxiliary function M00 (program stop) is
+     programmed in the block being executed.
+
+  DM01 (M5546)
+
+     The CNC sets this signal high to tell the PLC that the auxiliary function M01 (conditional stop) is         CNC 8055
+     programmed in the block being executed.
+                                                                                                                 CNC 8055i
+  DM02 (M5545)
+
+     The CNC sets this signal high to tell the PLC that the auxiliary function M02 (program end) is
+     programmed in the block being executed.                                                                            SOFT: V01.6X
+
+  DM03 (M5544)
+
+     The CNC sets this signal high to tell the PLC that the spindle is turning clockwise or that the auxiliary
+     function M03 is programmed in the block being executed.
+
+
+
+                                                                                                                                                ·499·
+===== PAGE 499 =====
+
+                                                              DM04 (M5543)
+
+                                                                The CNC sets this signal high to tell the PLC that the spindle is turning counter-clockwise or that
+                                                                the auxiliary function M04 is programmed in the block being executed.
+
+                                                              DM05 (M5542)
+
+                                                                The CNC sets this signal high to tell the PLC that the spindle is stopped or that the auxiliary function
+                                                                M05 is programmed in the block being executed.
+
+                                                              DM06 (M5541)
+
+12.                                                             The CNC sets this signal high to tell the PLC that the spindle is stopped or that the auxiliary function
+                                                                M06 is programmed in the block being executed (tool change).
+
+
+
+
+       LOGIC CNC INPUTS AND OUTPUTS
+                                      General logic outputs
+                                                              DM08 (M5540)
+
+                                                                The CNC sets this signal high to tell the PLC that the coolant output is activated or that the auxiliary
+                                                                function M08 is programmed in the block being executed.
+
+                                                              DM09 (M5555)
+
+                                                                The CNC sets this signal high to tell the PLC that the coolant output is deactivated or that the auxiliary
+                                                                function M09 is programmed in the block being executed.
+
+                                                              DM19 (M5554)
+
+                                                                The CNC sets this signal high to tell the PLC that it is working with spindle orientation or that the
+                                                                auxiliary function M19 is programmed in the block being executed.
+
+                                                              DM30 (M5553)
+
+                                                                The CNC sets this signal high to tell the PLC that the auxiliary function M30 (program end) is
+                                                                programmed in the block being executed.
+
+                                                              DM41 (M5552)
+
+                                                                The CNC sets this signal high to tell the PLC that the first spindle gear is selected or that the auxiliary
+                                                                function M41 is programmed in the block being executed.
+
+                                                              DM42 (M5551)
+
+                                                                The CNC sets this signal high to tell the PLC that the second spindle gear is selected or that the
+                                                                auxiliary function M42 is programmed in the block being executed.
+
+                                                              DM43 (M5550)
+
+                                                                The CNC sets this signal high to tell the PLC that the third spindle gear is selected or that the auxiliary
+                                                                function M43 is programmed in the block being executed.
+
+                                                              DM44 (M5549)
+
+                                                                The CNC sets this signal high to tell the PLC that the fourth spindle gear is selected or that the
+                                                                auxiliary function M44 is programmed in the block being executed.
+
+                                                              DM45 (M5548)
+
+                                                                The CNC sets this signal high to tell the PLC that the miscellaneous function M45 has been
+                                                                programmed and, therefore, the "auxiliary spindle or live tool" is active.
+
+                                                              TANGACT (M5558)
+CNC 8055
+                                                                It indicates that the tangential control function, G45, is active.
+CNC 8055i
+                                                              SYNCPOSI (M5559)
+
+                                                                Indicates that the spindles are synchronized in position (set high). In other words, that the second
+                                                                spindle follows behind the main spindle at an angular distance set by G30.
+ SOFT: V01.6X
+                                                                It goes low when the following error between them exceeds the maximum allowed by s.m.p.
+                                                                "SYNPOSOF (P53)".
+
+
+
+
+    ·500·
+===== PAGE 500 =====
+
+  SYNSPEED (M5560)
+
+     Indicates that the spindles are synchronized in speed (set high). In other words, that the second
+     spindle turns at the same speed as the main spindle.
+
+     It goes low when the following error between them exceeds the maximum allowed by s.m.p.
+     SYNSPEOF (P54).
+
+  SYNCHRON (M5561)
+
+     Indicates that the G77S function is currently selected (spindle synchronization).
+
+  SERPLCAC (M5562)                                                                                                                               12.
+     It is used in the data exchange, via Sercos between the CNC and the drives.
+
+
+
+
+                                                                                                                  LOGIC CNC INPUTS AND OUTPUTS
+                                                                                                                                                 General logic outputs
+     The CNC sets this signal high to "tell" the PLC that the requested change of parameter sets and
+     gear ratios is in progress.
+
+     While this mark is on, no other change may be requested because the command would be lost.
+
+  RETRACT (M5567)
+
+     During the drilling, tapping and rigid tapping cycles of the mill model CNC, it is now possible to
+     withdraw the tool to the starting plane and, once there, stop the spindle.
+
+     Once the retraction is completed, the user may finish the hole, go to the next hole or go into tool
+     inspection.
+
+     General logic output RETRACT (M5567) is activated when the stop is completed and it is canceled
+     when completing the retraction of the drilling or mill type threading operation.
+
+     When retracting the axes on the lathe model, general logic output RETRACT (M5567) is activated
+     when pressing [STOP] and the CNC starts retracting. This mark will stay active until the withdrawal
+     distances set in G233 are reached.
+
+  TMINEM (M5569)
+
+     Mark activated when the CNC detects an error during tool change. This mark stays memorized until
+     it is canceled by the RESTMEM mark or with the option [REMOVE ERROR] shown in the error
+     message.
+
+     READEND (M5507)
+     CNC output that indicates that the message received is in the buffer.
+
+         Value          Meaning
+
+         0              The execution of the RCV instruction begins.
+
+         1              It indicates that the process started by the RCV instruction has finished and that the
+                        message is in the buffer.
+
+                                                                                               Default value 0.
+
+     READRDY (M5571)
+     CNC output that indicates whether the READ commands may be received or not.
+
+         Value          Meaning
+
+         0              It indicates that no READ commands may be received.
+
+         1              It indicates that READ commands may be received.                                          CNC 8055
+                                                                                                                  CNC 8055i
+     WRITERDY (M5572)
+     CNC output that indicates whether the WRITE commands may be sent or not.
+                                                                                                                         SOFT: V01.6X
+         Value          Meaning
+
+         0              It indicates that no WRITE commands may be sent.
+
+         1              It indicates that WRITE commands may be sent.
+
+
+
+
+                                                                                                                                                 ·501·
+===== PAGE 501 =====
+
+
+
+
+12.
+
+
+
+       LOGIC CNC INPUTS AND OUTPUTS
+                                      General logic outputs
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·502·
+===== PAGE 502 =====
+
+12.8      Logic outputs of the axes
+
+       There are several groups of logic inputs (ENABLE, DIR, etc.) which refer to the possible axes of
+       the machine by means of digits 1 through 7 (ENABLE2, DIR1,etc.) or using the axis name
+       (ENABLEX, DIRZ, etc.).
+
+       The marks of the axes that do not exist in the machine parameters assume the value of the M2045
+       mark, that's always set to 0.
+
+       When monitoring the PLC program, it shows the edited marks, either with a letter or with a number.
+       However, the resource windows created from monitoring will replace the marks with axis names by
+       the marks with axis numbers. For example:
+          ENABLEX with ENABLE1
+                                                                                                                                                12.
+
+
+                                                                                                                                                Logic outputs of the axes
+
+
+
+                                                                                                                 LOGIC CNC INPUTS AND OUTPUTS
+          ENABLEZ by ENABLE2 if there is no Y axis, but there are X and Z axes.
+
+       Mnemonics using numbers 1 through 7.
+       These signals are numbered as the logic order of the axes; it is not related to the values assigned
+       to g.m.p. AXIS1 (P0) through AXIS8 (P7).
+
+       For example, if the CNC controls the X, Y, Z, B, C and U axis, the order will be: X, Y, Z, U, B, C and,
+       therefore:
+
+           ENABLE1, DIR1, REFPOIN1, INPOS1                      for the X axis:
+
+           ENABLE2, DIR2, REFPOIN2, INPOS2                      for the Y axis:
+
+           ENABLE3, DIR3, REFPOIN3, INPOS3                      for the Z axis:
+
+           ENABLE4, DIR4, REFPOIN4, INPOS4                      for the U axis:
+
+           ENABLE5, DIR5, REFPOIN5, INPOS5                      for the B axis
+
+           ENABLE6, DIR6, REFPOIN6, INPOS6                      for the C axis:
+
+
+       Mnemonics using the axis name
+       The mnemonics of the signals refer to the axis name.
+
+       Mnemonics with axis names offer the advantage that if an axis is eliminated, the PLC program will
+       still be consistent with the rest of the axes.
+
+  ENABLE1 (M5600)            ENABLE2 (M5650)            ENABLE3 (M5700)            ENABLE4 (M5750)
+  ENABLE5 (M5800)            ENABLE6 (M5850)            ENABLE7 (M5900)
+
+       The CNC sets these signals at a high logic level to tell the PLC to allow the corresponding axis to
+       move.
+
+  DIR1 (M5601)               DIR2 (M5651)               DIR3 (M5701)               DIR4 (M5751)
+  DIR5 (M5801)               DIR6 (M5851)               DIR7 (M5901)
+
+       The CNC uses these signals to tell the PLC in which direction the axes move.
+
+       If the signal is high this indicates that the corresponding axis moves in a negative direction.
+
+       If the signal is low this indicates that the corresponding axis moves in a positive direction.
+
+
+
+
+                                                                                                                 CNC 8055
+                                                                                                                 CNC 8055i
+
+
+
+                                                                                                                        SOFT: V01.6X
+
+
+
+
+                                                                                                                                                ·503·
+===== PAGE 503 =====
+
+                                                                  REFPOIN1 (M5602)          REFPOIN2 (M5652)              REFPOIN3 (M5702)          REFPOIN4 (M5752)
+                                                                  REFPOIN5 (M5802)          REFPOIN6 (M5852)              REFPOIN7 (M5902)
+
+                                                                    The CNC sets these signals high to tell the PLC that the machine reference search has been made
+                                                                    already. The CNC forces a home search on an axis by setting its mark low.
+
+                                                                    The marks are set low in the following instances:
+                                                                      • On CNC power-up.
+                                                                      • After executing the sequence [SHIFT] [RESET].
+                                                                      • When the feedback is direct through the axes board and a feedback alarm occurs.
+12.                                                                   • When losing feedback count via Sercos due to broken communication. Difference greater than
+                                                                        10 microns (0.00039 inches) or 0.01º
+
+
+
+
+                                      Logic outputs of the axes
+
+
+
+       LOGIC CNC INPUTS AND OUTPUTS
+                                                                      • When modifying certain machine parameters; for example, number of axes.
+
+                                                                    In all these cases, a home search must be carried out so the signal is set back high.
+
+                                                                  DRSTAF1 (M5603)            DRSTAS1 (M5604)              DRSTAF2 (M5653)           DRSTAS2 (M5654)
+                                                                  DRSTAF3 (M5703)            DRSTAS3 (M5704)              DRSTAF4 (M5753)           DRSTAS4 (M5754)
+                                                                  DRSTAF5 (M5803)            DRSTAS5 (M5804)              DRSTAF6 (M5853)           DRSTAS6 (M5854)
+                                                                  DRSTAF7 (M5903)            DRSTAS7 (M5904)              DRSTAF8 (M6603)           DRSTAS8 (M6604)
+                                                                  DRSTAF9 (M6653)            DRSTAS9 (M6654)
+
+                                                                    The CNC uses these signals when communicating with the drive via Sercos or via Can and indicate
+                                                                    the status of the drive.
+
+                                                                                                                                                  DRSTAF*           DRSTAS*
+
+                                                                     Actuating the main switch of the electrical cabinet supplies 24 Vdc to the      0                   0
+                                                                     drive.
+                                                                     The drive runs an internal test.
+                                                                     If correct, it activates the output "System OK".
+
+                                                                     From that moment on, the power supply must be turned on.                        0                   1
+                                                                     When there is power at the drive bus, it is ready to output torque.
+                                                                     To do that, activate the "drive enable" and "speed enable" inputs.              1                   0
+
+                                                                     Once the "drive enable" and "speed enable" are activated, the drive is          1                   1
+                                                                     running properly.
+
+                                                                    When an internal error occurs at the drive, the DRSTAF* and DRSTAS* signals are set low (logic
+                                                                    level low).
+
+                                                                  MAXDIFF1 (M5605)          MAXDIFF2 (M5655)              MAXDIFF3 (M5705)          MAXDIFF4 (M5755)
+                                                                  MAXDIFF5 (M5805)          MAXDIFF6 (M5855)              MAXDIFF7 (M5905)
+
+                                                                    These marks are activated when the position difference between master and slave is not
+                                                                    compensated because the coordinate difference is greater than the value of a.m.p. MAXDIFF (P97).
+                                                                    This can happen after homing both axes of a Gantry pair.
+
+                                                                    This way, the PLC can issue a warning indicating that the position difference between the master
+                                                                    and the slave has not been compensated for.
+
+                                                                  ANT1 (M5606)              ANT2 (M5656)                  ANT3 (M5706)              ANT4 (M5756)
+                                                                  ANT5 (M5806)              ANT6 (M5856)                  ANT7 (M5906)
+
+                                                                    These signals are related to a.m.p. MINMOVE (P54).
+
+                                                                    If the axis move is smaller than the value indicated by this a.m.p. MINMOVE (P54), the corresponding
+                                                                    axis logic output "ANT1 thru "ANT7" goes high.
+CNC 8055
+                                                                  INPOS1 (M5607)             INPOS2 (M5657)               INPOS3 (M5707)            INPOS4 (M5757)
+CNC 8055i                                                         INPOS5 (M5807)             INPOS6 (M5857)               INPOS7 (M5907)
+
+                                                                    The CNC sets these signals high to tell the PLC that the corresponding axis is in position.
+
+                                                                    There is also the general logic output INPOS in which the CNC indicates to the PLC that all the axes
+ SOFT: V01.6X                                                       have reached their position.
+
+
+
+
+    ·504·
+===== PAGE 504 =====
+
+12.9       Spindle logic outputs.
+
+       This CNC can handle 2 spindles: a main spindle and a second spindle. They both can be operative
+       simultaneously, but only one can be controlled at a time. This selection can be made via part-
+       program by means of functions G28 and G29.
+
+  ENABLES (M5950)               Main spindle
+  ENABLES2 (M5975)              Second spindle
+
+       This signal is used when working with the spindle in closed loop (M19). The CNC only considers
+       the signals for the currently selected spindle.
+
+       The CNC sets this signal high to tell the PLC to allow the spindle to move.
+                                                                                                                                               12.
+
+
+
+                                                                                                                LOGIC CNC INPUTS AND OUTPUTS
+                                                                                                                                               Spindle logic outputs.
+  DIRS (M5951)                 Main spindle
+  DIRS2 (M5976)                Second spindle
+
+       This signal is used when working with the spindle in closed loop (M19). The CNC only considers
+       the signals for the currently selected spindle.
+
+       The CNC uses this signal to tell the PLC in which direction the spindle is moving.
+
+       If the signal is at a high logic level, this indicates that the spindle moves in a negative direction.
+
+       If the signal is low, this indicates that the spindle moves in a positive direction.
+
+  REFPOINS (M5952)              Main spindle
+  REFPOIS2 (M5977)              Second spindle
+
+       This signal is used when working with the spindle in closed loop (M19). The CNC only considers
+       the signals for the currently selected spindle.
+
+       The CNC sets this signal high to tell the PLC that the spindle reference point search has already
+       been made.
+
+       This is set low when the CNC is powered up, after executing the [SHIFT] [RESET] sequence or a
+       feedback alarm occurs due to loss of count, and every time a change is made from closed loop (M19)
+       to open loop.
+
+  DRSTAFS (M5953)               DRSTASS (M5954)              Main spindle
+  DRSTAFS2 (M5978)              DRSTASS2 (M579)              Second spindle
+
+       The CNC uses these signals when communicating with the drive via Sercos or via Can and indicate
+       the status of the drive.
+
+                                                                                     DRSTAF*     DRSTAS*
+
+        Actuating the main switch of the electrical cabinet supplies 24 Vdc to the      0             0
+        drive.
+        The drive runs an internal test.
+        If correct, it activates the output "System OK".
+
+        From that moment on, the power supply must be turned on.                        0             1
+        When there is power at the drive bus, it is ready to output torque.
+
+        To do that, activate the "drive enable" and "speed enable" inputs.              1             0
+
+        Once the "drive enable" and "speed enable" are activated, the drive is          1             1
+        running properly.
+
+       When an internal error occurs at the drive, the DRSTAF* and DRSTAS* signals are set low (logic
+       level low).
+                                                                                                                CNC 8055
+  CAXIS (M5955)                Main spindle
+  CAXIS2 (M5980)               Second spindle                                                                   CNC 8055i
+       This signal is used when working with the spindle as "C" axis (G15). The CNC only considers the
+       signals for the currently selected spindle.
+
+       The CNC sets this signal high to tell the PLC that the C axis is active.                                        SOFT: V01.6X
+
+
+
+
+                                                                                                                                               ·505·
+===== PAGE 505 =====
+
+                                                               REVOK (M5956)            Main spindle
+                                                               REVOK2 (M5981)           Second spindle
+
+                                                                 The CNC only considers the signals for the currently selected spindle.
+
+                                                                 When working with M03 and M04 the CNC sets this signal high to tell the PLC that the real spindle
+                                                                 revolutions correspond to those programmed.
+
+                                                                 The CNC will activate this signal every time the real revolutions are within the range defined by s.m.p.
+                                                                 "LOSPDLIM" and "UPSPDLIM".
+
+                                                                 When working with the spindle in closed loop (M19), the CNC sets this signal high if the spindle is
+12.                                                              stopped.
+
+                                                               INPOSS (M5957)           Main spindle
+
+
+
+
+       LOGIC CNC INPUTS AND OUTPUTS
+                                      Spindle logic outputs.
+                                                               INPOSS2 (M5982)          Second spindle
+
+                                                                 This signal is used when working with the spindle in closed loop (M19). The CNC only considers
+                                                                 the signals for the currently selected spindle.
+
+                                                                 The CNC sets this signal high to tell the PLC that the spindle is in position.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·506·
+===== PAGE 506 =====
+
+12.10      Logic outputs of the auxiliary spindle
+
+  DRSTAFAS (M5557)             DRSTASAS (M5556)
+
+     The CNC uses these signals when communicating with the drive via Sercos or via Can and indicate
+     the status of the drive.
+
+                                                                                     DRSTAF*   DRSTAS*
+
+        Actuating the main switch of the electrical cabinet supplies 24 Vdc to the      0         0
+        drive.
+        The drive runs an internal test.
+        If correct, it activates the output "System OK".
+                                                                                                                                        12.
+
+
+
+                                                                                                                                        Logic outputs of the auxiliary spindle
+                                                                                                         LOGIC CNC INPUTS AND OUTPUTS
+        From that moment on, the power supply must be turned on.                        0         1
+        When there is power at the drive bus, it is ready to output torque.
+
+        To do that, activate the "drive enable" and "speed enable" inputs.              1         0
+
+        Once the "drive enable" and "speed enable" are activated, the drive is          1         1
+        running properly.
+
+     When an internal error occurs at the drive, the DRSTAF* and DRSTAS* signals are set low (logic
+     level low).
+
+
+
+
+                                                                                                         CNC 8055
+                                                                                                         CNC 8055i
+
+
+
+                                                                                                                SOFT: V01.6X
+
+
+
+
+                                                                                                                                        ·507·
+===== PAGE 507 =====
+
+                                                                    12.11   Logic outputs of key status
+
+                                                                      KEYDIS1 (R560)           KEYBD2 (R561)              KEYBD3 (R562)              KEYBD4 (R563)
+
+                                                                        These registers indicate whether or not one of the keys on the keyboard or on the operator panel
+                                                                        is pressed. When one of these keys is pressed, the corresponding bit will be set high and it will return
+                                                                        low when the key is released.
+
+                                                                        The appendix of this manual shows, for each keyboard, the code for each key. See "Logic outputs
+                                                                        of key status" on page 665.
+
+12.
+
+
+
+       LOGIC CNC INPUTS AND OUTPUTS
+                                      Logic outputs of key status
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·508·
+===== PAGE 508 =====
+VARIABLES
+
+                                                                                    13
+  The CNC has a number of internal variables that may be accessed from the user program, from
+  the PLC program or via DNC. Depending on how they are used, these variables may be read-only
+  or read-write.
+
+
+
+  Reading and writing variables from the PLC
+
+  The PLC provides two instructions (actions) which permit to read or modify the various internal
+  variables of the CNC from the PLC.
+
+  Reading variables. –CNCRD– command
+  The CNCRD command allows reading the CNC's internal variables. Its programming format is:
+     CNCRD (Variable, Register, Mark)
+
+  This PLC action loads the contents of the indicated variable into the selected register. If this
+  instruction has been executed properly, the PLC will assign a value of "0" to the indicated "error
+  detection" mark and "1" if otherwise.
+
+       CNCRD (FEED, R150, M200)
+         It loads the value of the feedrate selected at the CNC when working in G94 into the PLC register R150.
+
+
+  When requesting information about a nonexisting variable (i.e. the position value of a nonexisting
+  axis), this instruction will not alter the contents of the register and it will set the selected error mark
+  indicating that the variable does not exist.
+
+  Writing variables. –CNCWR– command
+  The CNCWR command allows writing the CNC's internal variables. Its programming format is:
+     CNCWR (Register, Variable, Mark)
+
+  This PLC action loads the contents of the indicated register into the selected variable. If this
+  instruction has been executed properly, the PLC will assign a value of "0" to the indicated "error
+  detection" mark and "1" if otherwise.
+
+       CNCWR (R92, TIMER, M200)
+         It resets the clock enabled by the PLC with the value contained in register R92.
+
+
+  When trying to modify the contents of a nonexisting variable or assign an improper value to it, the
+  selected "error mark" will be set to "1" which will indicate that this instruction is incorrect.
+
+  When performing an improper reading or writing request, the PLC will continue the execution of the
+  program unless interrupted by the programmer after having analyzed the "error" mark defined in                  CNC 8055
+  the instruction.                                                                                                CNC 8055i
+
+
+
+                                                                                                                   SOFT: V01.6X
+
+
+
+
+                                                                                                                      ·509·
+===== PAGE 509 =====
+
+                                          Identifying the variables in the PLC commands
+                                          These variables are accessed from the PLC using high level commands. Each one of these variables
+                                          is referred to by its mnemonic that must be written in upper-case (capital) letters.
+                                           • Mnemonics ending in (X-C)indicate a set of 9 elements formed by the corresponding root
+                                             followed by X, Y, Z, U, V, W, A, B and C.
+                                             ORG(X-C) -> ORGX               ORGY            ORGZ
+                                                            ORGU            ORGV            ORGW
+                                                            ORGA            ORGB            ORGC
+13.                                        • Mnemonics ending in n indicate that the variables are grouped in tables. To access an element
+                                             of any of these tables, indicate the field of the desired table using the relevant mnemonic followed
+
+
+
+
+       ACCESS TO INTERNAL CNC VARIABLES
+                                             by the desired element.
+                                             TORn ->        TOR1            TOR3            TOR11
+                                             These variables can also be referred to by its corresponding mnemonic and a register that
+                                             indicates the element number of that table.
+                                             TORn ->        TOR R1          TOR R23
+
+                                              CNCRD (TOR R222, R100, M102)
+                                                It assigns the radius value of the offset indicated by Register R222 to register R100
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·510·
+===== PAGE 510 =====
+
+13.1      Variables associated with tools.
+
+       These variables are associated with the tool offset table, tool table and tool magazine table, so the
+       values which are assigned to or read from these fields will comply with the formats established for
+       these tables.
+
+       Tool table for mill model CNC.
+
+       The radius (R), length (L) and wear offset (I, K) values of the tool are given in the units set by g.m.p.
+       INCHES.
+          If, INCHES = 0, in ten-thousandths of a millimeter (±999999999).
+          If INCHES = 1, in hundred-thousandths of an inch (±393700787).
+                                                                                                                                                      13.
+
+
+                                                                                                                                                      Variables associated with tools.
+
+
+
+                                                                                                                   ACCESS TO INTERNAL CNC VARIABLES
+          If rotary axis, in ten-thousandths of a degree (±999999999).
+
+       Tool table for lathe model CNC.
+
+       The length (X, Z), radius (R) and wear offset (I, K) values of the tool are given in the units set by
+       g.m.p. INCHES.
+          If, INCHES = 0, in ten-thousandths of a millimeter (±999999999).
+          If INCHES = 1, in hundred-thousandths of an inch (±393700787).
+          If rotary axis, in ten-thousandths of a degree (±999999999).
+
+       The location (tool shape) code (F) will be an integer between 0 and 9.
+
+       Tool table at the mill model CNC.
+       The tool offset number is an integer between 0 and 255. The maximum number of tool offsets is
+       limited by g.m.p. NTOFFSET.
+
+       The family code is a number between 0 and 255.
+          0 to 199        if it is a normal tool.
+          200 to 255      if it is a special tool.
+
+       The nominal life is given either in minutes or in operations (0··65535).
+
+       The real (actual) life is given either in hundredths of a minute (0··9999999) or in operations
+       (0··999999).
+
+       Tool table at the lathe model CNC.
+
+       The tool offset number is an integer between 0 and 255. The maximum number of tool offsets is
+       limited by g.m.p. NTOFFSET.
+       The family code is a number between 0 and 255.
+          0 to 199        if it is a normal tool.
+          200 to 255      if it is a special tool.
+
+       The nominal life is given either in minutes or in operations (0··65535).
+
+       The real (actual) life is given either in hundredths of a minute (0··9999999) or in operations
+       (0··999999).
+
+       The cutter angle is given in ten-thousandths of a degree (0··359999).
+
+       The cutter width is given in the units set by g.m.p. INCHES.
+          If, INCHES = 0, in ten-thousandths of a millimeter (±999999999).
+          If INCHES = 1, in hundred-thousandths of an inch (±393700787).                                           CNC 8055
+          If rotary axis, in ten-thousandths of a degree (±999999999).                                             CNC 8055i
+       The cutting angle is given in ten-thousandths of a degree (0··359999).
+
+
+                                                                                                                           SOFT: V01.6X
+
+
+
+
+                                                                                                                                                      ·511·

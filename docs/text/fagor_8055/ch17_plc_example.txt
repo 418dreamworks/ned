@@ -1,0 +1,931 @@
+===== PAGE 608 =====
+
+     Used in: Coolant treatment.
+
+         DEF   I-COOLMA   I82     The operator control the coolant. Manual mode.
+
+         DEF   I-COOLAU   I83     The CNC controls the coolant. Automatic mode.
+
+         DEF   O-COOL     O3      Coolant output
+
+
+     Used in: Spindle turning control.
+
+         DEF   O-S-ENAB   O4      Spindle enable output
+                                                                                                                                17.
+
+
+                                                                                                      PLC PROGRAMMING EXAMPLE   Definition of symbols (mnemonics)
+     Used in: Treatment of the spindle gear change.
+
+         DEF   O-GEAR1    O5      Move gears to select range 1 (gear 1)
+
+         DEF   O-GEAR2    O6      Move gears to select range 2 (gear 1)
+
+         DEF   I-GEAR1    I84     Indicates that Gear 1 is selected
+
+         DEF   I-GEAR2    I85     Indicates that Gear 2 is selected
+
+
+     Used in: Keyboard simulation.
+
+         DEF   I-SIMULA   I86         The operator requests the simulation of program P12
+
+         DEF   SENDKEY    M1100       Indicates that the code of a key is to be sent out to the CNC
+
+         DEF   KEYCODE    R55         Indicates the code of the key to be simulated
+
+         DEF   LASTKEY    R56         Indicates which is the last key accepted by the CNC
+
+         DEF   SENTOK     M1101       Indicates that the key code has been sent correctly
+
+         DEF   KEYBOARD   R57         Used to indicate to the CNC the source of the keys
+
+         DEF   CNCKEY     0           Used to indicate that the keys come from the CNC keyboard
+
+         DEF   PLCKEY     1           Used to indicate that the keys come from the PLC
+
+
+
+         DEF   MAINMENU   $FFF4       Code of the "MAIN MENU" key
+
+         DEF   SIMULATE   $FC01       Code of the "SIMULATE" key (F2)
+
+         DEF   KEY1       $31         Code of the "1" key
+
+         DEF   KEY2       $32         Code of the "2" key
+
+         DEF   ENTER      $0D         Code of the "ENTER" key
+
+         DEF   THEOPATH   $FC00       Code of the "THEORETICAL PATH" key (F1)
+
+         DEF   START      $FFF1       Code of the "START" key
+
+
+
+
+                                                                                                      CNC 8055
+                                                                                                      CNC 8055i
+
+
+
+                                                                                                           SOFT: V01.6X
+
+
+
+
+                                                                                                                                ·609·
+===== PAGE 609 =====
+
+                                                       17.2      First cycle module.
+
+                                                              CY1
+
+                                                              ( ) = ERA O1 512 = ERA C1 256 = ERA T1 256 = ERA R1 256 = ERA M1 2000
+
+                                                              ( ) = ERA M4000 4127 = ERA M4500 4563 = ERA M4700 4955
+
+                                                              Initializes all PLC resources to low logic level "0".
+
+
+17.                                                           ( ) = TG1 2 120000
+
+                                                              Initializes the timer which controls the lubrication of the machine ways on power-up. This operation
+
+
+
+
+       PLC PROGRAMMING EXAMPLE
+                                 First cycle module.
+                                                              will be performed for 2 minutes.
+
+                                                              ( ) = TG2 4 3600000
+
+                                                              Initializes the timer which controls the amount of time the axes are moving before they are lubricated.
+                                                              This lubrication lasts 5 minutes and it takes place after the axes have been moving for 1 hour.
+
+                                                              END
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·610·
+===== PAGE 610 =====
+
+17.3      Main module.
+
+       PRG
+
+       REA
+
+
+
+
+       ---- Basic and necessary programming ----
+
+       ( ) = /STOP                                                                                                                       17.
+       Permission to execute the part-program
+
+
+
+
+                                                                                                               PLC PROGRAMMING EXAMPLE
+                                                                                                                                         Main module.
+       ( ) = /FEEDHOL
+
+       Permission to move the axes
+
+       ( ) = /XFERINH
+
+       Permission to execute the next block
+
+       I-EMERG AND (rest of conditions) = /EMERGEN
+
+       If the external emergency input is activated or any other emergency occurs, the general logic input
+       /EMERGEN of the CNC. When there is no emergency, this signal must remain high.
+
+       /ALARM AND CNCREADY = O-EMERG
+
+       The emergency output, O1, of the PLC (O-EMERG) must be normally high
+
+       If an alarm or emergency is detected at the CNC (/ALARM) or a problem was detected when
+       powering the CNC up (CNCREADY), the emergency output O-EMERG must be brought low.
+
+       I-CONDI = M01STOP
+
+       When the operator selects the conditional mode (I-CONDI), the CNC general logic input M01STOP
+       must be activated. It interrupts the program when executing M01.
+
+       START AND (rest of conditions) = CYSTART
+
+       When the cycle START key is pressed, the CNC activates the general logic output START.
+
+       The PLC must check that the rest of the conditions (hydraulic, safety devices, etc.) are met before
+       setting the general input CYSTART high in order to start executing the program
+
+       SERVO-OK AND NOT LOPEN = SERVO1ON = SERVO2ON = SERVO3ON
+
+       If the servo drives are OK and the CNC does not detect any errors in the positioning loop of the axes
+       (LOPEN), the positioning loop must be closed on all axes. Axis logic inputs of the CNC: SERVO1ON,
+       SERVO2ON, SERVO3ON.
+
+
+
+       ----- Treatment of the axis overtravel limit switches -----
+
+       I-LIMTX1 = LIMIT+1
+
+       I-LIMTX2 = LIMIT-1
+
+       I-LIMTY1 = LIMIT+2                                                                                      CNC 8055
+                                                                                                               CNC 8055i
+       I-LIMTY2 = LIMIT-2
+
+       I-LIMTZ1 = LIMIT+3
+                                                                                                                    SOFT: V01.6X
+       I-LIMTZ2 = LIMIT-3
+
+
+
+
+                                                                                                                                         ·611·
+===== PAGE 611 =====
+
+                                                ----- Treatment of the machine reference (home) switches -----
+
+                                                I-REF0X = DECEL1
+
+                                                I-REF0Y = DECEL2
+
+                                                I-REF0Z = DECEL3
+
+
+
+
+17.                                             ----- Message treatment -----
+                                                The PLC allows displaying the corresponding PLC message at the CNC screen by activating marks
+                                                MSG1 through MSG255. This text must be previously edited at the PLC message table.
+
+
+
+
+       PLC PROGRAMMING EXAMPLE
+                                 Main module.
+                                                The following example shows how to generate a message to remind the operator to home the axes
+                                                after powering the machine up.
+
+                                                (MANUAL OR MDI OR AUTOMAT) AND NOT (REFPOIN1 AND REFPOIN2 AND REFPOIN3) =
+                                                MSG5
+
+                                                The message (MSG5) appears in the JOG, MDI or Automatic modes and only when the axes of
+                                                the machine have not been referenced (homed). The CNC logic outputs "REFPOIN" indicate that
+                                                the axes have been homed. ----- Error treatment -----
+
+
+
+                                                ----- Error message treatment -----
+                                                The PLC permits displaying the corresponding error message on the CNC screen by activating
+                                                marks ERR1 through ERR128 as well as interrupting the CNC program execution stopping the axes
+                                                and the spindle. The activation of any of these marks does not activate the external CNC Emergency
+                                                output.
+
+                                                Because the PLC program is not interrupted by these marks, it is advised to make it possible to
+                                                change their status via accessible external inputs; otherwise, the CNC will keep receiving the same
+                                                error at every PLC scan (cycle) thus preventing access to any PLC mode.
+
+                                                The text associated to the error message must be previously edited at the PLC error table.
+
+                                                The next example shows how to generate the X axis overtravel limit overrun error when one of the
+                                                overtravel limit switches is pressed.
+
+                                                NOT I-LIMTX1 OR NOT I-LIMTX2 = ERR10
+
+
+
+                                                ----- Treatment of M, S, T functions -----
+                                                The CNC activates the general logic output MSTROBE to "tell" the PLC to execute the M functions
+                                                indicated at the variables MBCD1 through MBCD7.
+
+                                                It also activates: the SSTROBE output when the S function indicated at variable SBCD must be
+                                                executed, the TSTROBE output when the T function indicated at variable TBCD must be executed
+                                                and the T2STROBE output when the T function indicated at variable T2BCD must be executed.
+
+                                                Whenever the CNC activates one of these signals, it is convenient to deactivate the general CNC
+                                                input AUXEND in order to interrupt the execution of the CNC. When the PLC concludes the
+                                                processing of the required function, this AUXEND signal must be activated back so that the CNC
+                                                resumes the execution of the interrupted program.
+CNC 8055                                        This example deactivates the AUXEND signal for 100 milliseconds using the timer T1.
+CNC 8055i
+                                                MSTROBE OR SSTROBE OR TSTROBE OR T2STROBE = TG1 1 100
+
+                                                The activation of the STROBE signals activates timer T1 in the mono-stable mode for 100
+                                                milliseconds.
+ SOFT: V01.6X
+                                                Whenever timer T1 is active, the PLC must set the AUXEND signal low as described in: "Treatment
+                                                of the general CNC input AUXEND".
+
+                                                When the CNC activates the MSTROBE signal, the contents of variables MBCD1 through MBCD7
+                                                must be analyzed in order to know which auxiliary functions are to be executed. All MBCD variables
+                                                may be analyzed at the same time by using "MBCD*".
+
+    ·612·
+===== PAGE 612 =====
+
+     This example SETs the auxiliary marks so they can be analyzed later. Once analyzed, they must
+     be RESet so that the PLC does not analyze them again on the next cycle (scan).
+
+     DFU MSTROBE AND CPS MBCD* EQ $0 = RES M-08
+
+     DFU MSTROBE AND CPS MBCD* EQ $2 = RES M-08
+
+     Functions M00 and M02 cancel the coolant (M08).
+
+     DFU MSTROBE AND CPS MBCD* EQ $3 = SET M-03 = RES M-04
+
+     DFU MSTROBE AND CPS MBCD* EQ $4 = SET M-04 = RES M-03                                                                     17.
+     DFU MSTROBE AND CPS MBCD* EQ $5 = RES M-03 = RES M-04
+
+
+
+
+                                                                                                     PLC PROGRAMMING EXAMPLE
+                                                                                                                               Main module.
+     Functions M03 and M04 are incompatible with each other and M05 cancels both.
+
+     DFU MSTROBE AND CPS MBCD* EQ $8 = SET M-08
+
+     DFU MSTROBE AND CPS MBCD* EQ $9 = RES M-08
+
+     DFU MSTROBE AND CPS MBCD* EQ $30 = RES M-08
+
+     Functions M09 and M30 cancel the coolant (M08)
+
+     DFU MSTROBE AND CPS MBCD* EQ $41 = SET M-41 = RES M-42
+
+     DFU MSTROBE AND CPS MBCD* EQ $42 = SET M-42 = RES M-41
+
+     Functions M41 and M42 are incompatible with each other.
+
+
+
+     ----- Spindle turning control -----
+     The spindle enable output O-S-ENAB will be activated when selecting function M03 or M04.
+
+     M-03 OR M-04 = O-S-ENAB
+
+
+
+
+                                                                                                     CNC 8055
+                                                                                                     CNC 8055i
+
+
+
+                                                                                                          SOFT: V01.6X
+
+
+
+
+                                                                                                                               ·613·
+===== PAGE 613 =====
+
+                                                ----- Treatment of spindle gear change -----
+                                                The spindle in this example has two gears (high and low). To perform a gear change, proceed as
+                                                follows:
+                                                 • Deactivate the general CNC input AUXEND.
+                                                 • Remove the control of the spindle back to the CNC Controlled by PLC.
+                                                 • Output an oscillating velocity command to change gears.
+                                                 • Move the gears.
+                                                 • Verify that the gear change has been completed.
+17.                                              • Remove the oscillating velocity command.
+                                                 • Return the control of the spindle back to the CNC.
+
+
+
+
+       PLC PROGRAMMING EXAMPLE
+                                 Main module.
+                                                 • Activate the general CNC input AUXEND.
+
+                                                Deactivate the general CNC input AUXEND
+                                                       While changing gears (ranges), general CNC input AUXEND should be canceled in order
+                                                       to interrupt the execution of the CNC. "Treatment of the general CNC input AUXEND".
+
+                                                Remove the control of the spindle back to the CNC Controlled by PLC.
+
+                                                Output an oscillating velocity command to change gears.
+
+                                                DFU M-41 OR DFU M-42
+
+                                                When a range (gear) change is requested...
+
+                                                = MOV 2000 SANALOG
+
+                                                A 0.610V analog command for the spindle is prepared and...
+
+                                                = SET PLCCNTL
+
+                                                the PLC grabs the control of the spindle loop.
+
+                                                PLCCNTL AND M2011
+
+                                                While the PLC has the spindle control...
+
+                                                = SPDLEREV
+
+                                                ...the spindle turning direction is changed every 400 milliseconds.
+
+                                                Move the gears.
+                                                   The corresponding gear output (O-GEAR) is kept active until the range selection is completed
+                                                   (I-GEAR).
+
+                                                M-41 AND NOT I-GEAR1 = O-GEAR1
+
+                                                M-42 AND NOT I-GEAR2 = O-GEAR2
+
+                                                Verify that the gear change has been completed.
+
+                                                Remove the oscillating velocity command.
+
+                                                Return the control of the spindle back to the CNC.
+
+                                                (M-41 AND I-GEAR1) OR (M-42 AND I-GEAR2)
+
+                                                Once the gear change has concluded, the following must be done:
+CNC 8055
+CNC 8055i                                       = RES M-41 = RES M-42
+
+                                                ... remove the request for a gear change (M-41, M-42), ....
+
+                                                = MOV 0 SANALOG
+ SOFT: V01.6X
+                                                ...remove the spindle velocity command,...
+
+                                                = RES PLCCNTL
+
+                                                ...Return the control of the spindle to the CNC.
+
+
+
+    ·614·
+===== PAGE 614 =====
+
+     I-GEAR1 = GEAR1
+
+     I-GAMA2 = GEAR2
+
+     The corresponding CNC logic input (GEAR1, GEAR2) must be activated to confirm the gear change.
+
+
+
+     ----- Lubrication of the machine ways -----
+     In this example, the machine axes are lubricated in the following instances:
+      • On machine power-up. For 2 minutes.
+      • When requesting a manual lubrication. For 5 minutes.
+                                                                                                                                      17.
+
+
+                                                                                                            PLC PROGRAMMING EXAMPLE
+                                                                                                                                      Main module.
+      • After the axes have been moving for 1 hour. For 5 minutes.
+      • After an axis has travelled a specific distance since last lubricated. For 4 minutes.
+
+     Lubrication on machine power-up.
+        This operation will be performed for 2 minutes.
+        Whenever the machine is powered up, the PLC program starts running. Therefore, the first cycle
+        module CY1 must activate timer T2 in the mono-stable mode for 2 minutes (120000
+        milliseconds).
+            ( ) = TG1 2 120000
+
+     Manual lubrication.
+            This operation will last 5 minutes and it will be performed at operator's request.
+
+     DFU I-LUBING = TG1 3 300000
+
+     Whenever the operator requests the lubricating (lubing) operation, T3 must be activated in the mono-
+     stable mode for 5 minutes (300000 milliseconds).
+
+     Lubrication every hour of axis motion.
+        This operation takes place when the axes of the machine have been moving for an accumulated
+        time period of 1 hour. They will be lubricated for 5 minutes.
+        Timer T4 is used to keep track of the axis accumulated moving time and T5 to time the 5 minute
+        lubrication period.
+        The first cycle module CY1 must activate timer T4 in the delayed activation mode with a time
+        constant of 1 hour (3600000 milliseconds).
+            ( ) = TG2 4 3600000
+
+     ENABLE1 OR ENABLE2 OR ENABLE3 = TEN 4
+
+     T4 only times when any of the axis is moving.
+
+     T4 = TG1 5 300000
+
+     After having timed 1 hour, T5 must be activated in the mono-stable mode for 5 minutes. (300000
+     milliseconds)
+
+     T5 = TRS 4 = TG2 4 3600000
+
+     Resets the axis-motion timer T4 to zero.
+
+     Lubrication when an axis has traveled a specific distance since the last time it was lubricated
+
+     PLC machine parameters USER12 (P14), "USER13 (P15) and USER14 (P16) are used to indicate
+     the distance each axis must travel before it gets lubricated.
+                                                                                                            CNC 8055
+     ( ) = CNCRD(MPLC12,R31,M302)                         =    CNCRD(MPLC13,R32,M302)                  =    CNC 8055i
+     CNCRD(MPLC14,R33,M302)
+
+     Assigns to registers R31, R32 and R33 the values of PLC machine parameters USER12 (P14),
+     "USER13 (P15) and USER14 (P16)
+                                                                                                                 SOFT: V01.6X
+
+     ( ) = CNCRD(DISTX,R41,M302) = CNCRD(DISTY,R42,M302) = CNCRD(DISTZ,R43,M302)
+
+     Assigns to registers R41, R42 and R43 the distance each axis has travelled.
+
+
+
+
+                                                                                                                                      ·615·
+===== PAGE 615 =====
+
+                                                CPS R41 GT R31 OR CPS R42 GT R32 OR CPS R43 GT R33
+
+                                                If the distance traveled by any axis exceeds the one set by machine parameter,......
+
+                                                = TG1 6 240000
+
+                                                ...timer T6 must be activated in the mono-stable mode for 4 minutes (240000 milliseconds) and ......
+
+                                                = MOV 0 R39
+
+                                                = CNCWR(R39,DISTX,M302) = CNCWR(R39,DISTY,M302) = CNCWR(R39,DISTZ,M302)
+
+17.                                             ...reset to "0" the count of the distance traveled by each axis.
+
+                                                Activate the lubricating (lubing) operation.
+
+
+
+
+       PLC PROGRAMMING EXAMPLE
+                                 Main module.
+                                                T2 OR T3 OR T5 OR T6 = O-LUBING
+
+                                                If any of these conditions is met, the lubing output will be activated.
+
+                                                DFD O-LUBING = TRS2 = TRS3 = TRS4 = TRS5 = TRS6
+
+                                                Once the lubricating operation has concluded, All timers must be reset to "0".
+
+
+
+                                                ---- Coolant treatment ----
+                                                The CNC executes function M08 to turn the coolant on and function M09 to turn it off.
+
+                                                Also, in this case, the operator has a switch to select whether the coolant is activated manually by
+                                                the operator or automatically by the CNC.
+                                                   I-COOLMA       The operator control the coolant. Manual mode.
+                                                   I-COOLAU       The CNC controls the coolant. Automatic mode.
+                                                   O-COOL         Coolant on/off output.
+
+                                                I-COOLMA OR (I-COOLAU AND M-08) = O-COOL
+
+                                                Coolant ON.
+
+                                                RESETOUT = NOT O-COOL = RES M-08
+                                                The coolant will be turned off when the CNC is reset to initial conditions (RESETOUT) or when
+                                                executing functions M00, M02, M09 and M30.
+
+                                                This instruction does not contemplate functions M00, M02, M09 and M30 since the treatment of M,
+                                                S, T functions turns mark M-08 off when activating any of them.
+
+
+
+                                                ----- Treatment of the general CNC input AUXEND -----
+                                                It is advisable to have one single instruction to control each one of the logic CNC inputs, thus
+                                                preventing undesired functioning.
+
+                                                When having several instructions which can activate or deactivate an input, the PLC will always
+                                                assign the result of analyzing the last one of those instructions.
+
+                                                This example shows how to group in a single instruction all the conditions that activate or deactivate
+                                                one logic CNC input.
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·616·
+===== PAGE 616 =====
+
+     NOT T1 AND NOT M-41 AND NOT M-42 = AUXEND
+
+     Input AUXEND will remain low while:
+      • The "Treatment of the MSTROBE, TSTROBE, STROBE signals" is in progress (timer T1 active)
+      • A spindle gear change is being performed (M-41, M-42)
+
+
+
+     ----- Keyboard simulation -----
+     With this example it is possible to simulate the theoretical path of part-program P12 whenever the
+     operator requests it.                                                                                                            17.
+     To do this, follow these steps:
+
+
+
+
+                                                                                                            PLC PROGRAMMING EXAMPLE
+                                                                                                                                      Main module.
+      • Indicate to the CNC that from now on the keys will come from the PLC.
+      • Simulate all the necessary steps sending the code of each one of the keys.
+      • Indicate to the CNC that from now on the keys will be coming from the CNC keyboard, not from
+        the PLC.
+
+     In order to make sending the keys easier, a subroutine is used which utilizes the following
+     parameters:
+        SENDKEY         (Send Key) Calling parameter that must be activated whenever a key is to be sent.
+        KEYCODE         (Code of the key) Calling parameter that must contain the code corresponding
+                        to the key being simulated.
+        SENTOK          (Sent OK) Outgoing parameter indicating that the key code has been sent
+                        successfully.
+
+     DFU I-SIMULA = SET M120 = ERA M121 126
+
+     Whenever the operator requests the simulation (I-SIMULA), marks M120 through M126 must be
+     activated....
+
+     = MOV PLCKEY KEYBOARD = CNCWR (KEYBOARD, KEYSRC, M100)
+
+     ...indicate to the CNC that, from now on, the keys will be coming from the PLC (PLCKEY)
+
+     = MOV MAINMENU KEYCODE = SET SENDKEY
+
+     ...and send the code for the "MAIN MENU" key.
+
+     M120 AND SENTOK = RES M120 = RES SENTOK = SET M121
+
+     If the previous key was sent out successfully (SENTOK), flags M120 and SENTOK will be turned
+     off, the flag for the next stage (M121) is activated ....
+
+     = MOV SIMULATE KEYCODE = SET SENDKEY
+
+     and the code for the SIMULATE key (F2) is sent out.
+
+     M121 AND SENTOK = RES M121 = RES SENTOK = SET M122
+
+     If the previous key was sent out successfully (SENTOK), flags M121 and SENTOK will be turned
+     off, the flag for the next stage (M122) is activated ....
+
+     = MOV KEY1 KEYCODE = SET SENDKEY
+
+     ...and the code for the "1" key is sent out.
+
+     M122 AND SENTOK = RES M122 = RES SENTOK = SET M123                                                     CNC 8055
+                                                                                                            CNC 8055i
+     If the previous key was sent out successfully (SENTOK), flags M122 and SENTOK will be turned
+     off, the flag for the next stage (M123) is activated ....
+
+     = MOV KEY2 KEYCODE = SET SENDKEY
+                                                                                                                 SOFT: V01.6X
+     ...and the code for the "2" key is sent out.
+
+     M123 AND SENTOK = RES M123 = RES SENTOK = SET M124
+
+     If the previous key was sent out successfully (SENTOK), flags M123 and SENTOK will be turned
+     off, the flag for the next stage (M124) is activated ....
+
+                                                                                                                                      ·617·
+===== PAGE 617 =====
+
+                                                = MOV ENTER KEYCODE = SET SENDKEY
+
+                                                ...and the code for the "ENTER" key is sent out.
+
+                                                M124 AND SENTOK = RES M124 = RES SENTOK = SET M125
+
+                                                If the previous key was sent out successfully (SENTOK), flags M124 and SENTOK will be turned
+                                                off, the flag for the next stage (M125) is activated ....
+
+                                                = MOV THEOPATH KEYCODE = SET SENDKEY
+
+
+17.                                             ...and the code for the "THEORETICAL PATH" (F1) is sent out.
+
+                                                M125 AND SENTOK = RES M125 = RES SENTOK = SET M126
+
+
+
+
+       PLC PROGRAMMING EXAMPLE
+                                 Main module.
+                                                If the previous key was sent out successfully (SENTOK), flags M125 and SENTOK will be turned
+                                                off, the flag for the next stage (M126) is activated ....
+
+                                                = MOV START KEYCODE = SET SENDKEY
+
+                                                ...and the code for the START key is sent out.
+
+                                                M126 AND SENTOK = RES M126 = RES SENTOK
+
+                                                If the last key was sent out successfully (SENTOK), flags M126 and SENTOK will be turned off....
+
+                                                = MOV CNCKEY KEYBOARD = CNCWR (KEYBOARD, KEYSRC, M100)
+
+                                                ...and the CNC is "told" that from now on the keys will be coming from CNC keyboard (CNCKEY),
+                                                not from the PLC.
+
+
+
+                                                --- Subroutine used to send a key ---
+
+                                                SENDKEY =SET M100 =SET M101 =SET M102 =RES SENDKEY
+
+                                                To send a key (SENDKEY), set to "1" internal marks M100 through M102 and reset the SENDKEY
+                                                flag to "0".
+
+                                                M100 = CNCWR (KEYCODE, KEY, M100)
+
+                                                Sends to the CNC the code of the key to be simulated (KEYCODE). If this command is not executed
+                                                correctly (M100=1), the PLC will try again on the next cycle scan.
+
+                                                M101 AND NOT M100 = CNCRD (KEY, LASTKEY, M101)
+
+                                                If the previous command was executed correctly, (M100=0), it reads the last key accepted by the
+                                                CNC (LASTKEY).
+
+                                                M102 AND NOT M101 AND CPS LASTKEY EQ KEYCODE
+
+                                                If the previous command was executed correctly (M101=0) and the CNC accepted the key sent to
+                                                it (LASTKEY = KEYCODE), .....
+
+                                                = RES M102 = SET SENTOK
+
+                                                ...the flag is turned off (M102=0) and the key is considered to be sent out successfully
+                                                (SENTOK=1)...
+
+                                                = NOT M101
+CNC 8055                                        ...But if the CNC did not accept the key sent to it, it waits until it does (M101=1).
+CNC 8055i
+                                                End of subroutine.
+
+
+
+ SOFT: V01.6X                                   END
+
+                                                End of the program.
+
+
+
+
+    ·618·
+===== PAGE 618 =====
+
+
+                                           APPENDIX
+
+
+  A. Technical characteristics of the 8055iCNC ............................................. 621
+  B. Central unit of the 8055 CNC .................................................................. 625
+  C. 11" LCD Monitor..................................................................................... 629
+  D. Probe connection at the 8055i.................................................................. 631
+  E. Probe connection at the 8055 CNC.......................................................... 633
+  F. Summary of internal CNC variables........................................................ 635
+  G. Summary of PLC commands ................................................................... 643
+  H. Summary of PLC inputs and outputs ....................................................... 647
+  I.   2-digit BCD code output conversion table............................................... 653
+  J.   Key code .................................................................................................. 655
+  K. Logic outputs of key status ...................................................................... 665
+  L. Key inhibiting codes ................................................................................ 675
+  M. Machine parameter setting chart.............................................................. 685
+  N. M functions setting chart ......................................................................... 697
+  O. Leadscrew error compensation table ....................................................... 699
+  P. Cross compensation table ........................................................................ 701
+  Q. Maintenance............................................................................................. 703
+
+
+
+
+                                                                                                                         CNC 8055
+                                                                                                                         CNC 8055i
+
+
+
+                                                                                                                          SOFT: V01.6X
+
+
+
+
+                                                                                                                             ·619·
+===== PAGE 619 =====
+
+
+
+             TECHNICAL CHARACTERISTICS OF THE 8055iCNC
+
+
+
+             The machine manufacturer must comply with the EN 60204-1 (IEC-204-1) standard in terms of
+             protection against electrical shock due to faulty contacts with external power supply.
+             This unit MUST NOT be opened by unauthorized personnel.
+             To avoid overheating the internal circuitry, do not block the ventilation grooves and install a ventilation
+
+
+                                                                                                                             A.
+             system that removes the hot air from the enclosure.
+
+
+     General characteristics
+
+
+
+
+                                                                                                                               Technical characteristics of the 8055iCNC
+     4 feedback inputs for the axes.
+     4 analog outputs to control the axes (±10 V).
+     1 feedback input for the spindle encoder.
+     1 analog output to control the spindle (±10 V).
+     2 feedback inputs for the electronic handwheels.
+     2 inputs for digital probes (TTL or 24 V DC).
+     Digital servo or CAN.
+
+     0.0001mm or 0.00001 inch resolution.
+     Multiplying factor up to x 25 with sinewave input.
+     Feedrate from 0.0001 to 99999.9999 mm/min (0.00001 - 3937 inches/min).
+     Maximum travel: ±99999.9999 mm (±3937 inches).
+
+     1 RS232C communication line.
+     56 optocoupled digital inputs
+     32 optocoupled digital outputs
+     Remote modules for digital I/O expansion.
+
+     32-bit processor
+     Math coprocessor
+     Graphics coprocessor.
+     1Mb CNC program memory.
+     3.5 ms block processing time , FL model.
+     0.9 ms block processing time, POWER model.
+     Sampling time configurable by the machine manufacturer; 2, 3, 4, 5 and 6 ms.
+
+     Approximate weight 7.5 Kg.
+     Maximum consumption of 60 W in normal operation.
+
+     Color monitor
+     Technology: Color TFT LCD.
+     Diagonal display area dimension: 10,4".
+     Resolution: VGA 3 x 640 x 480 pixels.
+     Number of colors: 262144 Colors (6 bit for each subpixel RGB).
+     Backlit with 2 cold-cathode fluorescent lamps.
+
+
+             Due to the current state of the COLOR TFT LCD technology, all manufacturers accept the fact the LCD
+             screens have a certain number of defective pixels.
+
+
+     Power supply
+
+                              Nominal voltage: 20 V minimum and 30 V maximum.
+                              Ripple: 4 V.                                                                                 CNC 8055
+                              Nominal current: 2 A.                                                                        CNC 8055i
+                              Current peak on power-up: 8 A.
+                              The figure shows the shape of the supply current on power-up
+
+
+                                                                                                                            SOFT: V01.6X
+
+
+
+
+                                                                                                                               ·621·
+===== PAGE 620 =====
+
+                                                        PLC
+                                                        Memory: 135 kb.
+                                                        Programming in mnemonics.
+                                                        1 millisecond time unit.
+                                                        512 inputs.
+                                                        512 outputs.
+                                                        3999 user marks.
+                                                        499 32-bit registers.
+                                                        256 32-bit counters.
+                                                        512 32-bit timers.
+
+A.                                                      5V probe input.
+
+
+
+
+            Technical characteristics of the 8055iCNC
+                                                        Typical value: 0.25 mA.  Vin = 5V.
+                                                        High threshold (logic level 1) VIH: A partir de +2,4 Vcc.
+                                                        Low threshold (logic level 0) VIL: Por debajo de +0,9 Vcc
+                                                        Maximum nominal voltage Vimax = +15 Vcc.
+
+                                                        24V probe input.
+                                                        Typical value: 0.30 mA.  Vin = 24V.
+                                                        High threshold (logic level 1) VIH: A partir de +12,5 Vcc.
+                                                        Low threshold (logic level 0) VIL: Below +4 Vdc.
+                                                        Maximum nominal voltage Vimax = +35 Vcc.
+
+                                                        Digital inputs
+                                                        Nominal voltage + 24 Vdc.
+                                                        Maximum nominal voltage + 30 Vdc.
+                                                        Minimum nominal voltage + 18 Vdc.
+                                                        High threshold (logic level 1) VIH: A partir de +18 Vcc.
+                                                        Low threshold (logic level 0) VIL: Under +5 Vdc or not connected.
+                                                        Typical consumption of each input 5 mA.
+                                                        Maximum consumption of each input 7 mA.
+                                                        Protection by means of galvanic isolation by optocouplers.
+                                                        Protection against reverse connection up to -30 Vdc.
+
+                                                        Digital outputs
+                                                        Nominal supply voltage + 24 Vdc.
+                                                        Maximum nominal voltage + 30 Vdc.
+                                                        Minimum nominal voltage + 18 Vdc.
+                                                        Output voltage Vout = Supply voltage (Vdc) -3 V
+                                                        Maximum output current 100 mA
+                                                        Protection by means of galvanic isolation by optocouplers.
+                                                        Shortcircuit protection. Place external recovery diodes.
+
+                                                        Analog outputs for axes and spindle
+                                                        Command voltage within ±10 V, 16-bit solution
+                                                        Minimum impedance of the connected connector 10 k.
+                                                        Shielded cable should be used.
+
+                                                        Ambient conditions
+                                                        Relative humidity: 30-95 % without condensation.
+                                                        Operating temperature: between +5 ºC (41 ºF) and +40 ºC (104 ºF) with an average under +35 ºC (95 ºF).
+                                                        Storage temperature: between -25 ºC (-13 ºF) and +70 ºC (158 ºF).
+                                                        Maximum work altitude: Meets the "IEC 1131-2" standard.
+
+CNC 8055
+                                                        Packaging
+CNC 8055i
+                                                        Meets the "EN 60068-2-32" standard
+
+                                                        Vibration
+                                                        When running 10-50 Hz amplitude 0.2 mm (1g).
+ SOFT: V01.6X
+                                                        While being shipped 10-50 Hz amplitude 1 mm (5g).
+                                                        Free fall of packaged unit under Fagor ruling 1m.
+
+                                                        Electromagnetic compatibility and safety
+                                                        Refer to the section on safety conditions in the introduction of this manual.
+
+
+    ·622·

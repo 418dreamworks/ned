@@ -1,0 +1,828 @@
+===== PAGE 128 =====
+
+8.1.1        Beginning of tool radius compensation
+
+        Once the plane in which tool radius compensation has been selected (via G16, G17, G18, or G19),
+        functions G41 or G42 must be used to activate it.
+             G41: Tool radius compensation to the left of the part.
+             G42: Tool radius compensation to the right of the part.
+
+        In the same block (or a previous one) in which G41 or G42 is programmed, functions T, D, or only
+        T must be programmed so that the tool offset value to be applied can be selected from the tool offset
+        table. If no tool offset is selected, the CNC takes D0 with R0 L0 I0 K0.
+
+        When the new selected tool has function M06 associated with it and this, in turn, has an associated
+                                                                                                                                       8.
+        subroutine, the CNC will first process the motion block of that subroutine as the starting block of
+
+
+
+
+                                                                                                                   TOOL COMPENSATION
+
+
+
+
+                                                                                                                                       Tool radius compensation (G40, G41, G42)
+        the compensation.
+
+        If in that subroutine, a block is executed that contains function G53 (programming in machine
+        coordinates), the previously programmed G41 or G42 is canceled.
+
+        The selection of tool radius compensation (G41 or G42) can only be made when functions G00 or
+        G01 are active (straight-line movements).
+
+        If the compensation is selected while G02 or G03 are active, the CNC will display the corresponding
+        error message.
+
+        The following pages show different cases of starting tool radius compensation, in which the
+        programmed path is represented by a solid line and the compensated path with a dotted line.
+
+        Beginning of compensation without programming a movement
+        After activating the compensation, it could happen that the plane axes do not get involved in the first
+        motion block either because they have not been programmed or because the same point as the tool
+        position has been programmed or because a null incremental move has been programmed.
+
+        In this case, the compensation is applied in the current tool position; depending on the first movement
+        programmed in the plane, the tool moves perpendicular to the path on its starting point.
+
+        The first movement programmed in the plane may be either linear or circular.
+
+
+
+
+                                                                                Y
+
+                                                                                    X
+                              Y
+                                                                           ···
+                                  X             (X0 Y0)                    G90
+                                                                           G01 Y40
+                              ···
+                                                                           G91 G40 Y0 Z10
+                              G90
+                                                                           G02 X20 Y20 I20 J0
+                              G01 X-30 Y30
+                                                                           ···
+                              G01 G41 X-30 Y30 Z10
+                              G01 X25
+                              ···
+                                                                 (X0 Y0)
+
+
+
+
+                                                                                                                  CNC 8055
+                                                                                                                  CNC 8055i
+
+
+
+                                                                                                                  ·M· & ·EN· MODELS
+                                                                                                                    SOFT: V01.6X
+
+
+
+
+                                                                                                                                       ·129·
+===== PAGE 129 =====
+
+                                                                       STRAIGHT-STRAIGHT path
+
+
+
+
+ 8.
+
+
+        TOOL COMPENSATION
+
+
+
+
+                            Tool radius compensation (G40, G41, G42)
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·130·
+===== PAGE 130 =====
+
+        STRAIGHT-CURVED path
+
+
+
+
+                                                       8.
+
+
+                                   TOOL COMPENSATION
+
+
+
+
+                                                       Tool radius compensation (G40, G41, G42)
+
+
+
+
+                                  CNC 8055
+                                  CNC 8055i
+
+
+
+                                  ·M· & ·EN· MODELS
+                                    SOFT: V01.6X
+
+
+
+
+                                                       ·131·
+===== PAGE 131 =====
+
+                                                                       8.1.2      Sections of tool radius compensation
+
+                                                                               The CNC reads up to 20 blocks ahead of the one it is executing, with the aim of calculating
+                                                                               beforehand the path to be followed. When working with tool radius compensation, the CNC needs
+                                                                               to know the next programmed movement to calculate the path to follow; therefore, no more than 17
+                                                                               blocks can be programmed in a row.
+
+                                                                               The diagrams (below) show the different paths followed by a tool controlled by a programmed CNC
+                                                                               with tool radius compensation. The programmed path is represented by a solid line and the
+                                                                               compensated path by a dotted line.
+
+ 8.
+
+
+        TOOL COMPENSATION
+
+
+
+
+                            Tool radius compensation (G40, G41, G42)
+
+
+
+
+                                                                               The way the various paths are blended (joined) depends on the setting of machine parameter
+                                                                               COMPMODE.
+                                                                                • If it is set to ·0·, the compensation method depends on the angle between paths.
+                                                                                  With an angle between paths of up to 300º, both paths are joined with straight sections. In the
+                                                                                  rest of the cases, both paths are joined with arcs.
+                                                                                • If it is set to ·1·, both paths are joined with arcs.
+                                                                                • If it is set to ·2·, the compensation method depends on the angle between paths.
+                                                                                  With an angle between paths of up 300º, it calculates the intersection. In the rest of the cases
+                                                                                  it is compensated like COMPMODE = 0.
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·132·
+===== PAGE 132 =====
+
+8.1.3        Cancellation of tool radius compensation
+
+        Tool radius compensation is canceled by using function G40.
+
+        It should be remembered that canceling radius compensation (G40) can only be done in a block
+        in which a straight-line movement is programmed (G00 or G01).
+
+        If G40 is programmed while functions G02 or G03 are active, the CNC displays the corresponding
+        error message.
+
+        The following pages show different cases of canceling tool radius compensation, in which the
+        programmed path is represented by a solid line and the compensated path with a dotted line.
+                                                                                                                                 8.
+        End of compensation without programming a movement:
+
+
+
+
+                                                                                                             TOOL COMPENSATION
+
+
+
+
+                                                                                                                                 Tool radius compensation (G40, G41, G42)
+        After cancelling the compensation, it could happen that the plane axes do not get involved in the
+        first motion block either because they have not been programmed or because the same point as
+        the tool position has been programmed or because a null incremental move has been programmed.
+
+        In this case, the compensation is canceled in the current tool position; depending on the last
+        movement executed in the plane, the tool moves to the end point without compensating the
+        programmed path.
+
+
+
+
+                                                                                (X0 Y0)
+                                                (X0 Y0)
+                                                                            Y
+
+                                                                                  X
+                          Y
+
+                                                                      ···
+                                  X                                   G90
+                          ···                                         G03 X-20 Y-20 I0 J-20
+                          G90                                         G91 G40 Y0
+                          G01 X-30                                    G01 X-20
+                          G01 G40 X-30                                ···
+                          G01 X25 Y-25
+                          ···
+
+
+
+
+                                                                                                            CNC 8055
+                                                                                                            CNC 8055i
+
+
+
+                                                                                                            ·M· & ·EN· MODELS
+                                                                                                              SOFT: V01.6X
+
+
+
+
+                                                                                                                                 ·133·
+===== PAGE 133 =====
+
+                                                                       STRAIGHT-STRAIGHT path
+
+
+
+
+ 8.
+
+
+        TOOL COMPENSATION
+
+
+
+
+                            Tool radius compensation (G40, G41, G42)
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·134·
+===== PAGE 134 =====
+
+        CURVED-STRAIGHT path
+
+
+
+
+                                                       8.
+
+
+                                   TOOL COMPENSATION
+
+
+
+
+                                                       Tool radius compensation (G40, G41, G42)
+
+
+
+
+                                  CNC 8055
+                                  CNC 8055i
+
+
+
+                                  ·M· & ·EN· MODELS
+                                    SOFT: V01.6X
+
+
+
+
+                                                       ·135·
+===== PAGE 135 =====
+
+                                                                       Example of machining with radius compensation:
+
+
+
+
+ 8.
+
+
+        TOOL COMPENSATION
+
+
+
+
+                            Tool radius compensation (G40, G41, G42)
+                                                                       The programmed path is represented by a solid line and the compensated path by a dotted line.
+                                                                          Tool radius                  10mm
+                                                                          Tool number                  T1
+                                                                          Tool offset number           D1
+
+
+                                                                       ; Preset
+                                                                       G92 X0 Y0 Z0
+                                                                       ; Tool, offset and spindle start at S100
+                                                                       G90 G17 S100 T1 D1 M03
+                                                                       ; Begins compensation
+                                                                       G41 G01 X40 Y30 F125Y70
+                                                                       X90
+                                                                       Y30
+                                                                       X40
+                                                                       ; Cancels compensation
+                                                                       G40 G00 X0 Y0
+                                                                       M30
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·136·
+===== PAGE 136 =====
+
+        Example of machining with radius compensation:
+
+
+
+
+                                                                                                                             8.
+
+
+                                                                                                         TOOL COMPENSATION
+
+
+
+
+                                                                                                                             Tool radius compensation (G40, G41, G42)
+        The programmed path is represented by a solid line and the compensated path by a dotted line.
+             Tool radius                10mm
+             Tool number                T1
+             Tool offset number         D1
+
+
+        ; Preset
+        G92 X0 Y0 Z0
+        ; Tool, offset and spindle start at S100
+        G90 G17 F150 S100 T1 D1 M03
+        ; Begins compensation
+        G42 G01 X30 Y30
+        X50
+        Y60
+        X80
+        X100 Y40
+        X140
+        X120 Y70
+        X30
+        Y30
+        ; Cancels compensation
+        G40 G00 X0 Y0
+        M30
+
+
+
+
+                                                                                                        CNC 8055
+                                                                                                        CNC 8055i
+
+
+
+                                                                                                        ·M· & ·EN· MODELS
+                                                                                                          SOFT: V01.6X
+
+
+
+
+                                                                                                                             ·137·
+===== PAGE 137 =====
+
+                                                                       Example of machining with radius compensation:
+
+
+
+
+ 8.
+
+
+        TOOL COMPENSATION
+
+
+
+
+                            Tool radius compensation (G40, G41, G42)
+                                                                       The programmed path is represented by a solid line and the compensated path by a dotted line.
+                                                                          Tool radius                  10mm
+                                                                          Tool number                  T1
+                                                                          Tool offset number           D1
+
+
+                                                                       ; Preset
+                                                                       G92 X0 Y0 Z0
+                                                                       ; Tool, offset and spindle start at S100
+                                                                       G90 G17 F150 S100 T1 D1 M03
+                                                                       ; Begins compensation
+                                                                       G42 G01 X20 Y20
+                                                                       X50 Y30
+                                                                       X70
+                                                                       G03 X85Y45 I0 J15
+                                                                       G02 X100 Y60 I15 J0
+                                                                       G01 Y70
+                                                                       X55
+                                                                       G02 X25 Y70 I-15 J0
+                                                                       G01 X20 Y20
+                                                                       ; Cancels compensation
+                                                                       G40 G00 X0 Y0 M5
+                                                                       M30
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·138·
+===== PAGE 138 =====
+
+8.1.4        Change of type of tool radius compensation while machining
+
+        The compensation may be changed from G41 to G42 or vice versa without having to cancel it with
+        G40. It may be changed in any motion block and even in a motionless one, i.e. without moving the
+        axes of the plane or by programming the same point twice.
+
+        It compensates independently the last movement before the change and the first one after the
+        change. To change the type of compensation, the different cases are solved according to these
+        criteria:
+         A. The compensated paths cut each other.
+             The programmed paths are compensated each on its corresponding side. The change of sides
+             takes place at the intersection point of both paths.
+                                                                                                                                       8.
+
+
+                                                                                                                   TOOL COMPENSATION
+
+
+
+
+                                                                                                                                       Tool radius compensation (G40, G41, G42)
+         B. The compensated paths do not cut each other.
+             An additional section is inserted between the two paths. From the point perpendicular to the first
+             path at the end point up to the point perpendicular to the second path at the starting point. Both
+             points are located at a distance R from the programmed path.
+
+        Here is a summary of the different cases:
+
+
+                            Straight - straight path:
+
+
+
+
+                                                        A                         B
+
+                            Straight - arc path:
+
+
+
+
+                                                   A                          B
+
+                          Arc - straight path:
+
+
+
+
+                                              A                                B
+
+                            Arc - arc path:
+
+
+
+
+                                                                                                                  CNC 8055
+                                                                                                                  CNC 8055i
+                                                   A                           B
+
+                                                                                                                  ·M· & ·EN· MODELS
+                                                                                                                    SOFT: V01.6X
+
+
+
+
+                                                                                                                                       ·139·
+===== PAGE 139 =====
+
+                                                                       8.2      Tool length compensation (G43, G44, G15)
+
+                                                                             With this function it is possible to compensate possible differences in length between the
+                                                                             programmed tool and the tool being used.
+
+                                                                             The tool length compensation is applied on to the axis indicated by function G15 or, in its absence,
+                                                                             to the axis perpendicular to the main plane.
+                                                                                If G17, tool length compensation on the Z axis.
+                                                                                If G18, tool length compensation on the Y axis
+
+ 8.                                                                             If G19, tool length compensation on the X axis.
+
+                                                                             Whenever one of functions G17, G18 or G19 is programmed, the CNC assumes as new longitudinal
+
+
+
+
+        TOOL COMPENSATION
+
+
+
+
+                            Tool length compensation (G43, G44, G15)
+                                                                             axis (upon which tool length compensation will be applied) the one perpendicular to the selected
+                                                                             plane.
+
+                                                                             On the other hand, if function G15 is executed while functions G17, G18 or G19 are active, the new
+                                                                             longitudinal axis (selected with G15) will replace the previous one.
+
+                                                                             The function codes used in length compensation are as follows:
+                                                                                G43: Tool length compensation.
+                                                                                G44: Cancellation of tool length compensation.
+
+                                                                             Function G43 only indicates that a longitudinal compensation is to be applied. The CNC starts
+                                                                             applying it when the longitudinal (perpendicular) axis starts moving.
+
+                                                                                 ; Preset
+                                                                                 G92 X0 Y0 Z50
+                                                                                  ; Tool, offset ...
+                                                                                 G90 G17 F150 S100 T1 D1 M03
+                                                                                 ; Selects compensation
+                                                                                 G43 G01 X20 Y20
+                                                                                 X70
+                                                                                 ; Begins compensation
+                                                                                 Z30
+
+
+                                                                             When G43 is programmed, the CNC compensates the length in accordance with the value of the
+                                                                             tool offset selected with code D, or (in its absence) the tool offset shown in the tool table for the
+                                                                             selected tool (T).
+
+                                                                             Tool values R, L, I, K should be stored in the tool offset table before starting machining, or should
+                                                                             be loaded at the beginning of the program via assignments to variables TOR, TOL, TOI, TOK.
+
+                                                                             If no tool offset is selected, the CNC takes D0 with R0 L0 I0 K0.
+
+                                                                             Function G43 is modal and can be canceled via G44 and G74 (home search). If general machine
+                                                                             parameter "ILCOMP=0", it is also canceled on power-up, after executing M02, M30 or after
+                                                                             EMERGENCY or RESET.
+
+                                                                             G53 (programming with respect to machine zero) temporarily cancels G43 only while executing a
+                                                                             block which contains a G53.
+
+                                                                             Length compensation can be used together with canned cycles, although here care should be taken
+                                                                             to apply this compensation before starting the cycle.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·140·
+===== PAGE 140 =====
+
+        Example of machining with tool length compensation:
+
+
+
+
+                                                                                                         8.
+
+
+                                                                                     TOOL COMPENSATION
+
+
+
+
+                                                                                                         Tool length compensation (G43, G44, G15)
+        It is assumed that the tool used is 4 mm shorter than the programmed one.
+             Tool length               -4mm
+             Tool number               T1
+             Tool offset number        D1
+
+
+        ; Preset
+        G92 X0 Y0 Z0
+        ; Tool, offset ...
+        G91 G00 G05 X50 Y35 S500 M03
+        ; Begins compensation
+        G43 Z-25 T1 D1
+        G01 G07 Z-12 F100
+        G00 Z12
+        X40
+        G01 Z-17
+        ; Cancels compensation
+        G00 G05 G44 Z42 M5
+        G90 G07 X0 Y0
+        M30
+
+
+
+
+                                                                                    CNC 8055
+                                                                                    CNC 8055i
+
+
+
+                                                                                    ·M· & ·EN· MODELS
+                                                                                      SOFT: V01.6X
+
+
+
+
+                                                                                                         ·141·
+===== PAGE 141 =====
+
+                                                                 8.3      Collision detection (G41 N, G42 N)
+
+                                                                       Using this option, the CNC analyzes in advance the blocks to be executed in order to detect loops
+                                                                       (profile intersections with itself) or collisions of the programmed profile. The number of blocks to be
+                                                                       analyzed (up to 50) may be defined by the user.
+
+                                                                       The example shows machining errors (E) due to a collision in the programmed profile. This type of
+                                                                       errors may be avoided using collision detection.
+
+
+
+ 8.
+
+
+                            Collision detection (G41 N, G42 N)
+        TOOL COMPENSATION
+
+
+
+
+                                                                       When detecting a loop or a collision, the blocks that caused it will not be executed and a warning
+                                                                       will be issued for each loop or collision eliminated.
+
+                                                                       Possible cases: a step on a straight path, a step in a circular path and tool radius compensation too
+                                                                       large.
+
+                                                                       The information contained in the eliminated blocks, not being the moving in the active plane, will
+                                                                       be executed (including the movements of the axes).
+
+                                                                       Block detection is defined and activated with tool radius compensation functions G41 and G42. A
+                                                                       new parameter N (G41 N y G42 N) has been added to activate the feature and define the number
+                                                                       of blocks to analyze.
+
+                                                                       Possible values from N3 to N50. Without "N", or with N0, N1 and N2 , it behaves like in older versions.
+
+                                                                       In CAD generated programs that are made up of lots of very short blocks, it is recommended to use
+                                                                       very low N values (around 5) so as not to jeopardize block processing time.
+
+                                                                       When this function is active, the history of active G functions shows G41 N or G42 N.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·142·
+===== PAGE 142 =====
+
+
+                                                                                   9
+  These canned cycles can be performed on any plane, the depth being along the axis selected as
+  longitudinal via function G15 or, in its absence, along the axis perpendicular to this plane.
+
+  The CNC offers the following machining canned cycles :
+     G69            Deep hole drilling canned cycle with variable peck.
+     G81            Drilling canned cycle.
+     G82            Drilling cycle with dwell.
+     G83            Deep-hole drilling canned cycle with constant peck.
+     G84            Tapping canned cycle.
+     G85            Reaming canned cycle.
+     G86            Boring cycle with rapid withdrawal in G00.
+     G87            Rectangular pocket canned cycle.
+     G88            Circular pocket canned cycle.
+     G89            Boring cycle with withdrawal at work feedrate G01.
+     G210           Bore milling canned cycle.
+     G211           Inside thread milling canned cycle.
+     G212           Outside thread milling canned cycle.
+
+  It also offers the following functions that can be used with the machining canned cycles:
+     G79            Modification of the canned cycle parameters.
+     G98            Return to the starting plane at the end of the canned cycle.
+     G99            Return to the reference plane at the end of the canned cycle.
+
+
+
+
+                                                                                                  CNC 8055
+                                                                                                  CNC 8055i
+
+
+
+                                                                                                  ·M· & ·EN· MODELS
+                                                                                                    SOFT: V01.6X
+
+
+
+
+                                                                                                       ·143·
+===== PAGE 143 =====
+
+                                                  9.1      Canned cycle definition
+
+                                                        A canned cycle is defined by the G function indicating the canned cycle and its corresponding
+                                                        parameters.
+
+                                                        A canned cycle cannot be defined in a block which has nonlinear movements (G02, G03, G08, G09,
+                                                        G33 or G34).
+
+                                                        Also, a canned cycle cannot be executed while function G02, G03, G33 or G34 is active. The CNC
+                                                        will issue the corresponding error message.
+
+ 9.                                                     However, once a canned cycle has been defined in a block and following blocks, functions G02, G03,
+                                                        G08 or G09 can be programmed.
+
+
+
+
+                        Canned cycle definition
+        CANNED CYCLES
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·144·

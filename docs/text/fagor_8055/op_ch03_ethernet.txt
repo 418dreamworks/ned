@@ -1,0 +1,572 @@
+===== PAGE 44 =====
+
+3.2        Connection to a PC through WinDNC
+
+      The PC operative system must be Windows® and it must have the WinDNC software installed (V4.0
+      or newer). The CNC must be configured just like another node within the local network or internet.
+
+
+
+      i        The access to a DNC server is configured by machine parameters. Refer to the chapter on machine
+               parameters for Ethernet in the installation manual.
+
+
+      Possible connections:
+          • From a PC.
+           The connection may be initiated at any PC and addressed to any CNC. Two PC's cannot be
+                                                                                                                                            3.
+
+
+
+                                                                                                                                            Connection to a PC through WinDNC
+                                                                                                                  OPERATIONS VIA ETHERNET
+           connected to each other.
+           To establish the connection, the WinDNC allows the user to enter the CNC's IP address to be
+           used for the connection.
+          • From a CNC.
+           The connection is always addressed to the DNC server. The DNC server is defined by machine
+           parameters.
+
+      Communication status
+      As with the communication via serial line, the DNC status screen shows its status through Ethernet.
+      When having the DNC available, the top of the screen shows the message" DNC E". The connection
+      may be activated and deactivated from the softkey menu.
+
+      It is possible to connect several WinDNC (up to 10) simultaneously to the same CNC. The access
+      protection is by operation. If several WinDNC initiate an operation, the commands are processed
+      one by one while the rest of the WinDNC's wait.
+
+
+
+
+                                                                                                                 CNC 8055
+                                                                                                                 CNC 8055i
+
+
+
+                                                                                                                 ·M· & ·EN· MODELS
+                                                                                                                   SOFT: V01.6X
+
+
+
+
+                                                                                                                                                     ·45·
+===== PAGE 45 =====
+
+                                                                         3.3         Access the CNC's hard disk from a PC
+
+                                                                               If the CNC is configured like another node in the network, it may be accessed from any PC of the
+                                                                               network knowing its IP. Only the CNC's hard disk may be accessed; i.e. it is not possible to access
+                                                                               programs in RAM nor read variables, tables, etc.
+
+                                                                               From the PC, it is possible to access the part-program directory of the hard disk and edit, modify,
+                                                                               etc. the programs stored. It is also possible to copy programs from the hard disk to the PC and vice
+                                                                               versa.
+
+
+ 3.                                                                            Protocol used
+                                                                               The FTP protocol is used to access the hard disk of the CNC. The FTP protocol permits transferring
+
+
+
+
+                                  Access the CNC's hard disk from a PC
+        OPERATIONS VIA ETHERNET
+                                                                               files between a PC and a CNC connected to a local network or to internet. The FTP client, in charge
+                                                                               of managing the transfer, must be installed at the PC. The interface depends on the FTP client being
+                                                                               used.
+
+                                                                                            The PC operative system may be Windows, Linux or Unix.
+                                                                               i            Windows® includes an FTP client in its Internet Explorer application from version 5.x on. From
+                                                                                            Windows® 98 on, the Windows explorer has its own integrated FTP client.
+
+                                                                               When accessing the CNC from a PC via FTP, it shows the following directory structure.
+
+
+                                                                                                                                     ROOT
+
+
+
+
+                                                                                                                  DISK                                     BIN
+
+
+
+
+                                                                                                                  PRG
+
+
+
+
+                                                                                      BIN          System folder used by the FTP protocol. It cannot be modified.
+
+                                                                                      DISK         CNC hard disk. The user can fully access it from the PC. Although subdirectories and files
+                                                                                                   may be defined, they won't be accessible from the CNC.
+
+                                                                                      PRG          Part-programs and PLC programs stored at the CNC. If this folder does not exist on start-up,
+                                                                                                   an empty one is created.
+
+                                                                               Although the user may create new directories through the FTP, only the programs contained in the
+                                                                               "PRG" directory may be seen from the CNC.
+
+                                                                               If the CNC does not have a hard disk, it will show the directory empty and it will not allow sending
+                                                                               any program.
+
+                                                                               File transfer
+                                                                               To copy a file from the PC to the CNC.
+                                                                                   • In any Windows® (95, 98, 2000 or XP) system. Drag the file from one folder to another or use
+                                                                                     the keyboard shortcuts [CTRL]+[C] and [CTRL]+[V].
+
+                                                                               To copy a file from the CNC to the PC.
+                                                                                   • In Windows® 95 or 98. Click the right mouse button on the file, select the option to "Copy to folder"
+                                                                                     and select the destination folder.
+CNC 8055                                                                           • In Windows® 2000 or XP. Drag the file from one folder to another or use the keyboard shortcuts
+                                                                                     [CTRL]+[C] (copy) and [CTRL]+[V] (paste).
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·46·
+===== PAGE 46 =====
+
+
+     Connection using Windows ® 95 or 98
+
+
+     Connection with a shared CNC without password
+     At the Web browser (e.g. IExplorer) or from the file explorer (only on Windows 98), write in the
+     command line the CNC's IP address.
+           For example: ftp://10.0.7.224
+
+     Connection with a shared CNC with password
+     At the Web browser (e.g. IExplorer) or from the file explorer (only on Windows 98), write in the
+                                                                                                                                                3.
+     command line the user name, the password and the CNC's IP address. The user name is always
+
+
+
+
+                                                                                                                                                Access the CNC's hard disk from a PC
+                                                                                                                      OPERATIONS VIA ETHERNET
+     "cnc".
+           For example: ftp://cnc:password@10.0.17.62
+
+     Assign a name to the IP address
+     The IP address may be assigned a name for easier identification. This operation is carried out at
+     the PC and there are two different ways to do it.
+         • Editing the file "c:\windows\hosts". This file may be modified with any text editor.
+           In the file, add a line containing the CNC'S IP address and the name to identify it with. For
+           example:
+
+               10.0.7.40      CNC_1
+               10.1.6.25      MILL_MACH_01
+
+           On the Web browser or from the file explorer (only on Windows 98), write the defined name in
+           the command line.
+           For example (CNC without password): ftp://CNC_01.
+           For example (CNC with password): ftp://cnc:password@MILL_MACH_01
+         • Through the "Favorites" menu of the Web browser.
+           In the Web explorer, write the IP address in the command line. After accessing the site, select
+           the "Favorites" option on the menu add to favorites and assign a name to that IP address. This
+           way, it is possible to access the CNC by selecting the assigned name on the "Favorites" menu.
+
+
+
+     i         On the Iexplorer browser, it is called "Favorites". This name may vary depending on the Web browser
+               being used.
+
+
+
+
+     Connection using Windows ® 2000 or XP
+
+     The easiest way to access the CNC's hard disk from a PC is configuring a new connection. At the
+     file explorer, select My Network sites > Add network sites. It will show the Windows help to add
+     network sites that permits configuring the connection step by step. Press the –OK– button to go on
+     to the next step.
+
+     Follow the instructions shown on the screen to configure the connection; refer to the Windows® help
+     for additional information.
+
+     Connection with a shared CNC without password
+     1. First, select the network site, in this case an ftp folder. Write "ftp://" followed by the CNC's             CNC 8055
+        IP address defined by machine parameter DIRIP (P24).
+                                                                                                                     CNC 8055i
+               For example: ftp://10.0.17.62
+     2. Define how the session is initiated, anonymously or not When the CNC is shared without
+        password, the session is initiated anonymously.
+     3. Define the name to be associated with the new connection. This is the name that will appear                  ·M· & ·EN· MODELS
+        on the PC's net directory. Just select it from the list to start the connection.                               SOFT: V01.6X
+
+               For example: FAGOR_CNC
+
+
+
+
+                                                                                                                                                          ·47·
+===== PAGE 47 =====
+
+                                                                         Connection with a shared CNC with password
+                                                                         1. First, select the network site, in this case an ftp folder. Write "ftp://" followed by the CNC's
+                                                                            IP address defined by machine parameter DIRIP (P24).
+                                                                                For example: ftp://10.0.17.62
+                                                                         2. Define the user name and how the session is initiated, anonymously or not. When the CNC is
+                                                                            shared with password, the session is not initiated anonymously. The user must identify itself and
+                                                                            it must be as "cnc" or "CNC".
+                                                                         3. Define the name to be associated with the new connection. This is the name that will appear
+                                                                            on the PC's net directory. Just select it from the list to start the connection.
+ 3.                                                                             For example: FAGOR_CNC
+
+                                                                         After the configuration is done and every time the connection is made, a window will open requesting
+
+
+
+
+                                  Access the CNC's hard disk from a PC
+        OPERATIONS VIA ETHERNET
+                                                                         the user name and password. As user name, select "cnc" or "CNC" and as password the one defined
+                                                                         by machine parameter CNHDPAS1 (P7).
+
+                                                                         To make it easier, the –Save password– option may be selected in this window. This way, it will no
+                                                                         longer request the password when connecting again and it will access the hard disk directly.
+
+                                                                                 Use the "save password" option with caution. Bear in mind that if you save the password, it will not
+                                                                                 be requested for the connection and, therefore, anybody is free to access the CNC from the PC.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·48·
+===== PAGE 48 =====
+
+
+                                                                                          4
+  The EXECUTE operating mode allows the execution of part programs in automatic mode or in single
+  block mode.
+
+  The SIMULATE operating mode allows the simulation of part-programs in automatic or single block
+  mode. When wished to SIMULATE a part-program, the CNC will request the type of simulation to
+  be carried out.
+
+  When selecting one of these operating modes, one must indicate the location of the part-program
+  to be executed or simulated. The part program may be stored in the CNC's internal RAM memory,
+  in PC connected through the serial line or in the hard disk (KeyCF).
+
+  After pressing one of these softkeys, the CNC displays the corresponding part-program directory.
+  The program may be selected by:
+      • Keying in its number and pressing [ENTER].
+      • Positioning the cursor of the screen over the desired program and pressing [ENTER].
+
+  The executing or simulating conditions (fist block, type of graphics, etc.) may be set before executing
+  or simulating the part-program. These conditions may also be modified if the execution or simulation
+  is interrupted.
+
+                To execute or simulate a part-program, press the [START] key.
+
+
+
+            To switch to JOG mode once executed or simulated a part program (or a section of it), the CNC will
+  i         maintain the machining conditions (type of movement, feedrates, etc.) selected while executing or
+            simulating it.
+
+
+
+
+  Feedrate selection.
+
+  The program is executed at the feedrate specified in the program and may be modified between
+  0% and 120% using the switch on the operator panel. When doing a simulation with axis movement,
+  the feedrate can also be modified with the switch.
+
+  The behavior of the rapid key during execution and simulation is set by machine parameters, thus
+  it may be disabled. When enabled, the rapid key behaves as follows in execution and simulation:
+      • The movements are carried out in rapid traverse (G00) while the rapid key is pressed.
+      • The rapid key is ignored while threading, while look-ahead is active.
+      • If G95 is active, it switches to G94 mode. When releasing the rapid key, it goes back to G95 mode.
+      • It only affects the main channel. It is ignored in the PLC channel.
+
+
+                                                                                                                 CNC 8055
+                                                                                                                 CNC 8055i
+
+
+
+                                                                                                                 ·M· & ·EN· MODELS
+                                                                                                                   SOFT: V01.6X
+
+
+
+
+                                                                                                                       ·49·
+===== PAGE 49 =====
+
+                                     Type of simulation
+
+                                     When SIMULATING a part-program, the CNC requests the type of simulation desired; one of the
+                                     following options must be selected with the softkeys:
+
+                                                     Graphic repre-   Movement of     Spindle control      Send to the          Send to the
+                                                       sentation       the axes                               PLC                  PLC
+                                                                                                            M-S-T              M3 M4 M5 M41
+                                                                                                                               M42 M43 M44
+
+
+ 4.                          Theoretical path
+
+                             G functions
+                                                      Programmed
+
+                                                       Tool center
+                                                                           No
+
+                                                                           No
+                                                                                            No
+
+                                                                                            No
+                                                                                                                   No
+
+                                                                                                                   No
+                                                                                                                                       No
+
+                                                                                                                                       No
+
+
+
+
+        EXECUTE / SIMULATE
+                             G, M, S, T Functions      Tool center         No               No                 Yes                    Yes
+
+                             Main plane                Tool center         Yes             Yes                 Yes                    Yes
+
+                             Rapid                     Tool center         Yes             Yes                 Yes                    Yes
+
+                             Rapid [S=0]               Tool center         Yes              No                 Yes                     No
+
+
+                                     THEORETICAL PATH
+                                     It ignores tool radius compensation (functions G41, G42) thus showing the graphic representation
+                                     of the programmed path.
+
+                                     It does not output the M, S, T function to the PLC.
+
+                                     It does not move the machine axes or start the spindle.
+
+                                     The simulation takes into account the dwells programmed with G4.
+
+                                     G FUNCTIONS
+                                     It takes into account tool radius compensation (functions G41, G42) thus showing the graphic
+                                     representation of the path for the tool center.
+
+
+                                                                                            Programmed tool Path.
+
+                                                                                               Tool center path.
+
+
+
+
+                                     It does not output the M, S, T function to the PLC.
+
+                                     It does not move the machine axes or start the spindle.
+
+                                     The simulation takes into account the dwells programmed with G4.
+
+                                     G, M, S, T FUNCTIONS
+                                     It takes into account tool radius compensation (functions G41, G42) thus showing the graphic
+                                     representation of the path for the tool center.
+
+                                     It outputs the M, S, T functions to the PLC.
+
+                                     It does not move the machine axes or start the spindle.
+
+CNC 8055                             The simulation takes into account the dwells programmed with G4.
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·50·
+===== PAGE 50 =====
+
+     MAIN PLANE
+     It only executes the movements of the axes forming the main plane.
+
+     It takes into account tool radius compensation (functions G41, G42) thus showing the graphic
+     representation of the path for the tool center.
+
+     It outputs the M, S, T functions to the PLC.
+
+     It starts the spindle if it has been programmed.
+
+     The axes are moved at maximum feedrate allowed F0 regardless of the programmed F value and
+     it can be varied using the feedrate override switch.
+
+     The simulation ignores the dwells programmed with G4.
+                                                                                                                                   4.
+
+                                                                                                              EXECUTE / SIMULATE
+     RAPID
+     It takes into account tool radius compensation (functions G41, G42) thus showing the graphic
+     representation of the path for the tool center.
+
+     It outputs the M, S, T functions to the PLC.
+
+     It starts the spindle if it has been programmed.
+
+     The axes are moved at maximum feedrate allowed F0 regardless of the programmed F value and
+     it can be varied using the feedrate override switch.
+
+     The simulation ignores the dwells programmed with G4.
+
+     RAPID [S=0]
+     It takes into account tool radius compensation (functions G41, G42) thus showing the graphic
+     representation of the path for the tool center.
+
+     It outputs to the PLC the rest of the functions M, S, T.
+
+     It does not output the M functions associated with the spindle when operating in open loop (rpm):
+     M3, M4, M5, M41, M42, M43 and M44.
+
+     It does output to the PLC the M function associated with spindle orientation (M19) when operating
+     in closed loop.
+
+     It does not start the spindle.
+
+     The axes are moved at maximum feedrate allowed F0 regardless of the programmed F value and
+     it can be varied using the feedrate override switch.
+
+     The simulation ignores the dwells programmed with G4.
+
+
+
+     Execution or simulation conditions
+
+     The executing or simulating conditions (initial block, type of graphics, etc.) that may be set before
+     or while executing or simulating a part-program are:
+
+     BLOCK SELECTION
+     It allows selecting the block in which the execution or the simulation of the program will start.
+
+     STOP CONDITION
+     It allows selecting the block in which the execution or the simulation of the program will stop.        CNC 8055
+                                                                                                             CNC 8055i
+     DISPLAY
+     It allows the display mode to be selected.
+
+                                                                                                             ·M· & ·EN· MODELS
+     MDI                                                                                                       SOFT: V01.6X
+     It allows any type of block (ISO or high level) to be edited with programming assistance by means
+     of softkeys.
+
+
+
+
+                                                                                                                                   ·51·
+===== PAGE 51 =====
+
+                             Once a block has been edited and after pressing the [START] key, the CNC will execute this block
+                             without leaving this operating mode.
+
+                             TOOL INSPECTION
+                             Once the execution of the program has been interrupted, this option allows the tool to be inspected
+                             and changed should this be necessary.
+
+                             GRAPHICS
+
+
+ 4.                          This option carries out a graphic representation of the part during the execution or simulation of the
+                             selected part program. It also allows selecting the type of graphic, the area to be displayed, the
+                             viewpoint and graphic parameters.
+
+
+
+
+        EXECUTE / SIMULATE
+                             SINGLE BLOCK
+                             Allows the part program to be executed one block at a time or continuously.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·52·
+===== PAGE 52 =====
+
+4.1      Block search. Switching from simulation to execution
+
+      This feature solves a situation that occurred when interrupting a program that was being executed
+      before it ended. The program may have been interrupted due to a "STOP-RESET", and emergency,
+      a PLC/CNC error or because the CNC was turned off while executing a program or in a temporary
+      stop.
+
+      The CNC remembers the program block at the time of the interruption that did not allow executing
+      it completely.
+
+      The home search permits restoring the history of a program up to a particular block in such way
+      that when resumed, it executes the rest of the program with the same conditions as it would if it were
+      executed from the beginning.
+                                                                                                                                     4.
+
+                                                                                                                EXECUTE / SIMULATE
+
+
+
+
+                                                                                                                                     Block search. Switching from simulation to execution
+      Example: A part machining process is interrupted at any time. The block search may be used for
+      positioning the tool in the same place it was just when the program was interrupted and in the same
+      conditions.
+
+      Block search is executed from the execution mode using a menu driven operational process. The
+      program execution will resume once the block search is done.
+
+      To access the block search, press the softkey <BLOCK SELECTION> of the softkey menu of the
+      execution window.
+
+
+
+
+                                                                                                               CNC 8055
+                                                                                                               CNC 8055i
+
+
+
+                                                                                                               ·M· & ·EN· MODELS
+                                                                                                                 SOFT: V01.6X
+
+
+
+
+                                                                                                                                                   ·53·

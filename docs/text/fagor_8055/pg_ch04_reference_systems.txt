@@ -1,0 +1,475 @@
+===== PAGE 53 =====
+
+                                                                    4.2      Machine reference (Home) search (G74)
+
+                                                                          The CNC allows you to program the machine reference search in two ways :
+                                                                           • Machine reference (home) search of one or more axes in a particular order.
+                                                                             G74 is programmed followed by the axes in which you want to carry out the reference search.
+                                                                             For example: G74 X Z C Y.
+                                                                             The CNC begins the movement of all the selected axes which have a machine reference switch
+                                                                             (machine axis parameter "DECINPUT") and in the direction indicated by the axis machine
+
+ 4.                                                                          parameter "REFDIREC".
+                                                                             This movement is carried out at the feedrate indicated by the axis machine parameter
+                                                                             "REFEED1" for each axis until the home switch is hit.
+
+
+
+
+        REFERENCE SYSTEMS
+
+
+
+
+                            Machine reference (Home) search (G74)
+                                                                             Next, the home search (marker pulse or home) will be carried out in the programmed order.
+                                                                             This second movement will be carried out one axis at a time, at the feedrate indicated in the axis
+                                                                             machine parameter "REFEED2" until the machine reference point is reached (i.e. the marker
+                                                                             pulse is found).
+                                                                           • Home search using the associated subroutine.
+                                                                             The G74 function will be programmed alone in the block, and the CNC will automatically execute
+                                                                             the subroutine whose number appears in the general machine parameter "REFPSUB". In this
+                                                                             subroutine it is possible to program the machine reference searches required, and also in the
+                                                                             required order.
+
+                                                                          In a block in which G74 has been programmed, no other preparatory function may appear.
+
+                                                                          If the machine reference search is done in JOG mode, the part zero selected is lost. The coordinates
+                                                                          of the reference point indicated in the machine axis parameter "REFVALUE" is displayed. In all other
+                                                                          cases, the active part zero will be maintained and the CNC will display the position values with
+                                                                          respect to that part zero.
+
+                                                                          If the G74 command is executed in MDI, the display of coordinates depends on the mode in which
+                                                                          it is executed : Jog, Execution, or Simulation.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·54·
+===== PAGE 54 =====
+
+4.3          Programming with respect to machine zero (G53)
+
+        Function G53 can be added to any block that has path control functions.
+
+        It is only used when the programming of block coordinates relating to machine zero is required.
+        These coordinates should be expressed in millimeters or inches, depending on how the general
+        machine parameter "INCHES" is defined.
+
+        By programming G53 alone (without motion information) the current active zero offset is canceled
+        regardless of whether it was originated by a G54-G59 or a G92 preset. This origin preset is described
+        next.
+
+        Function G53 is not modal, so it should be programmed every time you wish to indicate the
+                                                                                                                                     4.
+        coordinates referred to machine zero.
+
+
+
+
+                                                                                                                 REFERENCE SYSTEMS
+
+
+
+
+                                                                                                                                     Programming with respect to machine zero (G53)
+        This function temporarily cancels radius and tool length compensation.
+
+
+
+
+                      M       Machine zero
+
+                      W       Part zero
+
+
+
+
+                                                                                                                CNC 8055
+                                                                                                                CNC 8055i
+
+
+
+                                                                                                                ·M· & ·EN· MODELS
+                                                                                                                  SOFT: V01.6X
+
+
+
+
+                                                                                                                                                 ·55·
+===== PAGE 55 =====
+
+                                                                 4.4      Coordinate preset and zero offsets
+
+                                                                       The CNC allows you to carry out zero offsets with the aim of using coordinates related to the plane
+                                                                       of the part, without having to modify the coordinates of the different points of the part at the time
+                                                                       of programming.
+
+                                                                       The zero offset is defined as the distance between the part zero (point of origin of the part) and the
+                                                                       machine zero (point of origin of the machine).
+
+
+
+ 4.
+
+
+        REFERENCE SYSTEMS
+
+
+                            Coordinate preset and zero offsets
+                                                                                  M       Machine zero
+
+                                                                                  W       Part zero
+
+
+
+                                                                       This zero offset can be carried out in one of two ways :
+                                                                        • Via Function G92 (coordinate preset). The CNC accepts the coordinates of the programmed
+                                                                          axes after G92 as new axis values.
+                                                                        • Via the use of zero offsets (G54 ... G59, G159N1 ... G159N20); the CNC accepts as a new part
+                                                                          zero the point located relative to machine zero at the distance indicated by the selected table(s).
+
+                                                                       Both functions are modal and incompatible, so if one is selected the other is disabled.
+
+                                                                       There is, moreover, another zero offset which is governed by the PLC. This offset is always added
+                                                                       to the zero offset selected and is used (among other things) to correct deviations produced as a
+                                                                       result of expansion, etc.
+
+
+                                                                                      ORG*(54)            ORG*(55)             ORG*(56)              ORG*(57)
+
+                                                                                        G54                  G55                  G56                    G57
+
+
+
+
+                                                                                                                                                ORG*(58)
+
+                                                                                                                                                   G58
+
+                                                                                        G92
+                                                                                                                                                ORG*(59)
+
+                                                                                                                                                   G59
+                                                                                              ORG*                 PLCOF*
+
+                                                                                                                     PLC Parameters.
+CNC 8055
+CNC 8055i
+
+                                                                                                  Zero offsets
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·56·
+===== PAGE 56 =====
+
+4.4.1        Coordinate preset and S value limitation (G92)
+
+        Via Function G92 one can select any value in the axes of the CNC, in addition to limiting the spindle
+        speed.
+          • Coordinate preset.
+             When carrying out a zero offset via Function G92, the CNC assumes the coordinates of the axes
+             programmed after G92 as new axis values.
+             No other function can be programmed in the block where G92 is defined, the programming format
+             being :
+                 G92 X...C ±5.5                                                                                                      4.
+
+
+                                                                                                                 REFERENCE SYSTEMS
+
+
+                                                                                                                                     Coordinate preset and zero offsets
+
+
+
+                        ; Positioning in P0
+                        G90 X50 Y40
+                        ; Preset P0 as part zero
+                        G92 X0 Y0
+                        ; Programming according to part coordinates
+                        G91 X30
+                        X20 Y20
+                        X-20 Y20
+                        X -30
+                        Y-40
+
+
+          • Spindle speed limitation
+             When executing a "G92 S5.4" type block, the CNC limits the spindle speed from that instant on
+             to the value set by S5.4.
+             If later on, a block is to be executed at a greater "S", the CNC will execute that block at the
+             maximum "S" set with function G92S.
+             Neither is it possible to exceed this maximum value from the keyboard on the front panel.
+
+
+
+
+                                                                                                                CNC 8055
+                                                                                                                CNC 8055i
+
+
+
+                                                                                                                ·M· & ·EN· MODELS
+                                                                                                                  SOFT: V01.6X
+
+
+
+
+                                                                                                                                              ·57·
+===== PAGE 57 =====
+
+                                                                 4.4.2      Zero offsets (G54..G59 and G159)
+
+                                                                         The CNC has a table of zero offsets, in which several zero offsets can be selected. The aim is to
+                                                                         generate certain part zeros independently of the part zero active at the time.
+
+                                                                         Access to the table can be obtained from the front panel of the CNC (as explained in the Operating
+                                                                         Manual), or via the program using high-level language commands.
+
+                                                                         There are two kinds of zero offsets :
+                                                                          • Absolute zero offsets (G54 ... G57, G159N1 ... G159N20), which must be referred to machine
+
+ 4.                                                                         zero.
+                                                                          • Incremental zero offsets (G58,G59).
+
+
+
+
+        REFERENCE SYSTEMS
+
+
+                            Coordinate preset and zero offsets
+                                                                         Functions G54, G55, G56, G57, G58 & G59 must be programmed alone in the block, and work in
+                                                                         the following way:
+
+                                                                         When one of the G54, G55, G56, G57 functions is executed, the CNC applies the zero offset
+                                                                         programmed with respect to machine zero, canceling the possible active zero offsets.
+
+                                                                         If one of the incremental offsets G58 or G59 is executed, the CNC adds its values to the absolute
+                                                                         zero offset active at the time. Previously canceling the additive offset which might be active.
+
+                                                                         You can see (in the following example) the zero offsets which are applied when the program is
+                                                                         executed.
+                                                                            G54            Applies zero offsets G54                     ==> G54
+                                                                            G58            Adds zero offset G58                         ==> G54+G58
+                                                                            G59            Cancels G58 and adds G59                     ==> G54+G59
+                                                                            G55            Cancels whatever and applies G55             ==> G55
+
+                                                                         Once a Zero Offset has been selected, it will remain active until another one is selected or until a
+                                                                         home search is carried out (G74) in JOG mode. This zero offset will remain active even after
+                                                                         powering the CNC off and back on.
+
+                                                                         This kind of zero offsets established by program is very useful for repeated machining operations
+                                                                         at different machine positions.
+
+                                                                         Example: The zero offset table is initialized with the following values:
+                                                                            G54:           X200           Y100
+                                                                            G55:           X160           Y 60
+                                                                            G56:           X170           Y110
+                                                                            G58:           X-40           Y-40
+                                                                            G59:           X -30          Y 10
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·58·
+===== PAGE 58 =====
+
+        Using absolute zero offsets:
+             G54                             ; Applies G54 offset
+             Profile execution               ; Executes profile A1
+             G55                             ; Applies G55 offset
+             Profile execution               ; Executes profile A2
+             G56                             ; Applies G56 offset
+             Profile execution               ; Executes profile A3
+
+
+        Using incremental zero offsets:
+                                                                                                                                         4.
+
+
+                                                                                                                     REFERENCE SYSTEMS
+
+
+                                                                                                                                         Coordinate preset and zero offsets
+             G54                             ; Applies G54 offset
+             Profile execution               ; Executes profile A1
+             G58                             ; Applies offsets G54+G58
+             Profile execution               ; Executes profile A2
+             G59                             ; Applies offsets G54+G59
+             Profile execution               ; Executes profile A3
+
+
+
+        Function G159
+
+        To apply any zero offset defined in the table.
+
+        The first six zero offsets are the same as programming G54 through G59, except that the values
+        of G58 and G59 are absolute. This is because function G159 cancels functions G54 through G57
+        and, consequently, there is no active zero offset to add the G58 or G59 to.
+
+        Function G159 is programmed as follows:
+             G159 Nn          Where n is a number from 1 to 20 that indicates the number of the zero offset being
+                              applied.
+
+        Function G159 is modal, it is programmed alone in the block and is incompatible with functions G53,
+        G54, G55, G56, G57, G58, G59 and G92.
+
+        On power-up, the CNC assumes the zero offset that was active when the CNC was turned off. On
+        the other hand, the zero offset is neither affected by functions M02 and M30 nor by RESET.
+        This function is displayed in the history like G159Nn where the n is the active zero offset.
+
+        Examples:
+             G159 N1          It applies the first zero offset. It is the same as programming G54.
+             G159 N6          It applies the second zero offset. It is the same as programming G59, but it is
+                              applied in absolute.
+             G159 N20         It applies the 20th zero offset.
+
+
+
+
+                                                                                                                    CNC 8055
+                                                                                                                    CNC 8055i
+
+
+
+                                                                                                                    ·M· & ·EN· MODELS
+                                                                                                                      SOFT: V01.6X
+
+
+
+
+                                                                                                                                                  ·59·
+===== PAGE 59 =====
+
+                                                        4.5       Polar origin preset (G93)
+
+                                                              Function G93 allows you to preset any point from the work plane as a new origin of polar coordinates.
+
+                                                              This function must be programmed alone in the block, its programming format being :
+                                                                     G93 I±5.5 J±5.5
+
+                                                              Parameters I & J respectively define the abscissa and ordinate axes, of the new origin of polar
+                                                              coordinates referred to part zero.
+
+
+ 4.                                                                   Example, assuming that the tool is at X0 Y0
+
+
+
+
+        REFERENCE SYSTEMS   Polar origin preset (G93)
+
+
+
+
+                                                                         G93             I35     J30     ; Preset P3 as polar origin.
+
+                                                                         G90     G01     R25     Q0      ; Point P1, in a straight line (G01).
+
+                                                                                 G03             Q90     ; Point P2, in an arc (G03).
+
+                                                                                 G01     X0      Y0      ; Point P0, in a straight line (G01)
+
+
+
+                                                              If G93 is only programmed in a block, the point where the machine is at that moment becomes the
+                                                              polar origin.
+
+                                                              On power-up; or after executing M02, M30; or after an EMERGENCY or RESET; the CNC assumes
+                                                              the currently active part zero as polar origin.
+
+                                                              When selecting a new work plane (G16, G17, G18, G19), the CNC assumes as polar origin the part
+                                                              zero of that plane.
+
+                                                                      The CNC does not modify the polar origin when defining a new part zero; but it modifies the values
+                                                              i       of the variables: "PORGF" y "PORGS".
+                                                                      If, while selecting the general machine parameter "PORGMOVE" a circular interpolation is
+                                                                      programmed (G02 or G03), the CNC assumes the center of the arc as the new polar origin.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·60·
+===== PAGE 60 =====
+
+
+                                                                                    5
+  A block programmed in ISO language can consist of:
+   • Preparatory (G) functions
+   • Axis coordinates (X...C)
+   • Feedrate (F)
+   • Spindle speed (S)
+   • Tool number (T)
+   • Tool offset number (D)
+   • Auxiliary functions (M)
+
+  This order should be maintained within each block, although it is not necessary for every block to
+  contain the information.
+
+  The CNC allows you to program figures from 0.00001 to 99999.9999 with or without sign, working
+  in millimeters (G71), called format +/-5.4, or either from 0.00001 to 3937.00787 with or without sign
+  if the programming is done in inches (G70), called format +/-4.5.
+
+  However, and to simplify the instructions, we can say that the CNC admits +/- 5.5 format, thereby
+  admitting +/- 5.4 in millimeters and +/- 4.5 in inches.
+
+  Any function with parameters can also be programmed in a block, apart from the number of the label
+  or block. Thus, when the block is executed the CNC substitutes the arithmetic parameter for its value
+  at that time.
+
+
+
+
+                                                                                                          CNC 8055
+                                                                                                          CNC 8055i
+
+
+
+                                                                                                          ·M· & ·EN· MODELS
+                                                                                                            SOFT: V01.6X
+
+
+
+
+                                                                                                                ·61·

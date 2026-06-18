@@ -1,0 +1,1661 @@
+===== PAGE 53 =====
+
+                                                                                    4.1.1      Operating modes
+
+                                                                                            Pressing <BLOCK SELECTION> displays a menu for selecting the starting block or the way to
+                                                                                            operate.
+
+
+
+                                                                                            Starting block
+
+
+
+ 4.                                                                                         Pressing the <FIRST BLOCK> softkey gives access to the menu for selecting the block from which
+                                                                                            to start executing the program.
+
+
+
+
+        EXECUTE / SIMULATE
+
+
+
+
+                             Block search. Switching from simulation to execution
+                                                                                            FIRST LINE
+                                                                                            By pressing this key, the cursor will position at the first line of the program.
+
+                                                                                            LAST LINE
+                                                                                            By pressing this key, the cursor will position at the last line of the program.
+
+                                                                                            TEXT
+                                                                                            With this function it is possible to search for a text or character sequence starting at the current cursor
+                                                                                            position.
+
+                                                                                            When this softkey is pressed, the CNC requests the character sequence to be found. Once this text
+                                                                                            has been keyed in, press the <END OF TEXT> softkey and the cursor will position over the first
+                                                                                            occurrence of the keyed text.
+
+                                                                                            The search will begin from the block the cursor is position on beginning at that block. The text found
+                                                                                            will be highlighted being possible to continue with the search or to quit it.
+
+                                                                                            Press [ENTER] to continue the search up to the end of the program. The CNC will begin the search
+                                                                                            at the last text found and it will highlight it.
+
+                                                                                            The search can be done as many times as desired. Once searched to the end of the program, it
+                                                                                            will continue the search from the beginning.
+
+                                                                                            Press the <ABORT> softkey or the [ESC] key to quit the search mode. When quitting the search
+                                                                                            mode, the cursor will be positioned at the last matching text found.
+
+                                                                                            LINE NUMBER
+                                                                                            After pressing this softkey, the CNC will request the number of the line to be found. Once that number
+                                                                                            has been defined, pressing [ENTER] positions the cursor over the requested line.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·54·
+===== PAGE 54 =====
+
+     Searching blocks containing G functions. EXEC G search
+
+     When restoring the history of the program, the CNC reads it up to the set block activating and
+     canceling the "G" functions that reads along. Likewise, it sets the feedrate and spindle speed
+     conditions of the program and calculates the position where the axes should be.
+
+     The M, T and S functions are not output to the PLC, but they are memorized so when the last block
+     is reached, the CNC shows a list of the conditions that the CNC must have assumed by the history.
+
+     Once the simulation is over, the user can restore the M, S, T functions:
+     A. In the order in which the M, S, T functions were simulated by pressing <EXECUTE MST> and
+        then [CYCLE START].
+                                                                                                                                               4.
+
+                                                                                                                          EXECUTE / SIMULATE
+
+
+
+
+                                                                                                                                               Block search. Switching from simulation to execution
+     B. Pressing the softkeys <TOOL INSPECTION>, <DISPLAY MST> and <MDI> in this order, the
+        user can execute the desired blocks in any order he wishes.
+
+     The screen shows a list of the M, S and T functions (one per line and in simulation order) bearing
+     the following in mind:
+      • It shows the M functions of the history bearing in mind that some M functions may cancel others.
+      • If there is a second spindle and M functions a programmed that refer to that spindle (M3, M4,
+        M5, M19, M41-44), they will not cancel the ones equivalent to the first spindle. Also, when
+        restoring these M functions, it first restores those of each programmed spindle G28 or G29.
+      • When it receives an OEM's M function and then it receives the same M function, the older one
+        disappears from the list.
+      • It displays the last T function programmed as well as the last S function programmed.
+
+
+
+     Searching a block that contains G, M, S and T functions. EXEC GMST
+     search
+
+     When restoring the history of the program, the CNC reads it up to the set block activating and
+     canceling the G functions that reads along. Also, it sets the feedrate and spindle speed conditions
+     of the program and calculates the position where the axes should be.
+
+     The M, S and T functions are executed and output to the PLC.
+
+             WARNING: This block searching method is less suitable than the previous one especially when not
+             using safety mechanisms at the PLC. If the tool is not positioned correctly in the tool changes, it could
+             cause collisions.
+
+     If in any of the two block searching methods the program that contains the searched block is stored
+     in a hard disk, Ethernet or DNC, the bottom of the screen can display the line being simulated at
+     that moment. This information gives an idea of how much is left to reach the block.
+
+
+
+
+                                                                                                                         CNC 8055
+                                                                                                                         CNC 8055i
+
+
+
+                                                                                                                         ·M· & ·EN· MODELS
+                                                                                                                           SOFT: V01.6X
+
+
+
+
+                                                                                                                                                             ·55·
+===== PAGE 55 =====
+
+                                                                                    4.1.2      Automatic block search
+
+                                                                                            It may be used to restore the program history up to the block where the execution was interrupted.
+                                                                                            The CNC remembers in which block the execution was interrupted, thus not being necessary to set
+                                                                                            the stop block.
+
+                                                                                            If the program is interrupted inside an internal cycle, it will behave as follows:
+                                                                                               If it is a pocket cycle (G66, G67, G68, G87, G88) or a multiple cycle (G60, G61, G62, G63, G64),
+                                                                                               when doing a home search, it restores the history up to the last subblock inside the completed
+                                                                                               cycle.
+ 4.                                                                                            In the rest of the canned cycles (G69, G81, G82, G84, G85, G86), it is interrupted inside the
+                                                                                               cycle, it restores the history up to the cycle calling block.
+
+
+
+
+        EXECUTE / SIMULATE
+
+
+
+
+                             Block search. Switching from simulation to execution
+                                                                                            To access the automatic block search, press <BLOCK SELECTION> and press one of the operating
+                                                                                            modes <EXEC G SEARCH> or <EXEC GMST SEARCH>.
+
+                                                                                            Then, press the <STOP BLOCK> and <AUTOMATIC SEARCH> softkeys.
+
+                                                                                            The <AUTOMATIC SEARCH> softkey is only shown when the block that has been stored for the
+                                                                                            automatic search is located among those of the program and once pressed places the cursor in that
+                                                                                            block.
+
+                                                                                            Once the block has been selected, the screen shows the text STOP=HD:PxxxLxxx that indicates
+                                                                                            the location of the program, the program number and the program line. After pressing [CYCLE
+                                                                                            START] the CNC searches the block and once simulated up to the stop block, it removes the previous
+                                                                                            text.
+
+                                                                                            Then, the CNC determines the axes that are out of position and shows them so they can be selected.
+                                                                                            If it has also searched for G functions and the program contains M, S, T functions that must be
+                                                                                            executed, the menu shows the softkey <PENDING MST EXEC> so those functions are executed
+                                                                                            after pressing the softkey and validating it with [CYCLE START].
+
+                                                                                            Tool inspection:
+                                                                                            Pressing the <TOOL INSPECTION> accesses tool inspection.
+                                                                                             • Pressing the <DIS PENDING MST> softkey displays the M, S and T functions that have been
+                                                                                               simulated and are pending to be executed.
+                                                                                             • Pressing the <MDI> softkey access that mode and lets the user execute the desired blocks.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·56·
+===== PAGE 56 =====
+
+4.1.3      Manual block search
+
+        It serves to restore the history of the program up to a block defined by the user:
+        A. If it is a motion block, the program simulation stops once that block is completed.
+        B. If it is a program flow changing block (GOTO, RPT, CALL, EXEC), the simulation stops in that
+           block, but without jumping to the new block.
+        C. If it is a positioning block that has a canned cycle or a subroutine or a modal program associated
+           with it, the program simulation stops once the positioning is done leaving the execution of the
+           canned cycle or modal subroutine for after repositioning.
+        D. In the case of blocks calling upon irregular-pocket-with-islands cycle calling and TRACE, DIGIT
+           or PROBE cycles, the program simulation stops in the calling block, but without simulating
+                                                                                                                                         4.
+
+                                                                                                                    EXECUTE / SIMULATE
+
+
+
+
+                                                                                                                                         Block search. Switching from simulation to execution
+           anything in that cycle.
+
+        To access the manual block search, press <BLOCK SELECTION> and press one of the operating
+        modes <EXEC G SEARCH> or <EXEC GMST SEARCH>.
+
+        PROGRAM SELECTION
+        This option will be used when the final execution or simulation block belongs to another program
+        or to a subroutine resident in another program.
+
+        Pressing the <PROGRAM SELECTION> softkey opens an explorer-type window for selecting a
+        program of any unit such as hard disk, DNC, DNCE.
+
+
+
+
+        NUMBER OF TIMES
+        This function will be used to indicate that the execution or simulation of the selected program must
+        stop after executing the "end block" several times.
+
+        When selecting this function, the CNC will request the number of times to be executed or simulated.
+
+        If the selected block has a number of block repetitions, the program will stop after doing all the
+        repetitions indicated.
+
+        FIRST BLOCK                                                                                                CNC 8055
+        It sets as the first block for the block search the one selected with the cursor and validated with        CNC 8055i
+        [ENTER]. When not setting the first block, the block search starts in the first block of the program.
+
+        The block to be selected may be found using the [UP ARROW], [DOWN ARROW], [PREV. PAGE]
+        , [NEXT PAGE] or the softkeys of the menu.
+                                                                                                                   ·M· & ·EN· MODELS
+                                                                                                                     SOFT: V01.6X
+        STOP BLOCK
+        To set the last block for restoring the program history up to that block, just select it with the cursor
+        and press [ENTER]. When executing the program after that, it will start right from that block.
+
+
+
+                                                                                                                                                       ·57·
+===== PAGE 57 =====
+
+                                                                                    The block to be selected may be found using the [UP ARROW], [DOWN ARROW], [PREV. PAGE]
+                                                                                    , [NEXT PAGE] or the softkeys of the menu.
+
+                                                                                    Once a stop point has been selected, the screen shows the text STOP=HD:PxxxLxxx that indicates
+                                                                                    the location of the program, the program number and the program line. After pressing [CYCLE
+                                                                                    START] the CNC searches the block and once simulated up to the stop block, it removes the previous
+                                                                                    text.
+
+                                                                                    Then, the CNC determines the axes that are out of position and shows them so they can be selected.
+                                                                                    If it has also searched for G functions and the program contains M, S, T functions that must be
+                                                                                    executed, the menu shows the softkey <PENDING MST EXEC> so those functions are executed
+
+ 4.                                                                                 after pressing the softkey and validating it with [CYCLE START].
+
+                                                                                    Tool inspection:
+
+
+
+
+        EXECUTE / SIMULATE
+
+
+
+
+                             Block search. Switching from simulation to execution
+                                                                                    Pressing the <TOOL INSPECTION> accesses tool inspection.
+                                                                                     • Pressing the <DIS PENDING MST> softkey displays the M, S and T functions that have been
+                                                                                       simulated and are pending to be executed.
+                                                                                     • Pressing the <MDI> softkey access that mode and lets the user execute the desired blocks.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·58·
+===== PAGE 58 =====
+
+4.1.4      Home searching restrictions
+
+        Block search is restricted in the following scenarios:
+         • In a program where a particular scaling factor is activated, the block search is automatically or
+           manually restricted to a block after that activation.
+         • In a program where axes are slaved with G77 or using PLC SYNCRO marks, the block search
+           is automatically or manually restricted to a later block.
+           The same restriction applies to a program having spindle synchronization.
+         • In a program that applies mirror image via PLC using MIRROR marks, the automatic or manual
+           search are restricted to later blocks.
+         • In a program containing a home search (G74), the automatic or the manual search is restricted
+                                                                                                                                     4.
+
+                                                                                                                EXECUTE / SIMULATE
+
+
+
+
+                                                                                                                                     Block search. Switching from simulation to execution
+           to later blocks.
+
+
+
+
+4.1.5      Disabling the simulation and block search modes
+
+        The simulation and block search modes are available depending on the setting of g.m.p. DISSIMUL
+        (P184).
+
+
+
+
+                                                                                                               CNC 8055
+                                                                                                               CNC 8055i
+
+
+
+                                                                                                               ·M· & ·EN· MODELS
+                                                                                                                 SOFT: V01.6X
+
+
+
+
+                                                                                                                                                   ·59·
+===== PAGE 59 =====
+
+                                       4.2      Display
+
+                                             With this option, it is possible to select the most appropriate display mode at any time even during
+                                             execution or simulation of a part program.
+
+                                             The display modes available at the CNC and which can be selected with softkeys are:
+                                              • STANDARD display mode.
+                                              • POSITION display mode.
+                                              • PART-PROGRAM display.
+
+ 4.                                           • SUBROUTINES display mode.
+                                              • FOLLOWING ERROR display mode.
+
+
+
+
+        EXECUTE / SIMULATE
+                             Display
+                                              • USER display mode.
+                                              • EXECUTION TIME display mode.
+
+                                             All the display modes have a window at the bottom of the CRT which shows the history with the
+                                             conditions in which machining is being done. The information shown is as follows:
+                                                F and %        Programmed feedrate (F) and selected feedrate override %. When feed-hold is
+                                                               active, the feedrate value is shown in reverse video (highlighted).
+                                                S and %        Programmed spindle speed (S) and override % of the selected spindle speed.
+                                                T              Number of the active tool.
+                                                D              Number of active tool offset.
+                                                NT             Number of next tool.
+                                                               This field will be displayed when having a machining center and it will show the
+                                                               tool being selected but which is waiting for the execution of the M06 to make it
+                                                               active.
+                                                ND             Number of the next tool’s offset.
+                                                               This field will be displayed when having a machining center and it will show the
+                                                               tool being selected but which is waiting for the execution of the M06 to make it
+                                                               active.
+                                                S RPM          Real (actual) spindle speed. It is given in rpm.
+                                                               When working in M19 this indicates the position of the spindle. It is given in
+                                                               degrees.
+                                                G              All displayable G functions that are active.
+                                                M              All displayable M functions that are selected.
+                                                PARTC          Parts counter. It indicates the number of consecutive parts executed with the
+                                                               same part-program.
+                                                               Every time a new program is selected, this variable is reset to "0".
+                                                               With this CNC variable "PARTC" it is possible to modify this counter from the PLC,
+                                                               from the CNC program and via DNC.
+                                                CYTIME         It indicates the time elapsed while executing the part. It is given in "hours : minutes
+                                                               : seconds : hundredths of a second".
+                                                               Every time a part-program execution starts, even when repetitive, this variable is
+                                                               reset to "0".
+                                                TIMER          It indicates the count of the timer enabled by PLC. It is given in "hours : minutes
+                                                               : seconds".
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·60·
+===== PAGE 60 =====
+
+4.2.1      Standard display mode
+
+        The CNC assumes this display mode on power-up and after pressing [SHIFT]+[RESET].
+
+        It shows the following fields or windows:
+
+
+
+
+                                                                                                                                     4.
+
+                                                                                                                EXECUTE / SIMULATE
+                                                                                                                                     Display
+
+
+
+
+         • A group of program blocks. The first of them is the block being executed.
+         • The position values for the axes of the machine.
+           It must be borne in mind that the display format for the axes is established by machine parameter
+           "DFORMAT" and that real or theoretical position values will be shown depending on the setting
+           of machine parameter "THEODPLY".
+           Each axis is provided with the following fields:
+           COMMAND        Indicates the programmed coordinate or position value which the axis must reach.
+           ACTUAL         Indicates the actual (current) position of the axis.
+           TO GO          Indicates the distance which is left to run to the programmed coordinate.
+
+
+
+
+                                                                                                               CNC 8055
+                                                                                                               CNC 8055i
+
+
+
+                                                                                                               ·M· & ·EN· MODELS
+                                                                                                                 SOFT: V01.6X
+
+
+
+
+                                                                                                                                      ·61·
+===== PAGE 61 =====
+
+                                       4.2.2      Position display mode
+
+                                               This display mode shows the position values of the axes.
+
+                                               This display mode shows the following fields or windows:
+
+
+
+
+ 4.
+
+        EXECUTE / SIMULATE
+                             Display
+
+
+
+
+                                                • The real position values for the axes that indicate the current position of the machine.
+                                                  It must be borne in mind that the display format for the axes is established by machine parameter
+                                                  "DFORMAT" and that real or theoretical position values will be shown depending on the setting
+                                                  of machine parameter "THEODPLY".
+                                                  Each axis is provided with the following fields:
+                                                  PART ZERO             This field shows the real axis position with respect to part zero.
+                                                  MACHINE ZERO          This field shows the real axis position with the respect to machine
+                                                                        reference zero (home).
+
+
+
+
+                                       4.2.3      Part-program display
+
+                                               Displays a page of program blocks among which the block being executed is highlighted.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·62·
+===== PAGE 62 =====
+
+4.2.4      Subroutine display mode
+
+        This display mode shows information regarding the following commands:
+           (RPT N10, N20)        This function executes the program section between blocks N10 thru N20.
+           (CALL 25)            This function executes subroutine number 25.
+           G87 ...              This function the corresponding canned cycle.
+           (PCALL 30)            This function executes subroutine 30 in a local parameter level.
+
+        When this mode is selected, the following must be considered:
+         • Subroutines may be defined and called upon from the main program (or a subroutine) and
+           another subroutine from this one and so on, the CNC limits the number of these calls to a
+                                                                                                                                      4.
+
+                                                                                                                 EXECUTE / SIMULATE
+                                                                                                                                      Display
+           maximum of 15 nesting levels. The CNC limitation is 20 nesting levels.
+         • The CNC generates a new nesting level of local parameters every time parameters are assigned
+           to a subroutine. Up to a maximum of 6 nesting levels of local parameters are possible.
+         • When the machining canned cycles: G66, G68, G69, G81, G82, G83, G84, G85, G86, G87, G88
+           and G89 are active, they use the sixth nesting level of local parameters.
+
+        This display mode shows the following fields or windows:
+
+
+
+
+         • A display area that shows the following information on the subroutines that are active.
+           NS            Indicates the nesting level (1-15) which the subroutine occupies.
+           NP            Indicates the level of local parameters (1-6) in which the subroutine is executed.
+           SUBROUTINEIndicates the type of block which has caused a new nesting level.
+                         Examples: (RPT N10, N20) (CALL 25) (PCALL 30) G87
+           REPT          Indicates the number of times that remain to be executed.
+                         For example, if (RPT N10, N20) N4 is programmed and is the first time that it is
+                         being executed, this parameter will show a value of 4.
+                                                                                                                CNC 8055
+           M             If an asterisk is shown (*) this indicates that a Modal subroutine is active in this
+                         nesting level, and this is executed after each movement.
+                                                                                                                CNC 8055i
+           PROG          Indicates the program number where the subroutine is defined.
+
+
+                                                                                                                ·M· & ·EN· MODELS
+                                                                                                                  SOFT: V01.6X
+
+
+
+
+                                                                                                                                       ·63·
+===== PAGE 63 =====
+
+                                       • The position values for the axes of the machine.
+                                         It must be borne in mind that the display format for the axes is established by machine parameter
+                                         "DFORMAT" and that real or theoretical position values will be shown depending on the setting
+                                         of machine parameter "THEODPLY".
+                                         Each axis is provided with the following fields:
+                                         COMMAND        Indicates the programmed coordinate or position value which the axis must reach.
+                                         ACTUAL         Indicates the actual (current) position of the axis.
+                                         TO GO          Indicates the distance which is left to run to the programmed coordinate.
+
+ 4.
+
+        EXECUTE / SIMULATE
+                             Display
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·64·
+===== PAGE 64 =====
+
+4.2.5      Following error display mode
+
+        This display mode shows the following error (difference between the theoretical value and the real
+        value of their position) of the axes and the spindle.
+
+
+
+
+                                                                                                                                       4.
+
+                                                                                                                  EXECUTE / SIMULATE
+                                                                                                                                       Display
+
+
+
+
+        The display format is determined by the axis machine parameter "DFORMAT".
+
+        When executing a rigid tapping, the offset between the spindle and the longitudinal axis appears
+        below the following error of the spindle. The displayed value corresponds with that of the "RIGIER"
+        variable.
+
+        The offset value during rigid tapping is only displayed while tapping is in progress. Once the tapping
+        is completed, the data will disappear.
+
+
+
+
+4.2.6      User display mode
+
+        This option will execute the program that is selected by means of the general machine parameter
+        "USERDPLY" in the user channel.
+
+        To quit its execution and return to the previous menu, press [ESC].
+
+
+
+
+                                                                                                                 CNC 8055
+                                                                                                                 CNC 8055i
+
+
+
+                                                                                                                 ·M· & ·EN· MODELS
+                                                                                                                   SOFT: V01.6X
+
+
+
+
+                                                                                                                                        ·65·
+===== PAGE 65 =====
+
+                                       4.2.7      Execution time display mode
+
+                                               This option is available while simulating a part-program and it will display the following fields or
+                                               windows:
+
+
+
+
+ 4.
+
+        EXECUTE / SIMULATE
+                             Display
+
+
+
+
+                                                • A display window shows the estimated program execution time at 100% of the programmed
+                                                  feedrate. This display area shows the following information:
+                                                  The time each tool (TOOL) takes to execute the positioning moves (POS.TIME) as well as the
+                                                  machining moves (MACH.TIME) indicated in the program.
+                                                  The total time required to execute the complete program.
+                                                  The M functions being executed in the program.
+                                                  The number of tool changes performed during the execution of the program.
+                                                • The position values for the axes of the machine.
+                                                  It must be borne in mind that the display format for the axes is established by machine parameter
+                                                  "DFORMAT" and that real or theoretical position values will be shown depending on the setting
+                                                  of machine parameter "THEODPLY".
+                                                  Each axis is provided with the following fields:
+                                                  COMMAND        Indicates the programmed coordinate or position value which the axis must reach.
+                                                  ACTUAL         Indicates the actual (current) position of the axis.
+                                                  TO GO          Indicates the distance which is left to run to the programmed coordinate.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·66·
+===== PAGE 66 =====
+
+4.3      MDI
+
+      This function is not available in the "program simulation" mode. Besides, if a program is being
+      executed, it must be interrupted in order to access this function.
+
+      It is possible to execute any block (ISO or high level) and it provides information on the corresponding
+      format via the softkeys.
+
+                 Once a block has been edited and after pressing the [START] key, the CNC will execute
+                 this block without leaving this operating mode.
+
+                                                                                                                                        4.
+
+                                                                                                                   EXECUTE / SIMULATE
+                                                                                                                                        MDI
+      History of executed blocks.
+
+      From the MDI mode, pressing the [] or [] key will open a window that shows the last 10 instructions
+      that have been executed. This window resizes itself to fit the number of instructions that have been
+      saved. To execute or modify an MDI line that has been executed earlier, proceed as follows:
+      1. Open the window that displays the last MDI instructions:
+            If the cursor is at the beginning of the line, press []. Pressing [] moves the cursor to the
+             end of the line.
+            If the cursor is at the end of the line, press []. Pressing [] moves the cursor to the beginning
+             of the line.
+            If the cursor is neither at the beginning nor at the end of the line, both keys [[] and [] open
+             the window that shows the last MDI instructions.
+      2. Use the [] or [] key to select the desired instruction.
+            Press [START] to execute the selected instruction.
+            Press [ENTER] to modify the selected instruction. Once the instruction has been modified,
+             press [START] to execute it.
+
+      An MDI instruction is saved only if it is correct and if it is not the same as the previous one on the
+      list. The instructions are kept saved even after turning the unit off.
+
+
+
+
+                                                                                                                  CNC 8055
+                                                                                                                  CNC 8055i
+
+
+
+                                                                                                                  ·M· & ·EN· MODELS
+                                                                                                                    SOFT: V01.6X
+
+
+
+
+                                                                                                                                        ·67·
+===== PAGE 67 =====
+
+                                               4.4      Tool inspection
+
+                                                     This function is not available in the "program simulation" mode. Besides, if a program is being
+                                                     executed, it must be interrupted in order to access this function.
+
+                                                     This operating mode allows all the machine movements to be controlled manually, and enabling the
+                                                     axis control keys on the operator panel. Also, the CNC will show the softkeys to access the CNC
+                                                     tables, edit and execute a block in MDI as well as repositioning the axes of the machine to the position
+                                                     from where this function was called.
+
+
+ 4.                                                  One of the ways to make the tool change is as follows:
+                                                     1. Move the tool to the required tool change position.
+                                                        This move may be made by jogging the axes from the operator panel or in MDI.
+
+
+
+
+        EXECUTE / SIMULATE
+                             Tool inspection
+                                                     2. Gain access to CNC tables (tools. Tool offsets, etc.) in order to find another tool with the similar
+                                                        characteristics.
+                                                     3. Select, in MDI, the new tool as the active one.
+                                                     4. Make the tool change
+                                                        This operation will be performed depending on the type of tool changer used. It is possible to
+                                                        execute the tool change in MDI in this step.
+                                                     5. Return the axes to the position where the tool inspection began (REPOSITIONING).
+                                                     6. Continue executing the program, pressing the [START] key.
+
+                                                     If during tool inspection, the spindle is stopped, the CNC will restart it in the same turning direction
+                                                     (M3 or M4) while repositioning.
+
+                                                     The CNC offers the following options by means of softkeys:
+
+
+
+                                                     "MDI" softkey
+
+                                                     Allows to edit blocks in ISO or high level (except those associated with subroutines) providing
+                                                     information on the corresponding format by means of softkeys.
+
+                                                                Once a block has been edited and after pressing the [START] key, the CNC will execute
+                                                                this block without leaving this operating mode.
+
+
+                                                     History of executed blocks.
+                                                     From the MDI mode, pressing the [] or [] key will open a window that shows the last 10 instructions
+                                                     that have been executed. This window resizes itself to fit the number of instructions that have been
+                                                     saved. To execute or modify an MDI line that has been executed earlier, proceed as follows:
+                                                     1. Open the window that displays the last MDI instructions:
+                                                           If the cursor is at the beginning of the line, press []. Pressing [] moves the cursor to the
+                                                            end of the line.
+                                                           If the cursor is at the end of the line, press []. Pressing [] moves the cursor to the beginning
+                                                            of the line.
+                                                           If the cursor is neither at the beginning nor at the end of the line, both keys [[] and [] open
+                                                            the window that shows the last MDI instructions.
+                                                     2. Use the [] or [] key to select the desired instruction.
+                                                           Press [START] to execute the selected instruction.
+                                                           Press [ENTER] to modify the selected instruction. Once the instruction has been modified,
+CNC 8055                                                    press [START] to execute it.
+CNC 8055i                                            An MDI instruction is saved only if it is correct and if it is not the same as the previous one on the
+                                                     list. The instructions are kept saved even after turning the unit off.
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·68·
+===== PAGE 68 =====
+
+     "TABLES" softkey
+
+     Allows access to any of the CNC tables associated with part programs (zero offsets, tool offsets,
+     tools, tool magazine and parameters).
+
+     Once the desired table has been selected, all editing commands will be available for its verification
+     and modification.
+
+     Press the [ESC] key to return to the previous menu (tool inspection).
+
+
+
+     "REPOSITIONING" softkey
+                                                                                                                                    4.
+
+                                                                                                               EXECUTE / SIMULATE
+                                                                                                                                    Tool inspection
+     The user can do a repositioning after a tool inspection.
+
+     The repositioning mode is selected using g.m.p. REPOSTY (P181).
+
+     Basic repositioning mode
+     Positions the axes at the point where tool inspection started.
+
+     Once this option is selected, the CNC will show the axes to be repositioned and will request the order
+     in which they will move.
+
+     The "PLANE" softkey will appear for the main plane movements and another softkey for each one
+     of the rest of the axes to be repositioned.
+     The order used by the CNC to reposition the axes will be the one indicated in the selection of the
+     axes to move.
+
+                Once all the axes have been selected, press [START] for the CNC to reposition them.
+
+
+
+     Extended repositioning mode
+     With the extended repositioning mode, pressing the [REPOSITIONING] softkey displays a softkey
+     menu to carry out the following operations:
+      • If there is a pending spindle movement (M3, M4, M5, M19), it shows a spindle softkey showing
+        this previous status and the pending function.
+        After pressing the displayed softkey and then [CYCLE START], the CNC generates a block that
+        resumes the spindle movement before the inspection.
+        If the spindle position changes while being in M19, it considers that there has been a change
+        and it shows the softkey.
+      • When selecting an axis with the relevant softkey and pressing [CYCLE START], the CNC
+        generates a motion block up to the repositioning coordinate for that axis.
+        Several axes may be moved at the same time, but it is not possible to select the movement of
+        the axes and of the spindle at the same time.
+      • The repositioning movement of one or several axes may be interrupted and it is possible to
+        inspect and reposition as often as desired.
+      • Using the manual repositioning mode, the CNC lets move the axes with the electronic
+        handwheels or with JOG keypad both continuously and in incrementally. The movement of the
+        axes is restricted by the repositioning end point and the corresponding software travel limit.
+        The handwheel movements will not be restricted by the repositioning points.
+      • When an axis reaches the last repositioning point, it is no longer available and cannot be jogged.
+        To move that axis, switch to tool inspection mode.
+                                                                                                              CNC 8055
+      • The [END REPOSITIONING] softkey may be used to exit the repositioning mode and press
+                                                                                                              CNC 8055i
+        [CYCLE START] to resume program execution.
+        If after quitting the repositioning mode, the axes are not properly repositioned, the CNC will move
+        the axes from where they are to the repositioning point.
+                                                                                                              ·M· & ·EN· MODELS
+      • The [TOOL INSPECTION] softkey may be used to return to the tool inspection mode where the               SOFT: V01.6X
+        axes may be jogged continuously, incrementally or with an electronic handwheel. In this case,
+        the movements are only limited by the software travel limits.
+        Besides, it is possible to switch to MDI mode to execute simple blocks.
+
+
+
+                                                                                                                                        ·69·
+===== PAGE 69 =====
+
+                                               "MODIFY OFFSETS" softkey
+
+                                               This option shows (at the top) a help graphic and the tool fields that can be edited. The data may
+                                               be selected with the [] [] [] [] keys or from the softkey menu.
+
+                                               It is also possible to select a new tool to correct it. To select a new tool, enter its number in the T
+                                               field and press [ENTER].
+                                                • The I and K values may be modified for the active tool. To assume the new values, select the
+                                                  tool again.
+
+ 4.                                             • The I, K and D values may be modified if it is not the active tool.
+
+                                               The values entered in the I - K fields are incremental; they are added to the ones already in the table.
+
+
+
+
+        EXECUTE / SIMULATE
+                             Tool inspection
+                                               The "I" data is given in diameter.
+
+                                               The maximum value that may be entered in each I - K field is limited by machine parameters
+                                               MAXOFFI and MAXOFFK. When trying to enter a greater value, the relevant message will be
+                                               displayed.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·70·
+===== PAGE 70 =====
+
+4.5      Graphics
+
+      With this function it is possible to select the type of graphic to be used as well as to define all the
+      parameters for the corresponding graphic display.
+
+      To do so, the CNC must NOT be executing or simulating a part program; otherwise, it must be
+      interrupted.
+
+      Once the type of graphics has been selected and its parameters defined, this function can be
+      accessed even during the execution or simulation of a part program should the type of graphic or
+      any graphic parameters be changed In this case, the CNC shows the graphic representation for the
+      part being executed or simulated and the part-program must be interrupted in order to change the
+      type of graphics or to modify any of the graphic parameters.
+                                                                                                                                      4.
+
+                                                                                                                 EXECUTE / SIMULATE
+                                                                                                                                      Graphics
+      After selecting this function, the CNC will display the following softkey options:
+       • Type of graphic.
+       • Display area.
+       • Zoom.
+       • Viewpoint.
+       • Graphic parameters.
+       • Clear Screen.
+       • Deactivate graphics.
+
+      The following method to define the graphics is one of the many that could be used:
+      1. Define the DISPLAY AREA. It depends on the part dimensions and its coordinates will be
+         referred to the part zero active at the time.
+      2. Select the TYPE OF GRAPHIC for the graphic representation.
+      3. Define the VIEWPOINT for the graphic representation. This option is available in 3D and SOLID
+         graphics.
+      4. Select the colors for the graphic representation using the GRAPHIC PARAMETERS option.
+
+      Once the part execution or simulation has begun, it may be interrupted to define another TYPE OF
+      GRAPHICS or select another graphic display area using the ZOOM option.
+
+
+
+
+                                                                                                                CNC 8055
+                                                                                                                CNC 8055i
+
+
+
+                                                                                                                ·M· & ·EN· MODELS
+                                                                                                                  SOFT: V01.6X
+
+
+
+
+                                                                                                                                        ·71·
+===== PAGE 71 =====
+
+                                        4.5.1      Type of graphic
+
+                                                The CNC has two types of graphics, line and solid. Both types are totally independent from each
+                                                other so any execution or simulation on any of them does not affect the other mode.
+
+                                                Select one of all the CNC options shown by softkeys.
+
+                                                The selected type of graphics will remain active until a different type is selected, until graphics are
+                                                deactivated (there is a "DEACTIVATE" option) or until the CNC is turned off.
+
+                                                Every time a type of graphics is selected, all the graphic conditions (zoom, graphic parameters and
+
+ 4.                                             display area) used last will be recovered. These conditions remain even after turning the CNC off
+                                                and back on.
+
+
+
+
+        EXECUTE / SIMULATE
+                             Graphics
+                                                The type of graphic selected will appear to the right of the screen with the following information:
+
+
+
+
+                                                 • The real position values for the axes that indicate the current position of the machine. The tool
+                                                   coordinates indicate the position of its tip.
+                                                 • The feedrate of the axes (F) and the spindle speed (S) currently selected.
+                                                 • The tool (T) and offset (D) currently active.
+                                                 • The viewpoint used in the graphic representation. It is defined by the X, Y and Z axes and may
+                                                   be modified using the "VIEWPOINT" option.
+                                                 • Two cubes or two rectangles, depending on the viewpoint used.
+                                                   The cube whose sides are colored indicates the area currently selected for graphics and the cube
+                                                   shown only with the edges (lines) shows the size selected as display area.
+                                                   When the viewpoint used only shows one side of the cube or when the selected type of graphics
+                                                   corresponds to one of the planes XY, XZ or YZ, the CNC shows two rectangles to indicate the
+                                                   graphic representation area (color filled rectangle) and the display area (empty rectangle).
+                                                   The CNC will represent all the machining operations carried out with the tool located on the X,
+                                                   Y and Z axes except when the tool is located on the Z axis and the machining is carried out on
+                                                   the negative side of the part (in the "-Z to +Z" direction).
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·72·
+===== PAGE 72 =====
+
+
+
+
+                                                                                                                                        4.
+
+                                                                                                                   EXECUTE / SIMULATE
+                                                                                                                                        Graphics
+     When simulating a part-program, the CNC checks the value assigned to the tool length "L" in
+     corresponding offset.
+
+     If the value is positive, the graphic representation is carried out on the positive part (in the [+] to [-
+     ] direction) and when it is negative, the machining is carried out on the negative side of the part (in
+     the [-] to [+] direction).
+
+     It must be borne in mind that the CNC interprets the "L0" value as a positive value. Also, if no tool
+     is selected during the simulation of the part-program, the CNC will assume the values of L0 and R0.
+
+
+
+     LINE GRAPHICS
+
+     This type of graphics draws with colored lines the movement of the tool in the selected planes (XY,
+     XZ, YZ).
+
+     The types of line graphics available are:
+        3D              This option draws the part in three dimensions.
+        XY, XZ, YZ      These options draw the part in the selected plane.
+        COMBINED VIEWThis option divides the screen in four quadrants and draws the graph
+                  corresponding to each plane XY, XZ, YZ and the three-dimensional graph.
+
+     The graphic generated after the execution or simulation of a program will be lost in the following
+     cases:
+      • When deleting the screen ("CLEAR SCREEN" softkey)
+      • When deactivating the graphics ("DEACTIVATE GRAPHICS" softkey).
+      • When selecting another type of solid graphics (top view or solid).
+
+
+
+     SOLID GRAPHICS
+
+     This type of graphics offer the same information in two different ways: as a three-dimensional solid
+     (SOLID) or as a section view of the part (SECTION VIEW).
+
+     When executing or simulating in one of these modes, those graphics may be viewed in both modes.
+
+     A simulation in SECTION VIEW is usually faster than in SOLID view, thus we recommend to do it
+     in SECTION VIEW mode and then see it in SOLID mode. The result is the same.
+
+     The graphic generated after the execution or simulation of a program will be lost in the following
+     cases:                                                                                                       CNC 8055
+      • When deleting the screen ("CLEAR SCREEN" softkey)                                                         CNC 8055i
+      • When deactivating the graphics ("DEACTIVATE GRAPHICS" softkey).
+      • When selecting another type of line graphics (3D, XY, XZ, YZ, Combined).
+
+                                                                                                                  ·M· & ·EN· MODELS
+                                                                                                                    SOFT: V01.6X
+
+
+
+
+                                                                                                                                          ·73·
+===== PAGE 73 =====
+
+                                        TOP VIEW
+                                        This option draws a top view (XY plane) with different shades of gray that indicate the depth of the
+                                        part.
+
+                                        It also displays the XZ and YZ sections for the areas shown by the indicators of the top view (XY
+                                        plane).
+
+                                        To select other sections of the part, use the [] [] [] [] keys to move the indicators that the top
+                                        view (XY plane) show where the part is being sectioned.
+
+
+ 4.                                     This function can be used any time, even during part program execution or simulation: Also, the CNC
+                                        shows dynamically the new section being selected.
+
+                                        After an execution or simulation is done or it is interrupted, it redraws the top view in order to optimize
+
+
+
+
+        EXECUTE / SIMULATE
+                             Graphics
+                                        the color levels and provide a better feeling of depth.
+
+                                        This type of graphics will not show the machining done by a tool placed on the X or Y axis, but it
+                                        will show the machining done with tool placed on the Z axis. If then the SOLID type is selected, it
+                                        will show all the machining operations carried out.
+
+                                        SOLD
+                                        This option shows a three-dimensional block that will be "machined" as the part-program is being
+                                        run.
+
+                                        If no tool has been selected while executing or simulating the part-program, the CNC will assume
+                                        a default tool offset value of L0, R0. With these values, the CNC will only show the programmed
+                                        tool path and the block will not be "machined" since the tool is assumed to have no radius (R0).
+                                        The screen refresh is done periodically depending on the selected simulation speed. The screen
+                                        is refreshed each time from left to right regardless of the movement direction of the tool.
+
+                                        It must be borne in mind that when executing or simulating a new program, it will be "machined"
+                                        over the existing "already-machined" block. However, the screen may be cleared with the "CLEAR
+                                        SCREEN" softkey.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·74·
+===== PAGE 74 =====
+
+4.5.2      Display area
+
+        In order to use this function, no part program may be in execution or simulation. If this is the case,
+        it must be interrupted.
+
+        With this option it is possible to re-define the display area by assigning new maximum and minimum
+        values for each axis. These position values are referred to part zero.
+
+        In order to re-define the display area, the CNC will show, to the right of the screen, several windows
+        indicating the current display area dimensions.
+        Use the [] [] keys to select the window whose value is to be changed and key in the new value.
+
+        Once all the desired windows have been assigned new values, press [ENTER] to validate them.
+                                                                                                                                       4.
+
+                                                                                                                  EXECUTE / SIMULATE
+                                                                                                                                       Graphics
+        To quit this mode without making any changes, press [ESC].
+
+        In line graphics (3D, XY, XZ, YZ, Combined) there is a softkey [optimum area] which redefines the
+        display area that contains, in all planes, all the tool paths already executed.
+
+        Every time a new display area is defined, it redraws the machining executed up to that point. If the
+        number of points to be redrawn exceeds the amount of memory reserved for it, only the last points
+        will be redrawn and the older ones will be lost.
+
+        In solid graphics, it only redraws when having a PowerPC board.
+
+        In certain applications such a punch press, that only requires the XY plane view, we recommend
+        to define the minimum Z = 0 and maximum Z = 0.0001. This way, the section view (top view) will
+        only show the XY plane (it will not show the XZ and YZ planes).
+
+
+
+
+                                                                                                                 CNC 8055
+                                                                                                                 CNC 8055i
+
+
+
+                                                                                                                 ·M· & ·EN· MODELS
+                                                                                                                   SOFT: V01.6X
+
+
+
+
+                                                                                                                                         ·75·
+===== PAGE 75 =====
+
+                                        4.5.3      Zoom
+
+                                                In order to use this function, no part program may be in execution or simulation. If this is the case,
+                                                it must be interrupted.
+
+                                                With this option, it is possible to enlarge or reduce the graphics display area. It cannot be used in
+                                                the COMBINED and TOP VIEW graphic types.
+
+                                                When selecting this option, the CNC will show a window superimposed on the current graphics and
+                                                another one over the drawing at the lower right-hand side of the screen. These new windows indicate
+
+ 4.                                             the new display area being selected.
+
+                                                Use the softkeys [zoom +], [zoom-] and the keys [+], [-] to either enlarge or reduce the size of the
+                                                new display area and the [] [] [] [] keys to move the zoom window around to the desired
+
+
+
+
+        EXECUTE / SIMULATE
+                             Graphics
+                                                location on the screen.
+
+                                                The "initial value" softkey assumes the values set with this softkey "display area" The CNC shows
+                                                that value, but does not quit the ZOOM function.
+
+                                                Once the new display area has been defined, press [ENTER] to validate the new values.
+
+                                                To quit this mode without making any changes, press [ESC].
+
+                                                Every time a zoom is carried out, it redraws the machining executed up to that point. If the number
+                                                of points to be redrawn exceeds the amount of memory reserved for it, only the last points will be
+                                                redrawn and the older ones will be lost.
+
+                                                In solid graphics, it only redraws when having a PowerPC board.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·76·
+===== PAGE 76 =====
+
+4.5.4      Viewpoint
+
+        In order to use this function, no part program may be in execution or simulation. If this is the case,
+        it must be interrupted.
+
+        This function can be used with any three-dimensional graphics (3D, COMBINED VIEW or SOLID)
+        and it allows to change the point of view (perspective) of the part by shifting the X, Y and Z axes.
+
+        When selecting this option, the CNC will highlight the current viewpoint on the right-hand side of
+        the screen.
+        Use the [] [] keys to rotate the XY plane around the Z axis up to 360°. Use the [] [] keys to
+        tilt the Z axis up to 90°.                                                                                                     4.
+
+                                                                                                                  EXECUTE / SIMULATE
+                                                                                                                                       Graphics
+        Once the new orientation has been selected, press [ENTER] to validate the changes.
+
+        If SOLID GRAPHICS was selected before or it is selected again, the CNC will refresh the screen
+        showing the same part but from the new viewpoint.
+
+        When the selected type of graphics is 3D or COMBINED VIEW, the CNC will maintained the current
+        drawing. The new viewpoint will be applied when executing the next blocks. These blocks will be
+        drawn over the existing graphics. However, the screen may be cleared with the "CLEAR SCREEN"
+        softkey.
+
+        To quit this mode without making any changes, press [ESC].
+
+
+
+
+                                                                                                                 CNC 8055
+                                                                                                                 CNC 8055i
+
+
+
+                                                                                                                 ·M· & ·EN· MODELS
+                                                                                                                   SOFT: V01.6X
+
+
+
+
+                                                                                                                                         ·77·
+===== PAGE 77 =====
+
+                                        4.5.5      Graphic parameters
+
+                                                This function can be used any time, even during part program execution or simulation:
+
+                                                With this function it is possible to modify the simulation speed and the colors used to draw the tool
+                                                paths.
+
+                                                The modifications made to any parameter are immediately assumed by the CNC and can be made
+                                                during the execution or simulation of the part program.
+
+                                                The softkey options displayed by the CNC are:
+
+ 4.
+                                                SIMULATION SPEED
+
+
+
+
+        EXECUTE / SIMULATE
+                             Graphics
+                                                With this option it is possible to modify the feedrate percentage used by the CNC to execute the part
+                                                programs in the simulation modes. The selected value will be kept until modified by another value
+                                                or resetting the CNC.
+
+                                                The CNC will display a window at the top right-hand side of the screen indicating the current % of
+                                                simulation speed.
+
+                                                That value will be modified with the [] [] keys Once the desired value is selected, press [ENTER]
+                                                to validate the new value. Press [ESC] to quit this function without making any changes to this field.
+
+                                                It is also possible to change the simulation speed while it is redrawing after a zoom. This lets you
+                                                check the machining of a particular operation.
+
+
+
+                                                PATH COLORS
+
+                                                This option is used to change the colors used in the graphic representation. They can only be used
+                                                in line graphics (3D, XY, XZ, YZ and COMBINED). There are the following parameters:
+                                                 • The color to draw the rapid traverse.
+                                                 • The color to draw the theoretical path.
+                                                 • The color to draw the compensated path.
+                                                 • The color to draw the threading.
+                                                 • The color to draw the canned cycles.
+
+                                                In order to re-define the display area, the CNC will show, to the right of the screen, several windows
+                                                indicating the currently selected colors.
+
+                                                Among the various colors to choose from, there is a black or "transparent" one. If this one is chosen
+                                                for a particular path, this path will not be displayed on the screen.
+
+                                                Use the [] [] keys to select the window and once selected, modify it using the [] [] keys.
+
+                                                Once the desired colors have been selected, press [ENTER] to validate the new choices or ESC
+                                                to ignore the changes and leave this function with the original values intact. Press [ESC] to quit this
+                                                function without making any changes to this field.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·78·
+===== PAGE 78 =====
+
+     COLORS OF SOLID
+
+     With this option it is possible to modify the colors used to draw the 3D solid. They can only be used
+     in SOLID graphics. There are the following parameters:
+      • The color to draw the outside X.
+      • The color to draw the outside Y.
+      • The color to draw the outside Z.
+      • The color to draw the internal X side, machined side.
+      • The color to draw the internal Y side, machined side.
+      • The color to draw the internal Z side, machine side.
+                                                                                                                                        4.
+
+                                                                                                                   EXECUTE / SIMULATE
+                                                                                                                                        Graphics
+     In order to re-define the display area, the CNC will show, to the right of the screen, several windows
+     indicating the currently selected colors.
+
+     Among the various colors offered, it is also possible to select "black". If this color is selected to draw
+     an external or internal side, none of the machining operations will be shown.
+
+     Use the [] [] keys to select the window and once selected, modify it using the [] [] keys.
+
+     Once the desired colors have been selected, press [ENTER] to validate the new choices or ESC
+     to ignore the changes and leave this function with the original values intact. Press [ESC] to quit this
+     function without making any changes to this field.
+
+
+
+
+                                                                                                                  CNC 8055
+                                                                                                                  CNC 8055i
+
+
+
+                                                                                                                  ·M· & ·EN· MODELS
+                                                                                                                    SOFT: V01.6X
+
+
+
+
+                                                                                                                                          ·79·
+===== PAGE 79 =====
+
+                                        4.5.6      Clear screen
+
+                                                In order to use this function, no part program may be in execution or simulation. If this is the case,
+                                                it must be interrupted.
+
+                                                This function erases the screen or graphic representation shown.
+
+                                                When the solid graphic type is selected, the graphic representation will be reset and it will return
+                                                to its initial state without machining.
+
+
+
+ 4.
+
+        EXECUTE / SIMULATE
+                             Graphics
+                                        4.5.7      Deactivate graphics
+
+                                                This function can be used any time, even during part program execution or simulation:
+
+                                                It turns the graphics off.
+
+                                                To activate this function again, press the "GRAPHICS" softkey again. To do so, the CNC must NOT
+                                                be executing or simulating a part program; otherwise, it must be interrupted.
+
+                                                Also, it will recover all the previous graphic conditions (type of graphics, zoom, graphic parameters
+                                                and display area) used last.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·80·
+===== PAGE 80 =====
+
+4.5.8      Measurement
+
+        To use this function, a "Line Graphics" (planes XY, XZ or YZ) must be selected and the CNC must
+        not be executing or simulating the part-program. If this is the case, it must be interrupted.
+
+        Once this function is selected, the CNC shows the following information on the screen:
+
+
+
+
+                                                                                                                                    4.
+
+                                                                                                               EXECUTE / SIMULATE
+                                                                                                                                    Graphics
+
+
+
+
+        The center of the CRT shows a dotted line with two cursors, the section to be measured. Also, the
+        right-hand side of the screen shows:
+         • The coordinates of those two cursors with respect to part-zero.
+         • The distance "D" between them and the components of this distance along the axes of the
+           selected plane "X" and "Y".
+         • The cursor step "" corresponding to the selected display area. It is given in the work units,
+           millimeters or inches.
+
+        The CNC shows the selected cursor and its coordinates in red.
+
+        To select the other cursor, press the [+] or [-] key. The CNC shows the new selected cursor and its
+        coordinates in red.
+
+        Use the [] [] [] [] keys to move the selected cursor.
+
+        Likewise, the cursor may be moved to the indicated end using the keystroke combinations
+        [SHIFT]+[], [SHIFT]+[], [SHIFT]+[], [SHIFT]+[].
+
+        To quit this command and return to the graphics menu, press [ESC].
+
+                  Also, if [START] is pressed, the CNC exits this work mode and returns to the graphics
+                  menu.
+
+
+
+
+                                                                                                              CNC 8055
+                                                                                                              CNC 8055i
+
+
+
+                                                                                                              ·M· & ·EN· MODELS
+                                                                                                                SOFT: V01.6X
+
+
+
+
+                                                                                                                                      ·81·
+===== PAGE 81 =====
+
+                                            4.6      Single block
+
+                                                  When actuating on this option, the CNC toggles between single block mode and continuous run
+                                                  mode. The mode may be changed even while executing or simulation the program.
+
+                                                            If the single block mode is selected, the CNC will only execute one line of the program
+                                                            every time [START] is pressed.
+
+                                                  The upper window of the screen will show the selected mode of operation. If continuous execution,
+                                                  no message will appear and if SINGLE BLOCK, it will display the message:
+ 4.
+
+        EXECUTE / SIMULATE
+                             Single block
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·82·
+===== PAGE 82 =====
+
+
+                                                                                      5
+  This operating mode will be used to edit, modify or look at a part-program stored in the CNC's RAM
+  memory, in the hard disk (KeyCF) or in a remote disk.
+
+  To edit a program stored in a USB disk, it must be previously copied into RAM memory.
+
+  To edit a part-program, enter the program number (up to 6 digits) from the keyboard or by selecting
+  it with the cursor from the CNC's part-program directory and then pressing [ENTER]. Move the
+  cursor line by line using the [] [] keys or page by page using the Page-up and Page-down keys.
+
+  Once the program number has been entered, the CNC will display the softkeys for the following
+  options:
+       EDIT                        To edit new lines in the selected program.
+       MODIFY                      To modify an existing line of the program.
+       FIND                        To search a string of characters within a program.
+       REPLACE                    To replace a string of characters with another.
+       DELETE BLOCK                With this function it is possible to delete a block or group of blocks.
+       MOVE BLOCK                  To move a block or group of blocks within a program.
+       COPY BLOCK                  To copy a block or group of blocks to another program position.
+       COPY TO PROGRAM             With this option it is possible to copy a block or group of blocks of
+                                   one program into another program.
+       INCLUDE PROGRAM             With this option it is possible to include or merge the contents of
+                                   another program into the one currently selected.
+       EDITOR PARAMETERS          To select the editing parameters (automatic numbering and axes
+                                  for Teach-in editing).
+
+
+
+
+                                                                                                             CNC 8055
+                                                                                                             CNC 8055i
+
+
+
+                                                                                                             ·M· & ·EN· MODELS
+                                                                                                               SOFT: V01.6X
+
+
+
+
+                                                                                                                   ·83·
+===== PAGE 83 =====
+
+                      5.1      Edit
+
+                            With this option it is possible to edit new lines or blocks of the selected program.
+
+                            Select with the cursor the block after which the new ones will be added and press the softkey
+                            corresponding to one of the available editing modes.
+
+                            CNC LANGUAGE
+                               The program is edited in ISO code or high level language.
+                               See "5.1.1 Editing in CNC language" on page 85.
+ 5.                         TEACH-IN
+                               The machine is jogged to the desired position and, then, the new axis position may be assigned
+        EDIT   Edit            to the block.
+                               See "5.1.2 TEACH-IN editing" on page 86.
+
+                            INTERACTIVE
+                               Editing mode assisted by the CNC.
+                               See "5.1.3 Interactive editor" on page 87.
+
+                            PROFILES
+                               To edit a new profile.
+                               After defining the known profile data, the CNC generates its corresponding ISO-coded program.
+                               See "5.1.4 Profile editor" on page 88.
+
+                            PROFILE SELECTION
+                               To modify an existing profile.
+                               The CNC requests the first and last blocks of the profile. Once they are both defined, the CNC
+                               will show the corresponding graphics.
+
+                            USER
+                               When selecting this option, the CNC will execute, in the user channel, the customizing program
+                               selected by general machine parameter "USEREDIT".
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·84·

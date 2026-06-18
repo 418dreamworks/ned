@@ -1,0 +1,1229 @@
+===== PAGE 442 =====
+
+10.2      Directing instructions
+
+       These provide the PLC with information on the type of module and the way it must be executed.
+
+       The directing instructions available at the PLC are:
+
+  PRG, PEt, CY1
+
+       Define the module type.
+          PRG            Main module.
+          CY1
+          PE
+                         First cycle module.
+                         Periodic module. It is executed every "t" milliseconds.
+                                                                                                                                  10.
+
+                                                                                                                PLC PROGRAMMING
+                                                                                                                                  Directing instructions
+       For example: PE 100 is executed every 100 ms.
+
+  END
+
+       Indicates the end of the module. If this is not defined, the PLC understands that this module ends
+       in the last block of the program.
+
+       Example of programming using the directing instruction END:
+
+           CY1            Beginning of module CY1.
+           ——-
+           END            End of module CY1.
+           PRG            Beginning of module PRG.
+           ——-
+           END            End of module PRG.
+           PE 100         Beginning of module PE.
+           ——-
+           END            End of module PE.
+
+
+       Example of programming without using the directing instruction END:
+
+           CY1            Beginning of module CY1.
+           ——-
+           PRG            Beginning of module PRG.
+           ——-
+           PE 100         Beginning of module PE.
+           ——-
+           ——             End of modules CY1, PRG and PE.
+
+
+  L
+
+       Label. Used to identify a program line, and is only used when references or program jumps are made.
+
+       It is represented with the letter L followed by up to 4 digits (1-2000), no order needs to be followed
+       and numbers may even be skipped.
+
+       If there are 2 or more labels with the same number in a single program, the PLC will show the
+       corresponding error when compiling it.
+
+  DEF
+
+       Symbol definition. Allows a symbol to be associated with any PLC variable, it being possible to
+       reference this variable throughout the program by means of the variable name or by means of the
+       associated symbol.
+                                                                                                                CNC 8055
+       Example:
+                                                                                                                CNC 8055i
+           DEF EMERG I1
+           Assigns the EMERG symbol to input I1, so any reference throughout the program to EMERG will be
+           interpreted by the PLC as a reference to I1.
+                                                                                                                   SOFT: V01.6X
+
+       It is also possible to associate a symbol to any number which can be given in decimal, with or without
+       a sign, or hexadecimal format preceded with the "$" sign.
+
+
+
+
+                                                                                                                                  ·443·
+===== PAGE 443 =====
+
+                                                    This option, among other applications, makes programming and later understanding of the PLC
+                                                    program much easier when trying to control the CNC by simulating its keyboard from the PLC
+                                                    program.
+
+                                                    Example:
+
+                                                        DEF HELP $FFF2
+                                                             Assigns the "HELP" symbol to the code for the HELP key.
+                                                        () = MOV HELP R101
+                                                             Assigns the code corresponding to the "HELP" key to register R101.
+
+
+10.                                                     CNCWR (R101, KEY, M101)
+                                                             Indicates to the CNC that the key whose code is stored in register R101 and corresponds to the HELP
+                                                             key.
+
+
+
+
+       PLC PROGRAMMING
+                         Directing instructions
+                                                    The PLC allows up to 2000 symbol definitions which must always be programmed at the beginning
+                                                    of the program, before any other instruction, be this directing or executing.
+
+                                                    A symbol will be made up with up to 8 characters, and must not coincide with any of the words
+                                                    reserved for instructions, nor be formed by the characters space" ", equal "=", open and close
+                                                    parentheses "( )", comma "," and semicolon ";".
+
+                                                    Duplicate symbols cannot be defined; but several symbols may be assigned to the same resource.
+
+                                                    Example:
+
+                                                        DEF EMRGOUT O1
+                                                        DEF SALEMRG O1
+
+
+                                                    The symbols associated to specialized marks and register (M>2047 and R>=500) are pre-defined
+                                                    in the PLC and, therefore, it is not necessary to define them, nevertheless and if required, the PLC
+                                                    allows a different symbol to be assigned to them.
+
+                                                  REA, IMA
+
+                                                    Indicate to the PLC that the consultations defined below will be made on the real (REA) or image
+                                                    (IMA) values of I, O, M resources.
+
+                                                    Counters, timers and registers do not have image values, so their real values will always be
+                                                    evaluated.
+
+                                                    Action instructions (=O32) will always update the real values of PLC resources.
+
+                                                    Example:
+
+                                                        IMA
+                                                             Consultations will evaluate image values.
+                                                        I1 AND I2 = 01
+                                                        ---------
+                                                        REA
+                                                             Consultations will evaluate real values.
+                                                        IMA I3 AND REA M4 = 02
+                                                             Evaluates the image of I3 and the real of M4.
+                                                        IMA I5 REA = O3
+                                                             Evaluates the image of I5 and the next ones in real.
+
+
+                                                  IRD, IREMRD
+
+                                                    Update the real values of the local inputs (IRD) and the remote ones (IREMRD) after reading the
+CNC 8055                                            relevant physical inputs.
+CNC 8055i                                           Care must be taken when using these instructions since the current real values of the inputs will
+                                                    be lost.
+
+                                                  OWR, OREMWR
+ SOFT: V01.6X                                       Update the local physical outputs (OWR) and the remote ones (OREMWR) with the current real
+                                                    values of the corresponding O resources.
+
+
+
+
+    ·444·
+===== PAGE 444 =====
+
+  MRD
+
+     Updates the values of resources M5000/5957 and R500/559 with the values of the logic outputs
+     of the CNC.
+
+     Care must be taken when using this instruction since the current values of those resources will
+     be lost. After executing this instruction, the new values will match those of the logic outputs of the
+     CNC (internal variables).
+
+  MWR
+
+     Updates the logic inputs of the CNC (internal variables) with the current real values of resources
+     M5000/5957 and R500/559.                                                                                                   10.
+
+                                                                                                              PLC PROGRAMMING
+                                                                                                                                Directing instructions
+  TRACE
+
+     This instruction is used when working with the Logic Analyzer in order to capture data during the
+     execution of the PLC cycle.
+
+     It must be born in mind that the logic analyzer performs a data capture at the beginning of each cycle
+     (PRG and PE) after reading the physical inputs and updating the marks corresponding to the CNC
+     logic outputs and just before starting the program execution.
+
+     Use this instruction to carry out another data capture while executing the PLC cycle.
+
+     Example of how to use the "TRACE" instruction:
+
+          PRG
+          -----------
+          TRACE             Data capture.
+          -----------
+          TRACE             Data capture.
+          -----------
+          TRACE             Data capture.
+          -----------
+          END
+          PE 5
+          -----------
+          TRACE             Data capture.
+          -----------
+          END
+
+
+     The data capture in the execution of the trace in this program takes place:
+      • At the beginning of each PRG cycle.
+      • Every time the periodic cycle is executed (every 5 milliseconds).
+      • 3 times while executing the PRG module.
+      • Once while executing the PE module.
+
+     This way, by means of the "TRACE" instruction the data capture can be done any time, especially
+     at those program points considered more critical.
+
+     This instruction must only be used when debugging the PLC program and it should be avoided once
+     the PLC program is fully debugged.
+
+
+
+
+                                                                                                              CNC 8055
+                                                                                                              CNC 8055i
+
+
+
+                                                                                                                 SOFT: V01.6X
+
+
+
+
+                                                                                                                                ·445·
+===== PAGE 445 =====
+
+                                                   10.3      Consulting instructions
+
+                                                          They may be used to check the status of PLC resources as well as the marks and registers for CNC-
+                                                          PLC communication. They are divided into:
+                                                           • Simple consulting Instructions.
+                                                           • Flank detection consulting Instructions.
+                                                           • Comparison consulting Instructions.
+
+                                                          All the consulting instructions allow the previous operand NOT, which reverses the result of the
+
+10.                                                       preceding consultation.
+
+                                                          Example:
+
+
+
+
+       PLC PROGRAMMING   Consulting instructions
+                                                             NOT I1         This Consultation will return a "0" if input I1 is at 1; and a "1" when input I1 is at 0.
+
+
+
+                                                          Simple
+
+                                                          They test the status of the resources and they return their logic state.
+
+                                                              I              1/512                   Inputs
+
+                                                              O              1/512                   Outputs
+
+                                                              M              1/5957                  Marks
+
+                                                              T              1/512                   Timers
+                                                              C              1/256                   Counters
+
+                                                              B              0/31 R 1/499            Register Bits
+
+                                                          Example:
+                                                             I12            It will return a 1 if input 12 is active and a 0 if otherwise.
+
+
+
+                                                          Flank detection
+
+                                                          They check whether the state of a resource has changed since the last time this consultation was
+                                                          made.
+
+                                                          This consultation may be made on real or image values. There are two types of instructions:
+
+                                                     DFU
+
+                                                          It detects an up-flank (0-to-1 change) at the indicated resource. It returns a "1" if it happened.
+
+                                                     DFD
+
+                                                          It detects an down-flank (0-to-1 change) at the indicated resource. It returns a "1" if it happened.
+
+                                                          The programming format of the different combinations is:
+
+                                                              DFU (Up flank detection.)                              I 1/512
+
+                                                              DFD (Down flank detection)                             O 1/512
+                                                                                                                     M 1/5957
+
+                                                          The consulting instructions to detect the flanks of marks M4000 thru M4127, M4500 thru M4563,
+CNC 8055                                                  M4700 thru M4955 and M5000 thru M5957 will be executed with their real values even when working
+CNC 8055i                                                 with image values since these marks have no image values.
+
+                                                          Considering that these instructions can evaluate real and image values, the following points must
+                                                          be taken into account:
+
+ SOFT: V01.6X                                             The PLC updates the real values of the inputs at the beginning of the cycle, taking the values of
+                                                          the physical inputs.
+
+                                                          The image values of the inputs, outputs and marks are updated after executing the program cycle.
+
+
+
+
+    ·446·
+===== PAGE 446 =====
+
+
+
+
+             I3 phy = physical I3             I3 rea = real I3          I3 ima = image I3
+
+
+     Examples:
+                                                                                                                             10.
+
+                                                                                                           PLC PROGRAMMING   Consulting instructions
+        DFU I23                 DFU B3R120               DFU AUXEND
+
+
+
+     Comparison
+
+
+  CPS
+
+     Used to compare two operands, checking whether the first one is greater than (GT), greater than
+     or equal to (GE), equal to (EQ), not equal to (NE), smaller than or equal to (LE) or less than (LT)
+     the second one.
+
+     The following may be used as operands: Timers (internal count), Counters (internal count),
+     Registers, CNC-PLC communication registers and numbers (#) within ±2147483647 or between
+     0 and $FFFFFFFF.
+
+     The programming format of the different combinations is:
+
+         CPS                        T 1/256                      GT              T 1/256
+
+                                    C 1/256                      GE              C 1/256
+                                    R 1/559                      EQ              R 1/559
+
+                                    #                            NE              #
+
+                                                                 LE
+
+                                                                 LT
+
+     If the required condition is met, the consulting instruction returns a logic value "1" and a "0" if
+     otherwise.
+
+     Programming examples:
+        CPS C12 GT R14 = M100
+            If the internal count of counter "C12" is GREATER than the value of register R14, the PLC
+            will assign the value of "1" to mark M100 and a "0" if otherwise.
+        CPS T2 EQ 100 = TG1 5 2000
+            When the time elapsed on the counter T2 is EQUAL to the value of 100, timer T5 will be
+            activated working as a monostable and with a time constant of 2 seconds.
+
+
+
+
+                                                                                                           CNC 8055
+                                                                                                           CNC 8055i
+
+
+
+                                                                                                              SOFT: V01.6X
+
+
+
+
+                                                                                                                             ·447·
+===== PAGE 447 =====
+
+                                                 10.4      Operators and symbols
+
+                                                        Used to group and operate with different consulting instructions.
+
+                                                            The available operators are:                   NOT           AND           OR             XOR
+
+                                                            The available symbols are:                     (             )
+
+                                                        The operators are associated from left to right and the priorities ordered from the highest to the
+                                                        lowest are:
+
+10.                                                        NOT             AND             XOR             OR
+
+                                                        With the "(" and ")" symbols, it is possible to clarify and select the order in which the logic expression
+
+
+
+
+       PLC PROGRAMMING   Operators and symbols
+                                                        is evaluated.
+                                                           Example: (I2 OR I3) AND (I4 OR (NOT I5 AND I6)) = O7
+
+                                                   NOT
+
+                                                        Reverses the result of the consultation.
+
+                                                        NOT I2 = O3
+                                                           Output "O3" will be active when input I2 is not.
+
+                                                   AND
+
+                                                        Logic function "AND".
+
+                                                        I4 AND I5 = O6
+                                                           Output "O6" will be active when both inputs (I4, I5) are active.
+
+                                                   OR
+
+                                                        Logic function "OR".
+
+                                                        I7 OR I8 = O9
+                                                           Output "O9" will be active when either one (or both) inputs are active.
+
+                                                   XOR
+
+                                                        Logic "Exclusive OR" function.
+
+                                                        I10 XOR I11 = O12
+                                                           Output "O12" will be active when both inputs I10 and I11 have different logic states.
+
+                                                   ( )
+
+                                                        Open and close parenthesis.
+
+                                                        They help clarify and select the order the logic expression is evaluated.
+                                                           Example: (I2 OR I3) AND (I4 OR (NOT I5 AND I6)) = O7
+
+                                                        A consulting instruction consisting of only these two operators always has a value of "1", i.e.
+
+                                                        ( ) = O2
+                                                           Output O2 will always be high (=1).
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·448·
+===== PAGE 448 =====
+
+10.5      Action instruction.
+
+       The action instructions, depending on the result obtained in the logic expression may be used to
+       alter the status of the PLC resources and CNC-PLC communication marks.
+          Logic expression = Action instruction
+       There may be several action instructions associated with a single logic expression. All the action
+       instructions must be preceded by the "=" sign.
+
+       All Action Instructions allow a previous NOT, which reverses the result of the expression for that
+       action.
+
+       Example:
+                                                                                                                                10.
+
+                                                                                                                                Action instruction.
+                                                                                                              PLC PROGRAMMING
+          I2 = O3 = NOT M100 = NOT TG1 2 100 = CPR 1 100
+             Output O3 will show the status of input I2.
+             Mark M100 will show the negated state of input I2.
+             A down-flank at input I2 will activate the trigger input TG1 of timer T2.
+             An up-flank at I2 will preset counter C1 with a value of 100.
+
+       Action instructions are divided into:
+        • Assignment Binary Action Instructions.
+        • Conditioned binary actions instructions.
+        • Sequence breaking action instructions.
+        • Arithmetic action instructions.
+        • Logic action instructions.
+        • Specific action instructions.
+
+       Action instructions can alter the status of all the PLC resources except that of the physical inputs
+       being used.
+
+       When seeing the field "I 1/1024", one must understand that only the status of the unused inputs may
+       be changed.
+
+       For example, if physical inputs I1 through I32 are used, only inputs I33 through I1024 may be
+       changed.
+
+
+
+
+                                                                                                              CNC 8055
+                                                                                                              CNC 8055i
+
+
+
+                                                                                                                 SOFT: V01.6X
+
+
+
+
+                                                                                                                                ·449·
+===== PAGE 449 =====
+
+                                               10.5.1   Binary assignment instructions
+
+                                                    They assign the value obtained from evaluating the logic expression (0/1) to the indicated resource.
+
+                                                         =I                1/512                  Inputs
+
+                                                         =O                1/512                  Outputs
+
+                                                         =M                1/5957                 Marks
+
+                                                         = TEN             1/256                  Timer enable
+
+
+10.                                                      = TRS
+
+                                                         = TGn
+                                                                           1/256
+
+                                                                           1/256 n/R
+                                                                                                  Timer reset
+
+                                                                                                  Timer trigger input
+
+
+
+
+                         Action instruction.
+       PLC PROGRAMMING
+                                                         = CUP             1/256                  Counter count up
+
+                                                         = CDW             1/256                  Counter count down
+                                                         = CEN             1/256                  Counter enable
+
+                                                         = CPR             1/256 n/R              Counter preset
+
+                                                         =B                0/31 R 1/499           Register Bits
+
+                                                    I3 = TG1 4 100
+                                                        Assigns the status of input I3 to the trigger input TG1 of timer T4. Thus, an up-flank at I3 will
+                                                        trigger the TG1 input of timer T4.
+
+                                                    (I2 OR I3) AND (I4 OR (NOT I5 AND I6)) = M111
+                                                        It assigns to Mark M111 the value obtained in the evaluation of the Logic Expression (I2 OR I3)
+                                                        AND (I4 OR (NOT I5 AND I6)) .
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·450·
+===== PAGE 450 =====
+
+10.5.2   Conditional binary action instructions
+
+     There are 3 instructions: SET, RES and CPL, that are used to change the status of the indicated
+     resource.
+
+     Their programming format is:
+
+          = SET                      I 1/512
+
+          = RES                      O 1/512
+
+          = CPL                      M 1/5957
+                                     B 0/31 R 1/559                                                                                10.
+
+                                                                                                                                   Action instruction.
+                                                                                                                 PLC PROGRAMMING
+  =SET
+     If expression "1", it assigns a "1" to the resource.
+
+     If the result of evaluating the logic expression is a "1", it assigns a "1" to the indicated resource. If
+     the result is "0", it does not change the resource.
+
+     Example: CPS T2 EQ 100 = SET B0R100
+         When the timing of timer T2 reaches 100 milliseconds, it sets bit 0 of register R100 to "1".
+
+  =RES
+
+     If expression "1", it assigns a "0" to the resource.
+
+     If the result of evaluating the logic expression is a "1", it assigns a "0" to the indicated resource. If
+     the result is "0", it does not change the resource.
+
+     Example: I12 OR NOT I22 = RES M55 = NOT RES M65
+         When the result of the logic expression is a "1", the PLC sets "M55 = 0"; but does not change M65.
+         When the result of the logic expression is a "0", the PLC sets "M65=0" and does not change M55.
+
+  =CPL
+
+     If expression = 1, it complements the resource.
+
+     If the result of evaluating the logic expression is a "1", it complements the status of the indicated
+     resource. If the result is "0", it will not change the resource.
+
+     Example: DFU I8 OR DFD M22 = CPL B12R35
+         Every time an Up Flank (leading edge) is detected at input I8 or a down flank (trailing edge) in
+         mark M22 the PLC will complement the status of bit 12 of register R35.
+
+
+
+
+                                                                                                                 CNC 8055
+                                                                                                                 CNC 8055i
+
+
+
+                                                                                                                    SOFT: V01.6X
+
+
+
+
+                                                                                                                                   ·451·
+===== PAGE 451 =====
+
+                                               10.5.3    Sequence breaking action instructions
+
+                                                    These actions interrupt the sequence of a program, resuming it somewhere else in the program.
+
+                                                    That area must be identified with a label (L 1/2000).
+
+                                                    A subroutine is any part of the program that starts with a label (L1/2000) and end with the directing
+                                                    instruction END.
+
+                                                 = JMP
+
+10.                                                 Unconditional Jump.
+
+                                                    If the result of evaluating the logic expression is a "1", it causes jump to the indicated label. If the
+
+
+
+
+                         Action instruction.
+       PLC PROGRAMMING
+                                                    result is a "0", it goes on to the next program line.
+
+                                                    Example:
+
+                                                         I8 = JMP L12                                 If I8 = 1 it goes on to L12
+
+                                                         M14 AND B7R120 = O8                          If I8=1 it is not executed
+
+                                                         CPS T2 EQ 2000 = O12                         If I8=1 it is not executed
+
+                                                         L12
+
+                                                         (I12 AND I23) OR M54 = O6
+
+
+                                                 = CAL
+
+                                                    Call to a subroutine.
+
+                                                    If the result obtained in the evaluation of the logic expression is a "1" this action will execute the
+                                                    indicated subroutine.
+
+                                                    Once the subroutine execution is over, the PLC will continue at the action instruction or executable
+                                                    instruction programmed after CAL.
+
+                                                    If the result obtained in the evaluation of the logic expression is a "0" this action will be ignored by
+                                                    the PLC without executing the subroutine.
+
+                                                    Example: I2 = CAL L5 = O2
+                                                         With I2=1, subroutine L5 will be executed and once executed, the PLC will set O2 to the value
+                                                         of input I2 (=1).
+
+                                                    If I2=0, the subroutine is not executed and the PLC sets output O2 to the status of input I2 (=0).
+
+                                                 = RET
+
+                                                    Return or end of subroutine.
+
+                                                    If the result obtained in the evaluation of the logic expression is a "1" this action will be treated by
+                                                    the PLC as if it involved the directing instruction END. If the result is a "0", the PLC will ignore it.
+
+                                                    If while executing a subroutine, the PLC detects a validated RET, it will conclude the subroutine.
+
+                                                    If END is not programmed as end of subroutine, the PLC will continue executing until the end of the
+                                                    module (END) or the end of the program and it will finish the execution of the subroutine at that point.
+
+                                                    It is advisable to place the subroutines after the END of the main program since if these are placed
+                                                    at the beginning, the PLC will start to execute them and will interpret the END of the subroutine as
+                                                    the END of the module, and it will consider that this has finished because no call was made to the
+                                                    subroutine.
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·452·
+===== PAGE 452 =====
+
+10.5.4    Arithmetic action instructions
+
+  = MOV
+
+     It is used to move data from one PLC resource to another.
+
+     The programming format is:
+
+                                Origin          Destination     Source code         Destination         Number of
+                                                                                       code               bits to
+                                                                                                         transmit
+
+           MOV                  I 1/512
+                               O 1/512
+                                                  I 1/512
+                                                 O 1/512
+                                                                      (Bin)
+                                                                     1(BCD)
+                                                                                       0(Bin)
+                                                                                      1(BCD)
+                                                                                                             32
+                                                                                                             28
+                                                                                                                                      10.
+
+                                                                                                                                      Action instruction.
+                                                                                                                    PLC PROGRAMMING
+                               M 1/5957          M 1/5957                                                    24
+                               T 1/256           R 1/559                                                     20
+                               C 1/256                                                                       16
+                               R 1/559                                                                       12
+                                    #                                                                         8
+                                                                                                              4
+
+     The source and destination codes indicate the original and destination format (binary or BCD) of
+     the data. 4, 8, 12, 16, 20, 24, 28 or 32 bits may be transmitted.
+
+     If the codes and number of bits to be moved are not indicated, 32 binary bits will be moved bit to
+     bit (0032).
+
+          MOV           I12             M100           0032        from Binary to Binary in 32 bits
+
+          MOV           O21             R100           0012        from Binary to Binary in 12 bits
+
+          MOV           C22             O23            0108          from Binary to BCD in 8 bits
+
+          MOV           T10             M112           1020          from BCD to Binary in 20 bits
+
+     If the number to be converted from binary to BCD is larger than the maximum BCD, its value will
+     be truncated ignoring the most significant bits.
+
+     The maximum BCD value that can be converted is:
+
+          9              with 4 bits           9999           with 16 bits        9999999            with 28 bits
+
+          99             with 8 bits           99999          with 20 bits        99999999           with 32 bits
+
+          999            with 12 bits          999999         with 24 bits
+
+
+     In these cases, it is recommended to make the move increasing the number of bits by using, if
+     necessary, registers or marks in intermediate steps.
+          Example: I11 = MOV I14 O16 108
+
+     If input I11 is "=1", the PLC moves the logic states of the 8 inputs (I14 plus the next 7) in BCD code
+     to the 8 outputs (O16 and the next 7) in binary code.
+
+  = NGU
+
+     Complements the bits of a register.
+
+     It changes the state of each one of the 32 bits of a register.
+
+     Example: I15 = NGU R152
+          If input "I15 is =1", the PLC changes the state of the 32 bits of register R152.
+
+          R152 before         0001       0001         0001    0001        0001       0001       0001         0001   CNC 8055
+          R152 after          1110       1110         1110    1110        1110       1110       1110         1110   CNC 8055i
+
+
+
+                                                                                                                       SOFT: V01.6X
+
+
+
+
+                                                                                                                                      ·453·
+===== PAGE 453 =====
+
+                                               = NGS
+
+                                                  Register sign change.
+
+                                                  Example: I16 = NGS R89
+                                                       If input "I16 = 1", the PLC changes the sign of the contents of register R89.
+
+                                                       R89 before         0001       0001       0001       0001        0001      0001        0001         0001
+
+                                                       R89 after          1110       1110       1110       1110        1110      1110        1110         1111
+
+
+
+10.                                            = ADS, = SBS, = MLS, = DVS, = MDS
+
+                                                  They may be used to carry out arithmetic operations such as addition (ADS), subtraction (SBS),
+
+
+
+
+                         Action instruction.
+       PLC PROGRAMMING
+                                                  multiplication (MLS), division (DVS) and module or remainder of a division (MDS).
+
+                                                  Its programming format is:
+
+                                                        ADS                       R1/559                      R1/559                    R1/559
+                                                        SBS                       #                           #
+                                                        MLS
+                                                        DVS
+                                                        MDS
+
+                                                  The operands may be: Registers, CNC-PLC communication registers and numbers (#) within
+                                                  ±2147483647 or between 0 and $FFFFFFFF
+
+                                                  The result of the operation may be stored in a register or in CNC-PLC communication register
+                                                  Examples with R100=1234 and R101=100
+
+                                                       () = ADS       R100            R101             R102            R102 = 1234 + 100 = 1334
+
+                                                       () = SBS       R100            R101             R103            R103 = 1234 - 100 = 1134
+
+                                                       () = MLS       R100            R101             R104            R104 = 1234 x 100 = 123400
+
+                                                       () = DVS       R100            R101             R105            R105 = 1234 : 100 = 12
+                                                       () = MDS       R100            R101             R106            R106 = 1234 MOD 100 = 34
+
+                                                       () = ADS       1563            R101             R112            R112 = 1563 + 100 = 1663
+
+                                                       () = SBS       R100            1010             R113            R113 = 1234 - 1010 = 224
+                                                       () = MLS       1563            100              R114            R114 = 1563 x 100 = 156300
+
+                                                       () = DVS       R100            1000             R115            R115 = 1234 : 1000 = 1
+
+                                                       () = MDS       8765            1000             R116            R116 = 8765 MOD 1000= 765
+
+
+                                                           If a division by "0" is performed in the DVS operation, the CNC stops the execution of the PLC program
+                                                           and it displays the corresponding error message.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·454·
+===== PAGE 454 =====
+
+10.5.5   Logic action instructions
+
+  = AND, = OR, = XOR
+
+     To perform logic operations: AND, OR and XOR between register contents or between a register
+     content and a number. The result is always stored in a register.
+
+     Its programming format is:
+
+          AND                      R1/559                    R1/559                    R1/559
+          OR                       #                         #
+          XOR
+
+     Registers (R1/559) or numbers expressed in decimal, hexadecimal or binary format can be defined
+                                                                                                                                     10.
+
+                                                                                                                                     Action instruction.
+                                                                                                                   PLC PROGRAMMING
+     as first or second operand.
+
+     The destination register indicates where the result of the operation will be deposited and will be
+     defined by means of a register (R1/559).
+
+     The mark M2003 is called zero flag and indicates whether the result of an AND, OR, XOR, operation
+     equals zero, in which case it follows that M2003=1.
+         Examples with          R200 = B1001 0010
+                                R201 = B0100 0101
+
+         ()=AND         R200           R201           R202            R202=B0                    M2003=1
+
+         ()=OR          R200           R201           R203            R203=B11010111             M2003=0
+
+         ()=XOR         R200           R201           R204            R204=B11010111             M2003=0
+
+         ()=AND         B1111          R201           R205            R205=B00000101             M2003=0
+
+         ()=OR          R200           B1111          R206            R206=B10011111             M2003=0
+
+         ()=XOR         B1010          B1110          R207            R207=B00000100             M2003=0
+
+
+  = RR, = RL
+
+     Used to rotate registers clockwise (RR) or counterclockwise (RL). There are two types of rotations:
+     type 1 (RR1 or RL1) and type 2 (RR2 or RL2).
+
+     Rotation type 1 (RL1 or RR1):
+
+     It inserts a "0" at the least significant bit (RL1) or at the most significant bit (RR1), pushing the other
+     bits of the register. The value of the last bit disappears.
+
+
+
+
+     Rotation type 2 (RL2 or RR2):
+
+     Circular rotation of the register in the indicated direction.
+
+
+
+
+                                                                                                                   CNC 8055
+     Its programming format is:                                                                                    CNC 8055i
+                                            Origin              Nr of repetitions            Destination
+
+          RR1                               R1/559                    R1/559                    R1/559
+          RR2                                                          0/31
+                                                                                                                      SOFT: V01.6X
+          RL1
+          RL2
+
+
+
+
+                                                                                                                                     ·455·
+===== PAGE 455 =====
+
+                                               The origin and destination registers must always be defined, even when they are both the same.
+                                               The number of repetitions indicates the consecutive number of times the register will be rotated.
+
+                                               Examples:
+                                                  RR1 R100 1 R200
+                                                      1 type 1 rotation to the right of the contents of R100 leaving the result in R200.
+                                                  RL2 R102 4 R101
+                                                      4 type-2 rotations to the left of the contents of R102 leaving the result in R101.
+                                                  () = RL2 R17 4 R20
+10.                                                R17 =            0011      0000      1100      1100      0100      0110       1101         0100
+
+                                                   R20 =            0000      1100      1100      0100      0110      1101       0100         0011
+
+
+
+
+                         Action instruction.
+       PLC PROGRAMMING
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·456·
+===== PAGE 456 =====
+
+10.5.6    Specific action instructions
+
+  = ERA
+
+     Used to delete a group of resources. Indicate the first and last resource to be erased.
+
+     Its programming format is:
+
+          ERA                     I                       1/512                   1/512
+
+                                  O                       1/512                   1/512
+
+                                  M
+
+                                  T
+                                                          1/5957
+
+                                                          1/256
+                                                                                  1/5957
+
+                                                                                  1/256
+                                                                                                                               10.
+
+                                                                                                                               Action instruction.
+                                                                                                             PLC PROGRAMMING
+                                  C                       1/256                   1/256
+
+                                  R                       1/559                   1/559
+
+     The marks can be M1/2047, M4000/4127, M4500/4563, M4700/4955 or M5000/5957 and registers
+     R1/559
+
+     When deleting a group of I, O, M or R, the PLC sets them to "0".
+
+     If a group of timers is erased this is the equivalent of Resetting them and if a group of counters is
+     erased this is similar to making a preset with a value 0 for them.
+
+     This action is especially handy when executed in the first cycle module (CY1) in order to set the
+     desired resources to their initial work conditions (states).
+
+     Examples:
+          I12 = ERA O5 12
+             If input I12 has a value of "1" the PLC will set to 0 outputs O5 thru O12.
+          I23 = ERA C15 18
+             If input "I23 =1", the PLC presets counters C15 through C18 (both included) to "0".
+
+  = CNCRD, = CNCWR
+
+     Access to the internal CNC variables.
+
+     Used to read (CNCRD) and write (CNCWR) the internal CNC variables. Their programming format
+     is:
+          CNCRD (Variable, Register, Mark)
+          CNCWR (Register, Variable, Mark)
+
+     The CNCRD action loads the contents of the variable into the register and the CNCWR action reads
+     the contents of the register into the variable.
+
+     The internal CNC variables are described in the chapter on ?"CNC-PLC communication".
+
+     The mark is set to "1" at the beginning of the operation and it keeps its value until the end of the
+     operation.
+
+     When requesting information on a nonexistent variable (for example the position of an nonexistent
+     axis), it will show the relevant error message.
+
+     Examples:
+          CNCRD (FEED, R150, M200)
+             Loads into register R150 the feedrate value selected at the CNC by means of function G94.
+          CNCWR (R92, TIMER, M200)
+                                                                                                             CNC 8055
+             It resets the clock enabled by the PLC with the value contained in register R92.
+                                                                                                             CNC 8055i
+
+
+
+                                                                                                                SOFT: V01.6X
+
+
+
+
+                                                                                                                               ·457·
+===== PAGE 457 =====
+
+                                               = PAR
+
+                                                 It analyzes the type of parity of a register.
+
+                                                 Its programming format is:
+
+                                                        PAR                               R1/559                             M1/5957
+
+                                                 If the register being checked has an EVEN parity, this instruction will set the indicated mark to "1"
+                                                 and if its parity is ODD, it will set it to "0".
+
+                                                 Example:
+10.                                                    I15 = PAR R123 M222
+                                                          If I15 = 1 the PLC checks the parity of register R123 and sets M222 = 1 if it is EVEN or M222
+
+
+
+
+                         Action instruction.
+       PLC PROGRAMMING
+                                                          = 0 if it is ODD.
+
+                                               = WRITE, = READ
+
+                                                 Instructions to control communication via RS232. These READ and WRITE instructions may be
+                                                 executed from a periodic execution module (PE).
+
+                                                 = WRITE nBuffer.
+                                                       If the line is not busy, the data of the indicated buffer is sent through the RS232 serial line. If the
+                                                       line is busy, the data is not sent.
+
+                                                 = READ nBuffer.
+                                                       The RS232 serial line remains "listening" and fills up the buffer nBuffer with the data received
+                                                       according to the setting of RCVCTRL. Only one READ instruction may be executed at a time.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·458·
+===== PAGE 458 =====
+
+
+                                                                           11
+  With the data exchange between the CNC and the PLC, it is possible to:
+   • The control of logic inputs and outputs from the CNC by means of an exchange of information
+     between both systems, which is done periodically and by means of specific PLC Marks and
+     Registers.
+   • The transfer from the CNC to the PLC of M, S and T auxiliary functions.
+   • Display screens which have been defined previously by the user, as well as generating
+     messages and errors in the CNC, by means of specific PLC Marks.
+   • Read and modify internal CNC variables from the PLC.
+   • Access all PLC resources from any part-program.
+   • Monitor PLC resources on the CNC screen.
+   • Access to all PLC variables from a computer, via DNC through the RS 232 C serial line.
+
+
+
+
+                                                                                                   CNC 8055
+                                                                                                   CNC 8055i
+
+
+
+                                                                                                    SOFT: V01.6X
+
+
+
+
+                                                                                                       ·459·
+===== PAGE 459 =====
+
+                                                             11.1      Auxiliary M, S, T functions
+
+                                                               MBCD1 (R550)                 MBCD2 (R551)                 MBCD3 (R552)        MBCD4 (R553)
+                                                               MBCD5 (R554)                 MBCD6 (R555)                 MBCD7 (R556)        MBCDP1 (R565)
+                                                               MBCDP2 (R566)                MBCDP3 (R567)                MBCDP4 (R568)       MBCDP5 (R569)
+                                                               MBCDP6 (R570)                MBCDP7 (R571)
+
+                                                                    MBCD* resgisters correspond to the main channel whereas MBCDP registers are for the PLC
+                                                                    channel.
+
+11.                                                                 The CNC tells the PLC by means of these 32 bit registers, the miscellaneous M functions
+                                                                    programmed in the block being executed.
+
+
+
+
+                               Auxiliary M, S, T functions
+       CNC-PLC COMMUNICATION
+                                                                    If there are less than 7 miscellaneous M functions in each block, the CNC will send the information
+                                                                    in the lower-numbered registers, assigning the value $FFFFFFFF to those which are left free.
+                                                                    This way, if a block contains functions M100, M120 and M135, the CNC will transfer the following
+                                                                    information to the PLC:
+                                                                       MBCD1 (R550)             = $100
+                                                                       MBCD2 (R551)             = $120
+                                                                       MBCD3 (R552)             = $135
+                                                                       MBCD4 (R553)             = $FFFFFFFF
+                                                                       MBCD5 (R554)             = $FFFFFFFF
+                                                                       MBCD6 (R555)             = $FFFFFFFF
+                                                                       MBCD7 (R556)             = $FFFFFFFF
+
+                                                                    To know whether a particular M function is programmed in the execution block, use one of the
+                                                                    following methods:
+                                                                    1. Check all MBCD registers one by one until the specific "M" function is found or until one of them
+                                                                       contains the $FFFFFFFF value.
+                                                                    2. Use the "MBCD*" format which permits checking all MBCD registers at the same time.
+
+                                                                        Example:
+                                                                           CPS MBCD* EQ $30 = ...
+                                                                           It returns a "1" if it detects an M30, and a "0" if otherwise.
+
+
+                                                                    The miscellaneous M functions can be executed at the beginning or end of the block, according to
+                                                                    how these are set in the miscellaneous M function table.
+
+                                                                    Besides, this table will indicate whether the CNC must wait, or not, for the general logic input
+                                                                    AUXEND to consider the execution of the corresponding M as having been completed
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·460·

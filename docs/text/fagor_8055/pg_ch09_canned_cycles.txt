@@ -1,0 +1,3284 @@
+===== PAGE 144 =====
+
+9.2          Influence zone of a canned cycle
+
+        Once a canned cycle has been defined it remains active, and all blocks programmed after this block
+        are under its influence while it is not cancelled.
+
+        In other words, every time a block is executed in which some axis movement has been programmed,
+        the CNC will carry out (following the programmed movement) the machining operation which
+        corresponds to the active canned cycle.
+
+        If, in a movement block within the area of influence of a canned cycle, the number of times a block
+        is executed (repetitions) "N" is programmed at the end of the block, the CNC repeats the
+        programmed positioning and the machining operation corresponding to the canned cycle the
+        indicated number of times.
+                                                                                                                               9.
+
+
+                                                                                                                               Influence zone of a canned cycle
+                                                                                                               CANNED CYCLES
+        If a number of repetitions (times) "N0" is programmed, the machining operation corresponding to
+        the canned cycle will not be performed. The CNC will only carry out the programmed movement.
+
+        If, within the area of influence of a canned cycle, there is a block which does not contain any
+        movement, the machining operation corresponding to the defined canned cycle will not be
+        performed, except in the calling block.
+
+            G81...                Definition and execution of the canned cycle (drilling).
+
+            G90 G1 X100           The X axis moves to X100, where the hole is to be drilled.
+
+            G91 X10 N3            The CNC runs the following operation 3 times.
+                                   • Incremental move to X10.
+                                   • Runs the cycle defined above.
+
+            G91 X20 N0            Incremental move only to X20 (no drilling).
+
+
+
+
+                                                                                                              CNC 8055
+                                                                                                              CNC 8055i
+
+
+
+                                                                                                              ·M· & ·EN· MODELS
+                                                                                                                SOFT: V01.6X
+
+
+
+
+                                                                                                                               ·145·
+===== PAGE 145 =====
+
+                                                           9.2.1      G79. Modification of the canned cycle parameters
+
+                                                                   The CNC allows one or several parameters of an active canned cycle to be modified by programming
+                                                                   the G79 function, without any need for redefining the canned cycle.
+
+                                                                   The CNC will continue to maintain the canned cycle active and will perform the following machinings
+                                                                   of the canned cycle with the updated parameters.
+
+                                                                   The G79 function must be programmed alone in a block, and this block must not contain any more
+                                                                   information.
+
+ 9.                                                                Next 2 programming examples are shown assuming that the work plane is formed by the X and Y
+                                                                   axes, and that the longitudinal axis (perpendicular) is the Z axis:
+
+
+
+
+                        Influence zone of a canned cycle
+        CANNED CYCLES
+
+
+
+
+                                                                       T1
+                                                                       M6
+                                                                       ; Starting point.
+                                                                       G00 G90 X0 Y0 Z60
+                                                                       ; Defines drilling cycle. Drills in A.
+                                                                       G81 G99 G91 X15 Y25 Z-28 I-14
+                                                                       ; Drills in B.
+                                                                       G98 G90 X25
+                                                                       ; Modifies reference plane and machining depth.
+                                                                       G79 Z52
+                                                                       ; Drills in C.
+                                                                       G99 X35
+                                                                       ; Drills in D.
+                                                                       G98 X45
+                                                                       ; Modifies reference plane and machining depth.
+                                                                       G79 Z32
+                                                                       ; Drills in E.
+                                                                       G99 X55
+                                                                       ; Drills in F.
+                                                                       G98 X65
+                                                                       M30
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·146·
+===== PAGE 146 =====
+
+
+
+
+                                                                        9.
+
+
+                                                                        Influence zone of a canned cycle
+                                                        CANNED CYCLES
+              T1
+              M6
+              ; Starting point.
+              G00 G90 X0 Y0 Z60
+              ; Defines drilling cycle. Drills in A.
+              G81 G99 X15 Y25 Z32 I18
+              ; Drills in B.
+              G98 X25
+              ; Modifies reference plane.
+              G79 Z52
+              ; Drills in C.
+              G99 X35
+              ; Drills in D.
+              G98 X45
+              ; Modifies reference plane.
+              G79 Z32
+              ; Drills in E.
+              G99 X55
+              ; Drills in F.
+              G98 X65
+              M30
+
+
+
+
+                                                       CNC 8055
+                                                       CNC 8055i
+
+
+
+                                                       ·M· & ·EN· MODELS
+                                                         SOFT: V01.6X
+
+
+
+
+                                                                        ·147·
+===== PAGE 147 =====
+
+                                                    9.3      Canned cycle cancellation
+
+                                                          A canned cycle can be canceled via :
+                                                           • Function G80, which can be programmed in any block.
+                                                           • After defining a new canned cycle. This will cancel and replace any other that may be active.
+                                                           • After executing M02, M30, or after EMERGENCY or RESET.
+                                                           • When searching home with function G74.
+                                                           • Selecting a new work plane via functions G16, G17, G18, or G19.
+ 9.
+
+
+                        Canned cycle cancellation
+        CANNED CYCLES
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·148·
+===== PAGE 148 =====
+
+9.4          Some general points to consider
+
+          • A canned cycle may be defined anywhere in the program, that is, in the main program as well
+            as in a subroutine.
+          • Calls to subroutines can be made from a block within the influence of a canned cycle without
+            implying the cancellation of the canned cycle.
+          • The execution of a canned cycle will not alter the history of previous "G" functions.
+          • Nor will the spindle turning direction be altered. A canned cycle can be entered with any turning
+            direction (M03 or M04), leaving in the same direction in which the cycle was entered.
+             Should a canned cycle be entered with the spindle stopped, it will start in a clockwise direction
+             (M03), and maintain the same turning direction until the cycle is completed.
+                                                                                                                                  9.
+
+
+                                                                                                                                  Some general points to consider
+                                                                                                                  CANNED CYCLES
+          • Should it be required to apply a scaling factor when working with canned cycles, it is advisable
+            that this scale factor be common to all the axes involved.
+          • The execution of a canned cycle cancels radius compensation (G41 and G42). It is equivalent
+            to G40.
+          • If tool length compensation (G43) is to be used, this function must be programmed in the same
+            block or in the one before the definition of the canned cycle.
+             The CNC applies the tool length compensation when the longitudinal (perpendicular) axis starts
+             moving. Therefore, it is recommended to position the tool outside the canned cycle area when
+             defining function G43 for the canned cycle.
+          • The execution of any canned cycle will alter the global parameter P299.
+
+
+
+
+                                                                                                                 CNC 8055
+                                                                                                                 CNC 8055i
+
+
+
+                                                                                                                 ·M· & ·EN· MODELS
+                                                                                                                   SOFT: V01.6X
+
+
+
+
+                                                                                                                                  ·149·
+===== PAGE 149 =====
+
+                                                  9.5      Machining canned cycles
+
+                                                        In all machining cycles there are three coordinates along the longitudinal axis to the work plane
+                                                        which, due to their importance, are discussed below:
+                                                         • Initial plane coordinate. This coordinate is given by the position which the tool occupies with
+                                                           respect to machine zero when the cycle is activated.
+                                                         • Coordinate of the reference plane. This is programmed in the cycle definition block and
+                                                           represents an approach coordinate to the part. It can be programmed in absolute coordinates
+                                                           or in incremental, in which case it will be referred to the initial plane.
+
+ 9.                                                      • Machining depth coordinate. This is programmed in the cycle definition block. It can be
+                                                           programmed in absolute coordinates or in incremental coordinates, in which case it will be
+                                                           referred to the reference plane.
+
+
+
+
+                        Machining canned cycles
+        CANNED CYCLES
+                                                        There are two functions which allow to select the type of withdrawal of the longitudinal axis after
+                                                        machining.
+                                                         • G98: Selects the withdrawal of the tool as far as the initial plane, once the indicated machining
+                                                           has been done.
+                                                         • G99: Selects the withdrawal of the tool as far as the reference plane, once the indicated
+                                                           machining has been done.
+
+                                                        These functions can be used both in the cycle definition block and the blocks which are under the
+                                                        influence of the canned cycle. The initial plane will always be the coordinate which the longitudinal
+                                                        axis had when the cycle was defined.
+
+                                                        The structure of a canned cycle definition block is as follows:
+
+                                                             G**            Machining point                 Parameters         FSTDM               N****
+
+                                                        It is possible to program the starting point in the canned cycle definition block (except the longitudinal
+                                                        axis), both in polar coordinates and in Cartesian coordinates.
+
+                                                        After defining the point at which it is required to carry out the canned cycle (optional), the functions
+                                                        and parameters corresponding to the canned cycle will be defined, and afterwards, if required, the
+                                                        complementary functions F S T D M are programmed.
+
+                                                        When programming, at the end of the block, the number of times a block is to be executed "N", the
+                                                        CNC performs the programmed move and the machining operation corresponding to the active
+                                                        canned cycle the indicated number of times.
+
+                                                        If "N0" is programmed, it will not execute the machining operation corresponding to the canned cycle.
+                                                        The CNC will only carry out the programmed movement.
+
+                                                        The general operation for all the cycles is as follows:
+                                                        1. If the spindle was previously running, it maintains the turning direction. If it was not in movement,
+                                                           it will start by turning clockwise (M03).
+                                                        2. Positioning (if programmed) at the starting point for the programmed cycle.
+                                                        3. Rapid movement of the longitudinal axis from the initial plane to the reference plane.
+                                                        4. Execution of the programmed machining cycle.
+                                                        5. Rapid withdrawal of the longitudinal axis to the initial plane or reference plane, depending on
+                                                           whether G98 or G99 has been programmed.
+                                                           The explanation of each cycle assumes that the work plane is formed by the X and Y axes, and
+                                                           that the longitudinal axis (perpendicular) is the Z axis:
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·150·
+===== PAGE 150 =====
+
+        Programming in other planes
+
+        The programming format is always the same, it does not depend on the work plane. Parameters
+        XY indicate the coordinate in the work plane (X = abscissa, Y = ordinate) and the penetration along
+        the longitudinal axis.
+
+        The following examples show how to drill in X and Y in both directions.
+
+        Function G81 defines the drilling canned cycle. It is defined with parameters:
+             X
+             Y
+                     Coordinate of the point to be machined along the abscissa axis.
+                     Coordinate of the point to be machined along the ordinate axis.                                           9.
+             I       drilling depth.
+
+
+
+
+                                                                                                                               Machining canned cycles
+                                                                                                               CANNED CYCLES
+             K       dwell at the bottom.
+
+        In the following examples, the part surface has a 0 coordinate, the holes are 8 mm deep and the
+        reference coordinate is 2 mm above the surface.
+
+        Example 1:
+
+
+                                                                   G19
+                                                                   G1 X25 F1000 S1000 M3
+                                                                   G81 X30 Y20 Z2 I-8 K1
+
+
+
+
+        Example 2:
+
+
+                                                                   G19
+                                                                   G1 X-25 F1000 S1000 M3
+                                                                   G81 X25 Y15 Z-2 I8 K1
+
+
+
+
+        Example 3:
+
+
+                                                                   G18
+                                                                   G1 Y25 F1000 S1000 M3
+                                                                   G81 X30 Y10 Z2 I-8 K1
+
+                                                                                                              CNC 8055
+                                                                                                              CNC 8055i
+
+
+
+                                                                                                              ·M· & ·EN· MODELS
+                                                                                                                SOFT: V01.6X
+
+
+
+
+                                                                                                                               ·151·
+===== PAGE 151 =====
+
+                                                  Example 4:
+
+
+                                                               G18
+                                                               G1 Y-25 F1000 S1000 M3
+                                                               G81 X15 Y60 Z-2 I8 K1
+
+
+
+
+ 9.
+
+
+                        Machining canned cycles
+        CANNED CYCLES
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·152·
+===== PAGE 152 =====
+
+9.6          G69. Drilling canned cycle with variable peck
+
+        This cycle makes successive drilling steps until the final coordinate is reached. The tool withdraws
+        a fixed amount after each drilling operation, it being possible to select that every J drillings it
+        withdraws to the reference plane. A dwell can also be programmed after every drilling.
+
+        Working in Cartesian coordinates, the basic structure of the block is as follows:
+                 G69 G98/G99 X Y Z I B C D H J K L R
+
+
+
+                                                                                                                                     9.
+
+
+
+
+                                                                                                                                     G69. Drilling canned cycle with variable peck
+                                                                                                                     CANNED CYCLES
+
+
+
+
+    [ G98/G99 ] Withdrawal plane
+        G98      The tool withdraws to the Initial Plane, once the hole has been drilled.
+        G99      The tool withdraws to the Reference Plane, once the hole has been drilled.
+
+    [ X/Y±5.5 ] Machining coordinates
+
+        These are optional and define the movement of the axes of the main plane to position the tool at
+        the machining point.
+
+        This point can be programmed in Cartesian coordinates or in polar coordinates, and the coordinates
+        may be absolute or incremental, according to whether the machine is operating in G90 or G91.
+
+    [ Z±5.5 ] Reference plane
+        Defines the reference plane coordinate. It can be programmed in absolute coordinates or
+        incremental coordinates, in which case it will be referred to the initial plane.
+
+        If not programmed, it assumes as reference plane the current position of the tool.
+
+    [ I±5.5 ] Drilling depth.
+
+        Defines the total drilling depth. It can be programmed in absolute coordinates or incremental
+        coordinates and in this case will be referred to the part surface.
+
+    [ B5.5 ] Drilling peck (step)
+
+        Defines the drilling step in the axis longitudinal to the main plane.
+
+    [ C5.5 ] Approach to the previous drilling
+
+        Defines the approach distance the longitudinal axis will move in rapid (G00) from the previous drilling     CNC 8055
+        step to start the next drilling step.                                                                       CNC 8055i
+        If not programmed, a value of 1 mm is assumed. If programmed with a 0 value, the CNC will display
+        the corresponding error message.
+
+    [ D5.5 ] Reference plane                                                                                        ·M· & ·EN· MODELS
+                                                                                                                      SOFT: V01.6X
+        Defines the distance between the reference plane and the surface of the part where the drilling is
+        to be done.
+
+        In the first drilling, this amount will be added to "B" drilling step. If not programmed, a value of 0 is
+        assumed.
+
+                                                                                                                                     ·153·
+===== PAGE 153 =====
+
+                                                                        [ H±5.5 ] Withdrawal after drilling
+
+                                                                           Distance or coordinate the longitudinal axis returns to, in rapid (G00), after each drilling step.
+
+                                                                           "J" other than 0 means the distance and "J=0" indicates the relief coordinate or absolute coordinate
+                                                                           it withdraws to.
+
+                                                                           If not programmed, the longitudinal axis returns to the reference plane.
+
+                                                                        [ J4 ] Drilling passes to withdraw to the starting plane
+
+                                                                           Defines after how many drilling pecks the tool returns to the reference plane in G00. A value between
+ 9.                                                                        0 and 9999 may be programmed.
+
+                                                                           When not programmed or programmed with a "0" value, it returns to the position indicated by H (relief
+
+
+
+
+                        G69. Drilling canned cycle with variable peck
+        CANNED CYCLES
+                                                                           position) after each drilling peck.
+
+
+
+
+                                                                            • With "J" greater than 1, after each peck, the tool returns the distance indicated by "H" and every
+                                                                              "J" pecks to the reference plane (RP).
+                                                                            • With J1, it will return to the reference plane (RP) after each peck .
+                                                                            • With J0, it will return to the relief position indicated by H.
+
+                                                                        [ K5 ] Dwell
+
+                                                                           Defines the dwell, in hundredths of a second, after each drilling peck until the withdrawal begins.
+                                                                           If not programmed, the CNC will take the value of "K0".
+
+                                                                        [ L5.5 ] Minimum drilling peck (step)
+
+                                                                           It defines the minimum value for the drilling peck. This paramater is used with "R" values other than
+                                                                           1. If not programmed or programmed with a 0 value, it assumes 1 mm.
+
+                                                                        [ R5.5 ] Reduction factor for the drilling pecks.
+
+                                                                           Factor that reduces the drilling peck (step) "B". If it is not programmed or is programmed with a value
+                                                                           of "0", it assumes a value of "1".
+
+                                                                           If R =1, all the drilling pecks will be the same (the programmed "B" value).
+
+                                                                           If R is other than 1, the first drilling peck will be "B", the second one "R B", The third one "R (RB)"
+                                                                           and so on. In other words, from the second peck on, the new peck will be the product of the R factor
+                                                                           times the previous peck.
+
+                                                                           If R is selected with a value other than 1, the CNC will not allow smaller steps than that programmed
+CNC 8055                                                                   in L.
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·154·
+===== PAGE 154 =====
+
+9.6.1        Basic operation
+
+         1. If the spindle was previously running, it maintains the turning direction. If it was not in movement,
+            it will start by turning clockwise (M03).
+         2. Rapid movement of the longitudinal axis from the initial plane to the reference plane.
+
+
+
+
+                                                                                                                                     9.
+
+
+
+
+                                                                                                                                     G69. Drilling canned cycle with variable peck
+                                                                                                                     CANNED CYCLES
+
+
+
+
+         3. First drilling operation. The drilling axis moves in G01 to the programmed incremental depth "B
+            + D".
+         4. Drilling loop. The following steps will be repeated until the programmed machining depth "I" is
+            reached.
+             ·1· Dwell K, in hundredths of a second, if it has been programmed.
+             ·2· Withdrawal of the longitudinal axis in rapid (G00) as far as the reference plane, if the number
+                 of drillings programmed in J were made, otherwise it withdraws the distance programmed
+                 in "H".
+             ·3· Rapid approach (G00) of the longitudinal axis to a "C" distance from the next peck.
+             ·4· New drilling step. G1 move of the longitudinal axis to the next incremental depth "B and R".
+                 This movement will be carried out either in G07 or G50 depending on the value assigned             CNC 8055
+                 to the longitudinal axis "INPOSW2(P51)"                                                            CNC 8055i
+                 If P51=0, in G7 (square corner). If P51=1, in G50 (controlled round corner).
+         5. Dwell K, in hundredths of a second, if it has been programmed.
+         6. Withdrawal at rapid feedrate (G00) of the longitudinal axis to the initial or reference plane,
+                                                                                                                    ·M· & ·EN· MODELS
+            depending on whether G98 or G99 has been programmed.                                                      SOFT: V01.6X
+
+
+
+
+                                                                                                                                     ·155·
+===== PAGE 155 =====
+
+                                                                        The first drilling penetration is done in G07 or G50 depending on the value assigned to the parameter
+                                                                        of the longitudinal axis "INPOSW2 (P51)" and to parameter "INPOSW1 (P19)". This is important
+                                                                        to join a drilling operation with another one in multiple drilling so the tool path is faster and smoother.
+                                                                           If INPOSW2 < INPOSW1 in G07 (square corner).
+                                                                           If INPOSW2 >= INPOSW1 in G50 (controlled round corner).
+
+                                                                        If a scaling factor is applied to this cycle, it should be borne in mind that this scaling factor will only
+                                                                        affect the reference plane coordinates and drilling depth.
+
+                                                                        Therefore, and due to the fact that parameter "D" is not affected by the scaling factor, the surface
+
+ 9.                                                                     coordinate of the part will not be proportional to the programmed cycle.
+
+                                                                            Programming example assuming that the work plane is formed by the X and Y axes, that the
+
+
+
+
+                        G69. Drilling canned cycle with variable peck
+        CANNED CYCLES
+                                                                            Z axis is the longitudinal axis and that the starting point is X0 Y0 Z0:
+                                                                            ; Tool selection.
+                                                                            T1
+                                                                            M6
+                                                                            ; Starting point.
+                                                                            G0 G90 X0 Y0 Z0
+                                                                            ; Canned cycle definition.
+                                                                            G69 G98 G91 X100 Y25 Z-98 I-52 B12 C2 D2 H5 J2 K150 L3 R0.8 F100 S500 M8
+                                                                            ; Cancels the canned cycle.
+                                                                            G80
+                                                                            ; Positioning.
+                                                                            G90 X0 Y0
+                                                                            ; End of program.
+                                                                            M30
+
+
+
+                                                                        Tool withdrawal
+
+                                                                        While machining, the CNC lets withdraw the tool to the starting plane stopping the spindle when
+                                                                        the tool reaches the starting plane.
+
+                                                                        Activating PLC mark RETRACYC (M5065) stops the main axis and the tool is withdrawn without
+                                                                        stopping the spindle. The spindle stops when the tool is retracted, once it reaches the starting plane.
+
+
+
+                                                                        Options after tool withdrawal
+
+                                                                        Once the tool has been retracted, the user will have the following options:
+                                                                         • Finish the hole.
+                                                                         • Go to the next hole.
+                                                                         • Go into tool inspection.
+
+                                                                        After this, the CNC will display the following message:
+                                                                           "To end the cycle, press START to skip to the next SKIPCYCL".
+
+                                                                        Finish the hole:
+                                                                        To finish the hole, press the [START] key.
+
+                                                                        It goes down in G0 with spindle running to 1 mm before the coordinate where the hole stopped. From
+CNC 8055                                                                then on, it continues at the F and S programmed in the cycle.
+CNC 8055i
+                                                                        Go to the next hole:
+                                                                        To go to the next hole, activate the PLC mark SKIPCYCL.
+
+                                                                        The CNC will display the following message:
+·M· & ·EN· MODELS
+  SOFT: V01.6X                                                             "Press [START] to continue".
+
+                                                                        Pressing the [START] key, the CNC considers the cycle to be finished and continues with the next
+                                                                        block.
+
+
+
+
+     ·156·
+===== PAGE 156 =====
+
+        Go into tool inspection:
+        If you don't wish to finish the hole nor go to the next hole, it is possible to go into a standard tool
+        inspection.
+
+        In this case, a block must be selected and a standard repositioning must be done before resuming
+        the execution of the program.
+
+        After inspecting the tool, once repositioning is done, the following choices will be offered:
+          • Resume the interrupted cycle.
+          • Skip the interrupted cycle and resume at the next block.
+                                                                                                                                   9.
+
+
+
+
+                                                                                                                                   G69. Drilling canned cycle with variable peck
+                                                                                                                   CANNED CYCLES
+
+
+
+
+                                                                                                                  CNC 8055
+                                                                                                                  CNC 8055i
+
+
+
+                                                                                                                  ·M· & ·EN· MODELS
+                                                                                                                    SOFT: V01.6X
+
+
+
+
+                                                                                                                                   ·157·
+===== PAGE 157 =====
+
+                                                     9.7      G81. Drilling canned cycle
+
+                                                           This cycle drills at the point indicated until the final programmed coordinate is reached. It is possible
+                                                           to program a dwell at the bottom of the drill hole.
+
+                                                           Working in Cartesian coordinates, the basic structure of the block is as follows:
+                                                                  G81 G98/G99 X Y Z I K
+
+
+
+
+ 9.
+
+
+                        G81. Drilling canned cycle
+        CANNED CYCLES
+
+
+
+
+                                                       [ G98/G99 ] Withdrawal plane
+                                                           G98    The tool withdraws to the Initial Plane, once the hole has been drilled.
+                                                           G99    The tool withdraws to the Reference Plane, once the hole has been drilled.
+
+                                                       [ X/Y±5.5 ] Machining coordinates
+
+                                                           These are optional and define the movement of the axes of the main plane to position the tool at
+                                                           the machining point.
+
+                                                           This point can be programmed in Cartesian coordinates or in polar coordinates, and the coordinates
+                                                           may be absolute or incremental, according to whether the machine is operating in G90 or G91.
+
+                                                       [ Z±5.5 ] Reference plane
+
+                                                           Defines the reference plane coordinate. It can be programmed in absolute coordinates or
+                                                           incremental coordinates, in which case it will be referred to the initial plane.
+                                                           If not programmed, it assumes as reference plane the current position of the tool.
+
+                                                       [ I±5.5 ] Drilling depth.
+
+                                                           Defines the total drilling depth. It can be programmed in absolute coordinates or incremental
+                                                           coordinates and in this case will be referred to the reference plane.
+
+                                                       [ K5 ] Dwell
+
+                                                           Defines the dwell, in hundredths of a second, after each drilling peck until the withdrawal begins.
+                                                           If not programmed, the CNC will take the value of "K0".
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·158·
+===== PAGE 158 =====
+
+9.7.1        Basic operation
+
+         1. If the spindle was previously running, it maintains the turning direction. If it was not in movement,
+            it will start by turning clockwise (M03).
+         2. Rapid movement of the longitudinal axis from the initial plane to the reference plane.
+         3. Drill the hole. Movement of the longitudinal axis at work feedrate, to the bottom of the hole
+            programmed in "I".
+         4. Dwell K, in hundredths of a second, if it has been programmed.
+         5. Withdrawal at rapid feedrate (G00) of the longitudinal axis to the initial or reference plane,
+            depending on whether G98 or G99 has been programmed.                                                                     9.
+        Programming example assuming that the work plane is formed by the X and Y axes, that the Z axis
+
+
+
+
+                                                                                                                                     G81. Drilling canned cycle
+                                                                                                                     CANNED CYCLES
+        is the longitudinal axis and that the starting point is X0 Y0 Z0:
+
+
+
+
+              ; Tool selection.
+              T1
+              M6
+              ; Starting point.
+              G0 G90 X0 Y0 Z0
+              ; Canned cycle definition.
+              G81 G98 G00 G91 X250 Y350 Z-98 I-22 F100 S500
+              ; Polar coordinate origin.
+              G93 I250 J250
+              ; Turn and canned cycle, 3 times
+              Q-45 N3
+              ; Cancels the canned cycle.
+              G80
+              ; Positioning.
+              G90 X0 Y0
+              ; End of program.
+              M30
+                                                                                                                    CNC 8055
+                                                                                                                    CNC 8055i
+
+
+
+                                                                                                                    ·M· & ·EN· MODELS
+                                                                                                                      SOFT: V01.6X
+
+
+
+
+                                                                                                                                     ·159·
+===== PAGE 159 =====
+
+                                                     Tool withdrawal
+
+                                                     While machining, the CNC lets withdraw the tool to the starting plane stopping the spindle when
+                                                     the tool reaches the starting plane.
+
+                                                     Activating PLC mark RETRACYC (M5065) stops the main axis and the tool is withdrawn without
+                                                     stopping the spindle. The spindle stops when the tool is retracted, once it reaches the starting plane.
+
+
+
+
+ 9.                                                  Options after tool withdrawal
+
+
+
+
+                        G81. Drilling canned cycle
+        CANNED CYCLES
+                                                     Once the tool has been retracted, the user will have the following options:
+                                                      • Finish the hole.
+                                                      • Go to the next hole.
+                                                      • Go into tool inspection.
+
+                                                     After this, the CNC will display the following message:
+                                                        "To end the cycle, press START to skip to the next SKIPCYCL".
+
+                                                     Finish the hole:
+                                                     To finish the hole, press the [START] key.
+
+                                                     It goes down in G0 with spindle running to 1 mm before the coordinate where the hole stopped. From
+                                                     then on, it continues at the F and S programmed in the cycle.
+
+                                                     Go to the next hole:
+                                                     To go to the next hole, activate the PLC mark SKIPCYCL.
+
+                                                     The CNC will display the following message:
+                                                        "Press [START] to continue".
+
+                                                     Pressing the [START] key, the CNC considers the cycle to be finished and continues with the next
+                                                     block.
+
+                                                     Go into tool inspection
+                                                     If you don't wish to finish the hole nor go to the next hole, it is possible to go into a standard tool
+                                                     inspection.
+                                                     In this case, a block must be selected and a standard repositioning must be done before resuming
+                                                     the execution of the program.
+
+                                                     After inspecting the tool, once repositioning is done, the following choices will be offered:
+                                                      • Resume the interrupted cycle.
+                                                      • Skip the interrupted cycle and resume at the next block.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·160·
+===== PAGE 160 =====
+
+9.8          G82. Drilling canned cycle with dwell
+
+        This cycle drills at the point indicated until the final programmed coordinate is reached. Then it
+        executes a dwell at the bottom of the drill hole.
+
+        Working in Cartesian coordinates, the basic structure of the block is as follows:
+                 G82 G98/G99 X Y Z I K
+
+
+
+
+                                                                                                                                 9.
+
+
+
+                                                                                                                                 G82. Drilling canned cycle with dwell
+                                                                                                                 CANNED CYCLES
+
+
+
+
+    [ G98/G99 ] Withdrawal plane
+        G98      The tool withdraws to the Initial Plane, once the hole has been drilled.
+        G99      The tool withdraws to the Reference Plane, once the hole has been drilled.
+
+    [ X/Y±5.5 ] Machining coordinates
+
+        These are optional and define the movement of the axes of the main plane to position the tool at
+        the machining point.
+
+        This point can be programmed in Cartesian coordinates or in polar coordinates, and the coordinates
+        may be absolute or incremental, according to whether the machine is operating in G90 or G91.
+
+    [ Z±5.5 ] Reference plane
+        Defines the reference plane coordinate. It can be programmed in absolute coordinates or
+        incremental coordinates, in which case it will be referred to the initial plane.
+
+        If not programmed, it assumes as reference plane the current position of the tool.
+
+    [ I±5.5 ] Drilling depth.
+
+        Defines the total drilling depth. It can be programmed in absolute coordinates or incremental
+        coordinates and in this case will be referred to the reference plane.
+
+    [ K5 ] Dwell
+
+        Defines the dwell, in hundredths of a second, after each drilling until the withdrawal begins. Should
+        this not be programmed, the CNC will take a value of K0.
+
+
+
+
+                                                                                                                CNC 8055
+                                                                                                                CNC 8055i
+
+
+
+                                                                                                                ·M· & ·EN· MODELS
+                                                                                                                  SOFT: V01.6X
+
+
+
+
+                                                                                                                                 ·161·
+===== PAGE 161 =====
+
+                                                                9.8.1      Basic operation
+
+                                                                        1. If the spindle was previously running, it maintains the turning direction. If it was not in movement,
+                                                                           it will start by turning clockwise (M03).
+                                                                        2. Rapid movement of the longitudinal axis from the initial plane to the reference plane.
+                                                                        3. Drill the hole. Movement of the longitudinal axis at work feedrate, to the bottom of the hole
+                                                                           programmed in "I".
+                                                                        4. Dwell time K in hundredths of a second.
+
+
+ 9.                                                                     5. Withdrawal at rapid feedrate (G00) of the longitudinal axis to the initial or reference plane,
+                                                                           depending on whether G98 or G99 has been programmed.
+
+                                                                        Programming example assuming that the work plane is formed by the X and Y axes, that the Z axis
+
+
+
+
+                        G82. Drilling canned cycle with dwell
+        CANNED CYCLES
+                                                                        is the longitudinal axis and that the starting point is X0 Y0 Z0:
+
+
+
+
+                                                                            ; Tool selection.
+                                                                            T1
+                                                                            M6
+                                                                            ; Starting point.
+                                                                            G0 G90 X0 Y0 Z0
+                                                                            ; Canned cycle definition. Three machining operations are carried out.
+                                                                            G82 G99 G91 X50 Y50 Z-98 I-22 K15 F100 S500 N3
+                                                                            ; Positioning and canned cycle
+                                                                            G98 G90 G00 X500 Y500
+                                                                            ; Cancels the canned cycle.
+                                                                            G80
+                                                                            ; Positioning.
+                                                                            G90 X0 Y0
+                                                                            ; End of program.
+                                                                            M30
+
+CNC 8055
+CNC 8055i                                                               Tool withdrawal
+
+                                                                        While machining, the CNC lets withdraw the tool to the starting plane stopping the spindle when
+                                                                        the tool reaches the starting plane.
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+                                                                        Activating PLC mark RETRACYC (M5065) stops the main axis and the tool is withdrawn without
+                                                                        stopping the spindle. The spindle stops when the tool is retracted, once it reaches the starting plane.
+
+
+
+
+     ·162·
+===== PAGE 162 =====
+
+        Options after tool withdrawal
+
+        Once the tool has been retracted, the user will have the following options:
+          • Finish the hole.
+          • Go to the next hole.
+          • Go into tool inspection.
+
+        After this, the CNC will display the following message:
+             "To end the cycle, press START to skip to the next SKIPCYCL".
+
+        Finish the hole:
+                                                                                                                                   9.
+
+
+
+                                                                                                                                   G82. Drilling canned cycle with dwell
+                                                                                                                   CANNED CYCLES
+        To finish the hole, press the [START] key.
+
+        It goes down in G0 with spindle running to 1 mm before the coordinate where the hole stopped. From
+        then on, it continues at the F and S programmed in the cycle.
+
+        Go to the next hole:
+        To go to the next hole, activate the PLC mark SKIPCYCL.
+
+        The CNC will display the following message:
+             "Press [START] to continue".
+
+        Pressing the [START] key, the CNC considers the cycle to be finished and continues with the next
+        block.
+
+        Go into tool inspection
+        If you don't wish to finish the hole nor go to the next hole, it is possible to go into a standard tool
+        inspection.
+
+        In this case, a block must be selected and a standard repositioning must be done before resuming
+        the execution of the program.
+
+        After inspecting the tool, once repositioning is done, the following choices will be offered:
+          • Resume the interrupted cycle.
+          • Skip the interrupted cycle and resume at the next block.
+
+
+
+
+                                                                                                                  CNC 8055
+                                                                                                                  CNC 8055i
+
+
+
+                                                                                                                  ·M· & ·EN· MODELS
+                                                                                                                    SOFT: V01.6X
+
+
+
+
+                                                                                                                                   ·163·
+===== PAGE 163 =====
+
+                                                                                  9.9      G83. Deep-hole drilling canned cycle with constant peck
+
+                                                                                        This cycle makes successive drilling steps until the final coordinate is reached.
+
+                                                                                        The tool withdraws as far as the reference plane after each drilling step.
+
+                                                                                        Working in Cartesian coordinates, the basic structure of the block is as follows:
+                                                                                               G83 G98/G99 X Y Z I J
+
+
+
+
+ 9.
+
+        CANNED CYCLES
+
+
+
+
+                        G83. Deep-hole drilling canned cycle with constant peck
+                                                                                    [ G98/G99 ] Withdrawal plane
+                                                                                        G98    The tool withdraws to the Initial Plane, once the hole has been drilled.
+                                                                                        G99    The tool withdraws to the Reference Plane, once the hole has been drilled.
+
+                                                                                    [ X/Y±5.5 ] Machining coordinates
+
+                                                                                        These are optional and define the movement of the axes of the main plane to position the tool at
+                                                                                        the machining point.
+
+                                                                                        This point can be programmed in Cartesian coordinates or in polar coordinates, and the coordinates
+                                                                                        may be absolute or incremental, according to whether the machine is operating in G90 or G91.
+
+                                                                                    [ Z±5.5 ] Reference plane
+
+                                                                                        Defines the reference plane coordinate. It can be programmed in absolute coordinates or
+                                                                                        incremental coordinates, in which case it will be referred to the initial plane.
+
+                                                                                        If not programmed, it assumes as reference plane the current position of the tool.
+
+                                                                                    [ I±5.5 ] Depth of each drilling peck
+
+                                                                                        Defines the value of each drilling step according to the axis longitudinal to the main plane.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·164·
+===== PAGE 164 =====
+
+    [ J4 ] Drilling passes to withdraw to the starting plane
+
+        Defines the number of steps which the drill is to make. A value between 1 and 9999 may be
+        programmed.
+
+
+
+
+                                                                                                                     9.
+
+                                                                                                     CANNED CYCLES
+
+
+
+
+                                                                                                                     G83. Deep-hole drilling canned cycle with constant peck
+
+
+
+
+                                                                                                    CNC 8055
+                                                                                                    CNC 8055i
+
+
+
+                                                                                                    ·M· & ·EN· MODELS
+                                                                                                      SOFT: V01.6X
+
+
+
+
+                                                                                                                     ·165·
+===== PAGE 165 =====
+
+                                                                                  9.9.1      Basic operation
+
+                                                                                          1. If the spindle was previously running, it maintains the turning direction. If it was not in movement,
+                                                                                             it will start by turning clockwise (M03).
+                                                                                          2. Rapid movement of the longitudinal axis from the initial plane to the reference plane.
+                                                                                          3. First drilling operation. The longitudinal axis moves in G01 to the programmed incremental depth
+                                                                                             "I".
+                                                                                          4. Drilling loop. The following steps will be repeated "J-1" times as in the previous step the first
+                                                                                             programmed drilling was done.
+ 9.                                                                                           ·1· Withdrawal of the longitudinal axis in rapid (G00) to the reference plane.
+                                                                                              ·2· Longitudinal axis approach in rapid (G00):
+
+
+
+
+        CANNED CYCLES
+
+
+
+
+                        G83. Deep-hole drilling canned cycle with constant peck
+                                                                                                 If INPOSW2 < INPOSW1, down to 1mm off the previous drilling peck.
+                                                                                                 If not, down to twice the value of INPOSW2.
+                                                                                              ·3· New drilling step. G01 movement of the longitudinal axis to the incremental depth
+                                                                                                  programmed in "I".
+                                                                                                 If INPOSW2=0 in G7. If not, in G50.
+                                                                                          5. Withdrawal at rapid feedrate (G00) of the longitudinal axis to the initial or reference plane,
+                                                                                             depending on whether G98 or G99 has been programmed.
+
+                                                                                          The first drilling penetration is done in G07 or G50 depending on the value assigned to the parameter
+                                                                                          of the longitudinal axis "INPOSW2 (P51)" and to parameter "INPOSW1 (P19)". This is important
+                                                                                          to join a drilling operation with another one in multiple drilling so the tool path is faster and smoother.
+                                                                                             If INPOSW2 < INPOSW1 in G07 (square corner).
+                                                                                             If INPOSW2 >= INPOSW1 in G50 (controlled round corner).
+
+                                                                                          If a scaling factor is applied to this cycle, drilling will be performed proportional to that programmed,
+                                                                                          with the same step "I" programmed, but varying the number of steps "J".
+
+                                                                                          Programming example assuming that the work plane is formed by the X and Y axes, that the Z axis
+                                                                                          is the longitudinal axis and that the starting point is X0 Y0 Z0:
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·166·
+===== PAGE 166 =====
+
+
+              ; Tool selection.
+              T1
+              M6
+              ; Starting point.
+              G0 G90 X0 Y0 Z0
+              ; Canned cycle definition.
+              G83 G99 X50 Y50 Z-98 I-22 J3 F100 S500 M4
+              ; Positioning and canned cycle
+              G98 G90 G00 X500 Y500
+              ; Cancels the canned cycle.
+              G80
+              ; Positioning.
+                                                                                                                                   9.
+
+                                                                                                                   CANNED CYCLES
+
+
+
+
+                                                                                                                                   G83. Deep-hole drilling canned cycle with constant peck
+              G90 X0 Y0
+              ; End of program.
+              M30
+
+
+
+        Tool withdrawal
+
+        While machining, the CNC lets withdraw the tool to the starting plane stopping the spindle when
+        the tool reaches the starting plane.
+
+        Activating PLC mark RETRACYC (M5065) stops the main axis and the tool is withdrawn without
+        stopping the spindle. The spindle stops when the tool is retracted, once it reaches the starting plane.
+
+
+
+        Options after tool withdrawal
+
+        Once the tool has been retracted, the user will have the following options:
+          • Finish the hole.
+          • Go to the next hole.
+          • Go into tool inspection.
+
+        After this, the CNC will display the following message:
+             "To end the cycle, press START to skip to the next SKIPCYCL".
+
+        Finish the hole:
+        To finish the hole, press the [START] key.
+
+        It goes down in G0 with spindle running to 1 mm before the coordinate where the hole stopped. From
+        then on, it continues at the F and S programmed in the cycle.
+
+        Go to the next hole:
+        To go to the next hole, activate the PLC mark SKIPCYCL.
+
+        The CNC will display the following message:
+             "Press [START] to continue".
+
+        Pressing the [START] key, the CNC considers the cycle to be finished and continues with the next
+        block.
+
+        Go into tool inspection                                                                                   CNC 8055
+        If you don't wish to finish the hole nor go to the next hole, it is possible to go into a standard tool   CNC 8055i
+        inspection.
+
+        In this case, a block must be selected and a standard repositioning must be done before resuming
+        the execution of the program.
+                                                                                                                  ·M· & ·EN· MODELS
+        After inspecting the tool, once repositioning is done, the following choices will be offered:               SOFT: V01.6X
+
+          • Resume the interrupted cycle.
+          • Skip the interrupted cycle and resume at the next block.
+
+
+
+                                                                                                                                   ·167·
+===== PAGE 167 =====
+
+                                                    9.10      G84. Tapping canned cycle
+
+                                                           This cycle taps at the point indicated until the final programmed coordinate is reached. General logic
+                                                           output "TAPPING" (M5517) stays active while executing this cycle.
+
+                                                           Due to the fact that the tapping tool turns in two directions (one when tapping and the other when
+                                                           withdrawing from the thread), by means of the machine parameter of the spindle "SREVM05" it is
+                                                           possible to select whether the change in turning direction is made with the intermediate spindle stop,
+                                                           or directly.
+
+
+ 9.                                                        General machine parameter "STOPAP(P116)" indicates whether general inputs /STOP, /FEEDHOL
+                                                           and /XFERINH are enabled or not while executing function G84.
+
+                                                           It is possible to program a dwell before each reversal of the spindle turning direction, i.e., at the
+
+
+
+
+                        G84. Tapping canned cycle
+        CANNED CYCLES
+                                                           bottom of the thread hole and when returning to the reference plane.
+
+                                                           Using parameters B and H, the threading may be done with relief for chip breakage.
+
+                                                           The tapping with relief is done in successive approaches until the programmed total depth is
+                                                           reached. After every approach, it withdraws for chip relief. In this case, the dwell (K) is only applied
+                                                           on the last pass, not on the relief passes.
+
+                                                           Working in Cartesian coordinates, the basic structure of the block is as follows:
+                                                                  G84 G98/G99 X Y Z I K R J B H
+
+
+
+
+                                                      [ G98/G99 ] Withdrawal plane
+                                                           G98    The tool withdraws to the Initial Plane, once the hole has tapped.
+                                                           G99    The tool withdraws to the Reference Plane, once the hole has tapped.
+
+                                                      [ X/Y±5.5 ] Machining coordinates
+
+                                                           These are optional and define the movement of the axes of the main plane to position the tool at
+                                                           the machining point.
+
+                                                           This point can be programmed in Cartesian coordinates or in polar coordinates, and the coordinates
+                                                           may be absolute or incremental, according to whether the machine is operating in G90 or G91.
+
+                                                      [ Z±5.5 ] Reference plane
+
+                                                           Defines the reference plane coordinate. It can be programmed in absolute coordinates or
+                                                           incremental coordinates, in which case it will be referred to the initial plane.
+CNC 8055
+                                                           If not programmed, it assumes as reference plane the current position of the tool.
+CNC 8055i
+                                                      [ I±5.5 ] Thread depth.
+
+                                                           Defines tapping depth. It can be programmed in absolute coordinates or incremental coordinates
+                                                           and in this case will be referred to the reference plane.
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+                                                      [ K5 ] Dwell
+
+                                                           Defines the dwell, in hundredths of a second, after the tapping until the withdrawal begins. If not
+                                                           programmed, the CNC will take the value of "K0".
+
+
+
+     ·168·
+===== PAGE 168 =====
+
+    [ R ] Type of tapping
+
+        Defines the type of tapping to be carried out.
+             R0      Normal tapping.
+             R1      Rigid tapping. The CNC stops the spindle with M19 and orients it to begin tapping.
+             R2      Rigid tapping. If the spindle is turning in M3 or M4, the CNC does not stop it nor orient
+                     it to begin tapping. This option does not allow thread repair, even if the part has not been
+                     released because the thread start (entry) will coincide with the one machined earlier.
+
+    [ J5.5 ] Withdrawal feedrate factor
+
+        When rigid tapping, the returning feedrate will be J times the tapping feedrate. When not
+                                                                                                                                     9.
+        programmed or programmed J1, they will both be the same.
+
+
+
+
+                                                                                                                                     G84. Tapping canned cycle
+                                                                                                                     CANNED CYCLES
+        In order to execute a rigid tapping, the spindle must be ready to operate in closed loop; in other words,
+        that it must have a servo drive-motor system with rotary encoder.
+
+        When rigid tapping, the CNC interpolates the movement of the longitudinal axis with the spindle
+        rotation.
+
+    [ B5.5 ] Penetration step during tapping with relief.
+
+        It is optional and sets the penetration step during tapping with relief. This parameter is ignored when
+        programming R=0 or R=2. Tapping with relief is only possible when programming R=1.
+
+        When not programmed, tapping will be done in a single pass. When programmed with a 0 value,
+        it issues the corresponding error.
+
+    [ H5.5 ] Withdrawal distance after each penetration step.
+
+        This withdrawal will be done at a speed that will take into consideration the factor programmed in
+        J. This parameter is ignored when programming R=0 or R=2, or if parameter B has not been
+        programmed.
+
+        If not programmed or programmed with a 0 value, the withdrawal will be done to the Z reference
+        plane coordinate.
+
+
+
+
+                                                                                                                    CNC 8055
+                                                                                                                    CNC 8055i
+
+
+
+                                                                                                                    ·M· & ·EN· MODELS
+                                                                                                                      SOFT: V01.6X
+
+
+
+
+                                                                                                                                     ·169·
+===== PAGE 169 =====
+
+                                                    9.10.1      Basic operation
+
+                                                             1. If the spindle was previously running, it maintains the turning direction. If it was not in movement,
+                                                                it will start by turning clockwise (M03).
+                                                             2. Rapid movement of the longitudinal axis from the initial plane to the reference plane.
+                                                             3. Movement of the longitudinal axis and at the working feedrate, to the bottom of the machined
+                                                                section, producing the threaded hole. The canned cycle will execute this movement and all later
+                                                                movements at 100% of F feedrate and the programmed S speed.
+                                                                If rigid tapping is selected (parameter R=1), the CNC will activate the general logic output
+ 9.                                                             "RIGID" (M5521) to indicate to the PLC that a rigid tapping block is being executed.
+                                                             4. Spindle stop (M05). This will only be performed when the spindle machine parameter
+
+
+
+
+                        G84. Tapping canned cycle
+        CANNED CYCLES
+                                                                "SREVM05" is selected and parameter "K" has a value other than "0"..
+                                                             5. Dwell, if parameter "K" has been programmed.
+                                                             6. Reverse the spindle turning direction.
+                                                             7. Withdrawal, at J times the working feedrate, of the longitudinal axis to the reference plane. Once
+                                                                this coordinate has been reached, the canned cycle will assume the selected FEEDRATE
+                                                                OVERRIDE and the SPINDLE OVERRIDE.
+                                                                If rigid tapping is selected (parameter R=1), the CNC will activate the general logic output
+                                                                "RIGID" (M5521) to indicate to the PLC that a rigid tapping block is being executed.
+                                                             8. Spindle stop (M05). This will only be performed if the spindle machine parameter "SREVM05"
+                                                                is selected.
+                                                             9. Dwell, if parameter "K" has been programmed.
+                                                             10.Reverse the spindle turning direction restoring the initial turning direction.
+                                                             11.Withdrawal, at rapid feedrate (G00), of the longitudinal axis as far as the initial plane if G98 has
+                                                                been programmed.
+
+                                                         Programming example assuming that the work plane is formed by the X and Y axes, that the Z axis
+                                                         is the longitudinal axis and that the starting point is X0 Y0 Z0:
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·170·
+===== PAGE 170 =====
+
+
+              ; Tool selection.
+              T1
+              M6
+              ; Starting point.
+              G0 G90 X0 Y0 Z0
+              ; Canned cycle definition. Three machining operations are carried out.
+              G84 G99 G91 X50 Y50 Z-98 I-22 K150 F350 S500 N3
+              ; Positioning and canned cycle
+              G98 G90 G00 X500 Y500
+              ; Cancels the canned cycle.
+              G80
+              ; Positioning.
+                                                                                                                            9.
+
+
+                                                                                                                            G84. Tapping canned cycle
+                                                                                                            CANNED CYCLES
+              G90 X0 Y0
+              ; End of program.
+              M30
+
+
+
+        Tool withdrawal
+
+        While machining, the CNC lets withdraw the tool to the starting plane stopping the spindle when
+        the tool reaches the starting plane.
+
+        Activating PLC mark RETRACYC (M5065) stops the main axis and the spindle, the tool is withdrawn
+        changing the direction of the axis and spindle while keeping the machining F and S values. This
+        withdrawal will be to the starting plane.
+
+        The stopping and starting sequence of the spindle and the axis when tapping keeps the same
+        synchronism and dwells as during the execution of the canned cycle.
+
+
+
+        Options after tool withdrawal
+
+        Once the tool has been retracted, the user will have the following options:
+          • Finish the hole.
+          • Go to the next hole.
+          • Go into tool inspection.
+
+        After this, the CNC will display the following message:
+             "To end the cycle, press START to skip to the next SKIPCYCL".
+
+        Finish the hole:
+        To finish the hole, press the [START] key.
+
+        The hole is repeated from the starting plane under the same F and S conditions without stopping
+        at the point where it stopped.
+
+        Go to the next hole:
+        To go to the next hole, activate the PLC mark SKIPCYCL.
+
+        The CNC will display the following message:
+             "Press [START] to continue".
+
+        Pressing the [START] key, the CNC considers the cycle to be finished and continues with the next   CNC 8055
+        block.                                                                                             CNC 8055i
+
+
+
+                                                                                                           ·M· & ·EN· MODELS
+                                                                                                             SOFT: V01.6X
+
+
+
+
+                                                                                                                            ·171·
+===== PAGE 171 =====
+
+                                                    Go into tool inspection
+                                                    If you don't wish to finish the hole nor go to the next hole, it is possible to go into a standard tool
+                                                    inspection.
+
+                                                    In this case, a block must be selected and a standard repositioning must be done before resuming
+                                                    the execution of the program.
+
+                                                    After inspecting the tool, once repositioning is done, the following choices will be offered:
+                                                     • Resume the interrupted cycle.
+
+
+ 9.                                                  • Skip the interrupted cycle and resume at the next block.
+
+
+
+
+                        G84. Tapping canned cycle
+        CANNED CYCLES
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·172·
+===== PAGE 172 =====
+
+9.11         G85. Reaming canned cycle
+
+        This cycle reams at the point indicated until the final programmed coordinate is reached.
+
+        It is possible to program a dwell at the bottom of the machined hole.
+
+        Working in Cartesian coordinates, the basic structure of the block is as follows:
+                 G85 G98/G99 X Y Z I K
+
+
+
+
+                                                                                                                               9.
+
+
+                                                                                                                               G85. Reaming canned cycle
+                                                                                                               CANNED CYCLES
+
+
+
+
+    [ G98/G99 ] Withdrawal plane
+        G98      The tool withdraws to the Initial Plane, once the hole has been reamed.
+        G99      The tool withdraws to the Reference Plane, once the hole has been reamed.
+
+    [ X/Y±5.5 ] Machining coordinates
+
+        These are optional and define the movement of the axes of the main plane to position the tool at
+        the machining point.
+
+        This point can be programmed in Cartesian coordinates or in polar coordinates, and the coordinates
+        may be absolute or incremental, according to whether the machine is operating in G90 or G91.
+
+    [ Z±5.5 ] Reference plane
+
+        Defines the reference plane coordinate. It can be programmed in absolute coordinates or
+        incremental coordinates, in which case it will be referred to the initial plane.
+
+        If not programmed, it assumes as reference plane the current position of the tool.
+
+    [ I±5.5 ] Reaming depth.
+
+        Defines reaming depth. It can be programmed in absolute coordinates or incremental coordinates
+        and in this case will be referred to the reference plane.
+
+    [ K5 ] Dwell
+
+        Defines the dwell, in hundredths of a second, after the reaming until the withdrawal begins. If not
+        programmed, the CNC will take the value of "K0".
+
+
+
+
+                                                                                                              CNC 8055
+                                                                                                              CNC 8055i
+
+
+
+                                                                                                              ·M· & ·EN· MODELS
+                                                                                                                SOFT: V01.6X
+
+
+
+
+                                                                                                                               ·173·
+===== PAGE 173 =====
+
+                                                    9.11.1      Basic operation
+
+                                                             1. If the spindle was previously running, it maintains the turning direction. If it was not in movement,
+                                                                it will start by turning clockwise (M03).
+                                                             2. Rapid movement of the longitudinal axis from the initial plane to the reference plane.
+                                                             3. Movement at the working feedrate (G01) of the longitudinal axis to the bottom of the machined
+                                                                hole, and reaming.
+                                                             4. Dwell, if parameter "K" has been programmed.
+
+
+ 9.                                                          5. Withdrawal at working feedrate, of the longitudinal axis as far as the reference plane.
+                                                             6. Withdrawal, at rapid feedrate (G00), of the longitudinal axis as far as the initial plane if G98 has
+                                                                been programmed.
+
+
+
+
+                        G85. Reaming canned cycle
+        CANNED CYCLES
+                                                         Programming example assuming that the work plane is formed by the X and Y axes, that the Z axis
+                                                         is the longitudinal axis and that the starting point is X0 Y0 Z0:
+
+                                                                 ; Tool selection.
+                                                                 T1
+                                                                 M6
+                                                                 ; Starting point.
+                                                                 G0 G90 X0 Y0 Z0
+                                                                 ; Canned cycle definition.
+                                                                 G85 G98 G91 X250 Y350 Z-98 I-22 F100 S500
+                                                                 ; Cancels the canned cycle.
+                                                                 G80
+                                                                 ; Positioning.
+                                                                 G90 X0 Y0
+                                                                 ; End of program.
+                                                                 M30
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·174·
+===== PAGE 174 =====
+
+9.12         G86. Boring cycle with withdrawal in G00
+
+        This cycle bores at the point indicated until the final programmed coordinate is reached. It is possible
+        to program a dwell at the bottom of the machined hole.
+
+        After the quail has penetrated, it is possible to orient the spindle and retract the quail before the exit
+        movement, thus preventing the part from scratching. This is only available when using spindle
+        orientation.
+
+        Working in Cartesian coordinates, the basic structure of the block is as follows:
+                 G86 G98/G99 X Y Z I K Q D E
+                                                                                                                                      9.
+                                                                        G00
+
+
+
+
+                                                                                                                                      G86. Boring cycle with withdrawal in G00
+                                                                                                                      CANNED CYCLES
+                                                                        G01
+
+                                                                  M03         M03
+                                                                  M04         M04
+                                                                             G98
+
+                                                                             G99
+
+                                  I
+                                                                    K
+
+                                                             M05
+
+
+                                                 Q
+                                  D
+
+
+
+
+                                                      E
+
+
+
+    [ G98/G99 ] Withdrawal plane
+        G98      The tool withdraws to the Initial Plane, once the hole has been bored.
+        G99      The tool withdraws to the Reference Plane, once the hole has been bored.
+
+    [ X/Y±5.5 ] Machining coordinates
+
+        These are optional and define the movement of the axes of the main plane to position the tool at
+        the machining point.
+
+        This point can be programmed in Cartesian coordinates or in polar coordinates, and the coordinates
+        may be absolute or incremental, according to whether the machine is operating in G90 or G91.
+
+    [ Z±5.5 ] Reference plane
+
+        Defines the reference plane coordinate. It can be programmed in absolute coordinates or
+        incremental coordinates, in which case it will be referred to the initial plane.
+
+        If not programmed, it assumes as reference plane the current position of the tool.
+
+    [ I±5.5 ] Reaming depth.
+
+        Defines boring depth. It can be programmed in absolute coordinates or incremental coordinates and
+        in this case will be referred to the reference plane.                                                        CNC 8055
+                                                                                                                     CNC 8055i
+    [ K5 ] Dwell
+
+        Defines the dwell, in hundredths of a second, after boring until the withdrawal begins. If not
+        programmed, the CNC will take the value of "K0".
+                                                                                                                     ·M· & ·EN· MODELS
+                                                                                                                       SOFT: V01.6X
+    [ Q±5.5 ] Spindle position for the withdrawal
+
+        Defines the spindle position in degrees, to separate the cutter from the wall of the hole.
+
+        If not programmed, the withdrawal will be done without separating the cutter from the wall of the
+        hole, with the spindle stopped and at rapid feedrate.
+
+                                                                                                                                      ·175·
+===== PAGE 175 =====
+
+                                                                   [ D±5.5 ] Gap between the cutter and the wall of the hole on the X axis
+
+                                                                      Defines the gap between the cutter and the wall of the hole on the X axis for the withdrawal.
+
+                                                                      If not programmed there will be no gap between the cutter and the wall of the hole on the X axis.
+
+                                                                      Both Q and D must be programmed for the cutter to separate from the wall of the hole.
+
+                                                                   [ E±5.5 ] Gap between the cutter and the wall of the hole on the Y axis
+
+                                                                      Defines the gap between the cutter and the wall of the hole on the Y axis for the withdrawal.
+
+ 9.                                                                   If not programmed there will be no gap between the cutter and the wall of the hole on the Y axis.
+
+                                                                      Both Q and E must be programmed for the cutter to separate from the wall of the hole.
+
+
+
+
+                        G86. Boring cycle with withdrawal in G00
+        CANNED CYCLES
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·176·
+===== PAGE 176 =====
+
+9.12.1       Basic operation
+
+         1. If the spindle was previously running, it maintains the turning direction. If it was not in movement,
+            it will start by turning clockwise (M03).
+         2. Rapid movement of the longitudinal axis from the initial plane to the reference plane.
+         3. Movement at the working feedrate (G01) of the longitudinal axis to the bottom of the machined
+            hole, and boring.
+         4. Dwell, if parameter "K" has been programmed.
+         5. Spindle orientation to the position programmed in parameter Q.
+         6. Tool movement in a slow interpolated movement, the distances programmed in parameters D
+            and E. If proper values are not programmed, the cutter could run into the wall instead of
+                                                                                                                                     9.
+
+
+
+                                                                                                                                     G86. Boring cycle with withdrawal in G00
+                                                                                                                     CANNED CYCLES
+            separating from it.
+         7. Rapid tool withdrawal (G00) to the initial plane or reference plane, depending on whether G98
+            or G99 has been programmed.
+         8. Rapid interpolated tool movement in the amounts programmed in parameters D and E, but in
+            the opposite direction (undoing the movement made in step 6).
+         9. When spindle withdrawal has been completed, it will start in the same direction in which it was
+            turning before.
+
+        Programming example assuming that the work plane is formed by the X and Y axes, that the Z axis
+        is the longitudinal axis and that the starting point is X0 Y0 Z0:
+
+              ; Tool selection.
+              T1
+              M6
+              ; Starting point.
+              G0 G90 X0 Y0 Z0
+              ; Canned cycle definition.
+              G86 G98 G91 X250 Y350 Z-98 I-22 K20 F100 S500
+              ; Cancels the canned cycle.
+              G80
+              ; Positioning.
+              G90 X0 Y0
+              ; End of program.
+              M30
+
+
+
+
+                                                                                                                    CNC 8055
+                                                                                                                    CNC 8055i
+
+
+
+                                                                                                                    ·M· & ·EN· MODELS
+                                                                                                                      SOFT: V01.6X
+
+
+
+
+                                                                                                                                     ·177·
+===== PAGE 177 =====
+
+                                                                9.13      G87. Rectangular pocket canned cycle.
+
+                                                                       This cycle executes a rectangular pocket at the point indicated until the final programmed coordinate
+                                                                       is reached.
+
+                                                                       It is possible to program, in addition to milling pass and feedrate, a final finishing step with its
+                                                                       corresponding milling feedrate.
+
+                                                                       In order to obtain a good finish in the machining of the pocket walls, the CNC will apply a tangential
+                                                                       entry and exit to the last milling step during each cutting operation.
+
+ 9.                                                                    Working in Cartesian coordinates, the basic structure of the block is as follows:
+                                                                              G87 G98/G99 X Y Z I J K B C D H L V
+
+
+
+
+                        G87. Rectangular pocket canned cycle.
+        CANNED CYCLES
+
+
+
+
+                                                                  [ G98/G99 ] Withdrawal plane
+                                                                       G98    The tool withdraws to the Initial Plane, once the pocket has been made.
+                                                                       G99    The tool withdraws to the Reference Plane, once the pocket has been made.
+
+                                                                  [ X/Y±5.5 ] Machining coordinates
+
+                                                                       These are optional and define the movement of the axes of the main plane to position the tool at
+                                                                       the machining point.
+                                                                       This point can be programmed in Cartesian coordinates or in polar coordinates, and the coordinates
+                                                                       may be absolute or incremental, according to whether the machine is operating in G90 or G91.
+
+                                                                  [ Z±5.5 ] Reference plane
+
+                                                                       Defines the reference plane coordinate.
+
+                                                                       When programmed in absolute coordinates, it will be referred to the part zero and when programmed
+                                                                       in incremental coordinates, it will be referred to the starting plane (P.P.).
+
+                                                                       If not programmed, it assumes as reference plane the current position of the tool. Thus, the starting
+                                                                       plane (P.P.) and the reference plane (P.R.) will be the same.
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·178·
+===== PAGE 178 =====
+
+    [ I±5.5 ] Machining depth.
+
+        Defines the machining depth.
+
+        When programmed in absolute coordinates, it will be referred to the part zero and when programmed
+        in incremental coordinates, it will be referred to the starting plane (P.P.).
+
+    [ J±5.5 ] Half the width of the pocket along the abscissa axis
+
+        Defines the distance from the center to the edge of the pocket according to the abscissa axis. The
+        sign indicates the pocket machining direction.
+
+                                                                                                                                      9.
+
+
+
+                                                                                                                                      G87. Rectangular pocket canned cycle.
+                                                                                                                      CANNED CYCLES
+
+
+                                   J with "+" sign                      J with "-" sign
+
+
+
+    [ K5.5 ] Half the width of the pocket along the ordinate axis
+        Defines the distance from the center to the edge of the pocket according to the ordinate axis.
+
+
+
+
+    [ B±5.5 ] Penetration step
+
+        Defines the cutting depth according to the longitudinal axis.
+
+        If this is programmed with a positive sign, the entire cycle will be executed with the same machining
+        pass, this being equal to or less than that programmed.
+
+        If programmed with a negative sign, the whole pocket is machined with the given pass (step) except
+        the last pass that machines the rest.
+
+    [ C±5.5 ] Milling pass
+
+        Defines the milling pass along the main plane.
+
+        If the value is positive, the entire cycle will be executed with the same milling step, this being equal
+        to or less than that programmed.
+        If the value is negative, the entire pocket will be executed with the given step, except for the last step
+        which will machine whatever remains.
+
+
+                                                                                                                     CNC 8055
+                                                                                                                     CNC 8055i
+
+
+
+                                                                                                                     ·M· & ·EN· MODELS
+                                                                                                                       SOFT: V01.6X
+
+
+
+
+        If not programmed, it assumes a value of 3/4 of the diameter of the selected tool.
+
+
+
+                                                                                                                                      ·179·
+===== PAGE 179 =====
+
+                                                                   If programmed with a value greater than the tool diameter, the CNC issues the relevant error
+                                                                   message.
+
+                                                                   If programmed with a 0 value, the CNC will display the corresponding error message.
+
+                                                                [ D5.5 ] Reference plane
+
+                                                                   Defines the distance between the reference plane and the surface of the part where the pocket is
+                                                                   to be made.
+
+                                                                   During the first deepening operation this amount will be added to incremental depth "B". If not
+
+ 9.                                                                programmed, a value of 0 is assumed.
+
+
+
+
+                        G87. Rectangular pocket canned cycle.
+        CANNED CYCLES
+
+
+
+
+                                                                [ H.5.5 ] Feedrate for the finishing pass
+
+                                                                   Defines the working feedrate during the finishing pass.
+
+                                                                   If not programmed or programmed with a 0 value, it assumes the value of the machining feedrate.
+
+                                                                [ L±5.5 ] Finishing stock.
+
+                                                                   Defines the value of the finishing pass, along the main plane.
+
+                                                                   If the value is positive, the finishing pass is made on a square corner (G07).
+
+                                                                   If the value is negative, the finishing pass is made on a rounded corner (G05).
+
+
+
+
+                                                                   If not programmed or programmed with a 0 value, it does not run the finishing pass.
+
+                                                                [ V.5.5 ] Tool penetrating feedrate.
+
+                                                                   Defines the tool penetrating feedrate.
+
+                                                                   If not programmed or programmed with a 0 value, it assumes 50% of the feedrate in the plane (F).
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·180·
+===== PAGE 180 =====
+
+9.13.1       Basic operation
+
+         1. If the spindle was previously running, it maintains the turning direction. If it was not in movement,
+            it will start by turning clockwise (M03).
+         2. Rapid movement (G0) of the longitudinal axis from the starting plane to the reference plane.
+         3. First penetrating operation. Movement of longitudinal axis at the feedrate indicated by "V" to the
+            incremental depth programmed in "B+D".
+         4. Milling of the pocket surface at work feedrate in the passes defined by "C" up to a distance "L"
+            (finishing pass) from the pocket wall.
+         5. Finishing pass milling, "L" at the work feedrate defined by "H".
+         6. Once the finishing pass has been completed, the tool withdraws at the rapid feedrate (G00) to
+                                                                                                                                     9.
+
+
+
+                                                                                                                                     G87. Rectangular pocket canned cycle.
+                                                                                                                     CANNED CYCLES
+            the center of the pocket, the longitudinal axis being separated 1 mm (0.040 inch) from the
+            machined surface.
+
+
+
+
+         7. New milling surfaces until reaching the total depth of the pocket.
+             ·1· Movement of the longitudinal axis at the feedrate indicated by "V", up to a distance "B" from
+                 the previous surface.
+             ·2· Milling of the new surface following the steps indicated in points 4, 5 and 6.
+         8. Withdrawal at rapid feedrate (G00) of the longitudinal axis to the initial or reference plane,
+            depending on whether G98 or G99 has been programmed.
+
+
+
+
+                                                                                                                    CNC 8055
+                                                                                                                    CNC 8055i
+
+
+
+                                                                                                                    ·M· & ·EN· MODELS
+                                                                                                                      SOFT: V01.6X
+
+
+
+
+                                                                                                                                     ·181·
+===== PAGE 181 =====
+
+                                                                Programming example ·1·
+                                                                Let us suppose a work plane formed by the X and Y axis, Z being the longitudinal axis and the starting
+                                                                point X0 Y0 Z0.
+
+
+
+
+ 9.
+
+
+
+                        G87. Rectangular pocket canned cycle.
+        CANNED CYCLES
+
+
+
+
+                                                                    ; Tool selection.
+                                                                    (TOR1=6, TOI1=0)
+                                                                    T1 D1
+                                                                    M6
+                                                                    ; Starting point
+                                                                    G0 G90 X0 Y0 Z0
+                                                                    ; Canned cycle definition
+                                                                    G87 G98 X90 Y60 Z-48 I-90 J52.5 K37.5 B12 C10 D2 H100 L5 V100 F300 S1000 M03
+                                                                    ; Cancels the canned cycle
+                                                                    G80
+                                                                    ; Positioning
+                                                                    G90 X0 Y0
+                                                                    ; End of program
+                                                                    M30
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·182·
+===== PAGE 182 =====
+
+        Programming example ·2·
+        Let us suppose a work plane formed by the X and Y axis, Z being the longitudinal axis and the starting
+        point X0 Y0 Z0.
+
+
+
+
+                                                                                                                                  9.
+
+
+
+                                                                                                                                  G87. Rectangular pocket canned cycle.
+                                                                                                                  CANNED CYCLES
+
+
+
+
+              ; Tool selection.
+              (TOR1=6, TOI1=0)
+              T1 D1
+              M6
+              ; Starting point
+              G0 G90 X0 Y0 Z0
+              ; Work plane.
+              G18
+              ; Canned cycle definition
+              N10 G87 G98 X200 Y-48 Z0 I-90 J52.5 K37.5 B12 C10 D2 H100 L5 V50 F300
+              ; Coordinate rotation
+              N20 G73 Q45
+              ; Repeats the select blocks 7 times.
+              (RPT N10,N20) N7
+              ; Cancels the canned cycle.
+              G80
+              ; Positioning
+              G90 X0 Y0
+              ; End of program
+              M30
+
+
+
+
+                                                                                                                 CNC 8055
+                                                                                                                 CNC 8055i
+
+
+
+                                                                                                                 ·M· & ·EN· MODELS
+                                                                                                                   SOFT: V01.6X
+
+
+
+
+                                                                                                                                  ·183·
+===== PAGE 183 =====
+
+                                                            9.14      G88. Circular pocket canned cycle
+
+                                                                   This cycle executes a circular pocket at the point indicated until the final programmed coordinate
+                                                                   is reached.
+
+                                                                   It is possible to program, in addition to milling pass and feedrate, a final finishing step with its
+                                                                   corresponding milling feedrate.
+
+                                                                   Working in Cartesian coordinates, the basic structure of the block is as follows:
+                                                                          G88 G98/G99 X Y Z I J B C D H L V
+
+ 9.
+
+
+                        G88. Circular pocket canned cycle
+        CANNED CYCLES
+
+
+
+
+                                                              [ G98/G99 ] Withdrawal plane
+                                                                   G98    The tool withdraws to the Initial Plane, once the pocket has been made.
+                                                                   G99    The tool withdraws to the Reference Plane, once the pocket has been made.
+
+                                                              [ X/Y±5.5 ] Machining coordinates
+
+                                                                   These are optional and define the movement of the axes of the main plane to position the tool at
+                                                                   the machining point.
+
+                                                                   This point can be programmed in Cartesian coordinates or in polar coordinates, and the coordinates
+                                                                   may be absolute or incremental, according to whether the machine is operating in G90 or G91.
+
+                                                              [ Z±5.5 ] Reference plane
+
+                                                                   Defines the reference plane coordinate.
+
+                                                                   It may be programmed either in absolute or incremental coordinates, in which case it will be referred
+                                                                   to the starting plane. If not programmed, it assumes as reference plane the current position of the
+                                                                   tool.
+
+                                                              [ I±5.5 ] Machining depth
+
+                                                                   Defines the machining depth. It may be programmed either in absolute or incremental coordinates,
+                                                                   in which case it will be referred to the reference plane.
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·184·
+===== PAGE 184 =====
+
+    [ J±5.5 ] Pocket radius
+
+        Defines the radius of the pocket. The sign indicates the pocket machining direction.
+
+
+
+
+                                                                                                                                     9.
+
+
+                                                                                                                                     G88. Circular pocket canned cycle
+                                                                                                                     CANNED CYCLES
+                                   J with "+" sign                      J with "-" sign
+
+
+
+    [ B±5.5 ] Penetration step
+
+        Defines the cutting pass along the longitudinal axis to the main plane.
+          • If this value is positive, the entire cycle will be executed with the same machining pass, this being
+            equal to or less than that programmed.
+          • If the value is negative, the entire pocket will be executed with the given step, except for the last
+            step which will machine whatever remains.
+
+
+
+
+    [ C±5.5 ] Milling pass
+
+        Defines the milling pass along the main plane.
+          • If the value is positive, the entire cycle will be executed with the same milling step, this being
+            equal to or less than that programmed.
+          • If the value is negative, the entire pocket will be executed with the given step, except for the last
+            step which will machine whatever remains.
+
+        If not programmed, it assumes a value of 3/4 of the diameter of the selected tool.
+
+        If programmed with a value greater than the tool diameter, the CNC issues the relevant error
+        message.
+
+        If programmed with a 0 value, the CNC will display the corresponding error message.
+
+
+
+
+                                                                                                                    CNC 8055
+                                                                                                                    CNC 8055i
+
+
+
+                                                                                                                    ·M· & ·EN· MODELS
+                                                                                                                      SOFT: V01.6X
+
+
+
+
+                                                                                                                                     ·185·
+===== PAGE 185 =====
+
+                                                            [ D5.5 ] Reference plane
+
+                                                               Defines the distance between the reference plane and the surface of the part where the pocket is
+                                                               to be made.
+
+                                                               During the first deepening operation this amount will be added to incremental depth "B". If not
+                                                               programmed, a value of 0 is assumed.
+
+
+
+
+ 9.
+
+
+                        G88. Circular pocket canned cycle
+        CANNED CYCLES
+                                                            [ H5.5 ] Feedrate for the finishing pass
+
+                                                               Defines the working feedrate during the finishing pass.
+
+                                                               If not programmed or programmed with a 0 value, it assumes the value of the machining feedrate.
+
+                                                            [ L5.5 ] Finishing stock
+                                                               Defines the value of the finishing pass, along the main plane.
+
+                                                               If not programmed or programmed with a 0 value, it does not run the finishing pass.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·186·
+===== PAGE 186 =====
+
+    [ V.5.5 ] Tool penetrating feedrate.
+
+        Defines the tool penetrating feedrate.
+
+        If not programmed or programmed with a 0 value, it assumes 50% of the feedrate in the plane (F).
+
+
+
+
+                                                                                                                            9.
+
+
+                                                                                                                            G88. Circular pocket canned cycle
+                                                                                                            CANNED CYCLES
+
+
+
+
+                                                                                                           CNC 8055
+                                                                                                           CNC 8055i
+
+
+
+                                                                                                           ·M· & ·EN· MODELS
+                                                                                                             SOFT: V01.6X
+
+
+
+
+                                                                                                                            ·187·
+===== PAGE 187 =====
+
+                                                            9.14.1      Basic operation
+
+                                                                     1. If the spindle was previously running, it maintains the turning direction.
+                                                                        If it was not in movement, it will start by turning clockwise (M03).
+                                                                     2. Rapid movement (G0) of the longitudinal axis from the starting plane to the reference plane.
+                                                                     3. First penetrating operation. Movement of longitudinal axis at the feedrate indicated by "V" to the
+                                                                        incremental depth programmed in "B+D".
+                                                                     4. Milling of the pocket surface at work feedrate in the passes defined by "C" up to a distance "L"
+
+ 9.                                                                     (finishing pass) from the pocket wall.
+                                                                     5. Finishing pass milling, "L" at the work feedrate defined by "H".
+                                                                     6. Once the finishing pass has been completed, the tool withdraws at the rapid feedrate (G00) to
+
+
+
+
+                        G88. Circular pocket canned cycle
+        CANNED CYCLES
+                                                                        the center of the pocket, the longitudinal axis being separated 1 mm (0.040 inch) from the
+                                                                        machined surface.
+
+
+
+
+                                                                     7. New milling surfaces until reaching the total depth of the pocket.
+                                                                        ·1· Movement of the longitudinal axis at the feedrate indicated by "V", up to a distance "B" from
+                                                                            the previous surface.
+                                                                        ·2· Milling of the new surface following the steps indicated in points 4, 5 and 6.
+                                                                     8. Withdrawal at rapid feedrate (G00) of the longitudinal axis to the initial or reference plane,
+                                                                        depending on whether G98 or G99 has been programmed.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·188·
+===== PAGE 188 =====
+
+        Programming example ·1·
+        Let us suppose a work plane formed by the X and Y axis, Z being the longitudinal axis and the starting
+        point X0 Y0 Z0.
+
+
+
+
+                                                                                                                                  9.
+
+
+                                                                                                                                  G88. Circular pocket canned cycle
+                                                                                                                  CANNED CYCLES
+
+
+
+
+              ; Tool selection.
+              (TOR1=6, TOI1=0)
+              T1 D1
+              M6
+              ; Starting point
+              G0 G90 X0 Y0 Z0
+              ; Canned cycle definition
+              G88 G98 G00 G90 X90 Y80 Z-48 I-90 J70 B12 C10 D2 H100 L5 V100 F300 S1000 M03
+              ; Cancels the canned cycle.
+              G80
+              ; Positioning
+              G90 X0 Y0
+              ; End of program
+              M30
+
+
+
+
+                                                                                                                 CNC 8055
+                                                                                                                 CNC 8055i
+
+
+
+                                                                                                                 ·M· & ·EN· MODELS
+                                                                                                                   SOFT: V01.6X
+
+
+
+
+                                                                                                                                  ·189·
+===== PAGE 189 =====
+
+                                                                                   9.15      G89. Boring cycle with withdrawal at work feedrate (G01)
+
+                                                                                          This cycle bores at the point indicated until the final programmed coordinate is reached.
+
+                                                                                          It is possible to program a dwell at the bottom of the machined hole.
+
+                                                                                          Working in Cartesian coordinates, the basic structure of the block is as follows:
+                                                                                                 G89 G98/G99 X Y Z I K
+
+
+
+
+ 9.
+
+
+
+
+                        G89. Boring cycle with withdrawal at work feedrate (G01)
+        CANNED CYCLES
+
+
+
+
+                                                                                     [ G98/G99 ] Withdrawal plane
+                                                                                          G98    The tool withdraws to the Initial Plane, once the hole has been bored.
+                                                                                          G99    The tool withdraws to the Reference Plane, once the hole has been bored.
+
+                                                                                     [ X/Y±5.5 ] Machining coordinates
+
+                                                                                          These are optional and define the movement of the axes of the main plane to position the tool at
+                                                                                          the machining point.
+
+                                                                                          This point can be programmed in Cartesian coordinates or in polar coordinates, and the coordinates
+                                                                                          may be absolute or incremental, according to whether the machine is operating in G90 or G91.
+
+                                                                                     [ Z±5.5 ] Reference plane
+                                                                                          Defines the reference plane coordinate. It can be programmed in absolute coordinates or
+                                                                                          incremental coordinates, in which case it will be referred to the initial plane.
+
+                                                                                          If not programmed, it assumes as reference plane the current position of the tool.
+
+                                                                                     [ I±5.5 ] Machining depth
+
+                                                                                          Defines boring depth. It can be programmed in absolute coordinates or incremental coordinates and
+                                                                                          in this case will be referred to the reference plane.
+
+                                                                                     [ K5 ] Dwell
+
+                                                                                          Defines the dwell, in hundredths of a second, after boring until the withdrawal begins. If not
+                                                                                          programmed, the CNC will take the value of "K0".
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·190·
+===== PAGE 190 =====
+
+9.15.1       Basic operation
+
+         1. If the spindle was previously running, it maintains the turning direction. If it was not in movement,
+            it will start by turning clockwise (M03).
+         2. Rapid movement of the longitudinal axis from the initial plane to the reference plane.
+         3. Movement at the working feedrate (G01) of the longitudinal axis to the bottom of the machined
+            hole, and boring.
+         4. Dwell, if parameter "K" has been programmed.
+         5. Withdrawal at working feedrate, of the longitudinal axis as far as the reference plane.
+         6. Withdrawal, at rapid feedrate (G00), of the longitudinal axis as far as the initial plane if G98 has
+            been programmed.
+                                                                                                                                     9.
+
+
+
+
+                                                                                                                                     G89. Boring cycle with withdrawal at work feedrate (G01)
+                                                                                                                     CANNED CYCLES
+        Programming example ·1·
+        Let us suppose a work plane formed by the X and Y axis, Z being the longitudinal axis and the starting
+        point X0 Y0 Z0.
+
+              ; Tool selection.
+              T1 D1
+              M6
+              ; Starting point
+              G0 G90 X0 Y0 Z0
+              ; Canned cycle definition
+              G89 G98 G91 X250 Y350 Z-98 I-22 K20 F100 S500
+              ; Cancels the canned cycle.
+              G80
+              ; Positioning
+              G90 X0 Y0
+              ; End of program
+              M30
+
+
+
+
+                                                                                                                    CNC 8055
+                                                                                                                    CNC 8055i
+
+
+
+                                                                                                                    ·M· & ·EN· MODELS
+                                                                                                                      SOFT: V01.6X
+
+
+
+
+                                                                                                                                     ·191·
+===== PAGE 191 =====
+
+                                                          9.16      G210. Bore milling canned cycle
+
+                                                                 This cycle may be used to increase the diameter of a hole through a helical movement of the tool.
+                                                                 Besides this, if the tool allows it, it is also possible to mill a hole without having to drill it first.
+
+                                                                 Working in Cartesian coordinates, the basic structure of the block is as follows:
+                                                                        G210 G98/G99 X Y Z D I J K B
+
+
+
+                                                                                                                                G00           M03
+ 9.                                                                                                                             G01           M04
+
+                                                                                                                                             G98
+
+
+
+
+                        G210. Bore milling canned cycle
+        CANNED CYCLES
+                                                                                                                         Z
+                                                                                                                                             G99
+                                                                                                                     D
+
+
+                                                                                        I
+
+
+
+
+                                                                                                          K
+                                                                                                          J
+
+
+
+                                                            [ G98/G99 ] Withdrawal plane
+                                                                 G98    The tool withdraws to the Initial Plane, once the hole has been milled.
+                                                                 G99    The tool withdraws to the Reference Plane, once the hole has been milled.
+
+                                                            [X±5.5] Hole center coordinate along the abscissa axis.
+
+                                                                 It defines the hole center coordinate along the X axis. If not programmed, it will assume the current
+                                                                 tool position on that axis.
+
+                                                            [ Y±5.5 ] Hole center coordinate along the ordinate axis
+
+                                                                 It defines the hole center coordinate along the Y axis. If not programmed, it will assume the current
+                                                                 tool position on that axis.
+
+                                                            [ Z±5.5 ] Reference plane
+
+                                                                 Defines the reference plane coordinate. It may be programmed either in absolute or incremental
+                                                                 coordinates, in which case it will be referred to the starting plane.
+
+                                                                 If not programmed, it assumes as reference plane the current position of the tool.
+
+                                                            [D5] Safety distance
+
+                                                                 Defines the distance between the reference plane and the surface of the part where the milling is
+                                                                 to be done. If not programmed, it assumes 0.
+
+                                                            [ I±5.5 ] Machining depth
+
+                                                                 Defines the machining depth. It may be programmed either in absolute or incremental coordinates,
+                                                                 in which case it will be referred to the reference plane.
+
+                                                                 If not programmed, the CNC issues the corresponding error.
+CNC 8055
+CNC 8055i                                                   [J±5.5 ] Hole diameter
+
+                                                                 Defines the nominal diameter of the hole. The sign indicates the direction of the helical path
+                                                                 associated with the machining of the hole (positive if clockwise and negative if counterclockwise).
+
+·M· & ·EN· MODELS                                                If not programmed or programmed with a value smaller than the diameter of the active tool, the CNC
+  SOFT: V01.6X                                                   issues the relevant error message.
+
+                                                            [ K5.5 ] Pre-drilling diameter
+
+                                                                 Starting with a hole previously drilled, this parameter defines the diameter of that hole. If not
+                                                                 programmed or programmed with a 0 value, it means that no hole has been previously drilled.
+
+     ·192·
+===== PAGE 192 =====
+
+        The tool must meet the following conditions:
+          • The tool radius must be smaller than J/2.
+          • The tool radius must be equal to or larger than (J-K)/4.
+
+        If these two conditions are not met, the CNC issues the corresponding error.
+
+    [ B±5.5 ] Penetration step
+
+        It defines the penetration step when machining the hole.
+          • With a positive sign, it will mill the bottom of the hole.
+          • With a negative sign, it will not mill the bottom of the hole.                                              9.
+        If not programmed or programmed with a 0 value, the CNC will display the corresponding error
+
+
+
+
+                                                                                                                        G210. Bore milling canned cycle
+                                                                                                        CANNED CYCLES
+        message.
+
+
+
+
+                                                                                                       CNC 8055
+                                                                                                       CNC 8055i
+
+
+
+                                                                                                       ·M· & ·EN· MODELS
+                                                                                                         SOFT: V01.6X
+
+
+
+
+                                                                                                                        ·193·
+===== PAGE 193 =====
+
+                                                          9.16.1      Basic operation
+
+                                                                   1. Rapid movement to the center of the hole (X, Y).
+                                                                   2. Rapid movement to the reference plane (Z).
+                                                                   3. Rapid movement to the tangential entry coordinate along the longitudinal axis.
+                                                                   4. Tangential entry to the helical path of the drilling.
+                                                                   5. Helical movement, with the pitch given by parameter B and in the direction given by parameter
+                                                                      J, down to the bottom of the hole.
+
+ 9.                                                                6. Milling of the bottom of the hole (this step is only carried out if parameter B has a positive sign).
+                                                                   7. Tangential exit movement to the helical path of the drilling to the center of the hole.
+
+
+
+
+                        G210. Bore milling canned cycle
+        CANNED CYCLES
+                                                                   8. Rapid movement to the reference plane (G99) or to the starting plane (G98).
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·194·
+===== PAGE 194 =====
+
+9.17         G211. Inside thread milling cycle
+
+        This cycle may be used to make an inside thread through a helical movement of the tool.
+
+        Working in Cartesian coordinates, the basic structure of the block is as follows:
+                 G211 G98/G99 X Y Z D I J K B C L A E Q
+
+
+                                                                          G00              M03
+                                      L
+                                                                          G01           M04
+
+                              B
+                                          A                                           G98                                        9.
+
+
+                                                                                                                                 G211. Inside thread milling cycle
+                                                                                                                 CANNED CYCLES
+                                                                     Z
+                                                                                      G99
+                                  K                              D
+
+
+
+                                              I
+
+
+
+
+                                                         J
+
+
+
+    [ G98/G99 ] Withdrawal plane
+        G98      The tool withdraws to the Initial Plane, once the hole has been milled.
+        G99      The tool withdraws to the Reference Plane, once the hole has been milled.
+
+    [X±5.5] Hole center coordinate along the abscissa axis.
+
+        It defines the hole center coordinate along the X axis. If not programmed, it will assume the current
+        tool position on that axis.
+
+    [ Y±5.5 ] Hole center coordinate along the ordinate axis
+
+        It defines the hole center coordinate along the Y axis. If not programmed, it will assume the current
+        tool position on that axis.
+
+    [ Z±5.5 ] Reference plane
+
+        Defines the reference plane coordinate. It may be programmed either in absolute or incremental
+        coordinates, in which case it will be referred to the starting plane.
+
+        If not programmed, it assumes as reference plane the current position of the tool.
+
+    [D5] Safety distance
+
+        Defines the distance between the reference plane and the surface of the part where the milling is
+        to be done. If not programmed, it assumes 0.
+
+    [ I±5.5 ] Machining depth
+        Defines the threading depth. It may be programmed either in absolute or incremental coordinates,
+        in which case it will be referred to the reference plane.
+                                                                                                                CNC 8055
+        If not programmed, the CNC issues the corresponding error.
+                                                                                                                CNC 8055i
+    [ J±5.5 ] Thread diameter
+
+        Defines the nominal diameter of the thread The sign indicates the machining direction of the thread
+        (positive if clockwise and negative if counterclockwise).                                               ·M· & ·EN· MODELS
+                                                                                                                  SOFT: V01.6X
+        If not programmed, the CNC issues the corresponding error.
+
+
+
+
+                                                                                                                                 ·195·
+===== PAGE 195 =====
+
+                                                            [ K5.5 ] Thread depth
+
+                                                               It defines the distance between the crest and the root of the thread. If not programmed, the CNC
+                                                               issues the corresponding error.
+
+                                                            [ B±5.5 ] Thread pitch
+
+                                                               Defines the thread pitch.
+                                                                • With a positive sign, the direction of the thread pitch is from the surface of the part to the bottom.
+                                                                • With a negative sign, the direction of the thread pitch is from the bottom to the surface of the part.
+
+ 9.                                                            If not programmed or programmed with a 0 value, the CNC will display the corresponding error
+                                                               message.
+
+
+
+
+                        G211. Inside thread milling cycle
+        CANNED CYCLES
+                                                            [ C1 ] Type of tapping
+
+                                                               Defines the type of tapping to be carried out. This parameter depends on the type of tool being used.
+                                                                • When programming C= 0, the threading will be done in a single pass.
+                                                                • When programming C=1, it will make one thread per each pass (single-edge cutter).
+                                                                • When programming C=n (where n is the number of cutting edges of the cutter), it will make n
+                                                                  threads per each pass.
+
+                                                               If not programmed, a value of C=1 is assumed.
+
+
+                                                                                               C=0              C=1                C>1
+
+
+
+
+                                                            [ L5.5 ] Finishing stock
+
+                                                               It defines the finishing stock at the bottom of the thread. If not programmed, a value of 0 is assumed.
+
+                                                            [ A5.5 ] Maximum penetration step
+
+                                                               Defines the maximum penetrating pass of the thread. If not programmed or programmed with a 0
+                                                               value, it will run a single pass up to the finishing stock.
+
+                                                            [ E5.5 ] Approach distance
+
+                                                               Approach distance to the thread entry. If not programmed, it will enter the thread from the center
+                                                               of the hole.
+
+                                                            [ Q±5.5 ] Thread entry angle
+
+                                                               Angle (in degrees) of the segment formed by the center of the hole and the thread entry point with
+                                                               respect to the abscissa axis. If not programmed, a value of 0 is assumed.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·196·
+===== PAGE 196 =====
+
+9.17.1       Basic operation
+
+         1. Rapid movement to the center of the hole (X, Y).
+         2. Rapid movement to the reference plane (Z).
+         3. Rapid movement of the plane axes to the thread entry point (it only makes this movement if
+            parameter E has been programmed).
+         4. Rapid movement to the thread entry point coordinate along the longitudinal axis.
+         5. Thread entry with a helical movement tangent to the first helical threading path.
+         6. Making the thread according to the value of parameter C.
+               If C=0:
+                                                                                                                                          9.
+
+
+                                                                                                                                          G211. Inside thread milling cycle
+                                                                                                                          CANNED CYCLES
+                  ·1· Helical movement, in the direction indicated in parameter J, to the bottom of the thread
+                      (the movement will only be one revolution).
+                  ·2· Helical thread exiting movement, tangent to the previous helical path. If parameter E has
+                      not been programmed, the exit point will correspond with the coordinates of the hole
+                      center.
+                     It must be borne in mind that in the exit tangent to the helical path, the exit point will exceed
+                     the coordinate of the bottom of the thread along the longitudinal axis.
+               If C=1:
+                  ·1· Helical movement, with the pitch and direction given in parameter J, to the bottom of the
+                      thread.
+                  ·2· Helical thread exiting movement, tangent to the previous helical path. If parameter E has
+                      not been programmed, the exit point will correspond with the coordinates of the hole
+                      center.
+                     It must be borne in mind that in the exit tangent to the helical path, the exit point will exceed
+                     the coordinate of the bottom of the thread along the longitudinal axis.
+               If C=n:
+                  ·1· Helical movement, with the pitch and direction given in parameter J, (the movement will
+                      be one revolution).
+                  ·2· Helical thread exiting movement, tangent to the previous helical path. If parameter E has
+                      not been programmed, the exit point will correspond with the coordinates of the hole
+                      center.
+                  ·3· Rapid movement to the thread entry point of the next threading path.
+                  ·4· Rapid movement to the Z coordinate of the thread entry point of the next threading path.
+                  ·5· Repetition of the previous 3 steps until reaching the bottom of the thread. It must be borne
+                      in mind that in the last helical exit, the exit point will exceed the coordinate of the bottom
+                      of the thread along the longitudinal axis.
+         7. Rapid movement to the center of the hole (X, Y).
+         8. Rapid movement to the thread entry coordinate along the longitudinal axis.
+         9. Repetition of steps 3 to 8 until reaching the depth of the finishing stock.
+         10.Repetition of steps 3 to 8 until reaching the bottom of the thread.
+         11.Rapid movement to the reference plane (G99) or to the starting plane (G98).
+
+
+
+
+                                                                                                                         CNC 8055
+                                                                                                                         CNC 8055i
+
+
+
+                                                                                                                         ·M· & ·EN· MODELS
+                                                                                                                           SOFT: V01.6X
+
+
+
+
+                                                                                                                                          ·197·
+===== PAGE 197 =====
+
+                                                             9.18      G212. Outside thread milling cycle
+
+                                                                    This cycle may be used to make an outside thread through a helical movement of the tool.
+
+                                                                    Working in Cartesian coordinates, the basic structure of the block is as follows:
+                                                                           G212 G98/G99 X Y Z D I J K B C L A E Q
+
+
+
+                                                                                      L                                                   G00            M03
+                                                                                                                                          G01           M04
+ 9.                                                                                              B                                                G98
+
+
+
+
+                        G212. Outside thread milling cycle
+        CANNED CYCLES
+                                                                                            K                                   Z                 G99
+                                                                                                                    D
+
+
+                                                                                                                            I
+
+
+
+
+                                                                                                              J
+
+
+
+                                                               [ G98/G99 ] Withdrawal plane
+                                                                    G98    The tool withdraws to the Initial Plane, once the hole has been milled.
+                                                                    G99    The tool withdraws to the Reference Plane, once the hole has been milled.
+
+                                                               [ X±5.5 ] Boss center coordinate along the abscissa axis.
+
+                                                                    It defines the boss center coordinate along the X axis. If not programmed, it will assume the current
+                                                                    tool position on that axis.
+
+                                                               [ Y±5.5 ] Boss center coordinate along the ordinate axis.
+
+                                                                    It defines the boss center coordinate along the Y axis. If not programmed, it will assume the current
+                                                                    tool position on that axis.
+
+                                                               [ Z±5.5 ] Reference plane
+
+                                                                    Defines the reference plane coordinate. It may be programmed either in absolute or incremental
+                                                                    coordinates, in which case it will be referred to the starting plane.
+
+                                                                    If not programmed, it assumes as reference plane the current position of the tool.
+
+                                                               [D5] Safety distance
+
+                                                                    Defines the distance between the reference plane and the surface of the part where the milling is
+                                                                    to be done. If not programmed, it assumes 0.
+
+                                                               [ I±5.5 ] Machining depth
+
+                                                                    Defines the threading depth. It may be programmed either in absolute or incremental coordinates,
+                                                                    in which case it will be referred to the reference plane.
+
+CNC 8055                                                            If not programmed, the CNC issues the corresponding error.
+
+CNC 8055i                                                      [ J±5.5 ] Thread diameter
+
+                                                                    Defines the nominal diameter of the thread The sign indicates the machining direction of the thread
+                                                                    (positive if clockwise and negative if counterclockwise).
+·M· & ·EN· MODELS                                                   If not programmed, the CNC issues the corresponding error.
+  SOFT: V01.6X
+
+                                                               [ K5.5 ] Thread depth
+
+                                                                    It defines the distance between the crest and the root of the thread. If not programmed, the CNC
+                                                                    issues the corresponding error.
+
+
+     ·198·
+===== PAGE 198 =====
+
+    [ B±5.5 ] Thread pitch
+
+        Defines the thread pitch.
+          • With a positive sign, the direction of the thread pitch is from the surface of the part to the bottom.
+          • With a negative sign, the direction of the thread pitch is from the bottom to the surface of the part.
+
+        If not programmed or programmed with a 0 value, the CNC will display the corresponding error
+        message.
+
+    [ C1 ] Type of tapping
+
+        Defines the type of tapping to be carried out. This parameter depends on the type of tool being used.
+          • When programming C= 0, the threading will be done in a single pass.
+                                                                                                                                      9.
+
+
+                                                                                                                                      G212. Outside thread milling cycle
+                                                                                                                      CANNED CYCLES
+          • When programming C=1, it will make one thread per each pass (single-edge cutter).
+          • When programming C=n (where n is the number of cutting edges of the cutter), it will make n
+            threads per each pass.
+
+        If not programmed, a value of C=1 is assumed.
+
+
+                                         C=0              C=1                C>1
+
+
+
+
+    [ L5.5 ] Finishing stock
+
+        It defines the finishing stock at the bottom of the thread. If not programmed, a value of 0 is assumed.
+
+    [ A5.5 ] Maximum penetration step
+
+        Defines the maximum penetrating pass of the thread. If not programmed or programmed with a 0
+        value, it will run a single pass up to the finishing stock.
+
+    [ E5.5 ] Approach distance
+
+        Approach distance to the thread entry. If not programmed or programmed with a 0 value, the CNC
+        will display the corresponding error message.
+
+    [ Q±5.5 ] Thread entry angle
+
+        Angle (in degrees) of the segment formed by the center of the hole and the thread entry point with
+        respect to the abscissa axis. If not programmed, a value of 0 is assumed.
+
+
+
+
+                                                                                                                     CNC 8055
+                                                                                                                     CNC 8055i
+
+
+
+                                                                                                                     ·M· & ·EN· MODELS
+                                                                                                                       SOFT: V01.6X
+
+
+
+
+                                                                                                                                      ·199·
+===== PAGE 199 =====
+
+                                                             9.18.1      Basic operation
+
+                                                                      1. Rapid movement to the center of the hole (X, Y).
+                                                                      2. Rapid movement to the reference plane (Z).
+                                                                      3. Rapid movement of the plane axes to the thread entry point (it only makes this movement if
+                                                                         parameter E has been programmed).
+                                                                      4. Rapid movement to the thread entry point coordinate along the longitudinal axis.
+                                                                      5. Rapid movement to the thread entry point (movement interpolated in 3 axes).
+
+ 9.                                                                   6. Thread entry with a helical movement tangent to the first helical threading path.
+                                                                      7. Making the thread according to the value of parameter C.
+
+
+
+
+                        G212. Outside thread milling cycle
+        CANNED CYCLES
+                                                                           If C=0:
+                                                                             ·1· Helical movement, in the direction indicated in parameter J, to the bottom of the thread
+                                                                                 (the movement will only be one revolution).
+                                                                             ·2· Helical thread exiting movement, tangent to the previous helical path.
+                                                                                It must be borne in mind that in the exit tangent to the helical path, the exit point will exceed
+                                                                                the coordinate of the bottom of the thread along the longitudinal axis.
+                                                                           If C=1:
+                                                                             ·1· Helical movement, with the pitch and direction given in parameter J, to the bottom of the
+                                                                                 thread.
+                                                                             ·2· Helical thread exiting movement, tangent to the previous helical path.
+                                                                                It must be borne in mind that in the exit tangent to the helical path, the exit point will exceed
+                                                                                the coordinate of the bottom of the thread along the longitudinal axis.
+                                                                           If C=n:
+                                                                             ·1· Helical movement, with the pitch and direction given in parameter J, (the movement will
+                                                                                 be one revolution).
+                                                                             ·2· Helical thread exiting movement, tangent to the previous helical path to the thread entry
+                                                                                 point.
+                                                                             ·3· Rapid movement to the Z coordinate of the thread entry point of the next threading path.
+                                                                             ·4· Repetition of the previous 3 steps until reaching the bottom of the thread. It must be borne
+                                                                                 in mind that in the last helical exit, the exit point will exceed the coordinate of the bottom
+                                                                                 of the thread along the longitudinal axis.
+                                                                      8. Rapid movement to the reference plane (G99).
+                                                                      9. Repetition of steps 3 to 8 until reaching the depth of the finishing stock.
+                                                                      10.Repetition of steps 3 to 8 until reaching the bottom of the thread.
+                                                                      11.Rapid movement to the reference plane (G99) or to the starting plane (G98).
+                                                                      12.Rapid movement to the center of the hole (X, Y).
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·200·
+===== PAGE 200 =====
+
+
+                                                                                10
+  Multiple machining is defined as a series of functions which allow a machining operation to be
+  repeated along a given path.
+
+  The programmer will select the type of machining, which can be a canned cycle or a subroutine
+  (which must be programmed as a modal subroutine) defined by the user.
+
+  Machining paths are defined by the following functions:
+     G60: Multiple machining in a straight line
+     G61: Multiple machining in a rectangular pattern.
+     G62: Multiple machining in a grid pattern.
+     G63: Multiple machining in a circular pattern.
+     G64: Multiple machining in an arc
+     G65: Machining programmed with an arc-chord
+
+  These functions can be performed on any work plane and must be defined every time they are used,
+  as they are not modal.
+
+  It is absolutely essential for the machining which it is required to repeat to be active. In other words,
+  these functions will only make sense if they are under the influence of a canned cycle or under the
+  influence of a modal subroutine.
+
+  To perform multiple machining, follow these steps:
+  1. Move the tool to the first point of the multiple machining operation.
+  2. Define the canned cycle or modal subroutine to be repeated at all the points.
+  3. Define the multiple operation to be performed.
+  All machining operations programmed with these functions will be done under the same working
+  conditions (T,D,F,S) which were selected when defining the canned cycle or modal subroutine.
+
+  Once the multiple machining operation has been performed, the program will recover the history
+  it had before starting this machining, even when the canned cycle or modal subroutine will remain
+  active. Now feedrate F corresponds to the feedrate programmed for the canned cycle or modal
+  subroutine.
+
+  Likewise, the tool will be positioned at the last point where the programmed machining operation
+  was done.
+
+  If multiple machining of a modal subroutine is performed in the Single Block mode, this subroutine
+  will be performed complete (not block by block) after each programmed movement.
+
+  A detailed explanation is given on the next page of multiple machining operations, assuming in each
+  case, that the work plane is formed by X and Y axes.
+
+
+                                                                                                              CNC 8055
+                                                                                                              CNC 8055i
+
+
+
+                                                                                                              ·M· & ·EN· MODELS
+                                                                                                                SOFT: V01.6X
+
+
+
+
+                                                                                                                   ·201·

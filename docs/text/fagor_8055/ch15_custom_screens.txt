@@ -1,0 +1,904 @@
+===== PAGE 570 =====
+
+
+
+
+                                   [JOGFLW] JOG mode - Following error                                                        15.
+
+
+                                                                                                       CUSTOMIZABLE SCREENS
+                                                                                                                              Configuration file
+
+
+
+
+                           [STD]                                         [POS]
+                 Execution mode - Standard                      Execution mode - Position
+
+
+
+
+                                  [FLW] Execution mode - Following error
+
+
+
+
+                           [PRG]                                         [SUB]
+                 Execution mode - Program                     Execution mode - Subroutines
+
+
+
+
+                                                                                                       CNC 8055
+                                                                                                       CNC 8055i
+
+
+
+                                                                                                            SOFT: V01.6X
+
+                        [STDCONV]                                     [AUXCONV]
+               Conversational mode - Standard          Conversational mode - Auxiliary for execution
+
+
+
+
+                                                                                                                              ·571·
+===== PAGE 571 =====
+
+                                                       15.2      Configuration language
+
+                                                              The general characteristics of the configuration language are:
+                                                               • All instructions are preceded by ";" and enclosed in parenthesis.
+                                                               • The comments must be alone and preceded by ";;"
+                                                               • The configuration file must begin with the line ;(PRGSCRIPT 1)
+                                                               • It indicates that it is a configuration file corresponding to the version being used (in this case "1")
+                                                               • The configuration file should end with the line ;(END)
+15.                                                            • While debugging the program, the ;(DEBUG) instruction should be used
+                                                               • If an error occurs while checking the configuration file, the CNC will inform about it in program
+
+
+
+
+       CUSTOMIZABLE SCREENS
+                              Configuration language
+                                                                 999500.
+
+                                                              The configuration language consists of:
+                                                               • A series of key words or tokens.
+                                                               • The names of the internal CNC variables.
+                                                               • Numbers that may be associated with the previous two items.
+                                                               • Various punctuation signs.
+
+                                                              Example of a configuration file:
+
+                                                                  ;(PRGSCRIPT 1)
+                                                                  ;;==================================
+                                                                  ;; SCREEN LAYOUT
+                                                                  ;; Screen in JOG mode - Actual
+                                                                  ;;==================================
+                                                                  ;[JOG],PLCM1125
+                                                                  ;(DEBUG)
+                                                                  ;(DISABLE 0)
+                                                                  ;(WGDWIN 201)
+                                                                  ;;--------------------- X axis, coordinate, error and consumption
+                                                                  ;(AUTOREFRESH W1=POSX)
+                                                                  ;(AUTOREFRESH W2=FLWEX)
+                                                                  ;(FORMAT W3,LEDBARDEC)
+                                                                  ;(AUTOREFRESH W3=ANAI1)
+                                                                  ;;-------------------- Z axis, position, error and consumption
+                                                                  ;(AUTOREFRESH W4=POSZ)
+                                                                  ;(AUTOREFRESH W5=FLWEZ)
+                                                                  ;(FORMAT W6,LEDBARDEC)
+                                                                  ;(AUTOREFRESH W6=ANAI2)
+                                                                  ;;-------------------- Feedrate, F, %
+                                                                  ;(AUTOREFRESH W7=FEED)
+                                                                  ;(AUTOREFRESH W8=FRO)
+                                                                  ;;-------------------- Spindle, S, Smax, %
+                                                                  ;(AUTOREFRESH W9=SPEED)
+                                                                  ;(AUTOREFRESH W10=SLIMIT)
+                                                                  ;(AUTOREFRESH W11=SSO)
+                                                                  ;;-------------------- Tool and offset (T, D)
+                                                                  ;(AUTOREFRESH W12=TOOL)
+                                                                  ;(AUTOREFRESH W13=TOD)
+                                                                  ;(END)
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·572·
+===== PAGE 572 =====
+
+15.3       Key words
+
+  ;(PRGSCRIPT 1)
+  ;(PRGSCRIPT 2)
+
+        Header of the configuration file and version used to edit it. It must always be defined.
+        ;(PRGSCRIPT 1)            Version 1.
+        ;(PRGSCRIPT 2)            Version 2. Includes arithmetic operations and conditional expressions.
+
+        Version 1 of the configuration language does not offer arithmetic operations or conditional
+        expressions. In this case, the error file (999500) will show an error. The error file will only be
+        generated if the configuration file shows the instruction ;(DEBUG).
+                                                                                                                                        15.
+
+
+                                                                                                                 CUSTOMIZABLE SCREENS
+    i       In programs identified as ";(PRGSCRIPT 1)", the CPU handling has been optimized, so if conditional                          Key words
+            instructions or arithmetic operations are not used, we recommend to use version 1.
+
+
+  ;[JOG],PLCM1125
+
+        Screen to be customized and condition. The screens that may be customized are:
+           [JOG]                  JOG mode - Actual
+           [JOGFLW]               JOG mode - Following Error
+           [JOGAFL]               JOG mode - Actual and Following Error
+           [STD]                  Execution mode - Standard
+           [FLW]                  Execution mode - Following error
+           [POS]                  Execution mode - Position
+           [PRG]                  Execution mode - Program
+           [SUB]                  Execution mode - Subroutines
+           [STDCONV]              Conversational mode - Standard
+           [AUXCONV]              Conversational mode - Auxiliary for execution
+
+        The screens may be active at all times or only when the set condition is met, Thus: Thus:
+
+            ;[JOG]                      Is always active
+
+            ;[PRG],PLCM1000             Active with M1000=1.
+                                        If M1000=0, standard screen
+
+
+  ;(END)
+
+        End of the screen definition.
+
+        The configuration file must contain all the screens to be customized. Each screen starts with the
+        [xxx] instruction and ends with the (END) instruction .
+
+  ;(DEBUG)
+
+        It is optional. It indicates on which line program 999500 starts giving out information of the errors
+        that have come up when debugging the configuration file.
+
+        The configuration file only debugs the portion of the selected screen. It starts with the [xxx]
+        instruction and end with the (END) instruction.
+
+        It is recommended to program a (DEBUG) in the definition of each screen.                                 CNC 8055
+  ;(DISABLE x)
+                                                                                                                 CNC 8055i
+        Indicates the area of the standard screen to be eliminated.
+
+        When editing a screen, the CNC overlaps the OEM screen over the standard CNC screen. The
+        DISABLE instruction serves to indicate which areas of the standard display are to be eliminated (not          SOFT: V01.6X
+        displayed)
+           (DISABLE 1)            Eliminates area 1 of the standard display.
+           (DISABLE 2)            Eliminates area 2 of the standard display.
+
+
+
+                                                                                                                                        ·573·
+===== PAGE 573 =====
+
+                                            It is possible to define as many DISABLE instructions as screen areas are to be eliminated.
+
+                                            To eliminate the whole standard screen, program (DISABLE 0). In this case, only the OEM screen
+                                            will be displayed.
+
+                                            Examples:
+
+
+
+
+15.
+
+
+       CUSTOMIZABLE SCREENS
+                              Key words
+                                                                Standard screen                             OEM screen
+
+
+                                                 Without "Disable"
+
+                                                 Both screens overlap.
+                                                 There are areas with information overlapped.
+                                                 In this case, area 1.
+
+
+
+
+                                                 With (DISABLE 1)
+
+                                                 Area 1 of the standard screen is not displayed.
+
+
+
+
+                                                 With (DISABLE 1) and (DISABLE 3)
+
+                                                 Areas 1 and 3 of the standard display are not
+                                                 displayed.
+
+
+
+
+                                                 With (DISABLE 0)
+
+                                                 All areas of the standard screen are turned off
+                                                 Only the OEM screen is displayed.
+
+
+
+
+CNC 8055
+CNC 8055i                                 ;(WGDWIN 201)
+
+                                            It must ALWAYS be defined. It indicates the number of the OEM screen to be overlapped, edited
+                                            with the Fagor WINDRAW55 application software.
+ SOFT: V01.6X
+                                          ;(W1=GUP100)
+
+                                            Associates the value of a global parameter with the (W) data.
+
+
+
+
+    ·574·
+===== PAGE 574 =====
+
+  ;(W2=PLCFRO)
+
+     Associates the value of a variable with the (W) data.
+
+  ;(W3=PLCR127)
+
+     Associates the value of a PLC resource with the (W) data.
+
+         A register                        ;(W6=PLCR127)
+
+         A mark                            ;(W6=PLCM1000,1)                first and how many
+
+         A group of inputs                 ;(W6=PLCI8,4)                   first and how many                                      15.
+
+
+                                                                                                            CUSTOMIZABLE SCREENS
+                                                                                                                                   Key words
+         A group of outputs                ;(W6=PLCO10,3)                  first and how many
+
+     Associate only resources that are defined in the PLC program.
+
+     For marks, inputs and outputs, one must indicate how many of them, if none is indicated, 32 are
+     assigned.
+        ;(W6=PLCO11,4)         Assigns the value of O11, O12, O13, O14
+        ;(W6=PLCO11)           Assigns the value of O11, O12 ... O41, O42
+
+     If a field (W) has a parameter, variable or resource associated with it, it acts as follows:
+
+     It assumes the value that its associate has when accessing the page.
+      • To continuously update the field value, use the (AUTOREFRESH) instruction as described later
+        on.
+      • If its associate is a read-only type, the user will not be able to change the field value.
+      • It its associate is read/write type, the user may change the field value.
+      • When changing the value of the field (W), the value of its associate is also changed.
+      • On the other hand, when using the (AUTOREFRESH) instruction and the CNC or PLC changes
+        the value of the associate, the value of the field is also changed.
+
+  ;(AUTOREFRESH W2=FLWEX)
+
+     If (W2=FLWEX), it assigns the value of the X axis following error to the graphic element W2. This
+     instruction updates that value periodically.
+
+  ;(UNMODIFIED)
+
+     It indicates that the associated item must not pick up the editing focus.
+
+     It is programmed as a prefix of the instructions.
+        ;(W1=GUP100)
+            Associates the value of a global parameter, variable or resource of the PLC with the (W1)
+            data. The W1 item of the screen pick ups the editing focus.
+        ;(AUTOREFRESH W6=FLWEX)
+            It refreshes (updates) the value of the graphic element W6 and it assigns the editing focus
+            to it.
+
+     The resulting new instructions are:
+        ;(UNMODIFIED W1=GUP170)
+            Associates the value of a global parameter, variable or resource of the PLC with the (W1)
+            data. The W1 item of the screen pick ups the editing focus.
+        ;(UNMODIFIED AUTOREFRESH W6=FLWEX)                                                                  CNC 8055
+            It refreshes (updates) the value of the graphic element (item) W6, but it does not assign the   CNC 8055i
+            editing focus to it.
+
+
+
+                                                                                                                 SOFT: V01.6X
+
+
+
+
+                                                                                                                                   ·575·
+===== PAGE 575 =====
+
+                                          ;(FORMAT W8,LEDBARDEC)
+
+                                            It must be used with Ledbar type (W) data that have a decimal variable associated with them. (For
+                                            example: X axis following error).
+
+                                            The values assigned, at the PLC, to the end and intermediate values of a LEDBAR element must
+                                            be integer values and must be related to the variable associated at the CNC.
+
+                                            When the associated variable has a decimal format the following instruction must be used:
+                                                   ;(FORMAT W8,LEDBARDEC)
+
+
+15.                                         This instruction is used to convert coordinate values (decimal) to integer values by multiplying them
+                                            by 10000
+
+                                            Examples:
+
+
+
+
+       CUSTOMIZABLE SCREENS
+                              Key words
+                                            To represent the % of axis feedrate, the FRO variable is used. The FRO values are integers (between
+                                            0 and 120) and, therefore, do not require LEDBARDEC.
+                                                   ;(AUTOREFRESH W9=FRO)
+
+                                            On the other hand, to represent the amount of following error on the X axis, the FLWEX variable
+                                            is used. The values of FLWEX are not integers and, therefore, require LEDBARDEC (multiplying
+                                            it by 10000) in order to make them integers.
+                                                   ;(FORMAT W11,LEDBARDEC)
+                                                   ;(AUTOREFRESH W11=FLWEX)
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·576·
+===== PAGE 576 =====
+
+15.4          Arithmetic operations
+
+        Math operations are only available in version 2 of the configuration language. With math operations
+        (arithmetic, trigonometric, logic, etc.) it is possible to assign to a "widget" element the result of several
+        operations taking CNC variables, PLC resources, constants, etc. as operands.
+
+
+
+    i         A numeric value must be assigned through an internal CNC variable (GUP100 - GUP255, GUP1000 -
+              GUP1255, GUP2000 - GUP2255). A constant (a number) cannot be assigned directly to a widget.
+
+
+                                                                                                                                               15.
+        OPERATORS
+
+
+
+
+                                                                                                                        CUSTOMIZABLE SCREENS
+                                                                                                                                               Arithmetic operations
+        An operator is a symbol that indicates the mathematical or logic operations to carry out. The CNC
+        has arithmetic, relational, logic, binary, trigonometric operators and special operators.
+
+        Arithmetic operators:
+
+         +           add.                                    GUP100=3 + 4                GUP100=7
+
+         -           subtraction, also a negative value.     GUP101=5 - 2                GUP101=3
+                                                             GUP100= -(2 * 3)            GUP103=-6
+
+         *           multiplication.                         GUP104=2 * 3                GUP104=6
+
+         /           division.                               GUP105=9 / 2                GUP105=4.5
+
+         MOD         Module or remainder of the division.    GUP106=7 MOD 4              GUP106=3
+
+         EXP         exponential.                            GUP107=2 EXP 3              GUP107=8
+
+
+        Relational operators:
+
+         EQ          equal.                                  (GUP100 EQ GUP200)
+
+         NE          different.                              (GUP101 NE 2.5)
+
+         GT          greater than.                           (GUP102 EQ 0)
+
+         GE          greater than or equal to.               (GUP103 GE 1)
+
+         LT          Less than.                              (GUP104 LT GUP100)
+
+         LE          Less than or equal to.                  (GUP105 LE 66)
+
+
+        Logic and binary operators:
+        NOT, OR, AND, XOR: The act as logic operators between conditions and as binary operators
+        between variables and constants.
+              IF ((FIRST) AND (GS1 EQ 1))
+              GUP1005 = (GUP100 AND (NOT(GUP200 OR GUP299)))
+
+        Trigonometric functions:
+
+         SIN         sine.                                   GUP101=SIN(30)              GUP101=0.5
+
+         COS         cosine.                                 GUP102=COS(30)              GUP102=0.8660
+                                                                                                                        CNC 8055
+         TAN         tangent.                                GUP103=TAN(30)              GUP103=0.5773
+                                                                                                                        CNC 8055i
+         ASIN        arcsine (degrees).                      GUP104=ASIN(1)              GUP104=90º
+
+         ACOS        arccosine (degrees).                    GUP105=ACOS(1)              GUP105=0º
+
+         ATAN        arctangent (degrees).                   GUP106=ATAN(1)              GUP106=45º                          SOFT: V01.6X
+
+         ARG         ARG(x,y) arctangent y/x (degrees).      GUP107=ARG(-1 ,-2)          GUP107=243.4349º
+
+        There are two functions for calculating the arc tangent ATAN which returns the result between ±90°
+        and ARG given between 0 and 360°.
+
+
+                                                                                                                                               ·577·
+===== PAGE 577 =====
+
+                                                      Other functions:
+
+                                                      ABS        absolute value.                     GUP101=ABS(-8)            GUP101=8
+
+                                                      LOG        decimal logarithm.                  GUP102=LOG(100)           GUP102=2
+
+                                                      SQRT       square root.                        GUP103=SQRT(16)           GUP103=4
+
+                                                      ROUND      rounding up an integer number.      GUP104=ROUND(5.83)        GUP104=6
+
+                                                      FLOOR      It rounds down.                     GUP105=FLOOR(5.423)       GUP105=5
+
+
+15.                                                   CEIL       It rounds up.                       GUP106=CEIL(5.423)        GUP106=6
+
+
+
+
+       CUSTOMIZABLE SCREENS
+                              Arithmetic operations
+                                                      Example:
+                                                        Display the value of the X coordinate affected by the active zero offset. To do that, use the
+                                                        following control variables as an intermediate step: GUP100...GUP255, GUP1000...GUP1255
+                                                        and GUP2000...GUP2255.
+                                                        It is possible to write equations like:
+                                                             ;(GUP100 = (PPOSX - ORGX) * 25.4 / 2)
+                                                             ;(W1= GUP100)
+                                                        To assign a value to a widget, that value must first be assigned to a GUP parameter of the CNC
+                                                        and, then, assign the value of this parameter to the widget. Otherwise, an error will be issued.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·578·
+===== PAGE 578 =====
+
+15.5      Conditional instructions.
+
+       Conditional instructions are only available in version 2 of the configuration language. These
+       instructions may be used to have (IF...ELSE…) type structures that depending on particular
+       conditions (PLC resources, etc.) it will be possible to do the following:
+        • Overlay one screen or another one or change screens.
+        • Assign different variables to the same "Widget" element.
+        • Temporarily cancel (disable) part of a screen.
+
+
+
+       Flow control instructions
+                                                                                                                                     15.
+
+
+                                                                                                              CUSTOMIZABLE SCREENS
+                                                                                                                                     Conditional instructions.
+       This instruction analyzes the given condition that must be a relational expression. If the condition
+       is true (result = 1), action 1 will be executed. Otherwise (result = 0), action 2 will be executed.
+          ;(IF (condition))
+              ;(<action1>)
+          ;(ELSE)
+              ;(<action2>)
+          ;(ENDIF)
+
+       IF conditions cannot be nested; i.e. an IF instruction cannot be programmed inside another one.
+       On the other hand, the ELSE part can be missing in the instruction; i.e., it is possible to program
+       IF condition <action1>.
+
+       Example 1:
+
+       In this example, if P8 is other than 12.8, it executes the instruction WGDWIN 201. Otherwise, if P8
+       is equal to 12.8, it executes the instruction WGDWIN 202.
+          ;(IF (GUP1000 NE 12.8))
+              ;(WGDWIN 201)
+          ;(ELSE)
+              ;(WGDWIN 202)
+          ;(ENDIF)
+
+       Example 2:
+       Example of an IF conditional instruction without the ELSE part.
+          ;(IF (GUP100 EQ 12.8))
+              ;(WGDWIN 201)
+          ;(ENDIF)
+
+       Example 3:
+
+       The following program could be used to set a parameter to ·0· where the user has entered a value
+       that is out of the permitted range. This may be particularly interesting in the MCO/TCO mode where
+       the configuration file is only refreshed (updated) on start-up or after pressing the [ENTER] key.
+          ;(IF (GUP100 GT 1000))
+              ;(GUP100=0)
+          ;(ENDIF)
+              ;(W1=GUP100)                                                                                    CNC 8055
+       In this case, when entering the parameter value and pressing [ENTER], the configuration file is        CNC 8055i
+       refreshed and if the parameter value is higher than ·1000·, the parameter takes the value of ·0·.
+
+
+                                                                                                                   SOFT: V01.6X
+
+
+
+
+                                                                                                                                     ·579·
+===== PAGE 579 =====
+
+                                                                15.6      Example of a configuration file
+
+
+                                                                       ;(PRGSCRIPT 1)
+                                                                                                               Header
+                                                                       ;;===============================================
+                                                                       ;;   Screen (201) in JOG mode - Actual
+                                                                       ;;===============================================
+
+15.                                                                    ;[JOG],PLCM1125
+                                                                                                               Comment
+
+
+
+
+       CUSTOMIZABLE SCREENS   Example of a configuration file
+                                                                                                               To show the "JOG mode - Actual" screen when mark M1125=1
+                                                                       ;(DEBUG)
+                                                                                                               Starting at this line, program 999500 keeps a log of the errors originated
+                                                                                                               when debugging the configuration file.
+                                                                       ;(DISABLE 0)
+                                                                                                               The OEM screen will replace the standard CNC screen.
+                                                                       ;(WGDWIN 201)
+                                                                                                               The OEM screen is 201
+
+
+                                                                       ;;--------------------- X axis, coordinate, error and consumption
+                                                                       ;(AUTOREFRESH W1=POSX)
+                                                                                                               The graphic element W1 will always show the X axis position.
+                                                                       ;(AUTOREFRESH W2=FLWEX)
+                                                                                                               The graphic element W2 will always show the X axis following error.
+                                                                       ;(FORMAT W3,LEDBARDEC)
+                                                                       ;(AUTOREFRESH W3=ANAI1)
+                                                                                                               The graphic element W3 (ledbar) will always show the X axis consumption
+                                                                                                               (input ANAI1)
+
+
+                                                                       ;;-------------------- Z axis, position, error and consumption
+                                                                       ;(AUTOREFRESH W4=POSZ)
+                                                                                                               The graphic element W4 will always show the Z axis position.
+                                                                       ;(AUTOREFRESH W5=FLWEZ)
+                                                                                                               The graphic element W5 will always show the Z axis following error.
+                                                                       ;(FORMAT W6,LEDBARDEC)
+                                                                       ;(AUTOREFRESH W6=ANAI2)
+                                                                                                               The graphic element W6 (ledbar) will always show the Z axis consumption
+                                                                                                               (input ANAI2)
+
+
+                                                                       ;;-------------------- Feedrate, F, %
+                                                                       ;(AUTOREFRESH W7=FEED)
+                                                                                                               The graphic element W7 will always show the feedrate of the axes
+                                                                       ;(AUTOREFRESH W8=FRO)
+                                                                                                               The graphic element W8 will always show the selected % of feedrate override
+CNC 8055                                                                                                       for the axes.
+
+CNC 8055i
+                                                                       ;;-------------------- Spindle, S, Smax, %
+                                                                       ;(AUTOREFRESH W9=SPEED)
+                                                                                                               The graphic element W9 will always show the spindle speed.
+ SOFT: V01.6X                                                          ;(AUTOREFRESH W10=SLIMIT)
+                                                                                                               The graphic element W10 will always show the maximum spindle speed
+                                                                                                               allowed.
+
+
+                                                                       ;(AUTOREFRESH W11=SSO)
+
+
+    ·580·
+===== PAGE 580 =====
+
+
+                                            The graphic element W11 will always show the selected % of spindle speed
+                                            override.
+
+
+      ;;-------------------- Tool and offset (T, D)
+      ;(AUTOREFRESH W12=TOOL)
+                                            The graphic element W12 will always show the number of the selected tool.
+      ;(AUTOREFRESH W13=TOD)
+                                            The graphic element W10 will always show the number of the selected tool
+
+
+      ;(END)
+                                            offset.
+                                                                                                                                                 15.
+
+
+                                                                                                                          CUSTOMIZABLE SCREENS   Example of a configuration file
+                                            End of debug and end of the section corresponding to the screen
+
+
+
+
+      ;;===============================================
+      ;;    Screen (202) in MC/TC/CO mode
+      ;;===============================================
+      ;[STDCONV],PLCM1125
+                                            We wish to customize the "Standard screen of the conversational mode"
+                                            when mark M1125=1
+      ;(DEBUG)
+                                            Starting at this line, program 999500 keeps a log of the errors originated
+                                            when debugging the configuration file.
+      ;(DISABLE 0)
+                                            The OEM screen will replace the standard CNC screen.
+      ;(WGDWIN 202)
+                                            The OEM screen is 202
+      ;;--------------------- Coordinates of the Z and X axes
+      ;(AUTOREFRESH W1=POSZ)
+                                            The graphic element W1 will always show the Z axis position (coordinates)
+      ;(AUTOREFRESH W2=POSX)
+                                            The graphic element W2 will always show the X axis position (coordinates)
+      ;;-------------------- Machine cursors
+      ;(AUTOREFRESH W3=POSZ)
+                                            The graphic element W3 (ledbar) will always show the Z axis position.
+      ;(AUTOREFRESH W4=POSX)
+                                            The graphic element W4 (ledbar) will always show the X axis position.
+      ;;--------------------- Axes feedrate (F)
+      ;(AUTOREFRESH W5=FEED)
+                                            The graphic element W5 will always show the feedrate of the axes.
+      ;(END)
+                                            End of debug, end of the portion of the configuration file corresponding to
+                                            the screen and end of the configuration file.
+
+
+
+                                                                                                                          CNC 8055
+                                                                                                                          CNC 8055i
+
+
+
+                                                                                                                               SOFT: V01.6X
+
+
+
+
+                                                                                                                                                 ·581·
+===== PAGE 581 =====
+
+                                                         15.7      Error log file (P999500)
+
+                                                                Every time a customized screen is accessed, the CNC checks the section of that screen in the
+                                                                configuration file.
+
+                                                                If it has errors, it displays the standard screen instead of the customized one.
+
+                                                                If the error has been detected in a section defined after the DEBUG instruction, it generates, in
+                                                                program P999500 several lines indicating the detected error or errors.
+
+                                                                The error log file (P999500) contains all the errors detected since the CNC was turned on. When
+15.                                                             the CNC is turned off, this error log file (P999500) is deleted.
+
+                                                                Examples of detected errors:
+
+
+
+
+       CUSTOMIZABLE SCREENS
+                              Error log file (P999500)
+                                                                   Error due to a nonexistent variable. It must be FLWEX
+                                                                   ;(AUTOREFRESH W2=FLWEXX)
+                                                                   ; Syntax error ...
+                                                                   ;       Unknown CNC variable name
+                                                                   ;       Error on line: 12
+                                                                   ;       Error on character: LF
+                                                                   Error caused for referring to a nonexistent graphic element (W33).
+                                                                   ;(AUTOREFRESH W33=PLCR124)
+                                                                   ; Warning...
+                                                                   ;       Programmed Widget does not exist.
+                                                                   ;       Warning in line: 15
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·582·
+===== PAGE 582 =====
+
+
+                                                                            16
+  The CNC offers a work mode that may be configured by the machine manufacturer. The basic screen
+  provided by Fagor permits controlling the axes, the tool and the spindle.
+
+  In the configurable work mode, the manufacturer (OEM) can:
+   • Configure, partly or completely, the basic screen provided by Fagor.
+   • Create diagnosis screens.
+   • Create screens to consult and/or modify internal variables of the CNC, PLC or drive.
+   • Create screens for the operator to set zero offsets, etc.
+
+  Since all the OEM screens have a subroutine associated, they can also create OEM cycles to:
+   • Consult inputs and outputs.
+   • Adjust the machine axes.
+   • Manage tool magazines.
+   • Manage external devices.
+   • etc.
+
+  The OEM machining canned cycles may even be used to machine parts. A machining operation
+  may be repeated as often as you wish, but it cannot be stored in memory.
+
+  With the keystroke sequence [SHIFT] [ESC] , it is possible to switch from M/T mode to configurable
+  mode and vice versa.
+
+  Depending on the model, when accessing the configurable work mode, the CNC shows the following
+  screen:
+
+
+
+
+                      M model                                          T model
+
+  The way to operate with either model is very similar. If any of the features described here is not
+  common to both models, it will clearly indicate which model it corresponds to.
+
+  These screens may be customized entirely or by areas. See "15.1 Configuration file" on page 570.
+                                                                                                       CNC 8055
+                                                                                                       CNC 8055i
+
+
+
+                                                                                                        SOFT: V01.6X
+
+
+
+
+                                                                                                           ·583·
+===== PAGE 583 =====
+
+                                The screen provided by Fagor contains the following information:
+
+
+
+
+16.
+
+
+       CONFIGURABLE WORK MODE
+                                1. Clock.
+                                2. This window may show the following data:
+                                   SBK           When "Single Block" execution mode is selected.
+                                   DNC           When the DNC mode is active.
+                                   P...          Number of the program currently selected.
+                                   Message       «In position» - «Execution» - «Interrupted» - «RESET».
+                                   PLC messages.
+                                3. This window shows the CNC messages.
+                                4. The window provided by Fagor shows the position of the axes (those of the auxiliary axes
+                                   highlighted) and the real spindle rpm (S).
+                                5. The window provided by Fagor shows the axis feedrate (F) currently selected and the % of F
+                                   being applied.
+                                6. The window provided by Fagor shows the tool number (T) and the tool offset (D). If the tool
+                                   number and offset number are the same, the CNC will not show the "D" value.
+                                   The T model also shows the graphic representation for the location code (shape) associated
+                                   with the tool.
+                                7. The window provided by Fagor shows the associated spindle speed (S), the % being applied,
+                                   the selected turning direction and the active spindle gear.
+                                   The T model also shows the maximum rpm and the "CSS" value when working at Constant
+                                   Surface Speed.
+                                8. This window shows the help texts associated with the OEM screens. Refer to the WINDRAW55
+                                   manual.
+                                9. Reserved.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·584·
+===== PAGE 584 =====
+
+16.1      Axis control
+
+       When accessing the customizable mode, the CNC assumes the work units "mm or inches", "radius
+       or diameters", "mm/min. or mm/rev", etc. selected by machine parameter.
+
+       Coordinate preset
+       It must be done on one axis at a time and proceeding as follows:
+
+                            o                       o                     Value
+
+
+       The CNC requests confirmation of the command.
+                                                                                                                                       16.
+
+
+                                                                                                              CONFIGURABLE WORK MODE
+                                                                                                                                       Axis control
+       Axis feedrate (F)
+       To set the axis feedrate, key in:
+
+                         Value
+
+
+
+       Jog movement
+       Besides the continuous, incremental or handwheel jog, it is also possible to move the axes to a
+       programmed position.
+
+       It is done on one axis at a time. With the feedrate «F» and % currently selected. To do that, press:
+
+                            o                       o                     Value
+
+
+
+
+                                                                                                              CNC 8055
+                                                                                                              CNC 8055i
+
+
+
+                                                                                                                   SOFT: V01.6X
+
+
+
+
+                                                                                                                                       ·585·

@@ -1,0 +1,481 @@
+===== PAGE 129 =====
+
+                                       7.2      Tool magazine table
+
+                                             This table contains information about the tool magazine indicating all the tools of the magazine and
+                                             their position in it.
+
+
+
+
+ 7.
+
+                 Tool magazine table
+        TABLES
+
+
+
+
+                                             The end of the chapter describes how to edit the table.
+
+                                             Magazine position
+                                             Besides indicating each position in the magazine, it indicates the active tool and the one selected
+                                             for the following operations.
+
+                                             The next tool will be placed in the spindle after executing auxiliary function M06.
+
+                                             Tool
+                                             It indicates the number of the tool occupying that position.
+
+                                             The empty positions appear with the letter "T" and the canceled ones with the characters T****.
+
+                                             Status
+                                             The first letter indicates the tool size and the second one its status.
+
+                                             The size depends on the number of pockets it occupies in the magazine.
+                                                N = Normal (family 0-199).
+                                                S = Special (family 200-255).
+
+                                             The tool status is defined as follows:
+                                                A = Available
+                                                E = Expired ("real life" greater than "nominal life").
+                                                R = Rejected by the PLC.
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·130·
+===== PAGE 130 =====
+
+7.3       Tool table
+
+      This table stores information about the tools available indicating the type of tool offset associated
+      with them, their family, etc.
+
+
+
+
+                                                                                                                                  7.
+                                                                                                                         TABLES   Tool table
+
+
+
+
+      The end of the chapter describes how to edit the table. Each tool has the following data fields:
+
+      Offset number associated with the tool
+      Every time a tool is selected, the CNC will assume its dimensions as they appear in the tool offset
+      table for the specified tool offset.
+
+      Family code
+      It will be used when having an automatic tool changer and it will allow replacing the worn out tool
+      with another one with similar characteristics.
+
+      There are two types of families:
+       • Those for normal tools whose codes are between 0 and 199.
+       • Those for special tools (which occupy more than one magazine pocket), whose numbers are
+         between 200 and 255.
+
+      Every time a new tool is selected, the CNC checks whether it is worn out ("real life" greater than
+      "nominal life"). If that is the case, it will not select it, but it will select another one of the same family,
+      instead.
+
+      If while machining a part, the PLC "asks" the CNC to reject the current tool (by activating the logic
+      input "TREJECT"), the CNC will display the message "rejected" in the "STATUS" field and it will
+      replace it with the next tool of the same family that appear in the tool table. This change will take
+      place the next time that tool is selected.
+
+      Nominal tool life
+      It indicates the machining time (in minutes) or the number of operations that that tool is calculated             CNC 8055
+      to last.
+                                                                                                                        CNC 8055i
+      Real tool life
+      It indicates the machining time (in minutes) or the number of operations already carried out by that
+      tool.                                                                                                             ·M· & ·EN· MODELS
+                                                                                                                          SOFT: V01.6X
+
+      Tool status
+      It indicates the size of the tool and its status:
+
+
+
+                                                                                                                                  ·131·
+===== PAGE 131 =====
+
+                              The tool size depends on the number of pockets it takes in the magazine and it is defined as follows:
+                                 N = Normal (family 0-199).
+                                 S = Special (family 200-255).
+
+                              The tool status is defined as follows:
+                                 A = Available
+                                 E = Expired ("real life" greater than "nominal life").
+                                 R = Rejected by the PLC.
+
+
+ 7.
+        TABLES   Tool table
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·132·
+===== PAGE 132 =====
+
+7.4      Tool Offset table
+
+      This table stores the dimensions of each tool.
+
+
+
+
+                                                                                                                        7.
+
+                                                                                                                        Tool Offset table
+                                                                                                               TABLES
+
+
+
+
+      The values of this table can also be modified from the PLC and from the part-program by means
+      of the high level variables associated with the tools.
+
+      The end of the chapter describes how to edit the table. Each offset has a number of fields containing
+      the tool dimensions. These fields are:
+
+      Tool radius
+
+      Tool length
+
+      Tool radius wear offset
+      The CNC will add this value to the nominal radius to calculate the actual (real) tool radius (R+I).
+
+      Tool length wear offset
+      The CNC will add this value to the nominal length to calculate the real tool length (Z+K).
+
+
+
+
+                                                                                                              CNC 8055
+                                                                                                              CNC 8055i
+
+
+
+                                                                                                              ·M· & ·EN· MODELS
+                                                                                                                SOFT: V01.6X
+
+
+
+
+                                                                                                                        ·133·
+===== PAGE 133 =====
+
+                                                      7.5      Global and local parameters tables
+
+                                                            The CNC has two types of general purpose variables:
+                                                             • Local parameters P0-P25 (7 levels).
+                                                             • Global parameters P100-P299.
+
+                                                            The CNC updates the parameter tables after carrying out the operations indicated in the block in
+                                                            preparation. This operation is always carried out before executing the block. Therefore, the values
+                                                            shown in the table may not coincide with those of the block being executed.
+
+ 7.                                                         If the execution mode is abandoned after interrupting the execution of the program, the CNC will
+                                                            update the parameter tables with values corresponding to the block that was being executed.
+
+
+        TABLES
+
+
+
+
+                 Global and local parameters tables
+                                                            In the global and local parameter tables, the values of the parameters may be displayed in decimal
+                                                            (4127.423) or in scientific notation (0.23476 E-3).
+
+                                                            The CNC generates a new nesting level of local parameters every time parameters are assigned
+                                                            to a subroutine. Up to a maximum of 6 nesting levels of local parameters are possible.
+
+                                                            When the machining canned cycles: G66, G68, G69, G81, G82, G83, G84, G85, G86, G87, G88
+                                                            and G89 are active, they use the sixth nesting level of local parameters.
+
+                                                            To access the different local parameter tables, the corresponding level must be indicated (0 through
+                                                            6).
+
+                                                            While programming in high level, local parameters may be referred to as P0-P25, or as A-Z,"A" being
+                                                            the same as "P0" and "Z" the same as "P25".
+                                                            That is why the local parameter tables show the parameter number next to their associated letter
+                                                            (between parenthesis). In the tables, the parameter can only referred to as P0-P25, letters are not
+                                                            allowed.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·134·
+===== PAGE 134 =====
+
+7.6      How to edit tables
+
+      It is possible to move the cursor line by line using the [] [] keys or page by page using the Page-
+      up and Page-down keys.
+
+      There are several ways to edit or modify a line that will be described next.
+
+      Once any of those options has been selected, the user can move the cursor over this line by means
+      of the [] [] keys. Also, with the [] key, the cursor may be placed over the first character of the
+      editing window and, with the [] key over the last character.
+
+                                                                                                                            7.
+      "EDIT" softkey
+
+
+
+                                                                                                                            How to edit tables
+                                                                                                                   TABLES
+      Once this option has been selected, the softkeys change color appearing over a white background
+      and they show the information corresponding to the type of editing that may be done.
+
+      Also, editing help will be available at any time by just pressing the [HELP] key. To quit this help mode,
+      press [HELP] again.
+
+      Press [ESC] to quit the editing mode and maintain the table with the previous values.
+
+      Once the editing is done, press [ENTER]. The values assigned will be entered into the table.
+
+
+
+      "MODIFY" softkey
+
+      Once this option has been selected, the softkeys change color appearing over a white background
+      and showing the information corresponding to each field.
+
+      Also, editing help will be available at any time by just pressing the [HELP] key. To quit this help mode,
+      press [HELP] again.
+
+      By pressing [ESC], the information shown in the editing area is deleted. From this point on, the
+      selected line may be edited again.
+
+      To quit the block modifying mode, press [CL] or [ESC] to clear the editing window and then press
+      [ESC] again. The table will keep its previous values.
+
+      Once the modification is over, press [ENTER]. The new values assigned will be entered into the table.
+
+
+
+      "FIND" softkey
+
+      When selecting this option, the softkeys will show the following options:
+         BEGINNING When pressing this softkey, the cursor is placed over the first line of the table that
+                   can be edited.
+         END             When pressing this softkey, the cursor is placed over the last line of the table.
+         Zero offset, tool offset, tool, position, parameter
+                        When pressing one of these softkeys, the CNC requests the field number to be
+                        found. Once the field has been defined, press [ENTER].
+         The CNC searches for the requested field and places the cursor over it (when found).
+
+
+                                                                                                                  CNC 8055
+      "DELETE" softkey                                                                                            CNC 8055i
+
+      When deleting a line, the CNC sets all the fields to "0".
+
+      To delete a line, indicate its number and press [ENTER]
+                                                                                                                  ·M· & ·EN· MODELS
+                                                                                                                    SOFT: V01.6X
+      To delete several lines, indicate the beginning, press the [UP TO] softkey, indicate the last line to
+      be deleted and press [ENTER]
+
+      To delete all the lines, press the "ALL" softkey. The CNC will request confirmation of the command.
+
+
+
+                                                                                                                            ·135·
+===== PAGE 135 =====
+
+                                      "INITIALIZE" softkey
+
+                                      Resets all the table data to "0". The CNC will request confirmation of the command.
+
+
+
+                                      "LOAD" softkey
+
+                                      The tables may be loaded from the hard disk (KeyCF") or a peripheral device or a PC through the
+
+ 7.                                   serial line (RS232C).
+
+                                      The transmission starts after pressing the corresponding softkey. When using a serial line, the
+
+
+
+
+                 How to edit tables
+        TABLES
+                                      receptor must be ready before starting the transmission.
+
+                                      To interrupt the transmission, press the "ABORT" softkey.
+
+                                      If the length of the table received does not coincide with the current table length, the CNC will act
+                                      as follows:
+                                       • If the table received is shorter than the current one, the received lines are modified and the rest
+                                         remain with their previous values.
+                                       • If the table received is longer than the current one, all the lines of the table are modified and when
+                                         detecting that there is no more room, the CNC will issue the corresponding error message
+
+
+
+                                      "SAVE" softkey
+
+                                      The tables may be saved into the hard disk (KeyCF") or a peripheral device or a PC through the
+                                      serial line (RS232C).
+
+                                      The transmission starts after pressing the corresponding softkey. When using the serial line, the
+                                      receptor must be ready before starting the transmission.
+
+                                      To interrupt the transmission, press the "ABORT" softkey.
+
+
+
+                                      "MM/INCHES" softkey
+
+                                      It toggles the display units for the data. The lower right-hand side window shows the units selected
+                                      (MM/INCH).
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·136·
+===== PAGE 136 =====
+
+
+                                                                                   8
+   In this operating mode, one can access the programs stored in the CNC's RAM memory, in the hard
+   disk (KeyCF), in the USB disk and in external devices through the serial line.
+
+   They can be deleted, renamed or their protection changed. It is also possible to make copies within
+   the same device or from one to another.
+
+   The contents of the storage devices may be shown in two ways:
+   1. Using the explorer.
+   2. Without using the explorer.
+
+   There are two options to set how to access the explorer:
+    • Via the <utilities> softkey.
+    • From the softkeys <execute>, <simulate> or <edit>.
+      Accessing the explorer this way does not allow certain operations.
+
+   Advanced access
+   G.m.p EXPLORER (P180) sets how to access the explorer.
+
+
+
+
+                                                                                                         CNC 8055
+                                                                                                         CNC 8055i
+
+
+
+                                                                                                         ·M· & ·EN· MODELS
+                                                                                                           SOFT: V01.6X
+
+
+
+
+                                                                                                              ·137·
+===== PAGE 137 =====
+
+                                                                        8.1        Accessing the programs without using the explorer
+
+                                                                        8.1.1      Directory
+
+                                                                                To access the part-program directory of the RAM memory, hard disk (KeyCF), USB disk and of the
+                                                                                external devices (serial line). The subroutine directory of the CNC can also be accessed.
+
+
+
+                                                                                Program directory
+ 8.                                                                             By default, the CNC shows the program directory of the RAM memory, to view another directory,
+
+
+        UTILITIES
+
+
+
+
+                    Accessing the programs without using the explorer
+                                                                                press the corresponding softkey.
+
+
+
+
+                                                                                On each directory, the CNC shows all the programs visible (not hidden) to the user, that is:
+                                                                                 • Part programs
+                                                                                 • Screen customizing programs
+                                                                                 • The PLC program (PLC_PRG)
+                                                                                 • The PLC error file (PLC_ERR)
+                                                                                 • The PLC message file (PLC_MSG)
+
+                                                                                The program directory has the following definition fields:
+
+                                                                                Program
+                                                                                It shows the number when it is a part-program or a customizing program and the corresponding
+                                                                                mnemonic when it is a PLC program, the PLC error file or the PLC message file.
+
+                                                                                Comment
+                                                                                Any program may have a comment associated with it for its identification.
+
+                                                                                The comments may be defined when editing the program or in this operating mode using the
+CNC 8055                                                                        Rename option as described later on.
+CNC 8055i
+                                                                                Size
+                                                                                It indicates, in bytes, the size of the program text. It must be borne in mind that the actual size of
+                                                                                the program is slightly greater because this field does not include the space occupied by some
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+                                                                                variables used internally (header, etc.).
+
+                                                                                Date and time
+                                                                                The date and the time when the program was edited (last changed).
+
+
+
+     ·138·

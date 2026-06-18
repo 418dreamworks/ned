@@ -1,0 +1,670 @@
+===== PAGE 117 =====
+
+                    6.1.2      Incremental jog
+
+                            It allows to jog the selected axis in the selected direction an incremental step selected by the
+                            Feedrate Override switch of the operator panel. This movement will be carried out at the jog feedrate
+                            indicated by axis machine parameter "JOGFEED".
+
+                            The available positions are 1, 10, 100, 1000 and 10000 that indicate the units to move the axis. These
+                            units correspond to the units used for display.
+
+                            Example: Display format: 5.3 in mm or 4.4 in inches.
+
+ 6.                                             Switch position
+
+                                                       1
+                                                                                                     Distance
+
+                                                                                            0.001 mm or 0.0001 inches
+
+        JOG   Jog                                      10                                   0.010 mm or 0.0010 inches
+
+                                                      100                                   0.100 mm or 0.0100 inches
+
+                                                     1000                                   1.000 mm or 0.1000 inches
+
+                                                     10000                                 10.000 mm or 1.0000 inches
+
+                            The maximum permitted step is 10 mm or 1 inch regardless of the selected display format (for
+                            example: 5.2 in mm or 4.3 in inches) the movement for the 1000 and 10000 positions will be the
+                            maximum allowed.
+
+                            After selecting the desired incremental move at the switch, if a jog key is pressed, the corresponding
+                            axis will move the selected distance in the selected direction.
+                                       If while jogging an axis, the rapid key is pressed, the axis will move at the feedrate
+                                       established by machine parameter "G00FEED" for this axis as long as this key stays
+                                       pressed. This feedrate will be applied while this key is pressed and it will restore the
+                                       jogging feedrate percentage (0% to 120%) indicated in axis machine parameter
+                                       "JOGFEED" when this key is released.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·118·
+===== PAGE 118 =====
+
+6.1.3         Path-jog mode.
+
+        The "path jog" mode acts when the switch is in one of the continuous or incremental jog positions.
+        This feature may be used to act upon the jog keys of an axis to move both axes of the plane at the
+        same time for chamfering (straight sections) and rounding (curved sections). The CNC assumes
+        as "Path jog" the keys associated with the X axis.
+
+        The data to define the paths is defined using the following variables.
+            • For a linear path, indicate the path angle in the MASLAN variable (value in degrees between
+              the linear path and the first axis of the plane).
+            • For an arc, indicate the arc center coordinates in the MASCFI, MASCSE variables (for the first
+              and second axes of the main plane).
+                                                                                                                                  6.
+                                                                                                                            JOG   Jog
+
+
+
+
+        Variables MASLAN, MASCFI and MASCSE may be read and written from the CNC, DNC and PLC.
+
+                  This feature must be managed from the PLC. This feature is usually activated and deactivated by
+        i         means of an external push-button or a key configured for that purpose, as well as the selection of the
+                  type of path.
+
+
+
+
+        Operation in path-jog mode
+
+        The "path jog" mode is only available with the X axis keys. When pressing one of the keys associated
+        with the X axis, the CNC behaves as follows:
+
+               Switch position         Path-jog            Type of movement
+
+               Continuous jog          OFF                 Only the axis and in the indicated direction
+
+                                       ON                  Both axes in the indicated direction and along the indicated
+                                                           path
+
+               Incremental jog         OFF                 Only the axis, the selected distance and in the indicated
+                                                           direction
+                                       ON                  Both axes, the selected distance and in the indicated
+                                                           direction, but along the indicated path
+
+               Handwheel                                   It ignores the keys.
+
+        The rest of the jog keys always work in the same way, whether "path jog" is on or off. The rest of
+        the keys move only the axis and in the indicated direction.
+
+        The movements in path-jog may be aborted by pressing the [STOP] key or setting the jog switch
+        to one of the handwheel positions.
+
+        Considerations about the jog movements
+        This mode assumes as axis feedrate the one selected in jog mode and it will also be affected by                    CNC 8055
+        the feedrate override switch. If F0 is selected, it assumes the one indicated by machine parameter                 CNC 8055i
+        "JOGFEED (P43)". This mode ignores the rapid jog key.
+
+        Path-jog movements respect the travel limits and the work zones.
+
+                                                                                                                           ·M· & ·EN· MODELS
+                                                                                                                             SOFT: V01.6X
+
+
+
+
+                                                                                                                                  ·119·
+===== PAGE 119 =====
+
+                                                      6.2      Movement with an electronic handwheel
+
+                                                            Depending on their configuration, the various types of handwheels are:
+                                                             • General handwheel.
+                                                               This handwheel may be used to jog any axis one by one.
+                                                               Select the axis and turn the handwheel to move it.
+                                                             • Individual handwheel.
+                                                               This handwheel is the replacement for mechanical handwheels. It only moves the axis it is
+ 6.                                                            associated with.
+                                                               Up to 3 handwheels can be used (one per axis).
+
+        JOG
+
+
+
+
+              Movement with an electronic handwheel
+                                                             • Path-handwheel.
+                                                               This type of handwheel may be used to make chamfers and rounding. Two axes are moved along
+                                                               a selected path (chamfer or rounding) by moving a single handwheel.
+                                                               The CNC assumes as the path handwheel the general handwheel or, when this one is missing,
+                                                               the one associated with the X axis.
+                                                               This feature must be managed from the PLC.
+                                                             • Feed handwheel mode.
+                                                               This type of handwheel may be used to control the feedrate of the machine.
+                                                               This feature must be managed from the PLC.
+                                                             • "Additive handwheel" mode
+                                                               This type of handwheel may be used to jog the axes while a program is being executed.
+                                                               This feature must be managed from the PLC.
+
+
+
+                                                            Movement with handwheel
+
+                                                            To move any of them, turn the switch to any of the handwheel positions. Positions 1, 10 and 100
+                                                            indicate the multiplying factor being applied besides the internal x4 to the feedback pulses supplied
+                                                            by the electronic handwheel.
+
+                                                            For example, if the manufacturer has set a distance of 0.100 mm or 0.0100 inches per handwheel
+                                                            turn, thus:
+
+                                                                                Switch position                                   Distance per turn
+
+                                                                                        1                                     0.100 mm or 0.0100 inches
+
+                                                                                       10                                     1.000 mm or 0.1000 inches
+
+                                                                                      100                                    10.000 mm or 1.0000 inches
+
+
+
+                                                                    When jogging with handwheels, it may happen that depending on the turning speed and the selector
+                                                                    switch position, the CNC be demanded a faster feedrate than the maximum allowed. The CNC will
+                                                                    move the axis the indicated distance but at the maximum feedrate allowed.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·120·
+===== PAGE 120 =====
+
+6.2.1      General or individual handwheel mode
+
+        The machine may have a general handwheel and up to 3 individual handwheels associated with
+        each axis. In this case, the individual handwheels have priority over the general handwheel. So, if
+        an individual handwheel is moving, the general handwheel will be ignored.
+
+
+
+        General handwheel
+
+        To jog the axes with the general handwheel:
+        1. Select the axis to be jogged.
+                                                                                                                       6.
+                                                                                                                 JOG
+
+
+
+
+                                                                                                                       Movement with an electronic handwheel
+           Press one of the JOG keys of the axis to be jogged. The selected axis will be highlighted.
+           When using a FAGOR handwheel with an axis selector button, the axis may be selected by
+           pressing the push-button on the back of the handwheel. The CNC select the first axis and it
+           highlights it. When pressing the button again, the CNC selects the next axis and so on in a rotary
+           fashion. To deselect the axis, hold the button pressed for more than 2 seconds.
+        2. Jog the axis
+           Once the axis has been selected, it will move as the handwheel is being turned and in the
+           direction indicated by it.
+
+
+
+        Individual handwheels
+
+        Each axis will move as the corresponding handwheel is being turned according to the switch position
+        and in the direction indicated by it.
+
+
+
+
+                                                                                                                CNC 8055
+                                                                                                                CNC 8055i
+
+
+
+                                                                                                                ·M· & ·EN· MODELS
+                                                                                                                  SOFT: V01.6X
+
+
+
+
+                                                                                                                       ·121·
+===== PAGE 121 =====
+
+                                                      6.2.2      Path handwheel
+
+                                                              The "path handwheel" mode acts when the switch is in one of the handwheel positions. With this
+                                                              feature, it is possible to jog two axes of the plane at the same time along a linear path (chamfer)
+                                                              or circular path (rounding) with a single handwheel. The CNC assumes as the path handwheel the
+                                                              general handwheel or, when this one is missing, the one associated with the X axis.
+
+                                                              The data to define the paths is defined using the following variables.
+                                                               • For a linear path, indicate the path angle in the MASLAN variable (value in degrees between
+                                                                 the linear path and the first axis of the plane).
+ 6.                                                            • For an arc, indicate the arc center coordinates in the MASCFI, MASCSE variables (for the first
+                                                                 and second axes of the main plane).
+        JOG
+
+
+
+
+              Movement with an electronic handwheel
+                                                              Variables MASLAN, MASCFI and MASCSE may be read and written from the CNC, DNC and PLC.
+
+                                                                      This feature must be managed from the PLC. This feature is usually activated and deactivated by
+                                                          i           means of an external push-button or a key configured for that purpose, as well as the selection of the
+                                                                      type of path.
+
+
+
+
+                                                              Operation in path-handwheel mode
+
+                                                              When selecting the path handwheel mode, the CNC behaves as follows.
+                                                               • If there is a general handwheel, it will be the one working in path handwheel mode. The individual
+                                                                 handwheels, if any, will remain associated with the corresponding axes.
+                                                               • If there is no general handwheel, the individual handwheel associated with the X axis then works
+                                                                 in path-handwheel mode.
+
+                                                              The movements in path-handwheel may be aborted by pressing the [STOP] key or setting the jog
+                                                              switch to one of the continuous or incremental positions.
+
+                                                              Considerations about the jog movements
+                                                              Path-handwheel movements respect the travel limits and the work zones.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·122·
+===== PAGE 122 =====
+
+6.2.3       Feed handwheel mode
+
+        Usually, when making a part for the first time, the machine feedrate is controlled by means of the
+        feedrate override switch.
+
+        From this version on, it is also possible to use the machine handwheels to control that feedrate. This
+        way, the machining feedrate will depend on how fast the handwheel is turned.
+
+
+
+        i       This feature must be managed from the PLC. This feature is usually activated and deactivated by
+                means of an external push-button or a key configured for that purpose.
+
+
+        The following CNC variables return the number of pulses the handwheel has turned.
+                                                                                                                         6.
+                                                                                                                   JOG
+
+
+
+
+                                                                                                                         Movement with an electronic handwheel
+            HANPF         Shows the number of pulses of the 1st handwheel.
+            HANPS         Shows the number of pulses of the 2nd handwheel.
+            HANPT         Shows the number of pulses of the 3rd handwheel.
+            HANPFO        Shows the number of pulses of the 4th handwheel.
+
+
+
+
+                                                                                                                  CNC 8055
+                                                                                                                  CNC 8055i
+
+
+
+                                                                                                                  ·M· & ·EN· MODELS
+                                                                                                                    SOFT: V01.6X
+
+
+
+
+                                                                                                                         ·123·
+===== PAGE 123 =====
+
+                                                      6.2.4       "Additive handwheel" mode
+
+                                                              With manual intervention or additive handwheel, it is possible to move the axes manually while a
+                                                              program is being executed. Once this option is activated, use the handwheel to make a movement
+                                                              to be added to the one resulting from the automatic execution. This movement will be applied as
+                                                              if it were another zero offset.
+
+                                                              The general handwheel will be used as the additive handwheel. If there is no general handwheel,
+                                                              use the individual handwheel associated with the axis. Only one additive handwheel may be enabled
+                                                              at a time; the CNC will only attend to the first enabled handwheel.
+
+ 6.
+        JOG
+
+
+
+
+              Movement with an electronic handwheel
+                                                                                                                              G01 X_ Z_
+
+
+
+                                                                                                                        A
+                                                                                                                (X,Z)
+                                                                                                   ADIOFZ
+
+                                                                                                                        B
+
+
+
+
+                                                                       (A)Position of the tool while in execution.
+                                                                       (B)Position of the tool after a manual intervention.
+
+
+
+
+                                                              i       This feature must be managed from the PLC. This feature is usually activated and deactivated by
+                                                                      means of an external push-button or a key configured for that purpose.
+
+
+                                                              The intervention with an additive handwheel is only possible in execution mode, even while the
+                                                              program is interrupted. However, it is not allowed in the tool inspection mode.
+
+                                                              The additive handwheel cannot be enabled while TCP (G48) is active. However, the additive
+                                                              handwheel is enabled for a coordinate transformation G46 (inclined axis) or G49 (inclined plane)
+                                                              where the handwheel movements are applied to the machining operation even if they are not shown
+                                                              on the graphics screen.
+
+                                                              The offset caused by the additive handwheel stays active after disabling the handwheel and it is
+                                                              reset to zero after a home search. The offset stays active or is reset after an M02 or M30 and after
+                                                              an emergency or a reset depending on the setting of axis machine parameter ADIMPG.
+
+
+
+                                                              Considerations to the additive handwheel.
+
+                                                              The movement with the additive handwheel on the master axis is also applied to the slave axis when
+                                                              using axes that are gantry, slaved or synchronized by PLC.
+
+                                                              When testing the software limits during block preparation, it checks the theoretical coordinate
+                                                              ignoring the additional movement of the additive handwheel.
+
+                                                              The mirror image by PLC is not applied to the additive handwheel movement.
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·124·
+===== PAGE 124 =====
+
+     Configuring the additive handwheel
+
+
+     Handwheel resolution and maximum feedrate
+     The resolution of the additive handwheel depends on the setting of parameter ADIMPG. There are
+     two options to set the resolution:
+      • The resolution of the handwheel is set by parameter ADIMPRES (P177) of the axis.
+      • The handwheel resolution is set with the switch of the operator panel. If the switch is not in the
+        handwheel position, it assumes a x1 factor.
+
+     Maximum feedrate allowed, due to the additive handwheel, is limited by parameter ADIFEED (P84).
+                                                                                                                    6.
+                                                                                                              JOG
+
+
+
+
+                                                                                                                    Movement with an electronic handwheel
+     Coordinates display
+     Parameter DIPLCOF determines whether the CNC takes into consideration or not the additive zero
+     offset when displaying the coordinates of the axes on the screen and when accessing the POS(X-
+     C) and TPOS(X-C) variables.
+
+
+
+
+                                                                                                             CNC 8055
+                                                                                                             CNC 8055i
+
+
+
+                                                                                                             ·M· & ·EN· MODELS
+                                                                                                               SOFT: V01.6X
+
+
+
+
+                                                                                                                    ·125·
+===== PAGE 125 =====
+
+                                 6.3      Spindle movement
+
+                                       It is possible to control the spindle by means of the following operator-panel keys without the need
+                                       to execute M03, M04 or M05.
+
+                                                      Similar to executing function M03. To start the spindle clockwise and displays function
+                                                      M03 in the machining history.
+                                                      Similar to executing function M04. To start the spindle counterclockwise and displays
+                                                      function M04 in the machining history.
+
+ 6.                                                   Similar to executing function M05. To stop the spindle.
+
+                                                      vary the programmed spindle speed between the % set in spindle machine
+        JOG
+
+
+
+              Spindle movement
+                                                      parameters "MINSOVR" and "MAXSOVR with incremental steps set in spindle
+                                                      machine parameter "SOVRSTEP".
+
+                                       It is recommended to define the spindle speed before selecting the turning direction in order to avoid
+                                       an abrupt start because the turning direction had been selected before.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·126·
+===== PAGE 126 =====
+
+
+                                                                                        7
+  In order to select a new tool, tool offset or zero offset, it is necessary that those values be previously
+  stored at the CNC.
+
+  The following tables may be used for that:
+   • Zero offset table.
+     It must be defined. It indicates each axis offset for each zero offset.
+   • Tool offset table.
+     It must be defined. It stores the dimensions of each tool.
+   • Tool table.
+     It must be defined. It indicates for each tool, the family it belongs to, the offset associated to it,
+     its nominal and real life spans, etc.
+   • Tool magazine table
+     It must be defined. It indicates the position each tool occupies in the tool magazine.
+   • Global and local parameters table.
+     It does not need to be defined.
+
+  It is updated by the CNC. When selecting a tool (T) or a tool offset (D), the CNC acts as follows:
+
+
+              Magazine?             No
+
+                    Yes                   If the machine has a tool magazine, the CNC looks up the table
+                                          to know the position occupied by the selected tool and the
+            Tool selection                desired one.
+
+
+
+             "D" defined?           Yes
+                                          If the "D" function has not be defined, the CNC looks up the tool
+                    No                    table to know the number of the offset associated with it.
+      The CNC assume the "D"
+      associated with the tool by
+               default                    The CNC looks up the tool offset table and assumes the tool
+                                          dimensions corresponding to the "D" offset.
+         The CNC takes the
+      dimensions defined in the
+          tool offset table
+
+  We recommend to save the tables into the hard disk (KeyCF), a peripheral device or a PC.
+
+  When accessing the TABLES operating mode, the CNC will show the tables that are saved in the
+  hard disk (KeyCF).
+                                                                                                               CNC 8055
+                                                                                                               CNC 8055i
+
+
+
+                                                                                                               ·M· & ·EN· MODELS
+                                                                                                                 SOFT: V01.6X
+
+
+
+
+                                                                                                                    ·127·
+===== PAGE 127 =====
+
+                    If on CNC power-up, it detects that any table has been damaged, it checks whether that table has
+                    been saved in the hard disk (KeyCF) or not.
+                        • If it is in the hard disk (KeyCF), it asks whether a to make a copy or not.
+                        • If it is not in the hard disk (KeyCF), it asks whether a to initialize with the default values or not.
+
+                               When copying one of the following tables from the hard disk (KeyCF), it resets the CNC automatically.
+                    i          Zero offsets, M functions, tools, tool magazine, tool offsets, geometry, leadscrew error compensation,
+                               cross compensation.
+
+
+
+ 7.
+        TABLES
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·128·
+===== PAGE 128 =====
+
+7.1      Zero offset table
+
+      This table stores the offset of each axis.
+
+
+
+
+                   PLC
+                   G54=G159N1
+                                   X 0.0000
+                                   X 0.0000
+                                                   Y 0.0000
+                                                   Y 0.0000
+                                                              Z 0.0000
+                                                              Z 0.0000
+                                                                         U 0.0000
+                                                                         U 0.0000
+                                                                                    V 0.0000
+                                                                                    V 0.0000
+                                                                                                                        7.
+
+                                                                                                                        Zero offset table
+                                                                                                               TABLES
+                   G55=G159N2      X 0.0000        Y 0.0000   Z 0.0000   U 0.0000   V 0.0000
+                   G56=G159N3      X 0.0000        Y 0.0000   Z 0.0000   U 0.0000   V 0.0000
+                   G57=G159N4      X 0.0000        Y 0.0000   Z 0.0000   U 0.0000   V 0.0000
+                   G58(G159N5)    X 0.0000        Y 0.0000   Z 0.0000   U 0.0000   V 0.0000
+                   G58(G159N5)    X 0.0000        Y 0.0000   Z 0.0000   U 0.0000   V 0.0000
+
+
+
+
+      The end of the chapter describes how to edit the table. The possible zero offsets are:
+
+      PLC. Additive zero offset defined by PLC.
+      It is used, for example, to correct deviations originated by machine dilatations.
+
+      These values are set from the PLC and from the part-program, by means of high level variables
+      "PLCOF(X-C)".
+
+      The CNC always adds these values to the zero offset currently active.
+
+      G54 through G57. Absolute zero offsets.
+      They can also be modified from the PLC and from the part-program, by means of high level variables
+      "ORG(X-C)".
+
+      In order for one of these absolute zero offsets to be active, it must be selected at the CNC using
+      its corresponding G code (G54, G55, G56 or G57).
+
+      G159 N1 to N20. Absolute zero offsets.
+      To apply any zero offset defined in the table.
+
+      The first six zero offsets are the same as programming G54 through G59, except that the values
+      of G58 and G59 are absolute. This is because function G159 cancels functions G54 through G57
+      and, consequently, there is no active zero offset to add the G58 or G59 to.
+
+      G58 and G59. Incremental zero offsets.                                                                  CNC 8055
+      They can also be modified from the PLC and from the part-program, by means of high level variables      CNC 8055i
+      "ORG(X-C)".
+
+      In order for one of these incremental zero offsets to be active, it must be selected at the CNC using
+      its corresponding G code (G58 or G59).
+                                                                                                              ·M· & ·EN· MODELS
+      The new incremental zero offset will be added to the absolute zero currently selected.                    SOFT: V01.6X
+
+
+
+
+                                                                                                                        ·129·

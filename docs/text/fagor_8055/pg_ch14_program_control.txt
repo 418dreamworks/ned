@@ -1,0 +1,1542 @@
+===== PAGE 385 =====
+
+                                                                 14.1      Assignment instructions
+
+                                                                        This is the simplest type of instruction and can be defined as:
+                                                                               (target = arithmetic expression)
+
+                                                                        A local or global parameter or a read-write variable may be selected as target. The arithmetic
+                                                                        expression may be as complex as required or a simple numerical constant.
+                                                                           (P102 = FZLOY)
+                                                                           (ORGY 55 = (ORGY 54 + P100))
+
+ 14.                                                                    In the specific case of designating a local parameter using its name (A instead of P0, for example)
+                                                                        and the arithmetic expression being a numerical constant, the instruction can be abbreviated as
+                                                                        follows:
+
+
+
+
+        PROGRAM CONTROL INSTRUCTIONS
+                                       Assignment instructions
+                                                                           (P0=13.7) ==> (A=13.7) ==> (A13.7)
+
+                                                                        Within a single block, up to 26 assignments can be made to different targets, a single assignment
+                                                                        being interpreted as the set of assignments made to the same target.
+                                                                           (P1=P1+P2, P1=P1+P3, P1=P1*P4, P1=P1/P5)
+                                                                               It is the same as saying:
+                                                                           (P1=(P1+P2+P3)*P4/P5).
+
+                                                                        The different assignments which are made in the same block will be separated by commas ",".
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·386·
+===== PAGE 386 =====
+
+14.2         Display instructions
+
+        (ERROR integer, "error text")
+        This instruction stops the execution of the program and displays the indicated error, it being possible
+        to select this error in the following ways:
+             (ERROR integer)
+                 This will display the error number indicated and the text associated to this number according
+                 to the CNC error code (should there be one).
+             (ERROR integer, "error text")
+                 This will display the number and the error text indicated, it being necessary to write the text
+                                                                                                                                                   14.
+
+                                                                                                                                                   Display instructions
+
+
+
+
+                                                                                                                    PROGRAM CONTROL INSTRUCTIONS
+                 between quote marks "".
+             (ERROR "error text").
+                 This will display the error text only.
+
+        The error number may be defined by means of a numerical constant or an arithmetic parameter.
+        When using a local parameter, its numeric format must be used (P0 thru P25 instead of A thru Z).
+
+        Programming examples:
+             (ERROR 5)
+             (ERROR P100)
+             (ERROR "User error")
+             (ERROR 3, "User error")
+             (ERROR P120, "User error)
+
+        (MSG "message")
+        This instruction will display the message indicated between quote marks.
+
+        The CNC screen is provided with an area for displaying DNC or user program messages, and always
+        displays the last message received irrespective of where it has come from.
+                 Example: (MSG "Check tool")
+
+        (DGWZ expression 1, expression 2, expression 3, expression 4, expression 5,
+        expression 6)
+        The DGWZ instruction (Define Graphic Work Zone) defines the graphics area.
+
+        Each expression forming the instruction syntax correspond to one of the limits and they must be
+        defined in millimeters or inches.
+             expression 1           Minimum X
+             expression 2           Maximum X
+             expression 3           Minimum Y
+             expression 4           Maximum Y
+             expression 5           Minimum Z
+             expression 6           Maximum Z
+
+
+
+
+                                                                                                                   CNC 8055
+                                                                                                                   CNC 8055i
+
+
+
+                                                                                                                   ·M· & ·EN· MODELS
+                                                                                                                     SOFT: V01.6X
+
+
+
+
+                                                                                                                                                   ·387·
+===== PAGE 387 =====
+
+                                                                     14.3      Enable-disable instructions
+
+                                                                            (ESBLK and DSBLK)
+                                                                            After executing the mnemonic ESBLK, the CNC executes all the blocks that come after as if it were
+                                                                            dealing with a single block.
+
+                                                                            This single block treatment is kept active until it is cancelled by executing the mnemonic DSBLK.
+
+                                                                            In this way, should the program be executed in the SINGLE BLOCK operating mode, the group of
+                                                                            blocks which are found between the mnemonics ESBLK and DSBLK will be executed in a continuous
+ 14.                                                                        cycle, i.e., execution will not be stopped at the end of a block but will continue by executing the
+                                                                            following one.
+
+
+
+
+                                       Enable-disable instructions
+
+
+
+        PROGRAM CONTROL INSTRUCTIONS
+                                                                                G01 X10 Y10 F8000 T1 D1
+                                                                                (ESBLK)                                         ; Start of single block
+                                                                                G02 X20 Y20 I20 J-10
+                                                                                G01 X40 Y20
+                                                                                G01 X40 Y40 F10000
+                                                                                G01 X20 Y40 F8000
+                                                                                (DSBLK)                                         ; Cancellation of single block
+                                                                                G01 X10 Y10
+                                                                                M30
+
+
+                                                                            (ESTOP and DSTOP)
+                                                                            After executing the mnemonic DSTOP, the CNC enables the Stop key, as well as the Stop signal
+                                                                            from the PLC.
+
+                                                                            It will remain disabled until it is enabled once again by means of the mnemonic ESTOP.
+
+                                                                            (EFHOLD and DFHOLD)
+                                                                            After executing the mnemonic DFHOLD, the CNC enables the Feed-Hold input from the PLC.
+
+                                                                            It will remain disabled until it is enabled once again by means of the mnemonic EFHOLD.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·388·
+===== PAGE 388 =====
+
+14.4         Flow control instructions
+
+        The GOTO and RPT instructions cannot be used in programs that are executed from a PC connected
+        through the serial line.
+
+        ( GOTO N(expression) )
+        The mnemonic GOTO causes a jump within the same program, to the block defined by the label
+        N(expression). The execution of the program will continue after the jump, from the indicated block.
+
+        The jump label can be addressed by means of a number or by any expression which results in a
+        number.                                                                                                                                         14.
+                       G00 X0 Y0 Z0 T2 D4
+
+
+
+
+                                                                                                                                                        Flow control instructions
+
+
+
+
+                                                                                                                         PROGRAM CONTROL INSTRUCTIONS
+                       X10
+                       (GOTO N22)                                 ; Jump instruction
+                       X15 Y20                                    ; It is not executed
+                       Y22 Z50                                    ; It is not executed
+              N22      G01 X30 Y40 Z40 F1000                      ; Continues execution in this block
+                       G02 X20 Y40 I-5 J-5
+                       ...
+
+
+        ( RPT N(expression), N(expression), P(expression) )
+        The mnemonic RPT executes the part of the program between the blocks defined by means of the
+        labels N(expression). The blocks to be executed may be in the execution program or in a RAM
+        memory program.
+
+        The label P(expression) indicates the number of the program containing the blocks to be executed.
+        If not defined, the CNC interprets that the portion to be repeated is located in the same program.
+
+        All the labels can be indicated by means of a number or by any expression which results in a number.
+        The part of the program selected by means of the two labels must belong to the same program, by
+        first defining the initial block and then the final block.
+
+        The execution of the program will continue in the block following the one in which the mnemonic
+        RPT was programmed, once the selected part of the program has been executed.
+              N10      G00 X10
+                       Z20
+                       G01 X5
+                       G00 Z0
+              N20      X0
+              N30      (RPT N10, N20) N3
+              N40      G01 X20
+                       M30
+                       When reaching block N30, the program will execute section N10-N20 three times.
+                       Once this has been completed, the program will continue execution in block N40.
+
+
+
+
+        i         Since the RPT instruction does not interrupt block preparation or tool compensation, it may be used
+                  when using the EXEC instruction and while needing to maintain tool compensation active.
+
+
+        (IF condition <action1> ELSE <action2>)
+        This instruction analyzes the given condition that must be a relational expression. If the condition
+                                                                                                                        CNC 8055
+        is true (result equal to 1), <action1> will be executed, otherwise (result equal to 0) <action2> will
+        be executed.                                                                                                    CNC 8055i
+             Example:
+                 (IF (P8 EQ 12.8) CALL 3 ELSE PCALL 5, A2, B5, D8)
+                 If P8 = 12.8 executes the mnemonic (CALL3)
+                                                                                                                        ·M· & ·EN· MODELS
+                 If P8<>12.8 executes the mnemonic (PCALL 5, A2, B5, D8)
+                                                                                                                          SOFT: V01.6X
+        The instruction can lack the ELSE part, i.e., it will be enough to program IF condition <action1>.
+             Example:
+                 (IF (P8 EQ 12.8) CALL 3)
+
+
+
+                                                                                                                                                        ·389·
+===== PAGE 389 =====
+
+                                                                   Both <action1> and <action2> can be expressions or instructions, except for mnemonics IF and
+                                                                   SUB.
+
+                                                                   Due to the fact that in a high level block local parameters can be named by means of letters,
+                                                                   expressions of this type can be obtained:
+                                                                          (IF (E EQ 10) M10)
+
+                                                                   If the condition of parameter P5 (E) having a value of 10 is met, the miscellaneous function M10
+                                                                   will not be executed, since a high level block cannot have ISO code commands. In this case M10
+                                                                   represents the assignment of value 10 to parameter P12, i.e., one can program either:
+
+ 14.                                                                      (IF (E EQ 10) M10) or (IF (P5 EQ 10) P12=10)
+
+
+
+
+                                       Flow control instructions
+
+
+
+
+        PROGRAM CONTROL INSTRUCTIONS
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·390·
+===== PAGE 390 =====
+
+14.5         Subroutine instructions
+
+        A subroutine is a part of a program which, being properly identified, can be called from any position
+        of a program to be executed.
+
+        A subroutine can be kept in the memory of the CNC as an independent part of a program and be
+        called one or several times, from different positions of a program or different programs.
+
+        Only subroutines stored in the CNC's RAM memory can be executed. Therefore, to execute a
+        subroutine stored in the hard disk (KeyCF) or in a PC connected through the serial line, copy it first
+        into the CNC's RAM memory.
+
+        If the subroutine is too large to be copied into RAM, it must be converted into a program and then
+                                                                                                                                                 14.
+        the EXEC instruction must be used.
+
+
+
+
+                                                                                                                                                 Subroutine instructions
+
+
+
+
+                                                                                                                  PROGRAM CONTROL INSTRUCTIONS
+        (SUB integer)
+        The SUB instruction defines as subroutine the set of program blocks programmed next until reaching
+        the RET subroutine. The subroutine is identified with an integer which also defines the type of
+        subroutine; either general or OEM.
+
+             Range of general subroutines                        SUB 0000 - SUB 9999
+
+             Range of OEM (manufacturer's) subroutines           SUB 10000 - SUB 20000
+
+        The OEM subroutines are treated like the general ones, but with the following restrictions:
+          • They can only be defined in OEM programs, having the [O] attribute. Otherwise, the CNC will
+            display the corresponding error.
+                 Error 63: Program subroutine number 1 thru 9999.
+          • To execute an OEM subroutine using CALL, PCALL or MCALL, it must be inside an OEM
+            program. Otherwise, the CNC will display the corresponding error.
+                 Error 1255: Subroutine restricted to an OEM program.
+
+        There can not be two subroutines with the same identification number in the CNC memory, even
+        when they belong to different programs.
+
+        ( RET )
+        The mnemonic RET indicates that the subroutine which was defined by the mnemonic SUB, finishes
+        in this block.
+              ( SUB 12)                                      ; Definition of subroutine 12
+              G91 G01 XP0 F5000
+              YP1
+              X-P0
+              Y-P1
+              (RET)                                          ; End of subroutine
+
+
+
+
+                                                                                                                 CNC 8055
+                                                                                                                 CNC 8055i
+
+
+
+                                                                                                                 ·M· & ·EN· MODELS
+                                                                                                                   SOFT: V01.6X
+
+
+
+
+                                                                                                                                                 ·391·
+===== PAGE 391 =====
+
+                                                                 ( CALL (expression) )
+                                                                 The mnemonic CALL makes a call to the subroutine indicated by means of a number or by means
+                                                                 of any expression that results in a number.
+
+                                                                 As a subroutine may be called from a main program, or a subroutine, from this subroutine to a second
+                                                                 one, from the second to a third, etc..., the CNC limits these calls to a maximum of 15 nesting levels,
+                                                                 it being possible to repeat each of the levels 9999 times.
+
+
+
+
+ 14.
+
+                                       Subroutine instructions
+
+
+
+
+        PROGRAM CONTROL INSTRUCTIONS
+                                                                 Programming example.
+
+
+
+
+                                                                     G90 G00 X30 Y20 Z10
+                                                                     (CALL 10)
+                                                                     G90 G00 X60 Y20 Z10
+                                                                     (CALL 10)
+                                                                     M30
+
+                                                                     ( SUB 10)
+                                                                     G91 G01 X20 F5000
+                                                                     (CALL 11)                                            ; Drilling and threading
+                                                                     G91 G01 Y10
+                                                                     (CALL 11)                                            ; Drilling and threading
+                                                                     G91 G01 X-20
+                                                                     (CALL 11)                                            ; Drilling and threading
+CNC 8055                                                             G91 G01 Y-10
+                                                                     (CALL 11)                                            ; Drilling and threading
+CNC 8055i                                                            (RET)
+
+                                                                     ( SUB 11)
+                                                                     G81 G98 G91 Z-8 I-22 F1000 S5000 T1 D1               ; Drilling canned cycle
+·M· & ·EN· MODELS                                                    G84 Z-8 I-22 K15 F500 S2000 T2 D2                    ; Threading canned cycle
+  SOFT: V01.6X                                                       G80
+                                                                     (RET)
+
+
+
+
+     ·392·
+===== PAGE 392 =====
+
+        (PCALL (expression), (assignment instruction), (assignment instruction),...) )
+        The mnemonic PCALL calls the subroutine indicated by means of a number or any expression that
+        results in a number. In addition, it allows up to a maximum of 26 local parameters of this subroutine
+        to be initialized.
+
+        These local parameters are initialized by means of assignment instructions.
+             Example: (PCALL 52, A3, B5, C4, P10=20)
+
+        In this case, in addition to generating a new subroutine nesting level, a new local parameter nesting
+        level will be generated, there being a maximum of 6 levels of local parameter nesting, within the 15
+        levels of subroutine nesting.
+
+        Both the main program and each subroutine that is found on a parameter nesting level, will have
+                                                                                                                                                14.
+
+                                                                                                                                                Subroutine instructions
+
+
+
+
+                                                                                                                 PROGRAM CONTROL INSTRUCTIONS
+        26 local parameters (P0-P25).
+
+        Programming example.
+
+
+
+
+              G90 G00 X30 Y50 Z0
+              (PCALL 10, P0=20, P1=10)                           ; Also (PCALL 10, A20, B10)
+              G90 G00 X60 Y50 Z0
+              (PCALL 10, P0=10, P1=20)                           ; Also (PCALL 10, A10, B20)
+              M30
+              ( SUB 10)
+              G91 G01 XP0 F5000
+              (CALL 11)
+              G91 G01 YP1
+              (CALL 11)
+              G91 G01 X-P0
+              (CALL 11)
+              G91 G01 Y-P1
+              (CALL 11)
+              (RET)
+              ( SUB 11)
+              G81 G98 G91 Z-8 I-22 F1000 S5000 T1 D1             ; Drilling canned cycle
+              G84 Z-8 I-22 K15 F500 S2000 T2 D2                  ; Threading canned cycle
+              G80
+              (RET)
+                                                                                                                CNC 8055
+                                                                                                                CNC 8055i
+
+
+
+                                                                                                                ·M· & ·EN· MODELS
+                                                                                                                  SOFT: V01.6X
+
+
+
+
+                                                                                                                                                ·393·
+===== PAGE 393 =====
+
+                                                                 (MCALL (expression), (assignment instruction), (assignment instruction),...) )
+                                                                 By means of the mnemonic MCALL, any user-defined subroutine (SUB integer) acquires the
+                                                                 category of canned cycle.
+
+                                                                 The execution of this mnemonic is the same as the mnemonic PCALL, but the call is modal, i.e.,
+                                                                 if another block with axis movement is programmed at the end of this block, after this movement,
+                                                                 the subroutine indicated will be executed and with the same call parameters.
+
+                                                                 If, when a modal subroutine is selected, a movement block with a number of repetitions is executed,
+                                                                 for example X10 N3, the CNC will execute the movement only once (X10) and after the modal
+
+ 14.                                                             subroutine, as many times as the number of repetitions indicates.
+
+                                                                 Should block repetitions be chosen, the first execution of the modal subroutine will be made with
+                                                                 updated call parameters, but not for the remaining times, which will be executed with the values
+
+
+
+
+                                       Subroutine instructions
+
+
+
+
+        PROGRAM CONTROL INSTRUCTIONS
+                                                                 which these parameters have at that time.
+
+                                                                 If, when a subroutine is selected as modal, a block containing the MCALL mnemonic is executed,
+                                                                 the present subroutine will lose its modal quality and the new subroutine selected will be changed
+                                                                 to modal.
+
+                                                                 ( MDOFF )
+                                                                 The MDOFF instruction indicates that the mode assumed by a subroutine with the MCALL
+                                                                 instruction or a part-program with MEXEC ends in that block.
+
+                                                                 The use of modal subroutines simplifies programming.
+
+                                                                 Programming example.
+
+
+
+
+                                                                     G90 G00 X30 Y50 Z0
+                                                                     (PCALL 10, P0=20, P1=10)
+                                                                     G90 G00 X60 Y50 Z0
+                                                                     (PCALL 10, P0=10, P1=20)
+                                                                     M30
+
+                                                                     ( SUB 10)
+                                                                     G91 G01 XP0 F5000
+                                                                     (MCALL 11)
+                                                                     G91 G01 YP1
+                                                                     G91 G01 X-P0
+CNC 8055                                                             G91 G01 Y-P1
+CNC 8055i                                                            (MDOFF)
+                                                                     (RET)
+                                                                     ( SUB 11)
+                                                                     G81 G98 G91 Z-8 I-22 F1000 S5000 T1 D1
+                                                                     G84 Z-8 I-22 K15 F500 S2000 T2 D2
+·M· & ·EN· MODELS                                                    G80
+  SOFT: V01.6X
+                                                                     (RET)
+
+
+
+
+     ·394·
+===== PAGE 394 =====
+
+14.6         Probe related instructions
+
+        (PROBE (expression), (assignment instruction), (assignment instruction),...) )
+        The mnemonic PROBE calls the probe cycle indicated by means of a number or any expression
+        that results in a number. In addition, it allows the local parameters of this subroutine to be initialized
+        by means of assignment instructions.
+
+        This instruction also generates a new subroutine nesting level.
+
+
+                                                                                                                                                     14.
+
+
+
+                                                                                                                      PROGRAM CONTROL INSTRUCTIONS
+                                                                                                                                                     Probe related instructions
+
+
+
+
+                                                                                                                     CNC 8055
+                                                                                                                     CNC 8055i
+
+
+
+                                                                                                                     ·M· & ·EN· MODELS
+                                                                                                                       SOFT: V01.6X
+
+
+
+
+                                                                                                                                                     ·395·
+===== PAGE 395 =====
+
+                                                                              14.7      Interruption-subroutine instructions
+
+                                                                                     Whenever one of the general interruption logic input is activated, "INT1" (M5024), "INT2" (M5025),
+                                                                                     "INT3" (M5026) or "INT4 (M5027), the CNC temporarily interrupts the execution of the program in
+                                                                                     progress and starts executing the interruption subroutine whose number is indicated by the
+                                                                                     corresponding general parameter.
+                                                                                        With INT1 (M5024) the one indicated by machine parameter INT1SUB (P35)
+                                                                                        With INT2 (M5025) the one indicated by machine parameter INT2SUB (P36)
+
+
+ 14.                                                                                    With INT3 (M5026) the one indicated by machine parameter INT3SUB (P37)
+                                                                                        With INT4 (M5027) the one indicated by machine parameter INT4SUB (P38)
+
+                                                                                     The interruption subroutines are defined like any other subroutine by using the instructions: "(SUB
+
+
+
+
+        PROGRAM CONTROL INSTRUCTIONS
+                                       Interruption-subroutine instructions
+                                                                                     integer)" and "(RET)".
+
+                                                                                     These interruption subroutines do not change the nesting level of local parameters, thus only global
+                                                                                     parameters must be used in them.
+
+                                                                                     Within an interruption subroutine, it is possible to use the "(REPOS X, Y, Z, ...)" instruction described
+                                                                                     next.
+
+                                                                                     Once the execution of the subroutine is over, the CNC resumes the execution of the program which
+                                                                                     was interrupted.
+
+                                                                                     ( REPOS X, Y, Z, ... )
+                                                                                     The REPOS instruction must always be used inside an interruption subroutine and facilitates the
+                                                                                     repositioning of the machine axes to the point of interruption.
+
+                                                                                     When executing this instruction, the CNC moves the axes to the point where the program was
+                                                                                     interrupted.
+
+                                                                                     Inside the REPOS instruction, indicate the order the axes must move to the point where the program
+                                                                                     was interrupted.
+                                                                                      • The axes move one by one.
+                                                                                      • It is not necessary to define all the axes, only those to be repositioned.
+                                                                                      • The axes that make up the main plane of the machine move together. Both axes need not be
+                                                                                        defined because the CNC moves the first one. The movement is not repeated when defining
+                                                                                        the second one, it is ignored.
+
+                                                                                     Example:
+                                                                                        The main plane is formed by the X and Y axes, the Z axis is the longitudinal (perpendicular) axis
+                                                                                        and the machine uses the C and W axes as auxiliary axes. It is desired to first move the C axis,
+                                                                                        then the X and Y axes and finally the Z axis.
+                                                                                        This repositioning move may be defined in any of the following ways:
+                                                                                            (REPOS C, X, Y, Z)(REPOS C, X, Z)(REPOS C, Y, Z)
+
+                                                                                     If the REPOS instruction is detected while executing a subroutine not activated by an interruption
+                                                                                     input, the CNC will issue the corresponding error message.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·396·
+===== PAGE 396 =====
+
+14.8         Program instructions
+
+        With this CNC, from a program in execution, it is possible to:
+          • Execute another program. Instruction (EXEC P.....)
+          • Execute another program in modal mode. Instruction (MEXEC P.....)
+          • Generate a new program. Instruction (OPEN P.....)
+          • Add blocks to an existing program. Instruction (WRITE P.....)
+
+        ( EXEC P(expression), (directory) )
+        The EXEC P instruction executes the part-program of the indicated directory
+                                                                                                                                               14.
+
+                                                                                                                                               Program instructions
+
+
+
+
+                                                                                                                PROGRAM CONTROL INSTRUCTIONS
+        The part-program may be defined by a number or any expression resulting in a number.
+
+        By default, the CNC interprets that the part-program is in the CNC's RAM memory. If it is in another
+        device, it must be indicated in (directory).
+             HD               in the Hard Disk (KeyCF).
+             DNC2             in a PC connected through the serial line.
+             DNCE             in a PC connected through Ethernet.
+
+        ( MEXEC P(expression), (directory) )
+        The MEXEC instruction executes the part-program of the indicated directory and it also becomes
+        modal; i.e. if after this block, another one is programmed with axis movement; after this movement,
+        it will execute the indicated program again.
+
+        The part-program may be defined with a number or with an expression whose result is a number.
+
+        By default, the CNC interprets that the part-program is in the CNC's RAM memory. If it is in another
+        device, it must be so indicated in (directory):
+             HD               in the Hard Disk (KeyCF).
+             DNC2             in a PC connected through the serial line.
+             DNCE             in a PC connected through Ethernet.
+
+        If while the modal part-program is selected, a motion block is executed with a number of repetitions
+        (for example X10 N3), the CNC ignores the number of repetitions and executes the movement and
+        the modal part-program only once.
+
+        If while a part-program is selected as modal, a block containing the MEXEC instruction is executed
+        from the main program, the current part-program stops being modal and the part-program called
+        upon with MEXEC will then become modal.
+
+        If within the modal part-program, an attempt is made to execute a block using the MEXEC instruction,
+        it will issue the relevant error message.
+                  1064: The program cannot be executed.
+
+        ( MDOFF )
+        The MDOFF instruction indicates that the mode assumed by a subroutine with the MCALL
+        instruction or a part-program with MEXEC ends in that block.
+
+        ( OPEN P(expression), (destination directory), A/D, "program comment" )
+        The OPEN instruction begins editing a part-program. The part-program number may be indicated
+        by a number or any expression resulting in a number.
+                                                                                                               CNC 8055
+        By default, the new part-program edited will be stored in the CNC's RAM memory. To store it another
+        device, it must be indicated in (destination directory).
+                                                                                                               CNC 8055i
+             HD               in the Hard Disk (KeyCF).
+             DNC2             in a PC connected through the serial line.
+             DNCE             in a PC connected through Ethernet.                                              ·M· & ·EN· MODELS
+                                                                                                                 SOFT: V01.6X
+
+
+
+
+                                                                                                                                               ·397·
+===== PAGE 397 =====
+
+                                                              Parameter A/D is used when the program to be edited already exists.
+                                                                 A       The CNC appends the new blocks after the ones already existing.
+                                                                 D       The CNC deletes the existing program and starts editing a new one.
+
+                                                              A program comment may also be associated with it; this comment will later be displayed next to it
+                                                              in the program directory.
+
+                                                              To edit blocks, the WRITE instruction must be used as described next.
+
+                                                              Notes:
+
+ 14.                                                             If the program to be edited already exists and the A/D parameters are not defined, the CNC will
+                                                                 display an error message when executing the block.
+                                                                 The program opened with the OPEN instruction is closed when executing an M30, or another
+
+
+
+
+                                       Program instructions
+
+
+
+
+        PROGRAM CONTROL INSTRUCTIONS
+                                                                 OPEN instruction and after an Emergency or Reset.
+                                                                 From a PC, only programs stored in the CNC'S RAM memory, or in the hard disk (KeyCF) can
+                                                                 be opened
+
+                                                              ( WRITE <block text> )
+                                                              The mnemonic WRITE adds, after the last block of the program which began to be edited by means
+                                                              of the mnemonic OPEN P, the information contained in <block text> as a new program block.
+
+                                                              When it is an ISO coded parametric block, all the parameters (global and local) are replaced by the
+                                                              numeric value they have at the time.
+                                                                 (WRITE G1 XP100 YP101 F100) => G1 X10 Y20 F100
+                                                              When it is a parametric block edited in high level, use the "?" character to indicate that the parameter
+                                                              is supposed to be replaced by the numeric value it has at the time.
+                                                                  (WRITE (SUB P102))                         =>         (SUB P102)
+                                                                  (WRITE (SUB ?P102))                        =>         ( SUB 55)
+
+                                                                  (WRITE (ORGX54=P103))                      =>         (ORGX54=P103)
+                                                                  (WRITE (ORGX54=?P103))                     =>         (ORGX54=222)
+
+                                                                  (WRITE (PCALL P104))                       =>         (PCALL P104)
+                                                                  (WRITE (PCALL ?P104))                      =>         (PCALL 25)
+
+
+                                                              If the mnemonic WRITE is programmed without having programmed the mnemonic OPEN
+                                                              previously, the CNC will display the corresponding error, except when editing a user customized
+                                                              program, in which case a new block is added to the program being edited.
+
+                                                              Example of the creation of a program which contains several points of a cardioid:
+
+
+
+
+                                                                                                                            | R = B cos (Q/2) |
+
+
+
+
+CNC 8055
+CNC 8055i
+                                                              Subroutine number 2 is used, its parameters having the following meaning:
+                                                                 A or P0         Q angle value.
+
+·M· & ·EN· MODELS
+                                                                 B or P1         B value
+  SOFT: V01.6X
+                                                                 C or P2         Angular increment for the calculation.
+                                                                 D or P3         Feedrate of the axes.
+
+
+
+
+     ·398·
+===== PAGE 398 =====
+
+        A way to use this example could be:
+              G00 X0 Y0
+              G93
+              (PCALL 2, A0, B30, C5, D500)
+              M30
+
+
+        Program generating subroutine.
+                       ( SUB 2)
+                       (OPEN P12345)                ; Starts editing of program P12345
+
+              N100
+                       (WRITE FP3)
+                       (P10=P1*(ABS(COS(P0/2))))
+                                                    ; Selects machining feedrate
+                                                    ; Calculates R
+                                                                                                                                   14.
+                       (WRITE G01 G05 RP10 QP0)     ; Movement block
+
+
+
+
+                                                                                                                                   Program instructions
+
+
+
+
+                                                                                                    PROGRAM CONTROL INSTRUCTIONS
+                       (P0=P0+P2)                   ; New angle
+                       (IF (P0 LT 365) GOTO N100)   ; If angle smaller than 365º, calculates new
+                                                      point
+                       (WRITE M30)                  ; End of program block
+                       (RET)                        ; End of subroutine
+
+
+
+
+                                                                                                   CNC 8055
+                                                                                                   CNC 8055i
+
+
+
+                                                                                                   ·M· & ·EN· MODELS
+                                                                                                     SOFT: V01.6X
+
+
+
+
+                                                                                                                                   ·399·
+===== PAGE 399 =====
+
+                                                                         14.9      Kinematics related instructions
+
+                                                                                Changing the kinematics requires modifying the general machine parameters associated with them
+                                                                                and validating them. The machine parameters may be modified from the OEM subroutines and then
+                                                                                the values validated using the INIPAR instruction.
+
+                                                                                An OEM program may have different subroutines that will set the machine parameters for each
+                                                                                kinematics. Then, the spindle change subroutine will call the subroutine with the parameters to be
+                                                                                activated and, then, will execute the INIPAR instruction.
+
+
+ 14.                                                                            ( INIPAR )
+                                                                                This instruction validates the machine parameters modified from an OEM subroutine that defines
+
+
+
+
+        PROGRAM CONTROL INSTRUCTIONS
+                                       Kinematics related instructions
+                                                                                the kinematics. This instruction is only valid when used in subroutines that are located inside OEM
+                                                                                programs.
+
+                                                                                To validate the machine parameters associated with a kinematics, G48 and G49 must NOT be active.
+                                                                                Otherwise, the CNC will display the corresponding error.
+                                                                                       1074: INIPAR cannot be executed.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·400·
+===== PAGE 400 =====
+
+14.10        Screen customizing instructions
+
+        Customizing instructions may be used only when customizing programs made by the user.
+
+        These customizing programs must be stored in the CNC's RAM memory and they may utilize the
+        "Programming Instructions" and they will be executed in the special channel designed for this use;
+        the program selected in each case will be indicated in the following general machine parameters.
+             In "USERDPLY" the program to be executed in the Execution Mode will be indicated.
+             In "USEREDIT" the program to be executed in the Editing Mode will be indicated.
+             In "USERMAN" the program to be executed in the Manual (JOG) Mode will be indicated.
+             In "USERDIAG" the program to be executed in the Diagnosis Mode will be indicated.
+                                                                                                                                                     14.
+
+
+                                                                                                                                                     Screen customizing instructions
+
+
+                                                                                                                      PROGRAM CONTROL INSTRUCTIONS
+        The customizing programs may have up to five nesting levels besides their current one. Also, the
+        customizing instructions do not allow local parameters, nevertheless all global parameters may be
+        used to define them.
+
+        ( PAGE (expression) )
+        The mnemonic PAGE displays the page number indicated by means of a number or by means of
+        any expression resulting in a number.
+
+        User-defined pages will be from page 0 to page 255 and will be defined from the CNC keyboard
+        in the Graphic Editor mode and as indicated in the Operating Manual.
+
+        System pages will be defined by a number greater than 1000. See the corresponding appendix.
+
+        ( SYMBOL (expression 1), (expression 2), (expression 3) )
+        The mnemonic SYMBOL displays the symbol whose number is indicated by means of the value of
+        expression 1 once this has been evaluated.
+
+        Its position on screen is also defined by expression 2 (column) and by expression 3 (row).
+
+        Expression 1, expression 2 and expression 3 may contain a number or any expression resulting in
+        a number.
+
+        The CNC allows displaying any user-defined symbol (0-255) defined at the CNC keyboard in the
+        Graphic Editor mode such as is indicated in the Operating Manual.
+
+        In order to position it within the display area its pixels must be defined, 0-639 for columns (expression
+        2) and 0-335 for rows (expression 3).
+
+        (IB (expression) = INPUT "text", format)
+        The CNC has 26 data entry variables (IBO-1B25)
+
+        The IB mnemonic displays the text indicated in the data input window and stores the data input by
+        the user in the entry variable indicated by means of a number or by means of any expression resulting
+        in a number.
+
+        The wait for data entry will only occur when programming the format of the requested data. This
+        format may have a sign, integer part and decimal part.
+             If it bears the "-" sign, it will allow positive and negative values, and if it does not have a sign,
+             it will only allow positive values.
+             The integer part indicates the maximum number of digits (0-6) desired to the left of the decimal
+             point.
+             The decimal part indicates the maximum number of digits (0-5) desired to the right of the decimal
+             point.
+                                                                                                                     CNC 8055
+        If the numerical format is not programmed; for example: (IB1 =INPUT "text"), the mnemonic will only
+                                                                                                                     CNC 8055i
+        display the indicated text without waiting for the data to be entered.
+
+
+
+                                                                                                                     ·M· & ·EN· MODELS
+                                                                                                                       SOFT: V01.6X
+
+
+
+
+                                                                                                                                                     ·401·
+===== PAGE 401 =====
+
+                                                                         ( ODW (expression 1), (expression 2), (expression 3) )
+                                                                         The mnemonic ODW defines and draws a white window on the screen with fixed dimensions (1 row
+                                                                         and 14 columns).
+
+                                                                         Each mnemonic has an associated number which is indicated by the value of expression 1 once
+                                                                         this has been evaluated.
+
+                                                                         Likewise, its position on screen is defined by expression 2 (row) and by expression 3 (column).
+
+                                                                         Expression 1, expression 2 and expression 3 may contain a number or any expression resulting in
+
+ 14.                                                                     a number.
+
+                                                                         The CNC allows 26 windows (0-25) to be defined and their positioning within the display area,
+                                                                         providing 21 rows (0-20) and 80 columns (0-79).
+
+
+
+
+                                       Screen customizing instructions
+
+
+        PROGRAM CONTROL INSTRUCTIONS
+                                                                         ( DW(expression 1) = (expression 2), DW (expression 3) = (expression 4), ... )
+                                                                         The instruction DW displays in the window indicated by the value for expression 1, expression 3,
+                                                                         .. once they have been evaluated, the numerical data indicated by expression 2, expression 4, ...
+
+                                                                         Expression 1, expression 2, expression 3, .... may contain a number or any expression which may
+                                                                         result in a number.
+
+                                                                         The following example shows a dynamic variable display:
+                                                                                     (ODW 1, 6, 33)
+                                                                                        ; Defines data window 1
+                                                                                     (ODW 2, 14, 33)
+                                                                                        ; Defines data window 2
+                                                                             N10     (DW1=DATE, DW2=TIME)
+                                                                                        ; Displays the date in window 1 and the time in 2
+                                                                                     (GOTO N10)
+
+
+                                                                         The CNC allows displaying the data in decimal, hexadecimal and binary format; the following
+                                                                         instructions are available:
+                                                                            (DW1 = 100)
+                                                                                Decimal format. Value "100" displayed in window 1.
+                                                                            (DWH2 = 100)
+                                                                                Hexadecimal format. Value "64" displayed in window 2.
+                                                                            (DWB3 = 100)
+                                                                                Binary format. Value "01100100" displayed in window 3.
+
+                                                                         When using the binary format, the display is limited to 8 digits in such a way that a value of
+                                                                         "11111111" will be displayed for values greater than 255 and the value of "10000000" for values
+                                                                         more negative than -127.
+
+                                                                         Besides, the CNC allows the number stored in one of the 26 data input variables (IB0-IB25) to be
+                                                                         displayed in the requested window.
+
+                                                                         The following example shows a request and later displays the axis feedrate:
+                                                                             (ODW 3, 4, 60)
+                                                                                ; Defines data window 3.
+                                                                             (IB1=INPUT "Axis feed: ", 5.4)
+                                                                                ; Axis feedrate request.
+                                                                             (DW3=IB1)
+                                                                                ; Displays feedrate in window 3.
+
+CNC 8055
+                                                                         (SK (expression 1) = "text1" (expression 2) = "text 2", .... )
+CNC 8055i
+                                                                         The instruction SK defines and displays the new softkey menu indicated.
+
+                                                                         Each of the expressions will indicate the softkey number which it is required to modify (1-7, starting
+                                                                         from the left) and the texts which it is required to write in them.
+·M· & ·EN· MODELS
+  SOFT: V01.6X                                                           Expression 1, expression 2, expression 3, .... may contain a number or any expression which may
+                                                                         result in a number.
+
+
+
+
+     ·402·
+===== PAGE 402 =====
+
+        Each text will allow a maximum of 20 characters that will be shown in two lines of 10 characters each.
+        If the text selected has less than 10 characters, the CNC will center it on the top line, but if it has
+        more than 10 characters the programmer will center it.
+
+        Examples:
+             (SK 1="HELP", SK 2="MAXIMUN POINT")
+
+                                             HELP                       MAXIMUN POINT
+
+
+             (SK 1="FEED", SK 2=" _ _MAXIMUN_ _ _POINT")
+
+                                             FEED                       MAXIMUN POINT                                                                       14.
+
+
+                                                                                                                                                            Screen customizing instructions
+
+
+                                                                                                                             PROGRAM CONTROL INSTRUCTIONS
+                  If while a standard CNC softkey menu is active, one or more softkeys are selected via high level
+                  language instruction: "SK", the CNC will clear all existing softkeys and it will only show the selected
+                  ones.
+                  If while a user softkey menu is active, one or more softkeys are selected via high level language
+                  instruction "SK", the CNC will only replace the selected softkeys leaving the others intact.
+
+
+        ( WKEY )
+        The mnemonic WKEY stops execution of the program until the key is pressed.
+
+        The pressed key will be recorded in the KEY variable.
+              ...
+              (WKEY)                                        ; Wait for key
+              (IF KEY EQ $FC00 GOTO N1000)                  ; If key F1 has been pressed, continue in N1000
+              ...
+
+
+        ( WBUF "text", (expression) )
+        The WBUF instruction can only be used when editing a program in the user channel.
+
+        This instruction may be programmed in two ways:
+          • ( WBUF "text", (expression) )
+             It adds the text and value of the expression, once it has been evaluated, to the block that is being
+             edited and within the data entry window.
+             (Expression) may contain a number or any expression resulting in a number.
+             It will be optional to program the expression, but it will be required to define the text. If no text
+             is required, "" must be programmed.
+             Examples for P100=10:
+              (WBUF "X", P100)                              =>          X10
+              (WBUF "X P100")                               =>          X P100
+
+
+
+
+                                                                                                                            CNC 8055
+                                                                                                                            CNC 8055i
+
+
+
+                                                                                                                            ·M· & ·EN· MODELS
+                                                                                                                              SOFT: V01.6X
+
+
+
+
+                                                                                                                                                            ·403·
+===== PAGE 403 =====
+
+                                                                          • ( WBUF )
+                                                                            Enters into memory, adding to the program being edited and after the cursor position, the block
+                                                                            being edited by means of (WBUF "text", (expression)). It also clears the editing buffer in order
+                                                                            to edit a new block.
+                                                                            This allows the user to edit a complete program without having to quit the user editing mode after
+                                                                            each block and press ENTER to "enter" it into memory.
+                                                                             (WBUF "(PCALL 25, ")
+                                                                                 ; Adds "(PCALL 25, " to the block being edited.
+                                                                             (IB1=INPUT "Parameter A:",-5.4)
+
+ 14.                                                                             ; Request of Parameter A.
+                                                                             (WBUF "A=", IB1)
+                                                                                 ; Adds "A=(value entered)" to the block being edited.
+
+
+
+
+                                       Screen customizing instructions
+
+
+        PROGRAM CONTROL INSTRUCTIONS
+                                                                             (IB2=INPUT "Parameter B: ", -5.4)
+                                                                                 ; Request of Parameter B.
+                                                                             (WBUF ", B=", IB2)
+                                                                                 ; Adds "B=(value entered)" to the block being edited.
+                                                                             (WBUF ")")
+                                                                                 ; Adds ")" to the block being edited.
+                                                                             (WBUF )
+                                                                                 ; Enters the edited block into memory.
+                                                                             ...
+
+
+                                                                            After executing this program the block being edited contains:
+                                                                                (PCALL 25, A=23.5, B=-2.25)
+
+                                                                         ( SYSTEM )
+                                                                         The mnemonic SYSTEM stops execution of the user customized program and returns to the
+                                                                         corresponding standard menu of the CNC.
+
+                                                                         Customizing program example:
+                                                                         The following customizing program must be selected as user program associated to the Editing
+                                                                         Mode.
+
+                                                                         After selecting the Editing Mode and pressing the USER softkey, this program starts executing and
+                                                                         it allows assisted editing of 2 user cycles. This editing process is carried out a cycle at a time and
+                                                                         as often as desired.
+
+                                                                         Displays the initial editing page (screen)
+                                                                             N0      ( PAGE 10 )
+
+
+                                                                         Sets the softkeys to access the various modes and requests a choice
+                                                                                     (SK 1="CYCLE 1",SK 2="CYCLE 2",SK 7="EXIT")
+                                                                             N5      (WKEY )                                                  ; Request a key
+                                                                                     (IF KEY EQ $FC00 GOTO N10)                               ; Cycle 1
+                                                                                     (IF KEY EQ $FC01 GOTO N20)                               ; Cycle 2
+                                                                                     (IF KEY EQ $FC06 SYSTEM ELSE GOTO N5)                    ; Quit or request a key
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·404·
+===== PAGE 404 =====
+
+        CYCLE 1
+                       ; Displays page 11 and defines 2 data entry windows
+              N10      (PAGE 11)
+                       (ODW 1,10,60)
+                       (ODW 2,15,60)
+
+                       ;Editing
+                       (WBUF "( PCALL 1,")           ; Adds "(PCALL 1," to the block being edited.
+
+                       (IB 1=INPUT "X:",-6.5)        ; Requests the value of X.
+                       (DW 1=IB1)
+                       (WBUF "X",IB1)
+                                                     ; Data window 1 shows the entered value.
+                                                     ; Adds X (entered value) to the block being edited.
+                                                                                                                                           14.
+
+
+                                                                                                                                           Screen customizing instructions
+
+
+                                                                                                            PROGRAM CONTROL INSTRUCTIONS
+                       (WBUF ",")                    ; Adds "," to the block being edited.
+
+                       (IB 2=INPUT "Y:",-6.5)        ; Requests the value of Y.
+                       (DW 2=IB2)                    ; Data window 2 shows the entered value.
+                       (WBUF "Y",IB2)                ; Adds Y (entered value) to the block being edited.
+
+                       (WBUF ")")                    ; Adds ")" to the block being edited.
+                       (WBUF )                       ; Enters the edited block into memory.
+                                                     ; For example : (PCALL 1, X2, Y3)
+
+                       (GOTO N0)
+
+
+        CYCLE 2
+                       ; Displays page 12 and defines 3 data entry windows
+              N20      (PAGE 12)
+                       (ODW 1,10,60)
+                       (ODW 2,13,60)
+                       (ODW 3,16,60)
+
+                       ; Editing
+                       (WBUF "( PCALL 2,")           ; Adds "(PCALL 2," to the block being edited.
+
+
+                       (IB 1=INPUT "A:",-6.5)        ; Requests the value of A.
+                       (DW 1=IB1)                    ; Data window 1 shows the entered value.
+                       (WBUF "A",IB1)                ; Adds A (entered value) to the block being edited.
+
+                       (WBUF ",")                    ; Adds "," to the block being edited.
+
+                       (IB 2=INPUT "B:",-6.5)        ; Requests the value of B.
+                       (DW 2=IB2)                    ; Data window 2 shows the entered value.
+                       (WBUF "B",IB2)                ; Adds B (entered value) to the block being edited.
+
+                       (WBUF ",")                    ; Adds "," to the block being edited.
+                       (IB 3=INPUT "C:",-6.5)        ; Requests the value of C.
+                       (DW 3=IB3)                    ; Data window 3 shows the entered value.
+                       (WBUF "C",IB3)                ; Adds C (entered value) to the block being edited.
+
+                       (WBUF ")")                    ; Adds ")" to the block being edited.
+
+                       (WBUF )                       ; Enters the edited block into memory.
+                                                         For example: (PCALL 2, A3, B1, C3).
+
+                       (GOTO N0)
+
+                                                                                                           CNC 8055
+                                                                                                           CNC 8055i
+
+
+
+                                                                                                           ·M· & ·EN· MODELS
+                                                                                                             SOFT: V01.6X
+
+
+
+
+                                                                                                                                           ·405·
+===== PAGE 405 =====
+
+
+
+
+ 14.
+
+
+                                       Screen customizing instructions
+
+
+        PROGRAM CONTROL INSTRUCTIONS
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·406·
+===== PAGE 406 =====
+
+
+                                                                            15
+  The description of the general coordinate transformation is divided into three basic functions:
+   • Movement in an inclined plane (G49).
+   • Tool movement according to the tool coordinate system (G47).
+   • TCP transformation, Tool Center Point (G48).
+
+  For a better understanding of coordinate transformation, three machine coordinate systems will be
+  considered in the following examples.
+   • Machine coordinate system. X Y Z in the figures.
+   • Part coordinate system. X' Y' Z' in the figures.
+   • Tool coordinate system. X" Y" Z" in the figures.
+
+  When no transformation has been made and the spindle is in the starting position, the three
+  coordinate systems coincide. Figure on the left.
+
+  When turning the spindle, the tool coordinate system (X" Y" Z") changes. Figure on the right.
+
+  If, also, an inclined plane is selected (G49), the part coordinate system also changes (X', Y', Z').
+  Bottom figure.
+
+
+
+
+                                                                                                         CNC 8055
+                                                                                                         CNC 8055i
+
+
+
+                                                                                                         ·M· & ·EN· MODELS
+                                                                                                           SOFT: V01.6X
+
+
+
+
+                                                                                                              ·407·
+===== PAGE 407 =====
+
+                                    Case –A–
+                                    No transformation has been done and the spindle is spinning.
+
+                                    If a Z axis movement is programmed (G01 Z), this axis will move according to the part coordinate
+                                    system which, in this case, coincides with machine coordinates.
+
+
+
+
+ 15.
+
+
+
+        COORDINATE TRANSFORMATION
+                                    Now, to move the tool according to the tool coordinate system, function G47 must be used when
+                                    programming the movement of the Z axis (G01 G47 Z).
+
+
+
+
+                                    In this type of movements, when the tool coordinate system does not coincide with the machine
+                                    coordinate system, the CNC moves several axes in order to move the tool according to the part
+                                    coordinates. In the example, the X and Z axes move.
+
+                                    Function G47 is not modal and only affects the programmed movement.
+
+                                    In order for the jog movements, to be carried out according to the tool coordinate system, the CNC
+                                    general logic input "TOOLMOVE (M5021" must be activated at the PLC.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·408·
+===== PAGE 408 =====
+
+        Case –B–
+        An inclined plane has been selected (G49) and the spindle is
+        perpendicular to it.
+
+        If a Z axis movement is programmed (G01 Z), this axis will move according to the part coordinate
+        system.
+
+
+
+
+                                                                                                                                        15.
+
+
+
+                                                                                                            COORDINATE TRANSFORMATION
+
+        In this type of movements, when the part coordinate system does not coincide with the machine
+        coordinate system, the CNC moves several axes in order to move the tool according to the part
+        coordinates. In the example, the X and Z axes move.
+
+        To move the tool according to the machine coordinate system, function G53 (programming with
+        respect to home) must be used when programming the movement of the Z axis (G01 G53 Z).
+
+
+
+
+        Function G53 is not modal and only affects the programmed movement.
+
+        In order for the jog movements to be carried out according to the machine coordinate system, CNC
+        general logic input "MACHMOVE (M5012)" must be activated at the PLC.
+
+
+
+
+                                                                                                           CNC 8055
+                                                                                                           CNC 8055i
+
+
+
+                                                                                                           ·M· & ·EN· MODELS
+                                                                                                             SOFT: V01.6X
+
+
+
+
+                                                                                                                                        ·409·
+===== PAGE 409 =====
+
+                                    Case –C–
+                                    An inclined plane has been selected (G49) and the spindle is not
+                                    perpendicular to it.
+
+                                    If a Z axis movement is programmed (G01 Z), this axis will move according to the part coordinate
+                                    system.
+
+
+
+
+ 15.
+
+
+
+        COORDINATE TRANSFORMATION
+
+                                    In this type of movements, when the part coordinate system does not coincide with the machine
+                                    coordinate system, the CNC moves several axes in order to move the tool according to the part
+                                    coordinates. In the example, the X and Z axes move.
+
+                                    Now, to move the tool according to the tool coordinate system, function G47 must be used when
+                                    programming the movement of the Z axis (G01 G47 Z).
+
+
+
+
+                                    In this type of movements, when the tool coordinate system does not coincide with the machine
+                                    coordinate system, the CNC moves several axes in order to move the tool according to the part
+                                    coordinates. In the example, the X and Z axes move.
+
+                                    Function G47 is not modal and only affects the programmed movement.
+
+                                    In order for the jog movements, to be carried out according to the tool coordinate system, the CNC
+                                    general logic input "TOOLMOVE (M5021" must be activated at the PLC.
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·410·
+===== PAGE 410 =====
+
+        To move the tool according to the machine coordinate system, function G53 (programming with
+        respect to home) must be used when programming the movement of the Z axis (G01 G53 Z).
+
+
+
+
+                                                                                                                                          15.
+
+
+
+                                                                                                              COORDINATE TRANSFORMATION
+        Function G53 is not modal and only affects the programmed movement.
+
+        In order for the jog movements to be carried out according to the machine coordinate system, CNC
+        general logic input "MACHMOVE (M5012)" must be activated at the PLC.
+
+
+
+        Case –D–
+        It is working with TCP, Tool Center Point
+
+        When working with TCP transformation, function G48 active, the CNC allows changing the tool
+        orientation without changing the position of its tool tip (part coordinates).
+
+        Obviously, the CNC must move several axes in order to maintain the tool tip position at all times.
+
+
+
+
+                                                                                                             CNC 8055
+                                                                                                             CNC 8055i
+        Function G48, as described later on, is modal and it indicates when the TCP transformation
+        becomes active and when it is canceled.
+
+        Function G48, TCP transformation, may be used together with function G49 (movement in the
+        inclined plane) and G47 (movement along the tool axes)                                               ·M· & ·EN· MODELS
+                                                                                                               SOFT: V01.6X
+
+
+
+
+                                                                                                                                          ·411·

@@ -1,0 +1,406 @@
+===== PAGE 412 =====
+
+8.2      PLC program execution
+
+      The PLC executes the user program cyclically. In other words, once it executes the complete
+      program, it restarts running this program from the first instruction.
+
+      This cyclic processing of the program is done as follows:
+      1. At the beginning of the cycle, PLC’s "I" resources are assigned the current values of the physical
+         inputs (connectors).
+         For example, if the physical input I10 is at 24V, the PLC sets the I10 resource to "1".
+
+                                                                                                                                          8.
+
+                                                                                                                                          PLC program execution
+
+                                                                                                                INTRODUCTION TO THE PLC
+
+
+
+
+      2. It allocates the current values of the logic CNC outputs (CNCREADY, START, FHOUT, etc.) to
+         PLC resources M5500 thru M5957 and R550 thru R562 .
+      3. It runs the program cycle.
+         The following sections indicate how the PLC program is structured and which are its execution
+         modules. See "8.4 Modular structure of the program" on page 417.
+      4. After executing the cycle, it updates the Logic CNC inputs (/EMERGEN, /STOP, /FEEDHOL, etc.)
+         with the current values of PLC resources M5000 thru M5465 and R500 thru R505.
+      5. It assigns the current values of the PLC’s "O" resources to the physical outputs (connectors).
+         For example, if the "O5" resource is at "1", the PLC sets physical output O5 (connector) to 24V.
+      6. The cycle ends and is ready for the next scan.
+
+      Bear in mind that all the actions of the program executed by the PLC alter the status of its resources.
+
+      Example: I10 AND I20 = O5
+         When this condition is met [resource I10 is "1" and I20 is also "1"], the PLC sets resource "O5"
+         to "1". If this condition is not met, the PLC sets resource "O5" to "0".
+
+      Therefore, the status of a resource may change during the execution of the PLC program.
+
+      Example, assuming that the initial status of resource M100 is "0":
+
+      M100 AND I7 = O3
+         Resource M100 = "0"
+
+      I10 = M100
+         M100 takes the value of resource I10
+
+      M100 AND I8 = M101
+         The value of M100 depends on the previous instruction.                                                 CNC 8055
+      This type of problems may be prevented by careful programming or by using "Image" resource                CNC 8055i
+      values (instead of "Real" values).
+
+      The PLC has 2 memories to store the status of the registers, the real memory and the image memory.
+
+      All the steps described so far work with the real memory. Saying "value of a particular resource"              SOFT: V01.6X
+      is the same as saying "real value of a particular resource"
+
+      The image memory contains a copy of the values (status) that the resources had at the end of the
+      previous cycle. The PLC makes this copy at the end of the cycle. The resources having an image
+      value are: I1 thru I512, O1 thru O512 and M1 thru M2047
+
+
+                                                                                                                                          ·413·
+===== PAGE 413 =====
+
+
+
+
+8.
+
+                                 PLC program execution
+
+       INTRODUCTION TO THE PLC
+
+
+
+
+                                                         The following example shows how the PLC acts when working with real or image values.
+
+                                                             PLC program          () = M1                 Assigns the value of "1" to mark M1.
+                                                                                  M1 = M2                 Assigns the value of M1 to M2.
+
+                                                                                  M2 = M3                 Assigns the value of M2 to M3.
+
+                                                                                  M3 = O5                 Assigns the value of M3 to output O5.
+
+
+                                                                                                      REA                     IMA
+                                                                                                 M1 M2 M3 O5 M1 M2 M3 O5
+                                                                             ()=M1               0    0      0    0     0    0    0    0
+                                                                            M1 = M2     Scan 1   1    1      1    1     1    0    0    0
+
+                                                                            M2 = M3     Scan 2   1    1      1    1     1    1    0    0
+                                                                            M3 = O5     Scan 3   1    1      1    1     1    1    1    0
+                                                                                        Scan 4   1    1      1    1     1    1    1    1
+
+                                                         As can be observed, the system is faster when operating with real resource values.
+
+                                                         Operating with image values permits analyzing the same resource along the whole program with
+                                                         the same value regardless of its current (instantaneous) real value.
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·414·
+===== PAGE 414 =====
+
+     Operating with real values
+     In the first scan, when execution the instruction M1 = M2, M1 has a real value of "1" set by the previous
+     instruction.
+
+     The same is true for instructions M2=M3 and M3=O5.
+
+     That is why real values are used, output O1 takes the value of "1" in the first scan.
+
+     Operating with image values
+     The first cycle (scan) sets the real value of M1=1; but its image value will not be set to "1" until the
+     end of the cycle.                                                                                                                     8.
+     In the 2nd cycle (scan), the image value of M1 is "1" and the real value of M2 is set to "1"; but the
+
+
+
+
+                                                                                                                                           PLC program execution
+
+                                                                                                                 INTRODUCTION TO THE PLC
+     image value of M2 will not be set to "1" until the end of the cycle.
+
+     In the 3rd cycle (scan), the image value of M2 is "1" and the real value of M3 is set to "1"; but the
+     image value of M3 will not be set to "1" until the end of the cycle.
+     In the 4th cycle (scan), the image value of M3 is "1" and the real value of O5 is set to "1".
+
+
+
+
+                                                                                                                 CNC 8055
+                                                                                                                 CNC 8055i
+
+
+
+                                                                                                                      SOFT: V01.6X
+
+
+
+
+                                                                                                                                           ·415·
+===== PAGE 415 =====
+
+                                             8.3      Loop time
+
+                                                   The time the PLC requires to execute the program is called cycle time and can vary in the successive
+                                                   cycles of a same program, as the conditions under which they are executed are not the same.
+
+
+
+
+8.
+
+
+       INTRODUCTION TO THE PLC
+                                 Loop time
+
+                                                   plc.m.p WDGPRG (P0) sets the maximum cycle execution time This is called WATCH-DOG time
+                                                   and if a cycle is executed which lasts longer than 1.5 times this time, or two cycles are executed,
+                                                   one after the other, taking longer than this time period, the CNC will display the WATCH-DOG error
+                                                   of the main module.
+
+
+
+
+                                                   This way, the execution of cycles that, due to their duration, disturb the operation of the machine
+                                                   can be prevented and the PLC can be prevented from executing a cycle which has no end due to
+                                                   a programming error.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·416·
+===== PAGE 416 =====
+
+8.4        Modular structure of the program
+
+        The program to be executed by the PLC consists of a series of modules which are appropriately
+        defined by means of directing instructions.
+
+        The modules which can make up the program are:
+         • Main module (PRG)
+         • Periodic execution module (PE)
+         • First cycle module (CY1)
+
+        Each module must begin with the directing instruction which defines it (PRG, PE, CY1) and end with
+        the directing instruction END.
+                                                                                                                                           8.
+
+
+                                                                                                                 INTRODUCTION TO THE PLC
+                                                                                                                                           Modular structure of the program
+        Should the main program contain the main module only it is not necessary to place the instructions
+        PRG and END.
+
+
+
+
+8.4.1      First cycle module (CY1)
+
+        This module is optional and will only be executed when the PLC is turned on. It is used to initialize
+        the different resources and variables with their initial values, before proceeding to execute the rest
+        of the program.
+
+        This module operates by default with the real values of resources I, O, M.
+
+        It is not necessary for this to be at the beginning of the program, but must always be preceded by
+        the instruction CY1.
+
+
+
+
+8.4.2      Main module (PRG)
+
+        This module contains the user program. It will be executed cyclically and will be given the task of
+        analyzing and modifying CNC inputs and outputs. Its execution time will be limited by the value of
+        plc.m.p. WDGPRG (P0)
+
+        This module operates by default with the image values of resources I, O, M.
+
+        There can only be one main program and this must be preceded by the instruction PRG, it is not
+        necessary to define it if it starts on the first line.
+
+
+
+
+                                                                                                                 CNC 8055
+                                                                                                                 CNC 8055i
+
+
+
+                                                                                                                      SOFT: V01.6X
+
+
+
+
+                                                                                                                                           ·417·
+===== PAGE 417 =====
+
+                                                                    8.4.3      Periodic execution module (PE t)
+
+                                                                            This module is optional and will be executed every period of time t indicated in the directing
+                                                                            instruction defining the module.
+
+                                                                            This module may be used to process certain critical inputs and outputs which cannot be checked
+                                                                            or updated properly in the body of the main program due to its extended execution time.
+
+                                                                            Another application for this module is for those cases where specific tasks need not be evaluated
+                                                                            at every PLC program cycle. Those tasks would be programmed in the periodic module and they
+
+8.                                                                          would be executed with the frequency established by the execution time assigned to this module
+                                                                            (for example: if t= 30,000; every 30 seconds).
+
+                                                                            A "t" value between 1 and 65535 milliseconds may be programmed.
+
+
+
+
+       INTRODUCTION TO THE PLC
+                                 Modular structure of the program
+                                                                            The execution time of this module will be limited by the value of plc.m.p. WDGPER (P1)
+
+                                                                            This module operates by default with the real values of resources I, O, M.
+
+                                                                            Example:
+
+                                                                                PE 10      Defines the beginning of the periodic module PE which will be executed every 10 milliseconds.
+
+                                                                            If this module is being executed with real values and acts on a physical output, this is updated at
+                                                                            the end of the execution of the periodic module.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·418·
+===== PAGE 418 =====
+
+8.4.4      Priority of execution of the PLC modules
+
+        Every time the PLC program is started (command RUN) the first module to be executed is the first
+        cycle module (CY1). Once execution has been completed, it will continue with the main module
+        (PRG).
+
+        The main module will be executed cyclically until the execution of the PLC has stopped (command
+        STOP).
+
+
+
+                                                                                                                                           8.
+
+
+                                                                                                                 INTRODUCTION TO THE PLC
+                                                                                                                                           Modular structure of the program
+
+
+
+        The periodic module will be executed every time the time indicated in the directing instruction "PE
+        t" elapses. This count starts when the execution of the main module (the first time) begins.
+
+        Every time this module is executed, the execution of the main module is interrupted, and its execution
+        resumes when the execution of the periodic module finishes.
+
+
+
+
+                                                                                                                 CNC 8055
+                                                                                                                 CNC 8055i
+
+
+
+                                                                                                                      SOFT: V01.6X
+
+
+
+
+                                                                                                                                           ·419·
+===== PAGE 419 =====
+
+
+
+
+8.
+
+
+       INTRODUCTION TO THE PLC
+                                 Modular structure of the program
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·420·
+===== PAGE 420 =====
+
+
+                                                                                         9
+9.1      Inputs
+
+      They are elements that provide information to the PLC on the signals they receive from the outside
+      world. They are represented by the letter I followed by the input number which is desired to reference,
+      for example I1, I25, I102, etc.
+
+      The PLC may control 512 inputs although when communicating with the outside world it can only
+      access the physical ones.
+
+      Local physical inputs are the ones corresponding to the central unit.
+
+      Remote physical inputs are the ones corresponding to the remote modules
+
+
+
+
+                                                                                                                CNC 8055
+                                                                                                                CNC 8055i
+
+
+
+                                                                                                                 SOFT: V01.6X
+
+
+
+
+                                                                                                                    ·421·

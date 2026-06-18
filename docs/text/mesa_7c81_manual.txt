@@ -1,0 +1,802 @@
+7C81 RPI
+ANYTHING I/O
+MANUAL
+
+
+
+
+Version 1.3
+This page intentionally not blank
+Table of Contents
+    GENERAL . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 1
+
+             DESCRIPTION . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 1
+
+    HARDWARE CONFIGURATION . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 2
+
+             GENERAL . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 2
+             CONNECTOR POWER . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 2
+             5V I/O TOLERANCE . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 2
+             PULL_UP/PULL-DOWN SELECTION . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 2
+
+    CONNECTORS . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 4
+
+             CONNECTOR LOCATIONS AND DEFAULT JUMPER POSITIONS . . . . . . . . 4
+             7C81 I/O CONNECTOR PIN-OUT . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 5
+             POWER CONNECTOR PIN-OUT . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 8
+             JTAG CONNECTOR PIN-OUT . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 8
+             RPI HOST CONNECTOR PIN-OUT . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 9
+             RS-422 CONNECTOR PIN-OUT . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 10
+
+    OPERATION . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 11
+        FPGA . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 11
+        HOST COMMUNICATION . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 11
+        SPI . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 11
+        CLOCK SIGNALS . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 11
+        LEDS . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 12
+        PULL-UP/PULL-DOWN RESISTORS . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 12
+        I/O LEVELS . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 12
+        STARTUP I/O VOLTAGE . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 12
+
+    HOST INTERFACE
+         SPI HOST INTERFACE . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 13
+         CONFIGURATION . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 15
+              FALLBACK . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 15
+              FALLBACK INDICATION . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 15
+              FAILURE TO CONFIGURE . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 15
+              EEPROM LAYOUT . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 16
+              BITFILE FORMAT . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 18
+              MESAFLASH . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 18
+
+
+
+
+                                                                                                                              iii
+Table of Contents
+
+SUPPLIED CONFIGURATIONS . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 19
+
+        HOSTMOT2 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 19
+            5ABOBX3 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 19
+            5ABOBX2 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 19
+            G540X2 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 19
+            PIN FILES . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 19
+
+
+        SPECIFICATIONS . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 20
+        CARD DRAWING . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 21
+
+
+
+
+                                                                                                                    iv
+GENERAL
+DESCRIPTION
+          The MESA 7C81 is FPGA motherboard host for a Raspberry Pi CPU. The 7C81
+    connects to the RPI's GPIO interface and normally uses SPI for FPGA communication,
+    though other communication methods are possible since all RPI GPIO bits are routed to the
+    FPGA.
+
+           Three 26 pin header connectors with standard parallel port pinouts and 5V tolerant
+    I/O are provided for compatibility with most parallel port interfaced motion control / CNC
+    breakout cards/ multi axis step motor drives, including Mesa's 25 pin breakout boards.
+
+           Mesa's 25 pin daughtercards or standard parallel port breakout boards allow almost
+    unlimited I/O options including quadrature or absolute encoder inputs, step/dir (to 10 MHz)
+    or PWM/dir outputs, and field I/O expansion to hundreds of I/O points.
+
+           In addition to the parallel expansion ports, the 7C81 provides two RS-422/RS-485
+    interfaces for I/O expansion via serial I/O daughtercards or other RS-422/RS-485
+    applications. With correct firmware, the RPI’s serial port can be routed to either RS-422/RS-
+    485 ports. The 7C81 mounts in standard 107 mm DIN rail channels.
+
+
+
+
+                                                                               7C81       1
+HARDWARE CONFIGURATION
+GENERAL
+           Hardware setup jumper positions assume that the 7C81 card is oriented in an
+    upright position, that is, with 26 pin connectors P1 and P2 at the top and the RJ45
+    connectors at the bottom right.
+
+CONNECTOR 5V POWER
+           The 7C81 has the option to supply 5V power to the breakout board. This option is
+    used by all Mesa breakout boards to simplify wiring. The option uses 4 parallel cable
+    signals that are normally used as grounds for supplying 5V to the remote breakout board
+    (DB25 pins 22,23,24 and 25). These pins are AC bypassed on both the 7C81 and Mesa
+    breakout cards so do not compromise AC signal integrity.
+
+           The 5V power option is individually selectable for each of the three I/O connectors.
+    The breakout 5V power is protected by per connector PTC devices so will not cause
+    damage to the 7C81 or system if accidentally shorted. This option should only be enabled
+    for Mesa breakout boards or boards specifically wired to accept 5V power on DB25 pins
+    22 through 25.
+
+    JUMPER              POS                  FUNCTION
+
+    W3,W6               UP                   Breakout power enabled (P1,P2)
+
+    W11                 DOWN                 Breakout power enabled (P7)
+
+    W3,W6               DOWN                 Breakout power disabled (P1,P2) (Default)
+
+    W11                 UP                   Breakout power disabled (P7) (Default)
+
+OPTION JUMPERS
+           Jumpers W7 and W8 set readable FPGA pins. They are intended to select FPGA
+    boot/interface options but are currently unsupported.
+
+
+
+
+                                                                             7C81       2
+HARDWARE CONFIGURATION
+5V I/O TOLERANCE
+            The FPGA used on the 7C81 has a 4V absolute maximum input voltage
+    specification. To allow interfacing with 5V inputs, the 7C81 has bus switches on all I/O pins
+    to provide 5V tolerance. The bus switches work by turning off when the input voltage
+    exceeds a preset threshold. The 5V I/O tolerance option is the default and should normally
+    be left enabled.
+
+            For high speed applications where only 3.3V maximum signals are present, the 5V
+    I/O tolerance option can be disabled. When 5V tolerance mode is enabled the I/O pullup
+    resistor source is 5V. When 3.3V tolerance mode is selected, the I/O pull-up resistor
+    source is 3.3V. The 5V tolerance option is selectable on a per I/O connector basis.
+
+    JUMPER               POS           FUNCTION
+
+    W1,W4                UP            5V Tolerance enabled (P1,P2) (Default)
+
+    W1,W4                DOWN          5V Tolerance disabled (P1,P2)
+
+    W13                  DOWN          5V Tolerance enabled (P7) (Default)
+
+    W13                  UP            5V Tolerance disabled (P7)
+
+PULL-UP/PULL-DOWN SELECTION
+            Each I/O connector on the 7C81 can have its I/O termination resistors set to pull-up
+    or pull-down mode. These resistors set the I/O voltage level when the pins are not driven
+    by the FPGA. For Mesa daughtercards, the option should always be set for pull-up mode.
+
+         It may be desirable with some parallel port type breakout boards to choose the pull-
+    down mode, so that the FPGA outputs are in the low state at power up.
+
+    JUMPER               POS           FUNCTION
+
+    W2,W5                UP            Pull-up mode (P1,P2) (Default)
+
+    W2,W5                DOWN          Pull-down mode (P1,P2)
+
+    W12                  DOWN          Pull-up mode (P7) (Default)
+
+    W12                  UP            Pull-down mode (P7)
+
+
+
+
+                                                                               7C81       3
+CONNECTORS
+CONNECTOR LOCATIONS AND DEFAULT JUMPER POSITIONS
+
+
+
+
+                                               7C81   4
+CONNECTORS
+I/O CONNECTORS
+           The 7C81 has 3 I/O connectors, P1, P2 and P7. Each I/O connector is a 26 pin
+    header. In addition to the header pin-out, the equivalent DB25 pin-out is listed since the
+    7C81 I/O cables will often be terminated with DB25 connectors.7C81 I/O connector pin-
+    outs are as follows:
+
+    P1 FIRST I/O CONNECTOR PIN-OUT
+
+    HDR26 PIN DB25 PIN         FUNCTION             HDR26 PIN DB25 PIN          FUNCTION
+
+    1            1             IO0                  2             14            IO1
+
+    3            2             IO2                  4             15            IO3
+
+    5            3             IO4                  6             16            IO5
+
+    7            4             IO6                  8             17            IO7
+
+    9            5             IO8                  10            18            GND
+
+    11           6             IO9                  12            19            GND
+
+    13           7             IO10                 14            20            GND
+
+    15           8             IO11                 16            21            GND
+
+    17           9             IO12                 18            22            GND or 5V
+
+    19           10            IO13                 20            23            GND or 5V
+
+    21           11            IO14                 22            24            GND or 5V
+
+    23           12            IO15                 24            25            GND or 5V
+
+    25           13            IO16                 26            XX            GND or 5V
+
+
+
+
+                                                                             7C81       5
+CONNECTORS
+I/O CONNECTORS
+   P2 FIRST SECOND CONNECTOR PIN-OUT
+
+   HDR26 PIN DB25 PIN   FUNCTION       HDR26 PIN DB25 PIN     FUNCTION
+
+   1         1          IO19           2         14           IO20
+
+   3         2          IO21           4         15           IO22
+
+   5         3          IO23           6         16           IO24
+
+   7         4          IO25           8         17           IO26
+
+   9         5          IO27           10        18           GND
+
+   11        6          IO28           12        19           GND
+
+   13        7          IO29           14        20           GND
+
+   15        8          IO30           16        21           GND
+
+   17        9          IO31           18        22           GND or 5V
+
+   19        10         IO32           20        23           GND or 5V
+
+   21        11         IO33           22        24           GND or 5V
+
+   23        12         IO34           24        25           GND or 5V
+
+   25        13         IO35           26        XX           GND or 5V
+
+
+
+
+                                                            7C81     6
+CONNECTORS
+I/O CONNECTORS
+   P7 THIRD I/O CONNECTOR PIN-OUT
+
+   HDR26 PIN DB25 PIN        FUNCTION            HDR26 PIN DB25 PIN        FUNCTION
+
+   1            1            IO38                2            14           IO39
+
+   3            2            IO40                4            15           IO41
+
+   5            3            IO42                6            16           IO43
+
+   7            4            IO44                8            17           IO45
+
+   9            5            IO46                10           18           GND
+
+   11           6            IO47                12           19           GND
+
+   13           7            IO48                14           20           GND
+
+   15           8            IO49                16           21           GND
+
+   17           9            IO50                18           22           GND or 5V
+
+   19           10           IO51                20           23           GND or 5V
+
+   21           11           IO52                22           24           GND or 5V
+
+   23           12           IO53                24           25           GND or 5V
+
+   25           13           IO54                26           XX           GND or 5V
+
+
+
+   Note that P7s white polarity mark on first revision cards (pre rev. A) is incorrect,
+   the connector polarity slot and square pad on the back of the card are correct.
+
+
+
+
+                                                                        7C81       7
+CONNECTORS
+POWER CONNECTOR PINOUT
+          TB1 is the 7C81s power connector. TB1 is a 3.5MM plug-in screw terminal block.
+    TB1 pinout is as follows:
+
+    PIN   FUNCTION
+
+    1     +5V          TOP, SQUARE PAD
+
+    2     GND          BOTTOM, ROUND PAD
+
+           Revision B 7C81 cards add a second power connector, TB2 is a also a 3.5MM plug-
+    in screw terminal block with the same pinout as TB1
+
+JTAG CONNECTOR PINOUT
+           P3 is a JTAG programming connector. This is normally used only for debugging or
+    if both EEPROM configurations have been corrupted. In case of corrupted EEPROM
+    contents the EEPROM can be re-programmed using Xilinx’s Impact tool.
+
+    P3 JTAG CONNECTOR PINOUT
+
+    PIN   FUNCTION
+
+    1     TMS
+
+    2     TDI
+
+    3     TDO
+
+    4     TCK
+
+    5     GND
+
+    6     +3.3V
+
+
+
+
+                                                                         7C81       8
+CONNECTORS
+RPI HOST INTERFACE CONNECTOR
+           P4 is the connector that connects to the host CPUs GPIO connector. This connector
+    can also supply 5V power to the CPU. A short 40 pin flat cable connects the RPI to the
+    7C81. Maximum cable length is 2.5"
+
+    PIN   SIGNAL               USE                 PIN    SIGNAL              USE
+    1     3.3V                 NC                  2      VCC                 +5V
+    3     GPIO2/SDA1           FPGA-NU             4      VCC                 +5V
+    5     GPIO3/SCL1           FPGA-NU             6      GND                 GND
+    7     GPIO4                FPGA-NU             8      GPIO14/TXD0         FPGA-NU
+    9     GND                  GND                 10     GPIO15/RXD0         FPGA-NU
+    11    GPIO17/RTS           FPGA-NU             12     GPIO18/PCM_CLK FPGA-NU
+    13    GPIO27               FPGA-NU             14     GND                 GND
+    15    GPIO22               FPGA-NU             16     GPIO23              FPGA-NU
+    17    3.3V                 NC                  18     GPIO24              FPGA-NU
+    19    GPIO10/MOSI0         FPGA-SPI            20     GND                 GND
+    21    GPIO9/MISO0          FPGA-SPI            22     GPIO25              FPGA-NU
+    23    GPIO11/CLK0          FPGA-SPI            24     GPIO8/CE00          FPGA-SPI
+    25    GND                  GND                 26     GPIO7/CE01          FPGA-NU
+    27    I2C-SD               ID EEPROM           28     ID EEPROM           FPGA-NU
+    29    GPIO5                FPGA-NU             30     GND                 GND
+    31    GPIO6                FPGA-NU             32     GPIO12              FPGA-NU
+    33    GPIO13               FPGA-NU             34     GND                 GND
+    35    GPIO19               FPGA-NU             36     GPIO16              FPGA-NU
+    37    GPIO26               FPGA-NU             38     GPIO20              FPGA-NU
+    39    GND                  GND                 40     GPIO21              FPGA-NU
+
+
+
+          Signals named FPGA-SPI are used with the standard firmwares host SPI interface.
+    Signals named FPGA-NU are routed to the FPGA but not used by the default interface
+    firmware. RPI 3.3V is not used on the 7C81 but the 7C81 has bypass capacitors on the
+    RPI 3.3V pins to lower the cable AC ground impedance.
+
+
+
+                                                                           7C81      9
+CONNECTORS
+RS-422/RS-485 CONNECTORS
+            Two RJ-45 connectors are provided for RS-422/RS-485 interfaces. Both RJ-45
+    jacks, P5 and P6 have the same pin-out. This pin-out is complementary to the pin-out used
+    on all of Mesa’s remote serial devices. When used with Mesa devices a straight through
+    CAT 6 cable is required. In addition to providing full duplex RS-422 communication the
+    CAT6 cable provides a small amount of 5V power to some remote devices.
+
+    PIN          FUNCTION             DIR                 CAT6 568B COLOR
+    1            TX-                  FROM 7C81           ORANGE/WHITE
+
+    2            TX+                  FROM 7C81           ORANGE
+
+    3            RX-                  TO 7C81             GREEN/WHITE
+
+    4            GND                  FROM 7C81           BLUE
+
+    5            GND                  FROM 7C81           BLUE/WHITE
+
+    6            RX+                  TO 7C81             GREEN
+
+    7            +5V                  FROM 7C81           BROWN/WHITE
+
+    8            +5V                  FROM 7C81           BROWN
+
+
+
+            Note that actual signal functions depends on FPGA configuration. In addition to
+    Mesa sserial devices, the interface can be used for absolute encoders, and general UART/
+    serial interfaces.
+
+          5V cable power is protected by a PTC device with maximum let through current of
+    approximately 3 Amps. Connectors are protected in pairs with one PTC device used for
+    2 connectors.
+
+
+
+
+                                                                            7C81      10
+OPERATION
+FPGA
+        The 7C81 use a Xilinx Spartan6 FPGA in a 144 pin TQFP package: XC6SLX9-
+    TQG144.
+
+HOST COMMUNICATION
+           Standard 7C81 firmware interfaces to the RPI using a SPI interface. This interface
+    is supported by the hm2_rpspi driver.
+
+CLOCK SIGNALS
+           The 7C81 has a single 50 MHz clock signal from an on card crystal oscillator. The
+    clock a can be multiplied and divided by the FPGAs clock generator block to generate a
+    wide range of internal clock signals.
+
+
+
+
+                                                                            7C81      11
+OPERATION
+LEDS
+            The 7C81 has four FPGA driven user LEDs (User 0 through user 3 = Green), and
+    three status LEDs (two red and one yellow). The user LEDs can be used for any purpose,
+    and can be helpful as a simple debugging feature. The status LEDs reflect the state of the
+    FPGA’s /INIT, DONE pins and 3.3V power. The red /DONE LED lights until the FPGA is
+    configured at power-up. The red /INIT LED lights when the power on reset is asserted,
+    when there has been a CRC error during configuration or when the hostmot2 watchdog has
+    bitten. The yellow PWR leds lights when 3.3V power is present on card. When using Mesa’s
+    configurations, the /INIT LED blinks when the fallback configuration has been loaded. The
+    /INIT LED is also illuminated when the hostmot2 watchdog bites so will be illuminated when
+    LinuxCNC exits.
+
+PULL-UP/PULL-DOWN RESISTORS
+           All I/O pins are provided with pull-up/pull-down resistors to allow connection to open
+    drain, open collector, or OPTO devices. These resistors have a value of 3.3K so have a
+    maximum pull-up current of ~1.07 mA (5V pull-up) or ~.7 mA (3.3V pull-up).
+
+IO LEVELS
+            The Xilinx FPGAs used on the 7C81 have programmable I/O levels for interfacing
+    with different logic families. The 7C81 does not support use of the I/O standards that require
+    input reference voltages. All standard Mesa configurations use LVTTL levels.
+
+           Note that even though the 7C81 can tolerate 5V signal inputs, its outputs will not
+    swing to 5V. The outputs are push pull CMOS that will drive to the output supply rail of
+    3.3V. This is sufficient for TTL compatibility but may cause problems with some types of
+    loads. For example when driving an LED that has its anode connected to 5V, in such
+    devices as OPTO isolators and I/O module rack SSRs, the 3.3V high level may not
+    completely turn the LED off. To avoid this problem, either drive loads that are ground
+    referred, Use 3.3V as the VCC for VCC referred loads, or use open drain mode.
+
+STARTUP I/O VOLTAGE
+           After power-up or system reset and before the FPGA is configured, the per connector
+    pull-up or pull-down resistors will pull all I/O signals per connector to a high or low level. If
+    the FPGA is used for motion control or controlling devices that could present a hazard when
+    enabled, external circuitry should be designed so that this initial state results in a safe
+    condition.
+
+
+
+
+                                                                                  7C81       12
+HOST INTERFACE
+SPI HOST INTERFACE
+    GENERAL
+           The SPI host interface is a medium speed real time host interface with a low pin
+    count for microcontrollers and SOC’s that have built in SPI interface hardware. The 7C81s
+    SPI interface is a slave interface and uses a SPI frame size of 32 bits for all transactions.
+    The interface supports a SPI clock rate up to 50 MHz.
+
+    SPI MODE
+            The host interface uses the convention that the clock idles low, host data is shifted
+    into the 7C81 on the SPI clock rising edge, and data is shifted out of the 7C81 on the clock
+    falling edge. This matches SPI master setup with CPOL=0 and CPHA=0. The CS pin is
+    active low. To support the highest transfer rates the master should have a "late sample"
+    option.
+
+    SPI HEADER
+          SPI transactions always starts with a 32 bit header which contains the target register
+    address, the read or write command, the number of data elements to be transferred and the
+    address increment bit.
+
+                                           SPI HEADER
+
+    A A A A A A A A A A A A A A A A C C C C I N N N N N N N X X X X
+
+
+
+           The first 16 bits ("A" in the table above) are the HostMot2 register address (byte
+    address), MSb first. The next 4 bits ("C") are the command. Currently only 2 commands
+    are supported, read (0xA) and write (0xB). The next bit ("I") is the address increment bit.
+    When this bit is set, the register address is incremented (by 4) after every register
+    read/write access, allowing burst transfers from groups of sequential registers without
+    requiring a new address to be sent. Burst transfers with the increment bit cleared can be
+    used for multiple reads/writes to a single address for FIFO access and similar applications.
+    The next 7 bits ("N") are the burst length for sequential transfers.Valid burst lengths are 1
+    through 127. The "X" bits are unused.
+
+    DATA TRANSFER SEQUENCE
+            For SPI reads the master sends the header followed by N frames of 32 dummy (0)
+    bits, N being the burst length specified in the SPI header. The read data is returned on each
+    32 bit frame after the header frame.
+
+          On writes, the N frames of write data are sent by the master following the SPI
+    header. The 7C81 returns dummy data when write data is being received.
+
+
+
+
+                                                                              7C81       13
+HOST INTERFACE
+SPI HOST INTERFACE
+    DATA TRANSFER SEQUENCE
+    Example 1: Read 3 doublewords starting at 0x1000 with increment.
+
+    Master asserts /CS
+    Master sends 0x1000A830            7C81 echos dummy data
+    Master sends 0x00000000            7C81 echos register data @0x1000
+    Master sends 0x00000000            7C81 echos register data @0x1004
+    Master sends 0x00000000            7C81 echos register data @0x1008
+    Master de-asserts /CS
+
+
+    Example 2: Write 4 doublewords (A,B,C,D) to location 0x600C:
+    Master asserts /CS
+    Master sends 0x600CB040            7C81 echos dummy data
+    Master sends 0x0000000A            7C81 echos dummy data
+    Master sends 0x0000000B            7C81 echos dummy data
+    Master sends 0x0000000C            7C81 echos dummy data
+    Master sends 0x0000000D            7C81 echos dummy data
+    Master de-asserts /CS
+           The master may de-assert /CS between frames or leave it asserted without affecting
+    the SPI interface behavior as long as the CS idle time does not exceed the burst timeout
+    value.
+
+    BURST TIMEOUT
+           Because the 7C81’s SPI interface supports burst transfers of programmable length,
+    its possible that an aborted or incorrect command could leave the 7C81 in an unknown
+    state. To recover from this condition, the 7C81s SPI interface has a timeout on bursts. The
+    default timeout is 50 uSec. If /CS is de-asserted for 50 usec, the SPI interface will be reset
+    (and any pending burst aborted) so that it expects a SPI header (a new command) as the
+    next frame. A side effect of this timeout is that a burst transfer must never de-assert /CS
+    for longer than 50 uSec during a burst.
+
+
+
+
+                                                                               7C81       14
+HOST INTERFACE
+CONFIGURATION
+   GENERAL
+          The 7C81 is configured at power up by a SPI FLASH memory. This flash memory
+   is an 16M bit chip that has space for two configuration files. Since all host interface logic
+   on the 7C81 is in the FPGA, a problem with configuration means that SPI access will not
+   be possible. For this reason there is a backup method to recover from FPGA boot failures.
+
+   FALLBACK
+          The backup system is called Fallback. The 7C81 flash memory normally contains
+   two configuration file images, A user image and a fallback image. If the primary user
+   configuration is corrupted, the FPGA will load the fallback configuration so the flash memory
+   image can be repaired remotely without having to resort JTAG programming.
+
+         Note that if you program the 7C81 with a valid bitfile for a XC6SLX9 but not
+   designed for a 7C81, you will likely "brick" the card. The only way a bricked card can be
+   recovered is by using JTAG.
+
+   FALLBACK INDICATION
+           Mesa’s supplied fallback configurations blink the red INIT LED on the center right
+   hand side of the card if the primary configuration fails and the fallback configuration loaded
+   successfully. If this happens it means the user configuration is corrupted or not a proper
+   configuration for the 7C81s FPGA. This can be fixed by running the configuration utility and
+   re-writing the user configuration.
+
+   FAILURE TO CONFIGURE
+          The 7C81 should configure its FPGA within a fraction of a second of power
+   application. If the FPGA card fails to configure, the red /DONE LED CR2 will remain
+   illuminated. If this happens the FPGA must re-programmed via the JTAG connector
+   followed by running mesaflash to update the configuration flash EEPROM.
+
+
+
+
+                                                                              7C81       15
+HOST INTERFACE
+CONFIGURATION
+   EEPROM LAYOUT
+          The EEPROM used on the 7C81 for configuration storage is the M25P16. The
+   M25P16 is a 16 M bit (2 M byte) EEPROM with 32 64K byte sectors. Configuration files are
+   stored on sector boundaries to allow individual configuration file erasing and updating.
+   Standard EEPROM sector layout is as follows:
+
+          0x000000                               BOOT BLOCK
+
+          0x010000                   FALLBACK CONFIGURATION BLOCK 0
+
+          0x020000                   FALLBACK CONFIGURATION BLOCK 1
+
+          0x030000                   FALLBACK CONFIGURATION BLOCK 2
+
+          0x040000                   FALLBACK CONFIGURATION BLOCK 3
+
+          0x050000                   FALLBACK CONFIGURATION BLOCK 4
+
+          0x060000                   FALLBACK CONFIGURATION BLOCK 5
+
+          0x070000                              UNUSED/FREE
+
+          0x080000                              UNUSED/FREE
+
+          0x090000                              UNUSED/FREE
+
+          0x0A0000                              UNUSED/FREE
+
+          0x0B0000                              UNUSED/FREE
+
+          0x0C0000                              UNUSED/FREE
+
+          0x0D0000                              UNUSED/FREE
+
+          0x0E0000                              UNUSED/FREE
+
+          0x0F0000                              UNUSED/FREE
+
+
+
+
+                                                                         7C81       16
+HOST INTERFACE
+CONFIGURATION
+   EEPROM LAYOUT
+
+
+        0x100000   USER CONFIGURATION BLOCK 0
+
+        0x110000   USER CONFIGURATION BLOCK 1
+
+        0x120000   USER CONFIGURATION BLOCK 2
+
+        0x130000   USER CONFIGURATION BLOCK 3
+
+        0x140000   USER CONFIGURATION BLOCK 4
+
+        0x150000   USER CONFIGURATION BLOCK 5
+
+        0x160000          UNUSED/FREE
+
+        0x170000          UNUSED/FREE
+
+        0x180000          UNUSED/FREE
+
+        0x190000          UNUSED/FREE
+
+        0x1A0000          UNUSED/FREE
+
+        0x1B0000          UNUSED/FREE
+
+        0x1C0000          UNUSED/FREE
+
+        0x1D0000          UNUSED/FREE
+
+        0x1E0000          UNUSED/FREE
+
+        0x1F0000          UNUSED/FREE
+
+
+
+
+                                                7C81   17
+HOST INTERFACE
+CONFIGURATION
+   BITFILE FORMAT
+           The configuration utilities expects standard FPGA bitfiles without any multiboot
+   features enabled. If multiboot FPGA files are loaded they will likely cause a configuration
+   failure. In addition for fallback to work, the -g next_config_register_write:disable, -g
+   reset_on_error:enable and -g CRC:enable bitgen options must be set.
+
+   MESAFLASH
+        The Linux utility program mesaflash is provided to write configuration files to the
+   7C81 EEPROM via the SPI interface.
+
+         If mesaflash is run with a Bhelp command line argument it will print usage
+   information.
+
+         The following examples assume the host SPI interface device is /dev/spidev0.0
+
+   mesaflash --device 7C81 –spi --addr /dev/spidev0.0           --write FPGAFILE.BIT
+
+   Writes a standard bitfile FPGAFILE.BIT to the user area of the EEPROM.
+
+   mesaflash --device 7C81 --spi --addr /dev/spidev0.00 --verify FPGAFILE.BIT
+
+   Verifies the user EEPROM configuration against the bit file FPGAFILE.BIT.
+
+   mesaflash --device 7C81 –spi--addr /dev/spidev0.0 --fallback --write FB.BIT
+
+         Writes the FB.BIT fallback configuration to the fallback area of the EEPROM.
+
+
+
+
+                                                                            7C81       18
+SUPPLIED CONFIGURATIONS
+HOSTMOT2
+            All supplied configurations are part of the HostMot2 motion control firmware set. All
+    HostMot2 firmware is open source and easily extendible to support new interfaces or
+    different sets of interfaces embedded in one configuration. The configurations listed here
+    are just example configurations. For a complete list check the /configs/hostmot2 directory
+    of the 7c81.zip archive. Custom configurations can be built on request. For detailed register
+    level information on Hostmot2 firmware modules, see the regmap file in the hostmot2
+    source code directory.
+
+5ABOBX3
+         The 5ABOBX3 configuration is a 12 axis (4 per connector) configuration for 3 of the
+    common 5 Axis "Mach 3" BOBs. Due to space limitations, the serial expansion ports are
+    unused. Encoders are available on all BOB connectors as are PWM generators for the
+    BOBs analog spindle speed interface.
+
+5ABOBX2
+          The 5ABOBX2 configuration is a 8 axis (4 per connector) configuration for 2 of the
+    common 5 Axis "Mach 3" BOBs. Both RS-422/RS-485 serial ports are used as Sserial I/O
+    expansion. Encoders are available on both BOB connectors as are PWM generators for the
+    BOBs analog spindle speed interface. The last parallel expansion connector may be used
+    for GPIO
+
+G540X2
+            The G540X2 configuration is a 8 axis (4 per connector) configuration for 2 G540
+    intergrate 4 axis step motor drives. Both RS-422/RS-485 serial ports are used as Sserial
+    I/O expansion. Encoders are available on both G540 connectors as are PWM generators
+    for the G540s analog spindle speed interface. The last parallel expansion connector may
+    be used for GPIO.
+
+PIN FILES
+            Each of the configurations has an associated file with file name extension .pin that
+    describes the FPGA functions included in the configuration and the I/O pinout. These are
+    plain text files that can be printed or viewed with any text editor.
+
+
+
+
+                                                                              7C81       19
+REFERENCE INFORMATION
+   POWER                            MIN      MAX          NOTES:
+
+   5V POWER SUPPLY                  4.5V     5.5V         P5 supplied 5V
+
+   5V POWER CONSUMPTION:            ----     5A           Depends on FPGA
+                                                          configuration and
+                                                          external load
+
+                                                          Typical current drain
+                                                          with no load is 200
+                                                          mA
+
+   MAX 5V CURRENT TO I/O CONNS      ---      2000 mA      Each (PTC Limit)
+
+   INPUT VOLTAGE                    -0.5V    +7V          Absolute maximum
+
+   OUTPUT VOLTAGE HIGH (pullup)     3.3V     5V           no load
+
+   OUTPUT VOLTAGE HIGH (pulldown)   2.7V     3.3V         no load
+
+   OUTPUT VOLTAGE HIGH (pullup)     2.5V     3.3V         1 K load to GND
+
+   OUTPUT VOLTAGE LOW (pullup)      0V       0.3V         300 Ohm load to 5V
+
+   RS-422/RS-485 DATA RATE          C        10 Mbits/s
+
+
+
+   TEMPERATURE RANGE -C version     0 oC     +70 oC
+
+   TEMPERATURE RANGE -I version     -40 oC   +85 oC
+
+
+
+
+                                                             7C81       20
+REFERENCE INFORMATION
+CARD DRAWING
+
+
+
+
+                        7C81   21
+

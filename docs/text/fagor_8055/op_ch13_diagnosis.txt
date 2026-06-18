@@ -1,0 +1,1193 @@
+===== PAGE 216 =====
+
+13.2      Hardware test
+
+       This option checks the power supply voltages corresponding to the system and to the boards as
+       well as the internal temperature of the central unit. It displays the following information:
+
+
+
+       Supply voltage
+
+       It indicates the voltage of the lithium battery and the voltages supplied by the power supply. The
+       voltages supplied by the power supply are internally used by the CNC.                                             13.
+       Next to the voltages, it displays the value range (maximum and minimum values), the real value and
+
+
+                                                                                                             DIAGNOSIS   Hardware test
+       whether it is OK or not.
+
+
+
+       Board voltage
+
+       It indicates which boards must be supplied with 24 Vdc and whether each one of them is properly
+       supplied.
+
+
+
+       Inside temperature
+
+       It shows the value range (maximum and minimum values), the inside temperature of the Central
+       Unit and whether that value is OK or not.
+
+
+
+
+                                                                                                            CNC 8055
+                                                                                                            CNC 8055i
+
+
+
+                                                                                                            ·M· & ·EN· MODELS
+                                                                                                              SOFT: V01.6X
+
+
+
+
+                                                                                                                         ·217·
+===== PAGE 217 =====
+
+                            13.3      Tests
+
+
+                                   Memory test
+
+                                   This option checks the status of the internal CNC memory, that of the memory available for the user
+                                   and for the system.
+
+                                   In order to perform this test, the PLC program must be stopped. If it is running, the CNC will ask
+
+ 13.                               the operator whether it is to be stopped or not.
+
+
+
+
+        DIAGNOSIS
+                    Tests          Code test
+
+                                   This option checks the status of the internal CNC Flash memory. These memories contain the CNC
+                                   software version currently installed.
+
+
+
+                                   Hard disk test
+
+                                   Accessing this screen runs a test on the disk. Testing the hard disk includes a test of the surface.
+                                   This test is not carried out on a remote hard disk and the relevant message is displayed.
+
+                                   When detecting an error, it shows the relevant error message at the bottom of the window.
+
+                                               DIAGNOSIS                               P...... N....                  DNC          12:24:55
+
+                                                                                     HARD DISK TEST
+
+                                                                PHYSICAL                                          LOGIC
+
+                                                     Model             * * *                       Block size                4096 Bytes
+
+                                                     Physical          984     16/    32           Total blocks             62846
+
+                                                     Logic             984     16/    32           Free blocks              40150
+
+                                                                MOUNTING                           Occupied blocks          22696
+
+                                                                                                   Sector/Cluster               8
+                                                                  Ok
+
+                                                                                                   Label                      BCB
+
+
+
+
+                                                Ok                                                                           CAP    INS
+
+
+                                   This mode shows the following information:
+                                    • Physical information.
+                                      Hard disk model installed and information on the physical and logic partition (cylinders, heads
+                                      and sectors). The physical and logic partitions might not be the same.
+                                      This information is only displayed for the local hard disk. When having a remote hard disk, this
+                                      information is not available.
+
+CNC 8055                            • Logic information.
+
+CNC 8055i                             Size in bytes of each of the blocks the disk is divided into. Total number of blocks in the disk,
+                                      free and occupied. Number of sectors in a cluster.
+                                      The label is the name given to the disk when formatting it.
+                                    • Mounting information.
+·M· & ·EN· MODELS                     If no error occurred, it shows the message "OK".
+  SOFT: V01.6X
+                                      Local hard disk: In case of error, it indicates the error number and the mounting stage where
+                                      it came up.
+                                      Remote hard disk: In case of error, it only shows a message indicating the type of error.
+
+
+
+     ·218·
+===== PAGE 218 =====
+
+13.4       Adjustments
+
+13.4.1     Circle geometry test
+
+       This adjustment improves the axis reversal peaks. It consists in machining a circle (without
+       compensation) and verifying it on the graph displayed at the CNC.
+
+       The following example shows a program that machines repetitive circles.
+           X0 Y0
+           G5 G1 F1000
+           N10 G2 X0 Y0 I20 J0
+           (RPT N10, N10) N50
+                                                                                                                               13.
+                                                                                                                   DIAGNOSIS   Adjustments
+           M30
+
+       After selecting this program in the Execution mode and starting it, access the "Diagnosis,
+       Adjustments, Circle Geometry test" mode and the CNC will display the following screen:
+
+
+
+
+       If the machine parameters are protected, it will request the access password because the bottom
+       right of the screen shows some of them. When not knowing the password, those values cannot be
+       changed, but it will be possible to access the screen and the circle geometry test.
+
+       The left side of the CNC screen shows the result of the test.
+
+       The data at the top right is refreshed by the CNC after the test is completed.
+
+       The data at the center right must be defined before running the test.
+
+       The bottom right side of the screen shows the parameters associated with the plane axes and the
+       values to set them.
+
+       The graph on the left must be defined before running the test. To do that, define the data of the center
+       right:
+         • Number of divisions to the left and to the right of the theoretical circle.
+         • Scale or value in microns of each division.
+         • Error margin or % of circle radius occupied by the error margin (divisions area).
+
+       Knowing the password, the values shown at the bottom right may be modified. The CNC assigns
+       the new values to the relevant machine parameters; therefore, it is recommended to jot the initial
+       values down.                                                                                               CNC 8055
+                                                                                                                  CNC 8055i
+
+
+
+                                                                                                                  ·M· & ·EN· MODELS
+                                                                                                                    SOFT: V01.6X
+
+
+
+
+                                                                                                                               ·219·
+===== PAGE 219 =====
+
+                                  Once the graphic display area and the machine parameters have been defined, capture the data
+                                  by pressing the following softkeys:
+                                      SINGLE         It deletes the current graph and draws, over the theoretical circle, the machining
+                                                     error enlarged according to the defined scale until a full circle is drawn or until the
+                                                     STOP softkey or ESC key is pressed.
+                                      CONTINUOUSIt deletes the current graph and draws, over the theoretical circle, a series of
+                                               circles with the machining error enlarged according to the defined scale until the
+                                               STOP softkey or ESC key is pressed.
+                                      DELETE         It may be pressed at any time, even while drawing the graph. It deletes the screen
+ 13.                                                 and resets the statistics shown at its right.
+
+                                  During continuous graphics, it is possible to modify the machine parameters and view the new graph
+
+
+
+        DIAGNOSIS   Adjustments
+                                  over the previous one, or press the DELETE softkey to only display the new one.
+
+                                  The data shown by the CNC at the top right is updated while capturing data.
+                                       internal     Maximum negative value of the error over the theoretical value, in microns or ten-
+                                                     thousandths of an inch and its angular position.
+                                       external     Maximum positive value of the error over the theoretical value, in microns or ten-
+                                                     thousandths of an inch and its angular position.
+
+                                  Once data capture is done, it draws two lines indicating the angular positions of both errors on the
+                                  graph. They appear in dashed lines when the error exceeds the value assigned to the display area
+                                  in its quadrant and it goes on to the opposite quadrant.
+
+
+
+                                  i       While capturing points for the geometry test, the execution graphics stops drawing.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·220·
+===== PAGE 220 =====
+
+13.4.2     Oscilloscope
+
+     The oscilloscope function is a help tool to adjust the CNC and the drives. With this tool, it is possible
+     to represent 4 previously selected variables and manipulate CNC machine parameters and
+     variables. When using Fagor drives with Sercos or CAN, the drive parameters may also be adjusted.
+
+     When requesting information (variable or parameter) of a drive that is not connected via Sercos or
+     CAN or has an old software version, the message "Variable does not exist" will be displayed.
+
+
+
+     i          It must be borne in mind that the oscilloscope is only an assistance tool for the adjustment; it is always
+                up to the technician to decide which one is the best adjustment.
+                                                                                                                                          13.
+     It is possible to access the oscilloscope from the main screens of the jog and execution modes by
+
+
+                                                                                                                              DIAGNOSIS   Adjustments
+     pressing "7" and then "1".
+
+     How to operate
+     The way to operate with the oscilloscope is summarized as followed:
+         1. Execute a part-program to move the axis or axes to be adjusted.
+           The program must execute a nonstop back-and-forth movement.
+         2. Once the program starts running, access the oscilloscope and define the variables to be
+            analyzed, the trigger conditions and the machine parameters of the CNC or the drive to be
+            modified.
+           From the oscilloscope, only certain machine parameters may be modified and it will also be
+           necessary to know the protection password if they are protected.
+         3. Start the oscilloscope, capture the data and then analyze it. While capturing data, the defined
+            data may be modified to check the system's response to different adjustments.
+           Repeat the capture, the analysis and the modification of parameters until obtaining the best
+           machining conditions.
+
+     After adjusting the axes individually, readjust the interpolating axes together.
+
+     Operating the oscilloscope
+     To enter or modify a data on the screens, it must be selected and it must have the editing focus.
+
+     To select another editable data or field, use the [] []. It is a rotary selection, if the [] key pressed
+     when the first element of the screen is selected, the focus goes to the last element whereas if the
+     [] is pressed when the last element is selected, the focus goes to the first element.
+
+     Not all the fields are editable, only the ones that may be selected can be edited, those having the
+     focus. There are two types of editable fields:
+         • Editable values:
+           They may be assigned a value, either a two-digit number or alphanumeric (numbers and letters).
+           Before validating the data, it is checked out and if it is not correct, it will not be accepted and a
+           warning message will be issued.
+         • Values that may be selected:
+           The possible data are fixed one of them must be selected. Use the [] [] keys to see the
+           possible values. For this type of values that are icons, the [White/Green] key has the same effect
+           as the [] key.
+
+
+
+
+                                                                                                                             CNC 8055
+                                                                                                                             CNC 8055i
+
+
+
+                                                                                                                             ·M· & ·EN· MODELS
+                                                                                                                               SOFT: V01.6X
+
+
+
+
+                                                                                                                                          ·221·
+===== PAGE 221 =====
+
+                                  Softkey menu
+                                  Accessing the oscilloscope mode enables the following softkeys:
+                                     Scale / Offsets        To change the amplitude of each signal, move them vertically or adjust the
+                                                            time base for all of them.
+                                     Analysis               To analyze, using 2 cursors, each signal of the last data capture.
+                                     Parameters             To assign new values to the machine parameters of the CNC and drive
+                                                            that have been defined in the "Configuration" screen.
+                                     Configuration          To define the variables to be analyzed, the trigger conditions and the
+ 13.                                 Actions
+                                                            machine parameters of the CNC or the drive to be modified.
+                                                            It shows various softkeys to modify the data of each field (amplitude of the
+
+
+
+        DIAGNOSIS   Adjustments
+                                                            signals, vertical movement, time base adjustment, position of the cursors,
+                                                            etc.).
+                                     Begin                  It captures data according to the conditions set on the "Configuration"
+                                                            screen to be analyzed later on.
+
+
+
+                                  "Configuration" softkey
+
+                                  To define the variables to be analyzed, the trigger conditions and the machine parameters of the
+                                  CNC or the drive to be modified.
+
+                                  It offers 2 screens, one to set the parameters and the other one to define the variables and trigger
+                                  conditions. On the screen for defining variables and the trigger condition, it is possible to go from
+                                  block of elements to another using the [page up] and [page down] keys.
+
+                                  Definition of variables
+                                  The oscilloscope has 4 graphics channels (CH1, CH2, CH3, CH4). The following data must be
+                                  defined in each channel.
+                                   • The code or name of the variable to be shown.
+                                   • The color used to show the variable on the graph.
+                                   • Whether the channel will be visible or not.
+                                     The hidden channels are not shown graphically (they are not shown on the screen after the data
+                                     capture). This type of channels are useful when using this channel to set the trigger condition.
+
+                                  When defining a variable that cannot be captured, an error message will be issued. If no variable
+                                  is to be captured in a channel, just leave the name field blank. If all 4 channels are deactivated
+                                  (without associated variable) no capture is possible.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·222·
+===== PAGE 222 =====
+
+     CNC variables that may be assigned to a channel
+
+     Indicate the desired variable.
+        Example:       ANAI1           FREAL             FLWEX.
+
+      Variable              Description
+
+      ANAI(1-8)             Voltage of input 1-8.
+
+      ANAO(1-8)             Voltage to apply to output 1-8.
+
+      FREAL                 Actual (real) CNC feedrate.
+
+      FREAL(X-C)
+
+      FTEO(X-C)
+                            Actual (real) X-C axis feedrate
+
+                            Theoretical X-C axis feedrate
+                                                                                                                       13.
+                                                                                                           DIAGNOSIS   Adjustments
+      FLWE(X-C)             X-C axis following error.
+      ASIN(X-C)             "A" signal of the CNC's sinusoidal feedback for the X-C axis.
+
+      BSIN(X-C)             "B" signal of the CNC's sinusoidal feedback for the X-C axis.
+
+      DRPO(X-C)             Position indicated by the Sercos drive of the X-C axis.
+
+      SREAL                 Real spindle speed
+
+      FTEOS                 Theoretical spindle speed.
+
+      FLWES                 Spindle following error.
+
+      ASINS                 "A" signal of the CNC's sinusoidal feedback for the spindle.
+
+      BSINS                 "B" signal of the CNC's sinusoidal feedback for the spindle.
+
+      DRPOS                 Position indicated by the Sercos drive of the spindle.
+
+      SSREAL                Real speed of the second spindle.
+
+      SFTEOS                Theoretical speed of the second spindle.
+
+      SFLWES                Following error (lag) of the second spindle.
+
+      SASINS                "A" signal of the CNC sinusoidal feedback for the second spindle.
+      SBSINS                "B" signal of the CNC sinusoidal feedback for the second spindle.
+
+      SDRPOS                Position indicated by the Sercos drive of the second spindle.
+
+
+     Fagor Sercos or CAN drive variables that may be assigned to a channel
+
+     Indicate the desired axis or spindle and variable, separated by a period. The auxiliary spindle is
+     identified with the prefix "AS".
+        Example:       X.CV3            Y.SV1            S1.SV2            AS.SV1
+
+      Variable              Description
+
+      CV3                   CurrentFeedback
+
+      SV1                   VelocityCommand
+
+      SV2                   VelocityFeedback
+
+      SV7                   VelocityCommandFinal
+
+      TV1                   TorqueCommand
+
+      TV4                   VelocityIntegralAction
+
+      RV1                   FeedbackSine
+
+      RV2                   FeedbackCosine
+
+      RV51                  Feedback2Sine                                                                 CNC 8055
+      RV52                  Feedback2Cosine                                                               CNC 8055i
+
+
+
+                                                                                                          ·M· & ·EN· MODELS
+                                                                                                            SOFT: V01.6X
+
+
+
+
+                                                                                                                       ·223·
+===== PAGE 223 =====
+
+                                  Trigger conditions
+                                  The following data is available to define the trigger conditions.
+                                   • Channel
+                                     It indicates which variable or channel (CH1, CH2, CH3, CH4) is to be used as reference or trigger
+                                     condition.
+                                   • Trigger
+                                     It indicates when the data capture begins. When selecting a trigger, the trigger condition must
+                                     be specified with the "flank", "level" and "position" data.
+
+ 13.                                 If not selected, the data capture begins when the user gives the command to begin (the "flank",
+                                     "level" and "position" data is ignored).
+
+
+
+
+        DIAGNOSIS   Adjustments
+                                   • Flank
+                                     It is taken into account when the trigger has been selected. It may be up-flank (leading edge)
+                                     or down-flank (trailing edge).
+                                     With an up flank, the data capture begins when in a sample the data value is lower than the level
+                                     and in the next sample the value is greater than or equal to the level.
+                                     With a down flank, the data capture begins when in a sample the data value is greater than the
+                                     level and in the next sample the value is lower than or equal to the level.
+                                   • Level
+                                     It is taken into account when the trigger has been selected.
+                                     It sets the value to be assumed by the variable to start capturing data.
+                                   • Position (%)
+                                     It is taken into account when the trigger has been selected. It is defined as a percentage, between
+                                     0% and 100%.
+                                     It indicates the number of samples to be taken before the trigger. For example, a 10% position
+                                     indicates that 10% of the total number of programmed samples will be taken before the trigger
+                                     and the remaining 90% after that instant.
+                                     The trigger condition starts evaluating after having the indicated % of samples. If the position
+                                     is defined as 50% and the trigger condition takes place after taking 10% of the samples, it is
+                                     ignored until capturing 50% of the samples.
+                                   • Number of samples
+                                     It indicates the number of sample to be captured. It is common to all the channels. Value between
+                                     1 and 1024.
+                                     The sample will be taken at the same time in all the channels so they are synchronized.
+                                   • Sample T
+                                     It indicates the sampe period or the time period between data captures. It is given in milliseconds,
+                                     integers between 1 and 1000 (between 1ms and 1s).
+                                     When analyzing CNC variables, the sample period must be a multiple of the loop time. If it is
+                                     not, a message is displayed indicating that the sampling period has been automatically rounded
+                                     off.
+                                     The sample time may be shorter than the CNC loop time only when analyzing 1 or 2 variables
+                                     of the same drive.
+                                     When the requested number of variables forces a reconfiguration of the CNC's Sercos or CAN
+                                     interface, a warning message is issued requesting its confirmation.
+                                   • Mode
+                                     It indicates the type of data capture, single or continuous.
+                                     With "single" capture, the process ends when the specified number of samples has been taken
+CNC 8055                             or when interrupted by the user.
+CNC 8055i                            In continuous capture mode, when the trace fills up the screen, the capture goes on except if
+                                     the trigger has triggered; in that case the trace of the trigger remains until a new trigger is
+                                     activated. The process goes on like that indefinitely until the user stops it.
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·224·
+===== PAGE 224 =====
+
+      • Superimposed channels
+        If this option is not selected, all the signals appear separated. The screen is divided into as many
+        horizontal strips as active and visible channels have been defined. The signals are shown with
+        their own graphic zero and ordered from top to bottom in the defined order (CH1, CH2, CH3,
+        CH4).
+        If this option is selected all the signals appear superimposed, with a single graphic zero located
+        at the center of the screen.
+        During the analysis of the signals, it is possible to change modes by pressing the [M] key.
+
+     Machine parameter setting
+     The parameters defining page shows the definition code on the left column, the parameter name
+                                                                                                                            13.
+                                                                                                                DIAGNOSIS   Adjustments
+     on the center column and the maximum and minimum values on the right column.
+      • To add a parameter to the list, select the row for the parameter, enter the definition code and
+        press [ENTER]. If the parameter is valid, the rest of the fields are updated and if not, it issues
+        a warning.
+      • To replace a parameter from the list, select the parameter to be replaced, enter the definition
+        code of the new parameter and press [ENTER]. If the previous content has been deleted and
+        no code is entered, the line appears empty.
+      • The [Add a parameter to the list] softkey enters a new empty line above the currently selected line.
+      • The [Eliminate parameter] softkey eliminates the currently selected line and shifts all the ones
+        below upwards.
+
+     The parameters are always shown in the same place where they were defined and the empty rows
+     appear blank.
+
+     When a parameter is changed, the CNC machine parameter table and the drive's work parameters
+     are updated. The [Save parameters] softkey is also activated. It is recommended to save the
+     parameter tables that have been changed, those of the CNC into the hard disk (KeyCF) and those
+     of the drive in its FLASH. If only the CNC parameters have been changed, the drive tables remain
+     unchanged and vice versa.
+
+     Once the values saved are the same as the ones edited last, the softkey disappears until a new
+     modification is made.
+
+     CNC machine parameters that may be modified
+
+     General machine parameters: Enter the indicator of the general parameter and the parameter
+     number separated with a dot.
+        Example:       G.P161
+
+      Parameter              Number                                    Update
+
+      TLOOK                    P161                         Beginning of program execution
+
+      CODISET                  P147                                   Immediate
+
+     Machine parameters of an axis: Indicate the axis and the parameter number separated by a dot.
+        Example:       X.P18          Z.P23
+
+      Parameter              Number                                    Update
+
+      BACKLASH                 P14                                    Immediate
+
+      ACCTIME                  P18                            Beginning of the next block
+
+      INPOSW                   P19                                    Immediate
+
+      MAXFLWE1                 P21                                    Immediate                                CNC 8055
+      MAXFLWE2                 P22                                    Immediate                                CNC 8055i
+      PROGAIN                  P23                                    Immediate
+
+      DERGAIN                  P24                                    Immediate
+
+      FFGAIN                   P25                                    Immediate                                ·M· & ·EN· MODELS
+                                                                                                                 SOFT: V01.6X
+      MINANOUT                 P27                                    Immediate
+
+      SERVOFF                  P28                                    Immediate
+
+      BAKANOUT                 P29                                    Immediate
+
+
+
+                                                                                                                            ·225·
+===== PAGE 225 =====
+
+
+                                  Parameter             Number                                   Update
+
+                                  BAKTIME                  P30                                  Immediate
+
+                                  REFDIREC                 P33                                  Immediate
+
+                                  REFVALUE                 P36                                  Immediate
+
+                                  MAXVOLT                  P37                                  Immediate
+
+                                  G00FEED                  P38                          Beginning of the next block
+
+                                  MAXFEED                  P42                          Beginning of the next block
+
+ 13.                              JOGFEED
+                                  ACCTIME2
+                                                           P43
+                                                           P59
+                                                                                        Beginning of the next block
+                                                                                        Beginning of the next block
+
+
+
+        DIAGNOSIS   Adjustments
+                                  PROGAIN2                 P60                                  Immediate
+
+                                  DERGAIN2                 P61                                  Immediate
+
+                                  FFGAIN2                  P62                                  Immediate
+
+                                  JERKLIM                  P67                          Beginning of the next block
+
+                                  FLIMIT                   P75                          Beginning of the next block
+
+                                  Spindle machine parameters: Indicate the spindle (S, S1, S2) and the parameter number separated
+                                  by a dot.
+                                     Example:      S.P18         S1.P23        S2.P25
+
+                                  Parameter             Number                                   Update
+
+                                  MAXGEAR1                 P2                           Beginning of the next block
+
+                                  MAXGEAR2                 P3                           Beginning of the next block
+
+                                  MAXGEAR3                 P4                           Beginning of the next block
+
+                                  MAXGEAR4                 P5                           Beginning of the next block
+
+                                  ACCTIME                  P18                          Beginning of the next block
+
+                                  INPOSW                   P19                                  Immediate
+                                  PROGAIN                  P23                                  Immediate
+
+                                  DERGAIN                  P24                                  Immediate
+
+                                  FFGAIN                   P25                                  Immediate
+                                  MINANOUT                 P27                                  Immediate
+
+                                  SERVOFF                  P28                                  Immediate
+
+                                  REFDIREC                 P33                                  Immediate
+
+                                  REFVALUE                 P36                                  Immediate
+
+                                  MAXVOLT1                 P37                                  Immediate
+
+                                  MAXVOLT2                 P38                                  Immediate
+
+                                  MAXVOLT3                 P39                                  Immediate
+
+                                  MAXVOLT4                 P40                                  Immediate
+
+                                  OPLACETI                 P45                                  Immediate
+
+                                  ACCTIME2                 P47                          Beginning of the next block
+
+                                  PROGAIN2                 P48                                  Immediate
+
+                                  DERGAIN2                 P49                                  Immediate
+CNC 8055
+                                  FFGAIN2                  P50                                  Immediate
+CNC 8055i
+                                  SLIMIT                   P66                                  Immediate
+
+                                  A modification in the MAXGEAR(1··4) parameters sets the square corner mode even if a round
+                                  corner has been programmed.
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·226·
+===== PAGE 226 =====
+
+     Drive parameters that may be modified.
+
+     Axis parameters. Indicate the axis, the name of the parameter and the set separated by a period.
+        Example:        X.CP1.0        Y.CP20.2        Z.SP1.1
+
+     Save and load the configurations of the oscilloscope
+     The system permits saving the current configuration into a file in ASCII format. To do that, set general
+     machine parameter STPFILE with the number to be assigned to the configuration file (the number
+     must be other than 0). The configuration file may be treated like any other program, sent out via DNC
+     or even edited.
+
+     When saving or loading a configuration, the CNC first checks if the file already exists in User RAM
+                                                                                                                              13.
+     and if not, it will look for it in the hard disk (KeyCF).
+
+
+                                                                                                                  DIAGNOSIS   Adjustments
+     Several configurations may be saved in the configuration file. Each configuration must be assigned
+     a name of up to 40 characters.
+
+     The following softkeys are related to this feature.
+        Save            To save the current configuration, press the [Save] softkey and enter the name
+                        to save it with up to 40 characters. If there is a previously saved configuration with
+                        the same name, it will ask whether it must be replaced or not.
+        Load            To load a previously saved configuration, press the [Load] softkey and select it
+                        from the list on the screen. If the configuration makes not sense (for example,
+                        because the CNC does not have an axis that that configuration refers to), the CNC
+                        will warn the user and it will only load the portion of the configuration read until
+                        that error came up.
+        Delete          To delete one of the saved configurations, press the [Delete] softkey, select it from
+                        the list on the screen and press [ENTER].
+        Reset           Pressing the [Reset] softkey resets the current configuration. There are neither
+                        variables nor parameters selected and the rest of conditions (colors, trigger, etc.)
+                        assume the values assigned by default.
+
+     Access to PLC resources
+     From the configuration screen, the system can access the PLC resources. The following syntax must
+     be used to access them:
+      • Marks: PLC.M1234
+      • Inputs: PLC.I25
+      • Outputs: PLC.O1
+      • Registers: PLC.R560
+      • Register Bit: PLC.B0R560
+      • Timers: PLC.T1
+      • Counters: PLC.C1
+
+     Access is also possible using the associated symbol.
+        Example: PLC.ENABLEX
+
+     An error will be issued when accessing a non-existent PLC resource.
+
+
+
+     "Scale / Offsets" softkey
+
+     To change the amplitude of each signal, move them vertically or adjust the time base for all of them.       CNC 8055
+                                                                                                                 CNC 8055i
+     The right side of the screen shows:
+      • The vertical scale or amplitude by square for each signal (next to the name of the variable).
+      • The horizontal scale or time base (t/div) for all the signals.
+                                                                                                                 ·M· & ·EN· MODELS
+     To change the amplitude, use the [] [] keys to place the focus in the "Scale" field of the desired          SOFT: V01.6X
+     variable. Then use the [] [] keys or [page up] [page down] to select one of the permitted values
+     or press [X] for auto-scaling.
+
+
+
+
+                                                                                                                              ·227·
+===== PAGE 227 =====
+
+                                  To move the signal vertically, use the [] [] keys to place the focus in the "Offset" field of the desired
+                                  variable. Then use the [] [] keys or [page up] [page down] to move the signal or press one of
+                                  these keys:
+                                     [U]             To move it up as high as possible
+                                     [D]             To move it down as low as possible
+                                     [0]             To center it.
+                                     [X]             For the CNC to scale it automatically.
+
+                                  When autoscaling a channel, the system determines the proper vertical scale and offset so the
+ 13.                              signal appears as enlarged as possible inside its graphic area.
+
+                                  To modify the time base of all the signals, use the[] [] keys to place the focus in the "t/div" field.
+
+
+
+        DIAGNOSIS   Adjustments
+                                  Then use the [] [] keys or [page up] [page down] to select one of the permitted values or press
+                                  [X] for auto-scaling.
+
+                                  To select another portion of the sample use the [] [] keys to place the focus in the "Win" field.
+                                  Then use the [] [] keys or [page up] [page down] to move the signal or press one of these keys:
+                                     [F]             To show the beginning of the trace (first)
+                                     [T]             To show the trigger zone
+                                     [S]             To show the final portion of the trace (second)
+                                     [X]             For the CNC to scale it automatically.
+
+
+
+                                  "Analysis" softkey
+
+                                  To analyze, using 2 cursors, each signal of the last data capture.
+
+                                  The right side of the screen shows:
+                                   • Next to each variable, the value (V1 and V2) of the signal in the position of each cursor and the
+                                     difference between them (Dv).
+                                   • The position, in milliseconds, of each cursor (C1 and C2) and the time difference between them
+                                     (Dt).
+
+                                  To select the first or second cursor, use the [] [] keys to place the focus in the "C1" or "C2" fields
+                                  respectively. Then use the [] [] keys or [page up] [page down] to move the signal or press one
+                                  of these keys:
+                                     [F]             To show the beginning of the trace (first)
+                                     [T]             To show the trigger zone
+                                     [S]             To show the final portion of the trace (second)
+                                     [X]             For the CNC to scale it automatically.
+
+                                  To select another portion of the sample use the [] [] keys to place the focus in the "Win" field.
+                                  Then use the [] [] keys or [page up] [page down] to move the signal or press one of these keys:
+                                     [F]             To show the beginning of the trace (first)
+                                     [T]             To show the trigger zone
+                                     [S]             To show the final portion of the trace (second)
+                                     [X]             For the CNC to scale it automatically.
+
+                                  Holding the [] []keys pressed accelerates the movement.
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·228·
+===== PAGE 228 =====
+
+     "Parameters" softkey
+
+     To assign new values to the machine parameters of the CNC and drive that have been defined in
+     the "Configuration-Parameters" screen.
+
+     The machine parameters of the axis or the spindle are updated according to the criteria defined in
+     the previous tables, the rest of the parameters are updated according to the general criteria:
+        //       It is necessary to press the keystroke sequence: [SHIFT] + [RESET] or turn the CNC off
+                 and back on.
+        /        Just press [RESET].
+                 The rest of the parameters (those unmarked) will be updated automatically, only by
+                                                                                                                          13.
+                                                                                                              DIAGNOSIS   Adjustments
+                 changing them.
+
+     If the password to the machine parameters has been defined (SETUPPSW), it will be requested
+     when modifying a parameter for the first time. If entered correctly, it is stored in memory and it is
+     not requested again unless the CNC is turned off. If the password is wrong, the parameter cannot
+     be modified and it will be requested again the next time.
+
+     When a parameter is changed, the CNC machine parameter table and the drive's work parameters
+     are updated. The [Save Parameters] softkey is also activated on the "Configuration - Parameters"
+     screen.
+
+     We suggest to access that screen and press the [Save Parameters] softkey to save the parameter
+     tables that have been changed, those of the CNC into the hard disk (KeyCF) and those of the drive
+     in its FLASH. If only the CNC parameters have been changed, the drive tables remain unchanged
+     and vice versa.
+     Once the values saved are the same as the ones edited last, the softkey disappears until a new
+     modification is made.
+
+
+
+     "Actions" softkey
+
+     It is available on the following screens: "Parameter Editing", "Analysis" and "Scales /Offsets".
+
+     It is very useful when not having an alpha-numeric keyboard because it shows several softkeys to
+     change the data of each field (amplitude of the signals, vertical movement, time base, position of
+     the cursors, etc.)
+
+
+
+     "Start" softkey
+
+     It is available on the following screens: "Parameter Editing", "Analysis" and "Scales /Offsets".
+
+     It captures data according to the conditions set on the "Configuration" screen and enables the
+     following softkeys:
+        [Stop]                 Interrupts the capture and shows the data collected until then.
+        [Continuous Stop]      Available when the capture is continuous. It interrupts the capture and
+                               shows the last full trace.
+
+     Once data capture has ended, or has been interrupted, it is possible to analyze the signals and
+     modify the parameters that have been previously selected, in order to improve the machining
+     conditions.
+
+     Repeat the capture, the analysis and the modification of parameters until obtaining the best            CNC 8055
+     machining conditions.
+                                                                                                             CNC 8055i
+
+
+
+                                                                                                             ·M· & ·EN· MODELS
+                                                                                                               SOFT: V01.6X
+
+
+
+
+                                                                                                                          ·229·
+===== PAGE 229 =====
+
+                           13.5      User
+
+                                  This option will execute the program which is selected with the general machine parameter
+                                  "USERDIAG" in the user channel.
+
+                                  To quit its execution and return to the previous menu, press [ESC].
+
+
+
+
+ 13.                       13.6      Hard disk
+
+
+
+        DIAGNOSIS
+                    User          Once this option has been selected, two softkeys will be displayed:
+
+
+
+                                  "Test" softkey
+
+                                  It check the status of the hard disk (user memory available). It takes about 30 minutes.
+
+                                  In order to perform this test, the PLC program must be stopped. If it is running, the CNC will ask
+                                  the operator whether it is to be stopped or not.
+
+
+
+                                  "Compress" softkey
+
+                                  It compresses the hard disk by defragmenting it. It also includes a hard disk surface check. The
+                                  duration of this test depends on the number of files it contains and on how defragmented the hard
+                                  disk is.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·230·
+===== PAGE 230 =====
+
+13.7      Interesting notes
+
+       The CNC carries out a series of sequential tests. If the result obtained is not correct, it may stop
+       axes feed and spindle rotation (by canceling their analog voltages and Enables), as well as stopping
+       the execution of the PLC program or activating the external emergency output (01).
+
+
+Type of test                      When doing         Stop axes and      Stop the PLC       Activates the
+                                                        spindles                            emergency
+                                                                                              output
+
+Temperature
+
+Battery out
+                                     Always
+
+                                     Always
+                                                           Yes
+
+                                                           No
+                                                                             No
+
+                                                                             No
+                                                                                                Yes
+
+                                                                                                No
+                                                                                                                           13.
+
+                                                                                                                           Interesting notes
+                                                                                                               DIAGNOSIS
+Flash memory                     From Diagnosis            Yes               Yes                Yes
+
+RAM memory                       From Diagnosis            Yes               No                 Yes
+
+External power supply.           EXEC/SIMUL                Yes               No                 No
+
+Board voltage                     EXEC/SIMUL               Yes               No                 Yes
+
+PLC in execution                 EXEC/SIMUL                Yes                ---               Yes
+
+PLC User errors                   EXEC/SIMUL               Yes               No                 No
+
+PLC watchdog                    PLC in execution           Yes               Yes                Yes
+
+
+
+
+                                                                                                              CNC 8055
+                                                                                                              CNC 8055i
+
+
+
+                                                                                                              ·M· & ·EN· MODELS
+                                                                                                                SOFT: V01.6X
+
+
+
+
+                                                                                                                           ·231·
+===== PAGE 231 =====
+
+
+
+
+ 13.
+
+                    Interesting notes
+        DIAGNOSIS
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·232·
+===== PAGE 232 =====
+TELEDIAGNOSIS
+
+                                                                              14
+  Telediagnosis may be used to govern and monitor the status of the CNC from a remote PC. The
+  remote PC used for telediagnosis must have the WinDNC software installed in it.
+
+  To use telediagnosis, first establish communication between the CNC and the PC either through
+  the RS232 line, through Ethernet or with phone call.
+
+  To establish communication through a phone call, both the CNC and the PC must be connected
+  to a modem. The call from a PC is make with the WinDNC and the call from the CNC is made from
+  the mode: Status > DNC > Phone Call. Pressing this softkey shows a menu with the different types
+  of phone calls available:
+   • Normal phone call.
+     It is a direct phone call between the CNC and the PC. Whoever establishes the connection incurs
+     in its costs.
+   • Advanced phone call.
+     It is a direct phone call between the CNC and the PC. The CNC incurs in the connection costs
+     because it is the one establishing the connection with the PC.
+     This option is similar to the previous one, but it provides faster telediagnosis. This type of
+     connection uses TCP/IP protocol, thus not being necessary to configure an incoming connection
+     at the PC.
+   • Internet phone call.
+     It is a connection made through internet. Both the CNC and the PC incur in the connection costs
+     because both the CNC and the PC must be connected to the internet.
+     Telediagnosis through the Internet offers all the advantages of this type of connection. Usually,
+     this type of connection costs less than a direct telephone call. When connecting through the
+     Internet for the connection, the telediagnosis may sometimes be slower than making a direct
+     telephone call.
+
+  No special machine parameter must be set at the CNC to carry out the telediagnosis. Only the
+  machine parameters of the serial line or Ethernet must be properly set depending on the type of
+  connection.
+
+
+
+  Telediagnosis
+
+
+             Once the connection has been made, access the telediagnosis option of the WinDNC
+             at the PC. From then on, the CNC may be governed either from its own keyboard at the
+             machine or remotely from the PC keyboard.
+
+  The PC will display the same information (screens) as the CNC. From the PC, it is possible to access
+  the different CNC modes, modify tables and parameters (when knowing the password), simulate
+  programs, etc. For safety reasons, it is not possible to move the axes of the machine or execute part-   CNC 8055
+  programs.
+                                                                                                           CNC 8055i
+  While in remote control mode, no other DNC command may be executed through the serial line;
+  for example the execution of an infinite program.
+
+  Disabling the CNC screen and keyboard                                                                    ·M· & ·EN· MODELS
+                                                                                                             SOFT: V01.6X
+  The CNC screen and keyboard may be disabled from the WinDNC so the user cannot manipulate
+  the CNC while telediagnosis is running.
+
+
+
+
+                                                                                                                ·233·
+===== PAGE 233 =====
+
+                                                When the keyboard is disabled, neither the feedrate override nor the CYCLE STOP button are
+                                                disabled. These operations are carried out by activating and deactivating the corresponding icons
+                                                on the left side of the telediagnosis screen.
+
+
+
+                                                End of telediagnosis
+
+                                                To end telediagnosis, select the END icon at the WinDNC. Ending telediagnosis does not end the
+                                                connection between the PC and the CNC.
+ 14.                                                      There are two ways to end the communication between the PC and the CNC; either from
+                                                          the PC or from the CNC.
+
+
+
+
+        CNC - PC COMMUNICATION. TELEDIAGNOSIS
+                                                            • From the PC select the EXIT option at the WinDNC.
+                                                            • At the CNC, in the window for phone calls, press HANG UP.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·234·
+===== PAGE 234 =====
+
+14.1      Direct connection through the serial line or Ethernet
+
+       The direct connection is also possible either through the RS232 serial line or Ethernet. With the
+       Ethernet connection it is possible to use a local network to access any CNC of the network from
+       the PC.
+
+       The connection is established from the PC through the WinDNC. Refer to the WinDNC help for
+       further information.
+
+
+
+
+                                                   RS232
+                                                                                                                                                     14.
+
+
+
+
+                                                                                                             CNC - PC COMMUNICATION. TELEDIAGNOSIS   Direct connection through the serial line or Ethernet
+                                                 ETHERNET
+
+
+
+
+                                                       ETHERNET
+
+
+
+
+       For the RS232 connection, the remote PC must have the WinDNC software (version V2.00 or later)
+       installed in it. For the Ethernet connection, the remote PC must have the WinDNC software (version
+       V4.00 or later) installed in it.
+
+
+
+
+                                                                                                            CNC 8055
+                                                                                                            CNC 8055i
+
+
+
+                                                                                                            ·M· & ·EN· MODELS
+                                                                                                              SOFT: V01.6X
+
+
+
+
+                                                                                                                                                     ·235·

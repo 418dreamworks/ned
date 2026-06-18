@@ -1,0 +1,1111 @@
+===== PAGE 411 =====
+
+                                                                    15.1      Movement in an inclined plane
+
+                                                                           An inclined plane is any plane in space resulting from the coordinate transformation of the X, Y, Z
+                                                                           axes.
+
+                                                                           Any plane in space may be selected to carry out machining operations in it.
+
+                                                                           The coordinates are programmed as if it were a regular XY plane, but the program will be executed
+                                                                           in the indicated inclined plane.
+
+
+ 15.
+
+
+
+        COORDINATE TRANSFORMATION
+                                    Movement in an inclined plane          To work with inclined planes, always proceed as follows:
+                                                                           1. Define, with G49, the inclined plane corresponding to the machining operation. G49 is described
+                                                                              later on in this chapter.
+                                                                           2. The CNC variables TOOROF, TOOROS and parameters P297, P298 show the position to be
+                                                                              occupied by the spindle rotary axes (main and secondary spindle respectively) in order to orient
+                                                                              the tool perpendicular to the indicated inclined plane.
+                                                                           3. To work with the tool perpendicular to the inclined plane, rotate the spindle rotary axes to the
+                                                                              indicated position.
+
+                                                                           From this moment on, the X, Y movements are carried out along the selected plane and those of
+                                                                           the Z axis will be perpendicular to it.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·412·
+===== PAGE 412 =====
+
+15.1.1       Definition of the inclined plane (G49)
+
+        With function G49, it is possible to define a coordinate transformation or, in other words, the inclined
+        plane resulting from that transformation. There are several ways to define G49.
+
+
+
+        G49 X Y Z A B C
+
+        Defines the inclined plane resulting from rotating around the X axis first and around the Z axis last
+        the amounts indicated in A, B, C respectively.                                                                                          15.
+
+
+
+                                                                                                                    COORDINATE TRANSFORMATION
+                                                                                                                                                Movement in an inclined plane
+    XYZ
+
+        Define the coordinate origin of the inclined plane.
+
+        Indicate the X, Y, Z coordinates with respect to the current coordinate origin.
+
+
+
+
+    ABC
+
+        They define the inclined plane resulting from:
+
+        Having rotated around the X axis first the amount indicated by A.
+
+
+
+
+        The new coordinate system resulting from this transformation is called X Y' Z' because the Y, Z axes
+        have been rotated.
+
+        Then, it must be rotated around the Y' axis the B amount.
+
+
+
+
+                                                                                                                   CNC 8055
+                                                                                                                   CNC 8055i
+
+
+
+                                                                                                                   ·M· & ·EN· MODELS
+                                                                                                                     SOFT: V01.6X
+        In the figure, the new coordinate system resulting from this transformation is called X'' Y' Z" because
+        the X, Z axes have been rotated.
+
+
+
+
+                                                                                                                                                ·413·
+===== PAGE 413 =====
+
+                                                                     And last, rotate around the Z'' axis the amount indicated by C.
+
+
+
+
+ 15.
+
+
+
+        COORDINATE TRANSFORMATION
+                                    Movement in an inclined plane
+                                                                     G49 X Y Z Q R S
+
+                                                                     Spherical coordinates. Defines the inclined plane resulting from rotating around the Z axis first, then
+                                                                     around the Y axis and again around the Z axis the amounts indicated by Q, R, S respectively.
+
+                                                                    XYZ
+
+                                                                     Define the coordinate origin of the inclined plane.
+                                                                     Indicate the X, Y, Z coordinates with respect to the current coordinate origin.
+
+
+
+
+                                                                    QRS
+
+                                                                     They define the inclined plane resulting from:
+                                                                     Having rotated around the Z axis first the amount indicated by Q.
+
+
+
+
+CNC 8055
+CNC 8055i                                                            In the figure, the new coordinate system resulting from this transformation is called X' Y' Z because
+                                                                     the X, Y axes have been rotated.
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·414·
+===== PAGE 414 =====
+
+        Then, it must be rotated around the Y' axis the R amount.
+
+
+
+
+                                                                                                                                               15.
+
+
+
+                                                                                                                   COORDINATE TRANSFORMATION
+                                                                                                                                               Movement in an inclined plane
+        In the figure, the new coordinate system resulting from this transformation is called X'' Y' Z' because
+        the X, Z axes have been rotated.
+
+        And last, rotate around the Z' axis the amount indicated by S.
+
+
+
+
+        G49 X Y Z I J K R S
+
+        Defines the inclined plane specifying the angles forming the new inclined plane with the X Y and
+        Z axes of the machine's coordinate system.
+
+    XYZ
+
+        Define the coordinate origin of the inclined plane.
+
+        Indicate the X, Y, Z coordinates with respect to the current coordinate origin.
+
+
+
+
+    IJK
+
+        They define the angles forming the new inclined plane with the X Y and Z axes of the machine's
+        coordinate system. Only two of these three angles are programmed.                                         CNC 8055
+                                                                                                                  CNC 8055i
+
+
+
+                                                                                                                  ·M· & ·EN· MODELS
+                                                                                                                    SOFT: V01.6X
+
+
+
+
+                                                                                                                                               ·415·
+===== PAGE 415 =====
+
+                                                                    R
+
+                                                                        Defines which of the axes of the new Cartesian plane (X' Y' ) is aligned with the edge. If R0, the
+                                                                        X' axis is lined up and If R1, the Y' axis is lined up. If not programmed, a value of R0 is assumed.
+
+
+
+
+ 15.
+
+
+
+        COORDINATE TRANSFORMATION
+                                    Movement in an inclined plane
+
+
+
+
+                                                                    S
+
+                                                                        Lets rotate the coordinates in the new Cartesian plane.
+
+
+
+                                                                        G49 T X Y Z S
+
+                                                                        It defines a new work plane perpendicular to the direction of the tool.
+
+                                                                        Is it a good idea to have a swivel or angled spindle (machine parameter "XFORM (P93) set to 2 or
+                                                                        3) when using this type of definition.
+
+                                                                    T
+
+                                                                        Indicates that one wishes to select a work plane perpendicular to the orientation of the tool.
+
+                                                                    XYZ
+
+                                                                        Define the coordinate origin of the inclined plane.
+
+                                                                        Indicate the X, Y, Z coordinates with respect to the current coordinate origin.
+
+                                                                    S
+
+                                                                        Lets rotate the coordinates around the new Z' corresponding to the new work plane.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·416·
+===== PAGE 416 =====
+
+        The new work plane will be perpendicular to the orientation of the tool.
+             The Z axis keeps the same orientation as the tool.
+             The orientation of the X, Y axes in the new work plane depends on the spindle type and on how
+             its rotary axes are oriented.
+
+        When setting the machine up, it must be set as the spindle's resting position, when the tool is parallel
+        to the Z axis of the machine.
+
+        Later, every time the spindle is rotated, the relative tool coordinates will also rotate.
+
+
+                                                                                                                                                 15.
+
+
+
+                                                                                                                     COORDINATE TRANSFORMATION
+                                                                                                                                                 Movement in an inclined plane
+
+
+
+
+        On the two machines on the left, only the main rotary axis has rotated.
+
+        On the contrary, in the machine on the right, to achieve the same tool orientation, both the main and
+        secondary rotary axes have rotated.
+
+        If in the machine on the right, we wanted to orient the X', Y' axes like in the other two cases, we would
+        have to program the following:
+             G49 T XYZ S-90
+
+        Programming S-90 means rotating -90º around the new Z' corresponding to the new work plane and,
+        this way, compensate for the rotation of the main rotary axis.
+
+
+
+
+                                                                                                                    CNC 8055
+                                                                                                                    CNC 8055i
+
+
+
+                                                                                                                    ·M· & ·EN· MODELS
+                                                                                                                      SOFT: V01.6X
+
+
+
+
+                                                                                                                                                 ·417·
+===== PAGE 417 =====
+
+                                                                    15.1.2     G49 in swinging spindles
+
+                                                                         Parameter W has been added to function G49, inclined plane definition. It indicates that it is a swing
+                                                                         spindle and it must be defined at the end: G49 ****** W.
+                                                                               G49 X Y Z A B C W            G49 X Y Z Q R S W
+                                                                               G49 X Y Z I J K R S W        G49 T X Y Z S W
+
+                                                                         The spindle orients to the new plane and later movements are carried out in X, Y, W.
+
+                                                                         To observe the graphics in the new plane, set general machine parameter GRAPHICS (P16)=1.
+ 15.                                                                     There are two choices to execute canned cycles in the inclined plane:
+                                                                             • After defining the plane (G49 **** W) select the W axis as longitudinal (G15W) so the movements
+
+
+
+
+        COORDINATE TRANSFORMATION
+                                    Movement in an inclined plane
+                                                                               programmed on Z are carried out on the W axis.
+                                                                             • Switch the Z-W axes (G28 ZW) before defining the plane (G49 **** W) so the movements
+                                                                               programmed in Z are carried out on the W axis.
+
+                                                                         To cancel the inclined plane, program G49 alone.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·418·
+===== PAGE 418 =====
+
+15.1.3       G49 on Huron type spindles
+
+        When defining a new inclined plane, the CNC provides the position that each rotary axis must occupy
+        to orient the tool perpendicular to the new plane.
+
+        That position is indicated in variables TOOROF and TOOROS and arithmetic parameters P297 and
+        P298.
+
+        Since there are two possible solutions on Huron type spindles (45º spindles), the L parameter has
+        been added to function G49, definition of inclined plane, that indicates which one of these two
+        solution is to be used. It is optional and it is defined at the end. G49 ****** L.
+             G49 X Y Z A B C L              G49 X Y Z Q R S L                                                                                         15.
+             G49 X Y Z I J K R S L          G49 T X Y Z S L
+
+
+
+
+                                                                                                                          COORDINATE TRANSFORMATION
+                                                                                                                                                      Movement in an inclined plane
+        If "L" is not defined or it is defined as "L0", it provides the solution where the main rotation (articulation
+        closest to the ram or furthest away from the tool) is closer to 0º
+
+        If "L1" is defined, it provides the other solution (the articulation furthest away from the ram).
+
+        If "L" is programmed on the rest of the spindles, it issues the error "Option not available".
+
+
+
+
+                                                                                                                         CNC 8055
+                                                                                                                         CNC 8055i
+
+
+
+                                                                                                                         ·M· & ·EN· MODELS
+                                                                                                                           SOFT: V01.6X
+
+
+
+
+                                                                                                                                                      ·419·
+===== PAGE 419 =====
+
+                                                                    15.1.4     Considerations about the G49 function
+
+                                                                         G49 cannot be programmed in the following instances:
+                                                                             • At the GP model CNC
+                                                                             • From the PLC channel (although it can be programmed from the user channel).
+                                                                             • Within a profile definition for pockets or other cycles.
+
+                                                                         In order to work with coordinate transformation (G49), the X, Y, Z axes must be defined, they must
+                                                                         form the active trihedron and be linear. The X, Y and Z axes may have GANTRY axes, coupled or
+
+ 15.                                                                     synchronized via PLC, associated with them.
+
+                                                                         When working with coordinate transformation and performing rigid tapping in inclined planes, all
+
+
+
+
+        COORDINATE TRANSFORMATION
+                                    Movement in an inclined plane
+                                                                         axes gains (not only for the Z axis) must be adjusted by using the second gains and accelerations.
+
+                                                                         The parameters associated with G49 are optional. When programming G49 without parameters,
+                                                                         the active coordinate transformation is canceled.
+
+                                                                         G49 is modal and no more G codes may be programmed alone in the block.
+
+                                                                         Coordinate transformation is kept active even after turning the CNC off and back on.
+
+                                                                         To cancel it, program the following:
+                                                                               G49 E1                 it cancels it, but it keeps the part zero defined in the transformation.
+                                                                               G49 E0 or G49          It cancels it and it recovers the part zero that was active before the G49
+                                                                                                      was activated.
+                                                                               G74                    It cancels it, it activates the home search and recovers the part zero that
+                                                                                                      was active before the G49 was activated.
+
+                                                                         Zero offsets G54-G59, pattern rotation (G73) and presets (G92, G93) are possible while coordinate
+                                                                         transformation is active.
+
+                                                                         But the following cannot be done:
+                                                                             • Program a new coordinate transformation without previously canceling the previous one.
+                                                                             • Probing (G75).
+                                                                             • Movement against hardstop (G52).
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·420·
+===== PAGE 420 =====
+
+15.1.5       Variables associated with function G49
+
+        Read-only variables associated with the definition of function G49
+
+    ORGROX                        ORGROY                  ORGROZ
+
+        New part zero coordinates with respect to home.
+
+    ORGROA                        ORGROB                  ORGROC
+
+        Values assigned to parameters A, B, C.
+
+    ORGROI                        ORGROJ                  ORGROK
+                                                                                                                                                 15.
+
+
+
+                                                                                                                     COORDINATE TRANSFORMATION
+                                                                                                                                                 Movement in an inclined plane
+        Values assigned to parameters I, J, K.
+
+    ORGROQ                        ORGROR                  ORGROS
+
+        Values assigned to parameters Q, R, S.
+
+    GTRATY
+
+        Type of G49 programmed.
+             0 = no G49 has been defined.
+             1 = Type G49 X Y Z A B C
+             2 = Type G49 X Y Z Q R S
+             3 = Type G49 T X Y Z S
+             4 = Type G49 X Y Z I J K R S
+
+
+
+
+        Every time G49 is programmed, the CNC updates the values of the parameters that have been
+        defined.
+
+        For example when programming G49 XYZ ABC, the CNC updates the variables ORGROX,
+        ORGROY, ORGROZ, ORGROA, ORGROB, ORGROC. The rest of variables keep their previous
+        values.
+
+        Read-write variables updated by the CNC once function G49 is executed.
+
+        When having a swivel or angular spindle, general machine parameter XFORM (P93) with a value
+        of 2 or 3, the CNC shows the following data:
+
+    TOOROF
+
+        It indicates the position to be occupied by the spindle's main rotary axis in order to orient the spindle
+        perpendicular to the indicated inclined plane.
+
+    TOOROS
+
+        It indicates the position to be occupied by the spindle's secondary rotary axis in order to orient the
+        spindle perpendicular to the indicated inclined plane.
+
+
+
+        Accessing the variables TOOROF or TOOROS interrupts block preparation and the CNC waits for
+        that command to be executed before resuming block preparation.
+                                                                                                                    CNC 8055
+                                                                                                                    CNC 8055i
+
+
+
+                                                                                                                    ·M· & ·EN· MODELS
+                                                                                                                      SOFT: V01.6X
+
+
+
+
+                                                                                                                                                 ·421·
+===== PAGE 421 =====
+
+                                                                    15.1.6   Parameters associated with function G49
+
+                                                                         Once G49 has been executed, the CNC updates global parameters P297 and P298:
+                                                                             P297 It indicates the position to be occupied by the spindle's main rotary axis in order to orient
+                                                                                  the spindle perpendicular to the indicated inclined plane. It is the same value as shown
+                                                                                  by the TOOROF variable.
+                                                                             P298 It indicates the position to be occupied by the spindle's secondary rotary axis in order
+                                                                                  to orient the spindle perpendicular to the indicated inclined plane. It is the same value
+                                                                                  as shown by the TOOROS variable.
+
+ 15.                                                                     These parameters are global. Therefore, they can be modified by the user or even by probing cycles
+                                                                         of the CNC itself.
+
+
+
+
+        COORDINATE TRANSFORMATION
+                                    Movement in an inclined plane
+                                                                         They should be used after executing G49. Otherwise, variables TOOROF and TOOROS should be
+                                                                         used.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·422·
+===== PAGE 422 =====
+
+15.1.7       Programming example
+
+
+
+
+                                                                                                                               15.
+
+
+
+                                                                                                   COORDINATE TRANSFORMATION
+              G49 X0 Y0 Z100 B-30   Defines the inclined plane.                                                                Movement in an inclined plane
+              G01 AP298 BP297       Orients the main axis (B) and the secondary axis (A) so the
+                                    tool is perpendicular to the plane.
+                                    The programming sequence is ABC, regardless of which one
+                                    is the main axis or the secondary.
+              G90 G01 Z5            Tool approach to the work plane.
+              G90 G01 X20 Y120      Positioning at the 1st point.
+              G??                   Machining at the 1st point.
+              G91 G01 Y60           Positioning at the 2nd point.
+              G??                   Machining at the 2nd point.
+              G91 G01 X100          Positioning at the 3rd point.
+              G??                   Machining at the 3rd point.
+              G91 G01 Y-60          Positioning at the last point.
+              G??                   Machining at the last point.
+              G90 G01 Z 20          Withdraw the tool.
+              G49                   Cancel the inclined plane.
+
+
+
+
+                                                                                                  CNC 8055
+                                                                                                  CNC 8055i
+
+
+
+                                                                                                  ·M· & ·EN· MODELS
+                                                                                                    SOFT: V01.6X
+
+
+
+
+                                                                                                                               ·423·
+===== PAGE 423 =====
+
+                                                                                             15.2      Movement according to the tool coordinate system (G47)
+
+                                                                                                    When using this function, a swivel or angled spindle should be utilized (general machine parameter
+                                                                                                    "XFORM (P93)" set to 2 or 3).
+
+                                                                                                    When not using function G47, the tool moves according to the part coordinate system
+
+
+                                                                                                            In the example on the left, the part coordinates coincide with those of the machine and in
+                                                                                                            the example on the right, an inclined plane is active (G49).
+
+
+ 15.
+
+
+
+        COORDINATE TRANSFORMATION
+
+
+
+
+                                    Movement according to the tool coordinate system (G47)
+                                                                                                    Now, to move the tool according to the tool coordinate system, function G47 must be used when
+                                                                                                    programming the movement of the Z axis (G01 G47 Z).
+
+
+
+
+                                                                                                    The movements programmed with G47 are always incremental.
+
+                                                                                                    Function G47 is not modal and it only acts within the block (linear path) where it has been
+                                                                                                    programmed.
+
+                                                                                                    G47 can also be programmed while G48 and G49 are active.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·424·
+===== PAGE 424 =====
+
+15.3         TCP Transformation (G48)
+
+        In order to use this feature, the spindle articulations must have encoders and they must be controlled
+        by the CNC.
+
+        When working with TCP transformation, Tool Center Point, the tool orientation may be modified
+        without changing the position of its tip (part coordinates).
+
+        Obviously, the spindle must be swivel or angled and general machine parameter "XFORM (P93)"
+        set to a value other than "0".
+        To orient the tool without changing its tip position, the CNC must move several axes of the machine.
+                                                                                                                                              15.
+
+
+
+                                                                                                                  COORDINATE TRANSFORMATION
+                                                                                                                                              TCP Transformation (G48)
+
+
+
+
+        TCP transformation is activated and deactivated by function G48:
+             G48 S1           Turn TCP transformation on
+             G48 S0           Turning the TCP transformation off
+
+        TCP transformation is also turned off by programming G48 without parameters.
+
+        Function G48 is modal and it must be programmed alone in the block.
+
+        Once TCP transformation is active, spindle positioning may be combined with linear and circular
+        interpolations.
+
+        To orient the spindle, one must program the target angular position for the main rotary axis and for
+        the secondary axis of the spindle.
+
+        The following examples use a double swivel rectangular spindle head:
+
+
+
+
+                                                                                                                 CNC 8055
+                                                                                                                 CNC 8055i
+
+
+
+                                                                                                                 ·M· & ·EN· MODELS
+                                                                                                                   SOFT: V01.6X
+
+
+
+
+                                                                                                                                              ·425·
+===== PAGE 425 =====
+
+                                                               Example –A–
+                                                               Circular interpolation keeping tool orientation fixed.
+
+
+
+
+ 15.
+
+
+
+        COORDINATE TRANSFORMATION
+                                    TCP Transformation (G48)
+                                                                • Block N20 selects the ZX plane (G18) and positions the tool at the starting point (30,90).
+                                                                • Block N21 turns TCP transformation on.
+                                                                • Block N22 positions the tool at (100,20) orienting it to -60º.
+                                                                  The CNC interpolates the XZB axes executing the programmed linear interpolation while rotating
+                                                                  the tool from the starting position (0º) to the programmed final orient position (-60º).
+                                                                • Block N23 makes a circular interpolation to point (170,90) maintaining the same tool orientation
+                                                                  along the whole path.
+                                                                • Block N24 positions the tool at (170,120) orienting it to 0º.
+                                                                  The CNC interpolates the XZB axes executing the programmed linear interpolation while rotating
+                                                                  the tool from the current position (-60º) to the programmed final orient position (0º).
+                                                                • Block N25 turns TCP transformation off.
+
+
+
+                                                               Example –B–
+                                                               Circular interpolation with the tool perpendicular to the path.
+
+
+
+
+CNC 8055
+CNC 8055i
+                                                                • Block N30 selects the ZX plane (G18) and positions the tool at the starting point (30,90).
+                                                                • Block N31 turns TCP transformation on.
+                                                                • Block N32 positions the tool at (100,20) orienting it to -90º.
+·M· & ·EN· MODELS
+  SOFT: V01.6X                                                    The CNC interpolates the XZB axes executing the programmed linear interpolation while rotating
+                                                                  the tool from the starting position (0º) to the programmed final orient position (-90º).
+
+
+
+
+     ·426·
+===== PAGE 426 =====
+
+          • Block N33 defines a circular interpolation up to point (170,90) setting the final tool orientation
+            to (0º).
+             The CNC interpolates the XZB axes executing the programmed circular interpolation while
+             rotating the tool from the current position (-90º) to the programmed final orient position (0º).
+             Since both orientations are radial, the tool stays radially oriented at all times. In other words,
+             perpendicular to the path.
+          • Block N34 positions the tool at (170,120).
+          • Block N35 cancels the TCP transformation..
+
+
+
+        Example –C–
+                                                                                                                                               15.
+
+
+
+                                                                                                                   COORDINATE TRANSFORMATION
+                                                                                                                                               TCP Transformation (G48)
+        Machining of a profile
+
+
+
+
+              G18 G90                       Selects the ZX plane (G18)
+              G48 S1                        It activates the TCP transformation.
+              G01 X40 Z0 B0                 Positions the tool at (40,0) oriented to (0º)
+              X100                          Movement to (100,0) with tool oriented to (0º)
+              B-35                          Orients the tool to (-35º)
+              X200 Z70                      Movement to (200,70) with tool oriented to (-35º)
+              B90                           Orients the tool to (90º)
+              G02 X270 Z0 R70 B0            Circular interpolation to (270,0) maintaining the tool
+                                            perpendicular to the path.
+              G01 X340                      Movement to (340,0) with tool oriented to (0º)
+              G48 S0                        It cancels the TCP transformation.
+
+
+
+
+                                                                                                                  CNC 8055
+                                                                                                                  CNC 8055i
+
+
+
+                                                                                                                  ·M· & ·EN· MODELS
+                                                                                                                    SOFT: V01.6X
+
+
+
+
+                                                                                                                                               ·427·
+===== PAGE 427 =====
+
+                                                               15.3.1     Considerations about the G48 function
+
+                                                                    G49 cannot be programmed in the following instances:
+                                                                        • At the GP model CNC
+                                                                        • From the PLC channel (although it can be programmed from the user channel).
+
+                                                                    In order to work with TCP transformation (G48), the X, Y, Z axes must be defined, they must form
+                                                                    the acive trihedron and be linear. The X, Y and Z axes may have GANTRY axes, coupled or
+                                                                    synchronized via PLC, associated with them.
+
+ 15.                                                                When working with TCP transformation and performing rigid tapping in inclined planes, all axes
+                                                                    gains (not only for the Z axis) must be adjusted by using the second gains and accelerations.
+
+
+
+
+        COORDINATE TRANSFORMATION
+                                    TCP Transformation (G48)
+                                                                    TCP transformation is kept active even after turning the CNC off and back on.
+
+                                                                    G48 can be programmed while G49 is active and vice versa.
+
+                                                                    To cancel TCP, program "G48 S0" or G48 without parameters. It is also canceled after a home search
+                                                                    (G74).
+
+                                                                    While TCP is on, the following operations are possible:
+                                                                        • Zero offsets G54-G59
+                                                                        • Pattern rotation (G73)
+                                                                        • Presets (G92, G93).
+                                                                        • Movements in continuous / incremental jog and handwheel
+                                                                    But the following cannot be done:
+                                                                        • Probing (G75).
+                                                                        • Do corner rounding or chamfering because in these instances tool orientation has to be
+                                                                          maintained.
+                                                                        • Compensate for tool length (G43) because TCP already implies a particular length
+                                                                          compensation. CAD/CAM programs usually program the coordinates of the spindle base.
+
+                                                                    Special care must be taken when turning G48 on and off.
+                                                                        • When G48 is on, the CNC shows the coordinates of the tool tip.
+                                                                        • When G48 is off, the CNC shows the coordinates of the tool base or theoretical tip (unturned tool).
+
+
+
+
+                                                                        1. G48 off. The CNC shows the coordinates of the tool tip.
+                                                                        2. G48 is turned on. The CNC still shows the coordinates of the tool tip.
+                                                                        3. The tool is turned. Since G48 is already on, the CNC still shows the coordinates of the tool tip.
+                                                                        4. G48 is turned off. The CNC shows the coordinates of the theoretical tip (unturned tool).
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·428·
+===== PAGE 428 =====
+
+        When working with inclined planes and TCP transformation, it is recommended to follow this
+        programming order (sequence):
+             G48 S1               Activate the TCP transformation.
+             G49 ...              Define the inclined plane.
+             G01 AP298 BP297      Position the tool perpendicular to the plane.
+             G...                 Start machining.
+             ...                  End of the machining operation.
+             G49
+             G48 S0
+                                  Cancel the inclined plane.
+                                  Cancel the TCP transformation.                                                                          15.
+             M30                  End of part-program.
+
+
+
+
+                                                                                                              COORDINATE TRANSFORMATION
+                                                                                                                                          TCP Transformation (G48)
+        RTCP should be turned on first because it allows orienting the tool without modifying the tool tip
+        position, thus avoiding undesired collisions.
+
+
+
+
+                                                                                                             CNC 8055
+                                                                                                             CNC 8055i
+
+
+
+                                                                                                             ·M· & ·EN· MODELS
+                                                                                                               SOFT: V01.6X
+
+
+
+
+                                                                                                                                          ·429·
+===== PAGE 429 =====
+
+
+
+
+ 15.
+
+
+
+        COORDINATE TRANSFORMATION
+                                    TCP Transformation (G48)
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·430·
+===== PAGE 430 =====
+AN INCLINE AXIS
+
+                                                                              16
+  With the angular transformation of an incline axis, it is possible to make movements along an axis
+  that is not perpendicular to another. The movements are programmed in the Cartesian system and
+  to make the movements, they are transformed into movements on the real axes.
+
+  On certain machines, the axes are configured in a Cartesian way, they are not perpendicular to each
+  other. A typical case is the X axis of a lathe that for sturdiness reasons is not perpendicular to the
+  Z axis.
+
+
+                              X
+                                                X'            X      Cartesian axis.
+                                                              X'     Angular axis.
+                                                              Z      Orthogonal axis.
+
+
+                                                         Z
+
+
+
+
+  Programming in the Cartesian system (Z-X) requires activating an angular transformation of an
+  inclined plane that converts the movements of the real (non-perpendicular) axes (Z-X'). This way,
+  a movement programmed on the X axis is transformed into movements on the Z-X' axes; i.e. it then
+  moves along the Z axis and the angular X' axis.
+
+  Turning angular transformation on and off.
+  The CNC assumes no transformation on power-up; the angular transformations are activated via
+  part-program using the instruction G46.
+
+  The angular transformations are turned off via part-program using function G46. Optionally, a
+  transformation may be "frozen" (suspended) to move angular axis by programming in Cartesian
+  coordinates.
+
+  Influence of the reset, turning the CNC off and of the M30.
+  The angular transformation of an incline axis stays active after a RESET, M30 and even after turning
+  the CNC off and back on.
+
+
+
+
+                                                                                                           CNC 8055
+                                                                                                           CNC 8055i
+
+
+
+                                                                                                           ·M· & ·EN· MODELS
+                                                                                                             SOFT: V01.6X
+
+
+
+
+                                                                                                                ·431·
+===== PAGE 431 =====
+
+                                                    Considerations for the angular transformation of an incline axis.
+                                                    The axes involved in an angular transformation must be linear. Both axes may have Gantry axes
+                                                    associated with them, the may be slaved (coupled) or synchronized by PLC.
+
+                                                    If the angular transformation is active, the coordinates displayed will be those of the Cartesian
+                                                    system. Otherwise, it will display the coordinates of the real axes.
+
+                                                    The following operations are possible while the transformation is active:
+                                                     • Zero offsets.
+
+
+ 16.                                                 • Coordinate preset.
+                                                     • Movements in continuous / incremental jog and handwheels.
+
+
+
+
+        ANGULAR TRANSFORMATION OF AN INCLINE AXIS
+                                                    The following operations are not possible while the transformation is active:
+                                                     • Movement until making contact (against a hard stop).
+                                                     • Coordinate rotation.
+                                                     • Surface feedrate in milling.
+
+                                                    Home search.
+
+                                                    Function G46 is canceled when homing an axis that is involved in the angular transformation
+                                                    (machine parameters ANGAXNA and ORTAXNA). When homing the axes that are not involved in
+                                                    the angular axis transformation, function G46 stays active.
+
+                                                    While searching home, only the real axes move.
+
+                                                    Jogging and handwheel movements.
+                                                    Either the real or the Cartesian axes may be jogged depending on how they've been set by the
+                                                    manufacturer. It is selected via PLC (MACHMOVE) and it may be available, for example, from a user
+                                                    key.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·432·
+===== PAGE 432 =====
+
+16.1         Turning angular transformation on and off
+
+
+        Turn angular transformation on
+
+        When the transformation is on, the movements are programmed in the Cartesian system and to
+        make the movements, the CNC transforms them into movements on the real axes. The coordinates
+        displayed on the screen will be those of the Cartesian system.
+
+        The angular transformation is turned on using function G46 whose programming format is:
+             G46 S1
+                                                                                                                                                            16.
+
+
+
+
+                                                                                                                ANGULAR TRANSFORMATION OF AN INCLINE AXIS
+                                                                                                                                                            Turning angular transformation on and off
+        This instruction turns a "frozen" (suspended) transformation on again. See "16.2 Freezing the
+        angular transformation" on page 434.
+
+
+
+        Turning the angular transformation off
+
+        If the transformation is off, the movements are programmed and executed in the system of the real
+        axes. The coordinates displayed on the screen will be those of the real axes.
+
+        The angular transformation is turned off using function G46 whose programming format is:
+             G46 S0
+             G46
+
+        The angular transformation of an incline axis stays active after a RESET, M30 and even after turning
+        the CNC off and back on.
+
+
+
+
+                                                                                                               CNC 8055
+                                                                                                               CNC 8055i
+
+
+
+                                                                                                               ·M· & ·EN· MODELS
+                                                                                                                 SOFT: V01.6X
+
+
+
+
+                                                                                                                                                            ·433·

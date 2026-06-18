@@ -1,0 +1,1391 @@
+===== PAGE 585 =====
+
+                                               16.2      Tool control
+
+                                                      To select another tool, press:
+
+                                                                       Value
+
+
+                                                      The CNC will manage the tool change and the T model updates its graphic representation.
+
+                                                      Another offset may be assigned to the tool temporarily without modifying the one associated with it.
+
+16.                                                   To access the "D" field, press:
+
+                                                                                        Tool offset number
+
+
+
+                                Tool control
+
+
+
+
+       CONFIGURABLE WORK MODE
+                                                      The CNC temporarily assumes the new offset for the current tool. The internal table is not modified,
+                                                      the tool’s associated offset is still the one assigned to it when it was calibrated.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·586·
+===== PAGE 586 =====
+
+16.3      Spindle control
+
+       The CNC displays the following information:
+
+
+
+
+                                                                                                                                          16.
+                                                                                                                                          Spindle control
+
+
+
+
+                                                                                                                 CONFIGURABLE WORK MODE
+       1. Real spindle speed in rpm.
+       2. Theoretical spindle speed in rpm or m/min (ft/min) when working at Constant Surface Speed
+          (CSS).
+          To select another speed, press:
+
+                        Value
+
+
+          The CNC assumes this value and if the spindle is turning, it updates the real spindle speed (in
+          rpm).
+       3. Spindle status and % of spindle speed being applied.
+       4. Maximum spindle rpm (T model).
+          To select another speed, press:
+
+                                The CNC highlights the current value.
+
+
+          Value                 The CNC assumes this value and does not allow the spindle to exceed these rpm.
+
+
+       5. Spindle gear currently selected.
+          This value cannot be changed when using an automatic gear change.
+          To change gears, press
+
+                          y                  until the new value is highlighted.
+
+
+
+          Gear number                                 o
+
+
+
+       Note: When the machine does not use spindle gears, this message makes no sense. That is why
+             the CNC does not show this message when text 28 of program 999997 has not been defined.
+
+
+
+
+                                                                                                                 CNC 8055
+                                                                                                                 CNC 8055i
+
+
+
+                                                                                                                      SOFT: V01.6X
+
+
+
+
+                                                                                                                                          ·587·
+===== PAGE 587 =====
+
+                                      16.4      MDI
+
+                                             To use the MDI option in this work mode, send the key code "$F01E (61470)" from the PLC to the
+                                             CNC.
+
+                                             In the next example, there is an external push button connected to input I13 and the MDI mode is
+                                             activated every time this button is pressed or when pressing a free key of the front panel.
+                                                ( ) = MOV 0 R100 = MOV 1 R101 = MOV $F01E R102
+                                                Initializations.
+
+16.                                             DFU I13 OR DFU B?? R???
+                                                    Every time one of the keys is pressed...
+                                MDI
+
+
+
+
+       CONFIGURABLE WORK MODE
+                                                = CNCWR(R101, KEYSRC, M1)
+                                                    ... it indicates to the CNC that the keys come from the PLC.
+                                                = CNCWR(R102, KEY, M1)
+                                                    ... a code is sent out to activate the MDI mode.
+                                                = CNCWR(R100, KEYSRC, M1)
+                                                    ... and it indicates to the CNC that the keys come from the CNC.
+
+                                             In MDI mode, the CNC shows a window at the bottom of the screen.
+
+
+
+
+                                             In this window, a block may be edited and later executed.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·588·
+===== PAGE 588 =====
+
+16.5      Screens, subroutines and cycles
+
+       User Fagor’s WINDRAW55 (PC based) application to define the screens
+
+       Screens 201 through 255 must be used to customize the screens already stored at the CNC.
+
+       Screens 001 through 200 may be used to create new screens for diagnosis, variable consultation,
+       setup, adjustments, device control, OEM canned cycles, etc.
+
+       Regardless of how they are used, screens 001 through 200 the have associated with them.
+        • The configuration file P999xxx (P999001 through P999200) that must be defined by the OEM.
+        • The subroutine that contains the executable 9xxx (9001 through 9200) that must be defined by
+          the OEM.
+                                                                                                                                               16.
+
+
+                                                                                                                      CONFIGURABLE WORK MODE   Screens, subroutines and cycles
+        • Program P999995 that contains the texts used by all the screens. Refer to the WINDRAW55
+          manual.
+        • Program P999994 that contains the help texts used by all the screens. Refer to the WINDRAW55
+          manual.
+
+       Thus, the configuration file P999004 and subroutine 9004 are associated with screen 4.
+
+       When pressing [HELP] , the CNC shows all the screens defined by the OEM with the WINDRAW55
+       application.
+
+       To delete any of them, position the cursor on it and press [CLEAR].
+
+       The CNC requests confirmation and the access code for customizing, if the OEM has previously
+       defined it.
+
+       To access one of the screens 001 through 2000, position the cursor on it and press [ENTER].
+
+       Screens 201 through 255 cannot be accessed from this mode. Select the CNC screen associated
+       with it.
+
+              In the WINDRAW55 application, the text for to the screen title should be defined with the same number
+              as the screen.
+              This way, when pressing, the key [HELP], CNC will show the number and title (text of program P999995
+              with the same number) of the available screens.
+
+
+
+
+                                                                                                                      CNC 8055
+                                                                                                                      CNC 8055i
+
+
+
+                                                                                                                           SOFT: V01.6X
+
+
+
+
+                                                                                                                                               ·589·
+===== PAGE 589 =====
+
+                                                  16.6      Associated keys
+
+                                                         Screens 001 through 200 are grouped in 20 groups. Keys F1 through F7 allow direct access to the
+                                                         first 7 groups; the rest of the grops are accessed by sending a key code from the PLC.
+
+                                                         Each group has 10 different levels or screens. Once a group has been selected, send the code
+                                                         "$F01C (61468)" for the [LEVEL CYCLE] key from the PLC to see the next level.
+
+                                                         Now, let us see how the screens are grouped and how to access them.
+
+
+16.                                                       Key or code
+
+                                                          F1 key                           1      21      41    61
+                                                                                                                     Screens
+
+                                                                                                                       81      101    121       141       161
+
+                                                          F2 key                           2      22      42    62     82      102    122       142       162
+
+
+
+
+                                Associated keys
+
+
+
+
+       CONFIGURABLE WORK MODE
+                                                          F3 key                           3      23      43    63     83      103    123       143       163
+
+                                                          F4 key                           4      24      44    64     84      104    124       144       164
+
+                                                          F5 key                           5      25      45    65     85      105    125       145       165
+
+                                                          F6 key                           6      26      46    66     86      106    126       146       166
+                                                          F7 key                           7      27      47    67     87      107    127       147       167
+
+                                                          $F108 (61704)                    8      28      48    68     88      108    128       148       168
+
+                                                          $F109 (61705)                    9      29      49    69     89      109    129       149       169
+                                                          $F10A (61706)                    10     30      50    70     90      110    130       150       170
+
+                                                          $F10B (61707)                    11     31      51    71     91      111    131       151       171
+
+                                                          $F10C (61708)                    12     32      52    72     92      112    132       152       172
+
+                                                          $F10D (61709)                    13     33      53    73     93      113    133       153       173
+
+                                                          $F10E (61710)                    14     34      54    74     94      114    134       154       174
+
+                                                          $F10F (61711)                    15     35      55    75     95      115    135       155       175
+                                                          $F110 (61712)                    16     36      56    76     96      116    136       156       176
+
+                                                          $F111 (61713)                    17     37      57    77     97      117    137       157       177
+
+                                                          $F112 (61714)                    18     38      58    78     98      118    138       158       178
+
+                                                          $F113 (61715)                    19     39      59    79     99      119    139       159       179
+
+                                                          $F114 (61716)                    20     40      60    80     100     120    140       160       180
+
+                                                         When accessing a group, the CNC will show the last screen (level) used in that group.
+
+                                                         To exit the screen:
+                                                          • Press the key again or send the group code.
+                                                            it shows the basic screen
+                                                          • Press the key or send the code of another group.
+                                                            shows the screen of the new group.
+                                                          • Press [ESC] twice.
+                                                            it shows the basic screen.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·590·
+===== PAGE 590 =====
+
+     Example. It has screens 1, 21, 41, 2 and 22.
+        Press F1.
+            it shows screen 1.
+        It sends the level key code.
+            it shows screen 21.
+        It sends the level key code.
+            it shows screen 41.
+        Press F2.
+            it shows screen 2.
+        It sends the level key code.
+                                                                                                                                 16.
+
+                                                                                                                                 Associated keys
+
+
+
+
+                                                                                                        CONFIGURABLE WORK MODE
+            it shows screen 22.
+        Press F2.
+            it exits the screen and shows the basic screen.
+        Press F1.
+            it shows screen 41 (last one used in the group).
+        It sends the level key code.
+            it shows screen 1 (there are only 1, 21, 41).
+        Press F2.
+            it shows screen 22 (last one used in the group).
+        It sends the level key code.
+            it shows screen 2 (there are only 2, 22).
+        Press [ESC] twice.
+            it shows the basic screen.
+
+     The next example shows an external push button connected to input I27 that selects and unselects
+     the group of screens 13, 33, 53, etc.
+        ( ) = MOV 0 R100 = MOV 1 R101 = MOV $F10D R102
+        Initializations.
+        DFU I27
+            Every time the external key is pressed...
+        = CNCWR(R101, KEYSRC, M1)
+            ... it indicates to the CNC that the keys come from the PLC.
+        = CNCWR(R102, KEY, M1)
+            ... it sends the key code for the group 13, 33, 53, etc.
+        = CNCWR(R100, KEYSRC, M1)
+            ... and it indicates to the CNC that the keys come from the CNC.
+
+
+
+
+                                                                                                        CNC 8055
+                                                                                                        CNC 8055i
+
+
+
+                                                                                                             SOFT: V01.6X
+
+
+
+
+                                                                                                                                 ·591·
+===== PAGE 591 =====
+
+                                                                 16.7       OEM text in several languages.
+
+                                                                        By default, the texts defined by the OEM are in a single language and stored in several programs:
+                                                                            PLCMSG        Texts for PLC messages.
+                                                                            PLCERR        Texts for PLC error messages.
+                                                                            P999995       Texts and titles used by all the OEM screens.
+                                                                            P999994       Help texts of the OEM screens or cycles.
+
+
+16.                                                                     To have texts and messages in several languages, they must be grouped in a single program and
+                                                                        set g.m.p. MSGFILE (P131) with that program number.
+
+                                                                        The MSGFILE program may be in user memory or in the hard disk (KeyCF). If it is in several places,
+
+
+
+
+       CONFIGURABLE WORK MODE
+                                OEM text in several languages.
+                                                                        it takes the one in user memory.
+
+                                                                        If any of these texts is in Russian or mainland Chinese, the file format must be converted from
+                                                                        Unicode to a special Unicode customized for the Fagor CNC. Use WinDNC to do this conversion.
+
+
+
+                                                                        i       Converting standard Unicode files into Fagor Unicode format requires WinDNC version 5.1. This
+                                                                                conversion is not possible with previous WinDNC versions.
+
+
+                                                                        To display these messages, besides doing this conversion, the CNC must be set in one of the
+                                                                        following languages:
+                                                                              English.
+                                                                              Chinese.
+                                                                              Russian.
+                                                                        Note: Russian or Chinese comments cannot be displayed in a program even if that program has
+                                                                              been converted using WinDNC.
+
+
+
+                                                                        MSGFILE program structure
+
+                                                                        On each line, a text is defined preceded by ";" the "text number", a blank space and the "$" sign.
+                                                                        Examples:
+                                                                            ;116   $Axis feedrate (F)
+                                                                            ;117   $Tool (T)
+
+                                                                        The texts must be grouped by subjects and languages.
+
+                                                                        The labels identify a group with a mnemonic in brackets and preceded by ";"
+                                                                            ;[PLCMSG]     Texts for PLC messages (up to 256).
+                                                                            ;[PLCERR]     Texts for PLC errors (up to 265).
+                                                                            ;[CO999995] Texts and titles used by all the OEM screens (up to 256).
+                                                                            ;[CO999994] Help texts of the OEM screens or cycles (up to 256).
+                                                                            ;[OEMMSG] Other texts used in OEM programs (up to 768).
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·592·
+===== PAGE 592 =====
+
+     The language number is indicated after the label and separated by a comma "," the same number
+     used by g.m.p. LANGUAGE (P122):
+
+         (0) English            ;[PLCMSG],0              (1) Spanish                ;[PLCMSG],1
+
+         (2) French             ;[PLCMSG],2              (3) Italian                ;[PLCMSG],3
+
+         (4) German             ;[PLCMSG],4              (5) Dutch                  ;[PLCMSG],5
+
+         (6) Portuguese         ;[PLCMSG],6              (7) Czech                  ;[PLCMSG],7
+
+         (8) Polish             ;[PLCMSG],8              (9) Mainland Chinese       ;[PLCMSG],9
+
+         (10) Basque
+
+         (12) Turkish
+                                ;[PLCMSG],10
+
+                                ;[PLCMSG],12
+                                                         (11) Russian               ;[PLCMSG],11
+                                                                                                                                16.
+
+
+                                                                                                       CONFIGURABLE WORK MODE
+                                                                                                                                OEM text in several languages.
+     The text groups may be defined in the desired order, grouping them by subjects, languages, etc.
+
+
+
+     Programming example using MSGFILE (P131) = 12345
+
+
+
+         P12345               Texts for PLC messages in English
+         ;[PLCMSG],0
+         ;1 $Text 1
+         ;2 $Text 2
+         --------------
+         ;[PLCERR],0          Texts for PLC error messages in English
+         ;1 $Text 1
+         ;2 $Text 2
+         --------------
+         ;[CO999994],0        Help texts of the OEM screens or cycles in English.
+         ;1 $Text 1
+         ;2 $Text 2
+         --------------
+         ;[CO999995],0        Texts and titles used by all the OEM screens in English.
+         ;1 $Text 1
+         ;2 $Text 2
+         --------------
+         ;[OEMMSG],0          Other texts used in OEM programs in English.
+         ;1 $Text 1
+         ;2 $Text 2
+         --------------
+
+
+     The texts of the [OEMMSG] are directed to:
+      • Texts of the user channel used with the program control instructions MSG, ERR, IB, SK that
+        depend on the selected work language.
+        (MSG "HELLO")        displays the text HELLO on the screen.
+        (MSG 200)            displays the text 200 of the [OEMMSG] group in the currently selected     CNC 8055
+                             language.
+                                                                                                       CNC 8055i
+        (MSG $C8)            similar to the previous one. It is the text 200 in hexadecimal format.
+        (MSG P100)           shows the text of the [OEMMSG] group whose number is the same as the
+                             value of parameter 100.
+                                                                                                            SOFT: V01.6X
+
+
+
+
+                                                                                                                                ·593·
+===== PAGE 593 =====
+
+                                                                  • Texts associated with screens and symbols generated with program Draw55.
+                                                                    Key in the text and press ENTER.
+                                                                    Assign to it the number of one of the internal CNC texts.
+                                                                    Assign to it the number of one of the OEM texts defined in the [OEMMSG] group. New option
+                                                                    that is selected with the F2 softkey (OEM TEXT).
+                                                                    Note: This type of texts can only be displayed properly at the CNC. The Draw55 application
+                                                                    shows OEMtxtnn where "nn" means the number of the associated text; for example OEMtxt25.
+                                                                    The OEM screens or cycles are created with the WINDRAW55 application.
+
+16.                                                              The texts used by the application are created in the WINDRAW55.txt program and must be copied
+                                                                 to the CNC as program P999995 or as part of the MSGFILE program within the [CO999995] group.
+
+
+
+
+       CONFIGURABLE WORK MODE
+                                OEM text in several languages.
+                                                                 Use the Draw55 application to generate symbols or drawings used by those screens. If the texts
+                                                                 of the symbols depend on the language, define them as part of the MSGFILE within the [OEMMSG]
+                                                                 group.
+
+                                                                 Notes:
+
+                                                                 On power-up or after a Shift-Reset, the CNC runs the following checkl to find the work texts of each
+                                                                 group or text type:
+                                                                  • It takes the group of the MSGFILE program if it has been defined in the selected language.
+                                                                  • If it is not defined, it takes the texts of the first group defined (another language).
+                                                                  • If there is none, it takes the texts of program PLCMSG, PLCERR, P999995 or P999994
+
+                                                                 It then looks for texts in those groups.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·594·
+===== PAGE 594 =====
+
+16.8      Associated programs
+
+       Programs P900000 through P999999 are reserved for the CNC itself; in other words, the user cannot
+       use them as part-programs.
+
+       Some have a special meaning and must be used by the machine manufacturer (OEM).
+
+           P999001       Configuration files for OEM screens.
+           P999200       P999001 corresponds to screen 1, P999002 to screen 2 and so on up to P999200 that
+                         corresponds to screen 200.
+
+           P999500
+
+           P999994
+                         Program that logs (stores) the errors occurred when interpreting a configuration file.
+
+                         Help texts of the OEM screens or cycles. Refer to the WINDRAW55 manual.
+                                                                                                                                           16.
+
+
+                                                                                                                  CONFIGURABLE WORK MODE
+                                                                                                                                           Associated programs
+           P999995       Texts and titles used by all the OEM screens. Refer to the WINDRAW55 manual.
+
+           P999999       Reserved for storing all the OEM subroutines It is empty.
+
+       The rest of the reserved programs are used internally by the CNC and cannot be erased.
+
+
+
+
+                                                                                                                  CNC 8055
+                                                                                                                  CNC 8055i
+
+
+
+                                                                                                                       SOFT: V01.6X
+
+
+
+
+                                                                                                                                           ·595·
+===== PAGE 595 =====
+
+                                                         16.9      Associated subroutines
+
+                                                                Subroutines 0000 through 8999 are free to use and subroutines 9000 through 9999 are reserved
+                                                                for customizing the CNC.
+
+                                                                It is recommended to define all the OEM subroutines in a program with a high number to prevent
+                                                                the user from modifying them. Program P999999 is free and may be used for this purpose.
+
+                                                                When executing a cycle (screen), its associated subroutine is called upon indicating in local
+                                                                parameters A - Z (P0 - P25) the value used to define each field.
+
+16.                                                                (PCALL 9001, A=11, B=22, C=33, D=44, E=0, F=1234, G=9999, H=1, I=1, J=12.34)
+
+                                                                Parameter A (P0) indicates the value of the first editable field, B (P1) that of the second field and
+
+
+
+
+       CONFIGURABLE WORK MODE
+                                Associated subroutines
+                                                                so on up to Z (P25) that indicates the value of the 26 field. The order is set when designing the screen
+                                                                with the WINDRAW55 application.
+
+                                                                All the screens (cycles) have an associated subroutine, 9000 + "screen number" Subroutine 9001
+                                                                corresponds to screen (cycle) 001, 9002 to 002 and so on up to 9200 that corresponds to screen
+                                                                (cycle) 200.
+
+                                                                All these subroutines must be defined by the OEM and must contain all the necessary instructions
+                                                                to run the canned cycle.
+
+                                                                Example:
+
+                                                                    ( SUB 9005)             ; Definition of subroutine 9005.
+                                                                                            ; Program blocks defined by the OEM.
+                                                                    (RET)                   ; End of subroutine.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·596·
+===== PAGE 596 =====
+
+16.10     Configuration file
+
+     The configuration file is a CNC file written in high-level language (configuration language) that
+     describes the operating characteristics of the various screen elements.
+
+     There is a configuration file for each screen. P999001 corresponds to screen 001, P999002 to 002
+     and so on up to P999200 that corresponds to screen 200.
+
+     The general characteristics of the configuration language are:
+        • All instructions are preceded by ";" and enclosed in parenthesis.
+        • The comments must be alone and preceded by ";;"
+        • The configuration file must begin with the line ";(PRGSCRIPT 1)"
+                                                                                                                                              16.
+
+                                                                                                                                              Configuration file
+
+
+
+
+                                                                                                                     CONFIGURABLE WORK MODE
+          It indicates that it is a configuration file corresponding to the version being used (in this case "1").
+        • The configuration file should end with the line ";(END)"
+        • It is recommended to use the ";(DEBUG)" instruction for the CNC to check the configuration file.
+          If an error occurs, it will log it in program 999500.
+
+     The configuration language has the following key words:
+
+  ;(PRGSCRIPT 1)
+
+     Header of the configuration file and version used to edit it (in this case "1"). It must always be defined.
+
+  ;(DEBUG)
+     It is optional. It indicates on which line program 999500 starts giving out information of the errors
+     that have come up when debugging the configuration file.
+
+     The debugging of the configuration file begins on the first line ;(PRGSCRIPT 1) and ends on the
+     ;(END) line.
+
+  ;(DISABLE 1)
+
+     It indicates that the blue frame at the top right must not be displayed; it shows the current status
+     of the machine (coordinates and machining conditions).
+
+  ;(DISABLE 20)
+
+     It indicates that the "CYCLE START" icon must not be displayed when pressing [ESC].
+
+     To exit the screen, press [ESC] twice. The first time, it displays the "CYCLE START" icon at the top
+     right of the screen offering the chance to either execute or simulate the associated program.
+
+     Some screens are merely informative and no associated program must be executed.
+
+     In these cases, it is recommended to program ;(DISABLE20) to exit the screen when press [ESC].
+
+  ;(DISABLE 21)
+
+     It indicates that the spindle is not to be stopped at the end of the cycle.
+
+     By default, if ;(DISABLE21) is not programmed, the CNC adds the M5 instruction at the end of the
+     associated program to stop the spindle at the end of the cycle.
+
+  ;(HOTKEY W4,88)
+
+     It permits associating a key to the (W) data.
+
+     In this case, pressing the X key (ASCII value 88) selects the W4 data.
+                                                                                                                     CNC 8055
+                                                                                                                     CNC 8055i
+
+
+
+                                                                                                                          SOFT: V01.6X
+
+
+
+
+                                                                                                                                              ·597·
+===== PAGE 597 =====
+
+                                                     ;(TEACHIN W5=POSX)
+
+                                                       Permits assigning the value of a CNC variable to the data.
+
+                                                       In this case, While the W5 data is selected, when pressing the Recall key, W5 will show the variable
+                                                       of POSX (X axis position). If Enter is then pressed, the cycle assumes this value.
+
+                                                     ;(FORMAT W7,INCH)
+
+                                                       The value is shown in the work units (mm / inches) set by g.m.p. INCHES (P8).
+
+
+16.                                                  ;(PROFILE W12)
+
+                                                       Permits associating a profile with the (W) field. The field must be an unsigned 3-digit integer.
+
+
+
+
+                                Configuration file
+
+
+
+
+       CONFIGURABLE WORK MODE
+                                                       Select the (W) field, enter the number of the profile to be edited, press Recall and it will access the
+                                                       profile editor.
+
+                                                       The edited profile is stored as program P994xxx.
+
+                                                       P994001 corresponds to profile 001, P994002 to 002 and so on up to P994999 that corresponds
+                                                       to profile 999.
+
+                                                     ;(P100=W13)
+
+                                                       Permits assigning the value of the (W) data to a global parameter only when calling a subroutine.
+
+                                                       When executing a cycle, the CNC calls the associated subroutine indicating with local parameters
+                                                       which values have been defined in each field. For example:
+                                                          (PCALL 9001, A10, B12, C5, D8)
+
+                                                       When using global parameters, the CNC uses another PCALL instruction to transfer the global
+                                                       parameters. For example:
+                                                          (PCALL 9301, P100=22, P101=32, P102=48)
+                                                          (PCALL 9001, A10, B12, C5, ... Y8, Z100)
+
+                                                               The subroutine associated with the cycle is         9000 + cycle number
+                                                               The auxiliary subroutine associated with the cycle is 9300 + cycle number
+
+                                                       When using a (P100=W13) type instruction, the auxiliary subroutine must also be defined even if
+                                                       it only contains the SUB and RET instructions.
+
+                                                     ;(W1=GUP100)
+
+                                                       Associates the value of a global parameter with the (W) data.
+
+                                                     ;(W2=PLCFRO)
+
+                                                       Associates the value of a variable with the (W) data.
+
+                                                     ;(W3=PLCR127)
+
+                                                       Associates the value of a PLC resource with the (W) data.
+
+                                                          A register                         ;(W6=PLCR127)
+
+                                                          A mark                             ;(W6=PLCM1000,1)                   first and how many
+
+                                                          A group of inputs                  ;(W6=PLCI8,4)                      first and how many
+
+                                                          A group of outputs                 ;(W6=PLCO10,3)                     first and how many
+
+CNC 8055                                               Associate only resources that are defined in the PLC program.
+CNC 8055i                                              For marks, inputs and outputs, one must indicate how many of them, if none is indicated, 32 are
+                                                       assigned.
+                                                          ;(W6=PLCO11,4)          Assigns the value of O11, O12, O13, O14
+                                                          ;(W6=PLCO11)            Assigns the value of O11, O12 ... O41, O42.
+ SOFT: V01.6X
+
+
+
+
+    ·598·
+===== PAGE 598 =====
+
+     If a field (W) has a parameter, variable or resource associated with it, it acts as follows:
+      • It assumes the value that its associate has when accessing the page.
+        To continuously update the field value, use the (AUTOREFRESH) instruction as described later
+        on.
+      • If its associate is a read-only type, the user will not be able to change the field value.
+      • It its associate is read/write type, the user may change the field value.
+        When changing the value of the field (W), the value of its associate is also changed.
+        On the other hand, when using the (AUTOREFRESH) instruction and the CNC or PLC changes
+        the value of the associate, the value of the field is also changed.
+      • If an error occurs because the variable does not exist (PLC register) or the communication fails
+                                                                                                                                       16.
+        (drive variable), the field is momentarily disabled and it displays a gray window. The field is
+
+
+
+
+                                                                                                                                       Configuration file
+
+
+
+
+                                                                                                              CONFIGURABLE WORK MODE
+        enabled again after 10 seconds.
+
+  ;(AUTOREFRESH W6=FLWEX)
+
+     Refreshes (updates periodically) the value of graphic element W6 assigning it the X axis following
+     error value.
+
+  ;(SAVEINSUB)
+
+     It is programmed as a prefix of the instructions
+        ;(W1=GUP100)
+            Associates the value of a global parameter, variable or resource of the PLC with the (W) data.
+        ;(AUTOREFRESH W6=FLWEX)
+            Refreshes the value of graphic element W6.
+
+     The resulting new instructions are:
+        ;(W1=GUP170)
+            ;(SAVEINSUB W1=GUP170)
+        ;(AUTOREFRESH W6=FLWEX)
+            ;(SAVEINSUB AUTOREFRESH W6=FLWEX)
+
+     When recalling a cycle stored in memory [PPROG] , the CNC analyzes the type of instruction that
+     each graphic element has associated with it and acts as follows:
+      • If it is of the ;(W1=GUP170) type, it assigns the current value of arithmetic parameter P170 to W1.
+      • If it is of the ;(SAVEINSUB W1=GUP170) , it restores the value that the arithmetic parameter
+        had when the program was edited (when it was saved into memory) and it assigns that value
+        to the graphic element W1 and to the arithmetic parameter P170.
+
+     Recommendations to use SAVEINSUB:
+      • Restrict its usage to when it is absolutely necessary because every time a stored cycle is saved
+        or recalled, the value of the variable associated with the element changes.
+      • Use it only with global parameters and variables that may be read and written from the CNC See
+        "Summary of internal CNC variables." on page 635.
+
+  ;(UNMODIFIED)
+
+     It indicates that the associated item must not pick up the editing focus.
+
+     It is programmed as a prefix of the instructions.
+        ;(W1=GUP100)
+            Associates the value of a global parameter, variable or resource of the PLC with the (W1)
+            data. The W1 item of the screen pick ups the editing focus.
+                                                                                                              CNC 8055
+        ;(AUTOREFRESH W6=FLWEX)
+                                                                                                              CNC 8055i
+            It refreshes (updates) the value of the graphic element W6 and it assigns the editing focus
+            to it.
+
+                                                                                                                   SOFT: V01.6X
+
+
+
+
+                                                                                                                                       ·599·
+===== PAGE 599 =====
+
+                                                        The resulting new instructions are:
+                                                              ;(UNMODIFIED W1=GUP170)
+                                                                 Associates the value of a global parameter, variable or resource of the PLC with the (W1)
+                                                                 data. The W1 item of the screen pick ups the editing focus.
+                                                              ;(UNMODIFIED AUTOREFRESH W6=FLWEX)
+                                                                 It refreshes (updates) the value of the graphic element (item) W6, but it does not assign the
+                                                                 editing focus to it.
+
+                                                     ;(FORMAT W8,LEDBARDEC)
+16.                                                     It must be used with Ledbar type (W) data that have a decimal variable associated with them. (For
+                                                        example: X axis following error).
+
+
+
+
+                                Configuration file
+
+
+
+
+       CONFIGURABLE WORK MODE
+                                                        The values assigned, at the PLC, to the end and intermediate values of a LEDBAR element must
+                                                        be integer values and must be related to the variable associated at the CNC.
+
+                                                        When the associated variable has a decimal format the following instruction must be used:
+                                                              ;(FORMAT W8,LEDBARDEC)
+
+                                                        This instruction is used to convert coordinate values (decimal) to integer values by multiplying them
+                                                        by 10000.
+
+                                                        Examples:
+                                                              To represent the % of axis feedrate, the FRO variable is used. The FRO values are integers
+                                                              (between 0 and 120) and, therefore, do not require LEDBARDEC.
+                                                                 ;(AUTOREFRESH W9=FRO)
+                                                              On the other hand, to represent the amount of following error on the X axis, the FLWEX variable
+                                                              is used. The values of FLWEX are not integers and, therefore, require LEDBARDEC (multiplying
+                                                              it by 10000) in order to make them integers.
+                                                                 ;(FORMAT W11,LEDBARDEC)
+                                                                 ;(AUTOREFRESH W11=FLWEX)
+
+                                                     ;(MODALCYCLE)
+
+                                                        It indicates that cycle is modal. See programming manual.
+
+                                                        The subroutine call is of the (MCALL 9001, A10, B12, C5,....) type
+
+                                                        If after executing the cycle, several movements are carried out, the cycle will be executed again after
+                                                        each movement calling the (MCALL 9001, A10, B12, C5,...) subroutine again.
+
+                                                        When using global parameters, the CNC only transfers the global parameters the first time.
+                                                              First time:
+                                                                 (PCALL 9301, P100=22, P101=32, P102=48)
+                                                                 (MCALL 9001, A10, B12, C5, ... Y8, Z100)
+                                                              The rest of the times:
+                                                                 (MCALL 9001, A10, B12, C5, ... Y8, Z100)
+
+                                                        To cancel this mode, execute the (MDOFF) instruction.
+
+                                                     ;(END)
+
+                                                        It indicates that it has finished debugging the configuration file.
+
+                                                        It ignores the instructions programmed next.
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·600·
+===== PAGE 600 =====
+
+16.11   Error log file (P999500)
+
+     There is a configuration file for each screen. P999001 corresponds to screen 001, P999002 to 002
+     and so on up to P999200 that corresponds to screen 200.
+
+     The CNC checks these programs when accessing each screen for the first time. When detecting
+     an error, it displays a message window.
+
+     In all of them, if the error has been detected in a section defined after the DEBUG instruction, they
+     generate, in program P999500, several lines indicating the detected error or errors.
+     The error log file (P999500) contains all the errors detected since the CNC was turned on. When
+     the CNC is turned off, this error log file (P999500) is deleted.
+                                                                                                                                              16.
+
+
+                                                                                                                     CONFIGURABLE WORK MODE
+                                                                                                                                              Error log file (P999500)
+     Examples of detected errors:
+
+         Error due to a nonexistent variable. It must be FLWEX.
+             ;(AUTOREFRESH W2=FLWEXX)
+             ; Syntax error ...
+             ; Unknown CNC variable name.
+             ; Error on line: 12.
+             ; Error on character: LF.
+         Error caused for referring to a nonexistent graphic element (W33).
+             ;(AUTOREFRESH W33=PLCR124)
+             ; Warning ...
+             ; Programmed Widget does not exist.
+             ; Warning in line: 15.
+
+
+
+             After modifying the configuration file, reset the CNC to debug it again when accessing its associated
+             screen.
+
+
+
+
+                                                                                                                     CNC 8055
+                                                                                                                     CNC 8055i
+
+
+
+                                                                                                                          SOFT: V01.6X
+
+
+
+
+                                                                                                                                              ·601·
+===== PAGE 601 =====
+
+                                                   16.12   Cycle data entry
+
+                                                       Once the cycle has been selected, the CNC shows the relevant screen. It may have a blue frame
+                                                       at the top right indicating the current status of the machine. Coordinates and machining conditions:
+
+
+
+
+16.
+
+
+       CONFIGURABLE WORK MODE
+                                Cycle data entry
+                                                       One of the data that define the cycle will be highlighted indicating that it is selected.
+
+                                                           Use the keys to select another data
+
+
+
+
+                                                       Select a numeric data
+
+                                                       The numeric data is used for coordinates, feedrate, spindle speed, tool number, etc. (value in
+                                                       WINDRAW55).
+
+
+
+
+                                                           Key in the desired value and press
+
+
+                                                           If the Teachin instruction is associated with it, the value of an
+                                                           internal variable (coordinate, tool number, etc.) may be
+                                                           assigned to this field. In those cases, press
+
+                                                       If this [Recall] key is not available, send the key code $F006 (61446) from the PLC to the CNC.
+
+                                                       The following example shows how to use an external push button connected to input I25 so as to
+                                                       act like the [Recall] key.
+
+                                                           ( ) = MOV 0 R100 = MOV 1 R101 = MOV $F006 R102
+                                                                Initializations.
+                                                           DFU I27
+                                                                Every time the external key is pressed...
+                                                           = CNCWR(R101, KEYSRC, M1)
+                                                                ... it indicates to the CNC that the keys come from the PLC.
+                                                           = CNCWR(R102, KEY, M1)
+                                                                ... the code for the Recall key is sent out.
+                                                           = CNCWR(R100, KEYSRC, M1)
+                                                                ... and it indicates to the CNC that the keys come from the CNC.
+
+
+
+
+                                                       Select an option among the ones available
+CNC 8055
+CNC 8055i                                              It is used to select a button in a group of WINDRAW55 buttons.
+
+
+
+
+ SOFT: V01.6X
+                                                           Use the keys
+
+
+
+
+    ·602·
+===== PAGE 602 =====
+
+     Select one of the representations in an icon
+
+     It is used to select an icon in a multiple representation of WINDRAW55.
+
+               Press the key or send the key code $F01D (61469) from the PLC to the CNC until the
+               desired icon or text appears.
+
+     When pressing [ESC], the top of the screen shows a CYCLE START icon. It is then possible to:
+      • press [ESC] again to exit the cycle.
+      • Press the [Start] key. It calls the associated subroutine (9001) to execute the cycle.
+                                                                                                                             16.
+
+
+                                                                                                    CONFIGURABLE WORK MODE
+                                                                                                                             Cycle data entry
+
+
+
+
+                                                                                                    CNC 8055
+                                                                                                    CNC 8055i
+
+
+
+                                                                                                         SOFT: V01.6X
+
+
+
+
+                                                                                                                             ·603·
+===== PAGE 603 =====
+
+                                                                      16.13      Example. Consult inputs and outputs
+
+                                                                           It uses the 005 screen. The data shown by this screen have the following identifier (W).
+
+                                                                                 Inputs I1 through I30                         W1 through W30
+
+                                                                                 Outputs O1 through O30                        W31 through W60
+
+                                                                                 X, Y, Z axis (spindle) output                 W61, W62, W63
+
+
+
+
+16.
+
+
+
+                                Example. Consult inputs and outputs
+       CONFIGURABLE WORK MODE
+
+
+
+
+                                                                           This screen has the P999005 configuration file associated with it which is defined as follows:
+
+                                                                        ;(PRGSCRIPT 1)
+
+                                                                           Header and version.
+
+                                                                           The debugging of the configuration file begins.
+
+                                                                        ;(DEBUG)
+
+                                                                           Starting at this line, program 999500 keeps a log of the errors originated when debugging the
+                                                                           configuration file.
+
+                                                                        ;(DISABLE 1)
+
+                                                                           The blue frame at the top right of the screen is not to be displayed.
+
+                                                                        ;(AUTOREFRESH W1=PLCI1,1)
+
+                                                                           Refreshes (updates periodically) the value of graphic element W1 assigning the value of input I1
+                                                                           to it. Repeat this instruction for all the inputs.
+
+                                                                        ;(AUTOREFRESH W31=PLCO1,1)
+
+                                                                           Refreshes (updates periodically) the value of graphic element W31 assigning the value of output
+                                                                           O1 to it. Repeat this instruction for all the outputs.
+
+                                                                        ;(FORMAT W61,LEDBARDEC)
+
+                                                                        ;(AUTOREFRESH W61=ANAO1)
+
+                                                                           Refreshes (updates periodically) the value of the W61 ledbar assigning the value of analog output
+CNC 8055                                                                   1 (X axis analog voltage) to it. Repeat this instruction for all three axes.
+CNC 8055i                                                               ;(END)
+
+                                                                           End of the debugging of the configuration file and end of program.
+
+                                                                           Since this screen does not belong to a cycle, its associated subroutine (9005) needs not be defined.
+ SOFT: V01.6X
+
+
+
+
+    ·604·
+===== PAGE 604 =====
+
+16.14      Example. Machining canned cycle
+
+     It uses the 001 screen. The data shown by this screen have the following identifier (W).
+
+     The data that the user may edit in this cycle have the W identifier, the number associated with each
+     one indicates the order in which they are selected (W1, W2, etc.). W11, W12).
+
+
+
+
+                                                                                                                                          16.
+
+
+                                                                                                                 CONFIGURABLE WORK MODE   Example. Machining canned cycle
+
+
+     This screen has the P999001 configuration file associated with it. Some of its fields are defined as
+     follows:
+
+  ;(PRGSCRIPT 1)
+
+  ;(HOTKEY W1,88)
+
+  ;(TEACHIN W1=POSX)
+
+     The W1 field has the X hotkey (88) and the X axis coordinate associated with it. In other words:
+
+     Pressing the X key selects this field.
+
+     While this field is selected, if the Recall key is pressed, it will show the X axis position. If Enter is
+     then pressed, the cycle assumes that value.
+
+     Repeat these instructions for the fields: W2, W3 and W4.
+
+  ;(HOTKEY W6,83)
+
+  ;(HOTKEY W7,83)
+
+     The W6 and W7 fields have the S (83) hotkey associated with them. In other words:
+           Pressing the S key selects the W6 field and pressing it again selects the W7 field.
+           Associate the F key with the W10 field and the T key with the W11 field.
+
+  ;(END)
+
+     End of the debugging of the configuration file and end of program.
+
+     Pressing [ESC] displays a cycle-start icon at the top right of the screen and if the [CYCLE START]
+     is pressed again, it calls the associated subroutine (9001) to execute the cycle.
+
+     The 9001 subroutine must be defined by the OEM and must contain all the necessary instructions
+     to run the canned cycle.                                                                                    CNC 8055
+                                                                                                                 CNC 8055i
+
+
+
+                                                                                                                      SOFT: V01.6X
+
+
+
+
+                                                                                                                                          ·605·
+===== PAGE 605 =====
+
+
+
+
+16.
+
+
+       CONFIGURABLE WORK MODE   Example. Machining canned cycle
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·606·
+===== PAGE 606 =====
+
+
+                                                                                   17
+  It is a three-axes machine (X, Y, Z) having a spindle with two speed ranges.
+
+  The PLC, besides controlling the 3 axes and the spindle, is in charge of lubricating the axes as well
+  as turning the coolant on and off.
+
+  CNC configuration
+  The PLC has 512 inputs and 512 outputs. Some of them, depending on the CNC configuration,
+  communicate with external devices.
+
+          Input I1 is the emergency input of the CNC and must be supplied with 24V. Regardless of how it is
+          treated by the PLC program, this signal is processed directly by the CNC at all times.
+          Output O1 is normally at 24V, high logic level, and it is set low, 0V, whenever an ALARM or an ERROR
+          occurs at the PLC output O1.
+
+
+
+
+                                                                                                                 CNC 8055
+                                                                                                                 CNC 8055i
+
+
+
+                                                                                                                  SOFT: V01.6X
+
+
+
+
+                                                                                                                     ·607·
+===== PAGE 607 =====
+
+                                                                     17.1      Definition of symbols (mnemonics)
+
+                                                                            It is a possible to associate a symbol (name) to any PLC resource. It may have up to 8 characters
+                                                                            so long as the name does not coincide with any of the reserved instructions. It may not contain the
+                                                                            following characters: blank-space " ", equal sign "=", parenthesis "(" or ")", comma "," or semi-colon
+                                                                            ";".
+
+                                                                            These symbols or names must always be defined at the beginning of the program. Duplicate
+                                                                            symbols cannot be defined; but several symbols may be assigned to the same resource.
+
+
+17.                                                                         For better clarification, the symbols used in this program are grouped by subjects.
+
+                                                                            Used in: Basic and necessary programming.
+
+
+
+
+       PLC PROGRAMMING EXAMPLE   Definition of symbols (mnemonics)
+                                                                                DEF    I-EMERG         I1       External emergency input.
+
+                                                                                DEF    I-CONDI         I70      Conditional mode. The CNC interrupts part-program execution when
+                                                                                                                executing auxiliary function M01
+
+                                                                                DEF    SERVO-OK        I71      The servo drives are O.K.
+
+                                                                                DEF    O-EMERG         O1       Emergency output. It must be normally high.
+
+
+                                                                            Used in: Treatment of the axis travel limit switches.
+
+                                                                                DEF    I-LIMTX1        I72      X axis positive overtravel limit switch
+
+                                                                                DEF    I-LIMTX2        I73      X axis negative overtravel limit switch
+
+                                                                                DEF    I-LIMTY1        I74      Y axis positive overtravel limit switch
+
+                                                                                DEF    I-LIMTY2        I75      Y axis negative overtravel limit switch
+
+                                                                                DEF    I-LIMTZ1        I76      Z axis positive overtravel limit switch
+
+                                                                                DEF    I-LIMTZ2        I77      Z axis negative overtravel limit switch
+
+
+                                                                            Used in: Treatment of the machine reference (home) switches.
+
+                                                                                DEF    I-REF0X         I78      X axis home switch
+
+                                                                                DEF    I-REF0Y         I79      Y axis home switch
+
+                                                                                DEF    I-REF0Z         I80      Z axis home switch
+
+
+                                                                            Used in: Treatment of M, S, T functions.
+
+                                                                                DEF    M-03    M1003         Auxiliary mark. Indicates that M03 must be executed
+
+                                                                                DEF    M-04    M1004         Auxiliary mark. Indicates that M04 must be executed
+
+                                                                                DEF    M-08    M1008         Auxiliary mark. Indicates that M08 must be executed
+
+                                                                                DEF    M-41    M1041         Auxiliary mark. Indicates that M41 must be executed
+
+                                                                                DEF    M-42    M1042         Auxiliary mark. Indicates that M42 must be executed
+
+
+CNC 8055                                                                    Used in: Machine way lubrication.
+CNC 8055i                                                                       DEF    I-LUBING        I81      Operator request to lubricate the ways of the machine
+
+                                                                                DEF    O-LUBING        O2       Ways lubrication output
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·608·

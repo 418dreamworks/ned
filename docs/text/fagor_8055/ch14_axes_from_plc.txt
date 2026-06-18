@@ -1,0 +1,695 @@
+===== PAGE 558 =====
+
+14.1.1     Considerations
+
+
+     Screen editor
+
+     a.m.p. "AXISTYPE" of each axis of the machine must be set properly indicating whether that axis
+     is controlled by the CNC or from the PLC.
+
+     The axes of the PLC channel can only be governed from the PLC.
+
+     They may be edited and part-programs may be generated with axes of the PLC channel. This permits
+     generating part-programs or subroutines associated with the PLC channel.
+                                                                                                                                          14.
+
+
+
+                                                                                                           AXES CONTROLLED FROM THE PLC
+                                                                                                                                          PLC execution channel
+     It issues an error message when trying to execute, from the CNC channel, a program block that
+     includes a PLC axis.
+
+     When all the axes of the machine are set to be governed from the CNC, with the CNCEX action
+     only blocks programmed in high level language may be executed through the PLC execution
+     channel.
+
+
+
+     Axis control
+
+     To govern axes managed by PLC, use the following marks associated with "Feed-hold" and "Transfer
+     Inhibit":
+
+           /FEEDHOP                 (M5004)                  Similar to the /FEEDHOL signal
+           FHOUTP                   (M5504)                  Similar to the /FHOUT signal
+
+           /XFERINP                 (M5005)                  Similar to the /XFERINH signal
+
+
+
+
+     Auxiliary M functions
+
+     To control the M functions managed by the PLC, the following marks and registers are generated:
+           MBCDP1 through MBCDP7 (R565 through R571)
+              similar to signals MBCD1 through MBCD7.
+           AUXENDP (M5006)
+              Similar to the AUXEND signal.
+           MSTROBEP (M5505)
+              Similar to the MSTROBE signal.
+
+
+
+     Data transfer
+
+     If when executing at the PLC the action "CNCEX (ASCII Block, Mark)", the CNC detects that the
+     contents of the ASCII block being received is erroneous, it will set the indicated Mark to "1". The
+     PLC program will keep executing while it is up to the programmer to check whether the function was
+     executed correctly or not.
+
+     The CNC considers the contents of the ASCII block incorrect in the following instances:
+         • When the syntax is incorrect.
+                                                                                                           CNC 8055
+         • When programming a not-permitted preparatory function (G code).
+                                                                                                           CNC 8055i
+         • When programming an auxiliary function M, S, T or tool offset D.
+         • When programming a high level language block.
+         • When the axis to be moved cannot be controlled from the PLC.                                           SOFT: V01.6X
+
+         • When the internal buffer for PLC command storage is full.
+
+
+
+
+                                                                                                                                          ·559·
+===== PAGE 559 =====
+
+                                                              Errors during execution
+
+                                                              When the CNC detects an execution error in one of the two execution channels (for example, travel
+                                                              limit overrun), it will show the corresponding error code.
+
+                                                              If it must also stop the movement of the axes and the spindle rotation, the CNC will stop the
+                                                              movement of all the axes regardless of whether they are controlled from the CNC or the PLC.
+
+                                                              Also, if the detected error stops the program execution, the CNC will stop the execution of both
+                                                              channels and each one of them will act as follows:
+
+14.                                                           CNC channel.
+
+
+
+
+       AXES CONTROLLED FROM THE PLC
+                                      PLC execution channel
+                                                              Once the cause of the error has been removed, select again the execution or simulation mode and
+                                                              continue with the program execution.
+
+                                                              PLC channel.
+
+                                                              The PLC program does not stop and continues running.
+
+                                                              The commands sent by means of action "CNCEX" will not be executed until removing the cause
+                                                              of the error.
+
+                                                              Once the cause of the error removed, the CNC will execute all the new commands sent by the PLC.
+
+                                                              To know from the PLC program whether any CNC error is active, this information can be requested
+                                                              by accessing the internal CNC variable "CNCERR". This variable indicates the error number being
+                                                              active at the CNC and if none is active, it returns a 0 value.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·560·
+===== PAGE 560 =====
+
+14.1.2   Blocks which can be executed from the PLC
+
+     It is possible to execute blocks that contain G codes, axis position values, feedrates, M functions
+     and high level language programming.
+
+     Auxiliary functions S, T and D cannot be programmed.
+
+     The ASCII block to be sent to the CNC by means of the action CNCEX to be executed in the PLC
+     execution channel must be written in the CNC's own programming format.
+
+
+
+     Preparatory functions                                                                                                                 14.
+
+
+
+                                                                                                            AXES CONTROLLED FROM THE PLC
+                                                                                                                                           PLC execution channel
+     The preparatory functions which can be used in the PLC execution channel are the following:
+
+         G00            Rapid travers
+
+         G01            Linear interpolation
+
+         G02            Clockwise circular (helical) interpolation
+
+         G03            Counterclockwise circular (helical) interpolation
+         G04            Interrupt block preparation of the PLC channel.
+
+         G04 K          Dwell
+
+         G05            Round corner
+         G06            Circle center in absolute coordinates
+
+         G07            Square corner
+
+         G09            Arc defined by three points
+
+         G16            Main plane selection by two addresses and longitudinal axis
+
+         G32            Feedrate "F" as an inverted function of time.
+
+         G50            Controlled corner rounding
+         G52            Movement until making contact
+
+         G53            Programming with respect to machine zero
+
+         G70            Programming in inches
+
+         G71            Metric programming
+
+         G74            Home search
+
+         G75            Probing move until touching
+         G76            Probing move while touching
+
+         G90            Absolute programming:
+
+         G91            Incremental programming
+
+         G92            Coordinate preset
+
+         G93            Polar origin preset
+
+         G94            Feedrate in millimeters (inches) per minute
+         G95            Feedrate in millimeters (inches) per revolution.
+
+     All these functions must be programmed as described in the programming manual.
+
+
+                                                                                                            CNC 8055
+     Move the axes
+                                                                                                            CNC 8055i
+
+     Only those axes set by means of a.m.p. AXISTYPE (P0) for each axis as to be controlled by the
+     PLC can be mentioned.
+                                                                                                                   SOFT: V01.6X
+     The position values of these axes, which can be either linear or rotary, can be programmed in either
+     Cartesian or polar coordinates.
+
+     These coordinates can also be defined via parametric programming using any global arithmetic
+     parameters (P100 thru P299)
+
+
+
+                                                                                                                                           ·561·
+===== PAGE 561 =====
+
+                                                              When using parametric programming, it is recommended to previously assign a value to the
+                                                              corresponding global parameter by means of the instruction: CNCWR.
+
+                                                                  ... = MOV 150 R1
+                                                                       Assigns the value of 150 to register R1.
+                                                                  ... = CNCWR (R1, GUP200, M100)
+                                                                       Assigns the value of R1 to parameter P200, (P200=150).
+                                                                  ... = CNCEX (G90 G1 U P200, M100)
+                                                                       Requests the CNC to execute the command: G90 G1 U150. The U axis will go to position 150.
+
+
+
+14.                                                           To govern axes managed by PLC, use the following marks associated with "Feed-hold" and "Transfer
+                                                              Inhibit":
+
+
+
+
+       AXES CONTROLLED FROM THE PLC
+                                      PLC execution channel
+                                                                  /FEEDHOP                  (M5004)                    Similar to the /FEEDHOL signal
+
+                                                                  FHOUTP                    (M5504)                    Similar to the /FHOUT signal
+
+                                                                  /XFERINP                  (M5005)                    Similar to the /XFERINH signal
+
+
+
+
+                                                              Feedrate of the axes
+
+                                                              The programming format for the axis feedrate (F5.5) depends on the function (G94 or G95) and on
+                                                              the work units selected for this execution channel.
+                                                               • If G94, in mm/min. or inches/min.
+                                                               • If G95, in mm/rev or inches/rev.
+
+                                                              It must be borne in mind that this feedrate depends on the actual spindle rpm which is in the main
+                                                              execution channel.
+
+                                                              If the moving axis is rotary, the CNC interprets that the programmed feedrate is in degrees/minute.
+
+
+
+                                                              Modify the feedrate (override)
+
+                                                              The PLCCFR variable sets, from the PLC, the % of feedrate selected by the execution channel of
+                                                              the PLC.
+
+                                                              g.m.p. MAXFOVR (P18) limits the value of the percentage applied to both execution channels (main
+                                                              and PLC).
+
+                                                              The OVRCAN (M5020) mark sets the feedrate override of the main channel to 100%. It does not
+                                                              affect the feedrate override of the PLC channel
+
+                                                              Same as with the main channel, the following movements have a special treatment:
+                                                               • When searching home, the value of PLCCFR is ignored.
+                                                               • In G0, it considers the value of g.m.p. RAPIDOVR (P17)
+                                                                 If "P17=NO" always 100%, except if PLCCFR=0. In that case, the movement stops.
+                                                                 If "P17=YES" considers PLCCFR, but it limits its value to 100%.
+                                                               • In G1, G2, G3 it is always applied except when operating at maximum feedrate (F0), it is limited
+                                                                 to 100%.
+                                                               • In G75, G76, it is only applied when g.m.p. FOVRG75 (P126) = YES.
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·562·
+===== PAGE 562 =====
+
+     Blocks programmed in high-level language
+
+     The high-level instructions that can be used in the PLC execution channel are:
+        (IF condition <action1> ELSE <action2>)
+        (CALL (expression))
+
+         CNCEX ((CALL 100), M1000)
+           Sends the (CALL 100) command to the CNC so it executes (calls) subroutine 100
+         CNCEX ((P100=P100+2), M1000)
+           Sends the (P100=P100+2) command to the CNC to increment the value of parameter P100 in 2 units.                                           14.
+
+
+
+                                                                                                                      AXES CONTROLLED FROM THE PLC
+                                                                                                                                                     PLC execution channel
+     Programming high-level blocks has the following restrictions:
+      • The programmed blocks can only work with global parameters.
+      • Up to 5 nesting levels of standard subroutines are allowed (neither parametric nor global).
+
+         Example in mm:
+         Move the W axis to the coordinate indicated by register R101.
+         When the PLC works with integers (32 bits), the value of register R2 is given in tenths of microns (0.0001
+         mm).
+         CNCWR (R101, GUP 155, M101)
+            Assigns the value indicated in R101 to global parameter P155.
+         CNCEX ((P155=P155/10000), M101)
+            Converts the value of P155 into mm.
+         CNCEX (G1 WP155 F2000, M101)
+            Movement of the W axis
+
+
+
+
+     Interrupt block preparation
+
+     Same as in the CNC channel, blocks are also prepared in advance in the PLC channel.
+
+         CNCEX (G1 W100, M101)
+           Movement of the W axis.
+         CNCEX (IF P100=0 <action1>)
+           P100 is analyzed during block preparation.
+
+
+     The value of P100 may be different before, during and after the movement of the W axis. If it is to
+     be analyzed after moving the axis, function G4 must be programmed.
+
+         CNCEX (G1 W100, M101)
+           Movement of the W axis
+         CNCEX (G4, M102)
+           Interrupts block preparation.
+         CNCEX (IF P100=0 <action1>)
+           P100 is analyzed after moving the axis.
+
+
+     Likewise, every time a PLC resource is accessed (I, O, M, R), block preparation is interrupted.
+
+         CNCEX (G1 W100, M101)
+           Movement of the W axis.
+         CNCEX (IF PLCI8=1 <action2>)
+           I8 is checked after moving the axis.                                                                       CNC 8055
+                                                                                                                      CNC 8055i
+
+
+
+                                                                                                                             SOFT: V01.6X
+
+
+
+
+                                                                                                                                                     ·563·
+===== PAGE 563 =====
+
+                                                              Auxiliary M functions
+
+                                                              The M functions programmed in the PLC channel may be defined in the M function table.
+
+                                                              In the PLC channel, the following functions cannot be programmed: M0, M1, M2, M3, M4, M5, M6,
+                                                              M19, M30, M41, M42, M43, M44 and M45.
+
+                                                              The following marks and registers are generated for managing the M functions, :
+
+                                                                  MBCDP1 through MBCDP7 (R565 through R571)
+
+14.                                                                  similar to signals MBCD1 through MBCD7.
+                                                                  AUXENDP (M5006)
+                                                                     Similar to the AUXEND signal.
+
+
+
+
+       AXES CONTROLLED FROM THE PLC
+                                      PLC execution channel
+                                                                  MSTROBEP (M5505)
+                                                                     Similar to the MSTROBE signal.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·564·
+===== PAGE 564 =====
+
+14.1.3   Control of the PLC program from the CNC
+
+     The section of the PLC program regarding the "axes controlled from the PLC" can be controlled from
+     the CNC itself.
+
+     To do this, the inputs, outputs, marks, registers, timers or counters of the PLC itself are used.
+
+     The CNC has the following PLC related variables to read or change the status of the selected
+     resource.
+         PLCI           To read or modify up to 32 PLC inputs.
+         PLCO
+         PLCM
+                        To read or modify up to 32 PLC outputs.
+                        To read or modify up to 32 PLC marks (internal relays).
+                                                                                                                                               14.
+
+
+
+                                                                                                                AXES CONTROLLED FROM THE PLC
+                                                                                                                                               PLC execution channel
+         PLCR           To read or modify the status of a register.
+         PLCT           To read or modify the count of a timer.
+         PLCC           To read or modify the count of a counter.
+
+     With these variables, the desired values will be assigned, in the part-program of the CNC, to the
+     PLC resources used in the communication. The setting of these values will be carried out whenever
+     an axis or axes are to be controlled from the PLC.
+
+     In turn, the PLC program must check the status of such resources and when detecting that one of
+     them is activated, it must execute the corresponding section of the PLC program.
+
+     It is also possible to transfer data from the CNC to the PLC via global and local arithmetic parameters.
+     The PLC has the following variables related to those CNC parameters:
+         GUP            To read or modify a global parameter of the CNC.
+         LUP            To read or modify a local parameter of the CNC.
+
+     Example
+     The "U" axis is controlled by the PLC and we want to command it from any part-program of the CNC
+     in such way that we could select the type of move (G00 or G01), the positioning coordinate and the
+     feedrate for that move.
+
+     In order to command it from any part-program, it is convenient to have in a subroutine the section
+     of the CNC program allowing the data transfer with the PLC.
+
+     This example uses subroutine SUB1 and, for data exchange, it uses global CNC parameters.
+         P100           Type of move. If P100 = 0, then G00; If P100 = 1, then G01.
+         P101           "U" axis positioning coordinate.
+         P102           Feedrate. It only makes sense when moving in G01.
+
+     To indicate to the PLC that it must execute this move, it activates the following PLC resource:
+         M1000          Command to begin movement.
+
+     Any part-program of the CNC may contain a block of the type:
+         (PCALL 1, G1, U100, F1000)
+
+     This block calls subroutine SUB1 and it transfers the local parameters G, U and F with the following
+     information:
+         G       Type of move.
+         U       "U" axis positioning coordinate.
+         F       Feedrate for the movement.
+                                                                                                                CNC 8055
+                                                                                                                CNC 8055i
+
+
+
+                                                                                                                       SOFT: V01.6X
+
+
+
+
+                                                                                                                                               ·565·
+===== PAGE 565 =====
+
+                                                              Subroutine SUB1 can be programmed as follows:
+                                                                 ( SUB 1)
+                                                                 (P100 = G, P101 = U, P102 = F)
+                                                                     Data transfer to global parameters.
+                                                                 ( PLCM1000 = PLCM1000 OR 1 )
+                                                                     Execution command for the PLC.
+                                                                 (RET)
+
+
+14.                                                           The PLC program, in turn, will have to contain the following instructions:
+                                                                 M1000 = CNCEX (G90 GP100 UP101 FP102, M111)
+                                                                 ;When mark M1000 is active, it sends the indicated block to the CNC.
+
+
+
+
+       AXES CONTROLLED FROM THE PLC
+                                      PLC execution channel
+                                                                 NOT M111 = RES M1000
+                                                                 If the CNC accepts this block, it resets mark M1000.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·566·
+===== PAGE 566 =====
+
+14.2      Action CNCEX1
+
+       The CNCEX1 action is executed via main channel of the CNC and as long as the JOG keyboard
+       is enabled. Its execution can be interrupted by pressing [CYCLE STOP] or even canceled by
+       pressing [RESET].
+
+       If a CNCEX1 action is received when the JOG keyboard is disabled, the CNC ignores this command.
+
+       The block to be executed must be written in the programming format of the CNC itself.
+
+       Any type of block can be sent which is edited in ISO or high level language. It admits preparatory
+       functions, auxiliary functions, calls to subroutines, etc.
+                                                                                                                                           14.
+
+
+
+                                                                                                            AXES CONTROLLED FROM THE PLC
+                                                                                                                                           Action CNCEX1
+
+
+
+
+                                                                                                            CNC 8055
+                                                                                                            CNC 8055i
+
+
+
+                                                                                                                   SOFT: V01.6X
+
+
+
+
+                                                                                                                                           ·567·
+===== PAGE 567 =====
+
+                                                                               14.3      Synchronize a PLC axis with a CNC axis
+
+                                                                                      The synchronization is carried out from the PLC. Previously, to synchronize an axis of the PLC
+                                                                                      channel with another one of the CNC channel (main channel), set a.m.p. SYNCHRO (P3) of the
+                                                                                      PLC axis indicating which axis it must synchronize with.
+
+                                                                                      Axis synchronization is carried out from the PLC by activating the general signal SYNCHRO of the
+                                                                                      axis to be coupled as slave (PLC axis). To end synchronization, cancel the general signal SYNCHRO
+                                                                                      of the PLC axis.
+
+
+14.                                                                                   If an error occurs canceling the ENABLE logic outputs of all the axes, it also cancels the
+                                                                                      synchronization.
+
+
+
+
+       AXES CONTROLLED FROM THE PLC   Synchronize a PLC axis with a CNC axis
+                                                                                      How to carry out and end the synchronization
+                                                                                      Both axes must be stopped in order to couple them. To ensure this condition, it is recommended
+                                                                                      to execute an M function at the CNC commanding the PLC to execute another M function in the PLC
+                                                                                      channel that actives the SYNCHRO signal. The M function of the main channel must not end until
+                                                                                      the PLC's M function execution is completed and the ENABLE signal of the slave axis is set high.
+
+                                                                                      To assure that the PLC axis recovers its position after the synchronization, it is recommended to
+                                                                                      follow the same procedure as for coupling using other 2 special M functions, one at the CNC and
+                                                                                      another one at the PLC.
+
+                                                                                      Considerations for the synchronization
+                                                                                      Once both axes are synchronized, it won't be possible to program movements of the PLC axis.
+
+                                                                                      During synchronization, it does not check whether the PLC axis gets in position or not.
+                                                                                       • The logic output ENABLE of the PLC axis is activated (allowing motion).
+                                                                                       • The logic output INPOS of the PLC axis is deactivated (the axis is NOT in position).
+                                                                                       • General input INHIBIT of the PLC axis is ignored, thus not being possible to prevent it from
+                                                                                         moving.
+                                                                                       • The execution of the movement of the synchronized slave axis cannot be aborted even by
+                                                                                         activating the general input PLCABORT.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·568·
+===== PAGE 568 =====
+
+
+                                                                            15
+  The machine manufacturer may customize some of the CNC screens to:
+
+  (1) display more information.
+
+
+
+
+  (2) display the same information but in a different way.
+
+
+
+
+  (3) display a completely different screen in contents and looks.
+
+
+
+
+  All of them use OEM screens that have been created on a PC using the Fagor WINDRAW55
+  application software and have been sent out to the CNC using the Fagor WinDNC application
+  software.                                                                                             CNC 8055
+   • In (1) the OEM screen (consumption led bar graph) is superimposed on the standard CNC              CNC 8055i
+     screen.
+   • In (2) the upper area corresponds to the standard screen and the lower area shows the part of
+     the machine manufacturer (OEM).
+   • In (3) the OEM screen replaces completely the standard CNC screen.                                  SOFT: V01.6X
+
+  Use the configuration file at the CNC to define how the screens are to be laid out and which values
+  must be displayed on the OEM screen.
+
+
+
+
+                                                                                                            ·569·
+===== PAGE 569 =====
+
+                                                   15.1      Configuration file
+
+                                                          It is a program which describes the operating characteristics of the graphic elements of the screen.
+
+                                                          Set g.m.p. "CFGFILE (127)" with the number of the program for the configuration file:
+
+                                                          The configuration file is a CNC program edited in high level language (configuration language) which
+                                                          is described later on. It may be edited both at the CNC and at a PC.
+
+                                                          It may be in the user RAM and in the hard disk (KeyCF). If it is in both places, the one located in
+                                                          user RAM will be used. It is recommended to store it only in the hard disk (KeyCF) once it has been
+15.                                                       fully debugged.
+
+                                                          The configuration file must contain all the information regarding all the screens being customized.
+
+
+
+
+       CUSTOMIZABLE SCREENS
+                              Configuration file
+                                                          When editing a screen, the CNC overlaps the OEM screen over the standard CNC screen. The
+                                                          DISABLE instruction of the configuration file serves to indicate which of the standard screen areas
+                                                          are eliminated.
+
+                                                          Example: Standard screen + OEM screen + Disable 1
+
+
+
+
+                                                                             Standard screen                                 OEM screen
+
+                                                          Both screens are overlapped; but "Disable 1" indicates that the area 1 of the standard screen is not
+                                                          displayed. Therefore:
+
+
+
+
+                                                          Next, all the screens that may be customized will be shown and the nomenclature to be used in the
+                                                          configuration file. Numbers 1, 2, 3, 4 and 5 indicate the areas each screen is divided into.
+
+
+
+
+CNC 8055
+CNC 8055i
+                                                                                [JOG]                       [JOGAFL] JOG mode - Actual and Following error
+                                                                           JOG mode - Actual
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·570·

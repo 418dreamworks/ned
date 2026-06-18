@@ -1,0 +1,3554 @@
+===== PAGE 332 =====
+PROGRAMMING
+
+                                                                                   13
+13.1      Lexical description
+
+       All the words that make up the high-level language of the numerical control must be written in capital
+       letters except for associated texts which may be written in upper and lower case letters.
+
+       The following elements are available for high-level programming:
+        • Reserved words.
+        • Numerical constants.
+        • Symbols.
+
+
+
+       Reserved words
+
+       Reserved words are those that the CNC uses in high-level programming for naming system
+       variables, operators, control instructions, etc.
+
+       All the letters of the alphabet A-Z are also reserved words, as they can make up a high-level language
+       word when used alone.
+
+
+
+       Numerical constants
+
+       Blocks programmed in high-level language admit numbers in decimal format and in hexadecimal
+       format.
+        • The numbers in decimal format must not exceed the ±6.5 format (6 digits to the left of the decimal
+          point and 5 decimals).
+        • The numbers in hexadecimal format must be preceded by the $ symbol and they must not have
+          more than 8 digits.
+
+       A constant higher than the format ±6,5 must be assigned to a variable by means of arithmetic
+       parameters by means of arithmetic expressions or by means of constants in hexadecimal format.
+           To assign the value 100000000 to the variable "TIMER", It can be done in one of the following
+           ways:
+               (TIMER = $5F5E100)
+               (TIMER = 10000 * 10000)
+               (P100 = 10000 * 10000)
+               (TIMER = P100)
+
+       If the CNC operates in the metric system (millimeters), the resolution is a tenth of a micron and the
+       figures will be programmed in the ±5.4 format (positive or negative with 5 digits to the left of the
+       decimal point and 4 decimals).                                                                           CNC 8055
+       If the CNC operates in inches, the resolution is a hundred-thousandths of an inch (ten millionths
+                                                                                                                CNC 8055i
+       of an inch) and the figures will be programmed in the ±4.5 format (positive or negative with 4 digits
+       to the left of the decimal point and 5 decimals).
+
+       For the convenience of the programmer, this control always allows the format ±5.5 (positive or           ·M· & ·EN· MODELS
+       negative, with 5 integers and 5 decimals), adjusting each number appropriately to the working units        SOFT: V01.4X
+       every time they are used.
+
+
+
+
+                                                                                                                     ·333·
+===== PAGE 333 =====
+
+                                                                Symbols
+
+                                                                The symbols used in high-level language are:
+                                                                   ()“=+-*/,
+
+
+
+
+ 13.
+
+                                          Lexical description
+
+
+
+
+        HIGH-LEVEL LANGUAGE PROGRAMMING
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.4X
+
+
+
+
+     ·334·
+===== PAGE 334 =====
+
+13.2         Variables
+
+        The CNC has a number of internal variables that may be accessed from the user program, from
+        the PLC program or via DNC. Depending on how they are used, these variables may be read-only
+        or read-write.
+
+        These variables may be accessed from the user program using high-level commands. Each one
+        of these variables is referred to by its mnemonic that must be written in upper-case (capital) letters.
+          • Mnemonics ending in (X-C)indicate a set of 9 elements formed by the corresponding root
+            followed by X, Y, Z, U, V, W, A, B and C.
+             ORG(X-C) -> ORGX              ORGY               ORGZ                                                                                    13.
+                              ORGU         ORGV               ORGW
+
+
+
+
+                                                                                                                    HIGH-LEVEL LANGUAGE PROGRAMMING
+                                                                                                                                                      Variables
+                              ORGA         ORGB               ORGC
+          • Mnemonics ending in n indicate that the variables are grouped in tables. To access an element
+            of any of these tables, indicate the field of the desired table using the relevant mnemonic followed
+            by the desired element.
+             TORn ->          TOR1         TOR3               TOR11
+
+
+
+        The variables and block preparation
+
+        The variables that access the real values of the CNC interrupt block preparation. The CNC waits
+        for that command to be executed before resuming block preparation. Thus, precaution must be taken
+        when using this type of variable, because if they are inserted between machining blocks that are
+        working with compensation, undesired profiles may be obtained.
+
+        Example: Reading a variable that interrupts block preparation.
+
+        The following program blocks are performed in a section with G41 compensation.
+             ...
+             N10 X50 Y80
+             N15 (P100 = POSX); Assigns the value of the real coordinate in X to parameter P100
+             N20 X50 Y50
+             N30 X80 Y50
+             ...
+
+
+
+
+                 Block N15 interrupts block preparation         As the next point corresponding to the
+                 and the execution of block N10 will finish     compensated path is point "B", the CNC
+                 at point A.                                    will move the tool to this point, executing
+                                                                path "A-B".
+                 Once the execution of block N15 has
+                 ended, the CNC will resume block               As can be observed, the resulting path is          CNC 8055
+                 preparation from block N20 on.                 not the desired one, and therefore it is           CNC 8055i
+                                                                recommended to avoid the use of this
+                                                                type of variable in sections having tool
+                                                                compensation active.
+                                                                                                                   ·M· & ·EN· MODELS
+                                                                                                                     SOFT: V01.4X
+
+
+
+
+                                                                                                                                                      ·335·
+===== PAGE 335 =====
+
+                                                      13.2.1     General purpose parameters or variables
+
+                                                           General purpose variables are referred to with the letter "P" followed by an integer number. The CNC
+                                                           has four types of general purpose variables.
+
+                                                               Parameter type                                                 Range
+
+                                                               Local parameters                                               P0-P25
+
+                                                               Global parameters                                              P100-P299
+
+
+ 13.                                                           User parameters
+
+                                                               OEM (manufacturer's) parameters
+                                                                                                                              P1000-P1255
+
+                                                                                                                              P2000-P2255
+
+
+
+
+        HIGH-LEVEL LANGUAGE PROGRAMMING
+                                          Variables
+                                                           Blocks programmed in ISO code allow associating parameters to the G F S T D M fields and
+                                                           coordinates of the axes. The block label number must be defined with a numeric value. If parameters
+                                                           are used in blocks programmed in high-level language, they can be programmed within any
+                                                           expression.
+
+                                                           Programmers may use general purpose variables when editing their own programs. Later on, during
+                                                           execution, the CNC will replace these variables with the values assigned to them at the time.
+                                                                  When programming...                              When executing...
+                                                                  GP0 XP1 Z100                                     G1 X-12.5 Z100
+                                                                  (IF (P100 * P101 EQ P102) GOTO N100)             (IF (2 * 5 EQ 12) GOTO N100)
+
+                                                           Using these general purpose variables will depend on the type of block in which they are
+                                                           programmed and the channel of execution. Programs that are executed in the user channel may
+                                                           contain any global, OEM or user parameter, but may not use local parameters.
+
+
+
+                                                           Types of arithmetic parameters
+
+
+                                                           Local parameters
+
+                                                           Local parameters can only be accessed from the program or subroutine where they have been
+                                                           programmed. There are seven groups of parameters.
+
+                                                           Local parameters used in high-level language may be defined either using the above format or by
+                                                           using the letter A-Z, except for Ñ, so that A is equal to P0 and Z to P25.
+                                                           The following example shows these two methods of definition:
+                                                                 (IF ((P0+P1)* P2/P3 EQ P4) GOTO N100)
+                                                                 (IF ((A+B)* C/D EQ E) GOTO N100)
+
+                                                           When using a parameter name (letter) for assigning a value to it (A instead of P0, for example), if
+                                                           the arithmetic expression is a constant, the instruction can be abbreviated as follows:
+                                                                 (P0=13.7) ==> (A=13.7) ==> (A13.7)
+
+                                                           Be careful when using parenthesis since M30 is not the same as (M30). The CNC interprets (M30)
+                                                           as a high level instruction meaning (P12 = 30) and not the execution of the miscellaneous M30
+                                                           function.
+
+                                                           Global parameters
+
+                                                           Global parameters can be accessed from any program and subroutine called from a program.
+
+                                                           Global parameters may be used by the user, by the OEM or by the CNC cycles.
+CNC 8055
+                                                           User parameters
+CNC 8055i
+                                                           These parameters are an expansion of the global parameters but they are not used by the CNC
+                                                           cycles.
+
+                                                           OEM (manufacturer's) parameters
+·M· & ·EN· MODELS
+  SOFT: V01.4X
+                                                           OEM parameters and subroutines with OEM parameters can only be used in OEM programs; those
+                                                           defined with the [O] attribute. Modifying one of these parameters in the tables requires an OEM
+                                                           password.
+
+
+
+
+     ·336·
+===== PAGE 336 =====
+
+        Using arithmetic parameters by the cycles
+
+        Multiple machining cycles (G60 through G65) and the machining canned cycles (G69, G81 to G89)
+        use the sixth nesting level of local parameters when they are active.
+
+        Machining canned cycles use the global parameter P299 for internal calculations and probing
+        canned cycles use global parameters P294 to P299.
+
+
+
+        Updating arithmetic parameter tables
+                                                                                                                                                  13.
+
+
+
+
+                                                                                                                HIGH-LEVEL LANGUAGE PROGRAMMING
+                                                                                                                                                  Variables
+        The CNC will update the parameter table after processing the operations indicated in the block that
+        is in preparation. This operation is always done before executing the block and for this reason, the
+        values shown in the table do not necessarily have to correspond to the block being executed.
+
+        If the execution mode is abandoned after interrupting the execution of the program, the CNC will
+        update the parameter tables with values corresponding to the block that was being executed.
+
+        When accessing the local parameter and global parameter table, the value assigned to each
+        parameter may be expressed in decimal notation (4127.423) or in scientific notation (0.23476 E-3).
+
+
+
+        Arithmetic parameters in the subroutines
+
+        The CNC offers high level instructions for defining and using subroutines that may be called upon
+        from the main program (or a subroutine) and another subroutine from this one and so on, the CNC
+        limits the number of these calls to a maximum of 15 nesting levels. The CNC limitation is 20 nesting
+        levels.
+
+        Up to 26 (P0-P25) local parameters may be assigned to a subroutine. These parameters, that will
+        be unknown for blocks outside the subroutine, may be referred to by the blocks that make up the
+        subroutine.
+
+        Local parameters may be assigned to more than one subroutine up to 6 parameter nesting levels
+        within the 15 subroutine nesting levels.
+
+
+
+
+                                                                                                               CNC 8055
+                                                                                                               CNC 8055i
+
+
+
+                                                                                                               ·M· & ·EN· MODELS
+                                                                                                                 SOFT: V01.4X
+
+
+
+
+                                                                                                                                                  ·337·
+===== PAGE 337 =====
+
+                                                      13.2.2   Variables associated with tools.
+
+                                                           These variables are associated with the tool offset table, tool table and tool magazine table, so the
+                                                           values which are assigned to or read from these fields will comply with the formats established for
+                                                           these tables.
+
+                                                           Tool Offset table
+
+                                                           The radius (R), length (L) and wear offset (I, K) values of the tool are given in the active units.
+                                                               If G70, in inches (within ±3937.00787).
+ 13.                                                           If G71, in millimeters (within ±99999.9999).
+                                                               If rotary axis in degrees (within ±99999.9999).
+
+
+
+
+        HIGH-LEVEL LANGUAGE PROGRAMMING
+                                          Variables
+                                                           Tool table
+
+                                                           The tool offset number is an integer between 0 and 255. The maximum number of tool offsets is
+                                                           limited by g.m.p. NTOFFSET.
+
+                                                           The family code is a number between 0 and 255.
+                                                               0 to 199        if it is a normal tool.
+                                                               200 to 255      if it is a special tool.
+
+                                                           The nominal life is given either in minutes or in operations (0··65535).
+
+                                                           The real (actual) life is given either in hundredths of a minute (0··9999999) or in operations
+                                                           (0··999999).
+
+                                                           Tool magazine table
+
+                                                           Each magazine position is represented as follows:
+                                                               1··255          Tool number.
+                                                               0               The magazine position is empty.
+                                                               -1              The magazine position has been canceled.
+
+                                                           The tool position in the magazine is represented as follows:
+                                                               1··255          Position number.
+                                                               0               The tool is in the spindle.
+                                                               -1              Tool not found.
+                                                               -2              The tool is in the change position.
+
+
+
+                                                           Read-only variables
+
+
+                                                        TOOL
+
+                                                           Returns the number of the active tool.
+                                                                (P100=TOOL)
+                                                                   Assigns the number of the active tool to parameter P100.
+
+                                                        TOD
+
+                                                           Returns the number of the active tool offset.
+CNC 8055
+                                                        NXTOOL
+CNC 8055i
+                                                           Returns the next tool number, which is selected but is awaiting the execution of M06 to be active.
+
+                                                        NXTOD
+·M· & ·EN· MODELS                                          Returns the number of the tool offset corresponding to the next tool, which is selected but is awaiting
+  SOFT: V01.4X
+                                                           the execution of M06 to be active.
+
+                                                        TMZPn
+
+                                                           Returns the position occupied in the tool magazine by the indicated tool (n).
+
+
+     ·338·
+===== PAGE 338 =====
+
+    HTOR
+
+        The HTOR variable indicates the tool radius being used by the CNC to do the calculations.
+
+        Being a variable that can be read and written by the CNC and read-only from the PLC and DNC,
+        its value may be different from the one assigned in the table (TOR).
+
+        On power-up, after a T function, after a RESET or after an M30 function, it assumes the value of
+        the table (TOR).
+
+        Application example
+
+        To machine a profile with a residual stock of 0.5 mm running 0.1mm-passes with a tool whose radius
+        is 10 mm.
+                                                                                                                                                       13.
+
+
+
+
+                                                                                                                     HIGH-LEVEL LANGUAGE PROGRAMMING
+                                                                                                                                                       Variables
+        Assign to the tool radius the value of:
+             10.5 mm in the table and execute the profile.
+             10.4 mm in the table and execute the profile.
+             10.3 mm in the table and execute the profile.
+             10.2 mm in the table and execute the profile.
+             10.1 mm in the table and execute the profile.
+             10.0 mm in the table and execute the profile.
+
+        However, if while machining, the program is interrupted or a reset occurs, the table assumes the
+        radius value assigned in that instant (e.g.: 10.2 mm). Its value has changed.
+
+        To avoid this, instead of modifying the tool radius in the (TOR) table, use the variable (HTOR) to
+        change the tool radius value used by the CNC to calculate.
+
+        Now, if the program is interrupted, the tool radius value initially assigned in the (TOR) table will be
+        correct because it has not changed.
+
+
+
+        Read-and-write variables
+
+
+    TORn
+
+        This variable allows the value assigned to the radius of the indicated tool offset (n) in the tool offset
+        table to be read or modified.
+              (P110=TOR3)
+                 Assigns the radius value of tool offset ·3· to parameter P110.
+              (TOR3=P111)
+                 Assigns the value indicated in parameter P111 to the radius of tool offset 3.
+
+    TOLn
+
+        This variable allows the value assigned to the length of the indicated tool offset (n) to be read or
+        modified in the tool offset table.
+
+    TOIn
+
+        This variable allows the value assigned to the wear in radius (I) of the indicated tool offset (n) to be
+        read or modified in the tool offset table.
+
+    TOKn
+
+        This variable allows the value assigned to the wear in length (K) of the indicated tool offset (n) to
+        be read or modified in the tool offset table.                                                               CNC 8055
+                                                                                                                    CNC 8055i
+    TLFDn
+
+        This variable allows the tool offset number of the indicated tool (n) to be read or modified in the tool
+        table.
+                                                                                                                    ·M· & ·EN· MODELS
+                                                                                                                      SOFT: V01.4X
+    TLFFn
+
+        This variable allows the family code of the indicated tool (n) to be read or modified in the tool table.
+
+
+
+
+                                                                                                                                                       ·339·
+===== PAGE 339 =====
+
+                                                      TLFNn
+
+                                                        This variable allows the value assigned as the nominal life of the indicated tool (n) to be read or
+                                                        modified in the tool table.
+
+                                                      TLFRn
+
+                                                        This variable allows the value corresponding to the real life of the indicated tool (n) to be read or
+                                                        modified in the tool table.
+
+                                                      TMZTn
+
+ 13.                                                    This variable allows the contents of the indicated position (n) to be read or modified in the tool
+                                                        magazine table.
+
+
+
+
+        HIGH-LEVEL LANGUAGE PROGRAMMING
+                                          Variables
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.4X
+
+
+
+
+     ·340·
+===== PAGE 340 =====
+
+13.2.3       Variables associated with zero offsets.
+
+        These variables are associated with the zero offsets and may correspond to the table values or to
+        those currently preset either by means of function G92 or manually in the JOG mode.
+
+        The possible zero offsets in addition to the additive offset indicated by the PLC, are G54, G55, G56,
+        G57, G58 and G59.
+
+        The values for each axis are given in the active units:
+             If G70, in inches (within ±3937.00787).
+             If G71, in millimeters (within ±99999.9999).
+             If rotary axis in degrees (within ±99999.9999).
+                                                                                                                                                         13.
+
+
+
+
+                                                                                                                       HIGH-LEVEL LANGUAGE PROGRAMMING
+                                                                                                                                                         Variables
+        Although there are variables which refer to each axis, the CNC only allows those referring to the
+        axes selected at the CNC. Thus, if the CNC controls axes X, Y, Z, U and B, it only allows the variables
+        ORGX, ORGY, ORGZ,. ORGU and ORGB in the case of ORG(X-C).
+
+
+
+        Read-only variables
+
+
+    ORG(X-C)
+
+        Returns the value of the active zero offset in the selected axis. The value of the additive offset
+        indicated by the PLC or by the additive handwheel is not included in this value.
+              (P100=ORGX)
+                 It assigns to P100 the X value of the part zero active for the X axis. This value could have
+                 been set either manually, by means of function G92 or by the variable "ORG(X-C)n".
+
+    PORGF
+
+        Returns the abscissa value of the polar coordinate origin with respect to the Cartesian origin.
+
+    PORGS
+
+        Returns the ordinate value of the polar coordinate origin with respect to the Cartesian origin.
+
+    ADIOF(X-C)
+
+        It returns the value of the zero offset generated by the additive handwheel in the selected axis.
+
+
+
+        Read-and-write variables
+
+
+    ORG(X-C)n
+
+        This variable allows the value of the selected axis to be read or modified in the table corresponding
+        to the indicated zero offset (n).
+              (P110=ORGX 55)
+                 Loads parameter P100 with the X value of G55 in the zero offset table.
+              (ORGY 54=P111)
+                 It assigns parameter P111 to the Y axis in the table for the G54 offset.
+
+    PLCOF(X-C)
+
+        This variable allows the value of the selected axis to be read or modified in the table of additive offsets   CNC 8055
+        indicated by the PLC.
+                                                                                                                      CNC 8055i
+        Accessing any of the PLCOF(X-C) variables interrupts block preparation and the CNC waits for that
+        command to be executed before resuming block preparation.
+
+
+                                                                                                                      ·M· & ·EN· MODELS
+                                                                                                                        SOFT: V01.4X
+
+
+
+
+                                                                                                                                                         ·341·
+===== PAGE 341 =====
+
+                                                      13.2.4   Variables associated with function G49
+
+                                                           With function G49, it is possible to define a coordinate transformation or, in other words, the inclined
+                                                           plane resulting from that transformation.
+
+                                                           The values for each axis are given in the active units:
+                                                               If G70, in inches (within ±3937.00787).
+                                                               If G71, in millimeters (within ±99999.9999).
+
+
+ 13.                                                       Read-only variables associated with the definition of function G49
+
+
+
+
+        HIGH-LEVEL LANGUAGE PROGRAMMING
+                                          Variables
+                                                        ORGROX                    ORGROY                     ORGROZ
+
+                                                           X coordinate of the new part zero with respect to home.
+
+                                                           Y coordinate of the new part zero with respect to home.
+
+                                                           Z coordinate of the new part zero with respect to home.
+
+                                                        ORGROA                    ORGROB                     ORGROC                     ORGROI
+                                                        ORGROJ                    ORGROK                     ORGROQ                     ORGROR
+                                                        ORGROS
+
+                                                           Value assigned to parameter A.
+
+                                                           Value assigned to parameter B.
+                                                           Value assigned to parameter C.
+
+                                                           Value assigned to parameter I.
+
+                                                           Value assigned to parameter J.
+
+                                                           Value assigned to parameter K.
+
+                                                           Value assigned to parameter Q.
+
+                                                           Value assigned to parameter R.
+
+                                                           Value assigned to parameter S.
+
+                                                        GTRATY
+
+                                                           Type of G49 programmed.
+
+                                                               0 = no G49 has been defined.                      3 = Type G49 T X Y Z S
+
+                                                               1 = Type G49 X Y Z A B C                          4 = Type G49 X Y Z I J K R S
+
+                                                               2 = Type G49 X Y Z Q R S
+
+                                                           Every time G49 is programmed, the CNC updates the values of the parameters that have been
+                                                           defined.
+
+                                                           For example when programming G49 XYZ ABC, the CNC updates the variables.
+                                                                  ORGROX, ORGROY, ORGROZ
+                                                                  ORGROA, ORGROB, ORGROC
+
+CNC 8055                                                   The rest of variables keep their previous values.
+
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.4X
+
+
+
+
+     ·342·
+===== PAGE 342 =====
+
+        Read-write variables updated by the CNC once function G49 is
+        executed
+
+        Accessing the variables TOOROF or TOOROS interrupts block preparation and the CNC waits for
+        that command to be executed before resuming block preparation.
+
+        When having a swivel or angular spindle, general machine parameter XFORM (P93) with a value
+        of 2 or 3, the CNC shows the following data:
+
+    TOOROF
+
+        It indicates the position to be occupied by the spindle's main rotary axis in order to orient the spindle
+                                                                                                                                                       13.
+        perpendicular to the indicated inclined plane.
+
+
+
+
+                                                                                                                     HIGH-LEVEL LANGUAGE PROGRAMMING
+    TOOROS                                                                                                                                             Variables
+        It indicates the position to be occupied by the spindle's secondary rotary axis in order to orient the
+        spindle perpendicular to the indicated inclined plane.
+
+
+
+
+                                                                                                                    CNC 8055
+                                                                                                                    CNC 8055i
+
+
+
+                                                                                                                    ·M· & ·EN· MODELS
+                                                                                                                      SOFT: V01.4X
+
+
+
+
+                                                                                                                                                       ·343·
+===== PAGE 343 =====
+
+                                                      13.2.5   Variables associated with machine parameters
+
+                                                           These variables associated with machine parameters are read-only variables. These variables may
+                                                           be read and written when executed inside an OEM program or subroutine.
+
+                                                           Refer to the installation and start-up manual to know the format of the values returned. The values
+                                                           of 1/0 correspond to the parameters that are set as YES/NO, +/- or ON/OFF.
+
+                                                           The coordinate and feedrate values are given in the active units:
+                                                               If G70, in inches (within ±3937.00787).
+
+ 13.                                                           If G71, in millimeters (within ±99999.9999).
+                                                               If rotary axis in degrees (within ±99999.9999).
+
+
+
+
+        HIGH-LEVEL LANGUAGE PROGRAMMING
+                                          Variables
+                                                           Modify the machine parameters from an OEM program or subroutine.
+                                                           These variables may be read and written when executed inside an OEM program or subroutine. In
+                                                           this case, these variables can be used to modify the value of certain machine parameters. Refer
+                                                           to the installation manual for the list of machine parameters that may be modified.
+
+                                                           In order to be able to modify these parameters via PLC, an OEM subroutine containing the relevant
+                                                           variables must be executed using the CNCEX command.
+
+
+
+                                                           Read-only variables
+
+
+                                                        MPGn
+
+                                                           Returns the value assigned to general machine parameter (n).
+                                                                (P110=MPG8)
+                                                                   It assigns the value of the general machine parameter P8 "INCHES" to parameter P110,
+                                                                   if millimeters P110=0 and if inches P110=1.
+
+                                                        MP(X-C)n
+
+                                                           Returns the value assigned to the machine parameter (n) of the indicated axis (X-C).
+                                                                (P110=MPY 1)
+                                                                   Assigns the value of Y axis machine parameter P1 "DFORMAT" to parameter P110.
+
+                                                        MPSn
+
+                                                           Returns the value assigned to the indicated machine parameter (n) of the main spindle.
+
+                                                        MPSSn
+
+                                                           Returns the value assigned to the indicated machine parameter (n) of the second spindle.
+
+                                                        MPASn
+
+                                                           Returns the value of the indicated machine parameter (n) of the auxiliary spindle.
+
+                                                        MPLCn
+
+                                                           Returns the value assigned to the indicated machine parameter (n) of the PLC.
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.4X
+
+
+
+
+     ·344·
+===== PAGE 344 =====
+
+13.2.6       Variables associated with work zones
+
+        Variables associated with work zones are read-only variables.
+
+        The values of the limits are given in the active units:
+             If G70, in inches (within ±3937.00787).
+             If G71, in millimeters (within ±99999.9999).
+             If rotary axis in degrees (within ±99999.9999).
+
+        The status of the work zones are defined according to the following code:
+             0 = Disabled.                                                                                                             13.
+             1 = Enabled as no-entry zone.
+
+
+
+
+                                                                                                     HIGH-LEVEL LANGUAGE PROGRAMMING
+                                                                                                                                       Variables
+             2 = Enabled as no-exit zone.
+
+
+
+        Read-only variables
+
+
+    FZONE
+
+        It returns the status of work zone 1.
+
+    FZLO(X-C)                     FZUP(X-C)
+
+        Lower limit of zone 1 along the selected axis (X-C).
+
+        Upper limit of zone 1 along the selected axis (X-C).
+              (P100=FZONE)              ; It assigns to parameter P100 the status of work zone 1.
+              (P101=FZOLOX)             ; It assigns the lower limit of zone 1 to parameter P101.
+              (P102=FZUPZ)              ; It assigns the upper limit of zone 1 to parameter P102.
+
+    SZONE                         SZLO(X-C)              SZUP(X-C)
+
+        Status of work zone 2.
+
+        Lower limit of zone 2 along the selected axis (X-C).
+
+        Upper limit of zone 2 along the selected axis (X-C).
+
+    TZONE                         TZLO(X-C)              TZUP(X-C)
+
+        Status of work zone 3.
+
+        Lower limit of zone 3 along the selected axis (X-C).
+
+        Upper limit of zone 3 along the selected axis (X-C).
+
+    FOZONE                        FOZLO(X-C)             FOZUP(X-C)
+
+        Status of work zone 4.
+
+        Lower limit of zone 4 along the selected axis (X-C).
+
+        Upper limit of zone 4 along the selected axis (X-C).
+
+    FIZONE                        FIZLO(X-C)             FIZUP(X-C)
+
+        Status of work zone 5.
+                                                                                                    CNC 8055
+        Lower limit of zone 5 along the selected axis (X-C).
+                                                                                                    CNC 8055i
+        Upper limit of zone 5 along the selected axis (X-C).
+
+
+
+                                                                                                    ·M· & ·EN· MODELS
+                                                                                                      SOFT: V01.4X
+
+
+
+
+                                                                                                                                       ·345·
+===== PAGE 345 =====
+
+                                                      13.2.7   Variables associated with feedrates
+
+
+                                                           Read-only variables associated with the real (actual) feedrate
+
+
+                                                        FREAL
+
+                                                           It returns the CNC's real feedrate. In mm/minute or inches/minute.
+
+
+ 13.                                                            (P100=FREAL)
+                                                                   It assigns the real feedrate value of the CNC to parameter P100.
+
+
+
+
+        HIGH-LEVEL LANGUAGE PROGRAMMING
+                                          Variables
+                                                        FREAL(X-C)
+
+                                                           It returns the actual (real) CNC feedrate of the selected axis.
+
+                                                        FTEO(X-C)
+
+                                                           It returns the theoretical CNC feedrate of the selected axis.
+
+
+
+                                                           Read-only variables associated with function G94
+
+
+                                                        FEED
+
+                                                           It returns the feedrate selected at the CNC by function G94. In mm/minute or inches/minute.
+
+                                                           This feedrate may be indicated by program, by PLC or by DNC; the CNC selects one of them, the
+                                                           one indicated by DNC has the highest priority and the one indicated by program has the lowest
+                                                           priority.
+
+                                                        DNCF
+
+                                                           It returns the feedrate, in mm/minute or inches/minute selected by DNC. If it has a value of 0 it means
+                                                           that it is not selected.
+
+                                                        PLCF
+
+                                                           It returns the feedrate, in mm/minute or inches/minute selected by PLC. If it has a value of 0 it means
+                                                           that it is not selected.
+
+                                                        PRGF
+
+                                                           It returns the feedrate, in mm/minute or inches/minute selected by program.
+
+
+
+                                                           Read-only variables associated with function G95
+
+
+                                                        FPREV
+
+                                                           It returns the feedrate selected at the CNC by function G95. In mm/turn or inches/turn.
+
+                                                           This feedrate may be indicated by program, by PLC or by DNC; the CNC selects one of them, the
+                                                           one indicated by DNC has the highest priority and the one indicated by program has the lowest
+                                                           priority.
+
+CNC 8055                                                DNCFPR
+CNC 8055i                                                  It returns the feedrate, in mm/turn or inches/turn selected by DNC. If it has a value of 0 it means
+                                                           that it is not selected.
+
+                                                        PLCFPR
+·M· & ·EN· MODELS
+  SOFT: V01.4X                                             It returns the feedrate, in mm/turn or inches/turn selected by PLC. If it has a value of 0 it means that
+                                                           it is not selected.
+
+                                                        PRGFPR
+
+                                                           It returns the feedrate, in mm/turn or inches/turn selected by program.
+
+     ·346·
+===== PAGE 346 =====
+
+        Read-only variables associated with function G32
+
+
+    PRGFIN
+
+        It returns the feedrate selected by program, in 1/min.
+
+        Likewise, the CNC variable FEED, associated with G94, indicates the resulting feedrate in mm/min
+        or inches/min.
+
+
+
+        Read-only variables associated with the override                                                                                               13.
+
+
+
+
+                                                                                                                     HIGH-LEVEL LANGUAGE PROGRAMMING
+                                                                                                                                                       Variables
+    FRO
+
+        It returns the feedrate override (%) currently selected at the CNC. It is given in integer values between
+        0 and "MAXFOVR" (maximum 255).
+
+        This feedrate percentage may be indicated by program, by PLC, by DNC or by the front panel; the
+        CNC selects one of them and the priority (from the highest to the lowest) is: by program, by DNC,
+        by PLC and from the front panel switch.
+
+    DNCFRO
+
+        It returns the feedrate override % currently selected by the DNC. If it has a value of 0 it means that
+        it is not selected.
+
+    PLCFRO
+
+        It returns the feedrate override % currently selected by the PLC. If it has a value of 0 it means that
+        it is not selected.
+
+    CNCFRO
+
+        It returns the feedrate override % currently selected by the switch.
+
+    PLCCFR
+
+        It returns the feedrate percentage currently selected by the PLC's execution channel.
+
+
+
+        Read-write variables associated with the override
+
+
+    PRGFRO
+
+        This variable may be used to read or modify the feedrate override percentage currently selected
+        by program. It is given in integer values between 0 and "MAXFOVR" (maximum 255). If it has a value
+        of 0 it means that it is not selected.
+              (P110=PRGFRO)
+                 It assigns to P110 the % of feedrate override selected by program.
+              (PRGFRO=P111)
+                 It sets the feedrate override % selected by program to the value of P111.
+
+
+
+
+                                                                                                                    CNC 8055
+                                                                                                                    CNC 8055i
+
+
+
+                                                                                                                    ·M· & ·EN· MODELS
+                                                                                                                      SOFT: V01.4X
+
+
+
+
+                                                                                                                                                       ·347·
+===== PAGE 347 =====
+
+                                                      13.2.8   Variables associated with coordinates
+
+                                                           The coordinate values for each axis are given in the active units:
+                                                               If G70, in inches (within ±3937.00787).
+                                                               If G71, in millimeters (within ±99999.9999).
+                                                               If rotary axis in degrees (within ±99999.9999).
+
+
+
+
+ 13.                                                       Read-only variables
+
+
+
+
+        HIGH-LEVEL LANGUAGE PROGRAMMING
+                                          Variables
+                                                           Accessing any of the variables POS(X-C), TPOS(X-C), APOS(X-C), ATPOS(X-C), DPOS(X-C),
+                                                           FLWE(X-C), DEFLEX, DEFLEY or DEFLEZ interrupts block preparation and the CNC waits for that
+                                                           command to be executed before resuming block preparation.
+
+                                                        PPOS(X-C)
+
+                                                           Returns the programmed theoretical coordinate of the selected axis.
+                                                                (P110=PPOSX)
+                                                                   It assigns to P100 the programmed theoretical position of the X axis.
+
+                                                        POS(X-C)
+
+                                                           It returns the real tool base position value referred to machine reference zero (home).
+
+                                                           On limit-less rotary axes, this variable takes into account the value of the active zero offset. The
+                                                           values of the variable are between the active zero offset and ±360º (ORG* ± 360º).
+                                                               If ORG* = 20º         it displays between 20º and 380º / displays between -340º and 20º.
+                                                               If ORG* = -60º        it displays between -60º and 300º / displays between -420 and -60º
+
+                                                        TPOS(X-C)
+
+                                                           It returns the theoretical position value (real coordinate + following error) of the tool base referred
+                                                           to machine reference zero (home).
+
+                                                           On limit-less rotary axes, this variable takes into account the value of the active zero offset. The
+                                                           values of the variable are between the active zero offset and ±360º (ORG* ± 360º).
+                                                               If ORG* = 20º         it displays between 20º and 380º / displays between -340º and 20º.
+                                                               If ORG* = -60º        it displays between -60º and 300º / displays between -420 and -60º
+
+                                                        APOS(X-C)
+
+                                                           It returns the real tool base position value, referred to part zero, of the selected axis.
+
+                                                        ATPOS(X-C)
+
+                                                           It returns the theoretical position value (real coordinate + following error) of the tool base referred
+                                                           to part zero.
+
+                                                        DPOS(X-C)
+
+                                                           The CNC updates this variable whenever probing operations G75, G76 and probing cycles PROBE
+                                                           and DIGIT are carried out.
+
+                                                           When the digital probe communicates with the CNC via infrared beams, there could be some delay
+                                                           (milliseconds) from the time the probe touches the part to the instant the CNC receives the probe
+CNC 8055                                                   signal.
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.4X
+
+
+
+
+     ·348·
+===== PAGE 348 =====
+
+
+
+
+        Although the probe keeps moving until the CNC receives the probing signal, the CNC takes into
+                                                                                                                                                   13.
+        account the value assigned to general machine parameter PRODEL and provides the following
+
+
+
+
+                                                                                                                 HIGH-LEVEL LANGUAGE PROGRAMMING
+                                                                                                                                                   Variables
+        information in the variables TPOS(X-C) and DPOS(X-C).
+             TPOS(X-C)        Actual position of the probe when the CNC receives the probe signal.
+             DPOS(X-C)        Theoretical position of the probe when the probe touched the part.
+
+    FLWE(X-C)
+
+        It returns the following error of the selected axis.
+
+    DEFLEX                        DEFLEY                  DEFLEZ
+
+        They return the amount of deflection obtained at the time by the Renishaw probe SP2 on each axis
+        X, Y, Z.
+
+    DPLY(X-C)
+
+        It returns the position value (coordinate) shown on the screen for the selected axis.
+
+    DRPO(X-C)
+
+        It returns the position indicated by the Sercos drive of the selected axis (variable PV51 or PV53 of
+        the drive).
+
+    GPOS(X-C)n p
+
+        Programmed coordinate for a particular axis in the indicated (n) block of the (p) program.
+              (P80=GPOSX N99 P100)
+                 It assigns to parameter P88 the value of the coordinate programmed for the X axis in
+                 the block having the label N99 and located in program P100.
+
+        Only programs located in the CNC's RAM memory may be consulted.
+        If the defined program or block does not exist, it shows the relevant error message. If the indicated
+        block does not contain the requested axis, it returns the value 100000.0000.
+
+
+
+
+                                                                                                                CNC 8055
+                                                                                                                CNC 8055i
+
+
+
+                                                                                                                ·M· & ·EN· MODELS
+                                                                                                                  SOFT: V01.4X
+
+
+
+
+                                                                                                                                                   ·349·
+===== PAGE 349 =====
+
+                                                         Read-and-write variables
+
+
+                                                      DIST(X-C)
+
+                                                         These variables may be used to read or modify the distance traveled by the selected axis. This value
+                                                         is accumulative and is very useful when it is required to perform an operation which depends on
+                                                         the distance traveled by the axes, their lubrication for example.
+                                                              (P110=DISTX)
+                                                                 It assigns to P110 the distance traveled by the X axis
+
+ 13.                                                          (DISTX=P111)
+                                                                 It presets the variable indicating the distance traveled by the Z axis with the value of
+                                                                 arithmetic parameter P111.
+
+
+
+
+        HIGH-LEVEL LANGUAGE PROGRAMMING
+                                          Variables
+                                                         Accessing any of the DIST(X-C) variables interrupts block preparation and the CNC waits for that
+                                                         command to be executed before resuming block preparation.
+
+                                                      LIMPL(X-C)                LIMMI(X-C)
+
+                                                         With these variables, it is possible to set a second travel limit for each axis: LIMPL for the upper limit
+                                                         and LIMMI for the lower one.
+
+                                                         Since the second limits are activated or deactivated from the PLC, through general logic input
+                                                         ACTLIM2 (M5052), besides setting the limits, an auxiliary M code must be executed to let it know.
+
+                                                         It is also recommended to execute function G4 after the change so the CNC executes the following
+                                                         blocks with the new limits.
+
+                                                         The second travel limit will be taken into account if the first one has been set using axis machine
+                                                         parameters LIMIT+ (P5) and LIMIT- (P6).
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.4X
+
+
+
+
+     ·350·
+===== PAGE 350 =====
+
+13.2.9       Variables associated with electronic handwheels
+
+
+        Read-only variables
+
+
+    HANPF                              HANPS                                 HANPT                           HANPFO
+
+        They return the pulses of the first (HANPF), second (HANPS), third (HANPT) or fourth (HANPFO)
+        handwheel received since the CNC was turned on. It is irrelevant to have the handwheel connected
+        to the feedback inputs or to the PLC inputs.
+                                                                                                                                                                                  13.
+    HANDSE
+
+
+
+
+                                                                                                                                                HIGH-LEVEL LANGUAGE PROGRAMMING
+                                                                                                                                                                                  Variables
+        For handwheels with axis selector button, it indicates whether that button has been pressed or not.
+        A value of ·0· means that it has not been pressed.
+
+    HANFCT
+
+        It returns the multiplying factor set by PLC for each handwheel.
+
+        It must be used when using several electronic handwheels or when using a single handwheel but
+        different multiplying factors (x1, x10, x100) are to be applied to each axis.
+
+                  C               B              A           W               V           U           Z           Y               X
+
+              c   b     a    c     b   a     c   b   a   c       b   a   c   b   a   c   b   a   c   b   a   c   b       a   c   b   a   lsb
+
+        Once the switch has been turned to one of the handwheel positions, the CNC checks this variable
+        and, depending on the values assigned to each axis bit (c, b, a) it applies the multiplying factor
+        selected for each one of them.
+              c     b    a
+
+              0     0    0       The value indicated at the front panel or keyboard switch.
+
+              0     0    1       x1 factor
+
+              0     1    0       x10 factor
+
+              1     0    0       x100 factor
+
+        If there are more than one bit set to "1" for an axis, the least significant bit will be considered. Thus:
+              c     b    a
+
+              1     1    1       x1 factor
+              1     1    0       x10 factor
+
+
+
+
+        i         The screen always shows the value selected at the switch.
+
+
+
+
+    HBEVAR
+
+        It must be used when having a Fagor HBE handwheel.
+
+        It indicates whether the HBE handwheel is enabled or not, the axis to be jogged and the multiplying
+        factor to be applied (x1, x10, x100).
+
+                                   C             B           A           W           V       U           Z           Y           X             CNC 8055
+              * ^                c b a c b a c b a c b a c b a c b a c b a c b a c b a                                                   lsb   CNC 8055i
+
+        (*) Indicates whether the HBE handwheel pulses will be taken into account or not in jog mode.
+             0=         They are ignored.
+                                                                                                                                               ·M· & ·EN· MODELS
+             1=         They are taken into account.                                                                                             SOFT: V01.4X
+
+
+
+
+                                                                                                                                                                                  ·351·
+===== PAGE 351 =====
+
+                                                        (^) When the machine has a general handwheel and individual handwheels (associated with an
+                                                        axis), it indicates which handwheel has priority when both are turned at the same time.
+                                                           0=        The individual handwheel has priority. The relevant axis ignores the pulses from the
+                                                                     general handwheel, the rest of the axes don’t.
+                                                           1=        The general handwheel has priority. It ignores the pulses from the individual handwheel.
+
+                                                        (a, b, c) Indicate the axis to be moved and the selected multiplying factor.
+                                                             c   b    a
+
+
+ 13.                                                         0
+
+                                                             0
+                                                                 0
+
+                                                                 0
+                                                                      0
+
+                                                                      1
+                                                                          The value indicated at the front panel or keyboard switch.
+
+                                                                          x1 factor
+
+                                                             0   1    0   x10 factor
+
+
+
+
+        HIGH-LEVEL LANGUAGE PROGRAMMING
+                                          Variables
+                                                             1   0    0   x100 factor
+
+                                                        If several axes are selected, the following order of priority is applied: X, Y, Z, U, V, W, A, B, C.
+
+                                                        If there are more than one bit set to "1" for an axis, the least significant bit will be considered. Thus:
+                                                             c   b    a
+
+                                                             1   1    1   x1 factor
+
+                                                             1   1    0   x10 factor
+
+                                                        The HBE handwheel has priority. That is, regardless of the mode selected at the CNC switch
+                                                        (continuous or incremental JOG, handwheel), HBEVAR is set to other than "0", the CNC goes into
+                                                        handwheel mode.
+
+                                                        It shows the selected axis in reverse video and the multiplying factor selected by the PLC. When
+                                                        the HBEVAR variable is set to "0", it shows the mode selected by the switch again.
+
+
+
+                                                        Read-and-write variables
+
+
+                                                      MASLAN
+
+                                                        It must be used when the path-handwheel or the path-jog is selected. Indicates the angle of the linear
+                                                        path.
+
+
+
+
+                                                      MASCFI                    MASCSE
+
+                                                        They must be used when the path-handwheel or the path-jog is selected. On circular paths (arcs),
+                                                        they indicate the center coordinates.
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.4X
+
+
+
+
+     ·352·
+===== PAGE 352 =====
+
+13.2.10 Variables associated with feedback
+
+    ASIN(X-C)
+
+        "A" signal of the CNC's sinusoidal feedback for the X-C axis.
+
+    BSIN(X-C)
+
+        "B" signal of the CNC's sinusoidal feedback for the X-C axis.
+
+    ASINS
+
+        "A" signal of the CNC's sinusoidal feedback for the spindle.                                           13.
+
+
+
+
+                                                                             HIGH-LEVEL LANGUAGE PROGRAMMING
+                                                                                                               Variables
+    BSINS
+
+        "B" signal of the CNC's sinusoidal feedback for the spindle.
+
+    SASINS
+
+        "A" signal of the CNC sinusoidal feedback for the second spindle.
+
+    SBSINS
+
+        "B" signal of the CNC sinusoidal feedback for the second spindle.
+
+
+
+
+                                                                            CNC 8055
+                                                                            CNC 8055i
+
+
+
+                                                                            ·M· & ·EN· MODELS
+                                                                              SOFT: V01.4X
+
+
+
+
+                                                                                                               ·353·
+===== PAGE 353 =====
+
+                                                      13.2.11 Variables associated with the main spindle
+
+                                                           In these variables associated with the spindle, their values are given in revolutions per minute and
+                                                           the main spindle override values are given in integers from 0 to 255.
+
+                                                           Certain variables interrupt block preparation (it is indicated in each one) and the CNC waits for that
+                                                           command to be executed before resuming block preparation.
+
+
+
+                                                           Read-only variables
+ 13.
+                                                        SREAL
+
+
+
+
+        HIGH-LEVEL LANGUAGE PROGRAMMING
+                                          Variables
+                                                           Returns the real main spindle turning speed in revolutions per minute. It interrupts block preparation.
+                                                                 (P100=SREAL)
+                                                                    It assigns to P100 the real turning speed of the main spindle.
+
+                                                        FTEOS
+
+                                                           It returns the theoretical turning speed of the main spindle.
+
+                                                        SPEED
+
+                                                           Returns, in revolutions per minute, the main spindle speed selected at the CNC.
+
+                                                           This turning speed may be indicated by program, by PLC or by DNC; the CNC selects one of them,
+                                                           the one indicated by DNC has the highest priority and the one indicated by program has the lowest
+                                                           priority.
+
+                                                        DNCS
+
+                                                           Returns the turning speed in revolutions per minute, selected by DNC. If it has a value of 0 it means
+                                                           that it is not selected.
+
+                                                        PLCS
+
+                                                           Returns the turning speed in revolutions per minute selected by PLC. If it has a value of 0 it means
+                                                           that it is not selected.
+
+                                                        PRGS
+
+                                                           Returns the turning speed in revolutions per minute, selected by program.
+
+                                                        SSO
+
+                                                           It returns the turning speed override (%) of the main spindle currently selected at the CNC. It is given
+                                                           in integer values between 0 and "MAXFOVR" (maximum 255).
+
+                                                           This turning speed percentage of the main spindle may be indicated by program, by PLC, by DNC
+                                                           or by the front panel; the CNC selects one of them and the priority (from the highest to the lowest)
+                                                           is: by program, by DNC, by PLC and from the front panel.
+
+                                                        DNCSSO
+
+                                                           It returns the turning speed override % of the main spindle currently selected via DNC. If it has a
+                                                           value of 0 it means that it is not selected.
+
+                                                        PLCSSO
+CNC 8055                                                   It returns the turning speed override % of the main spindle currently selected by PLC. If it has a value
+CNC 8055i                                                  of 0 it means that it is not selected.
+
+                                                        CNCSSO
+
+                                                           It returns the turning speed override % of the main spindle currently selected from the front panel.
+·M· & ·EN· MODELS
+  SOFT: V01.4X
+                                                        SLIMIT
+
+                                                           It returns the value set in rpm at the CNC for the turning speed limit of the main spindle.
+
+
+
+
+     ·354·
+===== PAGE 354 =====
+
+        This limit may be indicated by program, by PLC or by DNC; the CNC selects one of them, the one
+        indicated by DNC has the highest priority and the one indicated by program has the lowest priority.
+
+    DNCSL
+
+        It returns the speed limit of the main spindle in rpm currently selected via DNC. If it has a value of
+        0 it means that it is not selected.
+
+    PLCSL
+
+        It returns the speed limit of the main spindle in rpm currently selected by PLC. If it has a value of
+        0 it means that it is not selected.
+
+    PRGSL
+                                                                                                                                                     13.
+
+
+
+
+                                                                                                                   HIGH-LEVEL LANGUAGE PROGRAMMING
+                                                                                                                                                     Variables
+        It returns the speed limit of the main spindle in rpm currently selected by program.
+
+    MDISL
+
+        Maximum machining spindle speed. This variable is also updated (refreshed) when programming
+        function G92 via MDI.
+
+    POSS
+
+        It returns the real position of the main spindle. Its value may be within ±99999.9999°. It interrupts
+        block preparation.
+
+    RPOSS
+        It returns the real position of the main spindle. Its value is given in 0.0001 degree units (between
+        -360º and 360º). It interrupts block preparation.
+
+    TPOSS
+
+        It returns the theoretical position of the main spindle (real position + lag). Its value may be within
+        ±99999.9999º. It interrupts block preparation.
+
+    RTPOSS
+
+        It returns the theoretical position of the main spindle (real position + lag) in 360º module. Its value
+        may be between 0 and 360º. It interrupts block preparation.
+
+    DRPOS
+
+        Position indicated by the Sercos drive of the main spindle.
+
+    PRGSP
+
+        Position programmed in M19 via program for the main spindle. This variable may be read from the
+        CNC, from the PLC and from DNC.
+
+    FLWES
+
+        It returns the main spindle's following error in degrees (within ±99999.9999). It interrupts block
+        preparation.
+
+    SYNCER
+
+        It returns, in degrees (within ±99999.9999), the following error of the second spindle with respect
+        to the main spindle when they are synchronized in position.
+
+                                                                                                                  CNC 8055
+                                                                                                                  CNC 8055i
+
+
+
+                                                                                                                  ·M· & ·EN· MODELS
+                                                                                                                    SOFT: V01.4X
+
+
+
+
+                                                                                                                                                     ·355·
+===== PAGE 355 =====
+
+                                                        Read-and-write variables
+
+
+                                                      PRGSSO
+
+                                                        This variable may be used to read or modify the speed override percentage of the main spindle
+                                                        currently selected by program. It is given in integer values between 0 and "MAXFOVR" (maximum
+                                                        255). If it has a value of 0 it means that it is not selected.
+                                                            (P110=PRGSSO)
+                                                               It assigns to P110 the % of the main spindle speed selected by program.
+
+ 13.                                                        (PRGSSO=P111)
+                                                               It sets the value indicating the main spindle speed % selected by program to the value
+                                                               of arithmetic parameter P111.
+
+
+
+
+        HIGH-LEVEL LANGUAGE PROGRAMMING
+                                          Variables
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.4X
+
+
+
+
+     ·356·
+===== PAGE 356 =====
+
+13.2.12 Variables associated with the second spindle
+
+        In these variables associated with the spindle, their values are given in revolutions per minute and
+        the 2nd spindle override values are given in integers from 0 to 255.
+
+
+
+        Read-only variables
+
+
+    SSREAL
+
+        Returns the real 2nd spindle turning speed in revolutions per minute.
+                                                                                                                                                    13.
+
+
+
+
+                                                                                                                  HIGH-LEVEL LANGUAGE PROGRAMMING
+                                                                                                                                                    Variables
+              (P100=SSREAL)
+                 It assigns to P100 the real turning speed of the second spindle.
+
+        If this variable is accessed, block preparation is interrupted and the CNC waits for this command
+        to be executed to resume block preparation.
+
+    SFTEOS
+
+        It returns the theoretical turning speed of the second spindle.
+
+    SSPEED
+
+        Returns, in revolutions per minute, the 2nd spindle speed selected at the CNC.
+
+        This turning speed may be indicated by program, by PLC or by DNC; the CNC selects one of them,
+        the one indicated by DNC has the highest priority and the one indicated by program has the lowest
+        priority.
+
+    SDNCS
+
+        Returns the turning speed in revolutions per minute, selected by DNC. If it has a value of 0 it means
+        that it is not selected.
+
+    SPLCS
+
+        Returns the turning speed in revolutions per minute selected by PLC. If it has a value of 0 it means
+        that it is not selected.
+
+    SPRGS
+
+        Returns the turning speed in revolutions per minute, selected by program.
+
+    SSSO
+
+        It returns the turning speed override (%) of the second spindle currently selected at the CNC. It is
+        given in integer values between 0 and "MAXFOVR" (maximum 255).
+
+        This turning speed percentage of the second spindle may be indicated by program, by PLC, by DNC
+        or by the front panel; the CNC selects one of them and the priority (from the highest to the lowest)
+        is: by program, by DNC, by PLC and from the front panel.
+
+    SDNCSO
+
+        It returns the turning speed override % of the second spindle currently selected via DNC. If it has
+        a value of 0 it means that it is not selected.
+
+    SPLCSO
+
+        It returns the turning speed override % of the second spindle currently selected by PLC. If it has a
+                                                                                                                 CNC 8055
+        value of 0 it means that it is not selected.                                                             CNC 8055i
+    SCNCSO
+
+        It returns the turning speed override % of the second spindle currently selected from the front panel.
+                                                                                                                 ·M· & ·EN· MODELS
+                                                                                                                   SOFT: V01.4X
+    SSLIMI
+
+        It returns the value set in rpm at the CNC for the turning speed limit of the second spindle.
+
+
+
+
+                                                                                                                                                    ·357·
+===== PAGE 357 =====
+
+                                                        This limit may be indicated by program, by PLC or by DNC; the CNC selects one of them, the one
+                                                        indicated by DNC has the highest priority and the one indicated by program has the lowest priority.
+
+                                                      SDNCSL
+
+                                                        It returns the speed limit of the second spindle in rpm currently selected via DNC. If it has a value
+                                                        of 0 it means that it is not selected.
+
+                                                      SPLCSL
+
+                                                        It returns the speed limit of the second spindle in rpm currently selected by PLC. If it has a value
+
+ 13.                                                    of 0 it means that it is not selected.
+
+                                                      SPRGSL
+
+
+
+
+        HIGH-LEVEL LANGUAGE PROGRAMMING
+                                          Variables
+                                                        It returns the speed limit of the second spindle in rpm currently selected by program.
+
+                                                      SPOSS
+
+                                                        It returns the real position of the second spindle. Its value may be within ±99999.9999°.
+
+                                                      SRPOSS
+
+                                                        It returns the real position of the second spindle. Its value is given in 0.0001 degree units (between
+                                                        -360º and 360º).
+
+                                                      STPOSS
+
+                                                        It returns the theoretical position of the second spindle (real position + lag). Its value may be within
+                                                        ±99999.9999º.
+
+                                                      SRTPOS
+
+                                                        Returns the second spindle's theoretical position value (real coordinate+ following error) in a 360º
+                                                        module. Its value may be between 0 and 360º.
+
+                                                      SDRPOS
+
+                                                        Position indicated by the Sercos drive of the second spindle.
+
+                                                      SPRGSP
+
+                                                        Position programmed in M19 via program for the second spindle. This variable may be read from
+                                                        the CNC, from the PLC and from DNC.
+
+                                                      SFLWES
+
+                                                        It returns the second spindle's following error in degrees (within ±99999.9999).
+
+                                                        When accessing one of these variables SPOSS, SRPOSS, STPOSS, SRTPOSS or SFLWES, block
+                                                        preparation is interrupted and the CNC waits for that command to be executed before resuming block
+                                                        preparation.
+
+
+
+                                                        Read-and-write variables
+
+
+                                                      SPRGSO
+
+                                                        This variable may be used to read or modify the speed override percentage of the second spindle
+CNC 8055                                                currently selected by program. It is given in integer values between 0 and "MAXFOVR" (maximum
+                                                        255). If it has a value of 0 it means that it is not selected.
+CNC 8055i
+                                                              (P110=SPRGSO)
+                                                                 It assigns to P110 the % of the second spindle speed selected by program.
+                                                              (SPRGSO=P111)
+                                                                 It sets the value indicating the second spindle speed % selected by program to the value
+·M· & ·EN· MODELS                                                of arithmetic parameter P111.
+  SOFT: V01.4X
+
+
+
+
+     ·358·
+===== PAGE 358 =====
+
+13.2.13 Variables associated with the live tool
+
+
+        Read-only variables
+
+
+    ASPROG
+
+        It must be used inside the subroutine associated with function M45.
+
+        It returns the rpm programmed by M45 S. When programming M45 alone, the variable takes the
+        value of "0".                                                                                                                       13.
+
+
+
+
+                                                                                                          HIGH-LEVEL LANGUAGE PROGRAMMING
+                                                                                                                                            Variables
+        The ASPROG variable is updated just before executing the M45 function so it is already updated
+        when executing its associated subroutine.
+
+
+
+
+                                                                                                         CNC 8055
+                                                                                                         CNC 8055i
+
+
+
+                                                                                                         ·M· & ·EN· MODELS
+                                                                                                           SOFT: V01.4X
+
+
+
+
+                                                                                                                                            ·359·
+===== PAGE 359 =====
+
+                                                      13.2.14 PLC related variables
+
+                                                           It should be borne in mind that the PLC has the following resources:
+                                                                (I1 thru I512)         Inputs.
+                                                                (O1 thru O512)         Outputs.
+                                                                M1 thru M5957)         Marks.
+                                                                (R1 thru R499)         32-bit registers.
+
+
+ 13.                                                            (T1 thru T512)
+                                                                (C1 thru C256)
+                                                                                       Timers with a timing count in 32 bits.
+                                                                                       Counters with a count in 32 bits.
+
+
+
+
+        HIGH-LEVEL LANGUAGE PROGRAMMING
+                                          Variables
+                                                           If any variable is accessed which allows the status of a PLC variable to be read or modified
+                                                           (I,O,M,R,T,C), block preparation is interrupted and the CNC waits for this command to be executed
+                                                           in order to restart block preparation.
+
+
+
+                                                           Read-only variables
+
+
+                                                        PLCMSG
+
+                                                           Returns the number of the active PLC message with the highest priority and will coincide with the
+                                                           number displayed on screen (1··128). If there is none, it returns 0.
+                                                                 (P110=PLCMSG)
+                                                                    It assigns to P100 the number of the active PLC message with the highest priority.
+
+
+
+
+                                                           Read-and-write variables
+
+
+                                                        PLCIn
+
+                                                           This variable allows 32 PLC inputs to be read or modified starting with the one indicated (n).
+
+                                                           The value of the inputs which are used by the electrical cabinet cannot be modified as their values
+                                                           are determined by it. Nevertheless, the status of the remaining inputs can be modified.
+
+                                                        PLCOn
+
+                                                           This variable allows 32 PLC outputs to be read or modified starting from the one indicated (n).
+                                                                 (P110=PLCO 22)
+                                                                    It assigns to parameter P110 the value of outputs O22 through O53 (32 outputs) of the
+                                                                    PLC.
+                                                                 (PLCO 22=$F)
+                                                                    It sets outputs O22 through O25 to "1" and outputs O26 through O53 to "0".
+
+                                                                 Bit             31   30   29    28   27   26   25   24   23   22   ...    5    4    3    2    1    0
+
+                                                                                 0    0    0     0    0    0    0    0    0    0    ....   0    0    1    1    1    1
+
+                                                                 Output          53   52   51    50   49   48   47   46   45   44   ....   27   26   25   24   23   22
+
+
+                                                        PLCMn
+
+                                                           This variable allows 32 PLC marks to be read or modified starting from the one indicated (n).
+CNC 8055
+                                                        PLCRn
+CNC 8055i
+                                                           This variable allows the status of 32 register bits to be read or modified starting from the one indicated
+                                                           (n).
+
+·M· & ·EN· MODELS
+                                                        PLCTn
+  SOFT: V01.4X
+                                                           This variable allows the timer count to be read or modified starting from the one indicated (n).
+
+                                                        PLCCn
+
+                                                           This variable allows the counter count to be read or modified starting from the one indicated (n).
+
+
+     ·360·
+===== PAGE 360 =====
+
+    PLCMMn
+
+        This variable permits reading or modifying the PLC mark (n).
+              (PLMM4=1)
+                 It sets mark M4 to ·1· and leaves the rest untouched.
+              (PLCM4=1)
+                 It sets mark M4 to ·1· and the following 31 marks (M5, through M35) to ·0·
+
+
+
+
+                                                                                                                                 13.
+
+
+
+
+                                                                                               HIGH-LEVEL LANGUAGE PROGRAMMING
+                                                                                                                                 Variables
+
+
+
+
+                                                                                              CNC 8055
+                                                                                              CNC 8055i
+
+
+
+                                                                                              ·M· & ·EN· MODELS
+                                                                                                SOFT: V01.4X
+
+
+
+
+                                                                                                                                 ·361·
+===== PAGE 361 =====
+
+                                                      13.2.15 Variables associated with local parameters
+
+                                                           The CNC allows 26 local parameters (P0-P25) to be assigned to a subroutine, by using mnemonics
+                                                           PCALL and MCALL. In addition to performing the required subroutine these mnemonics allow local
+                                                           parameters to be initialized.
+
+
+
+                                                           Read-only variables
+
+
+ 13.                                                    CALLP
+
+                                                           Allows us to know which local parameters have been defined and which have not, in the call to the
+
+
+
+
+        HIGH-LEVEL LANGUAGE PROGRAMMING
+                                          Variables
+                                                           subroutine by means of the PCALL or MCALL mnemonic.
+
+                                                           The information will be given in the 26 least significant bits (bits 0··25), each of these corresponding
+                                                           to the local parameter of the same number; thus bit 12 corresponds to P12.
+
+                                                           Each bit will indicate whether the corresponding local parameter has been defined (=1) or not (0).
+
+                                                                Bit             31    30   29   28   27     26    25    24    23   22     ...         5   4   3   2   1   0
+
+                                                                                0     0    0    0    0      0     *     *     *    *      ...         *   *   *   *   *   *
+
+
+                                                           Example:
+                                                                ;Call to subroutine 20.
+                                                                (PCALL 20, P0=20, P2=3, P3=5)
+                                                                ...
+                                                                ...
+                                                                ;Beginning of subroutine 20.
+                                                                (SUB 20)
+                                                                (P100 = CALLP)
+                                                                ...
+                                                                ...
+
+                                                           In parameter P100 the following will be obtained:
+
+                                                                0000     0000       0000   0000      0000        0000       0000   1101         LSB
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.4X
+
+
+
+
+     ·362·
+===== PAGE 362 =====
+
+13.2.16 Sercos variables
+
+        They are used in the data exchange via Sercos between the CNC and the drives.
+
+
+
+        Read-only variables
+
+
+    TSVAR(X-C)                     TSVARS                         TSSVAR
+
+        It returns the third attribute of the Sercos variable corresponding to the "identifier". The third attribute
+        is used in particular software applications and its information is coded according to the Sercos
+                                                                                                                                                                        13.
+        standard.
+
+
+
+
+                                                                                                                                      HIGH-LEVEL LANGUAGE PROGRAMMING
+                                                                                                                                                                        Variables
+             TSVAR(X-C) Identifier              ... for the axes,
+             TSVARS           Identifier        ... for the main spindle.
+             TSSVAR           Identifier        ... for the second spindle.
+
+              (P110=SVARX 40)
+                 It assigns to parameter P110 the third attribute of the Sercos variable of identifier 40
+                 of the X axis which corresponds to "VelocityFeedback"
+
+
+
+        Write variables
+
+
+    SETGE(X-C)                     SETGES                         SSETGS
+
+        The drive may have up to 8 gear ratios (0 through 7). Sercos identifier 218, GearRatioPreselection.
+
+        I t m ay a l s o h ave u p t o 8 p a r a m e t e r s e t s ( 0 t h r o u g h 7 ) . S e r c o s i d e n t i f i e r 2 1 7 ,
+        ParameterSetPreselection.
+
+        With these variables the work range or gear ratio and the parameter set of each drive may be
+        modified.
+             SETGE(X-C) ... for the axes,
+             SETGES           ... for the main spindle.
+             SSETGS           ... for the second spindle.
+
+        The 4 least significant bits of these variables indicate the gear ratio and the other 4 the parameter
+        set to be selected.
+
+
+
+        Read-and-write variables
+
+
+    SVAR(X-C)                      SVARS                          SSVARS
+
+        They permit reading or modifying the value of the Sercos variable corresponding to the axis identifier.
+             SVAR(X-C)        Identifier        ... for the axes,
+             SVARS            Identifier        ... for the main spindle.
+             SSVARS           Identifier        ... for the second spindle.
+
+
+                                                                                                                                     CNC 8055
+                                                                                                                                     CNC 8055i
+
+
+
+                                                                                                                                     ·M· & ·EN· MODELS
+                                                                                                                                       SOFT: V01.4X
+
+
+
+
+                                                                                                                                                                        ·363·
+===== PAGE 363 =====
+
+                                                      13.2.17 Software & hardware configuration variables
+
+
+                                                           Read-only variables
+
+
+                                                        HARCON
+
+                                                           It indicates, with bits, the CNC's hardware configuration. The bit will be "1" when the relevant
+                                                           configuration is available.
+ 13.                                                       CNC8055 model:
+
+
+
+
+        HIGH-LEVEL LANGUAGE PROGRAMMING
+                                          Variables
+                                                            Bit              Meaning
+
+                                                            4,3,2,1          0000            8055 FL model.
+                                                                             0010            8055 Power model.
+
+                                                            5                Sercos integrated into CPU board.
+
+                                                            6                Sercos module on manager board.
+
+                                                            7                Axes module.
+
+                                                            10,9,8           001             One I/O module.
+                                                                             010             Two I/O modules.
+                                                                             011             Three I/O modules.
+                                                                             100             Four I/O modules.
+
+                                                            14               It has analog video.
+
+                                                            15               It has CAN integrated into the CPU board.
+
+                                                            18,17,16         Keyboard type (technical service department).
+
+                                                            20.19            CPU type (technical service department).
+                                                            23,22,21         1xx             CPU PPC5200.
+
+                                                            26,25,24         000             Color LCD Monitor.
+                                                                             001             Monochrome LCD monitor.
+
+                                                            30               Ethernet connector integrated in the CPU.
+
+                                                            31               Compact flash memory (KeyCF).
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.4X
+
+
+
+
+     ·364·
+===== PAGE 364 =====
+
+        CNC8055i model:
+
+         Bit                      Meaning
+
+         4, 3, 2, 1               0100            8055i FL model.
+                                  0110            8055i Power model.
+
+         5                        Sercos (digital model).
+
+         6                        Reserved.
+
+         9, 8, 7                  000
+                                  001
+                                  010
+                                                  Expansion board missing.
+                                                  "Feedback + I/O" expansion board.
+                                                  Feedback-only expansion board.
+                                                                                                                                                   13.
+                                  011             I/O-only expansion board.
+
+
+
+
+                                                                                                                 HIGH-LEVEL LANGUAGE PROGRAMMING
+                                                                                                                                                   Variables
+                                  101             "Axes 2" board for expansion of "feedback + I/O".
+                                  110             "Axes 2" board for expansion of feedback only.
+                                  111             "Axes 2" board for expansion of I/O only.
+
+         10                       Axis board with 12-bit (=0) or 16-bit (=1) Digital/Analog converter.
+
+         12, 11                   Reserved.
+
+         14, 13                   Reserved.
+
+         15                       It has CAN (digital module).
+
+         18,17,16                 Keyboard type (technical service department).
+
+         20.19                    CPU type (technical service department).
+
+         23,22,21                 1xx             CPU PPC5200.
+
+         26,25,24                 000             Color LCD Monitor.
+                                  001             Monochrome LCD monitor.
+
+         30                       Ethernet..
+
+         31                       Compact flash memory (KeyCF).
+
+
+
+    HARCOA
+
+        It indicates, with bits, the CNC's hardware configuration. The bit will be "1" when the relevant
+        configuration is available.
+
+        CNC8055 model:
+
+         Bit               Meaning
+
+         0                 Axis module 2.
+
+         1                 It has a connector for compact flash.
+
+         10                The axis board is "Axis module SB"
+                           Note: Bit 0 of HARCOA must be set to 0.
+
+        Bit ·1· only indicates whether the hardware has a connector for the compact flash or not, it does not
+        indicate whether the compact flash is inserted or not.
+
+        CNC8055i model:
+
+         Bit               Meaning
+                                                                                                                CNC 8055
+         0                 "Axes 2" board.                                                                      CNC 8055i
+         1                 It has a connector for compact flash.
+
+         10                The axis board is "Axis module SB"
+                           Note: Bit 0 of HARCOA must be set to 0.                                              ·M· & ·EN· MODELS
+                                                                                                                  SOFT: V01.4X
+        Bit ·1· only indicates whether the hardware has a connector for the compact flash or not, it does not
+        indicate whether the compact flash is inserted or not.
+
+
+
+
+                                                                                                                                                   ·365·
+===== PAGE 365 =====
+
+                                                      IDHARH                  IDHARL
+
+                                                        They return, in BCD code, the hardware identification number corresponding to the KeyCF. It is the
+                                                        number appearing on the software diagnosis screen.
+
+                                                        Since the identification number has 12 digits, the IDHARL variable shows the 8 least significant bits
+                                                        and the IDHARH the 4 most significant bits.
+
+                                                        Example:
+
+                                                                                                                         000029AD              IDHART
+
+ 13.                                                                     29ADEE020102
+                                                                                                                         EE020102              IDHARL
+
+
+
+
+        HIGH-LEVEL LANGUAGE PROGRAMMING
+                                          Variables   SOFCON
+
+                                                        They return the software version numbers for the CNC and the hard disk.
+
+                                                        Bits 15-0 return the CNC software version (4 digits)
+
+                                                        Bits 31-16 return the software version of the hard disk (HD) (4 digits)
+
+
+                                                                        ... 31   30   29      ...   18   17    16   15   14   13     ...   2    1   0
+                                                                                                                                                        LSB
+
+
+                                                                                      HD Software                             CNC Software
+
+
+                                                        For example, SOFCON 01010311 indicates:
+
+                                                            Hard disk (HD) software version                                        0101
+
+                                                            CNC software version                                                   0311
+
+
+                                                      HDMEGA
+
+                                                        It returns the size of the hard disk (in megabytes).
+
+                                                      KEYIDE
+
+                                                        Keyboard code, according to the auto-identification system.
+
+                                                               KEYIDE            CUSTOMY (P92)                Keyboard
+
+                                                                   0                   ---                    Keyboard without auto-identification.
+
+                                                                 130                   254                    Mill model keyboard.
+
+                                                                 131                   254                    Lathe model keyboard.
+
+                                                                 132                   254                    Conversational mill model keyboard.
+
+                                                                 133                   254                    Conversational lathe model keyboard.
+
+                                                                 134                   254                    Educational model keyboard.
+
+                                                                 135                   252                    Operator panel: OP.8040/55.ALFA.
+
+                                                                 136                    0                     Operator panel OP.8040/55. MC.
+CNC 8055
+                                                                 137                    0                     Operator panel OP.8040/55. TC.
+CNC 8055i
+                                                                 138                    0                     Operator panel OP.8040/55. MCO/TCO.
+
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.4X
+
+
+
+
+     ·366·
+===== PAGE 366 =====
+
+13.2.18 Variables associated with telediagnosis
+
+
+        Read-only variables
+
+
+    HARSWA                        HARSWB
+
+        They return, in 4 bits, the central unit configuration, a value of "1" if it is present and "0" if not. Logic
+        address (device select) set on each board with the dip-switches (see installation manual).
+
+                  HARSWA                                       HARSWB
+                                                                                                                                                           13.
+
+
+
+
+                                                                                                                         HIGH-LEVEL LANGUAGE PROGRAMMING
+                                                                                                                                                           Variables
+                   Bits           Board                         Bits           Board
+
+                   31 - 28        Large sercos                  31 - 28
+
+                   27 - 24        I/O 4                         27 - 24
+
+                   23 - 20        I/O 3                         23 - 20        Type of CAN at COM1.
+
+                   19 - 16        I/O 2                         19 - 16
+
+                   15 - 12        I/O 1                         15 - 12        0 - CAN board missing.
+                                                                               1 - CAN board in COM1
+                   11- 8          Axes:
+                                                                               2 - CAN board in COM2
+                   7 -4                                                        3 - Board in both COM
+
+                   3 - 0 (LSB)    CPU                           11- 8          Small sercos
+
+                                                                7 -4
+
+                                                                3 - 0 (LSB)    HD
+
+
+        The CPU board must be present in all the configurations and set to "0". In the rest of cases, it returns
+        a "0" if the board is missing.
+
+        There could be a large Sercos card (that takes up the whole module) or the small board that is
+        installed in the CPU module.
+
+        There may be two types of CAN boards (value of ·0001· if it is an SJ1000 type and value of ·0010·
+        if it is an OKI9225 type).
+
+
+
+
+                                                                                                                        CNC 8055
+                                                                                                                        CNC 8055i
+
+
+
+                                                                                                                        ·M· & ·EN· MODELS
+                                                                                                                          SOFT: V01.4X
+
+
+
+
+                                                                                                                                                           ·367·
+===== PAGE 367 =====
+
+                                                      HARTST
+
+                                                        It returns the result of the hardware test. The data comes at the least significant bits with a "1" if it
+                                                        failed and with a "0" if OK or if the relevant board is missing.
+
+                                                                    Bits
+
+                                                                     14       24V test of IO4 module
+
+                                                                     13       Inside temperature
+
+
+
+ 13.                                                                 12
+
+                                                                     11
+                                                                              I/O 3
+
+                                                                              I/O 2
+                                                                                                           (Board voltage)
+
+                                                                                                           (Board voltage)
+
+
+
+
+        HIGH-LEVEL LANGUAGE PROGRAMMING
+                                          Variables
+                                                                     10       I/O 1                        (Board voltage)
+
+                                                                      8       Axes:                        (Board voltage)
+
+                                                                      7       +3.3 V                       (Power supply)
+
+                                                                      6       GND                          (Power supply)
+
+                                                                      5       GNDA                         (Power supply)
+
+                                                                      4       - 15 V                       (Power supply)
+
+                                                                      3       + 15 V                       (Power supply)
+
+                                                                      2       Battery                      (Power supply)
+
+                                                                      1       -5V                          (Power supply)
+
+                                                                   0 (LSB)    +5V                          (Power supply)
+
+
+                                                      MEMTST
+
+                                                        It returns the result of the memory test. Each data uses 4 bits that will be at "1" if the test is OK and
+                                                        will have a value other than "1" if there is an error.
+
+
+                                                                    Bits         Test                         Bits           Test
+
+                                                                    30           Test status                  15 - 12        Sdram
+
+                                                                    ...          ...                          11- 8          HD
+
+                                                                    ...          ...                          7 -4           Flash
+
+                                                                    19 - 16      Caché                        3 - 0 (LSB)    Ram
+
+
+                                                        Bit 30 stays at "1" during the test.
+
+                                                      NODE
+
+                                                        It returns the number of the node used to configure the CNC in the Sercos ring.
+
+                                                      VCHECK
+
+                                                        It returns the checksum of the code for the software version installed. It is the value appearing on
+                                                        the code test.
+
+                                                      IONODE
+
+                                                        It returns in 16 bits the position of the "ADDRESS" switch of the CAN of the I/O. If it is not connected,
+CNC 8055
+                                                        it returns the value 0xFFFF.
+CNC 8055i
+                                                      IOSLOC
+
+                                                        They may be used to read the number of local digital I/O available.
+
+·M· & ·EN· MODELS                                            Bit              Meaning
+  SOFT: V01.4X
+
+                                                             0 - 15           Number of inputs.
+
+                                                             16 - 31          Number of outputs.
+
+
+
+
+     ·368·
+===== PAGE 368 =====
+
+    IOSREM
+
+        They may be used to read the number of remote digital I/O available.
+
+              Bit                 Meaning
+
+              0 - 15              Number of inputs.
+
+              16 - 31             Number of outputs.
+
+
+
+
+                                                                                                                  13.
+
+
+
+
+                                                                                HIGH-LEVEL LANGUAGE PROGRAMMING
+                                                                                                                  Variables
+
+
+
+
+                                                                               CNC 8055
+                                                                               CNC 8055i
+
+
+
+                                                                               ·M· & ·EN· MODELS
+                                                                                 SOFT: V01.4X
+
+
+
+
+                                                                                                                  ·369·
+===== PAGE 369 =====
+
+                                                      13.2.19 Operating-mode related variables
+
+
+                                                           Read-only variables related to the standard mode
+
+
+                                                        OPMODE
+
+                                                           It returns the code corresponding to the selected operating mode.
+
+
+ 13.                                                          0 = Main menu.
+
+
+                                                              10 = Automatic execution.
+
+
+
+
+        HIGH-LEVEL LANGUAGE PROGRAMMING
+                                          Variables
+                                                              11 = Single block execution.
+                                                              12 = MDI in EXECUTION.
+                                                              13 = Tool inspection.
+                                                              14 = Repositioning.
+                                                              15 = Block search executing G.
+                                                              16 = Block search executing G, M, S, T.
+
+
+                                                              20 = Theoretical path simulation.
+                                                              21 = G function simulation.
+                                                              22 = G, M, S and T function simulation.
+                                                              23 = Simulation with movement in the main plane.
+                                                              24 = Simulation with rapid movement.
+                                                              25 = Rapid simulation with S=0.
+
+
+                                                              30 = Normal editing.
+                                                              31 = User editing.
+                                                              32 = TEACH-IN editing.
+                                                              33 = Interactive editor.
+                                                              34 = Profile editor.
+
+
+                                                              40 = Movement in continuous JOG.
+                                                              41 = Movement in incremental JOG.
+                                                              42 = Movement with electronic handwheel.
+                                                              43 = HOME search in JOG.
+                                                              44 = Position preset in JOG.
+                                                              45 = Tool calibration.
+                                                              46 = MDI in JOG.
+                                                              47 = User JOG operation.
+
+
+                                                              50 = Zero offset table.
+                                                              51 = Tool offset table.
+                                                              52 = Tool table.
+CNC 8055
+                                                              53 = Tool magazine table.
+CNC 8055i
+                                                              54 = Global parameter table.
+                                                              55 = Local parameter table.
+                                                              56 = User parameter table.
+·M· & ·EN· MODELS
+  SOFT: V01.4X                                                57 = OEM parameter table.
+
+
+                                                              60 = Utilities.
+
+
+
+
+     ·370·
+===== PAGE 370 =====
+
+             70 = DNC status.
+             71 = CNC status.
+
+
+             80 = PLC file editing.
+             81 = PLC program compilation.
+             82 = PLC monitoring.
+             83 = Active PLC messages.
+             84 = Active PLC pages.
+             85 = Save PLC program.
+             86 = Restore PLC program.
+                                                                                                                           13.
+
+
+
+
+                                                                                         HIGH-LEVEL LANGUAGE PROGRAMMING
+                                                                                                                           Variables
+             87 = PLC usage maps.
+             88 = PLC statistics.
+
+
+             90 = Customizing.
+
+
+             100 = General machine parameter table.
+             101 = Axis machine parameter tables.
+             102 = Spindle machine parameter table.
+             103 = Serial port machine parameter tables.
+             104 = PLC machine parameter table.
+             105 = M function table.
+             106 = Leadscrew error compensation tables and cross compensation tables.
+             107 = Machine parameter table for Ethernet.
+
+
+             110 = Diagnosis: configuration.
+             111 = Diagnosis: hardware test.
+             112 = Diagnosis: RAM memory test.
+             113 = Diagnosis: Flash memory test.
+             114 = User diagnosis.
+             115 = Hard disk diagnosis (HD).
+             116 = Circle geometry test.
+             117 = Oscilloscope.
+             120 = DERGAIN auto-adjustment.
+
+
+
+
+                                                                                        CNC 8055
+                                                                                        CNC 8055i
+
+
+
+                                                                                        ·M· & ·EN· MODELS
+                                                                                          SOFT: V01.4X
+
+
+
+
+                                                                                                                           ·371·
+===== PAGE 371 =====
+
+                                                        Read-only variables related to the conversational mode (MC, MCO)
+                                                        and configurable mode M, ([SHIFT]-[ESC]).
+
+                                                        In these work modes, it is recommended to use variables OPMODA, OPMODB and OPMODC. The
+                                                        OPMODE variable is generic and contains different values to those of the standard mode.
+
+                                                      OPMODE
+
+                                                        It returns the code corresponding to the selected operating mode.
+
+ 13.                                                       0 = CNC starting up.
+                                                           10 = In execution mode.
+
+
+
+
+        HIGH-LEVEL LANGUAGE PROGRAMMING
+                                          Variables
+                                                                    In execution or waiting for the [CYCLE START] key (drawing of the [CYCLE START] on
+                                                                    top).
+                                                           12 = Indicates one of the following situations:
+                                                               - In MDI mode, when pressing the ISO key from the jog mode or tool inspection mode.
+                                                               - One of the following fields of the main screen that admits the START key has been selected:
+                                                               Axes, T, F or S.
+                                                           21 = In graphic simulation mode.
+                                                           30 = Cycle editing.
+                                                           40 = In Jog mode (standard screen).
+                                                           43 = Doing a home search.
+                                                           45 = In tool calibration mode.
+                                                           60 = Managing parts. PPROG mode.
+
+                                                      OPMODA
+
+                                                        Indicates the operating mode currently selected when working with the main channel.
+
+                                                        Use the OPMODE variable to know at any time the selected operating mode (main channel, user
+                                                        channel, PLC channel).
+
+                                                        This information is given at the least significant bits with a "1" when active and with a "0" when not
+                                                        active or when it is not available in the current version.
+                                                           Bit 0          Program in execution.
+                                                           Bit 1          Program in simulation.
+                                                           Bit 2          Block in execution via MDI, JOG.
+                                                           Bit 3          Repositioning in progress.
+                                                           Bit 4          Program interrupted, by CYCLE STOP.
+                                                           Bit 5          MDI, JOG Block interrupted.
+                                                           Bit 6          Repositioning interrupted.
+                                                           Bit 7          In tool inspection.
+                                                           Bit 8          Block in execution via CNCEX1.
+                                                           Bit 9          Block via CNCEX1 interrupted.
+                                                           Bit 10         CNC ready to accept JOG movements: jog, handwheel, teach-in, inspection.
+                                                           Bit 11         CNC ready to receive the CYCLE START command: execution, simulation and
+                                                                          MDI modes.
+                                                           Bit 12         The CNC is not ready to execute anything involving axis or spindle movement.
+CNC 8055
+                                                           Bit 13         It identifies the block search.
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.4X
+
+
+
+
+     ·372·
+===== PAGE 372 =====
+
+    OPMODB
+
+        Indicates the type of simulation currently selected. This information is given at the least significant
+        bits indicating with a "1" the one currently selected.
+             Bit 0            Theoretical path.
+             Bit 1            G functions.
+             Bit 2            G M S T functions.
+             Bit 3            Main plane.
+             Bit 4
+             Bit 5
+                              Rapid.
+                              Rapid (S=0).
+                                                                                                                                                     13.
+
+
+
+
+                                                                                                                   HIGH-LEVEL LANGUAGE PROGRAMMING
+                                                                                                                                                     Variables
+    OPMODC
+
+        Indicates the axes selected by handwheel. This information is given at the least significant bits
+        indicating with a "1" the one currently selected.
+             Bit 0            Axis 1.
+             Bit 1            Axis 2.
+             Bit 2            Axis 3.
+             Bit 3            Axis 4.
+             Bit 4            Axis 5.
+             Bit 5            Axis 6.
+             Bit 6            Axis 7.
+             Bit 7
+             Bit 8
+
+        The axis name corresponds to the number according to the programming order for them.
+
+        Example: If the CNC controls axes X, Y, Z, U, B, C, axis 1=X, axis2=Y, axis3=Z, axis4=U, axis5=B,
+        axis6=C.
+
+
+
+
+                                                                                                                  CNC 8055
+                                                                                                                  CNC 8055i
+
+
+
+                                                                                                                  ·M· & ·EN· MODELS
+                                                                                                                    SOFT: V01.4X
+
+
+
+
+                                                                                                                                                     ·373·
+===== PAGE 373 =====
+
+                                                      13.2.20 Other variables
+
+
+                                                           Read-only variables
+
+
+                                                        NBTOOL
+
+                                                           Indicates the tool number being managed. This variable can only be used within the tool change
+                                                           subroutine.
+ 13.                                                       Example: There is a manual tool changer. Tool T1 is currently selected and the operator requests
+                                                           tool T5.
+
+
+
+
+        HIGH-LEVEL LANGUAGE PROGRAMMING
+                                          Variables
+                                                           The subroutine associated with the tools may contain the following instructions:
+                                                                (P103 = NBTOOL)
+                                                                (MSG "SELECT T?P103 AND PRESS CYCLE START")
+
+                                                           Instruction (P103 = NBTOOL) assigns the number of the tool currently being managed to parameter
+                                                           P103. Therefore, P103=5.
+
+                                                           The message displayed by the CNC will be ""SELECT T5 AND PRESS CYCLE START".
+
+                                                        PRGN
+
+                                                           Returns the program number being executed. Should none be selected, a value of -1 is returned.
+
+                                                        BLKN
+
+                                                           It returns the label number of the last executed block.
+
+                                                        GSn
+                                                           Returns the status of the G function indicated (n). 1 if it is active and 0 if not.
+                                                                (P120=GS17)
+                                                                   It assigns the value 1 to parameter P120 if the G17 function is active and 0 if not.
+
+                                                        MSn
+
+                                                           Returns the status of the M function indicated (n). 1 if it is active and 0 if not.
+
+                                                           These functions are M00, M01, M02, M03, M04, M05, M06, M08, M09, M19, M30, M41, M42, M43,
+                                                           M44 and M45.
+
+                                                        PLANE
+
+                                                           Returns data on the abscissa axis (bits 4 to 7) and the ordinate axis (bits 0 to 3) of the active plane
+                                                           in 32 bits and in binary.
+
+                                                                           ...    ...    ...      ...     ...   ...     7654      3210     lsb
+
+
+
+                                                                                                        Abscissa axis                    Ordinate axis
+
+
+                                                           The axes are coded in 4 bits and indicate the axis number according to the programming order.
+
+                                                           Example: If the CNC controls the X,Y,Z,U,B,C axes and the ZX plane (G18) is selected.
+                                                               (P122 = GS17) assigns value $31 to parameter P122.
+CNC 8055
+CNC 8055i                                                       0000     0000    0000          0000     0000     0000      0011      0001        LSB
+
+                                                               Abscissa axis            = 3 (0011)                    => Axis
+                                                               Ordinate axis            = 1 (0001)                    => X axis
+·M· & ·EN· MODELS
+  SOFT: V01.4X                                          LONGAX
+
+                                                           It returns the number according to the programming order corresponding to the longitudinal axis.
+                                                           This will be the one selected with the G15 function and by default the axis perpendicular to the active
+                                                           plane, if this is XY, ZX or YZ.
+
+
+     ·374·
+===== PAGE 374 =====
+
+        Example:
+
+        If the CNC controls the X, Y, Z, U, B, C axes and the U axis is selected.
+             (P122 = LONGAX) assigns the value 4 to parameter P122.
+
+    MIRROR
+
+        Returns in the least significant bits of the 32-bit group, the status of the mirror image of each axis,
+        1 in the case of being active and 0 if not.
+
+               Bit 8   Bit 7      Bit 6    Bit 5    Bit 4    Bit 3    Bit 2    Bit 1    Bit 0    LSB
+
+                                  Axis 7   Axis 6   Axis 5   Axis 4   Axis 3   Axis 2   Axis 1                                                       13.
+
+
+
+
+                                                                                                                   HIGH-LEVEL LANGUAGE PROGRAMMING
+                                                                                                                                                     Variables
+        The axis name corresponds to the number according to the programming order for them.
+
+        Example: If the CNC controls axes X, Y, Z, U, B, C, axis 1=X, axis2=Y, axis3=Z, axis4=U, axis5=B,
+        axis6=C.
+
+    SCALE
+
+        It returns the general scaling factor being applied.
+
+    SCALE(X-C)
+
+        Returns the specific scaling factor of the indicated axis (X-C).
+
+    ORGROT
+
+        It returns the rotation angle of the coordinate system currently selected with G73. Its value is given
+        in degrees (within ±99999.9999).
+
+    ROTPF
+
+        Returns the abscissa value of the rotation center with respect to the Cartesian coordinate origin.
+        It is given in the active units:
+             If G70, in inches (within ±3937.00787).
+             If G71, in millimeters (within ±99999.9999).
+
+    ROTPS
+
+        Returns the ordinate value of the rotation center with respect to the Cartesian coordinate origin. It
+        is given in the active units:
+             If G70, in inches (within ±3937.00787).
+             If G71, in millimeters (within ±99999.9999).
+
+    PRBST
+
+        Returns probe status.
+             0 = the probe is not touching the part.
+             1 = the probe is touching the part.
+
+        If this variable is accessed, block preparation is interrupted and the CNC waits for this command
+        to be executed to resume block preparation.
+
+    CLOCK
+
+        Returns the time in seconds indicated by the system clock. Possible values 0..4294967295.
+
+        If this variable is accessed, block preparation is interrupted and the CNC waits for this command         CNC 8055
+        to be executed to resume block preparation.                                                               CNC 8055i
+    TIME
+
+        Returns the time in hours-minutes-seconds format.
+              (P150=TIME)                                                                                         ·M· & ·EN· MODELS
+                                                                                                                    SOFT: V01.4X
+                 Loads P150 with hh-mm-ss. For example if the time is: 34sec. P150 = 182234.
+
+        If this variable is accessed, block preparation is interrupted and the CNC waits for this command
+        to be executed to resume block preparation.
+
+
+
+                                                                                                                                                     ·375·
+===== PAGE 375 =====
+
+                                                      DATE
+
+                                                        Returns the date in year-month-day format.
+                                                              (P151=DATE)
+                                                                 It assigns to P151 the year-month-day. For example if the date is April 25th 1992, P151
+                                                                 = 920425.
+
+                                                        If this variable is accessed, block preparation is interrupted and the CNC waits for this command
+                                                        to be executed to resume block preparation.
+
+
+ 13.                                                  CYTIME
+
+                                                        It returns the amount of time (in hundredths of a second) elapsed executing the part. It ignores the
+                                                        time the execution has been interrupted. Possible values 0..4294967295.
+
+
+
+
+        HIGH-LEVEL LANGUAGE PROGRAMMING
+                                          Variables
+                                                        If this variable is accessed, block preparation is interrupted and the CNC waits for this command
+                                                        to be executed to resume block preparation.
+
+                                                      FIRST
+
+                                                        Indicates whether it is the first time that a program has been run or not. It returns a value of 1 if it
+                                                        is the first time and 0 if not.
+
+                                                        A first-time execution is considered as being one which is done:
+                                                          • After turning on the CNC.
+                                                          • After pressing [SHIFT]+[RESET].
+                                                          • Every time a new program is selected.
+
+                                                      ANAIn
+
+                                                        It returns the status of the indicated analog input (n). The value given in Volts and in ±1.4 format.
+                                                          • At the –Axes– module, it is possible to select one of the 8 analog inputs (1··8) available. The
+                                                            values returned will be within the ±5 V range.
+                                                          • At the –Vpp Axes– module, it is possible to select one of the 4 analog inputs (1··4) available.
+                                                            The returned values will be either within the ±5 V or ±10 V range depending on how the analog
+                                                            inputs have been set.
+
+                                                        If this variable is accessed, block preparation is interrupted and the CNC waits for this command
+                                                        to be executed to resume block preparation.
+
+                                                      AXICOM
+
+                                                        It returns in the 3 least significant bits the axis pairs switched with function G28.
+
+                                                                                  Pair 3            Pair 2              Pair 1
+
+                                                                              Axis 2   Axis 1   Axis 2   Axis 1   Axis 2    Axis 1   LSB
+
+                                                        The axes are coded in 4 bits and indicate the axis number (1 to 7) according to their programming
+                                                        order.
+
+                                                        If the CNC controls the X, Y, Z, B, C axes and G28BC has been programmed, the AXICOM variable
+                                                        will show:
+
+                                                                                  Pair 3            Pair 2              Pair 1
+
+                                                                                                                    C            B
+
+                                                                              0000     0000     0000     0000     0101      0100     LSB
+CNC 8055
+                                                      TANGAN
+CNC 8055i
+                                                        Variable associated with the tangential control function, G45. It indicates the programmed angular
+                                                        position.
+
+·M· & ·EN· MODELS                                     TPIOUT(X-C)
+  SOFT: V01.4X
+                                                        Output of the PI of the tandem master axis in rpm.
+
+
+
+
+     ·376·
+===== PAGE 376 =====
+
+    TIMEG
+
+        It shows the timing status of the timer programmed with G4 K in the CNC channel. This variable,
+        returns the time remaining to end the timing block in hundredths of a second.
+
+    TIPPRB
+
+        It indicates the PROBE cycle being executed at the CNC.
+
+        If PROBE1 is running, the TPPRB variable takes the value of 1, if PROBE2 is running, it takes the
+        value of 2, etc. if PROBE12 is running, it takes the value of 12.
+
+    TIPDIG                                                                                                                                            13.
+        It indicates the DIGIT cycle being executed at the CNC.
+
+
+
+
+                                                                                                                    HIGH-LEVEL LANGUAGE PROGRAMMING
+    PANEDI                                                                                                                                            Variables
+        WINDRAW55 application. Number of the screen created by the user or the manufacturer and is
+        being consulted.
+
+    DATEDI
+
+        WINDRAW55 application. Number of the element (item) being consulted.
+
+    RIP
+
+        Linear theoretical feedrate resulting from the next loop (in mm/min).
+        The calculation of the resulting feedrate ignores the rotary axes, slave axes (gantry, coupled and
+        synchronized) as well as DRO axes.
+
+    TEMPIn
+
+        It returns the temperature in tenths of a degree detected by the PT100. It is possible to select one
+        of the 4 temperature inputs (1··4) available.
+
+
+
+        Read-and-write variables
+
+
+    TIMER
+
+        This variable allows reading or modifying the time, in seconds, indicated by the clock enabled by
+        the PLC. Possible values 0..4294967295.
+
+        If this variable is accessed, block preparation is interrupted and the CNC waits for this command
+        to be executed to resume block preparation.
+
+    PARTC
+
+        The CNC has a part counter whose count increases, in all modes except simulation, every time M30
+        or M02 is executed and this variable allows its value to be read or modified. This value will be between
+        0 and 4294967295
+
+        If this variable is accessed, block preparation is interrupted and the CNC waits for this command
+        to be executed to resume block preparation.
+
+    KEY
+
+        Returns the code of the last key accepted.
+
+        This variable may be used as a write variable only inside a customizing program (user channel).
+                                                                                                                   CNC 8055
+                                                                                                                   CNC 8055i
+        If this variable is accessed, block preparation is interrupted and the CNC waits for this command
+        to be executed to resume block preparation.
+
+    KEYSRC
+                                                                                                                   ·M· & ·EN· MODELS
+        This variable allows reading or modifying the source of keystrokes, possible values being:                   SOFT: V01.4X
+
+             0 = Keyboard.
+             1 = PLC.
+             2 = DNC.
+
+
+                                                                                                                                                      ·377·
+===== PAGE 377 =====
+
+                                                        The CNC only allows modification of this variable if this is at 0.
+
+                                                      ANAOn
+
+                                                        This variable allows the required analog output (n) to be read or modified. The value assigned will
+                                                        be expressed in volts and in the ±2.4 format (±10 V).
+
+                                                        The analog outputs which are free among the eight (1 through 8) available at the CNC may be
+                                                        modified, the corresponding error being displayed if an attempt is made to write in one which is
+                                                        occupied.
+
+
+ 13.                                                    If this variable is accessed, block preparation is interrupted and the CNC waits for this command
+                                                        to be executed to resume block preparation.
+
+
+
+
+        HIGH-LEVEL LANGUAGE PROGRAMMING
+                                          Variables
+                                                      SELPRO
+
+                                                        When having two probe inputs, it allows selecting the active input.
+
+                                                        On power-up, it assumes the value of ·1· thus selecting the first probe input. To select the second
+                                                        probe input, set it to a value of ·2·.
+
+                                                        Accessing this variable from the CNC interrupts block preparation.
+
+                                                      DIAM
+
+                                                        It changes the programming mode for X axis coordinates between radius and diameter. When
+                                                        changing the value of this variable, the CNC assumes the new way to program the following blocks.
+
+                                                        When the variable is set to ·1·, the programmed coordinates are assumed in diameter; when is set
+                                                        to ·0·, the programmed coordinates are assumed in radius.
+
+                                                        This variable affects the display of the real value of the X axis in the coordinate system of the part
+                                                        and the reading of variables PPOSX, TPOSX and POSX.
+
+                                                        On power-up, after executing an M02 or M30 and after an emergency or a reset, the variable is
+                                                        initialized according to the value of the DFORMAT parameter of the X axis. If this parameter has
+                                                        a value equal to or greater than 4, the variable takes a value of 1; otherwise, it takes the value of ·0·.
+
+                                                      PRBMOD
+
+                                                        It indicates whether a probing error is to issued or not in the following cases, even if general machine
+                                                        parameter PROBERR (P119) =YES.
+                                                         • When a G75 probing move finishes before the probe has touched part.
+                                                         • When a G76 probing move finishes but the probe is still touching the part.
+
+                                                        The PRBMOD variable takes the following values.
+
+                                                                Value       Meaning
+
+                                                                   0        An error message is issued.
+
+                                                                   1        No error message is issued.
+
+                                                                                                                                                 Default value 0.
+
+                                                        The PRBMOD variable can be read and written from the CNC and the PLC an read from the DNC.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.4X
+
+
+
+
+     ·378·
+===== PAGE 378 =====
+
+13.3         Constants
+
+        Constants are defined as being all those fixed values which cannot be altered by a program. The
+        following are considered as constants:
+          • Numbers expressed in the decimal system.
+          • Hexadecimal numbers.
+          • PI constant.
+          • Read-only tables and variables as their value cannot be altered with a program.
+
+                                                                                                                                             13.
+
+
+
+
+                                                                                                           HIGH-LEVEL LANGUAGE PROGRAMMING
+                                                                                                                                             Constants
+
+
+
+
+                                                                                                          CNC 8055
+                                                                                                          CNC 8055i
+
+
+
+                                                                                                          ·M· & ·EN· MODELS
+                                                                                                            SOFT: V01.4X
+
+
+
+
+                                                                                                                                             ·379·
+===== PAGE 379 =====
+
+                                                      13.4      Operators
+
+                                                             An operator is a symbol that indicates the mathematical or logic operations to carry out. The CNC
+                                                             has arithmetic, relational, logic, binary, trigonometric operators and special operators.
+
+                                                             Arithmetic operators.
+
+                                                                 +             add.                                        P1=3 + 4            P1=7
+
+                                                                     -         subtraction, also a negative value.         P2=5 - 2            P2=3
+ 13.                                                                                                                       P3= -(2 * 3)        P3=-6
+
+                                                                 *             multiplication.                             P4=2 * 3            P4=6
+
+
+
+
+        HIGH-LEVEL LANGUAGE PROGRAMMING
+                                          Operators
+                                                                 /             division.                                   P5=9 / 2            P5=4.5
+
+                                                                 MOD           Module or remainder of the division.        P6=7 MOD 4          P6=3
+
+                                                                 EXP           exponential.                                P7=2 EXP 3          P7=8
+
+
+                                                             Relational operators.
+
+                                                                 EQ            equal.
+
+                                                                 NE            different.
+
+                                                                 GT            greater than.
+
+                                                                 GE            greater than or equal to.
+
+                                                                 LT            Less than.
+
+                                                                 LE            Less than or equal to.
+
+
+                                                             Logic and binary operators.
+                                                             NOT, OR, AND, XOR: The act as logic operators between conditions and as binary operators
+                                                             between variables and constants.
+                                                                IF (FIRST AND GS1 EQ 1) GOTO N100
+                                                                P5 = (P1 AND (NOT P2 OR P3))
+
+                                                             Trigonometric functions.
+
+                                                                 SIN           sine.                                       P1=SIN 30          P1=0.5
+
+                                                                 COS           cosine.                                     P2=COS 30          P2=0.8660
+
+                                                                 TAN           tangent.                                    P3=TAN 30          P3=0.5773
+
+                                                                 ASIN          arc sine.                                   P4=ASIN 1          P4=90
+
+                                                                 ACOS          arc cosine.                                 P5=ACOS 1          P5=0
+
+                                                                 ATAN          arc tangent.                                P6=ATAN 1          P6=45
+
+                                                                 ARG           ARG(x,y) arctangent y/x.                    P7=ARG(-1,-2)      P7=243.4349
+
+                                                             There are two functions for calculating the arc tangent ATAN which returns the result between ±90°
+CNC 8055                                                     and ARG given between 0 and 360°.
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.4X
+
+
+
+
+     ·380·
+===== PAGE 380 =====
+
+        Other functions.
+
+             ABS                  absolute value.                        P1=ABS -8             P1=8
+
+             LOG                  decimal logarithm.                     P2=LOG 100            P2=2
+
+             SQRT                 square root.                           P3=SQRT 16            P3=4
+
+             ROUND                rounding up an integer number.         P4=ROUND 5.83         P4=6
+
+             FIX                  Integer.                               P5=FIX 5.423          P5=5
+
+             FUP                  if integer takes integer.
+                                  if not, takes entire part + 1.
+                                                                         P6=FUP 7
+                                                                         P6=FUP 5,423
+                                                                                               P6=7
+                                                                                               P6=6
+                                                                                                                                                  13.
+
+
+
+
+                                                                                                                HIGH-LEVEL LANGUAGE PROGRAMMING
+                                                                                                                                                  Operators
+             BCD                  converts given number to BCD.          P7=BCD 234            P7=564
+
+
+                                                                                        0010   0011     0100
+
+
+             BIN                  converts given number to binary.       P8=BIN $AB            P8=171
+
+
+                                                                                               1010     1011
+
+        Conversions to binary and BCD are made in 32 bits, it being possible to represent the number 156
+        in the following formats:
+             Decimal                      156
+             Hexadecimal                  9C
+             Binary                       0000 0000 0000 0000 0000 0000 1001 1100
+             BCD                          0000 0000 0000 0000 0000 0001 0101 0110
+
+
+
+
+                                                                                                               CNC 8055
+                                                                                                               CNC 8055i
+
+
+
+                                                                                                               ·M· & ·EN· MODELS
+                                                                                                                 SOFT: V01.4X
+
+
+
+
+                                                                                                                                                  ·381·
+===== PAGE 381 =====
+
+                                                        13.5      Expressions
+
+                                                               An expression is any valid combination of operators, constants, parameters and variables.
+
+                                                               All expressions must be placed between brackets, but if the expression is reduced to an integer,
+                                                               the brackets can be removed.
+
+                                                        13.5.1    Arithmetic expressions
+
+
+ 13.                                                           These are formed by combining functions and arithmetic, binary and trigonometric operators with
+                                                               the constants and variables of the language.
+
+                                                               The priorities of the operators and the way they can be associated determine how these expressions
+
+
+
+
+        HIGH-LEVEL LANGUAGE PROGRAMMING
+                                          Expressions
+                                                               are calculated:
+
+                                                                   Priority from highest to lowest                   To be associated
+
+                                                                   NOT, functions, - (negative)                      from right to left.
+
+                                                                   EXP, MOD                                          from left to right.
+
+                                                                   *,/                                               from left to right.
+
+                                                                   +,- (add, subtract)                               from left to right.
+
+                                                                   Relational operators                              from left to right.
+
+                                                                   AND, XOR                                          from left to right.
+
+                                                                   OR                                                from left to right.
+
+                                                               Brackets should be used in order to clarify the order in which the expression is to be evaluated.
+                                                                  (P3 = P4/P5 - P6 * P7 - P8/P9 )
+                                                                  (P3 = (P4/P5)-(P6 * P7)-(P8/P9))
+
+                                                               Using redundant or additional brackets will neither cause errors nor slow down the execution.
+
+                                                               In functions, brackets must be used except when these are applied to a numerical constant, in which
+                                                               case they are optional.
+                                                                  (SIN 45) (SIN (45))      they're both valid and equivalent.
+                                                                  (SIN 10+5)               the same as ((SIN 10)+5).
+
+                                                               Expressions can be used also to reference parameters and tables:
+                                                                  (P100 = P9)
+                                                                  (P100 = P(P7))
+                                                                  (P100 = P(P8 + SIN(P8 * 20)))
+                                                                  (P100 = ORGX 55)
+                                                                  (P100 = ORGX (12+P9))
+                                                                  (PLCM5008 = PLCM5008 OR 1)
+                                                                     ; Selects single block execution mode (M5008=1)
+                                                                  (PLCM5010 = PLCM5010 AND $FFFFFFFE)
+                                                                     ; Frees feedrate override (M5010=0)
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.4X
+
+
+
+
+     ·382·
+===== PAGE 382 =====
+
+13.5.2       Relational expressions
+
+        These are arithmetic expressions joined by relational operators.
+             (IF (P8 EQ 12.8)
+                 ; It checks if the value of P8 is equal to 12.8.
+             (IF (ABS(SIN(P24)) GT SPEED)
+                 ;Analyzes if the sine is greater than the spindle speed.
+             (IF (CLOCK LT (P9 * 10.99))
+                 ; Analyzes if the clock count is less than (P9 * 10.99)
+
+
+        At the same time these conditions can be joined by means of logic operators.                                             13.
+             (IF ((P8 EQ 12.8) OR (ABS(SIN(P24)) GT SPEED)) AND (CLOCK LT (P9 * 10.99)) ...
+
+
+
+
+                                                                                               HIGH-LEVEL LANGUAGE PROGRAMMING
+                                                                                                                                 Expressions
+        The result of these expressions is either true or false.
+
+
+
+
+                                                                                              CNC 8055
+                                                                                              CNC 8055i
+
+
+
+                                                                                              ·M· & ·EN· MODELS
+                                                                                                SOFT: V01.4X
+
+
+
+
+                                                                                                                                 ·383·
+===== PAGE 383 =====
+
+
+
+
+ 13.
+
+
+
+
+        HIGH-LEVEL LANGUAGE PROGRAMMING
+                                          Expressions
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.4X
+
+
+
+
+     ·384·
+===== PAGE 384 =====
+INSTRUCTIONS
+
+                                                                          14
+  The control instructions available to high-level programming can be grouped as follows:
+   • Assignment instructions.
+   • Display instructions.
+   • Enable-disable instructions.
+   • Flow control instructions.
+   • Subroutine instructions.
+   • Probe related instructions.
+   • Interruption-subroutine instructions.
+   • Program instructions.
+   • Kinematics related instructions.
+   • Screen customizing instructions.
+
+  Only one instruction can be programmed in each block, and no other additional information may
+  be programmed in this block.
+
+
+
+
+                                                                                                  CNC 8055
+                                                                                                  CNC 8055i
+
+
+
+                                                                                                  ·M· & ·EN· MODELS
+                                                                                                    SOFT: V01.6X
+
+
+
+
+                                                                                                       ·385·

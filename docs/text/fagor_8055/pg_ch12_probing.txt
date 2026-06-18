@@ -1,0 +1,2915 @@
+===== PAGE 281 =====
+
+                                       12.1      Probing (G75, G76)
+
+                                              The G75 function allows movements to be programmed that will end after the CNC receives the
+                                              signal from the measuring probe used.
+
+                                              The G76 function allows movements to be programmed that will end after the CNC no longer
+                                              receives the signal from the measuring probe used.
+
+                                              Their definition format is:
+                                                 G75 X..C ±5.5
+
+ 12.                                             G76 X..C ±5.5
+
+                                              After G75 or G76, the required axis or axes will be programmed, as well as the coordinates of these
+
+
+
+        PROBING
+
+
+                  Probing (G75, G76)
+                                              axes that will define the end point of the programmed movement.
+
+                                              The machine will move according to the programmed path until it receives the signal from the probe
+                                              (G75) or until it no longer receives the probe signal (G76). At this time, the CNC will consider the
+                                              block finished, taking as the theoretical position of the axes the real position they have at that time.
+
+                                              If the axes reach the programmed position before receiving or while receiving the external signal
+                                              from the probe, the CNC will stop the movement of the axes.
+
+                                              This type of movement with probing blocks are very useful when it is required to generate
+                                              measurement or verification programs for tools and parts.
+
+                                              Functions G75 and G76 are not modal and, therefore, must be programmed whenever it is wished
+                                              to probe.
+                                              Functions G75 and G76 are incompatible with each other and with G00, G02, G03, G33, G34, G41
+                                              and G42 functions. In addition, once this has been performed, the CNC will assume functions G01
+                                              and G40.
+
+                                              During G75 or G76 moves, the operation of the feedrate override switch depends on the setting of
+                                              OEM machine parameter FOVRG75.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·282·
+===== PAGE 282 =====
+
+12.2         Probing canned cycles
+
+        The CNC offers the following probing canned cycles:
+          • Tool calibration canned cycle.
+          • Probe calibrating canned cycle.
+          • Surface measuring canned cycle.
+          • Outside corner measuring canned cycle.
+          • Inside corner measuring canned cycle.
+          • Angle measuring canned cycle.
+          • Corner and angle measuring canned cycle.
+                                                                                                                            12.
+
+                                                                                                                            Probing canned cycles
+                                                                                                                  PROBING
+          • Hole measuring canned cycle.
+          • Boss measuring canned cycle.
+          • Rectangular part centering canned cycle.
+          • Circular part centering canned cycle.
+          • Tabletop probe calibrating canned cycle.
+
+        All the movements of these probing canned cycles will be performed in the X, Y, Z axes and the work
+        plane must be formed by 2 of these axes (XY, XZ, YZ, YX, ZX, ZY). The other axis must be
+        perpendicular and it must be selected as the longitudinal axis.
+
+        Canned cycles will be programmed by means of the high level mnemonic, PROBE, which has the
+        following programming format:
+             (PROBE (expression), (assignment instruction),...)
+
+        This instruction PROBE calls the probing cycle indicated by means of a number or any expression
+        which results in a number. Besides, it allows the parameters of this cycle to be initialized with the
+        values required to perform it, by means of assignment instructions.
+
+        Some general points to consider
+        Probing canned cycles are not modal, and therefore must be programmed whenever it is required
+        to perform any of them.
+
+        The probes used in the performance of these cycles are:
+          • Probe placed on a fixed position on the machine, used for calibrating tools.
+          • Probe placed in the spindle, will be treated as a tool and will be used in the different measuring
+            cycles.
+
+        The execution of a probing canned cycle does not alter the history of previous "G" functions, except
+        for the radius compensation functions G41 and G42.
+
+
+
+
+                                                                                                                 CNC 8055
+                                                                                                                 CNC 8055i
+
+
+
+                                                                                                                 ·M· & ·EN· MODELS
+                                                                                                                   SOFT: V01.6X
+
+
+
+
+                                                                                                                            ·283·
+===== PAGE 283 =====
+
+                                                                  12.3      PROBE 1. Tool length calibrating canned cycle
+
+                                                                         This is used to calibrate the length and radius of the selected tool. The following operations are
+                                                                         possible with this cycle.
+                                                                          • Calibrate the length of a tool.
+                                                                          • Calibrate the radius of a tool.
+                                                                          • To calibrate the tool radius and length.
+                                                                          • Measure the length wear of a tool.
+
+ 12.                                                                      • Measure the radius wear of a tool.
+                                                                          • Measure the radius wear and length wear of a tool.
+
+
+
+
+                  PROBE 1. Tool length calibrating canned cycle
+        PROBING
+                                                                         To perform this cycle it is necessary to have a table-top probe, installed in a fixed position on the
+                                                                         machine and with its faces parallel to axes X, Y, Z. Its position will be indicated in absolute
+                                                                         coordinates with respect to machine zero by means of the general machine parameters:
+                                                                            PRBXMIN         Indicates the minimum coordinate occupied by the probe along the X axis.
+                                                                            PRBXMAX         Indicates the maximum coordinate occupied by the probe along the X axis.
+                                                                            PRBYMIN         Indicates the minimum coordinate occupied by the probe along the Y axis.
+                                                                            PRBYMAX         Indicates the maximum coordinate occupied by the probe along the Y axis.
+                                                                            PRBZMIN         Indicates the minimum coordinate occupied by the probe along the Z axis.
+                                                                            PRBZMAX         Indicates the maximum coordinate occupied by the probe along the Z axis.
+
+
+
+
+                                                                         If it is the first time that the tool length has been calibrated, it is advisable to include an approximate
+                                                                         value of its length (L) in the tool offset table.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·284·
+===== PAGE 284 =====
+
+        Programming format
+
+        The programming format for this cycle is.
+             (PROBE 1, B, I, F, J, K, L, C, D, E, S, M, C, N, X, U, Y, V, Z, W)
+
+        Certain parameters are only relevant in certain type of measurement. Later sections describe the
+        various options of this cycle and the parameters to be set in each one.
+
+        Parameters X, U, Y, V, Z, W.
+        Define the probe position. They are optional parameters that usually need not be defined. In certain
+        machines, due to lack of repeatability in the mechanical positioning of the probe, the probe must
+                                                                                                                              12.
+
+
+
+
+                                                                                                                              PROBE 1. Tool length calibrating canned cycle
+        be calibrated again before each calibration.
+
+                                                                                                                    PROBING
+        Instead of redefining machine parameters PRBXMIN, PRBXMAX, PRBYMIN, PRBYMAX,
+        PRBZMAX, PRBZMIN every time the probe is calibrated, those coordinates may be indicated in
+        parameters X, U, Y, V, Z, W, respectively.
+
+        The CNC does not modify the machine parameters. The CNC only takes into account the
+        coordinates indicated in X, U, Y, V, Z, W during this calibration. If any of the X, U, Y, V, Z, W fields
+        is left out, the CNC takes the value assigned to the corresponding machine parameter.
+
+
+
+
+                                                                                                                   CNC 8055
+                                                                                                                   CNC 8055i
+
+
+
+                                                                                                                   ·M· & ·EN· MODELS
+                                                                                                                     SOFT: V01.6X
+
+
+
+
+                                                                                                                              ·285·
+===== PAGE 285 =====
+
+                                                                  12.3.1     Calibrate the length or measure the length wear of a tool.
+
+                                                                       The type of operation (calibration or measurement) is selected when calling the cycle.
+
+                                                                       The calibration or measurement may be done on the tool shaft or on its tip. It is selected when calling
+                                                                       the canned cycle.
+
+                                                                       The programming format depends on the operation to carry out:
+                                                                           • Tool length calibration along its shaft.
+                                                                             (PROBE 1, B, I0, F, J0, X, U, Y, V, Z, W)
+
+ 12.                                                                       • Tool length calibration at its tip.
+                                                                             (PROBE 1, B, I1, F, J0, D, S, N, X, U, Y, V, Z, W)
+
+
+
+
+                  PROBE 1. Tool length calibrating canned cycle
+        PROBING
+                                                                           • Measurement of the tool length wear along its shaft.
+                                                                             (PROBE 1, B, I0, F, J1, L, C, X, U, Y, V, Z, W)
+                                                                           • Measurement of the tool length wear at its tip.
+                                                                             (PROBE 1, B, I1, F, J1, L, D, S, C, N, X, U, Y, V, Z, W)
+
+                                                                    [ B5.5 ] Safety distance
+
+                                                                       It must be programmed with a positive value greater than 0.
+
+                                                                    [ I ] Type of calibration or wear measurement
+
+                                                                       The calibration may be done on the tool shaft or on its tip.
+                                                                             I=0             Calibration of the tool length or measurement of the tool length wear along its
+                                                                                             shaft.
+                                                                             I=1             Calibration of the tool length or measurement of the tool length wear on its tip.
+
+                                                                       If not programmed, the cycle will assume the IO value.
+
+                                                                                                 I = 0. Tool calibration along its shaft.
+
+                                                                                                 It is useful for drilling tools, ball end-mills, or tools whose diameter is smaller
+                                                                                                 than the probe's probing surface.
+
+                                                                                                 This type of calibration is carried out with the spindle stopped.
+
+
+
+
+                                                                                                 I = 1. Tool calibration at its tip.
+                                                                                                 It is useful for calibrating tools with several cutting edges (end-mills), or tools
+                                                                                                 whose diameter is larger than the probe's probing surface.
+
+                                                                                                 This type of calibration may be carried out either with the spindle stopped or
+                                                                                                 turning in the opposite direction to the cutting direction.
+
+
+
+
+                                                                    [ F5.5 ] Probing feedrate
+
+                                                                       It sets the probing feedrate. It must be programmed in mm/minute or inches/minute.
+
+                                                                    [ J ] Type of operation
+CNC 8055                                                               The calibration may be done on the tool shaft or on its tip.
+CNC 8055i                                                                    J=0             Tool calibration.
+                                                                             J=1             Wear measurement.
+
+                                                                    [ L5.5 ] Maximum length wear allowed
+·M· & ·EN· MODELS
+  SOFT: V01.6X                                                         When set to 0, the tool is not rejected due to length wear. The tool is rejected when measuring a
+                                                                       wear greater than the one defined.
+
+                                                                       Only if J1 has been defined and tool life monitoring is being used. If not programmed, the canned
+                                                                       cycle will assume the L0 value.
+
+
+     ·286·
+===== PAGE 286 =====
+
+    [ D5.5 ] Distance from the tool shaft to the probing point
+
+        It sets the radius or distance referred to the tool shaft being probed.
+
+        If not defined, probing is carried out on the tool tip.
+
+    [ S±5.5 ] Speed and turning direction of the tool
+
+        To probe with the spindle running, the tool must be turning in the opposite direction to the cutting
+        direction.
+          • When set to 0, probing is carried out with the spindle stopped.
+          • When set with a positive value, the spindle starts in M3.
+          • When set with a negative value, the spindle starts in M4.
+                                                                                                                          12.
+
+
+
+
+                                                                                                                          PROBE 1. Tool length calibrating canned cycle
+                                                                                                                PROBING
+    [ C ] Behavior when exceeding the amount of wear allowed
+
+        Only if "L" has been set to other than zero.
+             C=0              It interrupts the execution for the user to select another tool.
+             C=1              The cycle replaces the tool with another one of the same family.
+
+        If not programmed, the cycle will assume the C0 value.
+
+    [ N ] Number of edges to measure
+
+        When set to zero, it only takes one measurement. If not programmed, the cycle will assume the N0
+        value.
+        To measure each cutting edge when the spindle has feedback and s.m.p. M19TYPE (P43) =1.
+
+    [ X U Y V Z W ] Probe position
+
+        Optional parameters. See "Programming format" on page 285.
+
+
+
+
+                                                                                                               CNC 8055
+                                                                                                               CNC 8055i
+
+
+
+                                                                                                               ·M· & ·EN· MODELS
+                                                                                                                 SOFT: V01.6X
+
+
+
+
+                                                                                                                          ·287·
+===== PAGE 287 =====
+
+                                                                  Actions after finishing the cycle
+
+
+                                                                  Once the calibration cycle has ended
+                                                                  It updates global arithmetic parameter P299 and assigns the measured length to the tool offset
+                                                                  selected in the tool offset table.
+                                                                     P299          "measured length" - "previous length (L+K)".
+                                                                     L             Measured length.
+
+ 12.                                                                 K             0.
+
+                                                                  Once the wear measuring cycle has ended
+
+
+
+
+                  PROBE 1. Tool length calibrating canned cycle
+        PROBING
+                                                                   • When using tool live monitoring.
+                                                                     In this case, it compares the measured value with the theoretical length assigned in the table.
+                                                                     If the maximum allowed is exceeded, it issues a "tool rejected" message and acts as follows:
+
+                                                                         C0     It interrupts the execution for the user to select another tool.
+
+                                                                         C1     The cycle replaces the tool with another one of the same family. It sets the "rejected
+                                                                                tool" indicator (Status = R) It activates the general logic output PRTREJEC (M5564).
+
+                                                                   • If tool life monitoring is not available or the measuring difference does not exceed the maximum
+                                                                     allowed.
+                                                                     In this case, it updates global arithmetic parameter P299 and the length wear value of the tool
+                                                                     offset selected in the tool offset table.
+                                                                     P299          "Measured length" - "theoretical length (L)".
+                                                                     L             Theoretical length. It maintains the previous value.
+                                                                     K             "Measured length" - "theoretical length (L)". New wear value.
+                                                                     If the dimension of each cutting edge was requested ("N" parameter) the measured values are
+                                                                     assigned to global arithmetic parameters P271 and on.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·288·
+===== PAGE 288 =====
+
+12.3.2       Calibrate the radius or measure the radius wear of a tool
+
+        The type of operation (calibration or measurement) is selected when calling the cycle.
+
+        The programming format depends on the operation to carry out:
+          • Tool radius Calibration.
+             (PROBE 1, B, I2, F, J0, K, E, S, N, X, U, Y, V, Z, W)
+          • Radius wear measurement.
+             (PROBE 1, B, I2, F, J1, K, E, S, M, C, N, X, U, Y, V, Z, W)
+
+    [ B5.5 ] Safety distance                                                                                              12.
+
+
+
+
+                                                                                                                          PROBE 1. Tool length calibrating canned cycle
+                                                                                                                PROBING
+        It must be programmed with a positive value greater than 0.
+
+    [ I ] Type of calibration or wear measurement
+
+        The calibration may be done on the tool shaft or on its tip.
+             I=2              Calibrate the radius or measure the radius wear of a tool.
+
+        If not programmed, the cycle will assume the IO value.
+
+    [ F5.5 ] Probing feedrate
+
+        It sets the probing feedrate. It must be programmed in mm/minute or inches/minute.
+
+    [ J ] Type of operation
+             J=0              Tool calibration.
+             J=1              Wear measurement.
+
+    [ K ] Probe side used
+
+        It sets the probe side being used to probe the radius.
+             K=0              Side X+.
+             K=1              Side X-.
+             K=2              Side Y+.
+             K=3              Side Y-.
+
+    [ E5.5 ] Distance from the tool tip to the probing point.
+
+        Distance referred to the theoretical tool tip being probed.
+        This parameter may be very useful with cutters whose bottom is not horizontal.
+
+        If not programmed, the cycle will assume the E0 value.
+
+
+
+
+    [ S±5.5 ] Speed and turning direction of the tool
+
+        To probe with the spindle running, the tool must be turning in the opposite direction to the cutting
+        direction.
+          • When set to 0, probing is carried out with the spindle stopped.
+                                                                                                               CNC 8055
+          • When set with a positive value, the spindle starts in M3.
+                                                                                                               CNC 8055i
+          • When set with a negative value, the spindle starts in M4.
+
+    [ M5.5 ] Maximum radius wear allowed
+                                                                                                               ·M· & ·EN· MODELS
+        When set to 0, the tool is not rejected due to radius wear. The tool is rejected when measuring a        SOFT: V01.6X
+        wear greater than the one defined.
+
+        Only if J1 has been defined and tool life monitoring is being used. If not programmed, a value of
+        M0 will be assumed.
+
+
+                                                                                                                          ·289·
+===== PAGE 289 =====
+
+                                                                  [ C ] Behavior when exceeding the amount of wear allowed
+
+                                                                     Only if "M" has been set to other than zero.
+                                                                        C=0            It interrupts the execution for the user to select another tool.
+                                                                        C=1            The cycle replaces the tool with another one of the same family.
+
+                                                                     If not programmed, the cycle will assume the C0 value.
+
+                                                                  [ N ] Number of edges to measure
+
+
+ 12.                                                                 When set to zero, it only takes one measurement. If not programmed, the cycle will assume the N0
+                                                                     value.
+
+                                                                     To measure each cutting edge when the spindle has feedback and s.m.p. M19TYPE (P43) =1.
+
+
+
+
+                  PROBE 1. Tool length calibrating canned cycle
+        PROBING
+                                                                  [ X U Y V Z W ] Probe position
+
+                                                                     Optional parameters. See "Programming format" on page 285.
+
+
+
+                                                                     Actions after finishing the cycle
+
+
+                                                                     Once the calibration cycle has ended
+                                                                     It updates global arithmetic parameter P298 and assigns the measured radius to the tool offset
+                                                                     selected in the tool offset table.
+                                                                        P298           "Measured radius" - "previous radius (R+I)".
+                                                                        R              Measured radius.
+                                                                        I              0.
+
+                                                                     Once the wear measuring cycle has ended
+                                                                      • When using tool live monitoring.
+                                                                        In this case, it compares the measured value with the theoretical radius assigned in the table.
+                                                                        If the maximum allowed is exceeded, it issues a "tool rejected" message and acts as follows:
+
+                                                                            C0     It interrupts the execution for the user to select another tool.
+
+                                                                            C1     The cycle replaces the tool with another one of the same family. It sets the "rejected
+                                                                                   tool" indicator (Status = R) It activates the general logic output PRTREJEC (M5564).
+
+                                                                      • If tool life monitoring is not available or the measuring difference does not exceed the maximum
+                                                                        allowed.
+                                                                        In this case, it updates global arithmetic parameter P298 and the radius wear value of the tool
+                                                                        offset selected in the tool offset table.
+                                                                        P298           "Measured radius" - "theoretical radius (R)".
+                                                                        R              Theoretical radius. It maintains the previous value.
+                                                                        I              "Measured radius" - "theoretical radius (R)". New wear value.
+                                                                        If the dimension of each cutting edge was requested ("N" parameter) the measured values are
+                                                                        assigned to global arithmetic parameters P251 and on.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·290·
+===== PAGE 290 =====
+
+12.3.3       Measure or calibrate the tool radius wear and tool length wear.
+
+        The type of operation (calibration or measurement) is selected when calling the cycle.
+
+        The programming format depends on the operation to carry out:
+          • Tool radius Calibration.
+             (PROBE 1, B, I3, F, J0, K, D, E, S, N, X, U, Y, V, Z, W)
+          • Radius wear measurement.
+             (PROBE 1, B, I3, F, J1, K, L, D, E, S, M, C, N, X, U, Y, V, Z, W)
+
+    [ B5.5 ] Safety distance                                                                                           12.
+
+
+
+
+                                                                                                                       PROBE 1. Tool length calibrating canned cycle
+                                                                                                             PROBING
+        It must be programmed with a positive value greater than 0.
+
+    [ I ] Type of calibration or wear measurement
+
+        The calibration may be done on the tool shaft or on its tip.
+             I=3              Measure or calibrate the tool radius wear and tool length wear.
+
+        If not programmed, the cycle will assume the IO value.
+
+    [ F5.5 ] Probing feedrate
+
+        It sets the probing feedrate. It must be programmed in mm/minute or inches/minute.
+
+    [ J ] Type of operation
+             J=0              Tool calibration.
+             J=1              Wear measurement.
+
+    [ K ] Probe side used
+
+        It sets the probe side being used to probe the radius.
+             K=0              Side X+.
+             K=1              Side X-.
+             K=2              Side Y+.
+             K=3              Side Y-.
+
+    [ L5.5 ] Maximum length wear allowed
+
+        When set to 0, the tool is not rejected due to length wear. The tool is rejected when measuring a
+        wear greater than the one defined.
+
+        Only if J1 has been defined and tool life monitoring is being used. If not programmed, the canned
+        cycle will assume the L0 value.
+
+    [ D5.5 ] Distance from the tool shaft to the probing point
+
+        It sets the radius or distance referred to the tool shaft being probed.
+
+        If not defined, probing is carried out on the tool tip.
+
+    [ E5.5 ] Distance from the tool tip to the probing point.
+
+        Distance referred to the theoretical tool tip being probed.
+
+        This parameter may be very useful with cutters whose bottom is not horizontal.
+
+        If not programmed, the cycle will assume the E0 value.
+                                                                                                            CNC 8055
+                                                                                                            CNC 8055i
+
+
+
+                                                                                                            ·M· & ·EN· MODELS
+                                                                                                              SOFT: V01.6X
+
+
+
+
+                                                                                                                       ·291·
+===== PAGE 291 =====
+
+                                                                  [ S±5.5 ] Speed and turning direction of the tool
+
+                                                                     To probe with the spindle running, the tool must be turning in the opposite direction to the cutting
+                                                                     direction.
+                                                                      • When set to 0, probing is carried out with the spindle stopped.
+                                                                      • When set with a positive value, the spindle starts in M3.
+                                                                      • When set with a negative value, the spindle starts in M4.
+
+                                                                  [ M5.5 ] Maximum radius wear allowed
+
+ 12.                                                                 When set to 0, the tool is not rejected due to radius wear. The tool is rejected when measuring a
+                                                                     wear greater than the one defined.
+
+
+
+
+                  PROBE 1. Tool length calibrating canned cycle
+        PROBING
+                                                                     Only if J1 has been defined and tool life monitoring is being used. If not programmed, a value of
+                                                                     M0 will be assumed.
+
+                                                                  [ C ] Behavior when exceeding the amount of wear allowed
+
+                                                                     Only if "M" or "L" has been set to other than zero.
+                                                                        C=0            It interrupts the execution for the user to select another tool.
+                                                                        C=1            The cycle replaces the tool with another one of the same family.
+
+                                                                     If not programmed, the cycle will assume the C0 value.
+
+                                                                  [ N ] Number of edges to measure
+
+                                                                     When set to zero, it only takes one measurement. If not programmed, the cycle will assume the N0
+                                                                     value.
+
+                                                                     To measure each cutting edge when the spindle has feedback and s.m.p. M19TYPE (P43) =1.
+
+                                                                  [ X U Y V Z W ] Probe position
+
+                                                                     Optional parameters. See "Programming format" on page 285.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·292·
+===== PAGE 292 =====
+
+        Actions after finishing the cycle
+
+
+        Once the calibration cycle has ended
+        It updates global arithmetic parameter P298 and assigns the measured radius to the tool offset
+        selected in the tool offset table.
+             P298             "Measured radius" - "previous radius (R+I)".
+             P299             "measured length" - "previous length (L+K)".
+             R
+             L
+                              Measured radius.
+                              Measured length.
+                                                                                                                              12.
+
+
+
+
+                                                                                                                              PROBE 1. Tool length calibrating canned cycle
+                                                                                                                    PROBING
+             I                0.
+             K                0.
+
+        Once the wear measuring cycle has ended
+          • When using tool live monitoring.
+             In this case, it compares the measured radius and length with the theoretical values in the table.
+             If the maximum allowed is exceeded, it issues a "tool rejected" message and acts as follows:
+
+                 C0       It interrupts the execution for the user to select another tool.
+
+                 C1       The cycle replaces the tool with another one of the same family. It sets the "rejected
+                          tool" indicator (Status = R) It activates the general logic output PRTREJEC (M5564).
+
+          • If tool life monitoring is not available or the measuring difference does not exceed the maximum
+            allowed.
+             In this case, it updates global arithmetic parameters P298 and P299 as well as the radius wear
+             and length wear value of the tool offset selected in the tool offset table.
+             P298             "Measured radius" - "theoretical radius (R)".
+             P299             "Measured length" - "theoretical length (L)".
+             R                Theoretical radius. It maintains the previous value.
+             I                "Measured radius" - "theoretical radius (R)". New wear value.
+             L                Theoretical length. It maintains the previous value.
+             K                "Measured length" - "theoretical length (L)". New wear value.
+             If the dimension of each cutting edge was requested, parameter "N", the lengths are assigned
+             to global arithmetic parameters P271 and on; the radii are assigned to global arithmetic
+             parameters P251 and on.
+
+
+
+
+                                                                                                                   CNC 8055
+                                                                                                                   CNC 8055i
+
+
+
+                                                                                                                   ·M· & ·EN· MODELS
+                                                                                                                     SOFT: V01.6X
+
+
+
+
+                                                                                                                              ·293·
+===== PAGE 293 =====
+
+                                                             12.4      PROBE 2. Probe calibration canned cycle.
+
+                                                                    This is used to calibrate the probe located in the tool holding spindle. This probe which previously
+                                                                    must be calibrated in length, will be the one used in probe measuring canned cycles.
+
+                                                                    The cycle measures the deviation which the probe ball axis has with respect to the tool holder axis,
+                                                                    using a previously machined hole with known center and dimensions for its calibration.
+
+
+
+
+ 12.
+        PROBING
+
+
+
+
+                  PROBE 2. Probe calibration canned cycle.
+                                                                    The CNC will treat each measuring probe used as just one more tool. The tool offset table fields
+                                                                    corresponding to each probe will have the following meaning:
+                                                                       R       Probe ball radius. This value will be loaded into the table manually.
+                                                                       L       Probe length. This value will be indicated by the tool length calibration cycle.
+                                                                       I       Deviation of the probe ball shaft with respect to the tool holder along the abscissa axis.
+                                                                               This value will be indicated by the cycle.
+                                                                       K       Deviation of the probe ball shaft with respect to the tool holder along the ordinate axis.
+                                                                               This value will be indicated by the cycle.
+
+                                                                    The following steps will be followed for its calibration:
+                                                                    1. Once the characteristics of the probe have been consulted, the value for the sphere radius (R)
+                                                                       will be entered manually in the corresponding tool offset.
+                                                                    2. After selecting the corresponding tool number and tool offset the Tool Length Calibration Cycle
+                                                                       will be performed, the value of (L) will be updated and the value of (K) will be initialized to 0.
+                                                                    3. Execution of the probe calibration canned cycle, updating the "I" and "K" values.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·294·
+===== PAGE 294 =====
+
+        The programming format for this cycle is:
+             (PROBE 2, X, Y, Z, B, J, E, H, F)
+
+    [ X±5.5 ] Real coordinate, along the X axis, of the hole center.
+
+    [ Y±5.5 ] Real coordinate, along the Y axis, of the hole center.
+
+    [ Z±5.5 ] Real coordinate, along the Z axis, of the hole center.
+
+    [ B5.5 ] Safety distance
+
+        Defines the safety distance. Must be programmed with a positive value and over 0.                           12.
+                                                                                                          PROBING
+
+
+
+
+                                                                                                                    PROBE 2. Probe calibration canned cycle.
+    [ J5.5 ] Real diameter of the hole
+
+        Defines the real diameter of the hole. Must be programmed with a positive value and over 0.
+
+    [ E5.5 ] Withdrawal distance
+
+        Defines the distance which the probe moves back after initial probing. Must be programmed with
+        a positive value and over 0.
+
+    [ H5.5 ] Initial probing feedrate
+
+        Defines the feedrate for the initial probing movement. It must be programmed in mm/minute or
+        inches/minute.
+
+    [ F5.5 ] Probing feedrate
+
+        It sets the probing feedrate. It must be programmed in mm/minute or inches/minute.
+
+
+
+
+                                                                                                         CNC 8055
+                                                                                                         CNC 8055i
+
+
+
+                                                                                                         ·M· & ·EN· MODELS
+                                                                                                           SOFT: V01.6X
+
+
+
+
+                                                                                                                    ·295·
+===== PAGE 295 =====
+
+                                                             12.4.1     Basic operation
+
+
+
+
+ 12.
+        PROBING
+
+
+
+
+                  PROBE 2. Probe calibration canned cycle.
+
+
+
+                                                                      1. Approach movement.
+                                                                        Movement of the probe in rapid (G00) from the point where the cycle is called to the center of
+                                                                        the hole.
+                                                                        The approaching movement is made in two stages:
+                                                                         ·1· Movement in the main work plane.
+                                                                         ·2· Movement along the longitudinal axis.
+                                                                      2. Probing.
+                                                                        This movement consists of:
+                                                                         ·1· Movement of the probe along the ordinate axis at the indicated feedrate (H), until the probe
+                                                                             signal is received.
+                                                                            The maximum distance to be traveled in the probing movement is "B+(J/2)"; if, after travelling
+                                                                            that distance, the CNC does not receive the probe signal, it will display the corresponding
+                                                                            error code and stop the movement of the axes.
+                                                                         ·2· Return of the probe in rapid (G00) the distance indicated in (E).
+                                                                         ·3· Movement of the probe along the ordinate axis at the indicated feedrate (F), until the probe
+                                                                             signal is received.
+                                                                      3. Withdrawal.
+                                                                        Movement of the probe in rapid (G00) from the point where it probed to the real center of the hole.
+                                                                      4. Second probing movement.
+                                                                        Same as above.
+                                                                      5. Withdrawal.
+                                                                        Movement of the probe in rapid (G00) from the point where it probed to the real center of the
+                                                                        hole along the ordinate axis.
+CNC 8055                                                              6. Third probing movement.
+CNC 8055i                                                               Same as above.
+                                                                      7. Withdrawal.
+                                                                        Movement of the probe in rapid (G00) from the point where it probed to the real center of the hole.
+·M· & ·EN· MODELS                                                     8. Fourth probing movement.
+  SOFT: V01.6X
+                                                                        Same as above.
+                                                                      9. Withdrawal.
+                                                                        This movement consists of:
+
+
+
+     ·296·
+===== PAGE 296 =====
+
+             ·1· Movement of the probe in rapid (G00) from the point where it probed to the real center of
+                 the hole.
+             ·2· Movement along the longitudinal axis to the coordinate of the point (along this axis) from
+                 where the cycle was called.
+             ·3· Movement in the main work plane to the point where the cycle is called.
+
+        Correction of the tool offset.
+        Once the cycle has been completed, the CNC will have updated the "I" and "K" values corresponding
+        to the tool offset selected at the time on the tool offset table.
+
+        Arithmetic parameters modified by the cycle
+                                                                                                                         12.
+                                                                                                               PROBING
+
+
+
+
+                                                                                                                         PROBE 2. Probe calibration canned cycle.
+        The cycle returns in arithmetic parameter P299 the best value to be assigned to general machine
+        parameter PRODEL.
+
+
+
+
+                                                                                                              CNC 8055
+                                                                                                              CNC 8055i
+
+
+
+                                                                                                              ·M· & ·EN· MODELS
+                                                                                                                SOFT: V01.6X
+
+
+
+
+                                                                                                                         ·297·
+===== PAGE 297 =====
+
+                                                             12.5      PROBE 3. Surface measuring canned cycle.
+
+                                                                    A probe placed in the spindle will be used, which must be previously calibrated by means of canned
+                                                                    cycles:
+                                                                       Tool length calibrating canned cycle.
+                                                                       Probe calibrating canned cycle.
+
+                                                                    This cycle allows correcting the value of the tool offset of the tool that has been used in the surface
+                                                                    machining process. This correction will be used only when the measurement error exceeds a
+
+ 12.                                                                programmed value.
+
+                                                                    The programming format for this cycle is:
+
+
+
+        PROBING
+
+
+
+
+                  PROBE 3. Surface measuring canned cycle.
+                                                                       (PROBE 3, X, Y, Z, B, K, F, C, D, L)
+
+                                                               [ X±5.5 ] Theoretical coordinate, along the X axis, of the point over which it is required to
+                                                               measure.
+
+                                                               [ Y±5.5 ] Theoretical coordinate, along the Y axis, of the point over which it is required to
+                                                               measure.
+
+                                                               [ Z±5.5 ] Theoretical coordinate, along the Z axis, of the point over which it is required to measure.
+
+                                                               [ B5.5 ] Safety distance
+
+                                                                    Defines the safety distance. Must be programmed with a positive value and over 0.
+
+                                                                    The probe must be placed, with respect to the point to be measured, at a distance greater than this
+                                                                    value when the cycle is called.
+
+                                                               [ K ] Probing axis
+
+                                                                    Defines the axis with which it is required to measure the surface and will be defined by means of
+                                                                    the following code:
+                                                                       K=0             With the abscissa axis of the work plane.
+                                                                       K=1             With the ordinate axis of the work plane.
+                                                                       K=2             With the axis longitudinal to the work plane.
+
+                                                                    If this is not programmed, the canned cycle will take the value of K0.
+
+
+
+
+CNC 8055                                                       [ F5.5 ] Probing feedrate
+CNC 8055i
+                                                                    It sets the probing feedrate. It must be programmed in mm/minute or inches/minute.
+
+                                                               [ C ] Actions after finishing the probing operation
+
+·M· & ·EN· MODELS                                                   Indicates where the probing cycle must finish.
+  SOFT: V01.6X
+                                                                       C=0             Will return to the same point where the call to the cycle was made.
+                                                                       C=1             The cycle will finish over the measured point returning the longitudinal axis to the
+                                                                                       cycle calling point.
+
+                                                                    If not programmed, the canned cycle will take the value of "C0".
+
+     ·298·
+===== PAGE 298 =====
+
+    [ D4 ] Tool offset
+
+        Defines the number of the tool offset to be corrected, once the measurement cycle is completed.
+        If this is not programmed or is programmed with a value of 0, the CNC will understand that it is not
+        required to make this correction.
+
+    [ L5.5 ] Error tolerance
+
+        Defines the tolerance that will be applied to the error measured. It will be programmed with an
+        absolute value and the tool offset will be corrected only when the error exceeds this value.
+
+        If this is not programmed, the canned cycle will take the value of 0.
+                                                                                                                          12.
+                                                                                                                PROBING
+
+
+
+
+                                                                                                                          PROBE 3. Surface measuring canned cycle.
+
+
+
+
+                                                                                                               CNC 8055
+                                                                                                               CNC 8055i
+
+
+
+                                                                                                               ·M· & ·EN· MODELS
+                                                                                                                 SOFT: V01.6X
+
+
+
+
+                                                                                                                          ·299·
+===== PAGE 299 =====
+
+                                                             12.5.1     Basic operation
+
+
+
+
+ 12.
+        PROBING
+
+
+
+
+                  PROBE 3. Surface measuring canned cycle.
+                                                                      1. Approach movement.
+                                                                        Movement of the probe in rapid (G00) from the point where the cycle is called to the approach
+                                                                        point.
+                                                                        This point is located in front of the point to be measured, at a safety distance (B) from it and along
+                                                                        the probing axis (K).
+                                                                        The approaching movement is made in two stages:
+                                                                         ·1· Movement in the main work plane.
+                                                                         ·2· Movement along the longitudinal axis.
+                                                                      2. Probing.
+                                                                        Movement of the probe along the selected axis (K) at the indicated feedrate (F), until the probe
+                                                                        signal is received.
+                                                                        The maximum distance to be traveled in the probing movement is 2B; if, after travelling that
+                                                                        distance, the CNC does not receive the probe signal, it will display the corresponding error code
+                                                                        and stop the movement of the axes.
+                                                                        Once probing has been made, the CNC will assume as their theoretical position the real position
+                                                                        of the axes when the probe signal is received .
+                                                                      3. Withdrawal.
+                                                                        Movement of the probe in rapid (G00) from the point where it probed to the point where the cycle
+                                                                        was called.
+                                                                        The withdrawal movement is made in three stages:
+                                                                         ·1· Movement along the probing axis to the approach point.
+                                                                         ·2· Movement along the longitudinal axis to the coordinate of the point (along this axis) from
+                                                                             where the cycle was called.
+                                                                         ·3· When (C0) is programmed, movement is made in the main work plane to the point where
+                                                                             the cycle is called.
+
+                                                                  Arithmetic parameters modified by the cycle
+                                                                  Once the cycle has been completed, the CNC will return the real values obtained after
+                                                                  measurement, in the following global arithmetic parameters.
+CNC 8055
+CNC 8055i                                                               P298        Real surface coordinate.
+
+                                                                        P299        Error detected. Difference between the real coordinate of the surface and the
+                                                                                    theoretical programmed coordinate.
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·300·
+===== PAGE 300 =====
+
+        Correction of the tool offset.
+        If the Tool Offset Number (D) was selected, the CNC will modify the values of this tool offset,
+        whenever the measurement error is equal to or greater than the tolerance (L).
+
+        Depending on the axis the measurement is made with (K), the correction will be made on the length
+        or radius value.
+          • If the measurement is made with the axis longitudinal to the work plane, the length wear (K) of
+            the indicated tool offset (D) will be modified.
+          • If the measurement is made with one of the axes that make up the work plane, the radius wear
+            (I) of the indicated tool offset (D) will be modified.
+                                                                                                                         12.
+                                                                                                               PROBING
+
+
+
+
+                                                                                                                         PROBE 3. Surface measuring canned cycle.
+
+
+
+
+                                                                                                              CNC 8055
+                                                                                                              CNC 8055i
+
+
+
+                                                                                                              ·M· & ·EN· MODELS
+                                                                                                                SOFT: V01.6X
+
+
+
+
+                                                                                                                         ·301·
+===== PAGE 301 =====
+
+                                                                   12.6      PROBE 4. Outside corner measuring canned cycle
+
+                                                                          A probe placed in the spindle will be used, which must be previously calibrated by means of canned
+                                                                          cycles:
+                                                                             Tool length calibrating canned cycle.
+                                                                             Probe calibrating canned cycle.
+
+                                                                          The programming format for this cycle is:
+                                                                             (PROBE 4, X, Y, Z, B, F)
+
+ 12.                                                                 [ X±5.5 ] Theoretical coordinate, along the X axis, of the corner to be measured
+
+
+
+
+                  PROBE 4. Outside corner measuring canned cycle
+        PROBING
+                                                                     [ Y±5.5 ] Theoretical coordinate, along the Y axis, of the corner to be measured
+
+                                                                     [ Z±5.5 ] Theoretical coordinate, along the Z axis, of the corner to be measured
+
+                                                                          Depending on the corner of the part it is required to measure, the probe must be placed in the
+                                                                          corresponding shaded area (see figure) before calling the cycle.
+
+
+
+
+                                                                     [ B5.5 ] Safety distance
+
+                                                                          Defines the safety distance. Must be programmed with a positive value and over 0.
+
+                                                                          The probe must be placed, with respect to the point to be measured, at a distance greater than this
+                                                                          value when the cycle is called.
+
+                                                                     [ F5.5 ] Probing feedrate
+
+                                                                          It sets the probing feedrate. It must be programmed in mm/minute or inches/minute.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·302·
+===== PAGE 302 =====
+
+12.6.1       Basic operation
+
+
+
+
+                                                                                                                              12.
+
+
+
+
+                                                                                                                              PROBE 4. Outside corner measuring canned cycle
+                                                                                                                    PROBING
+
+
+
+
+         1. Approach movement.
+             Movement of the probe in rapid (G00) from the point where the cycle is called to the first approach
+             point, situated at a distance (B) from the first face to be probed.
+             The approaching movement is made in two stages:
+             ·1· Movement in the main work plane.
+             ·2· Movement along the longitudinal axis.
+         2. Probing.
+             Movement of the probe along the abscissa axis at the indicated feedrate (F), until the probe signal
+             is received.
+             The maximum distance to be traveled in the probing movement is 2B; if, after travelling that
+             distance, the CNC does not receive the probe signal, it will display the corresponding error code
+             and stop the movement of the axes.
+         3. Withdrawal.
+             Movement of the probe in rapid (G00) from the point where it probed to the first approach point
+         4. Second approach.
+             Movement of the probe in rapid (G00) from the first approach point to the second.
+             The approaching movement is made in two stages:
+             ·1· Movement along the ordinate plane.
+             ·2· Movement along the abscissa axis.
+         5. Second probing movement.
+             Movement of the probe along the abscissa axis at the indicated feedrate (F), until the probe signal
+             is received.
+             The maximum distance to be traveled in the probing movement is 2B; if, after travelling that
+             distance, the CNC does not receive the probe signal, it will display the corresponding error code
+             and stop the movement of the axes.
+         6. Withdrawal.
+             Movement of the probe in rapid (G00) from the point where it probed for the second time to the
+             point where the cycle was called.                                                                     CNC 8055
+             The withdrawal movement is made in three stages:                                                      CNC 8055i
+             ·1· Movement along the probing axis to the second approach point.
+             ·2· Movement along the longitudinal axis to the coordinate of the point (along this axis) from
+                 where the cycle was called.
+                                                                                                                   ·M· & ·EN· MODELS
+             ·3· Movement in the main work plane to the point where the cycle is called.                             SOFT: V01.6X
+
+
+
+
+                                                                                                                              ·303·
+===== PAGE 303 =====
+
+                                                                   Arithmetic parameters modified by the cycle
+                                                                   Once the cycle has been completed, the CNC will return the real values obtained after
+                                                                   measurement, in the following global arithmetic parameters.
+
+                                                                      P296     Real coordinate of the corner along the abscissa axis.
+
+                                                                      P297     Real coordinate of the corner along the ordinate axis.
+
+                                                                      P298     Error detected along the abscissa axis. Difference between the real coordinate of the
+                                                                               corner and the theoretical programmed coordinate.
+
+ 12.                                                                  P299     Error detected along the ordinate axis. Difference between the real coordinate of the
+                                                                               corner and the theoretical programmed coordinate.
+
+
+
+
+                  PROBE 4. Outside corner measuring canned cycle
+        PROBING
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·304·
+===== PAGE 304 =====
+
+12.7         PROBE 5. Inside corner measuring canned cycle.
+
+        A probe placed in the spindle will be used, which must be previously calibrated by means of canned
+        cycles:
+             Tool length calibrating canned cycle.
+             Probe calibrating canned cycle.
+
+        The programming format for this cycle is:
+             (PROBE 5, X, Y, Z, B, F)
+
+    [ X±5.5 ] Theoretical coordinate, along the X axis, of the corner to be measured                                     12.
+
+
+
+
+                                                                                                                         PROBE 5. Inside corner measuring canned cycle.
+                                                                                                               PROBING
+    [ Y±5.5 ] Theoretical coordinate, along the Y axis, of the corner to be measured
+
+    [ Z±5.5 ] Theoretical coordinate, along the Z axis, of the corner to be measured
+
+        The probe must be placed within the pocket before calling the cycle.
+
+
+
+
+    [ B5.5 ] Safety distance
+
+        Defines the safety distance. Must be programmed with a positive value and over 0.
+
+        The probe must be placed, with respect to the point to be measured, at a distance greater than this
+        value when the cycle is called.
+
+    [ F5.5 ] Probing feedrate
+
+        It sets the probing feedrate. It must be programmed in mm/minute or inches/minute.
+
+
+
+
+                                                                                                              CNC 8055
+                                                                                                              CNC 8055i
+
+
+
+                                                                                                              ·M· & ·EN· MODELS
+                                                                                                                SOFT: V01.6X
+
+
+
+
+                                                                                                                         ·305·
+===== PAGE 305 =====
+
+                                                                   12.7.1     Basic operation
+
+
+
+
+ 12.
+
+
+
+
+                  PROBE 5. Inside corner measuring canned cycle.
+        PROBING
+
+
+
+
+                                                                            1. Approach movement.
+                                                                              Movement of the probe in rapid (G00) from the point where the cycle is called to the first approach
+                                                                              point, situated at a distance (B) from both faces to be probed.
+                                                                              The approaching movement is made in two stages:
+                                                                               ·1· Movement in the main work plane.
+                                                                               ·2· Movement along the longitudinal axis.
+                                                                            2. Probing.
+                                                                              Movement of the probe along the abscissa axis at the indicated feedrate (F), until the probe signal
+                                                                              is received.
+                                                                              The maximum distance to be traveled in the probing movement is 2B; if, after travelling that
+                                                                              distance, the CNC does not receive the probe signal, it will display the corresponding error code
+                                                                              and stop the movement of the axes.
+                                                                            3. Withdrawal.
+                                                                              Movement of the probe in rapid (G00) from the point where it probed to the approach point
+                                                                            4. Second probing movement.
+                                                                              Movement of the probe along the abscissa axis at the indicated feedrate (F), until the probe signal
+                                                                              is received.
+                                                                              The maximum distance to be traveled in the probing movement is 2B; if, after travelling that
+                                                                              distance, the CNC does not receive the probe signal, it will display the corresponding error code
+                                                                              and stop the movement of the axes.
+                                                                            5. Withdrawal.
+                                                                              Movement of the probe in rapid (G00) from the point where it probed for the second time to the
+                                                                              point where the cycle was called.
+                                                                              The withdrawal movement is made in three stages:
+                                                                               ·1· Movement along the probing axis to the approach point.
+                                                                               ·2· Movement along the longitudinal axis to the coordinate of the point (along this axis) from
+                                                                                   where the cycle was called.
+                                                                               ·3· Movement in the main work plane to the point where the cycle is called.
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·306·
+===== PAGE 306 =====
+
+        Arithmetic parameters modified by the cycle
+        Once the cycle has been completed, the CNC will return the real values obtained after
+        measurement, in the following global arithmetic parameters.
+
+             P296         Real coordinate of the corner along the abscissa axis.
+
+             P297         Real coordinate of the corner along the ordinate axis.
+
+             P298         Error detected along the abscissa axis. Difference between the real coordinate of the
+                          corner and the theoretical programmed coordinate.
+
+             P299         Error detected along the ordinate axis. Difference between the real coordinate of the
+                          corner and the theoretical programmed coordinate.
+                                                                                                                             12.
+
+
+
+
+                                                                                                                             PROBE 5. Inside corner measuring canned cycle.
+                                                                                                                   PROBING
+
+
+
+
+                                                                                                                  CNC 8055
+                                                                                                                  CNC 8055i
+
+
+
+                                                                                                                  ·M· & ·EN· MODELS
+                                                                                                                    SOFT: V01.6X
+
+
+
+
+                                                                                                                             ·307·
+===== PAGE 307 =====
+
+                                                          12.8      PROBE 6. Angle measuring canned cycle
+
+                                                                 A probe placed in the spindle will be used, which must be previously calibrated by means of canned
+                                                                 cycles:
+                                                                    Tool length calibrating canned cycle.
+                                                                    Probe calibrating canned cycle.
+
+                                                                 The programming format for this cycle is:
+                                                                    (PROBE 6, X, Y, Z, B, F)
+
+ 12.                                                        [ X±5.5 ] Theoretical coordinate, along the X axis, of the vertex of the angle to be measured.
+
+
+
+
+                  PROBE 6. Angle measuring canned cycle
+        PROBING
+                                                            [ Y±5.5 ] Theoretical coordinate, along the Y axis, of the vertex of the angle to be measured
+
+                                                            [ Z±5.5 ] Theoretical coordinate, along the Z axis, of the vertex of the angle to be measured.
+
+                                                            [ B5.5 ] Safety distance
+
+                                                                 Defines the safety distance. Must be programmed with a positive value and over 0.
+
+                                                                 The probe must be placed, with respect to the point to be measured, at a distance greater than
+                                                                 double this value when the cycle is called.
+
+                                                            [ F5.5 ] Probing feedrate
+
+                                                                 It sets the probing feedrate. It must be programmed in mm/minute or inches/minute.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·308·
+===== PAGE 308 =====
+
+12.8.1       Basic operation
+
+
+
+
+                                                                                                                              12.
+
+
+
+                                                                                                                              PROBE 6. Angle measuring canned cycle
+                                                                                                                    PROBING
+
+
+
+
+         1. Approach movement.
+             Movement of the probe in rapid (G00) from the point where the cycle is called to the first approach
+             point, situated at a distance (B) from the programmed vertex and at (2B) from the face to be
+             probed.
+             The approaching movement is made in two stages:
+             ·1· Movement in the main work plane.
+             ·2· Movement along the longitudinal axis.
+         2. Probing.
+             Movement of the probe along the abscissa axis at the indicated feedrate (F), until the probe signal
+             is received.
+             The maximum distance to be traveled in the probing movement is 3B; if, after travelling that
+             distance, the CNC does not receive the probe signal, it will display the corresponding error code
+             and stop the movement of the axes.
+         3. Withdrawal.
+             Movement of the probe in rapid (G00) from the point where it probed to the first approach point
+         4. Second approach.
+             Movement of the probe in rapid (G00) from the first approach point to the second. It is at a
+             distance (B) from the first one.
+         5. Second probing movement.
+             Movement of the probe along the abscissa axis at the indicated feedrate (F), until the probe signal
+             is received.
+             The maximum distance to be traveled in the probing movement is 4B; if, after travelling that
+             distance, the CNC does not receive the probe signal, it will display the corresponding error code
+             and stop the movement of the axes.
+         6. Withdrawal.
+             Movement of the probe in rapid (G00) from the point where it probed for the second time to the
+             point where the cycle was called.
+             The withdrawal movement is made in three stages:                                                      CNC 8055
+             ·1· Movement along the ordinate axis to the second approach point.                                    CNC 8055i
+             ·2· Movement along the longitudinal axis to the coordinate of the point (along this axis) from
+                 where the cycle was called.
+             ·3· Movement in the main work plane to the point where the cycle is called.
+                                                                                                                   ·M· & ·EN· MODELS
+                                                                                                                     SOFT: V01.6X
+
+
+
+
+                                                                                                                              ·309·
+===== PAGE 309 =====
+
+                                                          Arithmetic parameters modified by the cycle
+                                                          Once the cycle has been completed, the CNC will return the real values obtained after
+                                                          measurement, in the following global arithmetic parameter.
+
+                                                             P295       Inclination angle which the part has in relation to the abscissa axis.
+
+
+                                                          Considerations for the cycle
+                                                          This cycle may be used to measure angles between ±45º.
+
+ 12.                                                       • If the angle to be measured is > 45º, the CNC will display the corresponding error.
+                                                           • If the angle to be measured is < -45º, the probe will collide with the part.
+
+
+
+
+                  PROBE 6. Angle measuring canned cycle
+        PROBING
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·310·
+===== PAGE 310 =====
+
+12.9         PROBE 7. Corner and angle measuring canned cycle.
+
+        A probe placed in the spindle will be used, which must be previously calibrated by means of canned
+        cycles:
+             Tool length calibrating canned cycle.
+             Probe calibrating canned cycle.
+
+        The programming format for this cycle is:
+             (PROBE 7, K, X, Y, Z, B, F)
+
+    [ X±5.5 ] Theoretical coordinate, along the X axis, of the corner to be measured                                      12.
+                                                                                                                PROBING
+
+
+
+
+                                                                                                                          PROBE 7. Corner and angle measuring canned cycle.
+    [ Y±5.5 ] Theoretical coordinate, along the Y axis, of the corner to be measured
+
+    [ Z±5.5 ] Theoretical coordinate, along the Z axis, of the corner to be measured
+
+        If it is an outside corner, depending on the corner of the part it is required to measure, the probe
+        must be placed in the corresponding shaded area (see figure) before calling the cycle.
+
+
+
+
+        If it is an inside corner, the probe must be placed within the pocket before calling the cycle.
+
+
+
+
+    [ K ] Type of corner
+
+        Defines the type of corner to be measured:
+             K = 0:           Measuring an outside corner.
+             K = 1:           Measuring an inside corner.
+
+    [ B5.5 ] Safety distance
+
+        Defines the safety distance. Must be programmed with a positive value and over 0.                      CNC 8055
+        The probe must be placed, with respect to the point to be measured, at a distance greater than         CNC 8055i
+        double this value when the cycle is called.
+
+    [ F5.5 ] Probing feedrate
+
+        It sets the probing feedrate. It must be programmed in mm/minute or inches/minute.                     ·M· & ·EN· MODELS
+                                                                                                                 SOFT: V01.6X
+
+
+
+
+                                                                                                                          ·311·
+===== PAGE 311 =====
+
+                                                                      12.9.1     Basic operation (measuring an outside corner)
+
+
+
+
+ 12.
+        PROBING
+
+
+
+
+                  PROBE 7. Corner and angle measuring canned cycle.
+                                                                               1. Approach movement.
+                                                                                 Movement of the probe in rapid (G00) from the point where the cycle is called to the first approach
+                                                                                 point, situated at a distance (2B) from the first side to be probed.
+                                                                                 The approaching movement is made in two stages:
+                                                                                  ·1· Movement in the main work plane.
+                                                                                  ·2· Movement along the longitudinal axis.
+                                                                               2. Probing.
+                                                                                 Movement of the probe along the abscissa axis at the indicated feedrate (F), until the probe signal
+                                                                                 is received.
+                                                                                 The maximum distance to be traveled in the probing movement is 3B; if, after travelling that
+                                                                                 distance, the CNC does not receive the probe signal, it will display the corresponding error code
+                                                                                 and stop the movement of the axes.
+                                                                               3. Withdrawal.
+                                                                                 Movement of the probe in rapid (G00) from the point where it probed to the first approach point
+                                                                               4. Second approach.
+                                                                                 Movement of the probe in rapid (G00) from the first approach point to the second, situated at
+                                                                                 a distance (2B) from the second side to be probed.
+                                                                                 The approaching movement is made in two stages:
+                                                                                  ·1· Movement along the ordinate plane.
+                                                                                  ·2· Movement along the abscissa axis.
+                                                                               5. Second probing movement.
+                                                                                 Movement of the probe along the abscissa axis at the indicated feedrate (F), until the probe signal
+                                                                                 is received.
+                                                                                 The maximum distance to be traveled in the probing movement is 3B; if, after travelling that
+                                                                                 distance, the CNC does not receive the probe signal, it will display the corresponding error code
+                                                                                 and stop the movement of the axes.
+                                                                               6. Withdrawal.
+CNC 8055                                                                         Movement of the probe in rapid (G00) from the point where it probed to the second point of
+CNC 8055i                                                                        approach.
+                                                                               7. Third approach.
+                                                                                 Movement of the probe in rapid (G00) from the second approach point to the third. It is at a
+                                                                                 distance (B) from the previous one.
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·312·
+===== PAGE 312 =====
+
+         8. Third probing movement.
+             Movement of the probe along the abscissa axis at the indicated feedrate (F), until the probe signal
+             is received.
+             The maximum distance to be traveled in the probing movement is 4B; if, after travelling that
+             distance, the CNC does not receive the probe signal, it will display the corresponding error code
+             and stop the movement of the axes.
+         9. Withdrawal.
+             Movement of the probe in rapid (G00) from the third probing point to the point where the cycle
+             was called.
+             The withdrawal movement is made in three stages:
+             ·1· Movement along probing axis to the third approach point.
+                                                                                                                              12.
+                                                                                                                    PROBING
+
+
+
+
+                                                                                                                              PROBE 7. Corner and angle measuring canned cycle.
+             ·2· Movement along the longitudinal axis to the coordinate of the point (along this axis) from
+                 where the cycle was called.
+             ·3· Movement in the main work plane to the point where the cycle is called.
+
+        Arithmetic parameters modified by the cycle
+        Once the cycle has been completed, the CNC will return the real values obtained after
+        measurement, in the following global arithmetic parameters.
+
+             P295         Inclination angle which the part has in relation to the abscissa axis.
+
+             P296         Real coordinate of the corner along the abscissa axis.
+
+             P297         Real coordinate of the corner along the ordinate axis.
+
+             P298         Error detected along the abscissa axis. Difference between the real coordinate of the
+                          corner and the theoretical programmed coordinate.
+
+             P299         Error detected along the ordinate axis. Difference between the real coordinate of the
+                          corner and the theoretical programmed coordinate.
+
+
+        Considerations for the cycle
+        This cycle may be used to measure angles between ±45º.
+          • If the angle to be measured is > 45º, the CNC will display the corresponding error.
+          • If the angle to be measured is < -45º, the probe will collide with the part.
+
+
+
+
+                                                                                                                   CNC 8055
+                                                                                                                   CNC 8055i
+
+
+
+                                                                                                                   ·M· & ·EN· MODELS
+                                                                                                                     SOFT: V01.6X
+
+
+
+
+                                                                                                                              ·313·
+===== PAGE 313 =====
+
+                                                                      12.9.2     Basic operation (measuring an inside corner)
+
+
+
+
+ 12.                                                                                                                         7 5
+                                                                                                                                   4
+                                                                                                                                         3
+                                                                                                                                             2
+                                                                                                                         8
+
+        PROBING
+
+
+
+
+                  PROBE 7. Corner and angle measuring canned cycle.
+                                                                                                              B                    6
+                                                                                                                  B                              B
+                                                                                                                              9
+                                                                                                                                             B
+                                                                                                                                    1
+
+
+
+
+                                                                               1. Approach movement.
+                                                                                 Movement of the probe in rapid (G00) from the point where the cycle is called to the approach
+                                                                                 point, situated at a distance (B) from the first face to be probed.
+                                                                                 The approaching movement is made in two stages:
+                                                                                  ·1· Movement in the main work plane.
+                                                                                  ·2· Movement along the longitudinal axis.
+                                                                               2. Probing.
+                                                                                 Movement of the probe along the abscissa axis at the indicated feedrate (F), until the probe signal
+                                                                                 is received.
+                                                                                 The maximum probing distance is 2B. If the CNC does not receive the probe signal before
+                                                                                 reaching moving this probing distance, it displays the relevant error message and stops the axes.
+                                                                               3. Withdrawal.
+                                                                                 Movement of the probe in rapid (G00) from the point where it probed to the first approach point
+                                                                               4. Second probing movement.
+                                                                                 Movement of the probe along the abscissa axis at the indicated feedrate (F), until the probe signal
+                                                                                 is received.
+                                                                                 The maximum probing distance is 2B. If the CNC does not receive the probe signal before
+                                                                                 reaching moving this probing distance, it displays the relevant error message and stops the axes.
+                                                                               5. Withdrawal.
+                                                                                 Movement of the probe in rapid (G00) from the second probing point to the first approach point
+                                                                               6. Second approach.
+                                                                                 Movement of the probe in rapid (G00) from the first approach point to the second. It is at a
+                                                                                 distance (B) from the previous one.
+                                                                               7. Third probing movement.
+                                                                                 Movement of the probe along the abscissa axis at the indicated feedrate (F), until the probe signal
+                                                                                 is received.
+                                                                                 The maximum distance to be traveled in the probing movement is 3B; if, after travelling that
+                                                                                 distance, the CNC does not receive the probe signal, it will display the corresponding error code
+CNC 8055                                                                         and stop the movement of the axes.
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·314·
+===== PAGE 314 =====
+
+         8. Withdrawal.
+             Movement of the probe in rapid (G00) from the third probing point to the point where the cycle
+             was called.
+             The withdrawal movement is made in three stages:
+             ·1· Movement along the probing axis to the second approach point.
+             ·2· Movement along the longitudinal axis to the coordinate of the point (along this axis) from
+                 where the cycle was called.
+             ·3· Movement in the main work plane to the point where the cycle is called.
+
+        Arithmetic parameters modified by the cycle                                                                          12.
+        Once the cycle has been completed, the CNC will return the real values obtained after
+
+                                                                                                                   PROBING
+
+
+
+
+                                                                                                                             PROBE 7. Corner and angle measuring canned cycle.
+        measurement, in the following global arithmetic parameters.
+
+             P295         Inclination angle which the part has in relation to the abscissa axis.
+
+             P296         Real coordinate of the corner along the abscissa axis.
+
+             P297         Real coordinate of the corner along the ordinate axis.
+
+             P298         Error detected along the abscissa axis. Difference between the real coordinate of the
+                          corner and the theoretical programmed coordinate.
+
+             P299         Error detected along the ordinate axis. Difference between the real coordinate of the
+                          corner and the theoretical programmed coordinate.
+
+
+        Considerations for the cycle
+        This cycle may be used to measure angles between ±45º.
+          • If the angle to be measured is > 45º, the CNC will display the corresponding error.
+          • If the angle to be measured is < -45º, the probe will collide with the part.
+
+
+
+
+                                                                                                                  CNC 8055
+                                                                                                                  CNC 8055i
+
+
+
+                                                                                                                  ·M· & ·EN· MODELS
+                                                                                                                    SOFT: V01.6X
+
+
+
+
+                                                                                                                             ·315·
+===== PAGE 315 =====
+
+                                                          12.10    PROBE 8. Hole measuring canned cycle.
+
+                                                               A probe placed in the spindle will be used, which must be previously calibrated by means of canned
+                                                               cycles:
+                                                                   Tool length calibrating canned cycle.
+                                                                   Probe calibrating canned cycle.
+
+                                                               The programming format for this cycle is:
+                                                                   (PROBE 8, X, Y, Z, B, J, E, C, H, F)
+
+ 12.                                                        [ X±5.5 ] Theoretical coordinate, along the X axis, of the hole center
+
+
+
+        PROBING
+
+
+
+
+                  PROBE 8. Hole measuring canned cycle.
+                                                            [ Y±5.5 ] Theoretical coordinate, along the Y axis, of the hole center
+
+                                                            [ Z±5.5 ] Theoretical coordinate, along the Z axis, of the hole center
+
+                                                            [ B5.5 ] Safety distance
+
+                                                               Defines the safety distance. Must be programmed with a positive value and over 0.
+
+                                                            [ J5.5 ] Theoretical diameter of the hole
+
+                                                               Defines the theoretical diameter of the hole. Must be programmed with a positive value and over 0.
+
+                                                               This cycle allows holes to be measured with diameters of no more than (J+B).
+
+                                                            [ E5.5 ] Withdrawal distance
+
+                                                               Defines the distance which the probe moves back after initial probing. Must be programmed with
+                                                               a positive value and over 0.
+
+                                                            [ C ] Actions after finishing the probing operation
+
+                                                               Indicates where the probing cycle must finish.
+                                                                   C=0           Will return to the same point where the call to the cycle was made.
+                                                                   C=1           The cycle ends at the real hole center.
+
+                                                               If not programmed, the canned cycle will take the value of "C0".
+
+                                                            [ H5.5 ] Initial probing feedrate
+
+                                                               Defines the feedrate for the initial probing movement. It must be programmed in mm/minute or
+                                                               inches/minute.
+
+                                                            [ F5.5 ] Probing feedrate
+
+                                                               It sets the probing feedrate. It must be programmed in mm/minute or inches/minute.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·316·
+===== PAGE 316 =====
+
+12.10.1 Basic operation
+
+
+
+
+                                                                                                                             12.
+                                                                                                                   PROBING
+
+
+
+
+                                                                                                                             PROBE 8. Hole measuring canned cycle.
+
+
+         1. Approach movement.
+             Movement of the probe in rapid (G00) from the point where the cycle is called to the center of
+             the hole.
+             The approaching movement is made in two stages:
+             ·1· Movement in the main work plane.
+             ·2· Movement along the longitudinal axis.
+         2. Probing.
+             This movement consists of:
+             ·1· Movement of the probe along the ordinate axis at the indicated feedrate (H), until the probe
+                 signal is received.
+                 The maximum distance to be traveled in the probing movement is "B+(J/2)"; if, after travelling
+                 that distance, the CNC does not receive the probe signal, it will display the corresponding
+                 error code and stop the movement of the axes.
+             ·2· Return of the probe in rapid (G00) the distance indicated in (E).
+             ·3· Movement of the probe along the abscissa axis at the indicated feedrate (F), until the probe
+                 signal is received.
+         3. Withdrawal.
+             Movement of the probe in rapid (G00) from the point where it probed to the theoretical center
+             of the hole.
+         4. Second probing movement.
+             Same as above.
+         5. Withdrawal.
+             Movement of the probe in rapid (G00) from the point where it probed to the real center
+             (calculated) of the hole along the ordinate axis.
+         6. Third probing movement.                                                                               CNC 8055
+             Same as above.                                                                                       CNC 8055i
+         7. Withdrawal.
+             Movement of the probe in rapid (G00) from the point where it probed to the theoretical center
+             of the hole.                                                                                         ·M· & ·EN· MODELS
+         8. Fourth probing movement.                                                                                SOFT: V01.6X
+
+             Same as above.
+
+
+
+
+                                                                                                                             ·317·
+===== PAGE 317 =====
+
+                                                          9. Withdrawal.
+                                                             This movement consists of:
+                                                             ·1· Movement of the probe in rapid (G00) from the point where it probed to the real center
+                                                                 (calculated) of the hole.
+                                                             ·2· Should (C0) be programmed, the probe will be moved to the point where the cycle was called.
+                                                                Movement along the longitudinal axis to the coordinate of the point (along this axis) from
+                                                                where the cycle was called.
+                                                                Movement in the main work plane to the point where the cycle is called.
+
+ 12.                                                      Arithmetic parameters modified by the cycle
+                                                          Once the cycle has been completed, the CNC will return the real values obtained after
+
+        PROBING
+
+
+
+
+                  PROBE 8. Hole measuring canned cycle.
+                                                          measurement, in the following global arithmetic parameters.
+
+                                                             P294      Hole diameter.
+
+                                                             P295      Hole diameter error. Difference between the real diameter and programmed
+                                                                       diameter.
+
+                                                             P296      Real coordinate of the center along the abscissa axis.
+
+                                                             P297      Real coordinate of the center along the ordinate axis.
+
+                                                             P298      Error detected along the abscissa axis. Difference between the real coordinate of the
+                                                                       center and the programmed theoretical coordinate.
+
+                                                             P299      Error detected along the ordinate axis. Difference between the real coordinate of the
+                                                                       center and the programmed theoretical coordinate.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·318·
+===== PAGE 318 =====
+
+12.11        PROBE 9. Boss measuring canned cycle.
+
+        A probe placed in the spindle will be used, which must be previously calibrated by means of canned
+        cycles:
+             Tool length calibrating canned cycle.
+             Probe calibrating canned cycle.
+
+        The programming format for this cycle is:
+             (PROBE 9, X, Y, Z, B, J, E, C, H, F)
+
+    [ X±5.5 ] Theoretical coordinate, along the X axis, of the boss center                                                    12.
+                                                                                                                    PROBING
+
+
+
+
+                                                                                                                              PROBE 9. Boss measuring canned cycle.
+    [ Y±5.5 ] Theoretical coordinate, along the Y axis, of the boss center
+
+    [ Z±5.5 ] Theoretical coordinate, along the Z axis, of the boss center
+
+    [ B5.5 ] Safety distance
+
+        Defines the safety distance. Must be programmed with a positive value and over 0.
+
+    [ J5.5 ] Theoretical diameter of the boss.
+
+        Defines the theoretical diameter of the boss. Must be programmed with a positive value and over 0.
+
+        This cycle allows bosses to be measured with diameters of no more than (J+B).
+
+    [ E5.5 ] Withdrawal distance
+
+        Defines the distance which the probe moves back after initial probing. Must be programmed with
+        a positive value and over 0.
+
+    [ C ] Actions after finishing the probing operation
+
+        Indicates where the probing cycle must finish.
+             C=0              Will return to the same point where the call to the cycle was made.
+             C=1              The cycle will ends by positioning the probe over the center of the boss, at a (B)
+                              distance from the programmed theoretical coordinate.
+
+        If not programmed, the canned cycle will take the value of "C0".
+
+    [ H5.5 ] Initial probing feedrate
+
+        Defines the feedrate for the initial probing movement. It must be programmed in mm/minute or
+        inches/minute.
+
+    [ F5.5 ] Probing feedrate
+
+        It sets the probing feedrate. It must be programmed in mm/minute or inches/minute.
+
+
+
+
+                                                                                                                   CNC 8055
+                                                                                                                   CNC 8055i
+
+
+
+                                                                                                                   ·M· & ·EN· MODELS
+                                                                                                                     SOFT: V01.6X
+
+
+
+
+                                                                                                                              ·319·
+===== PAGE 319 =====
+
+                                                          12.11.1 Basic operation
+
+
+
+
+ 12.
+        PROBING
+
+
+
+
+                  PROBE 9. Boss measuring canned cycle.
+
+                                                               1. Positioning over the center of the boss.
+                                                                 Movement of the probe in rapid (G00) from the point where the cycle is called to the center of
+                                                                 the boss.
+                                                                 The approaching movement is made in two stages:
+                                                                  ·1· Movement in the main work plane.
+                                                                  ·2· Movement along the longitudinal axis up to a distance (B) from the programmed surface.
+                                                               2. Movement to the first approach point.
+                                                                 This movement of the probe that is made in rapid (G00) consists of:
+                                                                  ·1· Movement along the ordinate plane.
+                                                                  ·2· Movement of the longitudinal axis the distance (2B).
+                                                               3. Probing.
+                                                                 This movement consists of:
+                                                                  ·1· Movement of the probe along the ordinate axis at the indicated feedrate (H), until the probe
+                                                                      signal is received.
+                                                                     The maximum distance to be traveled in the probing movement is "B+(J/2)"; if, after travelling
+                                                                     that distance, the CNC does not receive the probe signal, it will display the corresponding
+                                                                     error code and stop the movement of the axes.
+                                                                  ·2· Return of the probe in rapid (G00) the distance indicated in (E).
+                                                                  ·3· Movement of the probe along the abscissa axis at the indicated feedrate (F), until the probe
+                                                                      signal is received.
+                                                               4. Movement to second approach point.
+                                                                 This movement of the probe that is made in rapid (G00) consists of:
+                                                                  ·1· Withdrawal to the first approach point.
+                                                                  ·2· Movement to a distance (B) above the boss, to the second approach point.
+CNC 8055                                                       5. Second probing movement.
+CNC 8055i                                                        Same as the first probing.
+                                                               6. Third approach movement.
+                                                                 Same as above.
+
+·M· & ·EN· MODELS
+                                                               7. Third probing movement.
+  SOFT: V01.6X                                                   Same as above.
+                                                               8. Fourth approach movement.
+                                                                 Same as above.
+
+
+
+     ·320·
+===== PAGE 320 =====
+
+         9. Fourth probing movement.
+             Same as above.
+         10.Withdrawal.
+             This movement consists of:
+             ·1· Withdrawal to the fourth approach point.
+             ·2· Movement of the probe in rapid (G00) and at a distance (B) above the boss to the real center
+                 (calculated) of the boss.
+             ·3· Should (C0) be programmed, the probe will be moved to the point where the cycle was called.
+                 Movement along the longitudinal axis to the coordinate of the point (along this axis) from
+                 where the cycle was called.
+                                                                                                                             12.
+                                                                                                                   PROBING
+
+
+
+
+                                                                                                                             PROBE 9. Boss measuring canned cycle.
+                 Movement in the main work plane to the point where the cycle is called.
+
+        Arithmetic parameters modified by the cycle
+        Once the cycle has been completed, the CNC will return the real values obtained after
+        measurement, in the following global arithmetic parameters.
+
+             P294         Boss diameter.
+
+             P295         Boss diameter error. Difference between the real diameter and programmed
+                          diameter.
+
+             P296         Real coordinate of the center along the abscissa axis.
+
+             P297         Real coordinate of the center along the ordinate axis.
+
+             P298         Error detected along the abscissa axis. Difference between the real coordinate of the
+                          center and the programmed theoretical coordinate.
+
+             P299         Error detected along the ordinate axis. Difference between the real coordinate of the
+                          center and the programmed theoretical coordinate.
+
+
+
+
+                                                                                                                  CNC 8055
+                                                                                                                  CNC 8055i
+
+
+
+                                                                                                                  ·M· & ·EN· MODELS
+                                                                                                                    SOFT: V01.6X
+
+
+
+
+                                                                                                                             ·321·
+===== PAGE 321 =====
+
+                                                                      12.12     PROBE 10. Rectangular part centering canned cycle
+
+                                                                           Cycle that, with a digital probe, minimizes the preparation time of rectangular part calculating the
+                                                                           real coordinates of the center, of the surface and of the part inclination.
+                                                                                (PROBE 10, I, J, X, Y, Z, K, L, B, D, E, H, F, Q)
+
+                                                                           Initial conditions
+                                                                              • The probe must properly calibrated in radius and length.
+
+
+ 12.                                                                          • The probe position before the first probing movement must be as centered as possible in X and Y.
+
+                                                                           Considerations for the cycle
+
+
+
+
+                  PROBE 10. Rectangular part centering canned cycle
+        PROBING
+                                                                              • After the probing movements, the probe withdraws from the part in G0 before moving to the safety
+                                                                                Z position.
+                                                                              • Depending on the PRBMOD variable, no error is issued in the following cases, even if machine
+                                                                                parameter PROBERR=YES.
+                                                                                  When a G75 probing move finishes before the probe has touched part.
+                                                                                  When a G76 probing move finishes but the probe is still touching the part.
+
+
+
+                                                                           Parameters
+
+
+                                                                        [ X±5.5 ] X coordinate where probing will begin
+
+                                                                           X coordinate of the probe position where the first probing move will start.
+
+                                                                           If not programmed, it will assume the current X position of the probe.
+
+                                                                        [ Y±5.5 ] Y coordinate where probing will begin
+                                                                           Y coordinate of the probe position where the first probing move will start.
+
+                                                                           If not programmed, it will assume the current Y position of the probe.
+
+                                                                        [ Z±5.5 ] Z coordinate where probing will begin
+
+                                                                           Z coordinate of the probe position where the first probing move will start.
+
+                                                                           If not programmed, it will assume the current Z position of the probe.
+
+                                                                        [ I5.5 ] X length of the rectangular part.
+
+                                                                           If not programmed or programmed with a 0 value, it generates the corresponding error message.
+
+                                                                        [ J5.5 ] Y length of the rectangular part.
+
+                                                                           If not programmed or programmed with a 0 value, it generates the corresponding error message.
+
+                                                                        [ K1 ] Axis and direction of the first probing movement.
+
+                                                                           The values are:
+                                                                              • For X+ : 0
+                                                                              • For X- : 1
+                                                                              • For Y+ : 2
+                                                                              • For Y- : 3
+CNC 8055
+CNC 8055i                                                                  If not programmed, it assumes 0.
+
+                                                                        [ L1 ] It indicates whether the part surface is measured or not
+                                                                              • 0 Value: It is not measured
+·M· & ·EN· MODELS                                                             • 1 Value: It is measured
+  SOFT: V01.6X
+                                                                              • If not programmed, it assumes 0
+
+
+
+
+     ·322·
+===== PAGE 322 =====
+
+    [ B5.5 ] Approach distance
+
+        Part approaching distance in each probing movement. If not programmed or programmed as 0, it
+        assumes the approach distance value from the probe position to the part.
+
+    [ D±5.5 ] Probe's up distance
+
+        Distance for the probe to go up in Z for its movements over the part. If not programmed or
+        programmed with a 0 value, it generates the corresponding error message.
+
+    [ E±5.5 ] Withdrawal distance
+
+        Distance the probe retracts after finding the part, to make the measurement. If not programmed or
+        programmed with a 0 value, it generates the corresponding error message.
+                                                                                                                       12.
+
+
+
+
+                                                                                                                       PROBE 10. Rectangular part centering canned cycle
+                                                                                                             PROBING
+    [ H5 ] Probing feedrate for part search
+
+        If not programmed or programmed with a 0 value, it generates the corresponding error message.
+
+    [ F5 ] Probe's measuring feedrate
+
+        If not programmed or programmed with a 0 value, it generates the corresponding error message.
+
+    [ Q5] Probe feedrate when going to the approach points
+
+        Probe feedrate when going to the approach points. If not programmed, it assumes rapid traverse
+        (G0).
+
+
+
+
+                                                                                                            CNC 8055
+                                                                                                            CNC 8055i
+
+
+
+                                                                                                            ·M· & ·EN· MODELS
+                                                                                                              SOFT: V01.6X
+
+
+
+
+                                                                                                                       ·323·
+===== PAGE 323 =====
+
+                                                                      12.12.1 Basic operation
+
+                                                                           1. Approach movement (according to the value given in Q), first in the axes of the plane and then
+                                                                              in the longitudinal axis, to the position of the first probing (only if X or Y or Z has been
+                                                                              programmed).
+                                                                           2. Probing movement (at the feedrate given in H), in the given axis and direction until touching the
+                                                                              first side.
+                                                                           3. Withdrawal (distance given in E) for the measuring probing movement.
+                                                                           4. Probing movement (at the feedrate given in F) until touching the same side again.
+ 12.                                                                       5. Withdrawal to the starting position.
+                                                                           6. Movement parallel to the probed side to touch a different point of the same side.
+
+
+
+
+                  PROBE 10. Rectangular part centering canned cycle
+        PROBING
+                                                                           7. Probing movement (at the feedrate given in F), in the given axis and direction until touching the
+                                                                              first side again. This calculates the part inclination angle with respect to the table and it is saved
+                                                                              in parameter P296.
+                                                                           8. Rapid up movement in Z (distance given in D) up to the Safety Z coordinate.
+                                                                           9. Movement (according to the value given in Q) up to the approach point of the opposite side
+                                                                              considering the length of the part, the calculated inclination angle and the value of parameter B.
+                                                                           10.Probing movement (at the feedrate given in H) to go down to the probing Z coordinate. If it
+                                                                              touches the part, the probe goes back up to the safety Z position and moves the distance
+                                                                              indicated by parameter B (in the same direction) until clearing the part.
+                                                                           11.Probing movement (at the feedrate given in H), considering the calculated inclination angle until
+                                                                              touching that side.
+                                                                           12.Withdrawal (distance given in E) for the measuring probing movement.
+                                                                           13.Probing movement (at the feedrate given in F) until touching the same side again.
+                                                                           14.Rapid up movement to the safety Z coordinate.
+                                                                           15.Movement (according to the value given in Q) up to approach point in the middle of one of the
+                                                                              remaining sides considering half the lengths and the calculated inclination angle.
+                                                                           16.Probing movement (at the feedrate given in H) to go down to the probing Z coordinate. If it
+                                                                              touches the part, the probe goes back up to the safety Z position and moves the distance
+                                                                              indicated by parameter B (in the same direction) until clearing the part.
+                                                                           17.Probing movement (at the feedrate given in H), considering the calculated inclination angle until
+                                                                              touching that side.
+                                                                           18.Withdrawal (distance given in E) for the measuring probing movement.
+                                                                           19.Probing movement (at the feedrate given in F) until touching the same side again.
+                                                                           20.Rapid up movement to the safety Z coordinate.
+                                                                           21.If part surface measuring has not been programmed, it goes on to point 26; and if it has been
+                                                                              programmed, movement (according to the value given in Q) up to the center of the part.
+                                                                           22.Probing movement (at the feedrate given in H) until touching the surface of the part.
+                                                                           23.Withdrawal (distance given in E) for the measuring probing movement.
+                                                                           24.Probing movement (at the feedrate given in F) until touching the surface of the part again. This
+                                                                              measures the coordinate of the part surface and it is saved in parameter P297.
+                                                                           25.Rapid up movement to the safety Z coordinate.
+                                                                           26.Movement (according to the value given in Q) up to the approach point of the opposite side
+                                                                              considering the length of the part, the calculated inclination angle.
+                                                                           27.Probing movement (at the feedrate given in H) to go down to the probing Z coordinate. If it
+                                                                              touches the part, the probe goes back up to the safety Z position and moves the distance
+                                                                              indicated by parameter B (in the same direction) until clearing the part.
+CNC 8055
+                                                                           28.Probing movement (at the feedrate given in H), considering the calculated inclination angle until
+CNC 8055i                                                                     touching that side.
+                                                                           29.Withdrawal (distance given in E) for the measuring probing movement.
+                                                                           30.Probing movement (at the feedrate given in F) until touching the same side again. This calculates
+                                                                              the real center of the rectangular part and it is saved in parameters P298 and P299.
+·M· & ·EN· MODELS
+  SOFT: V01.6X                                                             31.Rapid up movement to the safety Z coordinate.
+                                                                           32.Rapid movement up to the calculated center.
+
+
+
+
+     ·324·
+===== PAGE 324 =====
+
+12.13        PROBE 11. Circular part centering canned cycle.
+
+        Cycle that, with a digital probe, minimizes the preparation time of circular part calculating the real
+        coordinates of the center and of the surface of the part.
+             (PROBE 11, J, X, Y, Z, K, L, B, D, E, H, F, Q)
+
+        Initial conditions
+          • The probe must properly calibrated in radius and length.
+          • The probe position before the first probing movement must be as centered as possible in X and Y.
+
+        Considerations for the cycle
+                                                                                                                            12.
+                                                                                                                  PROBING
+
+
+
+
+                                                                                                                            PROBE 11. Circular part centering canned cycle.
+          • After the probing movements, the probe withdraws from the part in G0 before moving to the safety
+            Z position.
+          • Depending on the PRBMOD variable, no error is issued in the following cases, even if machine
+            parameter PROBERR=YES.
+               When a G75 probing move finishes before the probe has touched part.
+               When a G76 probing move finishes but the probe is still touching the part.
+
+
+
+        Parameters
+
+
+    [ X±5.5 ] X coordinate where probing will begin
+
+        X coordinate of the probe position where the first probing move will start.
+
+        If not programmed, it will assume the current X position of the probe.
+
+    [ Y±5.5 ] Y coordinate where probing will begin
+        Y coordinate of the probe position where the first probing move will start.
+
+        If not programmed, it will assume the current Y position of the probe.
+
+    [ Z±5.5 ] Z coordinate where probing will begin
+
+        Z coordinate of the probe position where the first probing move will start.
+
+        If not programmed, it will assume the current Z position of the probe.
+
+    [ J5.5 ] Diameter of the circular part.
+
+        If not programmed or programmed with a 0 value, it generates the corresponding error message.
+
+    [ K1 ] Axis and direction of the first probing movement.
+
+        The values are:
+          • For X+ : 0
+          • For X- : 1
+          • For Y+ : 2
+          • For Y- : 3
+
+        If not programmed, it assumes 0.
+
+    [ L1 ] It indicates whether the part surface is measured or not
+                                                                                                                 CNC 8055
+          • 0 Value: It is not measured
+                                                                                                                 CNC 8055i
+          • 1 Value: It is measured
+          • If not programmed, it assumes 0
+
+    [ B5.5 ] Part approaching distance in each probing movement.                                                 ·M· & ·EN· MODELS
+                                                                                                                   SOFT: V01.6X
+        If not programmed or programmed as 0, it assumes the approach distance value from the probe
+        starting position to the part.
+
+
+
+
+                                                                                                                            ·325·
+===== PAGE 325 =====
+
+                                                                    [ D±5.5 ] Probe's up distance along Z.
+
+                                                                       Distance for the probe to go up in Z for its movements over the part. If not programmed or
+                                                                       programmed with a 0 value, it generates the corresponding error message.
+
+                                                                    [ E±5.5 ] Probe withdrawal distance
+
+                                                                       Distance the probe retracts after finding the part, to make the measurement. If not programmed or
+                                                                       programmed with a 0 value, it generates the corresponding error message.
+
+                                                                    [ H5 ] Probing feedrate for searching the part.
+
+ 12.                                                                   If not programmed or programmed with a 0 value, it generates the corresponding error message.
+
+
+
+
+        PROBING
+
+
+
+
+                  PROBE 11. Circular part centering canned cycle.
+                                                                    [ F5 ] Probing feedrate for measuring.
+
+                                                                       If not programmed or programmed with a 0 value, it generates the corresponding error message.
+
+                                                                    [ Q5 ] Probe feedrate when going to the approach points.
+
+                                                                       If not programmed, it assumes in G0.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·326·
+===== PAGE 326 =====
+
+12.13.1 Basic operation
+
+         1. Approach movement (according to the value given in Q), first in the axes of the plane and then
+            in the longitudinal axis, to the position of the first probing (only if X or Y or Z has been
+            programmed).
+         2. Probing movement (at the feedrate given in H), in the given axis and direction until touching the
+            part.
+         3. Withdrawal (distance given in E) for the measuring probing movement.
+         4. Probing movement (at the feedrate given in F) until touching the same side again.
+         5. Rapid up movement in Z (distance given in D) up to the Safety Z coordinate.
+         6. Movement (according to the value given in Q) up to the opposite approach point considering the
+                                                                                                                             12.
+                                                                                                                   PROBING
+
+
+
+
+                                                                                                                             PROBE 11. Circular part centering canned cycle.
+            diameter of the part.
+         7. Probing movement (at the feedrate given in H) to go down to the probing Z coordinate. If it touches
+            the part, the probe goes back up to the safety Z position and moves the distance indicated by
+            parameter B (in the same direction) until clearing the part.
+         8. Probing movement (at the feedrate given in H) until touching the part.
+         9. Withdrawal (distance given in E) for the measuring probing movement.
+         10.Probing movement (at the feedrate given in F) until touching the part again. This calculates one
+            of the coordinates of the real center of the part.
+         11.Rapid up movement to the safety Z coordinate.
+         12.Movement (according to the value given in Q) up to the approach point of the remaining axis
+            considering the calculated center coordinate.
+         13.Probing movement (at the feedrate given in H) to go down to the probing Z coordinate. If it
+            touches the part, the probe goes back up to the safety Z position and moves the distance
+            indicated by parameter B (in the same direction) until clearing the part.
+         14.Probing movement (at the feedrate given in H) until touching the part.
+         15.Withdrawal (distance given in E) for the measuring probing movement.
+         16.Probing movement (at the feedrate given in F) until touching the part again.
+         17.Rapid up movement to the safety Z coordinate.
+         18.If part surface measuring has not been programmed, it goes on to point 23; and if it has been
+            programmed, movement (according to the value given in Q) up to the center of the part.
+         19.Probing movement (at the feedrate given in H) until touching the surface of the part.
+         20.Withdrawal (distance given in E) for the measuring probing movement.
+         21.Probing movement (at the feedrate given in F) until touching the surface of the part again. This
+            measures the coordinate of the part surface and it is saved in parameter P297.
+         22.Rapid up movement to the safety Z coordinate.
+         23.Movement (according to the value given in Q) up to the opposite approach point considering
+            the diameter of the part.
+         24.Probing movement (at the feedrate given in H) to go down to the probing Z coordinate. If it
+            touches the part, the probe goes back up to the safety Z position and moves the distance
+            indicated by parameter B (in the same direction) until clearing the part.
+         25.Probing movement (at the feedrate given in H) until touching the part.
+         26.Withdrawal (distance given in E) for the measuring probing movement.
+         27.Probing movement (at the feedrate given in F) until touching the part again. This calculates the
+            real center of the circular part and it is saved in parameters P298 and P299.
+         28.Rapid up movement to the safety Z coordinate. Rapid movement up to the calculated center.
+                                                                                                                  CNC 8055
+                                                                                                                  CNC 8055i
+
+
+
+                                                                                                                  ·M· & ·EN· MODELS
+                                                                                                                    SOFT: V01.6X
+
+
+
+
+                                                                                                                             ·327·
+===== PAGE 327 =====
+
+                                                         12.14     PROBE 12. Tabletop probe calibration
+
+                                                             This cycle makes it easier to calibrate the probe reducing machine preparation time.
+
+
+
+                                                             Initial conditions
+
+                                                             The tool used for calibration must properly calibrated in radius and length.
+
+ 12.                                                         The values of the machine parameters of the probe must be close to their real values. These
+                                                             parameters are the following:
+
+
+
+        PROBING
+
+
+
+
+                  PROBE 12. Tabletop probe calibration
+                                                                 • G.m.p. PRBXMIN (P40).
+                                                                 • G.m.p. PRBXMAX (P41).
+                                                                 • G.m.p. PRBYMIN (P42).
+                                                                 • G.m.p. PRBYMAX (P43).
+                                                                 • G.m.p. PRBZMIN (P44).
+                                                                 • G.m.p. PRBZMAX (P45).
+
+
+
+                                                             Initial considerations.
+
+                                                             Measuring on the Z axis:
+                                                                 • If the Z coordinate of the tool before running the cycle is greater than or equal to the maximum
+                                                                   Z coordinate of the probe, the Z side of the probe that will be measured will correspond with its
+                                                                   maximum Z coordinate.
+                                                                 • If the Z coordinate of the tool before running the cycle is lower than or equal to the minimum Z
+                                                                   coordinate of the probe, the Z side of the probe that will be measured will correspond with its
+                                                                   minimum Z coordinate.
+                                                                 • If the Z coordinate of the tool before running the cycle is between the maximum and minimum
+                                                                   Z coordinates of the probe, the CNC will issue the relevant error message.
+
+                                                             Measuring on the X axis:
+                                                                 • If the X coordinate of the tool before running the cycle is greater than half the maximum and
+                                                                   minimum X coordinates of the probe, the X side of the probe where the measuring will begin
+                                                                   will correspond with its maximum X coordinate.
+                                                                 • If the X coordinate of the tool before running the cycle is lower than or equal to half the maximum
+                                                                   and minimum X coordinates of the probe, the X side of the probe where the measuring will begin
+                                                                   will correspond with its minimum X coordinate.
+
+                                                             Initial positioning move:
+                                                                 • If the Z coordinate of the tool before running the cycle is located separated from the Z side of
+                                                                   the probe to be measured by a distance smaller than the approach distance (B), the initial
+                                                                   positioning move of the tool will be carried out first on the Z axis up to that approach distance
+                                                                   and, then, in XY up to the approach distance from the X side of the corresponding probe.
+                                                                 • If the Z coordinate of the tool before running the cycle is located separated from the Z side of
+                                                                   the probe to be measured by a distance greater than or equal to the approach distance (B), the
+                                                                   initial positioning move of the tool will be carried out first in XY up to the approach distance from
+                                                                   the X side of the corresponding probe and then in Z up to that approach distance from the Z
+                                                                   side of the corresponding probe.
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·328·
+===== PAGE 328 =====
+
+        Cycle programming format
+
+        Working in Cartesian coordinates, the basic structure of the block is as follows:
+             PROBE 12, B, E, H, F, I, X, U, Y, V, Z, W
+
+
+
+
+                                  B
+
+                                                                                                                              12.
+                                                                                                                    PROBING
+
+
+
+
+                                                                                                                              PROBE 12. Tabletop probe calibration
+                                                             B
+                                      Z
+                                          Y
+
+
+                                          X
+
+
+
+
+    [ B5.5 ] Approach distance
+
+        Probe approaching distance in each probing movement. If not programmed or programmed with
+        a 0 value, the CNC will display the corresponding error message.
+
+    [ E±5.5 ] Withdrawal distance
+
+        Distance the tool retracts after touching the probe to take the measurement. If not programmed or
+        programmed with a 0 value, the CNC will display the corresponding error message.
+
+    [ H5 ] Searching feedrate
+
+        Probe searching feedrate. If not programmed or programmed with a 0 value, the CNC will display
+        the corresponding error message.
+
+    [ F5 ] Measuring feedrate
+
+        Measuring feedrate. If not programmed or programmed with a 0 value, the CNC will display the
+        corresponding error message.
+
+    [ I1 ] Type of calibration
+
+        The type of calibration may be simple or double.
+             I=0     Simple calibration: The calibration is carried out in the 4 quadrants of the probe with the
+                     spindle that holds the tool oriented at 0º.
+             I=1     Double calibration: The calibration is carried out twice in the 4 quadrants of the probe,
+                     one with the spindle positioned at 0º and the other with the spindle positioned at 180º.
+                     This prevents tool eccentricity errors.
+
+        If not programmed, the cycle will assume the I=0 value.
+
+    [ X±5.5 ] Approximate X axis coordinate of the least positive side of the probe
+
+        Approximate coordinate of the least positive side of the probe, along the abscissa axis. If not
+        programmed, it will assume the value of general machine parameter PRBXMIN (P40).                           CNC 8055
+                                                                                                                   CNC 8055i
+    [ U±5.5 ] Approximate X axis coordinate of the most positive side of the probe
+
+        Approximate coordinate of the most positive side of the probe, along the abscissa axis. If not
+        programmed, it will assume the value of general machine parameter PRBXMAX (P41).
+                                                                                                                   ·M· & ·EN· MODELS
+    [ Y±5.5 ] Approximate Y axis coordinate of the least positive side of the probe                                  SOFT: V01.6X
+
+        Approximate coordinate of the least positive side of the probe, along the ordinate axis. If not
+        programmed, it will assume the value of general machine parameter PRBYMIN (P42).
+
+
+
+                                                                                                                              ·329·
+===== PAGE 329 =====
+
+                                                         [ V±5.5 ] Approximate Y axis coordinate of the most positive side of the probe
+
+                                                            Approximate coordinate of the most positive side of the probe, along the ordinate axis. If not
+                                                            programmed, it will assume the value of general machine parameter PRBYMAX (P43).
+
+                                                         [ Z±5.5 ] Approximate Z axis coordinate of the least positive side of the probe
+
+                                                            Approximate coordinate of the least positive side of the probe, along the Z axis. If not programmed,
+                                                            it will assume the value of general machine parameter PRBZMIN (P44).
+
+                                                         [ W±5.5 ] Approximate Z axis coordinate of the most positive side of the probe
+
+ 12.                                                        Approximate coordinate of the most positive side of the probe, along the Z axis. If not programmed,
+                                                            it will assume the value of general machine parameter PRBZMAX (P45).
+
+
+        PROBING
+
+
+
+
+                  PROBE 12. Tabletop probe calibration
+                                                            Operation
+
+                                                             1. Spindle orientation at 0º (only for double calibration).
+                                                             2. Initial positioning movement to the initial approach coordinates.
+                                                             3. Probing movement (at the feedrate given in H) up to the Z probing coordinate (in the middle of
+                                                                the probe). If it touches the part, the CNC issues the corresponding error.
+                                                             4. Probing movement (at the feedrate given in H), in the X axis and in the given direction until
+                                                                touching the first side.
+                                                             5. Rapid withdrawal along the X axis (distance given in E) for the measuring probing move.
+                                                             6. Probing movement (at the feedrate given in F) until touching the same side again.
+                                                             7. Rapid withdrawal up to the X approach coordinate.
+                                                             8. Rapid withdrawal in Z up to the Z approach coordinate.
+                                                             9. Rapid X axis movement up to the approach point of the other side considering the theoretical
+                                                                length of the probe on the X axis and the value of parameter B.
+                                                             10.Probing movement (at the feedrate given in H) to go down to the probing Z coordinate. If it
+                                                                touches the probe, it goes back up to the approach coordinate and moves the safety distance
+                                                                indicated in the same direction. This movement is repeated until clearing the probe.
+                                                             11.Probing movement on X (at the feedrate given in H) until touching that side.
+                                                             12.Rapid withdrawal along the X axis (distance given in E) for the measuring probing move.
+                                                             13.Probing movement on X (at the feedrate given in F) until touching the same side again.
+                                                             14.Rapid withdrawal up to the X approach coordinate.
+                                                             15.Rapid movement along the Z axis up to the Z approach coordinate.
+                                                             16.Rapid movement up to the approach coordinate to the minimum Y side of the probe (the X
+                                                                approach coordinate corresponds to the real center of the probe).
+                                                             17.Probing movement (at the feedrate given in H) to go down to the probing Z coordinate. If it
+                                                                touches the probe, it goes back up to the approach coordinate and moves the safety distance
+                                                                indicated in the same direction. This movement is repeated until clearing the probe.
+                                                             18.Probing movement on Y (at the feedrate given in H) until touching that side.
+                                                             19.Rapid withdrawal along the Y axis (distance given in E) for the measuring probing move.
+                                                             20.Probing movement on Y (at the feedrate given in F) until touching the same side again.
+                                                             21.Rapid withdrawal up to the Y approach coordinate.
+                                                             22.Rapid movement in Z up to the Z approach coordinate.
+
+CNC 8055                                                     23.Rapid movement along the Y axis up to the theoretical center of the probe.
+
+CNC 8055i                                                    24.Probing movement on Z (at the feedrate given in H) until touching the Z side of the probe.
+                                                             25.Rapid withdrawal along the Z axis (distance given in E) for the measuring probing move.
+                                                             26.Probing movement on Z (at the feedrate given in F) until touching the same side again.
+                                                             27.Rapid movement along the Z axis up to the Z approach coordinate.
+·M· & ·EN· MODELS
+  SOFT: V01.6X                                               28.Rapid Y axis movement up to the approach point of the other side considering the theoretical
+                                                                length of the probe on the Y axis and the value of parameter B.
+                                                             29.Probing movement (at the feedrate given in H) to go down to the probing Z coordinate. If it
+                                                                touches the probe, it goes back up to the approach coordinate and moves the safety distance
+                                                                indicated in the same direction. This movement is repeated until clearing the probe.
+
+
+     ·330·
+===== PAGE 330 =====
+
+         30.Probing movement (at the feedrate given in H) until touching that side.
+         31.Rapid withdrawal (distance given in E) for the measuring probing movement.
+         32.Probing movement (at the feedrate given in F) until touching the same side again.
+         33.Rapid withdrawal on the Y axis up to the approach position.
+         34.Rapid withdrawal in Z up to the Z approach coordinate.
+         35.Rapid movement up to the starting XY point.
+         36.Rapid withdrawal in Z up to the Z starting coordinate.
+         37.If it is a double calibration, orient the spindle at 180º and repeat steps 2 through 36.
+         38.Setting the relevant parameters with the real values of the sides of the calibrated probe.              12.
+                                                                                                          PROBING
+
+
+
+
+                                                                                                                    PROBE 12. Tabletop probe calibration
+        Arithmetic parameters modified by the cycle
+
+        Once the cycle has been completed, the CNC will return the real values obtained after
+        measurement, in the following global arithmetic parameters.
+             P295 Real coordinate of the least positive side of the probe, along the abscissa axis.
+             P296 Real coordinate of the most positive side of the probe, along the abscissa axis.
+             P297 Real coordinate of the least positive side of the probe, along the ordinate axis.
+             P298 Real coordinate of the most positive side of the probe, along the ordinate axis.
+             P299 Real coordinate of the measured probe side along the longitudinal axis.
+
+
+
+
+                                                                                                         CNC 8055
+                                                                                                         CNC 8055i
+
+
+
+                                                                                                         ·M· & ·EN· MODELS
+                                                                                                           SOFT: V01.6X
+
+
+
+
+                                                                                                                    ·331·
+===== PAGE 331 =====
+
+
+
+
+ 12.
+        PROBING
+
+
+
+
+                  PROBE 12. Tabletop probe calibration
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+     ·332·

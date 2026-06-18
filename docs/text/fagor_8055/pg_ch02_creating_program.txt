@@ -1,0 +1,192 @@
+===== PAGE 33 =====
+
+                                                            2.1        Program structure at the CNC
+
+                                                                    All the blocks which make up the program have the following structure:
+                                                                           Block header + program block + end of block
+
+
+
+
+                                                            2.1.1      Block header
+ 2.                                                                 The block header is optional, and may consist of one or more block skip conditions and by the block
+
+
+
+
+                             Program structure at the CNC
+        CREATING A PROGRAM
+                                                                    number or label. Both must be programmed in this order.
+
+                                                                    Block skip condition. "/", "/1", "/2", "/3".
+                                                                    These three block skip conditions, given that "/" and "/1" are the same, they are governed by the
+                                                                    marks BLKSKIP1, BLKSKIP2 and BLKSKIP3 of the PLC. If any of these marks is active, the CNC
+                                                                    will not execute the block or blocks in which it has been programmed; the execution takes place in
+                                                                    the following block.
+
+                                                                    Up to 3 skip conditions can be programmed in one block; they will be evaluated one by one,
+                                                                    respecting the order in which they have been programmed.
+
+                                                                    The control reads 200 blocks ahead of the one being executed in order to calculate in advance the
+                                                                    path to be run. The condition for block skip will be analyzed at the time when the block is read i.e.
+                                                                    200 blocks before execution.
+
+                                                                    If the block skip needs to be analyzed at the time of execution, it is necessary to interrupt the block
+                                                                    preparation, by programming G4 in the previous block.
+
+                                                                    Label or block number. N(0-99999999).
+                                                                    This is used to identify the block, and is only used when block references or jumps are made. They
+                                                                    are represented by the letter N followed by up to 8 digits (0-99999999).
+
+                                                                    No particular order is required and the numbers need not be sequential. If two or more blocks with
+                                                                    the same label number are present in the same program, the CNC will always give priority to the
+                                                                    first number.
+
+                                                                    Although it is not necessary to program it, by using a softkey the CNC allows the automatic
+                                                                    programming of labels. The programmer can select the initial number and the step between labels.
+
+                                                                    Restrictions:
+                                                                     • Displaying the number of the active block in the top window of the screen:
+                                                                          When executing a program in ISO mode, when the label number is higher than 9999, it
+                                                                           displays N**** .
+                                                                          On the "DISPLAY / SUBROUTINES" window, when displaying an RPT that has a label higher
+                                                                           than 9999, it displays it with ****.
+                                                                     • Canned cycles G66, G67 and G68 (irregular pockets with islands) can only be edited using 4-
+                                                                       digit labels.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·34·
+===== PAGE 34 =====
+
+2.1.2        Program block
+
+        This is written with commands in ISO and high level languages. To prepare a program, blocks written
+        in both languages will be used, although each one should be edited with commands in just one
+        language.
+
+        ISO language.
+        This language is specially designed to control axis movement, as it gives information and movement
+        conditions, in addition to data on feedrate. It offers the following types of functions.
+          • Preparatory functions for movement, used to determine geometry and working conditions, such
+            as linear and circular interpolations, threading, etc.
+                                                                                                                                       2.
+
+
+                                                                                                                                       Program structure at the CNC
+                                                                                                                  CREATING A PROGRAM
+          • Control functions for axis feedrate and spindle speeds.
+          • Tool control functions.
+          • Complementary functions, with technological instructions.
+
+        High level language.
+        This enables access to general purpose variables and to system tables and variables.
+
+        It gives the user a number of control sentences which are similar to the terminology used in other
+        languages, such as IF, GOTO, CALL, etc. It also allows the use of any type of expression (arithmetic,
+        referential, or logical).
+
+        It also has instructions for the construction of loops, plus subroutines with local variables. A local
+        variable is one that is only recognized by the subroutine in which it has been defined.
+
+        It is also possible to create libraries, grouping subroutines with useful and tested functions, which
+        can be accessed from any program.
+
+
+
+
+                                                                                                                 CNC 8055
+                                                                                                                 CNC 8055i
+
+
+
+                                                                                                                 ·M· & ·EN· MODELS
+                                                                                                                   SOFT: V01.6X
+
+
+
+
+                                                                                                                                              ·35·
+===== PAGE 35 =====
+
+                                                            2.1.3      End of block
+
+                                                                    The end of block is optional and may consist of the indication of number of repetitions of the block
+                                                                    and of the block comment. Both must be programmed in this order.
+
+                                                                    Number of block repetitions. N(0-9999)
+                                                                    This indicates the number of times the block will be executed. The number of repetitions is
+                                                                    represented by the letter N followed by up to 4 digits (0-9999). The active machining operation does
+                                                                    not take place if N0 is programmed; only the movement programmed within the block takes place.
+
+ 2.                                                                 Movement blocks can only be repeated which, at the time of their execution, are under the influence
+                                                                    of a modal subroutine. In these cases, the CNC executes the programmed move and the active
+
+
+
+
+                             Program structure at the CNC
+        CREATING A PROGRAM
+                                                                    machining operation (canned cycle or modal subroutine) the indicated number of times.
+
+                                                                    Block comment
+                                                                    The CNC allows you to incorporate any kind of information into all blocks in the form of a comment.
+                                                                    The comment is programmed at the end of the block, and should begin with the character ";"
+                                                                    (semicolon).
+
+                                                                    If a block begins with ";" all its contents will be considered as a comment, and it will not be executed.
+
+                                                                    Empty blocks are not permitted. They should contain at least one comment.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+·M· & ·EN· MODELS
+  SOFT: V01.6X
+
+
+
+
+      ·36·
+===== PAGE 36 =====
+
+
+                                                                                    3
+  Given that the purpose of the CNC is to control the movement and positioning of axes, it is necessary
+  to determine the position of the point to be reached through its coordinates.
+
+  The CNC allows you to use absolute, relative or incremental coordinates throughout the same
+  program.
+
+
+
+
+                                                                                                          CNC 8055
+                                                                                                          CNC 8055i
+
+
+
+                                                                                                          ·M· & ·EN· MODELS
+                                                                                                            SOFT: V01.6X
+
+
+
+
+                                                                                                                ·37·

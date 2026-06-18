@@ -1,0 +1,690 @@
+===== PAGE 460 =====
+
+  SBCD (R557)
+
+     This register will be used when using a spindle operating with BCD coded S signal. s.m.p.
+     SPDLTYPE (P0).
+
+     The auxiliary S function will always be executed at the beginning of the block and the CNC will wait
+     for the general logic input AUXEND to be activated to consider the execution completed.
+
+     If S output in 2-digit BCD is used the CNC will tell the PLC, by means of this register the selected
+     spindle speed according to the following conversion table:
+
+
+               S
+          Programmed
+                              S
+                             BCD
+                                                S
+                                           Programmed
+                                                                S
+                                                               BCD
+                                                                                S
+                                                                           Programmed
+                                                                                                S
+                                                                                               BCD
+                                                                                                                                    11.
+
+
+                                                                                                                                    Auxiliary M, S, T functions
+                                                                                                            CNC-PLC COMMUNICATION
+                0             00              50-55            54             800-899          78
+
+                1             20              56-62            55             900-999          79
+
+                2             26              63-70            56           1000-1119          80
+
+                3             29              71-79            57           1120-1249          81
+
+                4             32              80-89            58           1250-1399          82
+                5             34              90-99            59           1400-1599          83
+
+                6             35             100-111           60           1600-1799          84
+
+                7             36             112-124           61           1800-1999          85
+                8             38             125-139           62           2000-2239          86
+
+                9             39             140-159           63           2240-2499          87
+
+              10-11           40             160-179           64           2500-2799          88
+
+               12             41             180-199           65           2800-3149          89
+
+               13             42             200-223           66           3150-3549          90
+
+              14-15           43             224-249           67           3550-3999          91
+              16-17           44             250-279           68           4000-4499          92
+
+              18-19           45             280-314           69           4500-4999          93
+
+              20-22           46             315-354           70           5000-5599          94
+              23-24           47             355-399           71           5600-6299          95
+
+              25-27           48             400-449           72           6300-7099          96
+
+              28-31           49             450-499           73           7100-7999          97
+
+              32-35           50             500-559           74           8000-8999          98
+
+              36-39           51             560-629           75           9000-9999          99
+
+              40-44           52             630-709           76
+
+              45-49           53             710-799           77
+
+
+     If a value over 9999 is programmed the CNC will tell the PLC the spindle speed corresponding to
+     value 9999.
+
+     If S output in 8-digit BCD is used the CNC will indicate the programmed spindle speed to the PLC
+     by means of this register.
+        This value will be coded in BCD format (8 digits) in thousandths of a revolution per minute.
+
+         S 12345.678 =    0001      0010      0011      0100        0101    0110        0111   1000
+                                                                                                            CNC 8055
+        If no S has been programmed in the block, the CNC will assign a value of $FFFFFFFF to this          CNC 8055i
+        register.
+
+
+
+                                                                                                                 SOFT: V01.6X
+
+
+
+
+                                                                                                                                    ·461·
+===== PAGE 461 =====
+
+                                                             TBCD (R558)
+
+                                                               The CNC tells the PLC by means of this 32-bit register, the pocket number in the magazine where
+                                                               the selected tool is.
+
+                                                               If g.m.p. RANDOMTC (P25) has been set so it is not a random magazine, the magazine pocket
+                                                               position coincides with the tool number.
+
+                                                               This will be coded in BCD format (8 digits).
+
+                                                                   T 123 =           0000      0000      0000     0000      0000      0001        0010         0011
+
+
+11.                                                            If no T has been programmed in the block, the CNC will assign a value of $FFFFFFFF to this register.
+
+                                                               The T function will always be executed at the beginning of the block and the CNC will wait for the
+
+
+
+
+                               Auxiliary M, S, T functions
+       CNC-PLC COMMUNICATION
+                                                               general logic input AUXEND to be activated to consider the execution completed.
+
+
+                                                             T2BCD (R559)
+
+                                                               This register is used when a special tool change has been made (family code >= 200) or with
+                                                               machining centers with a non-random tool magazine (general machine parameter RANDOMTC
+                                                               (P25).
+
+                                                               The CNC tells the PLC by means of the 32 bit register, the position of the magazine (empty pocket)
+                                                               in which the tool which was on the spindle must be deposited.
+
+                                                               This will be coded in BCD code (8 digits). If a second T function is not required the CNC will assign
+                                                               a value $FFFFFFFF to the register.
+
+                                                               The second T function will be sent together with M06 and the CNC will wait for the general logic
+                                                               input AUXEND to the activated to consider the execution completed.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·462·
+===== PAGE 462 =====
+
+11.2      Auxiliary M, S, T function transfer
+
+       Every time a block is executed in the CNC, information is passed to the PLC about the M, S, and
+       T functions which are active.
+
+
+
+       M function
+
+       The CNC analyzes the M functions programmed in the block and in accordance with how these are
+       defined, will send these to the PLC before and/or after the movement.                                                                    11.
+       To do this, it uses variables "MBCD1" to "MBCD7" (R550 to R556) and activates the general logic
+
+
+
+
+                                                                                                                        CNC-PLC COMMUNICATION
+                                                                                                                                                Auxiliary M, S, T function transfer
+       output "MSTROBE" to indicate to the PLC that it must execute them.
+
+       Depending on how these functions are defined on the table, the CNC must wait, or not, for the general
+       input "AUXEND" to be activated to consider the execution completed.
+
+
+
+       S function
+
+       If an S function has been programmed and the spindle has BCD input, the CNC will send this value
+       to the variable "SBCD" (R557) and will activate the general logic output "SSTROBE" to indicate to
+       the PLC that it must be executed.
+       This transmission is made at the beginning of the block execution and the CNC will wait for the
+       general input "AUXEND" to be activated to consider the execution completed.
+
+
+
+       T function
+
+       The CNC will indicate via the variable "TBCD" (R558) the T function which has been programmed
+       in the block and activates the general logic output "TSTROBE" to tell the PLC that it must execute it.
+
+       This transmission is made at the beginning of the block execution and the CNC will wait for the
+       general input "AUXEND" to be activated to consider the execution completed.
+
+
+
+       Second T function
+
+       If this involves changing a special tool or a machining center with non-random tool magazine, the
+       CNC will indicate, on executing the M06 function, the position of the magazine (empty pocket) in
+       which the tool which was on the spindle must be deposited.
+
+       This indication will be made by means of the variable "T2BCD" (R559) and by activating the general
+       logic output "T2STROBE" to tell the PLC that it must execute it. The CNC will wait for the general
+       input AUXEND to be activated to consider the execution completed.
+
+               It must be borne in mind that at the beginning of the execution of the block, the CNC can tell the PLC
+               the execution of the M, S, T and T2 functions by activating their STROBE signals together and waiting
+               for a single "AUXEND" signal for all of them.
+
+
+
+
+                                                                                                                        CNC 8055
+                                                                                                                        CNC 8055i
+
+
+
+                                                                                                                             SOFT: V01.6X
+
+
+
+
+                                                                                                                                                ·463·
+===== PAGE 463 =====
+
+                                                                     11.2.1      Transferring M, S, T using the AUXEND signal
+
+                                                                              1. Once the block has been analyzed and after sending the corresponding values in the variables
+                                                                                 "MBCD1-7", "SBCD", "TBCD" and "T2BCD", the CNC will tell the PLC by means of the general
+                                                                                 logic outputs "MSTROBE", "SSTROBE", "TSTROBE" and "T2STROBE" that the required
+                                                                                 auxiliary functions must be executed.
+
+
+
+
+11.
+
+
+       CNC-PLC COMMUNICATION
+                               Auxiliary M, S, T function transfer
+                                                                              2. When the PLC detects that one of the STROBE signals is active, it must deactivate the general
+                                                                                 logic input "AUXEND" to tell the CNC that the execution of the corresponding function or
+                                                                                 functions is starting.
+                                                                              3. The PLC will execute all the auxiliary functions required, it being necessary to analyze the
+                                                                                 "MSTROBE", "SSTROBE", "TSTROBE", "T2STROBE" general logic outputs and the "MBCD1-
+                                                                                 7", "SBCD", "TBCD" and "T2BCD" variables in order to do this.
+                                                                                 Once this has been executed the PLC must activate the general logic input "AUXEND" to indicate
+                                                                                 to the CNC that the processing of the required functions was completed.
+                                                                              4. Once the general "AUXEND" input is activated, the CNC will require that this signal be kept active
+                                                                                 for a time period greater than the value given to the g.m.p. MINAENDW (P30).
+                                                                                 This way, erroneous interpretations of this signal by the CNC due to an improper PLC program
+                                                                                 logic are avoided .
+                                                                              5. Once the period of time MINAENDW has elapsed with the general input "AUXEND" at a high
+                                                                                 logic level, the CNC will deactivate the general logic outputs "MSTROBE", "SSTROBE",
+                                                                                 "TSTROBE", "T2STROBE" to tell the PLC that the execution of the required auxiliary function
+                                                                                 or functions has been completed.
+
+                                                                                     When the block being executed has several auxiliary functions (M, S, T), the CNC waits a time period
+                                                                                     set by g.m.p. MINAENDW (P30) between two consecutive transfers.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·464·
+===== PAGE 464 =====
+
+11.2.2     Transferring the auxiliary (miscellaneous) M functions without the
+           AUXEND signal
+
+         1. Once the block has been analyzed and after passing the corresponding values in variables
+            "MBCD1-7", the CNC will tell the PLC through the general logic output "MSTROBE" that the
+            required auxiliary function or functions must be executed.
+
+
+
+
+                                                                                                                                    11.
+
+
+                                                                                                            CNC-PLC COMMUNICATION
+                                                                                                                                    Auxiliary M, S, T function transfer
+         2. The CNC will keep the general logic output "MSTROBE" active during the time indicated by
+            means of g.m.p. MINAENDW (P30).
+           Once this period of time has elapsed the CNC will continue to execute the program.
+           It is advisable for the "MINAENDW" value to be equal to or greater than the duration of a PLC
+           cycle, in order to ensure the detection of this signal by the PLC.
+         3. When the PLC detects the activation of the general logic signal "MSTROBE" it will execute the
+            required miscellaneous "M" functions in the "MBCD1-7" variables.
+
+
+
+
+                                                                                                            CNC 8055
+                                                                                                            CNC 8055i
+
+
+
+                                                                                                                 SOFT: V01.6X
+
+
+
+
+                                                                                                                                    ·465·
+===== PAGE 465 =====
+
+                                                                         11.3      Displaying messages, errors and screens
+
+                                                                                The PLC has a series of marks that allow messages and errors to be displayed in the CNC, as well
+                                                                                as displaying screens which have been defined previously by the user.
+
+
+
+                                                                                Displaying messages
+
+
+11.                                                                             The PLC has 255 marks, with their corresponding mnemonic for displaying messages in the CNC.
+
+                                                                                      M4000           MSG001               M4100          MSG101               M4252              MSG253
+
+
+
+
+       CNC-PLC COMMUNICATION
+
+
+                               Displaying messages, errors and screens
+                                                                                      M4001           MSG002               M4101          MSG102               M4253              MSG254
+
+                                                                                      M4002           MSG003               M4102          MSG103               M4254              MSG255
+                                                                                        ...              ...                 ...             ...
+
+                                                                                        ...              ...                 ...             ...
+
+
+                                                                                If one of these marks is activated (high logic level), the CNC will display the selected message
+                                                                                number and its associated text on the PLC message display window (upper right-hand part).
+
+                                                                                The CNC allows a text to be associated to each PLC message (PLC message editing mode).
+
+                                                                                If the PLC activates 2 or more messages, the CNC will always display the message with the highest
+                                                                                priority, this being understood as being the message with the lowest number. In this way, MSG1 will
+                                                                                have the highest priority and MSG255 the lowest priority.
+
+                                                                                In this same message display window, the CNC can show the character + (plus sign), which indicates
+                                                                                that there are more messages activated by the PLC, and these can be displayed if the active
+                                                                                message page option is accessed in the PLC operating mode.
+
+                                                                                A message can be erased by deactivating it from the PLC program (low logic level) or from the CNC
+                                                                                keyboard, after selecting it on the active messages page.
+
+                                                                                Nevertheless and depending on the program, the PLC may reactivate this message in the following
+                                                                                cycle.
+
+                                                                                    Example:
+                                                                                       DFU I10 = MSG1
+                                                                                       I10 = MSG2
+                                                                                     (1) Input I10 changes from 0 to 1.
+                                                                                         Messages MSG1 and MSG2 are activated.
+                                                                                     (2) The user deletes the messages using the keyboard.
+                                                                                     (3) In the next PLC cycle, since I10 is kept at "1", MSG2 is activated again.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·466·
+===== PAGE 466 =====
+
+     Displaying errors
+
+     The PLC has 128 marks, with their corresponding mnemonic, for displaying errors at the CNC.
+
+            M4500         ERR001             M4530         ERR031             M4625         ERR126
+
+            M4501         ERR002             M4531         ERR032             M4626         ERR127
+
+            M4502         ERR003             M4532         ERR033             M4627         ERR128
+
+             ...
+
+             ...
+                             ...
+
+                             ...
+                                              ...
+
+                                              ...
+                                                              ...
+
+                                                              ...                                                                     11.
+
+
+                                                                                                              CNC-PLC COMMUNICATION
+
+
+                                                                                                                                      Displaying messages, errors and screens
+     When one of these marks is activated (they are set high), they interrupt CNC part-program
+     execution. It also displays the selected error message and its associated text in the middle of the
+     screen.
+
+     The CNC allows a text to be associated to each PLC error (PLC error editing mode).
+
+     It is recommended to change the state of these marks by means of accessible external inputs since
+     the PLC will not stop and the CNC will receive the error message in each new PLC cycle scan; thus
+     preventing access to any of the PLC modes.
+
+
+
+     Displaying screens (pages)
+
+     The PLC has 256 marks with their corresponding mnemonic, for displaying screens (pages) at the
+     CNC.
+
+            M4700         PIC000             M4900          PIC200            M4953          PIC253
+
+            M4701         PIC001             M4901          PIC201            M4954          PIC254
+            M4702         PIC002             M4902          PIC202            M4955          PIC255
+
+             ...             ...              ...             ...
+
+             ...             ...              ...             ...
+
+
+     If one of these marks is activated (high logic level), the CNC will display the character * (asterisk)
+     on the PLC message display window (upper right-hand part) indicating that at least one of the 256
+     screens (pages) defined by the user in the graphic editor mode is activated.
+
+     The selected screens (pages) will be displayed, one by one, if the active page (screen) option is
+     accessed in the PLC operating mode.
+
+     A page can be deactivated from the PLC program (by placing the corresponding mark at the low
+     logic level) or, from the CNC keyboard, after selecting it in the active page mode.
+
+
+
+
+                                                                                                              CNC 8055
+                                                                                                              CNC 8055i
+
+
+
+                                                                                                                   SOFT: V01.6X
+
+
+
+
+                                                                                                                                      ·467·
+===== PAGE 467 =====
+
+                                                                11.4      Access to the PLC from the CNC
+
+                                                                       The CNC is provided with an operating mode in which it can:
+                                                                        • Monitor the user PLC program.
+                                                                        • Monitor PLC resources.
+                                                                        • Modify PLC resources.
+                                                                        • Execute PLC commands (compile, execute, etc.).
+                                                                        • Etc.
+11.                                                                    Likewise, the CNC allows access to all PLC variables of any part program and is provided with
+                                                                       several high level language instructions for this purpose, which allow Inputs, Outputs, Marks,
+
+
+
+
+       CNC-PLC COMMUNICATION
+                               Access to the PLC from the CNC
+                                                                       Registers, Timers and Counters to be read or modified.
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·468·
+===== PAGE 468 =====
+
+11.5      Access to the PLC from a PC, via DNC
+
+       The CNC allows the PLC to communicate with a computer via DNC through the RS232C serial line.
+
+       In this way a computer can access the PLC carrying out:
+        • Transfer and reception of the user PLC program.
+        • Monitoring of the user PLC program.
+        • Monitoring of PLC resources.
+        • Consultation or modification of PLC resources.
+        • Execution of PLC commands (compile, execute, etc.).                                                                  11.
+        • Etc.
+
+
+
+
+                                                                                                                               Access to the PLC from a PC, via DNC
+                                                                                                       CNC-PLC COMMUNICATION
+       The DNC manual can be applied for from the Commercial Department of Fagor Automation.
+
+
+
+
+                                                                                                       CNC 8055
+                                                                                                       CNC 8055i
+
+
+
+                                                                                                            SOFT: V01.6X
+
+
+
+
+                                                                                                                               ·469·
+===== PAGE 469 =====
+
+
+
+
+11.
+
+
+
+                               Access to the PLC from a PC, via DNC
+       CNC-PLC COMMUNICATION
+
+
+
+
+CNC 8055
+CNC 8055i
+
+
+
+ SOFT: V01.6X
+
+
+
+
+    ·470·
+===== PAGE 470 =====
+
+
+                                                                            12
+  Physical inputs and outputs are the names given to the set of inputs and outputs of the CNC system
+  which, being controlled by the PLC, communicate with the outside through CNC connectors.
+
+  The CNC also has a series of logic inputs and outputs for the internal exchange of information with
+  PLC marks and registers. This type of marks do not have images on the PLC.
+
+  Each of these CNC logic inputs and outputs may be referred to with the corresponding PLC resource
+  or with their associated mnemonic. Mnemonics which begin with "/" indicate that the signal is active
+  low (0 V). For example:
+
+      M5000                   /EMERGEN                M5104                   MIRROR1
+
+      M5016                   AUXEND                  M5507                   /ALARM
+
+  All the mnemonics refer to their associated variable, it being necessary to use the NOT operator
+  to refer to its negation, for example:
+
+      NOT M5000                                   NOT /EMERGEN
+
+      NOT M5016                                   NOT AUXEND
+
+  CNC logic inputs and outputs can be grouped in:
+   • General logic inputs.
+   • Axis logic inputs.
+   • Spindle logic inputs.
+   • Logic inputs of the auxiliary spindle
+   • Key inhibiting logic inputs.
+   • Logic inputs of the PLC channel
+   • General logic outputs.
+   • Axis logic outputs.
+   • Spindle logic outputs.
+   • Logic outputs of the auxiliary spindle
+   • Logic outputs of key status
+   • Logic inputs of the PLC channel
+
+
+
+
+                                                                                                         CNC 8055
+                                                                                                         CNC 8055i
+
+
+
+                                                                                                          SOFT: V01.6X
+
+
+
+
+                                                                                                             ·471·
+===== PAGE 471 =====
+
+                                                             12.1      General logic inputs
+
+
+                                                                            These inputs must always be defined in the PLC program.
+                                                                            /EMERGEN (M5000) /STOP (M5001)
+                                                                            /FEEDHOL (M5002) /XFERINH (M5003)
+
+
+
+                                                               /EMERGEN (M5000)
+12.                                                                 There are to ways to cause an emergency at the CNC, by activating the physical input /Emergency
+                                                                    stop or the general logic input "/EMERGEN" from the PLC.
+
+
+
+
+       LOGIC CNC INPUTS AND OUTPUTS
+                                      General logic inputs
+                                                                       8055 CNC        Pin 2 of connector X9 of the –Axes– module or –Axes Vpp– module.
+                                                                       8055i CNC.      Pin 10 of connector X2
+
+
+
+
+                                                                                                                                                 /OUTPUT
+                                                                                                  emergency                                     emergency
+
+
+
+
+                                                                                                                 ELECTRICAL CABINET
+
+
+
+                                                                    When the PLC sets the "/EMERGEN" input low (0V), the CNC stops the axes and the spindle and
+                                                                    it displays the corresponding error message.
+
+                                                                    Also, the CNC activates the "/EMERGENCY OUTPUT" and "/ALARM" signals to let the outside
+                                                                    world and the PLC know that an emergency has occurred at the CNC.
+
+                                                                    The CNC does not allow executing programs and it aborts any attempt to move the axes or the
+                                                                    spindle while the "/EMERGEN" input is low (0V).
+
+                                                                    When the PLC brings the "/EMERGEN" input back high (24V), the CNC deactivates the
+                                                                    "/EMERGENCY OUTPUT" and "/ALARM" signals to let the outside world and the PLC know that
+                                                                    there is no longer an emergency at the CNC.
+
+                                                                        Example
+                                                                        I-EMERG AND (rest of conditions) = /EMERGEN
+                                                                            If the external emergency input is activated or any other emergency occurs, the general logic input
+                                                                            /EMERGEN of the CNC. When there is no emergency, this signal must remain high.
+
+
+                                                               /STOP (M5001)
+
+                                                                    When the PLC sets this signal low, the CNC stops the part program, and maintains spindle rotation.
+
+                                                                    In order to continue executing the program, as well as setting this signal at a high logic level, the
+CNC 8055                                                            general logic input CYSTART must be activated.
+CNC 8055i                                                           The treatment which this /STOP signal receives is similar to that given to the STOP key on the CNC
+                                                                    front panel keeping all the keys enabled even when the /STOP signal is at low logic level (0) .
+
+                                                                        Example
+ SOFT: V01.6X                                                           ( ) = /STOP
+                                                                             There is always permission to execute the part program.
+
+
+
+
+    ·472·
