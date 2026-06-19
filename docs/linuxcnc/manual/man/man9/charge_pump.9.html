@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>CHARGE_PUMP(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="charge_pump.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/charge_pump.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/charge_pump.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/charge_pump.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/charge_pump.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/charge_pump.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/charge_pump.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/charge_pump.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>CHARGE_PUMP(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>charge_pump - Create a square-wave for the 'charge pump' input of some controller boards</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt charge_pump</strong></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <em>Charge Pump</em> should be added to the base thread function.
+When enabled the output is on for one period and off for one period. To calculate the
+frequency of the output 1/(period time in seconds x 2) = Hz. For example if you
+have a base period of 100,000ns that is 0.0001 seconds and the formula would be
+1/(0.0001 x 2) = 5,000 Hz or 5 kHz. Two additional outputs are provided that run
+a factor of 2 and 4 slower for hardware that requires a lower frequency.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>charge-pump</strong>.<strong>-</strong></dt>
+<dd>
+<p>Toggle the output bit (if enabled)</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>charge-pump</strong>.<strong>out</strong> bit out </dt>
+<dd>
+<p>Square wave if <em>enable</em> is TRUE or unconnected, low if <em>enable</em> is FALSE</p>
+</dd>
+<dt class="hdlist1"><strong>charge-pump</strong>.<strong>out-2</strong> bit out </dt>
+<dd>
+<p>Square wave at half the frequency of <em>out</em></p>
+</dd>
+<dt class="hdlist1"><strong>charge-pump</strong>.<strong>out-4</strong> bit out </dt>
+<dd>
+<p>Square wave at a quarter of the frequency of <em>out</em></p>
+</dd>
+<dt class="hdlist1"><strong>charge-pump</strong>.<strong>enable</strong> bit in (default: <em>TRUE</em>)</dt>
+<dd>
+<p>If FALSE, forces all <em>out</em> pins to be low</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Jeff Epler</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:30:10 UTC
+</div>
+</div>
+</body>
+</html>

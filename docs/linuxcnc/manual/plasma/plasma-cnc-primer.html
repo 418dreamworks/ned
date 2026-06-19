@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>Plasma Cutting Primer for LinuxCNC Users</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../rouge-github.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:plasma-primer" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="plasma-cnc-primer.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/plasma/plasma-cnc-primer.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/plasma/plasma-cnc-primer.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/plasma/plasma-cnc-primer.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/plasma/plasma-cnc-primer.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/plasma/plasma-cnc-primer.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/plasma/plasma-cnc-primer.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/plasma/plasma-cnc-primer.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>Plasma Cutting Primer for LinuxCNC Users</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details open><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details open><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>Plasma Cutting Primer for LinuxCNC Users</summary><ul class="sectlevel1">
+<li><a href="plasma-cnc-primer.html#_what_is_plasma">1. What Is Plasma?</a></li>
+<li><a href="plasma-cnc-primer.html#_arc_initialisation">2. Arc Initialisation</a>
+<ul class="sectlevel2">
+<li><a href="plasma-cnc-primer.html#_high_frequency_start">2.1. High Frequency Start</a></li>
+<li><a href="plasma-cnc-primer.html#_blowback_start">2.2. Blowback Start</a></li>
+</ul>
+</li>
+<li><a href="plasma-cnc-primer.html#_cnc_plasma">3. CNC Plasma</a></li>
+<li><a href="plasma-cnc-primer.html#_choosing_a_plasma_machine_for_cnc_operations">4. Choosing a Plasma Machine for CNC operations</a></li>
+<li><a href="plasma-cnc-primer.html#_types_of_torch_height_control">5. Types Of Torch Height Control</a></li>
+<li><a href="plasma-cnc-primer.html#_arc_ok_signal">6. Arc OK Signal</a></li>
+<li><a href="plasma-cnc-primer.html#_initial_height_sensing">7. Initial Height Sensing</a>
+<ul class="sectlevel2">
+<li><a href="plasma-cnc-primer.html#_float_switches">7.1. Float Switches</a></li>
+<li><a href="plasma-cnc-primer.html#ohmic-sensing">7.2. Ohmic Sensing</a></li>
+<li><a href="plasma-cnc-primer.html#_hypersensing_with_a_mesa_thcad_5">7.3. Hypersensing with a MESA THCAD-5</a></li>
+<li><a href="plasma-cnc-primer.html#_example_hal_code_for_hypersensing">7.4. Example HAL Code for Hypersensing</a></li>
+</ul>
+</li>
+<li><a href="plasma-cnc-primer.html#_thc_delay">8. THC Delay</a></li>
+<li><a href="plasma-cnc-primer.html#_torch_voltage_sampling">9. Torch Voltage Sampling</a></li>
+<li><a href="plasma-cnc-primer.html#_torch_breakaway">10. Torch Breakaway</a></li>
+<li><a href="plasma-cnc-primer.html#_corner_lock_velocity_anti_dive">11. Corner Lock / Velocity Anti-Dive</a></li>
+<li><a href="plasma-cnc-primer.html#_void_kerf_crossing">12. Void / Kerf Crossing</a></li>
+<li><a href="plasma-cnc-primer.html#_hole_and_small_shape_cutting">13. Hole And Small Shape Cutting</a></li>
+<li><a href="plasma-cnc-primer.html#_io_pins_for_plasma_controllers">14. I/O Pins For Plasma Controllers</a>
+<ul class="sectlevel2">
+<li><a href="plasma-cnc-primer.html#_arc_ok_input">14.1. Arc OK (input)</a></li>
+<li><a href="plasma-cnc-primer.html#_torch_on_output">14.2. Torch On (output)</a></li>
+<li><a href="plasma-cnc-primer.html#_float_switch_input">14.3. Float switch (input)</a></li>
+<li><a href="plasma-cnc-primer.html#_ohmic_sensor_enable_output">14.4. Ohmic Sensor enable (output)</a></li>
+<li><a href="plasma-cnc-primer.html#_ohmic_sensing_input">14.5. Ohmic Sensing (input)</a></li>
+<li><a href="plasma-cnc-primer.html#_torch_breakaway_sensor">14.6. Torch Breakaway Sensor</a></li>
+</ul>
+</li>
+<li><a href="plasma-cnc-primer.html#_g_code_for_plasma_controllers">15. G-code For Plasma Controllers</a>
+<ul class="sectlevel2">
+<li><a href="plasma-cnc-primer.html#_enabledisable_thc_operation">15.1. Enable/Disable THC Operation:</a></li>
+</ul>
+</li>
+<li><a href="plasma-cnc-primer.html#_external_offsets_and_plasma_cutting">16. External Offsets and Plasma Cutting</a></li>
+<li><a href="plasma-cnc-primer.html#_reading_arc_voltage_with_the_mesa_thcad">17. Reading Arc Voltage With The Mesa THCAD</a>
+<ul class="sectlevel2">
+<li><a href="plasma-cnc-primer.html#_thcad_connections">17.1. THCAD Connections</a></li>
+<li><a href="plasma-cnc-primer.html#_thcad_initial_testing">17.2. THCAD Initial Testing</a></li>
+<li><a href="plasma-cnc-primer.html#_which_model_thcad_to_use">17.3. Which Model THCAD To Use?</a></li>
+</ul>
+</li>
+<li><a href="plasma-cnc-primer.html#_post_processors_and_nesting">18. Post Processors And Nesting</a></li>
+<li><a href="plasma-cnc-primer.html#_designing_for_noisy_electrical_environments">19. Designing For Noisy Electrical Environments</a></li>
+<li><a href="plasma-cnc-primer.html#_water_tables">20. Water Tables</a></li>
+<li><a href="plasma-cnc-primer.html#_downdraft_tables">21. Downdraft Tables</a></li>
+<li><a href="plasma-cnc-primer.html#_designing_for_speed_and_acceleration">22. Designing For Speed And Acceleration</a></li>
+<li><a href="plasma-cnc-primer.html#_distance_travelled_per_motor_revolution">23. Distance Travelled Per Motor Revolution</a></li>
+<li><a href="plasma-cnc-primer.html#_qtplasmac_linuxcnc_plasma_configuration">24. QtPlasmaC LinuxCNC Plasma Configuration</a></li>
+<li><a href="plasma-cnc-primer.html#_hypertherm_rs485_control">25. Hypertherm RS485 Control</a></li>
+<li><a href="plasma-cnc-primer.html#_post_processors_for_plasma_cutting">26. Post Processors For Plasma Cutting</a></li>
+</ul></details></details><details><summary>Configuration Wizards</summary><a href="../config/stepconf.html">Stepper Configuration Wizard</a><a href="../config/pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="../config/integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><a href="../config/ini-config.html">INI Configuration</a><a href="../config/ini-homing.html">Homing Configuration</a><a href="../config/lathe-config.html">Lathe Configuration</a><a href="../config/stepper-quickstart.html">Stepper Quickstart</a><a href="../config/stepper.html">Stepper Configuration</a><a href="../config/stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="../config/core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="../config/moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="../config/python-interface.html">The LinuxCNC Python module</a><a href="../config/python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_is_plasma">1. What Is Plasma?</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+Plasma is a fourth state of matter, an ionised gas which has been heated to an extremely high temperature and ionised so that it becomes electrically conductive.
+The plasma arc cutting and gouging processes use this plasma to transfer an electrical arc to the workpiece.
+The metal to be cut or removed is melted by the heat of the arc and then blown away.
+While the goal of plasma arc cutting is the separation of the material, plasma arc gouging is used to remove metals to a controlled depth and width.</p>
+</div>
+<div class="paragraph">
+<p>Plasma torches are similar in design to the automotive spark plug.
+They consist of negative and positive sections separated by a center insulator.
+Inside the torch, the pilot arc starts in the gap between the negatively charged electrode and the positively charged tip.
+Once the pilot arc has ionised the plasma gas, the superheated column of gas flows through the small orifice in the torch tip, which is focused on the metal to be cut.</p>
+</div>
+<div class="paragraph">
+<p>In a Plasma Cutting Torch a cool gas enters Zone B, where a pilot arc between the electrode and the torch tip heats and ionises the gas.
+The main cutting arc then transfers to the workpiece through the column of plasma gas in Zone C.
+By forcing the plasma gas and electric arc through a small orifice, the torch delivers a high concentration of heat to a small area.
+The stiff, constricted plasma arc is shown in Zone C.
+Direct current (DC) straight polarity is used for plasma cutting, as shown in the illustration.
+Zone A channels a secondary gas that cools the torch.
+This gas also assists the high velocity plasma gas in blowing the molten metal out of the cut allowing for a fast, slag - free cut.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/primer_torch-head.png" alt="primer torch head" width="50%">
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_arc_initialisation">2. Arc Initialisation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>There are two main methods for arc initialisation for plasma cutters that are designed for CNC operation.
+Whilst other methods are used on some machines (such as scratch start where physical contact with the material is required), they are unsuited for CNC applications..</p>
+</div>
+<div class="sect2">
+<h3 id="_high_frequency_start">2.1. High Frequency Start</h3>
+<div class="paragraph">
+<p>This start type is widely employed, and has been around the longest.
+Although it is older technology, it works well, and starts quickly.
+But, because of the high frequency high voltage power that is required generated to ionise the air, it has some drawbacks.
+It often interferes with surrounding electronic circuitry, and can even damage components.
+Also a special circuit is needed to create a Pilot arc.
+Inexpensive models will not have a pilot arc, and require touching the consumable to the work to start.
+Employing a HF circuit also can increase maintenance issues, as there are usually adjustable points that must be cleaned and readjusted from time to time.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_blowback_start">2.2. Blowback Start</h3>
+<div class="paragraph">
+<p>This start type uses air pressure supplied to the cutter to force a small piston or cartridge inside the torch head back to create a small spark between the inside surface of the consumable, ionising the air, and creating a small plasma flame.
+This also creates a "pilot arc" that provides a plasma flame that stays on, whether in contact with the metal or not.
+This is a very good start type that is now used by several manufacturers.
+It&#8217;s advantage is that it requires somewhat less circuitry, is a fairly reliable and generates far less electrical noise.</p>
+</div>
+<div class="paragraph">
+<p>For entry level air plasma CNC systems, the blowback style is much preferred to minimise electrical interference with electronics and standard PCs,
+but the High frequency start still rules supreme in larger machines from 200 A and up.
+These require industrial level PCs and electronics,
+and even commercial manufacturers have had issues with faults because they have failed to account for electrical noise in their designs.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_cnc_plasma">3. CNC Plasma</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Plasma operations on CNC machines is quite unique in comparison to milling or turning and is a bit of an orphan process.
+Uneven heating of the material from the plasma arc will cause the sheet to bend and buckle.
+Most sheets of metal do not come out of the mill or press in a very even or flat state.
+Thick sheets (30 mm plus) can be out of plane as much as 50 mm to 100 mm.
+Most other CNC G-code operations will start from a known reference or a piece of stock that has a known size and shape
+and the G-code is written to rough the excess off and then finally cut the finished part.
+With plasma the unknown state of the sheet makes it impossible to generate G-code that will cater for these variances in the material.</p>
+</div>
+<div class="paragraph">
+<p>A plasma Arc is oval in shape and the cutting height needs to be controlled to minimise bevelled edges.
+If the torch is too high or too low then the edges can become excessively bevelled.
+It is also critical that the torch is held perpendicular to the surface.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Torch to work distance can impact edge bevel</strong></p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/primer_cut-angularity.png" alt="primer cut angularity" width="50%">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Negative cut angle:</strong> torch too low, increase torch to work distance.</p>
+</li>
+<li>
+<p><strong>Positive cut angle:</strong> torch too high, decrease torch to work distance.</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+A slight variation in cut angles may be normal, as long as it is within tolerance.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The ability to precisely control the cutting height in such a hostile and ever changing environment is a very difficult challenge.
+Fortunately there is a very linear relationship between Torch height (Arc length) and arc voltage as this graph shows.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/primer_volts-height.png" alt="primer volts height" width="75%">
+</div>
+</div>
+<div class="paragraph">
+<p>This graph was prepared from a sample of about 16,000 readings at varying cut height and the regression analysis shows 7.53 V/mm with 99.4% confidence.
+In this particular instance this sample was taken from an Everlast 50 A machine being controlled by LinuxCNC.</p>
+</div>
+<div class="paragraph">
+<p>Torch voltage then becomes an ideal process control variable to use to adjust the cut height.
+Let&#8217;s assume for simplicity that voltage changes by 10 V/mm.
+This can be restated to be 1 Volt per 0.1 mm (0.004").
+Major plasma machine manufacturers (eg Hypertherm, Thermal Dynamics and ESAB),
+produce cut charts that specify the recommended cut height and estimated arc voltage at this height as well as some additional data.
+So if the arc voltage is 1 V higher than the manufacturers specification, the controller simply needs to lower the torch by 0.1 mm (0.004") to move back to the desired cut height.
+A torch height control unit (THC) is traditionally used to manage this process.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_choosing_a_plasma_machine_for_cnc_operations">4. Choosing a Plasma Machine for CNC operations</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>There are a plethora of plasma machines available on the market today and not all of them are suited for CNC use.
+CNC Plasma cutting is a complex operation and it is recommended that integrators choose a suitable plasma machine.
+Failure to do this is likely to cause hours and hours of fruitless trouble shooting trying to work around the lack of what many would consider to be mandatory features.</p>
+</div>
+<div class="paragraph">
+<p>Whilst rules are made to be broken if you fully understand the reasons the rule apply, we consider a new plasma table builder should select a machine with the following features:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Blowback start to minimise electrical noise to simplify construction</p>
+</li>
+<li>
+<p>A Machine torch is preferred but many have used hand torches.</p>
+</li>
+<li>
+<p>A fully shielded torch tip to allow ohmic sensing</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>If you have the budget, a higher end machines will supply:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Manufacturer provided cut charts which will save many hours and material waste calibrating cut parameters</p>
+</li>
+<li>
+<p>Dry Contacts for ArcOK</p>
+</li>
+<li>
+<p>Terminals for Arc On switch</p>
+</li>
+<li>
+<p>Raw arc voltage or divided arc voltage output</p>
+</li>
+<li>
+<p>Optionally a RS485 interface if using a Hypertherm plasma cutter and want to control it from the LinuxCNC console.</p>
+</li>
+<li>
+<p>Higher duty cycles</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>In recent times, another class of machine which includes some of these features has become available at around USD $550.
+One example is the Herocut55i available on Amazon but there is yet no feedback from users.
+This Machine features a blowback torch, ArcOK output, torch start contacts and raw arc voltage.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_types_of_torch_height_control">5. Types Of Torch Height Control</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Most THC units are external devices and many have a fairly crude “bit bang" adjustment method.
+They provide two signals back to the LinuxCNC controller.
+One turns on if the Z axis should move up and the other turns on if the Z axis should move down.
+Neither signal is true if the torch is at the correct height.
+The popular Proma 150 THC is one example of this type of THC.
+The LinuxCNC THCUD component is designed to work with this type of THC.</p>
+</div>
+<div class="paragraph">
+<p>With the release of the Mesa THCAD voltage to frequency interface, LinuxCNC was able to decode the actual torch voltage via an encoder input.
+This allowed LinuxCNC to control the Z axis and eliminate external hardware.
+Early implementations utilising the THCAD replicated the “bit bang" approach.
+The LinuxCNC THC component is an example of this approach.</p>
+</div>
+<div class="paragraph">
+<p>Jim Colt of Hypertherm is on record saying that the best THC controllers were fully integrated into the CNC controller itself.
+Of course he was referring to high end systems manufactured by Hypertherm, Esab, Thermal Dynamics and others such as Advanced Robotic Technology in Australia, little dreaming that open source could produce systems using this approach that rival high end systems.</p>
+</div>
+<div class="paragraph">
+<p>The inclusion of external offsets in LinuxCNC V2.8 allowed plasma control in LinuxCNC to rise to a whole new level.
+External Offsets refers to the ability to apply an offset to the axis commanded position external to the motion controller.
+This is perfect for plasma THC control as a method to adjust the torch height in real time based on our chosen process control methodology.
+Following a number of experimental builds, the Plasmac configuration was incorporated into LinuxCNC 2.8.
+<a href="qtplasmac.html">QtPlasmaC</a> has superceded Plasmac in LinuxCNC 2.9.
+This has been an extremely ambitious project and many people around the globe have been involved in testing and improving the feature set.
+QtPlasmaC is unique in that its design goal was to support all THCs including the simple bit bang ones through to sophisticated torch voltage control,
+if the voltage is made available to LinuxCNC via a THCAD or some other voltage sensor.
+What&#8217;s more, QtPlasmaC is designed to be a stand alone system that does not need any additional G-code subroutines
+and allows the user to define their own cut charts that are stored in the system and accessible by a drop-down.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_arc_ok_signal">6. Arc OK Signal</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Plasma machines that have a CNC interface contain a set of dry contacts (eg a relay) that close when a valid arc is established and each side of these contacts are bought out onto pins on the CNC interface.
+A plasma table builder should connect one side of these pins to field power and the other to an input pin.
+This then allows the CNC controller to know when a valid arc is established and also when an arc is lost unexpectedly.
+There is a potential trap here when the input is a high impedance circuit such as a Mesa card.
+If the dry contacts are a simple relay, there is a high probability that the current passing through the relay is less than the minimum current specification.
+Under these conditions, the relay contacts can suffer from a buildup of oxide which over time can result in intermittent contact operation.
+To prevent this from happening, a pull down resistor should be installed on the controller input pin.
+Care should be taken to ensure that this resistor is selected to ensure the minimum current passes through the relay and is of sufficient wattage to handle the power in the circuit.
+Finally, the resistor should be mounted in such a way that the generated heat does not damage anything whilst in operation.</p>
+</div>
+<div class="paragraph">
+<p>If you have an ArcOK signal, it is recommended it is used over and above any synthesised signal to eliminate potential build issues.
+A synthesised signal available from an external THC or QtPlasmaC&#8217;s Mode 0 can&#8217;t fully replace the ArcOK circuitry in a plasma inverter.
+Some build issues have been observed where misconfiguration or incompatibility with the plasma inverter has occurred from a synthesised ArcOK signal.
+By and large however, a correctly configured synthesised ArcOK signal is fine.</p>
+</div>
+<div class="paragraph">
+<p>A simple and effective ArcOK signal can be achieved with a simple reed relay.
+Wrap 3 turns of one of the plasma cutter&#8217;s thick cables, e.g. the material clamp cable, around it.
+Place the relay in an old pen tube for protection and  connect one side of the relay to field power and the other end to your ArcOK input pin.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_initial_height_sensing">7. Initial Height Sensing</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Because the cutting height is such a critical system parameter and the material surface is inherently uneven, a Z axis mechanism needs a method to sense the material surface.
+There are three methods this can be achieved:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Current sensing to detect increased motor torque,</p>
+</li>
+<li>
+<p>a “float" switch and an electrical or</p>
+</li>
+<li>
+<p>an “ohmic" sensing circuit that is closed when the torch shield contacts the material.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Current sensing is not a viable technique for DIY tables but float switches and ohmic sensing are discussed below:</p>
+</div>
+<div class="sect2">
+<h3 id="_float_switches">7.1. Float Switches</h3>
+<div class="paragraph">
+<p>The torch is mounted on a sliding stage that can move up when the torch tip contacts the material surface and trigger a switch or sensor.
+Often this is achieved under G-code control using the G38 commands.
+If this is the case, then after initial probing, it is recommended to probe away from the surface until the probe signal is lost at a slower speed.
+Also, ensure the switch hysteresis is accounted for.</p>
+</div>
+<div class="paragraph">
+<p>Regardless of the probing method used, it is strongly recommended that float switch is implemented so that there is a fallback or secondary signal to avoid damage to the torch from a crash.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="ohmic-sensing">7.2. Ohmic Sensing</h3>
+<div class="paragraph">
+<p>Ohmic sensing relies on contact between the torch and the material acting as a switch to activate an electrical signal that is sensed by the CNC controller.
+Provided the material is clean, this can be a much more accurate method of sensing the material than a float switch which can cause deflection of the material surface.
+This ohmic sensing circuit is operating in an extremely hostile environment so a number of failsafes need to be implemented to ensure safety of both the CNC electronics and the operator.
+In plasma cutting, the earth clamp attached to the material is positive and the torch is negative.
+It is recommended that:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Ohmic sensing only be implemented where the torch has a shield that is isolated from the torch tip that conveys the cutting arc.</p>
+</li>
+<li>
+<p>The ohmic circuit uses a totally separate isolated power supply that activates an opto-isolated relay to enable the probing signal to be transmitted to the CNC controller.</p>
+</li>
+<li>
+<p>The positive side of the circuit should be at the torch</p>
+</li>
+<li>
+<p>Both sides of the circuit needs to be isolated by opto-isolated relays until probing is being undertaken</p>
+</li>
+<li>
+<p>Blocking diodes be used to prevent arc voltage entering the ohmic sensing circuit.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>The following is an example circuit that has been proven to work and is compatible with the LinuxCNC QtPlasmaC configuration.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/primer_ohmic-sensing.png" alt="primer ohmic sensing" width="100%">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_hypersensing_with_a_mesa_thcad_5">7.3. Hypersensing with a MESA THCAD-5</h3>
+<div class="paragraph">
+<p>A more sophisticated method of material sensing that eliminates the relays and diodes is to use another THCAD-5 to monitor the material sensing circuit voltage from an isolated power supply.
+The advantage this has is the THCAD is designed for the hostile plasma electrical environment and totally and safely isolates the logic side from the high voltage side.</p>
+</div>
+<div class="paragraph">
+<p>To implement this method, a second encoder input is required.</p>
+</div>
+<div class="paragraph">
+<p>If using a mesa card, different firmware is available to provide 2 additional Encoder A inputs on the Encoder B and Encoder Index pins.
+This firmware is available for download for the 7I76E and 7I96 boards from the Mesa web site on the product pages.</p>
+</div>
+<div class="paragraph">
+<p>The THCAD is sensitive enough to see the ramp up in  circuit voltage as contact pressure increases.
+The ohmic.comp component included in LinuxCNC can monitor the sensing voltage and set a voltage threshold above which it is deemed contact is made and an output is enabled.
+By monitoring the voltage, a lower “break circuit"  threshold can be set to build in strong switch hysteresis.
+This minimises false triggering.
+In our testing, we found the material sensing using this method was more sensitive and robust as well as being simpler to implement the wiring.
+One further advantage is using software outputs instead of physical I/O pins is that it frees up pins to use for other purposes.
+This advantage is helpful to get the most out of the Mesa 7I96 which has limited I/O pins.</p>
+</div>
+<div class="paragraph">
+<p>The following circuit diagram shows how to implement a hypersensing circuit.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/primer_hypersensing.png" alt="primer hypersensing" width="75%">
+</div>
+</div>
+<div class="paragraph">
+<p>We used a 15 W Mean Well HDR-15 Ultra Slim DIN Rail Supply 24 V DIN rail based isolated power supply.
+This is a double insulated Isolation Class II device that will withstand any arc voltage that might be applied to the terminals.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_example_hal_code_for_hypersensing">7.4. Example HAL Code for Hypersensing</h3>
+<div class="paragraph">
+<p>The following HAL code can be pasted into your QtPlasmaC&#8217;s custom.hal to enable Ohmic sensing on Encoder 2 of a 7I76E.
+Install the correct bit file and connect the THCAD to IDX+ and IDX-.
+Be sure to change the calibration settings to agree with your THCAD-5.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="c1"># --- Load the Component ---</span>
+<span class="k">loadrt</span> <span class="n">ohmic</span> <span class="n">names</span><span class="o">=</span><span class="n">ohmicsense</span>
+<span class="k">addf</span> <span class="n">ohmicsense</span> <span class="n">servo-thread</span>
+
+<span class="c1"># --- 7I76E ENCODER 2 SETUP FOR OHMIC SENSING---</span>
+<span class="k">setp</span> <span class="na">hm2_7i76e.0.encoder.02.scale</span> <span class="mi">-1</span>
+<span class="k">setp</span> <span class="na">hm2_7i76e.0.encoder.02.counter-mode</span> <span class="mi">1</span>
+
+<span class="c1"># --- Configure the component ---</span>
+<span class="k">setp</span> <span class="na">ohmicsense.thcad-0-volt-freq</span>    <span class="mi">140200</span>
+<span class="k">setp</span> <span class="na">ohmicsense.thcad-max-volt-freq</span>  <span class="mi">988300</span>
+<span class="k">setp</span> <span class="na">ohmicsense.thcad-divide</span>         <span class="mi">32</span>
+<span class="k">setp</span> <span class="na">ohmicsense.thcad-fullscale</span>      <span class="mi">5</span>
+<span class="k">setp</span> <span class="na">ohmicsense.volt-divider</span>         <span class="mf">4.9</span>
+<span class="k">setp</span> <span class="na">ohmicsense.ohmic-threshold</span>      <span class="mf">22.0</span>
+<span class="k">setp</span> <span class="na">ohmicsense.ohmic-low</span>            <span class="mf">1.0</span>
+<span class="k">net</span> <span class="n">ohmic-vel</span> <span class="na">ohmicsense.velocity-in</span> <span class="o">&lt;=</span> <span class="na">hm2_7i76e.0.encoder.02.velocity</span>
+
+<span class="c1"># --- Replace QtPlasmaC's Ohmic sensing signal ---</span>
+<span class="k">unlinkp</span> <span class="na">db_ohmic.in</span>
+<span class="k">net</span> <span class="n">ohmic-true</span> <span class="na">ohmicsense.ohmic-on</span> <span class="o">=&gt;</span> <span class="na">db_ohmic.in</span>
+<span class="k">net</span> <span class="n">plasmac</span>:<span class="n">ohmic-enable</span>    <span class="o">=&gt;</span>  <span class="na">ohmicsense.is-probing</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_thc_delay">8. THC Delay</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When an arc is established, arc voltage peaks significantly and then settles back to a stable voltage at cut height.
+As shown by the green line in the image below.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/primer_thc-delay.png" alt="primer thc delay" width="100%">
+</div>
+</div>
+<div class="paragraph">
+<p>It is important for the plasma controller to “wait it out" before auto sampling the torch voltage and commencing THC control.
+If enabled too early, the voltage will be above the desired cut Volts and the torch will be driven down in an attempt to address a perceived over-height condition.</p>
+</div>
+<div class="paragraph">
+<p>In our testing this varies between machines and material from 0.5 to 1.5 seconds.
+Therefore a delay of 1.5 s after a valid ArcOK signal is received before enabling THC control is a safe initial setting.
+If you want to shorten this for a given material,
+LinuxCNC&#8217;s Halscope will allow you to plot the torch voltage and make informed decisions about the shortest safe delay is used.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+If the cut velocity is not near the desired cut speed at the end of this delay, the controller should wait until this is achieved before enabling the THC.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_torch_voltage_sampling">9. Torch Voltage Sampling</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Rather than relying on the manufacturer&#8217;s cut charts to set the desired torch voltage, many people (the writer included) prefer to sample the voltage as the THC is enabled and use that as a set point.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_torch_breakaway">10. Torch Breakaway</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>It is recommended that a mechanism is provided to allow the torch to “break away" or fall off in the case of impact with the material or a cut part that has tipped up.
+A sensor should be installed to allow the CNC controller to detect if this has occurred and pause the running program.
+Usually a break away is implemented using magnets to secure the torch to the Z axis stage.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_corner_lock_velocity_anti_dive">11. Corner Lock / Velocity Anti-Dive</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The LinuxCNC trajectory planner is responsible for translating velocity and acceleration commands into motion that obey the laws of physics.
+For example, motion will slow when negotiating a corner.
+Whilst this is not a problem with milling machines or routers, this poses a particular problem for plasma cutting as the arc voltage increases as motion slows.
+This will cause the THC to drive the torch down.
+One of the enormous advantages of a THC control embedded within the LinuxCNC motion controller is that it knows what is going on at all times.
+So it becomes a trivial matter to monitor the current velocity (<code>motion.current-velocity</code>) and to hold THC operation if it falls below a set threshold (e.g., 10% below the desired feedrate).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_void_kerf_crossing">12. Void / Kerf Crossing</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If the plasma torch passes over a void while cutting,
+arc voltage rapidly rises and the THC responds by violent downward motion which can smash the torch into the material possibly damaging it.
+This is a situation that is difficult to detect and handle.
+To a certain extent it can be mitigated by good nesting techniques but can still occur on thicker material when a slug falls away.
+This is the one problem that has yet to be solved within the LinuxCNC open source movement.</p>
+</div>
+<div class="paragraph">
+<p>One suggested technique is to monitor the rate of change in torch Volts over time (dv/dt)
+because this parameter is orders of magnitude higher when crossing a void than what occurs due to normal warpage of the material.
+The following graph shows a low resolution plot of dv/dt (in blue) while crossing a void.
+The red curve is a moving average of torch Volts.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/primer_kerf-cross.png" alt="primer kerf cross" width="50%">
+</div>
+</div>
+<div class="paragraph">
+<p>So it should be possible to compare the moving average with the dv/dt and halt THC operation once the dv/dt exceeds the normal range expected due to warpage.
+More work needs to be done in this area to come up with a working solution in LinuxCNC.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_hole_and_small_shape_cutting">13. Hole And Small Shape Cutting</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>It is recommended that you slow down cutting when cutting holes and small shapes.</p>
+</div>
+<div class="paragraph">
+<p>John Moore says: “If you want details on cutting accurate small holes look up the sales sheets on Hypertherm&#8217;s <em>True Hole Technology</em> also look on PlasmaSpider, user seanp has posted extensively on his work using simple air plasma.</p>
+</div>
+<div class="paragraph">
+<p>The generally accepted method to get good holes from 37mm dia. and down to material thickness with minimal taper using an air plasma is:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Use recommended cutting current for consumables.</p>
+</li>
+<li>
+<p>Use fixed (no THC) recommended cutting height for consumables.</p>
+</li>
+<li>
+<p>Cut from 60% to 70% of the recommended feed rate of consumables and materials.</p>
+</li>
+<li>
+<p>Start lead in at or near center of hole.</p>
+</li>
+<li>
+<p>Use perpendicular lead in.</p>
+</li>
+<li>
+<p>No lead out, either a slight over burn or early torch off depending on what works best for you.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>You will need to experiment to get exact hole size because the kerf with this method will be wider than your usual straight cut."</p>
+</div>
+<div class="paragraph">
+<p>This slow down can be achieved by manipulating the feed rate directly in your post processor or by using adaptive feed and an analog pin as input.
+This lets you use M67/M68 to set the percentage of desired feed to cut at.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Knowing The Feedrate</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>From the preceding discussion it is evident that the plasma controller needs to know the feed rate set by the user.
+This poses a problem with LinuxCNC because the Feedrate is not saved by LinuxCNC after the G-code is buffered and parsed.
+There are two approaches to work around this:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Remap the F command and save the commanded feedrate set in G-code via an M67/M68 command.</p>
+</li>
+<li>
+<p>Storing the cut charts in the plasma controller and allow the current feedrate be queried by the G-code program (as QtPlasmaC does).</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>A feature newly added to LinuxCNC 2.9 that is useful for plasma cutting are the state tags.
+This adds a “tag" that is available to motion containing the current feed and speed rates for all active motion commands.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_io_pins_for_plasma_controllers">14. I/O Pins For Plasma Controllers</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Plasma cutters require several additional pins.
+In LinuxCNC, there are no hard and fast rules about which pin does what.
+In this discussion we will assume the plasma inverter has a CNC interface and the controller card has active high inputs are in use (e.g., Mesa 7I76E).</p>
+</div>
+<div class="paragraph">
+<p>Plasma tables can be large machines and we recommend that you take the time to install separate max/min limit switches and homing switches for each joint.
+The exception might be the Z axis lower limit.
+When a homing switch is triggered the joint decelerates fairly slowly for maximum accuracy.
+This means that if you wish to use homing velocities that are commensurate with table size, you can overshoot the initial trigger point by 50-100 mm.
+If you use a shared home/limit switch, you have to move the sensor off the trigger point with the final HOME_OFFSET or you will trigger a limit switch fault as the machine comes out of homing.
+This means you could lose 50 mm or more of axis travel with shared home/limit switches.
+This does not happen if separate home and limit switches are used.</p>
+</div>
+<div class="paragraph">
+<p>The following pins are usually required (note that suggested connections may not be appropriate for a QtPlasmaC configuration):</p>
+</div>
+<div class="sect2">
+<h3 id="_arc_ok_input">14.1. Arc OK (input)</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Inverter closes dry contacts when a valid arc is established</p>
+</li>
+<li>
+<p>Connect Field power to one Inverter ArcOK terminal.</p>
+</li>
+<li>
+<p>Connect other Inverter Ok Terminal to input pin.</p>
+</li>
+<li>
+<p>Usually connected to one of the ``motion.digital-``<em>&lt;nn&gt;</em> pins for use from G-code with M66</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_torch_on_output">14.2. Torch On (output)</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Triggers a relay to close the torch on switch in the inverter.</p>
+</li>
+<li>
+<p>Connect the torch on terminals on the inverter to the relay output terminals.</p>
+</li>
+<li>
+<p>Connect one side of the coil to the output pin.</p>
+</li>
+<li>
+<p>Connect the other side of the coil to Field Power ground.</p>
+</li>
+<li>
+<p>If a mechanical relay is used, connect a flyback diode (e.g., IN400x series) across the coil terminals with the band on the diode pointing towards the output pin.</p>
+</li>
+<li>
+<p>If a Solid State Relay is used, polarity may need to be observed on the outputs.</p>
+</li>
+<li>
+<p>In some circumstances, the onboard spindle relay on a Mesa card can be used instead of an external relay.</p>
+</li>
+<li>
+<p>Usually connected to <code>spindle.0.on</code>.</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">
+It is strongly recommended that the torch cannot be enabled while this pin is false otherwise the torch will not be extinguished when estop is pressed.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_float_switch_input">14.3. Float switch (input)</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Used for surface probing. A sensor or switch that is activated if the torch slides up when it hits the material.</p>
+</li>
+<li>
+<p>Connect proximity sensor output to chosen input pin. If mechanical switches are used. Connect one side of the switch to field power and the other side of the switch to input.</p>
+</li>
+<li>
+<p>Usually connected to <code>motion.probe-input</code>.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_ohmic_sensor_enable_output">14.4. Ohmic Sensor enable (output)</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>See the <a href="plasma-cnc-primer.html#ohmic-sensing">ohmic sensing</a> schematic.</p>
+</li>
+<li>
+<p>Connect output pin to one side of the isolation relays and the other side to field power ground.</p>
+</li>
+<li>
+<p>In a non-QtPlasmaC configuration, usually triggered by a ``motion.digital-out-``<em>&lt;nn&gt;</em> so it can be controlled in G-code by <code>M62</code>/<code>M63</code>/<code>M64</code>/<code>M65</code>.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_ohmic_sensing_input">14.5. Ohmic Sensing (input)</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Take care to follow the <a href="plasma-cnc-primer.html#ohmic-sensing">ohmic sensing</a> schematic shown previously.</p>
+</li>
+<li>
+<p>An isolated power supply triggers a relay when the torch shield contacts the material.</p>
+</li>
+<li>
+<p>Connect field power to one output terminal and the other to the input.</p>
+</li>
+<li>
+<p>Take care to observe relay polarity if opto-coupled solid State relays are used.</p>
+</li>
+<li>
+<p>Usually connected to <code>motion.probe-input</code> and may be or&#8217;d with the float switch.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>As can be seen, plasma tables are pin intensive and we have already consumed about 15 inputs before the normal estops are added.
+Others have other views but it is the writer&#8217;s opinion that the Mesa 7I76E is preferred over the cheaper 7I96 to allow for MPG&#8217;s,
+scale and axis selection switch and other features you may wish to add over time.
+If your table uses servos, there are a number of alternatives.
+Whilst there are other suppliers, designing your machine around the Mesa ecosystem will simplify use of their THCAD board to read arc voltage.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_torch_breakaway_sensor">14.6. Torch Breakaway Sensor</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>As mentioned earlier, a breakaway sensor should be installed that is triggered if the torch crashes and falls off.</p>
+</li>
+<li>
+<p>Usually, this would be connected to <code>halui.program-pause</code> so the fault can be rectified and the program resumed.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_g_code_for_plasma_controllers">15. G-code For Plasma Controllers</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Most plasma controllers offer a method to change settings from G-code.
+LinuxCNC support this via <code>M67</code>/<code>M68</code> for analog commands and <code>M62</code>-<code>M65</code> for digital (on/off commands).
+How this is implemented is totally arbitrary.
+Lets look at how the LinuxCNC QtPlasmaC configuration does this:</p>
+</div>
+<div class="listingblock">
+<div class="title">Select Material Settings in QtPlasmaC and Use the Feedrate for that Material.</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ngc"><span class="k">M190</span> Pn
+<span class="k">M66</span> <span class="nd">P</span><span class="mi">3</span> <span class="nd">L</span><span class="mi">3</span> <span class="nd">Q</span><span class="mi">1</span>
+F<span class="p">#&lt;</span><span class="nb">_hal</span><span class="p">[</span><span class="nn">plasmac.cut-feed-rate</span><span class="p">]&gt;</span>
+<span class="k">M3</span> <span class="k">S1</span></code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Users with a very large number of entries in the QtPlasmaC Materials Table may need to increase the Q parameter (e.g., from Q1 to Q2).
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_enabledisable_thc_operation">15.1. Enable/Disable THC Operation:</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ngc"><span class="k">M62</span> <span class="nd">P</span><span class="mi">2</span> will disab<span class="ow">le</span> THC <span class="cm">(synchronised with motion)</span>
+<span class="k">M63</span> <span class="nd">P</span><span class="mi">2</span> will enab<span class="ow">le</span> THC <span class="cm">(synchronised with motion)</span>
+<span class="k">M64</span> <span class="nd">P</span><span class="mi">2</span> will disab<span class="ow">le</span> THC <span class="cm">(immediately)</span>
+<span class="k">M65</span> <span class="nd">P</span><span class="mi">2</span> will enab<span class="ow">le</span> THC <span class="cm">(immediately)</span></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Reduce Cutting Speeds: (e.g., for hole cutting)</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ngc"><span class="k">M67</span> <span class="nd">E</span><span class="mi">3</span> <span class="nd">Q</span><span class="mi">0</span> would set the velocity to <span class="mi">100</span>% of requested~speed
+<span class="k">M67</span> <span class="nd">E</span><span class="mi">3</span> <span class="nd">Q</span><span class="mi">40</span> would set the velocity to <span class="mi">40</span>% of requested~speed
+<span class="k">M67</span> <span class="nd">E</span><span class="mi">3</span> <span class="nd">Q</span><span class="mi">60</span> would set the velocity to <span class="mi">60</span>% of requested~speed
+<span class="k">M67</span> <span class="nd">E</span><span class="mi">3</span> <span class="nd">Q</span><span class="mi">100</span> would set the velocity to <span class="mi">100</span>% of requested~speed</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Cutter Compensation:</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ngc"><span class="k">G41.1</span> <span class="nd">D</span><span class="p">#&lt;</span><span class="nb">_hal</span><span class="p">[</span><span class="nn">plasmac_run.kerf-width-f</span><span class="p">]&gt;</span> <span class="c1">; for left of programmed path</span>
+<span class="k">G42.1</span> <span class="nd">D</span><span class="p">#&lt;</span><span class="nb">_hal</span><span class="p">[</span><span class="nn">plasmac_run.kerf-width-f</span><span class="p">]&gt;</span> f<span class="ow">or</span> right of programmed path
+<span class="k">G40</span> to turn compensation off</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Integrators should familiarise themselves with the LinuxCNC documentation for the various LinuxCNC G-code commands mentioned above.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_external_offsets_and_plasma_cutting">16. External Offsets and Plasma Cutting</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>External Offsets were introduced to LinuxCNC with version 2.8.
+By external, it means that we can apply an offset external to the G-code that the trajectory planner knows nothing about.
+It easiest to explain with an example.
+Picture a lathe with an external offset being applied by a mathematical formula to machine a lobe on a cam.
+So the lathe is blindly spinning around with the cut diameter set to a fixed diameter
+and the external offset moves the tool in and out to machine the cam lobe via an applied external offset.
+To configure our lathe to machine this cam, we need to allocate some portion of the axis velocity and acceleration to external offsets or the tool can&#8217;t move.
+This is where the INI variable OFFSET_AV_RATIO comes in.
+Say we decide we need to allocate 20% of the velocity and acceleration to the external offset to the Z axis.
+We set this equal to 0.2.
+The consequence of this is that your maximum velocity and acceleration for the Lathe&#8217;s Z axis is only 80% of what it could be.</p>
+</div>
+<div class="paragraph">
+<p>External offsets are a very powerful method to make torch height adjustments to the Z axis via a THC.
+But plasma is all about high velocities and rapid acceleration so it makes no sense to limit these parameters.
+Fortunately in a plasma machine, the Z axis is either 100% controlled by the THC or it isn&#8217;t.
+During the development of LinuxCNC&#8217;s external offsets it was recognised that Z axis motion by G-code and by THC were mutually exclusive.
+This allows us to trick external offsets into giving 100 % of velocity and acceleration all of the time.
+We can do this by doubling the machine&#8217;s Z axis velocity and acceleration settings in the INI file and set OFFSET_AV_RATIO = 0.5.
+That way 100% of the maximum velocity and acceleration will be available for both probing and THC.</p>
+</div>
+<div class="paragraph">
+<p>Example:
+On a metric machine with a NEMA23 motor with a direct drive to a 5 mm ball screw, 60 mm/s maximum velocity and 700 mm/s<sup>2</sup> acceleration were determined to be safe values without loss of steps.
+For this machine, set the Z axis in the INI file as follows:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="p">[</span><span class="nn">AXIS_Z</span><span class="p">]</span>
+<span class="py">OFFSET_AV_RATIO</span> <span class="p">=</span> <span class="s">0.5</span>
+<span class="py">MAX_VELOCITY</span> <span class="p">=</span> <span class="s">120</span>
+<span class="py">MAX_ACCELERATION</span> <span class="p">=</span> <span class="s">1400</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The joint associated with this axis would have the velocity and acceleration variables set as follows:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="p">[</span><span class="nn">JOINT_n</span><span class="p">]</span>
+<span class="py">MAX_VELOCITY</span> <span class="p">=</span> <span class="s">60</span>
+<span class="py">MAX_ACCELERATION</span> <span class="p">=</span> <span class="s">700</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For further information about external offsets (for version 2.8 or later) please read the <a href="../config/ini-config.html#sub:ini:sec:axis-letter">[AXIS_&lt;letter&gt;] Section</a> of the INI file document and <a href="../motion/external-offsets.html#cha:external-offsets">External Axis Offsets</a> in the LinuxCNC documentation.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reading_arc_voltage_with_the_mesa_thcad">17. Reading Arc Voltage With The Mesa THCAD</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Mesa THCAD board is a remarkably well priced and accurate voltage to frequency converter that is designed for the hostile noisy electrical environment associated with plasma cutting.
+Internally it has a 0-10 V range.
+This range can be simply extended by the addition of some resistors as described in the documentation.
+This board is available in three versions, the newer THCAD-5 with a 0-5 V range, the THCAD-10 with a 0-10 Volt range and the THCAD-300 which is pre-calibrated for a 300 Volt extended range.
+Each board is individually calibrated and a sticker is applied to the board that states the frequency at 0 Volts and full scale.
+For use with LinuxCNC, it is recommended that the 1/32 divisor be selected by the appropriate link on the board.
+In this case, be sure to also divide the stated frequencies by 32.
+This is more appropriate for the 1 kHz servo thread and also allows more time for the THCAD to average and smooth the output.</p>
+</div>
+<div class="paragraph">
+<p>There is a lot of confusion around how to decode the THCAD output.
+So let&#8217;s consider the Mesa 7I76E and the THCAD-10 for a moment with the following hypothetical calibration data:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Full scale ≙ 928 kHz (928 kHz/32 = 29 kHz)</p>
+</li>
+<li>
+<p>0 V ≙ 121.6 kHz (121.6 kHz/32 = 3.8 kHz)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Because the full scale is 10 Volts, then the frequency per Volt is:</p>
+</div>
+<div class="paragraph">
+<p>(29000 Hz - 3800 Hz) / 10 V = 2520 Hz per Volt</p>
+</div>
+<div class="paragraph">
+<p>So assuming we have a 5 Volt input, the calculated frequency would be:</p>
+</div>
+<div class="paragraph">
+<p>(2520 Hz/V * 5 V) + 3800 Hz = 16400 Hz</p>
+</div>
+<div class="paragraph">
+<p>So now it should be fairly clear how to convert the frequency to its voltage equivalent:</p>
+</div>
+<div class="paragraph">
+<p>Voltage = (frequency [Hz] - 3800 Hz) / (2520 Hz/V)</p>
+</div>
+<div class="sect2">
+<h3 id="_thcad_connections">17.1. THCAD Connections</h3>
+<div class="paragraph">
+<p>On the high voltage side:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Connect the divided or raw arc voltage to I<sub>N</sub>+ and I<sub>N</sub>-</p>
+</li>
+<li>
+<p>Connect the interconnect cable shield to the Shield connection.</p>
+</li>
+<li>
+<p>Connect the other Shield terminal to frame ground.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Assuming it is connected to a Mesa 7I76E, connect the output to the spindle encoder input:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>THCAD +5 V to TB3 Pin 6 (+5 VP)</p>
+</li>
+<li>
+<p>THCAD -5 V to TB3 Pin 1 (GND)</p>
+</li>
+<li>
+<p>THCAD FOUT+ to TB3 Pin 7 (ENC A+)</p>
+</li>
+<li>
+<p>THCAD FOUT- to TB3 Pin 8 (ENC A-)</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_thcad_initial_testing">17.2. THCAD Initial Testing</h3>
+<div class="paragraph">
+<p>Make sure you have the following lines in your INI file (assuming a Mesa 7I76E):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">setp</span> <span class="na">hm2_7i76e.0.encoder.00.scale</span> <span class="mi">-1</span>
+<span class="k">setp</span> <span class="na">hm2_7i76e.0.encoder.00.counter-mode</span> <span class="mi">1</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Power up your controller and open Halshow (AXIS: Show Homing Configuration), drill down to find the <code>hm2_7i76e.0.encoder.00.velocity pin</code>.
+With 0 Volts applied, it should be hovering around the 0 Volt frequency (3,800 in our example).
+Grab a 9 Volt battery and connect it to I<sub>N</sub>+ and I<sub>N</sub>-.
+For a THCAD-10 you can now calculate the expected velocity (26,480 in our hypothetical example).
+If you pass this test, then you are ready to configure your LinuxCNC plasma controller.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_which_model_thcad_to_use">17.3. Which Model THCAD To Use?</h3>
+<div class="paragraph">
+<p>The THCAD-5 is useful if you intend to use it for ohmic sensing.
+There is no doubt the THCAD-10 is the more flexible device and it is easy to alter the scaling.
+However, there is one caveat that can come into play with some cheaper plasma cutters with an inbuilt voltage divider.
+That is, the internal resistors may be sensed by the THCAD as being part of its own external resistance and return erroneous results.
+For example, the 16:1 divider on the Everlast plasma cutters needs to be treated as 24:1 (and 50:1 becomes 75:1).
+This is not a problem with more reputable brands (e.g., Thermal Dynamics, Hypertherm, ESAB etc).
+So if you are seeing lower than expected cutting voltages, it might be preferable to reconfigure the THCAD to read raw arc voltage.</p>
+</div>
+<div class="paragraph">
+<p>Remembering that plasma arc voltages are potentially lethal, here are some suggested criteria.</p>
+</div>
+<div class="paragraph">
+<div class="title">Pilot Arc Start</div>
+<p>Because there is not likely to be any significant EMI, you should be able to safely install the THCAD in your control panel if you have followed our construction guidelines.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>If you do not have a voltage divider, either install scaling resistors inside the plasma cutter and install the THCAD in the control panel or follow the suggestions for HF start machines.</p>
+</li>
+<li>
+<p>If you have a voltage divider, install a THCAD-10 in your control panel. We&#8217;ve had no problems with this configuration with a 120 A Thermal Dynamics plasma cutter.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<div class="title">HF Start</div>
+<p>Install the THCAD at the inverter as the frequency signal is far more immune to EMI noise.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>If you do not have a voltage divider and you have room inside the plasma cutter, install a THCAD-300 inside the plasma cutter.</p>
+</li>
+<li>
+<p>If you do not have a voltage divider and you do not have room inside the plasma cutter, install a THCAD-10 in a metal case outside the plasma cutter and install 50% of the scaling resistance on each of the I<sub>N</sub>+ and I<sub>N</sub>- inside the plasma cutter case so no lethal voltages come out of the case.</p>
+</li>
+<li>
+<p>If you have a voltage divider, install a THCAD-10 in a metal case outside the plasma cutter</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<div class="title">Raw Arc voltage presented on a connector</div>
+<p>In this case, regardless of the arc starting method, there are probably already resistors included in the circuitry to avoid lethal shocks so a THCAD-10 is advised so this resistance (typically 200 kΩ) can be accounted for when choosing a scaling resistor as these resistors will distort the voltage reported by the THCAD-300.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_post_processors_and_nesting">18. Post Processors And Nesting</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Plasma is no different to other CNC operations in that it is:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Designed in CAD (where it is output as a DXF or sometimes SVG format).</p>
+</li>
+<li>
+<p>Processed in CAM to generate final G-code that is loaded to the machine</p>
+</li>
+<li>
+<p>Cutting the parts via CNC G-code commands.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Some people achieve good results with Inkscape and G-code tools but SheetCam is a very well priced solution and there are a number of post processors available for LinuxCNC. SheetCam has a number of advanced features designed for plasma cutting and for the price, is a no brainer for anybody doing regular plasma cutting.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_designing_for_noisy_electrical_environments">19. Designing For Noisy Electrical Environments</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Plasma cutting is inherently an extremely hostile and noisy electrical environment.
+If you have EMI problems things won&#8217;t work correctly.
+You might fire the torch and the computer will reboot in a more obvious example, but you can have any number of other odd symptoms.
+They will pretty much all happen only when the torch is cutting - often when it is first fired.</p>
+</div>
+<div class="paragraph">
+<p>Therefore, system builders should select components carefully and design from the ground up to cope with this hostile environment to avoid the impact of Electro-Magnetic Interference (EMI).
+Failure to do this could result in countless hours of fruitless troubleshooting.</p>
+</div>
+<div class="paragraph">
+<p>Choosing ethernet boards such as the Mesa 7I76E or the cheaper 7I96 helps by allowing the PC to be located away from the electronics and the plasma machine.
+This hardware also allows the use of 24 Volt logic systems which are much more noise tolerant.
+Components should be mounted in a metal enclosure connected to the mains earth.
+It is strongly recommended that an EMI filter is installed on the mains power connection.
+The simplest way is to use a EMI filtered mains power IEC connector commonly used on PC&#8217;s and electric appliances which allows this to be achieved with no extra work.
+Plan the layout of components in the enclosure so that mains power, high voltage motor wires and logic signals are kept as separate as possible from each other.
+If they do have to cross, keep them at 90 degrees.</p>
+</div>
+<div class="paragraph">
+<p>Peter Wallace from Mesa Electronics suggests:
+"If you have a CNC compatible plasma source with a voltage divider, I would mount the THCAD inside your electronics enclosure with all the other motion hardware.
+If you have a manual plasma source and you are reading raw plasma voltage, I would mount the THCAD as close to the plasma source as possible (even inside the plasma source case if it fits).
+In this case, make sure that all low side THCAD connections are fully isolated from the plasma source.
+If you use a shielded box for the THCAD, the shield should connect to your electronic enclosure ground, not the plasma source ground."</p>
+</div>
+<div class="paragraph">
+<p>It is recommended to run a separate earth wire from motor cases and the torch back to a central star grounding point on the machine.
+Connect the plasma ground lead to this point and optionally an earth rod driven into the ground as close as possible to the machine (particularly if its a HF start plasma machine).</p>
+</div>
+<div class="paragraph">
+<p>External wiring to motors should be shielded and appropriately sized to handle the current passing through the circuit.
+The shield should be left unconnected at the motor end and earthed at the control box end.
+Consider using an additional pin on any connectors into the control box so the earth can be extended through into the control box and earthed to the chassis right at the stepper/servo motor controller itself.</p>
+</div>
+<div class="paragraph">
+<p>We are aware of at least one commercial system builder who has had problems with induced electrical noise on the ohmic sensing circuit.
+Whilst this can be mitigated by using ferrite beads and coiling the cable, adding a feed through power line filter is also recommended where the ohmic sensing signal enters the electronics enclosure.</p>
+</div>
+<div class="paragraph">
+<p>Tommy Berisha, the master of building plasma machines on a budget says:
+“If on a budget, consider using old laptop power bricks.
+They are very good, filtering is good, completely isolated, current limited (this becomes very important when something goes wrong),
+and fitting 2 or 3 of them in series is easy as they are isolated.
+Be aware that some do have the grounding wired to the negative output terminal, so it has to be disconnected, simply done by using a power cable with no ground contacts."</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_water_tables">20. Water Tables</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The minimum water level under the cut level of the torch should be around 40 mm,
+having space under slats is nice so the water can level and escape during cutting,
+having a bit of water above the metal plate being cut is really nice
+as it gets rid of the little bit of dust, running it submerged is the best way but not preferable for systems with part time use as it will corrode the torch.
+Adding baking soda to the water will keep the table in a nice condition for many years as it does not allow corrosion while the slats are under water and it also reduces the smell of water vapour.
+Some people use a water reservoir with a compressed air inlet so they can push the water from the reservoir up to the water table on demand and thus allow changes in water levels.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_downdraft_tables">21. Downdraft Tables</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Many commercial tables utilise a down draft design so fans are used to suck air down through the slats to capture fumes and sparks.
+Often tables are zoned so only a section below the torch is opened to the outgoing vent, often using air rams and air solenoids to open shutters.
+Triggering these zones is relatively straightforward if you use the axis or joint position from one of the motion pins and the lincurve component to map downdraft zones to the correct output pin.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_designing_for_speed_and_acceleration">22. Designing For Speed And Acceleration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In plasma cutting, speed and acceleration are king.
+The higher the acceleration, the less the machine needs to slow down when negotiating corners.
+This implies that the gantry should be as light as possible without sacrificing torsional stiffness.
+A 100 mm x 100 mm x 2 mm aluminium box section has equivalent torsional stiffness to an 80 mm x 80 mm T slot extrusion yet is 62% lighter.
+So does the convenience of T slots outweigh the additional construction?</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_distance_travelled_per_motor_revolution">23. Distance Travelled Per Motor Revolution</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Stepper motors suffer from resonance and a direct drive pinion is likely to mean that the motor is operating under unfavourable conditions.
+Ideally, for plasma machines a distance of around 15-25 mm per motor revolution is considered ideal but even around 30 mm per revolutions is still acceptable.
+A 5 mm pitch ball screw with a 3:1 or 5:1 reduction drive is ideal for the Z axis.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_qtplasmac_linuxcnc_plasma_configuration">24. QtPlasmaC LinuxCNC Plasma Configuration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <a href="qtplasmac.html">QtPlasmaC</a> which is comprised of a HAL component (plasmac.hal) plus a complete configurations for the QtPlasmaC GUI has received considerable input from many in the LinuxCNC Open Source movement that have advanced the understanding of plasma controllers since about 2015.
+There has been much testing and development work in getting QtPlasmaC to its current working state.
+Everything from circuit design to G-code control and configuration has been included.
+Additionally, QtPlasmaC supports external THC&#8217;s such as the Proma 150 but really comes into its own when paired with a Mesa controller as this allows the integrator to include the Mesa THCAD voltage to frequency converter which is purpose built to deal with the hostile plasma environment.</p>
+</div>
+<div class="paragraph">
+<p>QtPlasmaC is designed to stand alone and includes the ability to include your cutting charts yet also includes features to be used with a post processor like SheetCam.</p>
+</div>
+<div class="paragraph">
+<p>The QtPlasmaC system is now included in Version 2.9 and above of LinuxCNC.
+It is now quite mature and has been significantly enhanced since the first version of this guide was written.
+QtPlasmaC will define LinuxCNC&#8217;s plasma support for many years to come as it includes all of the features a proprietary high end plasma control system at an open source price.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_hypertherm_rs485_control">25. Hypertherm RS485 Control</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Some Hypertherm plasma cutters have a RS485 interface to allow the controller (e.g., LinuxCNC) to set amps.pressure and mode.
+A number of people have used a non-realtime component written in Python to achieve this.
+More recently, QtPlasmaC now supports this interface natively.
+Refer to the QtPlasmaC documentation for how to use it.</p>
+</div>
+<div class="paragraph">
+<p>The combination of a slow baud rate used by Hypertherm and the non-realtime component,
+make this fairly slow to alter machine states so it generally not viable to change settings on the fly while cutting.</p>
+</div>
+<div class="paragraph">
+<p>When selecting a RS485 interface to use at the PC end, users have reported that USB to RS485 interfaces are not reliable.
+Good reliable results have been achieved using a hardware based RS232 interface (e.g., PCI/PCIe or motherboard port) and an appropriate RS485 converter.
+Some users have reported success with a Sunix P/N: SER5037A PCI RS2322 card a generic XC4136 RS232 to RS485 converter (which may sometimes include a USB cable as well).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_post_processors_for_plasma_cutting">26. Post Processors For Plasma Cutting</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>CAM programs (Computer Aided Manufacture) are the bridge between CAD (Computer Aided Design) and the final CNC (Computer Numerical Control) operation.
+They often include a user configurable post processor to define the code that is generated for a specific machine or dialect of G-code.</p>
+</div>
+<div class="paragraph">
+<p>Many LinuxCNC users are perfectly happy with using Inkscape to convert SVG vector based files to G-code.
+If you are using a plasma cutter for hobby or home use, consider this option.</p>
+</div>
+<div class="paragraph">
+<p>However, if your needs are more complex, probably the best and most reasonably priced solution is SheetCam.
+SheetCam supports both Windows and Linux and post processors are available for it including the QtPlasmaC configuration.
+SheetCam allows you to nest parts over a full sheet of material and allows you to configure toolsets and code snippets to suit your needs.
+SheetCam post processors are text files written in the Lua programming language and are generally easy to modify to suit your exact requirements.
+For further information, consult the <a href="https://sheetcam.com">SheetCam web site</a> and their support forum.</p>
+</div>
+<div class="paragraph">
+<p>Another popular post-processor is included with the popular Fusion360 package but the included post-processors will need some customisation.</p>
+</div>
+<div class="paragraph">
+<p>LinuxCNC is a CNC application and discussions of CAM techniques other than this introductory discussion are out of scope of LinuxCNC.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

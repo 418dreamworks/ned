@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>hy_gt_vfd(1)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="hy_gt_vfd.1.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man1/hy_gt_vfd.1.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man1/hy_gt_vfd.1.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man1/hy_gt_vfd.1.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man1/hy_gt_vfd.1.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man1/hy_gt_vfd.1.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man1/hy_gt_vfd.1.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man1/hy_gt_vfd.1.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>hy_gt_vfd(1) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>hy_gt_vfd - HAL non-realtime component for Huanyang GT-series VFDs</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>hy_gt_vfd</strong> [<em>OPTIONS</em>]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The hy_gt_vfd component interfaces a Huanyang GT-series VFD to the LinuxCNC HAL.
+The VFD is connected via RS-485 serial to the LinuxCNC computer.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_hardware_setup">Hardware setup</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>At least some Huanyang GT VFDs must be physically modified to enable Modbus communication.</p>
+</div>
+<div class="paragraph">
+<p>The circuit board location marked "SW1" is identified in the manual as "Switch of terminal resistor for RS485 communication".
+On the only VFD I have experience with, the circuit board contained no switch at that location, instead holding a pair of crossed jumper wires (top-left pad connected to bottom-right pad, top-right to bottom-left).
+In this configuration, no Modbus communication is possible.
+We had to desolder the two crossed jumper wires and re-solder them parallel to each other (top-left to bottom-left, top-right to bottom-right).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_firmware_setup">Firmware setup</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Huanyang GT VFD must be configure via the faceplate to talk Modbus with LinuxCNC.
+Consult the Operation section of the Huanyang GT-series Inverter Manual for details.
+Set the following parameters:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">P0.01 = 2</dt>
+<dd>
+<p>Set Run Command Source to Modbus serial port.</p>
+</dd>
+<dt class="hdlist1">P0.03</dt>
+<dd>
+<p>Set Maximum Frequency to the maximum frequency you want the VFD to output, in Hz.</p>
+</dd>
+<dt class="hdlist1">P0.04</dt>
+<dd>
+<p>Set Upper Frequency Limit to the maximum frequency you want the VFD to output, in Hz.
+This should be the same as the value in P0.03.</p>
+</dd>
+<dt class="hdlist1">P0.05</dt>
+<dd>
+<p>Set Lower Frequency Limit to the minimum frequency you want the VFD to output, in Hz.</p>
+</dd>
+<dt class="hdlist1">P0.07 = 7</dt>
+<dd>
+<p>Set Frequency A Command Source to Modbus serial port.</p>
+</dd>
+<dt class="hdlist1">P2.01 = ???</dt>
+<dd>
+<p>Set Motor Rated Power to the motor&#8217;s power rating in kW.</p>
+</dd>
+<dt class="hdlist1">P2.02 = ???</dt>
+<dd>
+<p>Set Motor Rated Frequency to the motor&#8217;s max frequency in Hz.</p>
+</dd>
+<dt class="hdlist1">P2.03 = ???</dt>
+<dd>
+<p>Set Motor Rated Speed to the motor&#8217;s speed in RPM at its rated maximum frequency.</p>
+</dd>
+<dt class="hdlist1">P2.04 = ???</dt>
+<dd>
+<p>Set Motor Rated Voltage to the motor&#8217;s maximum voltage, in Volts.</p>
+</dd>
+<dt class="hdlist1">P2.05 = ???</dt>
+<dd>
+<p>Set Motor Rated Current to the motor&#8217;s maximum current, in Amps.</p>
+</dd>
+<dt class="hdlist1">PC.00 = 1</dt>
+<dd>
+<p>Set Local Address to 1.
+This matches the default in the hy_gt_vfd driver, change this if your setup has special needs.</p>
+</dd>
+<dt class="hdlist1">PC.01 = 5</dt>
+<dd>
+<p>Set baud rate selection to 5 (38400 bps).
+This matches the default in the hy_gt_vfd driver, change this if your setup has special needs.
++
+    0 = 1200
+    1 = 2400
+    2 = 4800
+    3 = 9600
+    4 = 19200
+    5 = 38400</p>
+</dd>
+<dt class="hdlist1">PC.02 = 0</dt>
+<dd>
+<p>Set Data Format (8n1 RTU).
+This matches the default in the hy_gt_vfd driver, change this if your setup has special needs.</p>
+</dd>
+<dt class="hdlist1">PC.03 = 1</dt>
+<dd>
+<p>Set Communication Delay Time to 1 ms.
+This is expected by the hy_gt_vfd driver.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_options">OPTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>-b</strong>, <strong>--bits</strong> <em>N</em></dt>
+<dd>
+<p>(default 8) For Modbus communication.
+Set number of data bits to <em>N</em>.
+<em>N</em> must be between 5 and 8 inclusive.</p>
+</dd>
+<dt class="hdlist1"><strong>-p</strong>, <strong>--parity</strong> [Even,Odd,None]</dt>
+<dd>
+<p>(default None) For Modbus communication.
+Set serial parity to Even, Odd, or None.</p>
+</dd>
+<dt class="hdlist1"><strong>-r</strong>, <strong>--rate</strong> <em>N</em></dt>
+<dd>
+<p>(default 38400) For Modbus communication.
+Set baud rate to <em>N</em>.
+It is an error if the rate is not one of the following: 1200, 2400, 4800, 9600, 19200, 38400</p>
+</dd>
+<dt class="hdlist1"><strong>-s</strong>, <strong>--stopbits</strong> [1,2]</dt>
+<dd>
+<p>(default 1) For Modbus communication.
+Set serial stop bits to 1 or 2.</p>
+</dd>
+<dt class="hdlist1"><strong>-t</strong>, <strong>--target</strong> <em>N</em></dt>
+<dd>
+<p>(default 1) For Modbus communication.
+Set Modbus target (slave) number.
+This must match the device number you set on the Huanyang GT VFD.</p>
+</dd>
+<dt class="hdlist1"><strong>-d</strong>, <strong>--device</strong> <em>PATH</em></dt>
+<dd>
+<p>(default /dev/ttyS0) For Modbus communication.
+Set the name of the serial device node to use.</p>
+</dd>
+<dt class="hdlist1"><strong>-v</strong>, <strong>--verbose</strong></dt>
+<dd>
+<p>Turn on verbose mode.</p>
+</dd>
+<dt class="hdlist1"><strong>-S</strong>, <strong>--motor-max-speed</strong> <em>RPM</em></dt>
+<dd>
+<p>The motor&#8217;s max speed in RPM.
+This must match the motor speed value configured in VFD register P2.03.</p>
+</dd>
+<dt class="hdlist1"><strong>-F</strong>, <strong>--max-frequency</strong> <em>HZ</em></dt>
+<dd>
+<p>This is the maximum output frequency of the VFD in Hz.
+It should correspond to the motor&#8217;s rated max frequency, and to the maximum and upper limit output frequency configured in VFD register P0.03 and P0.04.</p>
+</dd>
+<dt class="hdlist1"><strong>-f</strong>, <strong>--min-frequency</strong> <em>HZ</em></dt>
+<dd>
+<p>This is the minimum output frequency of the VFD in Hz.
+It should correspond to the minimum output frequency configured in VFD register P0.05.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>hy_gt_vfd.period</strong> (float, in)</dt>
+<dd>
+<p>The period for the driver&#8217;s update cycle, in seconds. This is
+how frequently the driver will wake up, check its HAL pins, and
+communicate with the VFD.  Must be between 0.001 and 2.000 seconds.
+Default: 0.1 seconds.</p>
+</dd>
+<dt class="hdlist1"><strong>hy_gt_vfd.speed-cmd</strong> (float, in)</dt>
+<dd>
+<p>The requested motor speed, in RPM.</p>
+</dd>
+<dt class="hdlist1"><strong>hy_gt_vfd.speed-fb</strong> (float, out)</dt>
+<dd>
+<p>The motor&#8217;s current speed, in RPM, reported by the VFD.</p>
+</dd>
+<dt class="hdlist1"><strong>hy_gt_vfd.at-speed</strong> (bit, out)</dt>
+<dd>
+<p>True when the drive is on and at the commanded speed (within 2%),
+False otherwise.</p>
+</dd>
+<dt class="hdlist1"><strong>hy_gt_vfd.freq-cmd</strong> (float, out)</dt>
+<dd>
+<p>The requested output frequency, in Hz.
+This is set from the .speed-cmd value, and is just shown for debugging purposes.</p>
+</dd>
+<dt class="hdlist1"><strong>hy_gt_vfd.freq-fb</strong> (float, out)</dt>
+<dd>
+<p>The current output frequency of the VFD, in Hz.
+This is reported from the VFD to the driver.</p>
+</dd>
+<dt class="hdlist1"><strong>hy_gt_vfd.spindle-on</strong> (bit, in)</dt>
+<dd>
+<p>Set this pin True to command the spindle on, at the speed requested on the .speed-cmd pin.
+Set this pin False to command the spindle off.</p>
+</dd>
+<dt class="hdlist1"><strong>hy_gt_vfd.output-voltage</strong> (float, out)</dt>
+<dd>
+<p>The voltage that the VFD is current providing to the motor, in Volts.</p>
+</dd>
+<dt class="hdlist1"><strong>hy_gt_vfd.output-current</strong> (float, out)</dt>
+<dd>
+<p>The current that the motor is currently drawing from the VFD, in Ampères.</p>
+</dd>
+<dt class="hdlist1"><strong>hy_gt_vfd.output-power</strong> (float, out)</dt>
+<dd>
+<p>The power that the motor is currently drawing from the VFD, in Watts.</p>
+</dd>
+<dt class="hdlist1"><strong>hy_gt_vfd.dc-bus-volts</strong> (float, out)</dt>
+<dd>
+<p>The current voltage of the VFD&#8217;s internal DC power supply, in Volts.</p>
+</dd>
+<dt class="hdlist1"><strong>hy_gt_vfd.modbus-errors</strong> (u32, out)</dt>
+<dd>
+<p>A count of the number of modbus communication errors between the driver and the VFD.
+The driver is resilient against communication errors, but a large or growing number here indicates a problem that should be investigated.</p>
+</dd>
+<dt class="hdlist1"><strong>hy_gt_vfd.input-terminal</strong> (float, out)</dt>
+<dd>
+<p>The VFD&#8217;s input terminal register.</p>
+</dd>
+<dt class="hdlist1"><strong>hy_gt_vfd.output-terminal</strong> (float, out)</dt>
+<dd>
+<p>The VFD&#8217;s output terminal register.</p>
+</dd>
+<dt class="hdlist1"><strong>hy_gt_vfd.AI1</strong> (float, out)</dt>
+<dd>
+<p>The VFD&#8217;s AI1 register.</p>
+</dd>
+<dt class="hdlist1"><strong>hy_gt_vfd.AI2</strong> (float, out)</dt>
+<dd>
+<p>The VFD&#8217;s AI2 register.</p>
+</dd>
+<dt class="hdlist1"><strong>hy_gt_vfd.HDI-frequency</strong> (float, out)</dt>
+<dd>
+<p>The VFD&#8217;s HDI-frequency register.</p>
+</dd>
+<dt class="hdlist1"><strong>hy_gt_vfd.external-counter</strong> (float, out)</dt>
+<dd>
+<p>The VFD&#8217;s external counter register.</p>
+</dd>
+<dt class="hdlist1"><strong>hy_gt_vfd.fault-info</strong> (float, out)</dt>
+<dd>
+<p>The VFD&#8217;s fault info register in floating point representation.  This is kept for backwards compatibility with existing setups and will be removed in the future.</p>
+</dd>
+<dt class="hdlist1"><strong>hy_gt_vfd.fault-info-code</strong> (u32, out)</dt>
+<dd>
+<p>The VFD&#8217;s fault code register value.  Introduced in LinuxCNC version 2.10.  0x00 if no fault is detected, see GT Series Inverter Manual page 87 for list of fault codes.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_issues">ISSUES</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The VFD produces the output frequency that it sends to the motor by adding a manually specified offset to the frequency command it gets over modbus.</p>
+</div>
+<div class="paragraph">
+<p>The manual offset is controlled by pressing the Up/Down arrows on the faceplate while the VFD is turning the motor.</p>
+</div>
+<div class="paragraph">
+<p>If you command a speed on the .speed-cmd pin and get a different speed reported on the .speed-fb pin, first verify that the VFD registers listed in the FIRMWARE SETUP section above and
+the driver&#8217;s command-line arguments all agree with the info on the motor&#8217;s name plate.
+If you still aren&#8217;t getting the speed you expect, zero the VFD&#8217;s frequency offset by starting the motor running, then pressing the Up/Down buttons to zero the offset.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Sebastian Kuzminsky</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL-2.0+</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

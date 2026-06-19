@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>encoder(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="encoder.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/encoder.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/encoder.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/encoder.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/encoder.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/encoder.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/encoder.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/encoder.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>encoder(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>encoder - software counting of quadrature encoder signals</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt encoder</strong> [ <strong>num_chan=</strong><em>num</em> | <strong>names=</strong><em>name1</em>[,<em>name2</em>&#8230;&#8203;] ]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>encoder</strong> is used to measure position by counting the pulses generated
+by a quadrature encoder. As a software-based implementation it is much
+less expensive than hardware, but has a limited maximum count rate. The
+limit is in the range of 10 kHz to 50 kHz, depending on the computer
+speed and other factors. If better performance is needed, a hardware
+encoder counter is a better choice. Some hardware-based systems can
+count at MHz rates.</p>
+</div>
+<div class="paragraph">
+<p><strong>encoder</strong> supports a maximum of eight channels. The number of channels
+actually loaded is set by the <strong>num_chan</strong> argument when the module is loaded.
+Alternatively, specify names= and unique names separated by commas.</p>
+</div>
+<div class="paragraph">
+<p>The <strong>num_chan=</strong> and <strong>names=</strong> specifiers are mutually exclusive. If
+neither <strong>num_chan=</strong> nor <strong>names=</strong> are specified, or if <strong>num_chan=0</strong> is
+specified, the default value is three.</p>
+</div>
+<div class="paragraph">
+<p><strong>encoder</strong> has a one-phase, unidirectional mode called <em>counter</em>. In this
+mode, the <strong>phase-B</strong> input is ignored; the counts increase on each rising
+edge of <strong>phase-A</strong>. This mode may be useful for counting a unidirectional
+spindle with a single input line, though the noise-resistant
+characteristics of quadrature are lost.</p>
+</div>
+<div class="paragraph">
+<p>If used in counter-mode it is also possible to enable the missing-teeth
+index mode, where a gap in the pulse train of one or more teeth is used
+as in index marker. This system is used extensively for automotive crank
+position sensors.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>encoder</strong>.<strong>update-counters</strong> (no floating-point)</dt>
+<dd>
+<p>Does the actual counting, by sampling the encoder signals and decoding
+the quadrature waveforms. Must be called as frequently as possible,
+preferably twice as fast as the maximum desired count rate. Operates
+on all channels at once.</p>
+</dd>
+<dt class="hdlist1"><strong>encoder</strong>.<strong>capture-position</strong> (uses floating point)</dt>
+<dd>
+<p>Captures the raw counts from <strong>update-counters</strong> and performs scaling
+and other necessary conversion, handles counter rollover, etc. Can
+(and should) be called less frequently than <strong>update-counters</strong>.
+Operates on all channels at once.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_naming">NAMING</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The names for pins and parameters are prefixed as: <strong>encoder</strong>.<em>N</em>. for
+N=0,1,&#8230;&#8203;,num-1 when using <strong>num_chan=num</strong> <strong>nameN.</strong> for
+nameN=name1,name2,&#8230;&#8203; when using <strong>names=name1,name2,&#8230;&#8203;</strong></p>
+</div>
+<div class="paragraph">
+<p>The <strong>encoder</strong>.<em>N</em>. format is shown in the following descriptions.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>encoder</strong>.<em>N</em>.<strong>counter-mode</strong> bit i/o</dt>
+<dd>
+<p>Enables counter mode. When true, the counter counts each rising edge
+of the phase-A input, ignoring the value on phase-B. This is useful
+for counting the output of a single channel (non-quadrature) sensor.
+When false (the default), it counts in quadrature mode.</p>
+</dd>
+<dt class="hdlist1"><strong>encoder</strong>.<em>N</em>.<strong>counts</strong> s32 out</dt>
+<dd>
+<p>Position in encoder counts.</p>
+</dd>
+<dt class="hdlist1"><strong>encoder</strong>.<em>N</em>.<strong>index-enable</strong> bit i/o</dt>
+<dd>
+<p>When true, <strong>counts</strong> and <strong>position</strong> are reset to zero on the next
+rising edge of <strong>Phase-Z</strong>. At the same time, <strong>index-enable</strong> is reset to
+zero to indicate that the rising edge has occurred.</p>
+</dd>
+<dt class="hdlist1"><strong>encoder</strong>.<em>N</em>.<strong>min-speed-estimate</strong> float in (default: 1.0)</dt>
+<dd>
+<p>Determine the minimum speed at which <strong>velocity</strong> will be estimated as
+nonzero and <strong>postition-interpolated</strong> will be interpolated. The units
+of <strong>min-speed-estimate</strong> are the same as the units of <strong>velocity</strong>.
+Setting this parameter too low will cause it to take a long time for
+<strong>velocity</strong> to go to 0 after encoder pulses have stopped arriving.</p>
+</dd>
+<dt class="hdlist1"><strong>encoder</strong>.<em>N</em>.<strong>phase-A</strong> bit in</dt>
+<dd>
+<p>Quadrature input for encoder channel <em>N</em>.</p>
+</dd>
+<dt class="hdlist1"><strong>encoder</strong>.<em>N</em>.<strong>phase-B</strong> bit in</dt>
+<dd>
+<p>Quadrature input.</p>
+</dd>
+<dt class="hdlist1"><strong>encoder</strong>.<em>N</em>.<strong>phase-Z</strong> bit in</dt>
+<dd>
+<p>Index pulse input.</p>
+</dd>
+<dt class="hdlist1"><strong>encoder</strong>.<em>N</em>.<strong>position</strong> float out</dt>
+<dd>
+<p>Position in scaled units (see <strong>position-scale</strong>)</p>
+</dd>
+<dt class="hdlist1"><strong>encoder</strong>.<em>N</em>.<strong>position-interpolated</strong> float out</dt>
+<dd>
+<p>Position in scaled units, interpolated between encoder counts. Only
+valid when velocity is approximately constant and above
+<strong>min-speed-estimate</strong>. Do not use for position control.</p>
+</dd>
+<dt class="hdlist1"><strong>encoder</strong>.<em>N</em>.<strong>position-scale</strong> float i/o</dt>
+<dd>
+<p>Scale factor, in counts per length unit. For example, if
+<strong>position-scale</strong> is 500, then 1000 counts of the encoder will be
+reported as a position of 2.0 units.</p>
+</dd>
+<dt class="hdlist1"><strong>encoder</strong>.<em>N</em>.<strong>missing-teeth</strong> s32 in</dt>
+<dd>
+<p>The number of teeth missing from the index gap. For example a 60 tooth
+gear with two teeth shortened to form an index so that there are 58
+pulses per revolution would use a position-scale of 60 and a
+missing-teeth of 2.</p>
+</dd>
+<dt class="hdlist1"><strong>encoder</strong>.<em>N</em>.<strong>rawcounts</strong> s32 out</dt>
+<dd>
+<p>The raw count, as determined by <strong>update-counters</strong>. This value is
+updated more frequently than <strong>counts</strong> and <strong>position</strong>. It is also
+unaffected by <strong>reset</strong> or the index pulse.</p>
+</dd>
+<dt class="hdlist1"><strong>encoder</strong>.<em>N</em>.<strong>reset</strong> bit in</dt>
+<dd>
+<p>When true, <strong>counts</strong> and <strong>position</strong> are reset to zero immediately.</p>
+</dd>
+<dt class="hdlist1"><strong>encoder</strong>.<em>N</em>.<strong>velocity</strong> float out</dt>
+<dd>
+<p>Velocity in scaled units per second. <strong>encoder</strong> uses an algorithm that
+greatly reduces quantization noise as compared to simply
+differentiating the <strong>position</strong> output. When the magnitude of the true
+velocity is below min-speed-estimate, the velocity output is 0.</p>
+</dd>
+<dt class="hdlist1"><strong>encoder</strong>.<em>N</em>.<strong>velocity-rpm</strong> float out</dt>
+<dd>
+<p>Velocity in scaled units per minute. Simply <strong>encoder<strong>.<em>N</em>.</strong>velocity</strong>
+scaled by a factor of 60 for convenience.</p>
+</dd>
+<dt class="hdlist1"><strong>encoder</strong>.<em>N</em>.<strong>x4-mode</strong> bit i/o</dt>
+<dd>
+<p>Enables times-4 mode. When true (the default), the counter counts each
+edge of the quadrature waveform (four counts per full cycle). When
+false, it only counts once per full cycle. In <strong>counter-mode</strong>, this
+parameter is ignored.</p>
+</dd>
+<dt class="hdlist1"><strong>encoder</strong>.<em>N</em>.<strong>latch-input</strong> bit in</dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>encoder</strong>.<em>N</em>.<strong>latch-falling</strong> bit in (default: <strong>TRUE</strong>)</dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>encoder</strong>.<em>N</em>.<strong>latch-rising</strong> bit in (default: <strong>TRUE</strong>)</dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>encoder</strong>.<em>N</em>.<strong>counts-latched</strong> s32 out</dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>encoder</strong>.<em>N</em>.<strong>position-latched</strong> float out</dt>
+<dd>
+<p>Update <strong>counts-latched</strong> and <strong>position-latched</strong> on the rising and/or
+falling edges of <strong>latch-input</strong> as indicated by <strong>latch-rising</strong> and
+<strong>latch-falling</strong>.</p>
+</dd>
+<dt class="hdlist1"><strong>encoder</strong>.<em>N</em>.<strong>counter-mode</strong> bit rw</dt>
+<dd>
+<p>Enables counter mode. When true, the counter counts each rising edge
+of the phase-A input, ignoring the value on phase-B. This is useful
+for counting the output of a single channel (non-quadrature) sensor.
+When false (the default), it counts in quadrature mode.</p>
+</dd>
+<dt class="hdlist1"><strong>encoder</strong>.<em>N</em>.<strong>capture-position.tmax</strong> s32 rw</dt>
+<dd>
+<p>Maximum time in ns it took to execute this function.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parameters">PARAMETERS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The encoder component has no HAL Parameters.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

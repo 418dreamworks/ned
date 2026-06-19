@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>PUSHMSG(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../rouge-github.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="pushmsg.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/pushmsg.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/pushmsg.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/pushmsg.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/pushmsg.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/pushmsg.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/pushmsg.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/pushmsg.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>PUSHMSG(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>pushmsg - Push configurable RT messages to non-RT logging on pin change</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt pushmsg</strong> [<strong>msgs</strong>=<em>value</em>[,<em>value</em>&#8230;&#8203;]]</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>msgs</strong></dt>
+<dd>
+<p>Comma separated list of custom messages in format level|pinname|message</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <strong>pushmsg</strong> component enables you to generate configurable messages to your
+GUI, terminal or other interface from real-time components using HAL pins.</p>
+</div>
+<div class="paragraph">
+<p>Up to 64 messages can be configured using the <strong>msgs</strong> module parameter using the
+following syntax:<br>
+  <code>"level|pinname|message"</code>[,&#8230;&#8203;]</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>level</code></dt>
+<dd>
+<p>is a letter denoting the severity level of the message with:<br></p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>e</code> - error</p>
+</li>
+<li>
+<p><code>w</code> - warning</p>
+</li>
+<li>
+<p><code>i</code> - info</p>
+</li>
+<li>
+<p><code>d</code> - debug</p>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1"><code>pinname</code></dt>
+<dd>
+<p>is the HAL pin name base used in the creation of the trigger pins:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>pushmsg</strong>.<em>&lt;pinname&gt;</em>.<strong>trigger</strong> (bit) - The trigger input to activate
+the message</p>
+</li>
+<li>
+<p><strong>pushmsg</strong>.<em>&lt;pinname&gt;</em>.<strong>edge</strong> (bit) - The trigger input edge selection
+with FALSE=rising trigger edge and TRUE=falling trigger edge</p>
+</li>
+<li>
+<p><strong>pushmsg</strong>.<em>&lt;pinname&gt;</em>.<strong>force</strong> (bit) - An always active rising edge
+trigger to activate the message, regardless of the setting of the global
+enable pin (<strong>pushmsg</strong>.<strong>enable</strong>)</p>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1"><code>message</code></dt>
+<dd>
+<p>is a free form text message.<br>
+The text may include <code>{t:refname}</code> placeholders for HAL pin value
+substitutions (use <code>\{</code> to embed a literal curly brace).
+Up to two placeholders are supported.
+Each placeholder creates a typed input pin <strong>pushmsg</strong>.<em>&lt;pinname&gt;</em>.<em>&lt;refname&gt;</em>
+that the user wires up to the source signal.
+The type letter in the placeholder selects the pin type:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>b</code> - bit</p>
+</li>
+<li>
+<p><code>s</code> - s32</p>
+</li>
+<li>
+<p><code>u</code> - u32</p>
+</li>
+<li>
+<p><code>l</code> - s64</p>
+</li>
+<li>
+<p><code>k</code> - u64</p>
+</li>
+<li>
+<p><code>f</code> - float</p>
+</li>
+</ul>
+</div>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>Each message line is limited to 128 characters in length. The length count
+includes the <code>level</code> indicator, <code>pinname</code>, <code>message</code> text and the <code>|</code> separator
+characters.</p>
+</div>
+<div class="paragraph">
+<p>HAL file example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadrt</span> <span class="n">pushmsg</span> <span class="n">msgs</span><span class="o">=</span><span class="s2">"e|nooil|No oil pressure"</span>,<span class="s2">"w|low|Oil {f:level} L low"</span>
+<span class="k">addf</span> <span class="n">pushmsg</span> <span class="n">servo-thread</span>
+<span class="k">net</span> <span class="n">no-oil</span> <span class="na">classicladder.0.out-21</span> <span class="na">pushmsg.nooil.trigger</span>
+<span class="k">net</span> <span class="n">oil-level</span> <span class="na">oil.level</span> <span class="na">pushmsg.low.level</span>
+...</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The INI-file may be an administrative help for message configuration.
+A longer list is much easier to read and maintain when split over multiple
+lines. The INI-file format supports continuations that improve readability and
+maintainability.</p>
+</div>
+<div class="paragraph">
+<p>Example INI expansion:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="p">[</span><span class="nn">PUSHMSG</span><span class="p">]</span>
+<span class="c"># Note: no surrounding whitespace, last line has no comma</span>
+<span class="py">MSGS</span><span class="p">=</span><span class="se">\
+</span><span class="s">"e|nooil|No oil pressure",</span><span class="se">\
+</span><span class="s">"w|low|Oil {f:level} L low"</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The HAL file then looks like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadrt</span> <span class="n">pushmsg</span> <span class="n">msgs</span><span class="o">=</span><span class="p">[</span><span class="nn">PUSHMSG</span><span class="p">]</span><span class="py">MSGS</span>
+<span class="k">addf</span> <span class="n">pushmsg</span> <span class="n">servo-thread</span>
+...</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>pushmsg</strong>.<strong>-</strong></dt>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>pushmsg</strong>.<strong>enable</strong> bit in (default: <em>TRUE</em>)</dt>
+<dd>
+<p>Enable message generation through trigger input pins</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>LinuxCNC</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:30:12 UTC
+</div>
+</div>
+</body>
+</html>

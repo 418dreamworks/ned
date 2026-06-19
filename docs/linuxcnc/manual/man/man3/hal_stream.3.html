@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>hal_stream(3)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../rouge-github.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="hal_stream.3.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man3/hal_stream.3.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man3/hal_stream.3.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man3/hal_stream.3.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man3/hal_stream.3.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man3/hal_stream.3.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man3/hal_stream.3.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man3/hal_stream.3.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>hal_stream(3) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>hal_stream - non-blocking realtime streams</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c"><span class="cp">#include</span> <span class="cpf">&lt;hal.h&gt;</span><span class="cp">
+</span><span class="kt">int</span> <span class="nf">hal_stream_create</span><span class="p">(</span><span class="n">hal_stream_t</span><span class="o">*</span> <span class="n">stream</span><span class="p">,</span> <span class="kt">int</span> <span class="n">comp_id</span><span class="p">,</span> <span class="kt">int</span> <span class="n">key</span><span class="p">,</span> <span class="kt">int</span> <span class="n">depth</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">typestring</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">hal_stream_destroy</span><span class="p">(</span><span class="n">hal_stream_t</span><span class="o">*</span> <span class="n">stream</span><span class="p">);</span>
+<span class="kt">int</span> <span class="nf">hal_stream_attach</span><span class="p">(</span><span class="n">hal_stream_t</span><span class="o">*</span> <span class="n">stream</span><span class="p">,</span> <span class="kt">int</span> <span class="n">comp_id</span><span class="p">,</span> <span class="kt">int</span> <span class="n">key</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">typestring</span><span class="p">);</span>
+<span class="kt">int</span> <span class="nf">hal_stream_detach</span><span class="p">(</span><span class="n">hal_stream_t</span><span class="o">*</span> <span class="n">stream</span><span class="p">);</span>
+
+<span class="kt">int</span> <span class="nf">hal_stream_element_count</span><span class="p">(</span><span class="n">hal_stream_t</span><span class="o">*</span> <span class="n">stream</span><span class="p">);</span>
+<span class="n">hal_type_t</span> <span class="nf">hal_stream_element_type</span><span class="p">(</span><span class="n">hal_stream_t</span><span class="o">*</span> <span class="n">stream</span><span class="p">,</span> <span class="kt">int</span> <span class="n">idx</span><span class="p">);</span>
+<span class="kt">int</span> <span class="nf">hal_stream_depth</span><span class="p">(</span><span class="n">hal_stream_t</span><span class="o">*</span> <span class="n">stream</span><span class="p">);</span>
+<span class="kt">int</span> <span class="nf">hal_stream_maxdepth</span><span class="p">(</span><span class="n">hal_stream_t</span><span class="o">*</span> <span class="n">stream</span><span class="p">);</span>
+<span class="kt">int</span> <span class="nf">hal_stream_num_underruns</span><span class="p">(</span><span class="n">hal_stream_t</span><span class="o">*</span> <span class="n">stream</span><span class="p">);</span>
+<span class="kt">int</span> <span class="nf">hal_stream_num_overruns</span><span class="p">(</span><span class="n">hal_stream_t</span><span class="o">*</span> <span class="n">stream</span><span class="p">);</span>
+
+<span class="kt">int</span> <span class="nf">hal_stream_read</span><span class="p">(</span><span class="n">hal_stream_t</span><span class="o">*</span> <span class="n">stream</span><span class="p">,</span> <span class="n">hal_stream_data_u</span> <span class="o">*</span><span class="n">buf</span><span class="p">,</span> <span class="kt">unsigned</span><span class="o">*</span> <span class="n">sampleno</span><span class="p">);</span>
+<span class="n">bool</span> <span class="nf">hal_stream_readable</span><span class="p">(</span><span class="n">hal_stream_t</span><span class="o">*</span> <span class="n">stream</span><span class="p">);</span>
+
+<span class="kt">int</span> <span class="nf">hal_stream_write</span><span class="p">(</span><span class="n">hal_stream_t</span><span class="o">*</span> <span class="n">stream</span><span class="p">,</span> <span class="n">hal_stream_data_u</span> <span class="o">*</span><span class="n">buf</span><span class="p">);</span>
+<span class="n">bool</span> <span class="nf">hal_stream_writable</span><span class="p">(</span><span class="n">hal_stream_t</span><span class="o">*</span> <span class="n">stream</span><span class="p">);</span>
+
+<span class="cp">#ifdef ULAPI
+</span><span class="kt">void</span> <span class="nf">hal_stream_wait_writable</span><span class="p">(</span><span class="n">hal_stream_t</span><span class="o">*</span> <span class="n">stream</span><span class="p">,</span> <span class="kt">sig_atomic_t</span><span class="o">*</span> <span class="n">stop</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">hal_stream_wait_readable</span><span class="p">(</span><span class="n">hal_stream_t</span><span class="o">*</span> <span class="n">stream</span><span class="p">,</span> <span class="kt">sig_atomic_t</span><span class="o">*</span> <span class="n">stop</span><span class="p">);</span>
+<span class="cp">#endif</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A HAL stream provides a limited ability for two components to
+communicate data which does not fit within the model of HAL pins.
+A reader and a writer must agree on a <em>key</em> (32-bit integer identifier)
+and a data structure specified by <em>typestring</em>.
+They must also agree which component (the first one loaded) will <strong>hal_stream_create</strong> the stream,
+and which component (the second one loaded) will <strong>hal_stream_attach</strong> to the already-created stream.</p>
+</div>
+<div class="paragraph">
+<p>The non-realtime part can be <strong>halstreamer</strong> or <strong>halsampler</strong>.
+In the case of <strong>halstreamer</strong> the key is 0x48535430 plus the channel number.
+In the case of <strong>halsampler</strong> the key is 0x48534130 plus the channel number.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>hal_stream_create</strong></dt>
+<dd>
+<p>Create the given stream, initializing the <em>stream</em> which is passed by reference.
+It is an undiagnosed error if a stream has already been created with the same <em>key</em>.</p>
+</dd>
+<dt class="hdlist1"><strong>hal_stream_destroy</strong></dt>
+<dd>
+<p>Destroy the given stream. It is an undiagnosed error if the stream is
+still attached by another component. It is an undiagnosed error if the
+stream was attached with <strong>hal_stream_attach</strong> rather than created with
+<strong>hal_stream_create</strong>. It is an undiagnosed error if the call to
+<strong>hal_stream_destroy</strong> is omitted.</p>
+</dd>
+<dt class="hdlist1"><strong>hal_stream_attach</strong></dt>
+<dd>
+<p>Attach the given stream, which was already created by <strong>hal_stream_create</strong>.
+If the typestring is specified, this call fails if it does not match the typestring the stream was created with.
+If the typestring argument is NULL, then any typestring is accepted.</p>
+</dd>
+<dt class="hdlist1"><strong>hal_stream_detach</strong></dt>
+<dd>
+<p>Detach the given stream. It is an undiagnosed error if the stream was
+created with <strong>hal_stream_create</strong> rather than attached with <strong>hal_stream_attach</strong>.
+It is an undiagnosed error if the call to <strong>hal_stream_detach</strong> is omitted.</p>
+</dd>
+<dt class="hdlist1"><strong>hal_stream_element_count</strong></dt>
+<dd>
+<p>Returns the number of pins.</p>
+</dd>
+<dt class="hdlist1"><strong>hal_stream_element_type</strong></dt>
+<dd>
+<p>Returns the type of the given pin number.</p>
+</dd>
+<dt class="hdlist1"><strong>hal_stream_readable</strong></dt>
+<dd>
+<p>Returns true if the stream has at least one sample to read</p>
+</dd>
+<dt class="hdlist1"><strong>hal_stream_read</strong></dt>
+<dd>
+<p>If the stream has one sample to read, stores it in buf.</p>
+</dd>
+<dt class="hdlist1"><strong>hal_stream_writable</strong></dt>
+<dd>
+<p>Returns true if the stream has room for at least one sample to be written.</p>
+</dd>
+<dt class="hdlist1"><strong>hal_stream_depth</strong></dt>
+<dd>
+<p>Returns the number of samples waiting to be read.</p>
+</dd>
+<dt class="hdlist1"><strong>hal_stream_maxdepth</strong></dt>
+<dd>
+<p>Returns the <strong>depth</strong> argument that the stream was created with.</p>
+</dd>
+<dt class="hdlist1"><strong>hal_stream_num_overruns</strong></dt>
+<dd>
+<p>Returns a number which is incremented each time <strong>hal_stream_write</strong> is called without space available.</p>
+</dd>
+<dt class="hdlist1"><strong>hal_stream_num_underruns</strong></dt>
+<dd>
+<p>Returns a number which is incremented each time <strong>hal_stream_read</strong> is called without a sample available.</p>
+</dd>
+<dt class="hdlist1"><strong>hal_stream_wait_readable</strong></dt>
+<dd>
+<p>Waits until the stream is readable or the stop flag is set.</p>
+</dd>
+<dt class="hdlist1"><strong>hal_stream_wait_writable</strong></dt>
+<dd>
+<p>Waits until the stream is writable or the stop flag is set.</p>
+</dd>
+<dt class="hdlist1"><strong>hal_stream_read</strong></dt>
+<dd>
+<p>Reads a record from stream.
+If successful, it is stored in the given buffer.
+Optionally, the sample number can be retrieved. If no sample is available, <em>num_underruns</em> is incremented.
+It is an undetected error if more than one component or real-time function calls <strong>hal_stream_read</strong> concurrently.</p>
+</dd>
+<dt class="hdlist1"><strong>hal_stream_write</strong></dt>
+<dd>
+<p>Writes a record to the stream.
+If successful, it copied from the given buffer.
+If no room is available, <em>num_overruns</em> is incremented.
+In either case, the internal <em>sampleno</em> value is incremented.
+It is an undetected error if more than one component or real-time function calls <strong>hal_stream_write</strong> concurrently.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_arguments">ARGUMENTS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1">stream</dt>
+<dd>
+<p>A pointer to a stream object. In the case of <strong>hal_stream_create</strong> and
+<strong>hal_stream_attach</strong> this is an uninitialized stream; in other cases,
+it must be a stream created or attached by an earlier call and not yet
+detached or destroyed.</p>
+</dd>
+<dt class="hdlist1">hal_id</dt>
+<dd>
+<p>An HAL component identifier returned by an earlier call to <strong>hal_init</strong>.</p>
+</dd>
+<dt class="hdlist1">key</dt>
+<dd>
+<p>The key for the shared memory segment.</p>
+</dd>
+<dt class="hdlist1">depth</dt>
+<dd>
+<p>The number of samples that can be unread before any samples are lost
+(overrun)</p>
+</dd>
+<dt class="hdlist1">typestring</dt>
+<dd>
+<p>A typestring is limited to 20 characters. A typestring is a
+case-insensitive string which consists of one or more of the
+following type characters:
++</p>
+<div class="ulist">
+<ul>
+<li>
+<p>B for bool / hal_bit_t</p>
+</li>
+<li>
+<p>S for rtapi_s32 / hal_s32_t</p>
+</li>
+<li>
+<p>U for rtapi_u32 / hal_u32_t</p>
+</li>
+<li>
+<p>F for real_t / hal_float_t</p>
+</li>
+<li>
+<p>L for rtapi_s64 / hal_s64_t</p>
+</li>
+<li>
+<p>K for rtapi_u64 / hal_u64_t</p>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1">buf</dt>
+<dd>
+<p>A buffer big enough to hold all the data in one sample.</p>
+</dd>
+<dt class="hdlist1">sampleno</dt>
+<dd>
+<p>If non-NULL, the last sample number is stored here. Gaps in this
+sequence indicate that an overrun occurred between the previous read
+and this one. May be NULL, in which case the sample number is not
+retrieved.</p>
+</dd>
+<dt class="hdlist1">stop</dt>
+<dd>
+<p>A pointer to a value which is monitored while waiting. If it is
+nonzero, the wait operation returns early. This allows a wait call to
+be safely terminated in the case of a signal.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_sample_code">SAMPLE CODE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In the source tree under <code>src/hal/components</code>, <strong>sampler.c</strong> and
+<strong>streamer.c</strong> are realtime components that read and write HAL streams.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_realtime_considerations">REALTIME CONSIDERATIONS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>hal_stream_read</strong>, <strong>hal_stream_readable</strong>, <strong>hal_stream_write</strong>,
+<strong>hal_stream_writable</strong>, <strong>hal_stream_element_count</strong>, <strong>hal_tream_pin_type</strong>,
+<strong>hal_stream_depth</strong>, <strong>hal_stream_maxdepth</strong>, <strong>hal_stream_num_underruns</strong>,
+<strong>hal_stream_number_overruns</strong> may be called from realtime code.</p>
+</div>
+<div class="paragraph">
+<p><strong>hal_stream_wait_writable</strong>, <strong>hal_stream_wait_writable</strong> may be called from ULAPI code.</p>
+</div>
+<div class="paragraph">
+<p>Other functions may be called in any context, including realtime contexts.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_return_value">RETURN VALUE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The functions <strong>hal_stream_create</strong>, <strong>hal_stream_attach</strong>, <strong>hal_stream_read</strong>,
+<strong>hal_stream_write</strong>, <strong>hal_stream_detach</strong> and <strong>hal_stream_destroy</strong> return
+an RTAPI status code. Other functions' return values are explained above.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_bugs">BUGS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The memory overhead of a stream can be large.
+Each element in a record uses 8 bytes, and the implicit sample number also uses 8 bytes.
+As a result, a stream which is used to transport 8-bit values uses 94% of its memory as overhead.
+However, for modest stream sizes this overhead is not important.
+(This memory is part of its own shared memory region and does not count against the HAL shared memory region used for pins, parameters and signals.)</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>sampler(9), streamer(9), halsampler(1), halstreamer(1)</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

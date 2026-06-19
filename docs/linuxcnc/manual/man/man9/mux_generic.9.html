@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>mux_generic(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="mux_generic.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/mux_generic.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/mux_generic.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/mux_generic.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/mux_generic.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/mux_generic.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/mux_generic.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/mux_generic.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>mux_generic(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>mux_generic - select one from several inputs and forwards it to a single output</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt mux_generic config="</strong><em>&lt;input_type&gt;&lt;output_type&gt;&lt;size&gt;</em>[,<em>&lt;input_type&gt;&lt;output_type&gt;&lt;size&gt;</em>],&#8230;&#8203;<strong>"</strong></p>
+</div>
+<div class="paragraph">
+<p>Types: <strong>b</strong> = bit, <strong>f</strong> = float, <strong>s</strong> = signed integer, <strong>u</strong> = unsigned integer</p>
+</div>
+<div class="paragraph">
+<p>Example: <strong>loadrt mux_generic config="</strong>bb8,fu12<strong>"</strong></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>mux-gen.</strong><em>NN</em> Depending on the data types can run in either a floating point or non-floating point thread.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="literalblock">
+<div class="content">
+<pre>               mux-gen.NN.sel-bit-00 ───────────────────┐
+                                 ... ─────────────────┐ │
+               mux-gen.NN.sel-bit-BB ───────────────┐ │ │
+                  mux-gen.NN.sel-int ─────────────┐ │ │ │
+                                          ┌───────┴─┴─┴─┴───────┐
+mux-gen.NN.in-[bit/float/s32/u32]-00 ─────┤   ─────o \          │
+                                 ... ─────┤   ─────o   o─────   ├───── mux-gen.NN.out-[bit/float/s32/u32]
+mux-gen.NN.in-[bit/float/s32/u32]-MM ─────┤   ─────o            │
+                                          │                     │
+        mux-gen.NN.suppress-no-input ─────┤                     │
+              mux-gen.NN.debounce-us ─────┤                     │
+                                          └─────────────────────┘</pre>
+</div>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>mux-gen</strong>.<em>N</em>.<strong>suppress-no-input</strong> bit in</dt>
+<dd>
+<p>This suppresses changing the output if all select lines are false.
+This stops unwanted jumps in output between transitions of input but makes in00 unavailable.</p>
+</dd>
+<dt class="hdlist1"><strong>mux-gen</strong>.<em>N</em>.<strong>debounce-us</strong> unsigned in</dt>
+<dd>
+<p>sets debounce time in microseconds, e.g. 100000 = a tenth of a second.
+The selection inputs must be stable this long before the output
+changes. This helps to ignore <em>noisy</em> switches.</p>
+</dd>
+<dt class="hdlist1"><strong>mux-gen</strong>.<em>N</em>.<strong>sel-bit-</strong><em>BB</em> bit in (BB=0..bit width of <em>size</em>)</dt>
+<dt class="hdlist1"><strong>mux-gen</strong>.<em>N</em>.<strong>sel-int</strong> unsigned in</dt>
+<dd>
+<p>Together, these determine which <strong>in</strong><em>M</em> value is copied to <strong>output</strong>.
+The bit pins are interpreted as binary bits, and the result is simply
+added on to the integer pin input. It is expected that either one or
+the other would normally be used. However, the possibility exists to
+use a higher-order bit to "shift" the values set by the integer pin.
+The sel-bit pins are only created when the size of the mux_gen
+component is an integer power of two. This component (unlike mux16)
+does not offer the option of decoding Gray-code, however the same
+effect can be achieved by arranging the order of the input values to suit.</p>
+</dd>
+<dt class="hdlist1"><strong>mux-gen</strong>.<em>N</em>.<strong>in-</strong><strong class="<strong>*bit</strong>*/<strong>*float</strong>*/<strong>*s32</strong>*/<strong>*u32</strong>*">-</strong><em>MM</em> variable-type in</dt>
+<dd>
+<p>The possible output values that are selected by the selection pins.</p>
+</dd>
+<dt class="hdlist1"><strong>mux-gen</strong>.<em>N</em>.<strong>out-</strong>[<strong>bit</strong>/<strong>float</strong>/<strong>s32</strong>/<strong>u32</strong>] variable-type out</dt>
+<dd>
+<p>Follows the value of one of the <strong>in</strong><em>N</em> values according to the
+selection bits and/or the selection number. Values will be
+converted/truncated according to standard C rules. This means, for
+example that a float input greater than 2147483647 will give an S32
+output of -2147483648.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parameters">PARAMETERS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>mux-gen</strong>.<em>N</em>.<strong>elapsed</strong> float r</dt>
+<dd>
+<p>Current value of the internal debounce timer for debugging.</p>
+</dd>
+<dt class="hdlist1"><strong>mux-gen</strong>.<em>N</em>.<strong>selected</strong> s32 r</dt>
+<dd>
+<p>Current value of the internal selection variable after conversion for debugging.
+Possibly useful for setting up gray-code switches.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This component is a more general version of the other multiplexing
+components. It allows the creation of arbitrary-size multiplexers (up to
+1024 entries) and also supports differing data types on the input and
+output pins. The configuration string is a comma-separated list of
+code-letters and numbers, such as "bb4,fu12". This would create a
+4-element bit-to-bit mux and a 12-element float-to-unsigned mux. The
+code letters are <strong>b</strong> = bit, <strong>f</strong> = float, <strong>s</strong> = signed integer, <strong>u</strong> = unsigned
+integer. The first letter code is the input type, the second is the
+output type. The codes are not case-sensitive. The order of the letters
+is significant but the position in the string is not. Do not insert any
+spaces in the config string. Any non-zero float value will be converted
+to a "true" output in bit form. Be wary that float datatypes can be
+very, very, close to zero and not actually be equal to zero.</p>
+</div>
+<div class="paragraph">
+<p>Each mux has its own HAL function and must be added to a thread
+separately. If neither input nor output is of type float then the
+function is base-thread (non floating-point) safe. Any mux_generic with
+a floating point input or output can only be added to a floating-point
+thread.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>mux2(9), mux4(9), mux8(9), mux16(9)</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Andy Pugh</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

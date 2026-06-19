@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>classicladder(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="classicladder.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/classicladder.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/classicladder.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/classicladder.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/classicladder.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/classicladder.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/classicladder.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/classicladder.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>classicladder(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>classicladder - realtime software plc based on ladder logic</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt classicladder_rt</strong> [<strong>numRungs=</strong><em>N</em>] [<strong>numBits=</strong><em>N</em>] [<strong>numWords=</strong><em>N</em>] [<strong>numTimers=</strong><em>N</em>] [<strong>numMonostables=</strong><em>N</em>] [<strong>numCounters=</strong><em>N</em>] [<strong>numPhysInputs=</strong><em>N</em>] [<strong>numPhysOutputs=</strong><em>N</em>] [<strong>numArithmExpr=</strong><em>N</em>] [<strong>numSections=</strong><em>N</em>] [<strong>numSymbols=</strong><em>N</em>] [<strong>numS32in=</strong><em>N</em>] [<strong>numS32out=</strong><em>N</em>] [<strong>numFloatIn=</strong><em>N</em>] [<strong>numFloatOut=</strong><em>N</em>]</p>
+</div>
+<div class="paragraph">
+<p><strong>loadusr classicladder</strong> <em>&lt;file name&gt;</em> [<strong>--nogui</strong>]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This component consist of a realtime part and a non-realtime part. The
+non-realtime part loads the programmable ladder description, while the
+realtime part provides the pins. The file name of the configuration can
+be changed using an argument to the non-realtime part. By default the
+non-realtime part provides a graphical visualisation of the loaded
+ladder, which can be disabled using the <em>--nogui</em> option to the
+non-realtime part.</p>
+</div>
+<div class="paragraph">
+<p>These pins and parameters are created by the realtime <strong>classicladder_rt</strong>
+module. Each period (minimum 1000000 ns), ClassicLadder reads the
+inputs, evaluates the ladder logic defined in the GUI, and then writes
+the outputs.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>classicladder.0.in-</strong><em>NN</em> IN bit</dt>
+<dd>
+<p>These bit signal pins map to <strong>%I</strong><em>NN</em> variables in ClassicLadder.</p>
+</dd>
+<dt class="hdlist1"><strong>classicladder.0.out-</strong><em>NN</em> OUT bit</dt>
+<dd>
+<p>These bit signal pins map to <strong>%Q</strong><em>NN</em> variables in ClassicLadder.
+Output from ClassicLadder.</p>
+</dd>
+<dt class="hdlist1"><strong>classicladder.0.s32in-</strong><em>NN</em> IN s32</dt>
+<dd>
+<p>Integer input from ClassicLadder.
+These s32 signal pins map to <strong>%IW</strong><em>NN</em> variables in ClassicLadder.</p>
+</dd>
+<dt class="hdlist1"><strong>classicladder.0.s32out-</strong><em>NN</em> OUT s32</dt>
+<dd>
+<p>Integer output from ClassicLadder.
+These s32 signal pins map to <strong>%QW</strong><em>NN</em> variables in ClassicLadder.</p>
+</dd>
+<dt class="hdlist1"><strong>classicladder.0.floatin-</strong><em>NN</em> IN float</dt>
+<dd>
+<p>Integer input from ClassicLadder.
+These float signal pins map to <strong>%IF</strong><em>NN</em> variables in ClassicLadder.
+These are truncated to S32 values internally, e.g. 7.5 will be 7.</p>
+</dd>
+<dt class="hdlist1"><strong>classicladder.0.floatout-</strong><em>NN</em> OUT float</dt>
+<dd>
+<p>Float output from ClassicLadder.
+These float signal pins map to <strong>%QF</strong><em>NN</em> variables in ClassicLadder.</p>
+</dd>
+<dt class="hdlist1"><strong>classicladder.0.hide_gui</strong> IN bit</dt>
+<dd>
+<p>This bit pin hides the ClassicLadder window, while still having the non-realtime code run.
+This is usually desirable when modbus is used, as modbus requires the non-realtime code to run.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parameters">PARAMETERS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>classicladder.0.refresh.time</strong> RO s32</dt>
+<dd>
+<p>Tells you how long the last refresh took.</p>
+</dd>
+<dt class="hdlist1"><strong>classicladder.0.refresh.tmax</strong> RW s32</dt>
+<dd>
+<p>Tells you how long the longest refresh took.</p>
+</dd>
+<dt class="hdlist1"><strong>classicladder.0.ladder-state</strong> RO s32</dt>
+<dd>
+<p>Tells you if the program is running or not</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>classicladder.0.refresh</strong> FP</dt>
+<dd>
+<p>The rung update rate.  Add this to the servo thread.
+You can added it to a faster thread but it.
+Will update no faster than once every 1 millisecond (1000000 ns).</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_bugs">BUGS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>See <a href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl?ClassicLadder_Ver_7.124" class="bare">https://wiki.linuxcnc.org/cgi-bin/wiki.pl?ClassicLadder_Ver_7.124</a> for the latest.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><em>ClassicLadder</em> chapters in the LinuxCNC documentation for a full
+description of the <strong>ClassicLadder</strong> syntax and examples.</p>
+</div>
+<div class="paragraph">
+<p><a href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl?ClassicLadder_Ver_7.124" class="bare">https://wiki.linuxcnc.org/cgi-bin/wiki.pl?ClassicLadder_Ver_7.124</a></p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

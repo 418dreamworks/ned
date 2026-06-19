@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>HISTOBINS(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="histobins.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/histobins.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/histobins.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/histobins.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/histobins.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/histobins.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/histobins.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/histobins.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>HISTOBINS(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>histobins - histogram bins utility for scripts/hal-histogram</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt histobins</strong> [<strong>count</strong>=<em>N</em>|<strong>names</strong>=<em>name1</em>[,<em>name2</em>&#8230;&#8203;]]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Read <strong>availablebins</strong> pin for the number of bins available. Set the <strong>minvalue</strong>,
+<strong>binsize</strong>, and <strong>nbins</strong> pins and ensure <strong>nbins</strong> ≤ <strong>availablebins</strong>.</p>
+</div>
+<div class="paragraph">
+<p>For <strong>nbins</strong> = N, the bins are numbered: 0 &#8230;&#8203; N-1</p>
+</div>
+<div class="paragraph">
+<p>Iterate:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Set <strong>index</strong> pin to a bin number: 0 ≤ <strong>index</strong> &lt; <strong>nbins</strong>.</p>
+</li>
+<li>
+<p>Read check pin and verify that check pin == index pin.</p>
+</li>
+<li>
+<p>Read outputs: binvalue, pextra, nextra pins.<br>
+(<strong>binvalue</strong> is count for the indexed bin)<br>
+(<strong>pextra</strong> is count for all inputs &gt; maxvalue)<br>
+(<strong>nextra</strong> is count for all bins   &lt; minvalue)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>If <strong>index</strong> is out of range (<strong>index</strong> &lt; 0 or <strong>index</strong> &gt; <strong>maxbinnumber</strong> then
+binvalue == -1. The <strong>input-error</strong> pin is set when input rules are violated and
+updates cease. The reset pin may be used to restart.</p>
+</div>
+<div class="paragraph">
+<p>The input used is selected based on pintype:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-center valign-top">pintype</th>
+<th class="tableblock halign-center valign-top">inputpin</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">input</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">input-s32</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">input-u32</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">input-bit</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Additional output statistics pins:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>input-min</strong></p>
+</li>
+<li>
+<p><strong>input-max</strong></p>
+</li>
+<li>
+<p><strong>nsamples</strong></p>
+</li>
+<li>
+<p><strong>variance</strong></p>
+</li>
+<li>
+<p><strong>mean</strong></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The method input pin selects an alternate variance calculation.</p>
+</div>
+<div class="paragraph">
+<p>Maintainers note: hardcoded for MAXBINNUMBER==200</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>histobins</strong>.<em>N</em></dt>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>histobins</strong>.<em>N</em>.<strong>pintype</strong> u32 in </dt>
+<dt class="hdlist1"><strong>histobins</strong>.<em>N</em>.<strong>input</strong> float in </dt>
+<dt class="hdlist1"><strong>histobins</strong>.<em>N</em>.<strong>input-s32</strong> s32 in </dt>
+<dt class="hdlist1"><strong>histobins</strong>.<em>N</em>.<strong>input-u32</strong> u32 in </dt>
+<dt class="hdlist1"><strong>histobins</strong>.<em>N</em>.<strong>input-bit</strong> bit in </dt>
+<dt class="hdlist1"><strong>histobins</strong>.<em>N</em>.<strong>nbins</strong> u32 in (default: <em>20</em>)</dt>
+<dt class="hdlist1"><strong>histobins</strong>.<em>N</em>.<strong>binsize</strong> float in (default: <em>1</em>)</dt>
+<dt class="hdlist1"><strong>histobins</strong>.<em>N</em>.<strong>minvalue</strong> float in (default: <em>0</em>)</dt>
+<dt class="hdlist1"><strong>histobins</strong>.<em>N</em>.<strong>index</strong> s32 in </dt>
+<dt class="hdlist1"><strong>histobins</strong>.<em>N</em>.<strong>check</strong> s32 out </dt>
+<dt class="hdlist1"><strong>histobins</strong>.<em>N</em>.<strong>reset</strong> bit in </dt>
+<dt class="hdlist1"><strong>histobins</strong>.<em>N</em>.<strong>method</strong> bit in </dt>
+<dt class="hdlist1"><strong>histobins</strong>.<em>N</em>.<strong>input-error</strong> bit out </dt>
+<dt class="hdlist1"><strong>histobins</strong>.<em>N</em>.<strong>binvalue</strong> float out </dt>
+<dt class="hdlist1"><strong>histobins</strong>.<em>N</em>.<strong>pextra</strong> float out </dt>
+<dt class="hdlist1"><strong>histobins</strong>.<em>N</em>.<strong>nextra</strong> float out </dt>
+<dt class="hdlist1"><strong>histobins</strong>.<em>N</em>.<strong>input-min</strong> float out </dt>
+<dt class="hdlist1"><strong>histobins</strong>.<em>N</em>.<strong>input-max</strong> float out </dt>
+<dt class="hdlist1"><strong>histobins</strong>.<em>N</em>.<strong>nsamples</strong> u32 out </dt>
+<dt class="hdlist1"><strong>histobins</strong>.<em>N</em>.<strong>variance</strong> float out </dt>
+<dt class="hdlist1"><strong>histobins</strong>.<em>N</em>.<strong>mean</strong> float out </dt>
+<dt class="hdlist1"><strong>histobins</strong>.<em>N</em>.<strong>availablebins</strong> s32 out (default: <em>200</em>)</dt>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Dewey Garrett</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:30:09 UTC
+</div>
+</div>
+</body>
+</html>

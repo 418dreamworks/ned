@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>Tool Compensation</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../rouge-github.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:tool-compensation" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="tool-compensation.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/gcode/tool-compensation.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/gcode/tool-compensation.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/gcode/tool-compensation.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/gcode/tool-compensation.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/gcode/tool-compensation.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/gcode/tool-compensation.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/gcode/tool-compensation.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>Tool Compensation</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="../config/stepconf.html">Stepper Configuration Wizard</a><a href="../config/pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="../config/integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><a href="../config/ini-config.html">INI Configuration</a><a href="../config/ini-homing.html">Homing Configuration</a><a href="../config/lathe-config.html">Lathe Configuration</a><a href="../config/stepper-quickstart.html">Stepper Quickstart</a><a href="../config/stepper.html">Stepper Configuration</a><a href="../config/stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="../config/core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="../config/moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details open><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details open><summary>G-code Programming</summary><a href="coordinates.html">Coordinate Systems</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>Tool Compensation</summary><ul class="sectlevel1">
+<li><a href="tool-compensation.html#sec:touch-off">1. Touch Off</a>
+<ul class="sectlevel2">
+<li><a href="tool-compensation.html#_using_g10_l1l10l11">1.1. Using G10 L1/L10/L11</a></li>
+</ul>
+</li>
+<li><a href="tool-compensation.html#sec:tool-table">2. Tool Table</a>
+<ul class="sectlevel2">
+<li><a href="tool-compensation.html#sub:tool-table-format">2.1. Tool Table Format</a></li>
+<li><a href="tool-compensation.html#sub:tool-io">2.2. Tool IO</a></li>
+<li><a href="tool-compensation.html#sub:tool-changers">2.3. Tool Changers</a></li>
+</ul>
+</li>
+<li><a href="tool-compensation.html#_tool_length_compensation">3. Tool Length Compensation</a></li>
+<li><a href="tool-compensation.html#sec:cutter-radius-compensation">4. Cutter Radius Compensation</a>
+<ul class="sectlevel2">
+<li><a href="tool-compensation.html#_overview">4.1. Overview</a></li>
+<li><a href="tool-compensation.html#_examples">4.2. Examples</a></li>
+</ul>
+</li>
+</ul></details><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="overview.html">Overview of G-Code Programming</a><a href="g-code.html">G-Codes</a><a href="m-code.html">M-Codes</a><a href="o-code.html">O Codes</a><a href="other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="../config/python-interface.html">The LinuxCNC Python module</a><a href="../config/python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:touch-off">1. Touch Off</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+Using the Touch Off Screen in the AXIS interface you can update the tool table automatically.</p>
+</div>
+<div class="paragraph">
+<p>Typical steps for updating the tool table:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>After homing load a tool with <em>T<em>n</em> M6</em> where <em>n</em> is the tool number.</p>
+</li>
+<li>
+<p>Move tool to an established point using a gauge or take a test cut and measure.</p>
+</li>
+<li>
+<p>Click the <em>Touch Off</em> button in the Manual Control tab (or hit the <em>End</em> button on your keyboard).</p>
+</li>
+<li>
+<p>Select <em>Tool Table</em> in the Coordinate System drop down box.</p>
+</li>
+<li>
+<p>Enter the gauge or measured dimension and select OK.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The Tool Table will be changed with the correct Z length to make the DRO display the correct Z position and a G43 command will be issued so the new tool Z length will be in effect.
+Tool table touch off is only available when a tool is loaded with <em>T<em>n</em> M6</em>.</p>
+</div>
+<div id="cap:touch-off-tool" class="imageblock text-center">
+<div class="content">
+<img src="images/ToolTable-TouchOff.png" alt="Touch Off Tool Table">
+</div>
+<div class="title">Figure 1. Touch Off Tool Table</div>
+</div>
+<div class="sect2">
+<h3 id="_using_g10_l1l10l11">1.1. Using G10 L1/L10/L11</h3>
+<div class="paragraph">
+<p>The G10 L1/L10/L11 commands can be used to set tool table offsets:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>G10 L1  P__n__</code> - Set offset(s) to a value. Current position irrelevant (see <a href="g-code.html#gcode:g10-l1">G10 L1</a> for details).</p>
+</li>
+<li>
+<p><code>G10 L10 P__n__</code> - Set offset(s) so current position w/ fixture 1-8 becomes a value (see <a href="g-code.html#gcode:g10-l10">G10 L10</a> for details).</p>
+</li>
+<li>
+<p><code>G10 L11 P__n__</code> - Set offset(s) so current position w/ fixture 9 becomes a value (see <a href="g-code.html#gcode:g10-l11">G10 L11</a> for details).</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+This is only a brief presentation, refer to the reference guide of the G-code for more detailed explanations.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:tool-table">2. Tool Table</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+The <em>Tool Table</em> is a text file that contains information about each tool.
+The file is located in the same directory as your configuration and is called <em>tool.tbl</em> by default.
+A file name may be specified with the INI file [EMCIO]TOOL_TABLE setting.
+The tools might be in a tool changer or just changed manually.
+The file can be edited with a text editor or be updated using G10 L1.
+See the <a href="../lathe/lathe-user.html#sec:lathe-tool-table">Lathe Tool Table</a> section for an example of the lathe tool table format.
+The maximum pocket number is 1000.</p>
+</div>
+<div class="paragraph">
+<p>The <a href="../gui/tooledit.html#cha:tooledit-gui">Tool Editor</a> or a text editor can be used to edit the tool table.
+If you use a text editor make sure you reload the tool table in the GUI.</p>
+</div>
+<div class="sect2">
+<h3 id="sub:tool-table-format">2.1. Tool Table Format</h3>
+<div class="paragraph">
+<p>
+.Tool Table Format</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 6.25%;">
+<col style="width: 6.25%;">
+<col style="width: 6.25%;">
+<col style="width: 6.25%;">
+<col style="width: 6.25%;">
+<col style="width: 6.25%;">
+<col style="width: 6.25%;">
+<col style="width: 6.25%;">
+<col style="width: 6.25%;">
+<col style="width: 6.25%;">
+<col style="width: 6.25%;">
+<col style="width: 6.25%;">
+<col style="width: 6.25%;">
+<col style="width: 6.25%;">
+<col style="width: 6.25%;">
+<col style="width: 6.25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">T#</th>
+<th class="tableblock halign-left valign-top">P#</th>
+<th class="tableblock halign-left valign-top">X</th>
+<th class="tableblock halign-left valign-top">Y</th>
+<th class="tableblock halign-left valign-top">Z</th>
+<th class="tableblock halign-left valign-top">A</th>
+<th class="tableblock halign-left valign-top">B</th>
+<th class="tableblock halign-left valign-top">C</th>
+<th class="tableblock halign-left valign-top">U</th>
+<th class="tableblock halign-left valign-top">V</th>
+<th class="tableblock halign-left valign-top">W</th>
+<th class="tableblock halign-left valign-top">Dia</th>
+<th class="tableblock halign-left valign-top">FA</th>
+<th class="tableblock halign-left valign-top">BA</th>
+<th class="tableblock halign-left valign-top">Ori</th>
+<th class="tableblock halign-left valign-top">Rem</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">;</p></td>
+<td class="tableblock halign-center valign-top" colspan="15"><p class="tableblock">(no data after opening semicolon)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">T1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">P17</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">X0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Y0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Z0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">B0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">U0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">V0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">W0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">D0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">I0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">J0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Q0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">;rem</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">T2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">P5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">X0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Y0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Z0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">B0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">U0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">V0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">W0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">D0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">I0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">J0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Q0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">;rem</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">T3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">P12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">X0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Y0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Z0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">B0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">U0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">V0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">W0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">D0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">I0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">J0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Q0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">;rem</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>In general, the tool table line format is:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>T - tool number (tool numbers must be unique)</p>
+</li>
+<li>
+<p>P - pocket number, 1-1000 (pocket numbers must be unique, Pocket 0 represents the spindle)</p>
+</li>
+<li>
+<p>X..W - tool offset on specified axis - floating-point</p>
+</li>
+<li>
+<p>D - tool diameter - floating-point, absolute value</p>
+</li>
+<li>
+<p>I - front angle (lathe only) - floating-point</p>
+</li>
+<li>
+<p>J - back angle (lathe only) - floating-point</p>
+</li>
+<li>
+<p>Q - tool orientation (lathe only) - integer, 0-9</p>
+</li>
+<li>
+<p>; - beginning of comment or remark - text</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Tool numbers should be unique.
+Lines beginning with a semicolon are ignored.</p>
+</div>
+<div class="paragraph">
+<p>The units used for the length, diameter, etc., are in machine units.</p>
+</div>
+<div class="paragraph">
+<p>You will probably want to keep the tool entries in ascending order, especially if you are going to be using a randomizing tool changer.
+Although the tool table does allow for tool numbers in any order.</p>
+</div>
+<div class="paragraph">
+<p>One line may contain as many as 16 entries, but will likely contain much fewer.
+The entries for T (tool number) and P (pocket number) are required.
+The last entry (a remark or comment, preceded by a semicolon) is optional.
+It makes reading easier if the entries are arranged in columns, as shown in the table,
+but the only format requirement is that there be at least one space or tab after each of the entries on a line and a newline character at the end of each entry.</p>
+</div>
+<div class="paragraph">
+<p>The meanings of the entries and the type of data to be put in each are as follows.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Tool Number (required)</dt>
+<dd>
+<p>The <em>T</em> column contains the number (unsigned integer) which represents a code number for the tool.
+The user may use any code for any tool, as long as the codes are unsigned integers.</p>
+</dd>
+<dt class="hdlist1">Pocket Number (required)</dt>
+<dd>
+<p>The <em>P</em> column contains the number (unsigned integer) which represents the pocket number (slot number) of the tool changer slot where the tool can be found.
+The entries in this column must all be different.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>The pocket numbers will typically start at 1 and go up to the highest available pocket on your tool changer.
+But not all tool changers follow this pattern.
+Your pocket numbers will be determined by the numbers that your tool changer uses to refer to the pockets.
+So all this is to say that the pocket numbers you use will be determined by the numbering scheme used in your tool changer,
+and the pocket numbers you use must make sense on your machine.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Data Offset Numbers (optional)</dt>
+<dd>
+<p>The <em>Data Offset</em> columns (XYZABCUVW) contain real numbers which represent tool offsets in each axis.
+This number will be used if tool length offsets are being used and this tool is selected.
+These numbers can be positive, zero, or negative, and are in fact completely optional.
+Although you will probably want to make at least one entry here, otherwise there would be little point in making an entry in the tool table to begin with.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>In a typical mill, you probably want an entry for Z (tool length offset).
+In a typical lathe, you probably want an entry for X (X tool offset) and Z (Z tool offset).
+In a typical mill using cutter diameter compensation (cutter comp), you probably also want to add an entry for D (cutter diameter).
+In a typical lathe using tool nose diameter compensation (tool comp), you probably also want to add an entry for D (tool nose diameter).</p>
+</div>
+<div class="paragraph">
+<p>A lathe also requires some additional information to describe the shape and orientation of the tool.
+So you probably want to have entries for I (tool front angle) and J (tool back angle).
+You probably also want an entry for Q (tool orientation).</p>
+</div>
+<div class="paragraph">
+<p>See the <a href="../lathe/lathe-user.html#cha:lathe-user-information">Lathe User Information</a> chapter for more detail.</p>
+</div>
+<div class="paragraph">
+<p>The <em>Diameter</em> column contains a real number. This number is used only if cutter compensation is turned on using this tool.
+If the programmed path during compensation is the edge of the material being cut, this should be a positive real number representing the measured diameter of the tool.
+If the programmed path during compensation is the path of a tool whose diameter is nominal,
+this should be a small number (positive or negative, but near zero) representing only the difference between the measured diameter of the tool and the nominal diameter.
+If cutter compensation is not used with a tool, it does not matter what number is in this column.</p>
+</div>
+<div class="paragraph">
+<p>The <em>Comment</em> column may optionally be used to describe the tool. Any type of description is OK.
+This column is for the benefit of human readers only. The comment must be preceded by a semicolon.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Earlier versions of LinuxCNC had two different tool table formats for mills and lathes, but since the 2.4.x release, one tool table format is used for all machines.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:tool-io">2.2. Tool IO</h3>
+<div class="paragraph">
+<p>
+The non-realtime program <strong>iocontrol</strong> is conventionally
+used for tool changer management (and other io functions for enabling
+LinuxCNC and the control of coolant hardware).  The HAL pins used for
+tool management are prefixed with <strong>iocontrol.0.</strong>.</p>
+</div>
+<div class="paragraph">
+<p>A G-code <strong>T</strong> command asserts the HAL output pin <code>iocontrol.0.tool-prepare</code>.
+The HAL input pin, <code>iocontrol.0.tool-prepared</code>, must be set by external HAL logic to complete tool preparation leading to a subsequent reset of the tool-prepare pin.</p>
+</div>
+<div class="paragraph">
+<p>A G-code <strong>M6</strong> command asserts the HAL output pin <code>iocontrol.0.tool-change</code>.
+The related HAL input pin, <code>iocontrol.0.tool-prepared</code>, must be set by external HAL logic to indicate completion of the tool change leading to a subsequent reset of the tool-change pin.</p>
+</div>
+<div class="paragraph">
+<p>Tooldata is accessed by an ordered index (idx) that depends on the type of toolchanger specified by `[EMCIO]RANDOM_TOOLCHANGER=`<em>type</em>.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>For <code>RANDOM_TOOLCHANGER = 0</code>, (0 is default and specifies a non-random toolchanger) idx is a number indicating the sequence in which tooldata was loaded.</p>
+</li>
+<li>
+<p>For <code>RANDOM_TOOLCHANGER = 1</code>, idx is the <strong>current</strong> pocket number for the tool number specified by the G-code select tool command <strong>T<em>n</em></strong>.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>The io program provides HAL output pins to facilitate toolchanger management:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>iocontrol.0.tool-prep-number</strong></p>
+</li>
+<li>
+<p><strong>iocontrol.0.tool-prep-index</strong></p>
+</li>
+<li>
+<p><strong>iocontrol.0.tool-prep-pocket</strong></p>
+</li>
+<li>
+<p><strong>iocontrol.0.tool-from-pocket</strong></p>
+</li>
+</ol>
+</div>
+<div class="sect3">
+<h4 id="_io_for_non_random_toolchanger">2.2.1. IO for non-random toolchanger</h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Tool number <em>n</em>==0 indicates no tool.</p>
+</li>
+<li>
+<p>The pocket number for a tool is set when tooldata is loaded/reloaded from its data source ([EMCIO]TOOL_TABLE or [EMCIO]DB_PROGRAM).</p>
+</li>
+<li>
+<p>At G-code <strong>T<em>n</em></strong> (<em>n</em> != 0) command:</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p><strong>iocontrol.0.tool-prep-index</strong>  = <em>idx</em> (index based on tooldata load sequence)</p>
+</li>
+<li>
+<p><strong>iocontrol.0.tool-prep-number</strong> = <em>n</em></p>
+</li>
+<li>
+<p><strong>iocontrol.0.tool-prep-pocket</strong> = the pocket number for <em>n</em></p>
+</li>
+</ol>
+</div>
+</li>
+<li>
+<p>At G-code <strong>T0</strong> (<em>n</em> == 0 remove) command:</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p><strong>iocontrol.0.tool-prep-index</strong>  = 0</p>
+</li>
+<li>
+<p><strong>iocontrol.0.tool-prep-number</strong> = 0</p>
+</li>
+<li>
+<p><strong>iocontrol.0.tool-prep-pocket</strong> = 0</p>
+</li>
+</ol>
+</div>
+</li>
+<li>
+<p>At M-code <strong>M6</strong> (following iocontrol.0.tool-changed pin 0-&#8594;1):</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p><strong>iocontrol.0.tool-from-pocket</strong> = pocket number used to retrieve tool</p>
+</li>
+</ol>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_io_for_random_toolchanger">2.2.2. IO for random toolchanger</h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Tool number <em>n</em>==0 is <strong>not special</strong>.</p>
+</li>
+<li>
+<p>Pocket number 0 is <strong>special</strong> as it indicates the <strong>spindle</strong>.</p>
+</li>
+<li>
+<p>The <strong>current</strong> pocket number for tool <em>n</em> is the tooldata index (<em>idx</em>) for tool <em>n</em>.</p>
+</li>
+<li>
+<p>At G-code command <strong>T<em>n</em></strong>:</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p><strong>iocontrol.0.tool-prep-index</strong>  = tooldata index (idx) for tool <em>n</em></p>
+</li>
+<li>
+<p><strong>iocontrol.0.tool-prep-number</strong> = <em>n</em></p>
+</li>
+<li>
+<p><strong>iocontrol.0.tool-prep-pocket</strong> = pocket number for tool <em>n</em></p>
+</li>
+</ol>
+</div>
+</li>
+<li>
+<p>At M-code <strong>M6</strong> (following iocontrol.0.tool-changed pin 0-&#8594;1):</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p><strong>iocontrol.0.tool-from-pocket</strong> = pocket number used to retrieve tool</p>
+</li>
+</ol>
+</div>
+</li>
+</ol>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+At startup, <strong>iocontrol.0.tool-from-pocket</strong> = 0.
+An M61Q<em>n</em> (<em>n</em>!=0) command does not change the <strong>iocontrol.0.tool-from-pocket</strong>.
+An M61Q0 (<em>n</em>==0) command sets <strong>iocontrol.0.tool-from-pocket</strong> to 0.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:tool-changers">2.3. Tool Changers</h3>
+<div class="paragraph">
+<p>
+LinuxCNC supports three types of tool changers: <em>manual</em>, <em>random location</em> and <em>non-random or fixed location</em>.
+Information about configuring a LinuxCNC tool changer is in the <a href="../config/ini-config.html#sub:ini:sec:emcio">EMCIO Section</a> of the INI chapter.</p>
+</div>
+<div class="paragraph">
+<div class="title">Manual Tool Changer</div>
+<p>Manual tool changer (you change the tool by hand) is treated like a fixed location tool changer.
+Manual toolchanges can be aided by a HAL configuration that employs the non-realtime program <strong>hal_manualtoolchange</strong> and is typically specified in an INI file with INI statements:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="p">[</span><span class="nn">HAL</span><span class="p">]</span>
+<span class="py">HALFILE</span> <span class="p">=</span> <span class="s">axis_manualtoolchange.hal</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<div class="title">Fixed Location Tool Changers</div>
+<p>Fixed location tool changers always return the tools to a fixed position in the tool changer.
+This would also include designs like lathe turrets.
+When LinuxCNC is configured for a fixed location tool changer the <em>P</em> number is not used internally (but read, preserved and rewritten) by LinuxCNC,
+so you can use P for any bookkeeping number you want.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+When using <code>[EMCIO]RANDOM_TOOLCHANGER = 0</code> (the default),
+the <em>P</em> pocket number is a parameter of the tooldata that is retrieved from the tooldata source (<code>[EMCIO]TOOL_TABLE</code> or <code>[EMCIO]DB_PROGRAM</code>).
+In many applications it is fixed but it may be changed by edits to the <code>[EMCIO]TOOL_TABLE</code> or programmatically when the <code>[EMCIO]DB_PROGRAM</code> is used.
+LinuxCNC pushes updates to the data source (<code>[EMCIO]TOOL_TABLE</code> or <code>[EMCIO]DB_PROGRAM</code>) for G-codes G10L1, G10L10, G10L11, M61.
+LinuxCNC can pull tooldata updates from the data source by UI (user-interface) commands (Python example: <code>linuxcnc.command().load_tool_table()</code>) or by the G-code: <code>G10L0</code>.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<div class="title">Random Location Tool Changers</div>
+<p>Random location tool changers (<code>[EMCIO]RANDOM_TOOLCHANGER = 1</code>) swap the tool in the spindle with the one in the changer.
+With this type of tool changer the tool will always be in a different pocket after a tool change.
+When a tool is changed LinuxCNC rewrites the pocket number to keep track of where the tools are.
+T can be any number but P must be a number that makes sense for the machine.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_tool_length_compensation">3. Tool Length Compensation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+The tool length compensations are given as positive numbers in the tool table.
+A tool compensation is programmed using G43 H_n_, where <em>n</em> is the index number of the desired tool in the tool table.
+It is intended that all entries in the tool table are positive.
+The value of H is checked, it must be a non-negative integer when read. The interpreter behaves as follows:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>If G43 H<em>n</em> is programmed, a call to the function <code>USE_TOOL_LENGTH_OFFSET(`__length__</code>)` is made (where <em>length</em> is the length difference, read from the tool table, of the indexed tool <em>n</em>),
+tool_length_offset is repositioned in the machine settings model and the value of current_z in the model is adjusted.
+Note that <em>n</em> does not have to be the same as the slot number of the tool currently in the spindle.</p>
+</li>
+<li>
+<p>If G49 is programmed, <code>USE_TOOL_LENGTH_OFFSET(0.0)</code> is called, tool_length_offset is reset to 0.0 in the machine settings template
+and the current value of current_z in the model is adjusted.
+The effect of the tool length compensation is illustrated in the capture below.
+Note that the tool length is subtracted from Z so that the programmed control point corresponds to the tip of the tool.
+Note also that the effect of the length compensation is immediate when you see the compensation is immediate when the position of Z is seen as a relative coordinate,
+but it has no effect on the actual machine position until a Z movement is programmed.</p>
+</li>
+</ol>
+</div>
+<div class="listingblock">
+<div class="title">Tool length test program. Tool #1 is one inch long.</div>
+<div class="content">
+<pre>N01 G1 F15 X0 Y0 Z0
+N02 G43 H1 Z0 X1
+N03 G49 X0 Z0
+N04 G0 X2
+N05 G1 G43 H1 G4 P10 Z0 X3
+N06 G49 X2 Z0
+N07 G0 X0</pre>
+</div>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="images/length1.png" alt="length1"></span></p>
+</div>
+<div class="paragraph">
+<p>With this program, in most cases, the machine will apply the offset in the form of a ramp during the movement in xyz following the word G43.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:cutter-radius-compensation">4. Cutter Radius Compensation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+Cutter Compensation allows the programmer to program the tool path without knowing the exact tool diameter.
+The only caveat is the programmer must program the lead in move to be at least as long as the largest tool radius that might be used.</p>
+</div>
+<div class="paragraph">
+<p>There are two possible paths the cutter can take since the cutter compensation can be on to the left or right side of a line
+when facing the direction of cutter motion from behind the cutter.
+To visualize this imagine you were standing on the part walking behind the tool as it progresses across the part.
+G41 is your left side of the line and G42 is the right side of the line.</p>
+</div>
+<div class="paragraph">
+<p>The end point of each move depends on the next move.
+If the next move creates an outside corner the move will be to the end point of the compensated cut line.
+If the next move creates in an inside corner the move will stop short so to not gouge the part.
+The following figure shows how the compensated move will stop at different points depending on the next move.</p>
+</div>
+<div id="cap:compensation-end-point" class="imageblock text-center">
+<div class="content">
+<img src="images/comp-path_en.svg" alt="Compensation End Point">
+</div>
+<div class="title">Figure 2. Compensation End Point</div>
+</div>
+<div class="sect2">
+<h3 id="_overview">4.1. Overview</h3>
+<div class="sect3">
+<h4 id="_tool_table">4.1.1. Tool Table</h4>
+<div class="paragraph">
+<p>Cutter compensation uses the data from the tool table to determine the offset needed.
+The data can be set at run time with G10 L1.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_programming_entry_moves">4.1.2. Programming Entry Moves</h4>
+<div class="paragraph">
+<p>Any move that is long enough to perform the compensation will work as the entry move.
+The minimum length is the cutter radius. This can be a rapid move above the work piece.
+If several rapid moves are issued after a G41/42 only the last one will move the tool to the compensated position.</p>
+</div>
+<div class="paragraph">
+<p>In the following figure you can see that the entry move is compensated to the right of the line.
+This puts the center of the tool to the right of X0 in this case.
+If you were to program a profile and the end is at X0 the resulting profile would leave a bump due to the offset of the entry move.</p>
+</div>
+<div id="cap:entry-move" class="imageblock text-center">
+<div class="content">
+<img src="images/comp02_en.svg" alt="Entry Move">
+</div>
+<div class="title">Figure 3. Entry Move</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_z_motion">4.1.3. Z Motion</h4>
+<div class="paragraph">
+<p>Z axis motion may take place while the contour is being followed in the XY plane.
+Portions of the contour may be skipped by retracting the Z axis above the part and by extending the Z-axis at the next start point.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_rapid_moves">4.1.4. Rapid Moves</h4>
+<div class="paragraph">
+<p>Rapid moves may be programmed while compensation is turned on.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_good_practices">4.1.5. Good Practices</h4>
+<div class="paragraph">
+<p>Start a program with G40 to make sure compensation is off.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_examples">4.2. Examples</h3>
+<div class="sect3">
+<h4 id="_outside_profile_example">4.2.1. Outside Profile Example</h4>
+<div id="cap:outside-profile" class="imageblock text-center">
+<div class="content">
+<img src="images/outside-comp.png" alt="Outside Profile">
+</div>
+<div class="title">Figure 4. Outside Profile</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_inside_profile_example">4.2.2. Inside Profile Example</h4>
+<div id="cap:inside-profile" class="imageblock text-center">
+<div class="content">
+<img src="images/inside-comp.png" alt="Inside Profile">
+</div>
+<div class="title">Figure 5. Inside Profile</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

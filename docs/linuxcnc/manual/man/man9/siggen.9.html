@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>siggen(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="siggen.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/siggen.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/siggen.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/siggen.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/siggen.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/siggen.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/siggen.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/siggen.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>siggen(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>siggen - signal generator</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt siggen</strong>[<strong>num_chan=</strong><em>num</em> | <strong>names=</strong><em>name1</em>[,<em>name2</em>&#8230;&#8203;]]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>siggen</strong> is a signal generator that can be used for testing and other
+applications that need simple waveforms. It produces sine, cosine,
+triangle, sawtooth, and square waves of variable frequency, amplitude,
+and offset, which can be used as inputs to other HAL components.</p>
+</div>
+<div class="paragraph">
+<p><strong>siggen</strong> supports a maximum of sixteen channels. The number of channels
+actually loaded is set by the <strong>num_chan</strong> argument when the module is
+loaded. Alternatively, specify <strong>names=</strong> and unique names separated by
+commas.</p>
+</div>
+<div class="paragraph">
+<p>The <strong>num_chan=</strong> and <strong>names=</strong> specifiers are mutually exclusive. If
+neither <strong>num_chan=</strong> nor <strong>names=</strong> are specified, the default value is
+one.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_naming">NAMING</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The names for pins, parameters, and functions are prefixed as:</p>
+</div>
+<div class="paragraph">
+<p><strong>siggen.</strong><em>N</em><strong>.</strong> for <em>N</em> = 0, 1, &#8230;&#8203;, <em>num</em>-1 when using <strong>num_chan=<em>num</em></strong></p>
+</div>
+<div class="paragraph">
+<p><strong>name</strong><em>N</em>. for name<em>N</em> = name1, name2, &#8230;&#8203; when using <strong>names=name1,name2,&#8230;&#8203;</strong></p>
+</div>
+<div class="paragraph">
+<p>The <strong>siggen.</strong><em>N</em><strong>.</strong> format is shown in the following descriptions.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>siggen.</strong><em>N</em><strong>.update</strong> (uses floating-point)</dt>
+<dd>
+<p>Updates output pins for signal generator <em>N</em>. Each time it is called
+it calculates a new sample. It should be called many times faster than
+the desired signal frequency, to avoid distortion and aliasing.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>siggen.</strong><em>N</em><strong>.frequency</strong> float in</dt>
+<dd>
+<p>The output frequency for signal generator <em>N</em>, in Hertz.
+The default value is 1.0 Hertz.</p>
+</dd>
+<dt class="hdlist1"><strong>siggen.</strong><em>N</em><strong>.amplitude</strong> float in</dt>
+<dd>
+<p>The output amplitude for signal generator <em>N</em>.
+If <strong>offset</strong> is zero, the outputs will swing from -<strong>amplitude</strong> to +<strong>amplitude</strong>.
+The default value is 1.00.</p>
+</dd>
+<dt class="hdlist1"><strong>siggen.</strong><em>N</em><strong>.offset</strong> float in</dt>
+<dd>
+<p>The output offset for signal generator <em>N</em>.
+This value is added directly to the output signal. The default value is zero.</p>
+</dd>
+<dt class="hdlist1"><strong>siggen.</strong><em>N</em><strong>.reset</strong> bit in</dt>
+<dd>
+<p>Resets output pins to predetermined states:<br>
+<strong>sine</strong>: 0<br>
+<strong>sawtooth</strong>: 0<br>
+<strong>square</strong>: -1 * amplitude<br>
+<strong>cosine</strong>: -1 * amplitude<br>
+<strong>triangle</strong>: -1 * amplitude</p>
+</dd>
+<dt class="hdlist1"><strong>siggen.</strong><em>N</em><strong>.clock</strong> bit out</dt>
+<dd>
+<p>The clock output. Bit type clock signal output at the commanded frequency.</p>
+</dd>
+<dt class="hdlist1"><strong>siggen.</strong><em>N</em><strong>.square</strong> float out</dt>
+<dd>
+<p>The square wave output. Positive while <strong>triangle</strong> and <strong>cosine</strong> are
+ramping upwards, and while <strong>sine</strong> is negative.</p>
+</dd>
+<dt class="hdlist1"><strong>siggen.</strong><em>N</em><strong>.sine</strong> float out</dt>
+<dd>
+<p>The sine output. Lags <strong>cosine</strong> by 90 degrees.</p>
+</dd>
+<dt class="hdlist1"><strong>siggen.</strong><em>N</em><strong>.cosine</strong> float out</dt>
+<dd>
+<p>The cosine output. Leads <strong>sine</strong> by 90 degrees.</p>
+</dd>
+<dt class="hdlist1"><strong>siggen.</strong><em>N</em><strong>.triangle</strong> float out</dt>
+<dd>
+<p>The triangle wave output.
+Ramps up while <strong>square</strong> is positive, and down while <strong>square</strong> is negative.
+Reaches its positive and negative peaks at the same time as <strong>cosine</strong>.</p>
+</dd>
+<dt class="hdlist1"><strong>siggen.</strong><em>N</em><strong>.sawtooth</strong> float out</dt>
+<dd>
+<p>The sawtooth output. Ramps upwards to its positive peak, then
+instantly drops to its negative peak and starts ramping again.
+The drop occurs when <strong>triangle</strong> and <strong>cosine</strong> are at their positive peaks,
+and coincides with the falling edge of <strong>square</strong>.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parameters">PARAMETERS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>None</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

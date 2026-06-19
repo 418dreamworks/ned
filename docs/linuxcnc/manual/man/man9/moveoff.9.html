@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>MOVEOFF(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="moveoff.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/moveoff.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/moveoff.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/moveoff.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/moveoff.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/moveoff.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/moveoff.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/moveoff.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>MOVEOFF(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>moveoff - Component for HAL-only offsets</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt moveoff</strong> [<strong>count</strong>=<em>N</em>|<strong>names</strong>=<em>name1</em>[,<em>name2</em>&#8230;&#8203;]] [<strong>personality</strong>=<em>P1</em>[,<em>P2</em>&#8230;&#8203;]]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The moveoff component is used to offset joint positions using custom HAL connections.
+Implementing an offset-while-program-is-paused functionality is supported with appropriate connections for the input pins.
+Nine joints are supported.</p>
+</div>
+<div class="paragraph">
+<p>The axis offset pin values (offset-in-M) are continuously applied (respecting limits on value, velocity, and acceleration)
+to the output pins (offset-current-M, pos-plusoffset-M, fb-minusoffset-M) when both enabling input pins (apply-offsets and move-enable) are TRUE.
+The two enabling inputs are anded internally.
+A <strong>warning</strong> pin is set and a message issued if the apply-offsets pin is deasserted while offsets are applied.
+The warning pin remains TRUE until the offsets are removed or the apply-offsets pin is set.</p>
+</div>
+<div class="paragraph">
+<p>Typically, the move-enable pin is connected to external controls and the apply-offsets pin is connected to halui.program.is-paused (for offsets only while paused) or set to TRUE (for continuously applied offsets).</p>
+</div>
+<div class="paragraph">
+<p>Applied offsets are <strong>automatically returned</strong> to zero (respecting limits) when either of the enabling inputs is deactivated.
+The zero value tolerance is specified by the epsilon input pin value.</p>
+</div>
+<div class="paragraph">
+<p>Waypoints are recorded when the moveoff component is enabled.
+Waypoints are managed with the waypoint-sample-secs and waypoint-threshold pins.
+When the backtrack-enable pin is TRUE, the auto-return path follows the recorded waypoints.
+When the memory available for waypoints is exhausted, offsets are frozen and the waypoint-limit pin is asserted.
+This restriction applies regardless of the state of the backtrack-enable pin.
+An enabling pin must be deasserted to allow a return to the original (non-offset position).</p>
+</div>
+<div class="paragraph">
+<p>Backtracking through waypoints results in <strong>slower</strong> movement rates as the moves are point-to-point respecting velocity and acceleration settings.
+The velocity and acceleration limit pins can be managed dynamically to control offsets at all times.</p>
+</div>
+<div class="paragraph">
+<p>When backtrack-enable is FALSE, the auto-return move is <strong>NOT</strong> coordinated, each axis returns to zero at its own rate.
+If a controlled path is wanted in this condition, each axis should be manually returned to zero before deasserting an enabling pin.</p>
+</div>
+<div class="paragraph">
+<p>The waypoint-sample-secs, waypoint-threshold, and epsilon pins are evaluated only when the component is idle.</p>
+</div>
+<div class="paragraph">
+<p>The offsets-applied output pin is provided to indicate the current state to a GUI so that program resumption can be managed.
+If the offset(s) are non-zero when the apply-offsets pin is deasserted (for example when resuming a program when offsetting during a pause),
+offsets are returned to zero (respecting limits) and an <strong>Error</strong> message is issued.</p>
+</div>
+<div class="paragraph">
+<p><strong>Caution:</strong> If offsets are enabled and applied and the machine is turned off for any reason,
+any <strong>external</strong> HAL logic that manages the enabling pins and the offset-in-M inputs is responsible for their state when the machine is subsequently turned on again.</p>
+</div>
+<div class="paragraph">
+<p>This HAL-only means of offsetting is typically not known to LinuxCNC nor available in GUI preview displays.
+<strong>No protection is provided</strong> for offset moves that exceed soft limits managed by LinuxCNC.
+Since soft limits are not honored, an offset move may encounter hard limits (or <strong>CRASH</strong> if there are no limit switches).
+Use of the offset-min-M and offset-max-M inputs to limit travel is recommended.
+Triggering a hard limit will turn off the machine&#8201;&#8212;&#8201;see <strong>Caution</strong> above.</p>
+</div>
+<div class="paragraph">
+<p>The offset-in-M values may be set with inifile settings, controlled by a GUI, or managed by other HAL components and connections.
+Fixed values may be appropriate in simple cases where the direction and amount of offset is well-defined but a control method is required to deactivate an enabling pin in order to return offsets to zero.
+GUIs may provide means for users to set, increment, decrement, and accumulate offset values for each axis and may set offset-in-M values to zero before deasserting an enabling pin.</p>
+</div>
+<div class="paragraph">
+<p>The default values for accel, vel, min, max, epsilon, waypoint-sample-secs, and waypoint-threshold may not be suitable for any particular application.
+This HAL component is unaware of limits enforced elsewhere by LinuxCNC.
+Users should test usage in a simulator application and understand all hazards <strong>before</strong> use on hardware.</p>
+</div>
+<div class="paragraph">
+<p>The module personality item sets the number of joints supported (default==3, maximum is 9).</p>
+</div>
+<div class="paragraph">
+<p>Use of the names= option for naming is <strong>required</strong> for compatibility with the gui provided as scripts/moveoff_gui:
+  loadrt moveoff names=<strong>mv</strong> personality=number_of_joints</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>moveoff</strong>.<em>N</em>.<strong>read-inputs</strong></dt>
+<dd>
+<p>Read all inputs</p>
+</dd>
+<dt class="hdlist1"><strong>moveoff</strong>.<em>N</em>.<strong>write-outputs</strong></dt>
+<dd>
+<p>Write computed offset outputs
+(offset-current-M, pos-plusoffset-M, fb-minusoffset-M).
+All other outputs are updated by read-inputs().</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>moveoff</strong>.<em>N</em>.<strong>power-on</strong> bit in </dt>
+<dd>
+<p>Connect to motion.motion-enabled</p>
+</dd>
+<dt class="hdlist1"><strong>moveoff</strong>.<em>N</em>.<strong>move-enable</strong> bit in </dt>
+<dd>
+<p>Enable offsets (Enabling requires apply-offset TRUE also)</p>
+</dd>
+<dt class="hdlist1"><strong>moveoff</strong>.<em>N</em>.<strong>apply-offsets</strong> bit in </dt>
+<dd>
+<p>Enable offsets (Enabling requires move-enable TRUE also)</p>
+</dd>
+<dt class="hdlist1"><strong>moveoff</strong>.<em>N</em>.<strong>backtrack-enable</strong> bit in (default: <em>1</em>)</dt>
+<dd>
+<p>Enable backtrack on auto-return</p>
+</dd>
+<dt class="hdlist1"><strong>moveoff</strong>.<em>N</em>.<strong>epsilon</strong> float in (default: <em>0.0005</em>)</dt>
+<dd>
+<p>When enabling pins are deactivated, return to un-offsetted position within epsilon units.  Warning: values that are too small in value may cause overshoot.  A minimum value of 0.0001 is <strong>silently enforced</strong>.</p>
+</dd>
+<dt class="hdlist1"><strong>moveoff</strong>.<em>N</em>.<strong>waypoint-threshold</strong> float in (default: <em>0.02</em>)</dt>
+<dd>
+<p>Minimum distance (in a single axis) for a new waypoint</p>
+</dd>
+<dt class="hdlist1"><strong>moveoff</strong>.<em>N</em>.<strong>waypoint-sample-secs</strong> float in (default: <em>0.02</em>)</dt>
+<dd>
+<p>Minimum sample interval (in seconds) for a new waypoint</p>
+</dd>
+<dt class="hdlist1"><strong>moveoff</strong>.<em>N</em>.<strong>warning</strong> bit out </dt>
+<dd>
+<p>Set TRUE if apply-offsets is deasserted while offset-applied is TRUE.</p>
+</dd>
+<dt class="hdlist1"><strong>moveoff</strong>.<em>N</em>.<strong>offset-applied</strong> bit out </dt>
+<dd>
+<p>TRUE if one or more offsets are applied.</p>
+</dd>
+<dt class="hdlist1"><strong>moveoff</strong>.<em>N</em>.<strong>waypoint-limit</strong> bit out (default: <em>0</em>)</dt>
+<dd>
+<p>Indicates waypoint limit reached (motion ceases), an enabling pin must be deasserted to initiate return to original position.</p>
+</dd>
+<dt class="hdlist1"><strong>moveoff</strong>.<em>N</em>.<strong>waypoint-ct</strong> s32 out </dt>
+<dd>
+<p>Waypoint count (for debugging)</p>
+</dd>
+<dt class="hdlist1"><strong>moveoff</strong>.<em>N</em>.<strong>waypoint-percent-used</strong> s32 out </dt>
+<dd>
+<p>Percent of available waypoints used</p>
+</dd>
+<dt class="hdlist1"><strong>moveoff</strong>.<em>N</em>.<strong>offset-in-<em>M</em></strong> float in  (M=0..personality) </dt>
+<dd>
+<p>Joint offset input value</p>
+</dd>
+<dt class="hdlist1"><strong>moveoff</strong>.<em>N</em>.<strong>pos-<em>M</em></strong> float in  (M=0..personality) </dt>
+<dd>
+<p>Joint position (typ: axis.0.motor-pos-cmd)</p>
+</dd>
+<dt class="hdlist1"><strong>moveoff</strong>.<em>N</em>.<strong>fb-<em>M</em></strong> float in  (M=0..personality) </dt>
+<dd>
+<p>Joint feedback (typ from encoder and input to pid controller (pid.feedback))</p>
+</dd>
+<dt class="hdlist1"><strong>moveoff</strong>.<em>N</em>.<strong>offset-current-<em>M</em></strong> float out  (M=0..personality) </dt>
+<dd>
+<p>Joint offset current value</p>
+</dd>
+<dt class="hdlist1"><strong>moveoff</strong>.<em>N</em>.<strong>pos-plusoffset-<em>M</em></strong> float out  (M=0..personality) </dt>
+<dd>
+<p>Computed joint position plus offset (typically connect to pid command input)</p>
+</dd>
+<dt class="hdlist1"><strong>moveoff</strong>.<em>N</em>.<strong>fb-minusoffset-<em>M</em></strong> float out  (M=0..personality) </dt>
+<dd>
+<p>Computed Joint feedback minus offset (typically connected to axis.0.motor-pos-fb)</p>
+</dd>
+<dt class="hdlist1"><strong>moveoff</strong>.<em>N</em>.<strong>offset-vel-<em>M</em></strong> float in  (M=0..personality) (default: <em>10</em>)</dt>
+<dd>
+<p>Joint offset velocity limit</p>
+</dd>
+<dt class="hdlist1"><strong>moveoff</strong>.<em>N</em>.<strong>offset-accel-<em>M</em></strong> float in  (M=0..personality) (default: <em>100</em>)</dt>
+<dd>
+<p>Joint offset acceleration limit</p>
+</dd>
+<dt class="hdlist1"><strong>moveoff</strong>.<em>N</em>.<strong>offset-min-<em>M</em></strong> float in  (M=0..personality) (default: <em>-1e20</em>)</dt>
+<dd>
+<p>Minimum limit for applied joint offset (typ negative)</p>
+</dd>
+<dt class="hdlist1"><strong>moveoff</strong>.<em>N</em>.<strong>offset-max-<em>M</em></strong> float in  (M=0..personality) (default: <em>1e20</em>)</dt>
+<dd>
+<p>Maximum limit for applied offset (typ positive)</p>
+</dd>
+<dt class="hdlist1"><strong>moveoff</strong>.<em>N</em>.<strong>dbg-waypoint-limit-test</strong> bit in </dt>
+<dd>
+<p>Debug input to test with limited number of waypoints</p>
+</dd>
+<dt class="hdlist1"><strong>moveoff</strong>.<em>N</em>.<strong>dbg-state</strong> s32 out </dt>
+<dd>
+<p>Debug output for current state of state machine</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_examples">EXAMPLES</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Example simulator configs that demonstrate the moveoff component and a simple gui
+(scripts/moveoff_gui) are located in configs/sim/axis/moveoff. The AXIS GUI is
+used for the demonstrations and the configs can be adapted for other GUIs like
+Touchy and Gscreen.  An example with the Touchy GUI is provided in configs/sim/touchy/ngcgui/.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>moveoff_gui</strong>(1)</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Dewey Garrett and Andy Pugh</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:30:13 UTC
+</div>
+</div>
+</body>
+</html>

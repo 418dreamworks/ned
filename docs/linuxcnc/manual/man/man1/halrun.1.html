@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>halrun(1)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="halrun.1.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man1/halrun.1.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man1/halrun.1.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man1/halrun.1.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man1/halrun.1.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man1/halrun.1.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man1/halrun.1.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man1/halrun.1.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>halrun(1) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>halrun - manipulate the LinuxCNC HAL from the command line</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>halrun -h</strong></p>
+</div>
+<div class="paragraph">
+<p><strong>halrun</strong> [<strong>-I</strong>] [<em>halcmd_opts</em>] [<em>filename[.hal|.tcl]</em>]</p>
+</div>
+<div class="paragraph">
+<p><strong>halrun -T</strong> [<em>halcmd_opts</em>] [<em>filename[.hal|.tcl]</em>]</p>
+</div>
+<div class="paragraph">
+<p><strong>halrun -U</strong></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The convenience script <strong>halrun</strong> can manipulate the HAL (Hardware
+Abstraction Layer) from the command line. When invoked, <strong>halrun</strong>:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Sets up the realtime environment.</p>
+</li>
+<li>
+<p>Executes a command interpreter (<strong>halcmd</strong> or <strong>haltcl</strong>).</p>
+</li>
+<li>
+<p>(Optionally) runs an interactive session.</p>
+</li>
+<li>
+<p>Tears down the realtime environment.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>If no filename is specified, an interactive session is started.
+The session will use <strong>halcmd</strong>(1) unless <strong>-T</strong> is specified in which case <strong>haltcl</strong>(1) will be used.</p>
+</div>
+<div class="paragraph">
+<p>If a filename is specified and neither the <strong>-I</strong> nor the <strong>-T</strong> option is included,
+the filename will be processed by the command interpreter
+corresponding to the filename extension (<strong>halcmd</strong> or <strong>haltcl</strong>).
+After processing, the realtime environment will be torn down.</p>
+</div>
+<div class="paragraph">
+<p>If a filename is specified and the <strong>-I</strong> or <strong>-T</strong> option is included,
+the file is processed by the appropriate command interpreter and then an
+interactive session is started for <strong>halcmd</strong> or <strong>haltcl</strong> according to the <strong>-I</strong> or <strong>-T</strong> option.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_options">OPTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>halcmd_opts</strong></dt>
+<dd>
+<p>When a .hal file is specified, the <strong>halcmd_opts</strong> are passed to <strong>halcmd</strong>.
+See the man page for <strong>halcmd</strong>(1).
+When a .tcl file is specified, the only valid options are: -i &lt;INI file&gt; -f &lt;filename[.tcl|.hal]&gt; (alternate means of specifying a file).</p>
+</dd>
+<dt class="hdlist1"><strong>-I</strong></dt>
+<dd>
+<p>Run an interactive <strong>halcmd</strong> session</p>
+</dd>
+<dt class="hdlist1"><strong>-T</strong></dt>
+<dd>
+<p>Run an interactive <strong>haltcl</strong> session.</p>
+</dd>
+<dt class="hdlist1"><strong>-U</strong></dt>
+<dd>
+<p>Forcibly cause the realtime environment to exit. It releases the HAL
+mutex, requests that all HAL components unload, and stops the realtime
+system. <strong>-U</strong> must be the only commandline argument.</p>
+</dd>
+<dt class="hdlist1"><strong>-h</strong></dt>
+<dd>
+<p>Display a brief help screen and exit.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_bugs">BUGS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>None known at this time.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Original version by John Kasunich, as part of the LinuxCNC Enhanced
+Machine Controller project. Now includes major contributions by several
+members of the project.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reporting_bugs">REPORTING BUGS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Report bugs at <a href="https://github.com/LinuxCNC/linuxcnc/issues" class="bare">https://github.com/LinuxCNC/linuxcnc/issues</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_copyright">COPYRIGHT</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Copyright © 2003 John Kasunich.</p>
+</div>
+<div class="paragraph">
+<p>This is free software; see the source for copying conditions. There is
+NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>halcmd(1), haltcl(1)</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

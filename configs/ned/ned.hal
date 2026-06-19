@@ -41,10 +41,12 @@ loadrt hostmot2
 # board_ip 10.10.10.10 = the 7I97T's as-shipped EEPROM IP, selected by jumpers
 #   W11 = DOWN, W12 = UP ("Fixed from EEPROM").  (Default DOWN/DOWN would be
 #   192.168.1.121 instead.)  If you re-flash the EEPROM IP with mesaflash, update
-#   this line to match. Other 7I97T jumpers (P2/DB25 to the 7I85S): W22 UP
-#   (5V to 7I85S over DB25), W21 = P2 I/O pull (UP=pullup 5V / DOWN=pulldown 0V,
-#   set per 7I85S need). Also W23 LEFT (sserial termination on, for the 7I84),
-#   and encoders 0-3 differential.
+#   this line to match. Other 7I97T jumpers: W22 DOWN (default) -- the 7I85S is
+#   powered SEPARATELY from its own P1 5V (7I85S W3 DOWN), so the 7I97T must NOT
+#   send 5V over the DB25.  WARNING: W22 UP together with 7I85S W3 DOWN shorts 5V
+#   to ground -- keep W22 DOWN.  W21 = P2 I/O pull (UP=pullup 5V / DOWN=pulldown
+#   0V, per 7I85S need). W23 LEFT (sserial termination on, for the 7I84).
+#   Encoders 0-3 differential.
 # num_encoders=6 -> 4 axis encoders (00-03) + pendant MPG (04) + 1 spare (05).
 loadrt hm2_eth board_ip="10.10.10.10" config="num_encoders=6 num_pwmgens=5 sserial_port_0=00xxxxxx"
 

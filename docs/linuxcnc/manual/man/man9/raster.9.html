@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>RASTER(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="raster.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/raster.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/raster.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/raster.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/raster.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/raster.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/raster.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/raster.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>RASTER(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>raster - Outputs laser power based upon pre programmed rastering data</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt raster</strong> [<strong>count</strong>=<em>N</em>|<strong>names</strong>=<em>name1</em>[,<em>name2</em>&#8230;&#8203;]]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The raster component converts a single raster program line to laser output.
+The position pin is slaved to the axis that the raster line maps too.
+The raster program must be programmed for each raster line that is to be executed.
+The port must be programmed prior to a raster line being executed.</p>
+</div>
+<div class="paragraph">
+<p>A python component RasterProgrammer (<code>lib/python/RasterProgrammer.py</code>) is
+provided to ease programming of the raster component.
+An example <code>configs/sim/axis/laser</code> shows how these pieces could be integrated
+for a functional laser engraver config.</p>
+</div>
+<div class="paragraph">
+<p>A program line format is as follows:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>{program_offset};{bits_per_pixel};{pixels_per_unit};{number_of_ pixels};{pixel_data ....}</pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>program_offset</strong>: a float. It indicates the start position of the raster line
+relative to the current axis position. A negative <strong>program_offset</strong> indicates
+that the raster sweeps from positive to negative. A zero or positive
+program_offset* indicates that the raster sweeps from negative to positive
+direction.</p>
+</li>
+<li>
+<p><strong>bits_per_pixel</strong>: an integer. It indicates the precision of a pixel value and
+consequently the number of bytes consumed per pixel value. A bits per pixel
+of 4 takes 1 character (0-F) and scales out from from 0.0 to 1.0 (0 being 0
+and E being 1.0). F corresponds to off or -1.0. A bits per pixel of 8 takes 2
+characters per pixel, 12 takes 3 characters per pixel etc&#8230;&#8203;</p>
+</li>
+<li>
+<p><strong>pixels_per_unit</strong>: a float that represents the size of a pixel in machine
+units. 1 would correspond to 1 pixel per machine unit, 100 would correspond
+to 100 pixels per machine unit.</p>
+</li>
+<li>
+<p><strong>number_of_pixels</strong>: an integer that indicates the length of the raster line
+in pixels. The length of the rasterline in machine units would be
+number_of_pixels / pixels_per_unit</p>
+</li>
+<li>
+<p><strong>pixel_data</strong>: a series of hexadeicmal digits ([0-9][a-f][A-F]) the represents
+the pixel data. <strong>bits_per_pixel</strong> determines the resolution of a pixel and how
+many hexadecimal digits per pixel.  pixel data characters have no delimiter
+between each pixel.<br>
+4 bpp is one character per pixel<br>
+8 bpp is 2 characters per pixel<br>
+12 bpp is 3<br>
+etc&#8230;&#8203;</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>raster</strong>.<em>N</em></dt>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>raster</strong>.<em>N</em>.<strong>position</strong> float in </dt>
+<dd>
+<p>input coordinate for raster</p>
+</dd>
+<dt class="hdlist1"><strong>raster</strong>.<em>N</em>.<strong>reset</strong> bit in </dt>
+<dd>
+<p>resets the component</p>
+</dd>
+<dt class="hdlist1"><strong>raster</strong>.<em>N</em>.<strong>program</strong> port in </dt>
+<dd>
+<p>pixel data used by the raster</p>
+</dd>
+<dt class="hdlist1"><strong>raster</strong>.<em>N</em>.<strong>run</strong> bit in </dt>
+<dd>
+<p>starts the raster</p>
+</dd>
+<dt class="hdlist1"><strong>raster</strong>.<em>N</em>.<strong>enabled</strong> bit out (default: <em>0</em>)</dt>
+<dd>
+<p>When a valid raster program is running.</p>
+</dd>
+<dt class="hdlist1"><strong>raster</strong>.<em>N</em>.<strong>output</strong> float out (default: <em>-1</em>)</dt>
+<dd>
+<p>current output level command</p>
+</dd>
+<dt class="hdlist1"><strong>raster</strong>.<em>N</em>.<strong>fault</strong> bit out (default: <em>0</em>)</dt>
+<dd>
+<p>If error has occurred</p>
+</dd>
+<dt class="hdlist1"><strong>raster</strong>.<em>N</em>.<strong>fault-code</strong> s32 out (default: <em>0</em>)</dt>
+<dd>
+<p>Code of fault</p>
+</dd>
+<dt class="hdlist1"><strong>raster</strong>.<em>N</em>.<strong>state</strong> s32 out (default: <em>0</em>)</dt>
+<dd>
+<p>current state</p>
+</dd>
+<dt class="hdlist1"><strong>raster</strong>.<em>N</em>.<strong>program-position</strong> float out (default: <em>0.0</em>)</dt>
+<dd>
+<p>base position of program at run start</p>
+</dd>
+<dt class="hdlist1"><strong>raster</strong>.<em>N</em>.<strong>program-offset</strong> float out (default: <em>0.0</em>)</dt>
+<dd>
+<p>offset to start of pixel data</p>
+</dd>
+<dt class="hdlist1"><strong>raster</strong>.<em>N</em>.<strong>bpp</strong> s32 out (default: <em>0</em>)</dt>
+<dd>
+<p>bits per pixel.</p>
+</dd>
+<dt class="hdlist1"><strong>raster</strong>.<em>N</em>.<strong>ppu</strong> float out (default: <em>0.0</em>)</dt>
+<dd>
+<p>pixels per unit</p>
+</dd>
+<dt class="hdlist1"><strong>raster</strong>.<em>N</em>.<strong>count</strong> s32 out (default: <em>0</em>)</dt>
+<dd>
+<p>pixel count</p>
+</dd>
+<dt class="hdlist1"><strong>raster</strong>.<em>N</em>.<strong>bitmap-position</strong> float out (default: <em>0.0</em>)</dt>
+<dd>
+<p>calculated position in bitmap</p>
+</dd>
+<dt class="hdlist1"><strong>raster</strong>.<em>N</em>.<strong>current-pixel-value</strong> float out (default: <em>-1.0</em>)</dt>
+<dd>
+<p>current loaded pixel value</p>
+</dd>
+<dt class="hdlist1"><strong>raster</strong>.<em>N</em>.<strong>previous-pixel-value</strong> float out (default: <em>-1.0</em>)</dt>
+<dd>
+<p>previously loaded pixel value</p>
+</dd>
+<dt class="hdlist1"><strong>raster</strong>.<em>N</em>.<strong>current-pixel-index</strong> s32 out (default: <em>-1</em>)</dt>
+<dd>
+<p>currently loaded pixel index</p>
+</dd>
+<dt class="hdlist1"><strong>raster</strong>.<em>N</em>.<strong>fraction</strong> float out (default: <em>0.0</em>)</dt>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:30:12 UTC
+</div>
+</div>
+</body>
+</html>

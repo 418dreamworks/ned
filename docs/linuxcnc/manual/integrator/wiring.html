@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>Best Wiring Practices</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:wiring" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="wiring.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/integrator/wiring.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/integrator/wiring.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/integrator/wiring.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/integrator/wiring.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/integrator/wiring.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/integrator/wiring.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/integrator/wiring.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>Best Wiring Practices</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="../config/stepconf.html">Stepper Configuration Wizard</a><a href="../config/pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="../config/integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><a href="../config/ini-config.html">INI Configuration</a><a href="../config/ini-homing.html">Homing Configuration</a><a href="../config/lathe-config.html">Lathe Configuration</a><a href="../config/stepper-quickstart.html">Stepper Quickstart</a><a href="../config/stepper.html">Stepper Configuration</a><a href="../config/stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="../config/core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="../config/moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="../config/python-interface.html">The LinuxCNC Python module</a><a href="../config/python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details open><summary>Integrator Information</summary><a href="steppers.html">Stepper Information</a><a href="stepper-timing.html">Stepper Timing</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>Best Wiring Practices</summary><ul class="sectlevel1">
+<li><a href="wiring.html#_electrical_noise">1. Electrical Noise</a></li>
+<li><a href="wiring.html#_ground_earth_and_common">2. Ground, Earth and Common</a></li>
+<li><a href="wiring.html#_wire_selection_and_use">3. Wire Selection and Use</a>
+<ul class="sectlevel2">
+<li><a href="wiring.html#_single_conductor_wire">3.1. Single Conductor Wire</a></li>
+<li><a href="wiring.html#_shielded_wire">3.2. Shielded Wire</a></li>
+</ul>
+</li>
+<li><a href="wiring.html#_ac_line_voltage">4. AC Line Voltage</a></li>
+<li><a href="wiring.html#_power_supply_units">5. Power Supply Units</a>
+<ul class="sectlevel2">
+<li><a href="wiring.html#_ac_ground">5.1. AC Ground</a></li>
+<li><a href="wiring.html#_dc_common">5.2. DC Common</a></li>
+</ul>
+</li>
+<li><a href="wiring.html#_dc_supply_feeds">6. DC Supply Feeds</a></li>
+<li><a href="wiring.html#_signal_wires_and_control_lines">7. Signal Wires and Control Lines</a></li>
+<li><a href="wiring.html#_stepper_or_servo_motor_drivers">8. Stepper or Servo Motor Drivers</a></li>
+<li><a href="wiring.html#_variable_frequency_drives">9. Variable Frequency Drives</a></li>
+<li><a href="wiring.html#_routing_conductors">10. Routing Conductors</a>
+<ul class="sectlevel2">
+<li><a href="wiring.html#_routing_movable_wires">10.1. Routing Movable Wires</a></li>
+<li><a href="wiring.html#_routing_stationary_wires">10.2. Routing Stationary Wires</a></li>
+</ul>
+</li>
+<li><a href="wiring.html#_mechanical_noise">11. Mechanical Noise</a>
+<ul class="sectlevel2">
+<li><a href="wiring.html#_hardware_debouncing">11.1. Hardware Debouncing</a></li>
+<li><a href="wiring.html#_software_debouncing">11.2. Software Debouncing</a></li>
+</ul>
+</li>
+<li><a href="wiring.html#_documentation">12. Documentation</a>
+<ul class="sectlevel2">
+<li><a href="wiring.html#_hardware_documentation">12.1. Hardware Documentation</a></li>
+<li><a href="wiring.html#_wiring_schematics">12.2. Wiring Schematics</a></li>
+<li><a href="wiring.html#_wiring_identification">12.3. Wiring Identification</a></li>
+</ul>
+</li>
+</ul></details></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_electrical_noise">1. Electrical Noise</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Electrical noise in a system is caused by Electromagnetic Interference (EMI), where signals appearing in one
+electrical circuit interfere with an adjacent circuit, either through electromagnetic induction, electrostatic
+coupling or conduction. EMI can cause problems with the daily operation of a CNC machine, and can manifest itself in
+various ways such as false triggering of limit switches, prematurely interrupted tool probing operations, corruption
+of a serial data link to a VFD or erratic behaviour of the CNC control systems and software.</p>
+</div>
+<div class="paragraph">
+<p>When current passes through a conductor a magnetic field is created. As the current increases the magnetic field gets
+stronger, and then collapses again when current ceases to flow. If this alternating magnetic field happens to cross
+another conductor it can induce an unwanted voltage into it, which presents itself as noise.</p>
+</div>
+<div class="paragraph">
+<p>There are several methods that can be employed to minimise the effects of EMI in any electrical system. The most
+effective of these is obviously to prevent the noise from occurring in the first place. In reality the method of
+controlling the effects of EMI is usually by applying measures to prevent noise from contaminating wanted signals in
+the CNC system.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_ground_earth_and_common">2. Ground, Earth and Common</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Confusion can arise when using terms such as earth, ground and common. In some cases they may be used to describe the
+same thing; that being the point in an electrical system to which all voltages are referenced to. For the purpose of
+this article, the terms <em>earth</em> and <em>ground</em> refer to the point at which the incoming mains supply is earthed to,
+whereas <em>common</em> is the return or negative terminal on a DC supply.  In some cases it is permissible to ground the
+common on a DC supply, thereby making the negative terminal on that supply the same potential as the incoming AC
+earth, but for the purposes of this discussion the terms <em>earth</em> and <em>common</em> must be made distinct from each other
+to avoid confusion.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_wire_selection_and_use">3. Wire Selection and Use</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Wire comes in many types, sizes and configurations. Wading through all the wire available is a monumental task of its
+own, but for the purposes of this article it is only necessary to consider the types of wires typically used when
+wiring a CNC controller. Additionally, how the wire is to be used can have some effect on the overall system. What
+follows are some tips that may prove helpful.</p>
+</div>
+<div class="sect2">
+<h3 id="_single_conductor_wire">3.1. Single Conductor Wire</h3>
+<div class="paragraph">
+<p>Wire comes in two forms: solid conductor and stranded. Solid core wire is generally cheaper than stranded, but more
+likely to break if used in applications where repeated bending is expected. Fortunately, the prevalence of stranded
+wire on the market means that its use should be encouraged wherever possible.</p>
+</div>
+<div class="paragraph">
+<p>Wires should be terminated such that all strands in the conductor are neatly and securely located into the mating
+receptacle. This may be accomplished by either twisting the strands together before inserting in the termination,
+or using a compression crimp such as a spade or bootlace terminal. Care should be made to ensure that no strands of
+wire end up outside the termination to prevent accidental shorting with adjacent terminations.</p>
+</div>
+<div class="paragraph">
+<p>If using a compression crimp on the bare wire, avoid soldering the strands together before crimping. Crimping the
+lug onto a soldered wire can result in the lug working loose over time as the soldered strands lose their
+compressibility once the crimp has been applied. For this same reason, soldered wire should not be installed in a
+terminal block where the screw stud bites directly onto the wire when tightened.</p>
+</div>
+<div class="paragraph">
+<p>When stripping the wire ready for a termination, only remove the minimum amount required to keep the termination
+covered when complete. Stripping too much insulation off will expose some of the wire that something can short
+against.</p>
+</div>
+<div class="paragraph">
+<p>The circuit that the wire is intended for should also be considered; the voltage the circuit operates at and the
+amount of current it carries have a bearing on the choice of wire to be used. The thin insulation on a piece of
+recycled CAT5 ethernet cable is insufficient to withstand the voltages that can appear at the output terminals of a
+Variable Frequency Drive, nor is the cross sectional area of the conductor sufficient to carry several amps of
+current without overheating and potentially causing a fire. Conversely, while it is perfectly permissible to wire a
+limit switch circuit using 2.5 sqmm cable, it creates needless bulk in the wiring loom. Consult any manufacturer&#8217;s
+documentation and your local country&#8217;s electrical wiring codes for minimum suggested wire gauges for power and
+control requirements.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_shielded_wire">3.2. Shielded Wire</h3>
+<div class="paragraph">
+<p>There are two types of shielded wire. One has a bare wire braid that surrounds the wire inside, and the other has
+metal foil that surrounds the wire inside. The type of shielded wire selected will depend on the amount of noise you
+are trying to combat.</p>
+</div>
+<div class="paragraph">
+<div class="title">Foil Shielded Wire</div>
+<p>Foil shielded wire has a thin aluminum or copper foil that is usually bonded to a film of plastic that surrounds
+the wire. The enclosed wire is usually 100% covered. Attaching the foil to earth can be difficult, especially if
+the foil is constructed from aluminum or laminated to a plastic backing material. For this reason, it is
+usual to find a bare metal stranded wire enclosed inside the cable which is in contact with the foil for the
+full length of the cable. This is called the drain wire and is used to make the connection to earth with.</p>
+</div>
+<div class="paragraph">
+<div class="title">Braided Shielded Wire</div>
+<p>Braided shielded wire has a woven copper braid that surrounds the wire. It is more bulky than foil and does not
+provide 100% coverage, but is more flexible than foil shielded types. Coverage is typically 70% to 95% depending on
+how tight the braid has been constructed. Despite the lower coverage of braided shield, the effectiveness is
+greater than foil shielding due to the increased bulk of the braid, and copper being a better conductor than
+aluminum.</p>
+</div>
+<div class="paragraph">
+<p>For very noisy environments, a further subset of the above two shielding methodologies may be employed, whereby both
+braid and foil shielding is used simultaneously. Individual wires in a multi-conductor cable may also be shielded
+along with an overall shield being applied to the entire cable jacket.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_ac_line_voltage">4. AC Line Voltage</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The incoming mains AC that powers the CNC system can pick up and carry noise into the power supplies and other
+equipment. For example, if the incoming supply is also used to feed large motors, electrical noise may be
+generated on the line feeding the CNC components. Although most modern electronic devices feature built-in mains
+filtering to help minimise the susceptibility to mains-borne interference, the custom and modularised nature of a
+CNC system can mean that components used come from a wide variety of sources with differing degrees of inherent
+noise immunity.</p>
+</div>
+<div class="paragraph">
+<p>Inline filters may be installed on the incoming mains supply feeding the CNC control system to help reduce any
+induced noise. Running the CNC system from a different mains circuit to any large electrical sources of noise may
+also help minimise any potential sources of mains-borne interference.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Be aware that in many countries, the installation and alteration of mains circuits can only be carried out by
+licensed electricians.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_power_supply_units">5. Power Supply Units</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_ac_ground">5.1. AC Ground</h3>
+<div class="paragraph">
+<p>A typical CNC machine may have several different Power Supply Units (PSUs) installed in the system. Any device
+powered from the incoming mains designed to be earthed must be properly and permanently terminated to mains earth.
+Ideally this should be made to the same point in the system, which may be a threaded post or bolt, a copper/brass
+termination strip or a large metallic mounting plate within the control enclosure.</p>
+</div>
+<div class="paragraph">
+<p>The prevalence of high-frequency switchmode PSUs used in CNC systems increase the likelihood of RF noise
+being coupled from them to adjacent circuitry. Many of these PSUs have a metal case which, if connected
+to mains earth, will help screen the coupling of high frequency EMI into other electrical components.</p>
+</div>
+<div class="paragraph">
+<p>From a safety standpoint, it is important that these mains earth connections also be mechanically strong and
+unlikely to break free, and the wire used has a cross-sectional area sufficient to carry the anticipated fault
+current should a short to earth occur. It is also imperative that mains earth is never used as a current-carrying
+conductor for other components in the system. Earth shall be used for one purpose only: safety earthing.</p>
+</div>
+<div class="paragraph">
+<p>Note also that the colour of the jacket used to make a termination to earth may be prescribed by the wiring code
+for your country, and the conduction of other unrelated signals in that same wire colour may be prohibited.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_dc_common">5.2. DC Common</h3>
+<div class="paragraph">
+<p>Commoning of a DC PSU is somewhat dependent on the electrical operating requirements of the CNC system. For example,
+a stepper motor driver operating with a 24VDC motor supply and a 5V logic supply may have optically-isolated signal
+input lines which provide complete electrical separation of the driver&#8217;s input and output circuitry for safety and
+noise immunity purposes. Tying the stepper motor and logic control supply commons together in this case may have a
+detrimental impact on the operation of the system.</p>
+</div>
+<div class="paragraph">
+<p>In general it makes most sense to keep the commons of the various DC PSUs used in the CNC system separate from each
+other, and separate from the AC mains earth unless there is a specific requirement to tie them together. In most
+cases the common points of the heavy-duty power sections of the CNC system (eg, stepper motor or servo motor
+drivers, spindle motors etc) will be segregated from common points of the electrically-sensitive sections of the
+CNC (control interface boards, limit switches, tool probe circuitry etc) to prevent cross-contamination of the two
+systems.</p>
+</div>
+<div class="paragraph">
+<p>Should it be necessary to connect several common points of different PSUs together, or to connect a common of a
+PSU to AC main earth, it should be done at a single point only and as close to the common terminal of the PSUs as
+possible.</p>
+</div>
+<div class="paragraph">
+<p>In CNC machines where the hardware drivers and interfacing circuitry are pre-assembled, the decision as to which
+DC commons are tied where is usually taken out of the hands of the end user.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_dc_supply_feeds">6. DC Supply Feeds</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In situations where a DC circuit is run with the common point disconnected from the mains earth (ie, the supply is
+<em>floating</em>), it can be helpful to run DC supplies using twisted pairs of wires, whereby each pair of wires in the
+circuit (eg, the positive and negative leads) is physically twisted together in a helix pattern. The twist in the
+wire allows both conductors to share the same <em>real estate</em> as closely as possible. Any EMI that passes across
+them will therefore be largely canceled as both conductors will receive the same degree of EMI. For additional
+protection use twisted wire that is housed in a shielded jacket with the shield terminated to mains earth.</p>
+</div>
+<div class="paragraph">
+<p>Note however that twisted pairs of wires are less effective at combating the effects of EMI if one of the two
+wires is referenced to mains earth, as the conductor at earth potential is less able to be influenced by EMI than
+the un-earthed conductor. In these instances the twisting of the wires has less of an impact on the overall noise
+immunity, and shielded cable will be intrinsically more effective at reducing noise pickup.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_signal_wires_and_control_lines">7. Signal Wires and Control Lines</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The wires that are used to transmit logic signals to and from various peripherals in the CNC (eg, stepper motor
+controller inputs, axis limit switches etc) are the most susceptible to noise interference. The reason for this is
+the low level voltages that are used to convey the information. When a limit or home switch is engaged, or a tool
+probe has made or broken contact, this signal is used to signify the event has taken place. Typically this is done
+by using input pins on the computer interface card or parallel port which, dependent on the application, may be
+signaled using as little as 3.3V. Evidently a 2V noise spike has the potential to corrupt the validity of a
+signal if the useful range is only 0-3.3V.</p>
+</div>
+<div class="paragraph">
+<p>If possible, isolate the common point of the PSU supplying the logic peripherals from the rest of the system.
+For example, keeping the common of the low voltage power supply isolated from the common of the stepper motor
+supply will reduce the chances of large currents flowing in the stepper motor return line contaminating the common
+of the low voltage supply.</p>
+</div>
+<div class="paragraph">
+<p>If the controller uses differential signaling, use twisted pairs to carry the signal. Shielded cable is preferred
+when the control lines are single-ended, or if the distances traversed are long or through electrically hostile
+environments. When grounding the shield in the cable, terminate to the mains earth.</p>
+</div>
+<div class="paragraph">
+<p>If the controller and interfacing devices can withstand higher control signals, consider altering the wiring and
+power supply requirements to use a bigger voltage for signaling (eg, 12V or 24V). The same 2V EMI noise spike
+that could corrupt a 3.3V limit switch signal will be far less likely to cause issues with a limit switch
+operating with a 24V signal.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_stepper_or_servo_motor_drivers">8. Stepper or Servo Motor Drivers</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The metal housing of the driver should be connected to the local mains earth in the CNC system. Some driver
+enclosures will indicate a specific terminal as being the earthing point, in which case this point must be
+connected to earth via a dedicated wire.</p>
+</div>
+<div class="paragraph">
+<p>Control and power wiring should be segregated as much as possible. Route signal input wires well away from power
+supply and motor drive output lines.</p>
+</div>
+<div class="paragraph">
+<p>It is recommended to run both driver input and motor output wiring in shielded cable with the shield terminated to
+mains earth. The shield on the input lines helps reduce the amount of interference they can receive, while the
+shield on the output lines reduces the amount of noise they can radiate.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_variable_frequency_drives">9. Variable Frequency Drives</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If at all possible the Variable Frequency Drive (VFD) should be mounted in a separate enclosure or cabinet to reduce
+the risk of it radiating noise into adjacent wiring. If the VFD enclosure is metallic it must be earthed as per any
+recommendations in the manufacturer&#8217;s documentation.</p>
+</div>
+<div class="paragraph">
+<p>Because the VFD is a high power, high frequency electronic switching device, the output is notoriously prone to
+EMI radiation, and it is advisable to run the VFD output to the connected motor in a shielded cable, with the
+shield terminated to mains earth.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_routing_conductors">10. Routing Conductors</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_routing_movable_wires">10.1. Routing Movable Wires</h3>
+<div class="paragraph">
+<p>Any wire that will be moved about during normal operation of the CNC falls into this category. For example, wires
+running from stepper drivers through a cable management system (drag chains) and then to the stepper motors
+mounted on a movable gantry.  Cables and wires operating in these circumstances should be rated for extra
+flexibility. This precludes the use of solid-core wires and cables, as the constant flexing will lead to fatigue
+and eventual failure of the conductors.</p>
+</div>
+<div class="paragraph">
+<p>If running cables in a cable track/carrier, tie them down at both ends of the cable track. If not, ratcheting can
+occur and fatigue the cable prematurely. Care should also be taken to ensure that mechanical rubbing of conductors
+against other parts of the machine is prevented.</p>
+</div>
+<div class="paragraph">
+<p>In a cable track/carrier observe the neutral axis idea. Have the wire run as close to the neutral axis as
+possible. Make sure the wire is not in tension in the longest neutral axis situation.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_routing_stationary_wires">10.2. Routing Stationary Wires</h3>
+<div class="paragraph">
+<p>As discussed earlier, running different signal classes (high voltage and low voltage) in proximity to each other
+has the tendency to exacerbate EMI interference. Separate conductors by as much distance as possible. If two
+conductors must cross over each other make the crossing as close to a 90 degree angle as possible.</p>
+</div>
+<div class="paragraph">
+<p>Avoid long loops of excess wire at any peripheral devices - they are great antennas for receiving or transmitting
+noise. Where possible, run wires in close proximity to large earthed structures. If the controller enclosure
+features a large metallic back plate that is earthed, secure all control wiring against this surface as much as
+possible while wiring between two points.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_mechanical_noise">11. Mechanical Noise</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Very few mechanical switches (eg, an axis limit switch or tool probe input) will close or open perfectly when
+operated. More often than not the switch contacts will physically bounce against each other several times within a
+very short space of time when operated. This may be interpreted by the machine controller as multiple operations
+of the same signal when in reality only one clean state change was expected. Sometimes it doesn&#8217;t matter, but in
+many circumstances it is desirable to ensure that any state change is as <em>clean</em> as possible and does not
+interfere with the operation of the machine. This is accomplished by debouncing.</p>
+</div>
+<div class="paragraph">
+<p>Debouncing is achieved by permitting a state change on a mechanical switch to only register with the controller
+after a fixed period of time to allow any bouncing in the switch contacts to settle. Time delays of 5-15
+milliseconds are usually sufficient. This can be done with the addition of some hardware to the signal circuit or
+in software within LinuxCNC.</p>
+</div>
+<div class="sect2">
+<h3 id="_hardware_debouncing">11.1. Hardware Debouncing</h3>
+<div class="paragraph">
+<p>Several schemes exist to implement debouncing of switches and relay contacts with hardware, ranging from the
+addition of a single capacitor across the signal and common lines, to dedicated debouncing integrated circuits
+such as the MC14490 or MAX6818. Several hardware debouncing schemes can be found via the link below:</p>
+</div>
+<div class="paragraph">
+<p><a href="https://electrosome.com/switch-debouncing/" class="bare">https://electrosome.com/switch-debouncing/</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_software_debouncing">11.2. Software Debouncing</h3>
+<div class="paragraph">
+<p>The Hardware Abstraction Layer (HAL) of LinuxCNC includes a debounce component. This component has a single input
+pin and a single output pin. Its job is to monitor the input and to send an output after the input has activated
+for a programmed delay period. More information can be found for the debounce component by visiting the following
+page:</p>
+</div>
+<div class="paragraph">
+<p><a href="../man/man9/debounce.9.html">debounce(9)</a></p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_documentation">12. Documentation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The importance of documenting the installed wiring and components cannot be over-emphasised. Should the user want
+to modify the CNC system further down the track, or if trouble should arise that needs correcting, then complete
+and concise documentation of the wiring and equipment can save many hours of head scratching and frustration.</p>
+</div>
+<div class="sect2">
+<h3 id="_hardware_documentation">12.1. Hardware Documentation</h3>
+<div class="paragraph">
+<p>At a minimum, make sure to save any documentation associated with the installed hardware in a safe place. Stepper
+controllers, break out boards, power supplies, VFDs, interfaces and controllers, servo and stepper drivers and any
+associated device settings are all critical components of the system and their documentation should be kept at
+hand for easy reference.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_wiring_schematics">12.2. Wiring Schematics</h3>
+<div class="paragraph">
+<p>As the CNC machine is wired, make sure to draw up a schematic that can be referenced to later. The schematic does
+not have to be all that neat, but it should be understandable in such a way that it could be easily interpreted at
+a later date, ideally by anyone who may need to service the equipment. Include details such as wire colours used,
+pin numbers, part numbers and any other notes that will help explain particular details not immediately apparent
+from first glance at the schematic.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_wiring_identification">12.3. Wiring Identification</h3>
+<div class="paragraph">
+<p>Take the time to identify each wire in the system. When a bundle of wires has been cable-tied in place it can be
+very difficult to look at them and know for sure which wire goes where. Label the motor wires with the joint or
+axis they are associated with, or identify each signal wire so that it is easy to identify what that signal does.
+It will also help if this information is transferred to the wiring schematics.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

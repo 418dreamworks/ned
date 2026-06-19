@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>hm2_bspi_setup_chan(3)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../rouge-github.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="hm2_bspi_setup_chan.3.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man3/hm2_bspi_setup_chan.3.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man3/hm2_bspi_setup_chan.3.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man3/hm2_bspi_setup_chan.3.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man3/hm2_bspi_setup_chan.3.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man3/hm2_bspi_setup_chan.3.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man3/hm2_bspi_setup_chan.3.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man3/hm2_bspi_setup_chan.3.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>hm2_bspi_setup_chan(3) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>hm2_bspi_setup_chan - setup a Hostmot2 bspi channel</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_syntax">SYNTAX</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c"><span class="cp">#include</span> <span class="cpf">&lt;hostmot2-serial.h&gt;</span><span class="cp">
+</span><span class="kt">int</span> <span class="n">hm2_bspi_setup_chan</span><span class="p">(</span><span class="kt">char</span><span class="o">*</span> <span class="n">name</span><span class="p">,</span> <span class="kt">int</span> <span class="n">chan</span><span class="p">,</span> <span class="kt">int</span> <span class="n">cs</span><span class="p">,</span> <span class="kt">int</span> <span class="n">bits</span><span class="p">,</span> <span class="kt">float</span> <span class="n">mhz</span><span class="p">,</span>
+                        <span class="kt">int</span> <span class="n">delay</span><span class="p">,</span> <span class="kt">int</span> <span class="n">cpol</span><span class="p">,</span> <span class="kt">int</span> <span class="n">cpha</span><span class="p">,</span> <span class="kt">int</span> <span class="n">noclear</span><span class="p">,</span> <span class="kt">int</span> <span class="n">noecho</span><span class="p">)</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>hm2_bspi_setup_chan</strong> allows a realtime component to claim and configure
+a BSPI channel on a previously configured hostmot2 board.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">name</dt>
+<dd>
+<p>A unique string given to the BSPI channel during hostmot2 setup. The
+names of the available channels are printed to standard output during
+the driver loading process and take the form
+<strong>hm2_</strong><em>board-name</em><strong>.</strong><em>board-index</em><strong>.bspi.</strong><em>bspi-index</em>.
+For example, the first index on the first hm2_5i23 board would be called
+<code>hm2_5i23.0.bspi.0</code>.</p>
+</dd>
+<dt class="hdlist1">chan</dt>
+<dd>
+<p>Channels are numbered 0 to 15. The value on the chip-select lines is
+set by cs and need not match the channel number.</p>
+</dd>
+<dt class="hdlist1">cs</dt>
+<dd>
+<p>The chip select line(s) to assert when accessing this channel. BSPI
+supports 4 chip select lines, so the valid range for cs is 0-15.</p>
+</dd>
+<dt class="hdlist1">bits</dt>
+<dd>
+<p>sets the bit-length of the SPI packet. The maximum supported length is
+64 bits but this will span two read FIFO entries and will need special
+handling (values 32 and below require no special handling).</p>
+</dd>
+<dt class="hdlist1">mhz</dt>
+<dd>
+<p>sets the chip communication rate. The maximum value for this is half
+the FPGA base frequency, so for example with a 48 MHz 5I23 the max SPI
+frequency is 24 MHz. Values in excess of the max supported will be
+silently rounded down.</p>
+</dd>
+<dt class="hdlist1">delay</dt>
+<dd>
+<p>sets the chip select valid delay (in ns)</p>
+</dd>
+<dt class="hdlist1">cpha and cpol</dt>
+<dd>
+<p>Set the clock phase and polarity (according to the device datasheet).</p>
+</dd>
+<dt class="hdlist1">noclear</dt>
+<dd>
+<p>Controls whether the frame clear bit is set after the 32 bit buffer transfer.
+This parameter should be set to 1 when the frame length is greater than 32 bits and the next data in the FIFO contains the other bits.</p>
+</dd>
+<dt class="hdlist1">noecho</dt>
+<dd>
+<p>Set to 1 for devices which do not return data (such as DACs).</p>
+</dd>
+<dt class="hdlist1">samplelate</dt>
+<dd>
+<p>Set to 1 to sample the received SPI data 1/2 SPI clock later than normal.
+This is useful when high clock rates or isolation cause significant delays from clock to received data.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_realtime_considerations">REALTIME CONSIDERATIONS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Call only from within realtime init/cleanup code or non-realtime
+components, not from realtime tasks.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_return_value">RETURN VALUE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Returns 0 on success and -1 on failure.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>hm2_allocate_bspi_tram(3), hm2_bspi_set_read_function(3),
+hm2_bspi_set_write_function(3), hm2_bspi_write_chan(3),
+hm2_tram_add_bspi_frame(3)</p>
+</div>
+<div class="paragraph">
+<p>See src/hal/drivers mesa_7i65.comp for an example usage.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

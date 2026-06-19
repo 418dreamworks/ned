@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>hm2_pktuart(3)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../rouge-github.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="hm2_pktuart.3.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man3/hm2_pktuart.3.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man3/hm2_pktuart.3.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man3/hm2_pktuart.3.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man3/hm2_pktuart.3.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man3/hm2_pktuart.3.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man3/hm2_pktuart.3.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man3/hm2_pktuart.3.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>hm2_pktuart(3) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>hm2_pktuart - functions to access the Mesa FPGA card packeted UARTs</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="literalblock">
+<div class="content">
+<pre>#include &lt;hostmot2-serial.h&gt;
+int hm2_pktuart_setup(char* name, int bitrate, rtapi_s32 tx_mode, rtapi_s32 rx_mode, int txclear, int rxclear);
+int hm2_pktuart_send(char* name,  unsigned char data[], rtapi_u8* num_frames, rtapi_u16 frame_sizes[]);
+int hm2_pktuart_read(char* name, unsigned char data[],  rtapi_u8* num_frames, rtapi_u16 *max_frame_length, rtapi_u16 frame_sizes[]);
+int hm2_pktuart_queue_get_frame_sizes(char *name, rtapi_u32 fsizes[]);
+int hm2_pktuart_queue_read_data(char* name, rtapi_u32* data, int bytes);
+int hm2_pktuart_get_clock(char* name);
+int hm2_pktuart_get_version(char* name);
+rtapi_u32 hm2_pktuart_get_rx_status(char* name);
+rtapi_u32 hm2_pktuart_get_tx_status(char* name);</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In this context a "Packeted UART" sends data as a burst of bytes separated by blank space, and receives packets of bytes similarly delimited.
+Each "packet" of N bytes is sent from, or stored in 32-bit "frames" inside 16-deep FIFOs in the FPGA code.</p>
+</div>
+<div class="paragraph">
+<p>Unlike the other hostmot2 functions, the hostmot2 uart and pktuart do not create any HAL pins or usable driver code when hostmot2 is loaded.
+Instead interfaxes are created to allow secondary drivers to use them.</p>
+</div>
+<div class="paragraph">
+<p>In LinuxCNC v2.8 and earlier the PktUART driver was entirely inactive.
+In LinuxCNC v2.9 onwards the driver polls the Rx and Tx status registers every servo thread, and these can be read with the functions rtapi_u32 hm2_pktuart_get_rx_status() and rtapi_u32 hm2_pktuart_get_tx_status().</p>
+</div>
+<div class="sect2">
+<h3 id="_accessing_the_uarts">Accessing the UARTs</h3>
+<div class="paragraph">
+<p>The UART functions above can be included in your driver code by ``#include "hostmot2-serial.h"``.
+This will make the functions above available for use in your own C code.</p>
+</div>
+<div class="paragraph">
+<p>The UARTs are accessed by name, and the names will be printed to the terminal (or dmesg in the case of RTAI kernel realtime) when the board driver (hm2_eth, hm2_pci etc) is loaded.
+Internally the UARTs are addressed by index, but the indices are per-card so not unambiguous.
+Internally the functions all use the private <code>hm2_get_pktuart</code> function which returns the index of the UART <em>and</em> the low level driver instance it belongs to.
+These functions are not hard- private, you can <code>#include "hostmot2.h"</code> if you need the lower-level functions, but then need to track the board instances yourself.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_configuring_the_uart">Configuring the UART</h3>
+<div class="paragraph">
+<p>You should refer to the Hostmot2 "regmap" file for up-to-date register setup information.
+The latest version will normally be found at <a href="https://freeby.mesanet.com/regmap" class="bare">https://freeby.mesanet.com/regmap</a>.</p>
+</div>
+<div class="paragraph">
+<p>You should use the function <strong>hm2_pktuart_get_version()</strong> to check the module version loaded to the FPGA board.
+This documentation is valid for Rx v0 / v1 and Tx v0.
+The return value of the function is 16 * Tx + Rx.
+If viewed in Hex then 0x01 would indicate Tx v0 and Rx v1. (The latest at the time of writing.)</p>
+</div>
+<div class="paragraph">
+<p>When reading the Regmap file it should be considered that to an FPGA read and write addresses are not the same.
+You will see that there are overlaps, in that some bits in the registers have different functions when read or written.</p>
+</div>
+<div class="paragraph">
+<p>To configure the UART use</p>
+</div>
+<div class="paragraph">
+<p>int <strong>hm2_pktuart_setup</strong>(<em>name</em>, <em>bitrate</em>, <em>tx_mode</em>, <em>rx_mode</em>, <em>txclear</em>, <em>rxclear</em>)</p>
+</div>
+<div class="paragraph">
+<p><em>bitrate</em> is simply the bitrate (e.g. 9600, 115200 etc).</p>
+</div>
+<div class="paragraph">
+<p><em>txmode</em> is built up from the following bits (directly copied from the regmap).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Bit  17        Parity enable WO
+Bit  18        Odd Parity  WO  (1=odd, 0=even)
+Bits 15..8     InterFrame delay in bit times RW
+Bit  6         Drive Enable bit (enables external RS-422/485 Driver when set) RW
+Bit  5         Drive enable Auto (Automatic external drive enable) RW
+               Drive Enable Auto has priority over Drive Enable (bit 6 is a no-op if bit 5 is set)
+Bits 3..0      Drive enable delay (delay from asserting drive enable to start of data transmit.
+               In Clock Low periods RW Drive enable delay is important to avoid start bit timing errors at high baud rates in RS-485 (half duplex) modes.</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A reasonable starting value for txmode is <strong>0x00000A20</strong></p>
+</div>
+<div class="paragraph">
+<p><strong>rxmode</strong> is built from the following:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Bits 29..22    RX data digital filter (in ClockLow periods)
+               Should be set to 1/2 bit time (or max=255 if it cannot be set long enough)
+Bit  17        Parity enable WO
+Bit  18        Odd Parity  WO  (1=odd, 0=even)
+Bits 15..8     InterFrame delay in bit times RW
+Bit  6	       RXMask RO
+Bit  3	       RXEnable (must be set to receive packets) RW
+Bit  2	       RXMask Enable (enables input data masking when transmitting) RW</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For low baud rates <strong>0x3FC0140C</strong> will generally work, but the filter bits should really be set according to the actual baud rate.</p>
+</div>
+<div class="paragraph">
+<p>The function <strong>int hm2_pktuart_get_clock(name)</strong> is provided to enable calculation of the required filter period.
+It returns units of Hz.</p>
+</div>
+<div class="paragraph">
+<p>[Note] It is expected that v2 of Rx will extend the number of bits in the filter definition for better behaviour at low bitrates.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_direct_reads_and_writes">Direct reads and writes</h3>
+<div class="paragraph">
+<p>The function:</p>
+</div>
+<div class="paragraph">
+<p><strong>int hm2_pktuart_send()</strong></p>
+</div>
+<div class="paragraph">
+<p>Will always use the hm2_llio_queue_write function where available.</p>
+</div>
+<div class="paragraph">
+<p>However:</p>
+</div>
+<div class="paragraph">
+<p><strong>int hm2_pktuart_read()</strong></p>
+</div>
+<div class="paragraph">
+<p>Will force an immediate read transaction.
+It may be used in setup and teardown code, but should not be called in the realtime functions as this will cause extra packets to be transmitted.
+This may be acceptable for PCI cards, but should otherwise be avoided.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_queued_reads_and_writes">Queued Reads and Writes</h3>
+<div class="paragraph">
+<p>In the realtime threads the queued reads and writes should be used.
+This means that most transactions will be spread over more than one thread period.</p>
+</div>
+<div class="paragraph">
+<p><strong>rtapi_u32 hm2_pktuart_get_rx_status(name)</strong></p>
+</div>
+<div class="paragraph">
+<p><strong>rtapi_u32 hm2_pktuart_get_tx_status(name)</strong></p>
+</div>
+<div class="paragraph">
+<p>These functions will always return the latest status from the most recent data packet from the FPGA.
+The status should be used to check if any new data has been received, or if the UART has completed the recent transmissions.</p>
+</div>
+<div class="paragraph">
+<p>The Tx status is encoded as:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Bit  21	       FrameBuffer Has Data RO
+Bits 20..16    Frames to send  RO
+Bit  7	       Send busy RO
+Bit  4	       SCFIFO Error RO</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The Rx status is:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Bit  21	       FrameBuffer has data RO
+Bits 20..16    Frames received RO
+Bit  7	       Buffer error (RX idle but data in RX data FIFO) RO
+Bit  6	       RXMask RO
+Bit  5         Parity Error RW
+Bit  4	       RCFIFO Error RW
+Bit  1	       Overrun error (no stop bit when expected) (sticky) RW
+Bit  0	       False Start bit error (sticky) RW</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Based on the status of the Rx and Tx components reads or writes from the FPGA can then be set up.
+This is typically a multi-step process:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>rxstatus indicates that there are packets of data, but at this point we need to know how big each packet is (and reading two much or two little data from the FIFOs will cause problems).</p>
+</li>
+<li>
+<p>Queue a read of the frame sizes. <strong>hm2_pktuart_queue_get_frame_sizes(name, fsizes[])</strong>
+On return, the fsizes[] array will have been loaded with the frame sizes (size in bytes).
+If fsizes are [8] [7] [6] and you only read 1 frame from the data FIFO then on the next call to get_frame_sizes the returned array would be [7] [6].</p>
+</li>
+<li>
+<p>Wait one thread cycle to get the data.  Note that there is no serial latency here, the data is already on the FPGA but we can only know how much data to request once we know the packet size</p>
+</li>
+<li>
+<p>Queue enough data reads to get all the data frames that the packet is spread over.
+int hm2_pktuart_queue_read_data(name, data, bytes)
+On return the data[] array will have been loaded with enough 32-bit frames to include "bytes" bytes.</p>
+</li>
+<li>
+<p>Parse the data.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_data_formats">Data Formats</h3>
+<div class="paragraph">
+<p>Both the Tx and Rx pack the bytes that are to be read or written in 32-bit "frames" stored in a 16-deep FIFO.</p>
+</div>
+<div class="paragraph">
+<p>To send the sequence 01, 02, 03, 04, 05, 06  followed by the sequence F1, F2, F3, F3, F5, F6, F7 the registers would be loaded with:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>0x04030201
+0xXXXX0605
+0xF4F3F2F1
+0xXXF7F6F5</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>(Where X indicates data that will be ignored).</p>
+</div>
+<div class="paragraph">
+<p>I.e., the data is filled right-to-left and right-justified with consecutive packets not sharing a 32-bit frame.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_typical_usage">Typical Usage</h3>
+<div class="paragraph">
+<p>Because the transactions are necessarily split over multiple reads, and some steps will have serial-port latency delays it is recommended to use a state machine in the realtime code where waiting on input is not possible.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="C">int process(void *arg, long period) {
+    static int state = START;
+
+    switch (state) {
+        case START:
+            // Check for received data
+            if (rxstatus &amp; 0x200000) {
+                state = WAIT_FOR_DATA_FRAME;
+                break;
+            }
+
+            // No incoming data, so service the outputs
+            if (time to send data){
+                hm2_pktuart_send(pktUART_name, some_data);
+                state = WAIT_FOR_SEND_COMPLETE;
+            break;
+
+        case WAIT_FOR_SEND_COMPLETE:
+            if ( ! (txstatus &amp; 0x80)){  // i.e. the Tx is not busy
+                state = WAIT_FOR_DATA_FRAME;
+            }
+            break;
+
+        case WAIT_FOR_DATA_FRAME:
+            if ( ! ( rxstatus &amp; 0x1F0000)) { // no data yet
+                break;
+            }
+            // find the frame size
+            hm2_pktuart_queue_get_frame_sizes(pktUART_name, fsizes);
+            state = WAIT_FOR_FRAME_SIZES;
+            frame_inde = 0;
+            break;
+
+        case WAIT_FOR_FRAME_SIZES:
+        case FETCH_MORE_DATA:
+            // This step may need to be iterated if there are multiple frames
+            r = hm2_pktuart_queue_read_data(pktUART_name, rxdata, fsizes[frame_index]);
+            state = WAIT_FOR_DATA; // Just a one-cycle delay, the data is on the FPGA
+            break;
+
+        case WAIT_FOR_DATA:
+            parse_data(rxdata);
+            if ((fsizes[++frame_index] &amp; 0x3FF) &gt; 0){
+                state = FETCH_MORE_DATA;
+            } else {
+                state = WAIT_FOR_RX_CLEAR;
+            }
+            break;
+
+        case WAIT_FOR_RX_CLEAR:
+            if (rxstatus &amp; 0x200000) break;
+            state = START;
+            break;
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The functions / hostmot2 component do not create any HAL pins.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example">EXAMPLE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>See inuxcnc-dev/src/hal/components/mesa_pktgyro_test.comp for a simple example (which might not work, and uses the deprecated direct reads and writes.
+<strong>mesa_modbus</strong> is a better example, but significantly more complex and less instructive because of that.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_testing">Testing</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The PktUART can be tested using low-level register writes outside the realtime context using mesaflash. Here is an example bash script:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="bash"><span class="c"># First setup the DDR and Alt Source regs for the 7I96</span>
+mesaflash <span class="nt">--device</span> 7i96 <span class="nt">--addr</span> 10.10.10.10 <span class="nt">--wpo</span> <span class="nv">0x1100</span><span class="o">=</span>0x1F800
+mesaflash <span class="nt">--device</span> 7i96 <span class="nt">--addr</span> 10.10.10.10 <span class="nt">--wpo</span> <span class="nv">0x1104</span><span class="o">=</span>0x1C3FF
+mesaflash <span class="nt">--device</span> 7i96 <span class="nt">--addr</span> 10.10.10.10 <span class="nt">--wpo</span> <span class="nv">0x1200</span><span class="o">=</span>0x1F800
+mesaflash <span class="nt">--device</span> 7i96 <span class="nt">--addr</span> 10.10.10.10 <span class="nt">--wpo</span> <span class="nv">0x1204</span><span class="o">=</span>0x1C3FF
+<span class="c"># Next set the baud rate DDS's for 9600 baud</span>
+mesaflash <span class="nt">--device</span> 7i96 <span class="nt">--addr</span> 10.10.10.10 <span class="nt">--wpo</span> <span class="nv">0x6300</span><span class="o">=</span>0x65
+mesaflash <span class="nt">--device</span> 7i96 <span class="nt">--addr</span> 10.10.10.10 <span class="nt">--wpo</span> <span class="nv">0x6700</span><span class="o">=</span>0x65
+<span class="c"># setup the TX and RX mode registers</span>
+mesaflash <span class="nt">--device</span> 7i96 <span class="nt">--addr</span> 10.10.10.10 <span class="nt">--wpo</span> <span class="nv">0x6400</span><span class="o">=</span>0x00062840
+mesaflash <span class="nt">--device</span> 7i96 <span class="nt">--addr</span> 10.10.10.10 <span class="nt">--wpo</span> <span class="nv">0x6800</span><span class="o">=</span>0x3FC61408
+<span class="c"># Reset the TX and RX UARTS</span>
+mesaflash <span class="nt">--device</span> 7i96 <span class="nt">--addr</span> 10.10.10.10 <span class="nt">--wpo</span> <span class="nv">0x6400</span><span class="o">=</span>0x80010000
+mesaflash <span class="nt">--device</span> 7i96 <span class="nt">--addr</span> 10.10.10.10 <span class="nt">--wpo</span> <span class="nv">0x6800</span><span class="o">=</span>0x80010000
+<span class="c"># load 7 bytes of data into the TX UART</span>
+mesaflash <span class="nt">--device</span> 7i96 <span class="nt">--addr</span> 10.10.10.10 <span class="nt">--wpo</span> <span class="nv">0x6100</span><span class="o">=</span>0x54535251
+mesaflash <span class="nt">--device</span> 7i96 <span class="nt">--addr</span> 10.10.10.10 <span class="nt">--wpo</span> <span class="nv">0x6100</span><span class="o">=</span>0x58575655
+mesaflash <span class="nt">--device</span> 7i96 <span class="nt">--addr</span> 10.10.10.10 <span class="nt">--wpo</span> <span class="nv">0x6100</span><span class="o">=</span>0x64636261
+mesaflash <span class="nt">--device</span> 7i96 <span class="nt">--addr</span> 10.10.10.10 <span class="nt">--wpo</span> <span class="nv">0x6100</span><span class="o">=</span>0x68676665
+<span class="c"># Command the TX UART to send 8 bytes twice</span>
+mesaflash <span class="nt">--device</span> 7i96 <span class="nt">--addr</span> 10.10.10.10 <span class="nt">--wpo</span> <span class="nv">0x6200</span><span class="o">=</span>0x08
+mesaflash <span class="nt">--device</span> 7i96 <span class="nt">--addr</span> 10.10.10.10 <span class="nt">--wpo</span> <span class="nv">0x6200</span><span class="o">=</span>0x08
+<span class="nb">sleep</span> .1
+<span class="c"># display the RX mode reg, RX count, and the data</span>
+mesaflash <span class="nt">--device</span> 7i96 <span class="nt">--addr</span> 10.10.10.10 <span class="nt">--rpo</span> 0x6800
+mesaflash <span class="nt">--device</span> 7i96 <span class="nt">--addr</span> 10.10.10.10 <span class="nt">--rpo</span> 0x6600
+mesaflash <span class="nt">--device</span> 7i96 <span class="nt">--addr</span> 10.10.10.10 <span class="nt">--rpo</span> 0x6500
+mesaflash <span class="nt">--device</span> 7i96 <span class="nt">--addr</span> 10.10.10.10 <span class="nt">--rpo</span> 0x6500
+mesaflash <span class="nt">--device</span> 7i96 <span class="nt">--addr</span> 10.10.10.10 <span class="nt">--rpo</span> 0x6800
+mesaflash <span class="nt">--device</span> 7i96 <span class="nt">--addr</span> 10.10.10.10 <span class="nt">--rpo</span> 0x6600
+mesaflash <span class="nt">--device</span> 7i96 <span class="nt">--addr</span> 10.10.10.10 <span class="nt">--rpo</span> 0x6500
+mesaflash <span class="nt">--device</span> 7i96 <span class="nt">--addr</span> 10.10.10.10 <span class="nt">--rpo</span> 0x6500</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Andy Pugh</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL-2.0+</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>shuttle(1)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="shuttle.1.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man1/shuttle.1.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man1/shuttle.1.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man1/shuttle.1.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man1/shuttle.1.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man1/shuttle.1.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man1/shuttle.1.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man1/shuttle.1.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>shuttle(1) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>shuttle - control HAL pins with the ShuttleXpress, ShuttlePRO, and ShuttlePRO2 device made by Contour Design</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadusr shuttle</strong> [<em>DEVICE</em> &#8230;&#8203;]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Shuttle is a non-realtime HAL component that interfaces Contour Design&#8217;s ShuttleXpress,
+ShuttlePRO, and ShuttlePRO2 devices with LinuxCNC&#8217;s HAL.</p>
+</div>
+<div class="paragraph">
+<p>If the driver is started without command-line arguments,
+it will probe all /dev/hidraw* device files for Shuttle devices, and use all devices found.
+If it is started with command-line arguments, it will only probe the devices specified.</p>
+</div>
+<div class="paragraph">
+<p>The ShuttleXpress has five momentary buttons, a 10 counts/revolution jog wheel with detents,
+and a 15-position spring-loaded outer wheel that returns to center when released.</p>
+</div>
+<div class="paragraph">
+<p>The ShuttlePRO has 13 momentary buttons, a 10 counts/revolution jog wheel with detents,
+and a 15-position spring-loaded outer wheel that returns to center when released.</p>
+</div>
+<div class="paragraph">
+<p>The ShuttlePRO2 has 15 momentary buttons, a 10 counts/revolution jog wheel with detents,
+and a 15-position spring-loaded outer wheel that returns to center when released.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_udev">UDEV</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The shuttle driver needs read permission to the Shuttle devices' /dev/hidraw* device files.
+This can be accomplished by adding a file <strong>/etc/udev/rules.d/99-shuttle.rules</strong>, with the following contents:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>SUBSYSTEM=="hidraw", ATTRS\{idVendor}=="0b33",
+ATTRS\{idProduct}=="0020", MODE="0444"
+
+SUBSYSTEM=="hidraw", ATTRS\{idVendor}=="05f3",
+ATTRS\{idProduct}=="0240", MODE="0444"
+
+SUBSYSTEM=="hidraw", ATTRS\{idVendor}=="0b33",
+ATTRS\{idProduct}=="0030", MODE="0444"</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The LinuxCNC Debian package installs an appropriate udev file automatically,
+but if you are building LinuxCNC from source and are not using the Debian packaging, you&#8217;ll need to install this file by hand.
+If you install the file by hand you&#8217;ll need to tell udev to reload its rules files by running <code>udevadm control --reload-rules</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_a_warning_about_the_jog_wheel">A warning about the Jog Wheel</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Shuttle devices have an internal 8-bit counter for the current jog-wheel position.
+The shuttle driver can not know this value until the Shuttle device sends its first event.
+When the first event comes into the driver, the driver uses the device&#8217;s reported jog-wheel position to initialize counts to 0.
+This means that if the first event is generated by a jog-wheel move, that first move will be lost.</p>
+</div>
+<div class="paragraph">
+<p>Any user interaction with the Shuttle device will generate an event, informing the driver of the jog-wheel position.
+So if you (for example) push one of the buttons at startup, the jog-wheel will work fine and notice the first click.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">Pins</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>All HAL pin names are prefixed with <code>shuttle</code> followed by the index of the device
+(the order in which the driver found them), for example <code>shuttle.0</code> or <code>huttle.2</code>.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><em>(prefix).button-(number)</em> (bit out)</dt>
+<dt class="hdlist1"><em>(prefix).button-(number)-not</em> (bit out)</dt>
+<dd>
+<p>The momentary buttons. "(number)" identifies which button corresponds to the HAL pin.
+The "button-(number)" pins are True when the button is pushed, the "button-(number)-not" pins are True when the button is not pushed.</p>
+</dd>
+<dt class="hdlist1"><em>(prefix).counts</em> (s32 out)</dt>
+<dd>
+<p>Accumulated counts from the jog wheel (the inner wheel).</p>
+</dd>
+<dt class="hdlist1"><em>(prefix).spring-wheel-s32</em> (s32 out)</dt>
+<dd>
+<p>The current deflection of the spring-wheel (the outer wheel).
+It&#8217;s 0 at rest, and ranges from -7 at the counter-clockwise extreme to +7 at the clockwise extreme.</p>
+</dd>
+<dt class="hdlist1"><em>(prefix).spring-wheel-f</em> (float out)</dt>
+<dd>
+<p>The current deflection of the spring-wheel (the outer wheel).
+It&#8217;s 0.0 at rest, -1.0 at the counter-clockwise extreme, and +1.0 at the clockwise extreme.
+(The Shuttle devices report the spring-wheel position as an integer from -7 to +7, so this pin reports only 15 discrete values in its range.)</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

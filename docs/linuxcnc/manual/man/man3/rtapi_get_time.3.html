@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>rtapi_get_time(3)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../rouge-github.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="rtapi_get_time.3.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man3/rtapi_get_time.3.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man3/rtapi_get_time.3.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man3/rtapi_get_time.3.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man3/rtapi_get_time.3.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man3/rtapi_get_time.3.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man3/rtapi_get_time.3.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man3/rtapi_get_time.3.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>rtapi_get_time(3) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>rtapi_get_time - get the current time in ns</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_syntax">SYNTAX</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c"><span class="kt">long</span> <span class="kt">long</span> <span class="nf">rtapi_get_time</span><span class="p">();</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>rtapi_get_time</strong> returns the current time in nanoseconds. Depending on
+the RTOS, this may be time since boot, or time since the clock period
+was set, or some other time. Its absolute value means nothing, but it is
+monotonically increasing and can be used to schedule future events, or
+to time the duration of some activity. Returns a 64 bit value. The
+resolution of the returned value may be as good as one nano-second, or
+as poor as several microseconds. May be called from init/cleanup code,
+and from within realtime tasks.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c"><span class="n">deltat</span> <span class="o">=</span> <span class="p">(</span><span class="kt">long</span> <span class="kt">int</span><span class="p">)(</span><span class="n">end_time</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">);</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where end_time and start_time are longlong values returned from
+rtapi_get_time, and deltat is an ordinary long int (32 bits). This will
+work for times up to 2.1s. It is best used for millisecond and microsecond scale
+measurements though.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_return_value">RETURN VALUE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Returns the current time in nanoseconds.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_realtime_considerations">REALTIME CONSIDERATIONS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>May be called from init/cleanup code and from within realtime tasks. Not
+available in non-realtime components.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

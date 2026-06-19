@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>xhc-hb04(1)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="xhc-hb04.1.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man1/xhc-hb04.1.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man1/xhc-hb04.1.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man1/xhc-hb04.1.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man1/xhc-hb04.1.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man1/xhc-hb04.1.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man1/xhc-hb04.1.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man1/xhc-hb04.1.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>xhc-hb04(1) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>xhc-hb04 - HAL non-realtime component for the xhc-hb04 pendant.</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The xhc-hb04 component supports a common USB pendant that provides a
+number of pushbuttons, a manual pulse generator (mpg or jog wheel), and
+a selector switch for the wheel.</p>
+</div>
+<div class="paragraph">
+<p>There are at least two hardware versions&#8201;&#8212;&#8201;one with 16 buttons and a
+more common one with 18 buttons. The information herein is based on the
+18 button device with a USB Vendor:Product code of 10CE:EB70.</p>
+</div>
+<div class="paragraph">
+<p>In addition to buttons, the pendant provides an LCD display for the
+current stepsize multiplier (from a set of available integer values),
+position (absolute and relative, labeled MC and WC respectively),
+feedrate (override percent and value in units per minute), and spindle
+speed (override percent and value in revolutions per minute (RPM)). The
+display is managed by a rotary switch that selects one of four axes for
+wheel positioning, feed override, spindle override, or OFF.</p>
+</div>
+<div class="paragraph">
+<p>The pendant display, its rotary selector switch, and the component pin
+names use designators x,y,z,a. While this arrangement presumes a machine
+configured as XYZA, the pins can be assigned independently as required
+in a HAL configuration.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_udev">UDEV</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The xhc-hb04 executable needs permission for reading the pendant&#8217;s USB
+device. Debian package installs (debs) handle this automatically but
+Run-In-Place (RIP) builds may need a udev rules file. This file should
+be created (using sudo and a text editor) as:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>/etc/udev/rules.d/99-xhc-hb04.rules with the single line:
+
+ATTR{idProduct}=="eb70", ATTR{idVendor}=="10ce", MODE="0666", OWNER="root", GROUP="plugdev"</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_standalone_usage">Standalone Usage</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The xhc-hb04 program can be run from the command line without LinuxCNC
+to test a pendant in a simulation mode. This standalone mode is used to
+identify the button codes produced for each button press and to verify
+proper counting of the jog wheel. The identified button codes can be
+used to create a <strong>button-cfg-file</strong>. When a <strong>button-cfg-file</strong> exists,
+pendant operation can be verified using the -I option to specify the
+file.</p>
+</div>
+<div class="paragraph">
+<p>Usage:</p>
+</div>
+<div class="paragraph">
+<p><code>xhc-hb04</code> [<em>options</em>]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_options">Options</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>-h</strong></dt>
+<dd>
+<p>list command line options and exit</p>
+</dd>
+<dt class="hdlist1"><strong>-I button-cfg-file</strong></dt>
+<dd>
+<p>see below for file format</p>
+</dd>
+<dt class="hdlist1"><strong>-H</strong></dt>
+<dd>
+<p>run in real-time HAL mode (simulation mode is default)</p>
+</dd>
+<dt class="hdlist1"><strong>-x</strong></dt>
+<dd>
+<p>wait for pendant detection before creating HAL pins.</p>
+</dd>
+<dt class="hdlist1"><strong>-s</strong> <em>n</em></dt>
+<dd>
+<p><em>n</em> is one of the following stepsize sequences</p>
+<div class="paragraph">
+<p>1: 1,10,100,1000 (default)
+2: 1,5,10,20 3: 1,10,100
+4: 1,5,10,20,50,100
+5: 1,10,50,100,1000</p>
+</div>
+<div class="paragraph">
+<p>The stepsize selected is always multiplied by 0.001.</p>
+</div>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_button_cfg_file_format">button-cfg-file format</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Standard configuration files are provided in the distribution for known
+button configurations:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>   /usr/share/linuxcnc/hallib/xhc-hb04-layout1.cfg
+   /usr/share/linuxcnc/hallib/xhc-hb04-layout2.cfg
+or for a RIP build:
+   rip_base_dir/lib/hallib/xhc-hb04-layout1.cfg
+   rip_base_dir/lib/hallib/xhc-hb04-layout2.cfg</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>layout1 describes the 16 button pendant, layout2 describes the more
+common 18 button pendant.</p>
+</div>
+<div class="paragraph">
+<p>The button configuration file follows the same format as INI files but
+should use a file suffix of .cfg.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>File format:
+  [XHC-HB04]
+  BUTTON=X1:button-thename1
+  BUTTON=X2:button-thename2
+  BUTTON=X3:button-thename3
+  etc.</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>XN is the code reported for a button press and button-thenameN is the
+name to be assigned to the pin created for the button.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_hal_usage">HAL Usage</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Use the -H option to specify HAL mode and other options as required:</p>
+</div>
+<div class="paragraph">
+<p><code>loadusr -W</code> xhc-hb04 <code>-H</code> <em>[options]</em></p>
+</div>
+<div class="paragraph">
+<p>Example: <code>loadusr -W xhc-hb04-H -I</code> <em>path_to_cfg_file</em> <code>-s 2</code></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_input_pins_control">Input Pins (Control)</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1">xhc-hb04.stepsize-up (bit in)</dt>
+<dd>
+<p>A 1 pulse on this pin changes the stepsize to the next higher stepsize
+in the stepsize sequence specified in the xhc-hb04 (loadusr) command.</p>
+</dd>
+<dt class="hdlist1">xhc-hb04.stepsize-down (bit in)</dt>
+<dd>
+<p>A 1 pulse on this pin changes the stepsize to the next lower stepsize
+in the stepsize sequence specified in the xhc-hb04 (loadusr) command.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_input_pins_to_the_pendant_lcd_display">Input Pins (to the pendant LCD display)</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1">xhc-hb04.[xyza].pos-absolute (float in)</dt>
+<dd>
+<p>Absolute position display. The LCD display for pos-absolute is fixed
+format with a sign, 4 number digits and 3 fraction digits (+XXXX.XXX),
+require: -9999.999 &lt;= value &lt;= 9999.999
+(typically connect to: <code>halui.axis.N.pos-feedback</code>).</p>
+</dd>
+<dt class="hdlist1">xhc-hb04.[xyza].pos-relative (float in)</dt>
+<dd>
+<p>Relative position display (typically connect to:
+halui.axis.N.pos-relative). The LCD display for pos-relative is fixed
+format with a sign, 4 number digits and 3 fraction digits (+XXXX.XXX),
+require: -9999.999 &lt;= value &lt;= 9999.999.</p>
+</dd>
+<dt class="hdlist1">xhc-hb04.feed-override (float in)</dt>
+<dd>
+<p>Feed-override value. The float value is converted to a 16 bit integer
+and multiplied by 100 in order to display as percent, require: 0 &lt;=
+pinvalue &lt;= 655 (typically connect to: <code>halui.feed-override.value</code>).</p>
+</dd>
+<dt class="hdlist1">xhc-hb04.feed-value (float in)</dt>
+<dd>
+<p>Current Feed-value (units/sec). The float value is converted to a 16
+bit integer and multiplied by 60 in order to display as
+units-per-minute, require: 0 &lt;= pinvalue &lt;= 1092 (65520 units-per-minute)
+(typically connect to: <code>motion.current-vel</code>).</p>
+</dd>
+<dt class="hdlist1">xhc-hb04.spindle-override (float in)</dt>
+<dd>
+<p>Spindle-override value. The float value is converted to a 16 bit
+integer and multiplied by 100 in order to display as percent, require:
+0 &lt;= pinvalue &lt;= 655) (typically connect to: <code>halui.spindle-override.value</code>).</p>
+</dd>
+<dt class="hdlist1">xhc-hb04.spindle-rps (float in)</dt>
+<dd>
+<p>Spindle speed in RPS (revolutions per second).
+The float value is converted to a 16 bit integer and multiplied by 60
+in order to display as RPMs, require: 0 &lt;= pinvalue &lt;= 1092 (65520 RPM)
+(typically connect to: <code>spindle.N.speed-out-rps-abs</code>).</p>
+</dd>
+<dt class="hdlist1">xhc-hb04.inch-icon (bit in)</dt>
+<dd>
+<p>Use inch icon (default is mm):</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_output_pins_status">Output Pins (Status)</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1">xhc-hb04.sleeping (bit out)</dt>
+<dd>
+<p>True when the driver receives a pendant inactive (sleeping) message.</p>
+</dd>
+<dt class="hdlist1">xhc-hb04.jog.enable-off (bit out)</dt>
+<dd>
+<p>True when the pendant rotary selector switch is in the OFF position or
+when the pendant is sleeping.</p>
+</dd>
+<dt class="hdlist1">xhc-hb04.enable-[xyza] (bit out)</dt>
+<dd>
+<p>True when the pendant rotary selector switch is in the [xyza] position
+and not sleeping.</p>
+</dd>
+<dt class="hdlist1">xhc-hb04.enable-spindle-override (bit out)</dt>
+<dd>
+<p>True when the pendant rotary selector switch is in the Spindle
+position and not sleeping (typically connect to:
+halui.spindle-override-count-enable).</p>
+</dd>
+<dt class="hdlist1">xhc-hb04.enable-feed-override (bit out)</dt>
+<dd>
+<p>True when the pendant rotary selector switch is in the feed position
+and not sleeping (typically connect to:
+halui.feed-override-count-enable).</p>
+</dd>
+<dt class="hdlist1">xhc-hb04.connected (bit out)</dt>
+<dd>
+<p>True when connection to the pendant is established over the USB
+interface.</p>
+</dd>
+<dt class="hdlist1">xhc-hb04.require_pendant (bit out)</dt>
+<dd>
+<p>True if driver started with the -x option.</p>
+</dd>
+<dt class="hdlist1">xhc-hb04.stepsize (s32 out)</dt>
+<dd>
+<p>Current stepsize in the stepsize sequence as controlled by the
+stepsize-up and/or stepsize-down pins.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_output_pins_for_jogging_using_axis_n_jog_counts">Output Pins (for jogging using axis.N.jog-counts)</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1">xhc-hb04.jog.counts (s32 out)</dt>
+<dd>
+<p>Number of counts of the wheel since start-up (50 counts per wheel revolution)
+(typically connect to <code>axis.N.jog-counts</code> (lowpass filtering may be helpful)).</p>
+</dd>
+<dt class="hdlist1">xhc-hb04.jog.counts-neg (s32 out)</dt>
+<dd>
+<p>The value of the <code>xhc-hb04.jog.counts</code> multiplied by -1.</p>
+</dd>
+<dt class="hdlist1">xhc-hb04.jog.scale (float out)</dt>
+<dd>
+<p>Value is the current stepsize multiplied by 0.001 (typically connect to <code>axis.N.jog-scale</code>).</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_experimental_pins_for_halui_plusminus_jogging">Experimental: Pins for halui plus/minus jogging.</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>These pins provide some support for non-trivkins, world mode jogging.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">xhc-hb04.jog.max-velocity (float in)</dt>
+<dd>
+<p>Connect to halui.max-velocity.value.</p>
+</dd>
+<dt class="hdlist1">xhc-hb04.jog.velocity (float out)</dt>
+<dd>
+<p>Connect to halui.jog-speed.</p>
+</dd>
+<dt class="hdlist1">xhc-hb04.jog.plus-[xyza] (bit out)</dt>
+<dd>
+<p>Connect to halui.jog.N.plus.</p>
+</dd>
+<dt class="hdlist1">xhc-hb04.jog.minus-[xyza] (bit out)</dt>
+<dd>
+<p>Connect to halui.jog.N.minus.</p>
+</dd>
+<dt class="hdlist1">xhc-hb04.jog.increment (float out)</dt>
+<dd>
+<p>Debug pin&#8201;&#8212;&#8201;abs(delta_pos).</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_button_output_pins_for_the_18_button_layout2_pendant">Button output pins (for the 18 button, layout2 pendant)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The output bit type pins are TRUE when the button is pressed.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>ROW 1
+    (bit out) xhc-hb04.button-reset
+    (bit out) xhc-hb04.button-stop
+
+ROW 2
+    (bit out) xhc-hb04.button-goto-zero
+    (bit out) xhc-hb04.button-rewind
+    (bit out) xhc-hb04.button-start-pause
+    (bit out) xhc-hb04.button-probe-z
+
+ROW 3
+   (bit out) xhc-hb04.button-spindle
+   (bit out) xhc-hb04.button-half
+   (bit out) xhc-hb04.button-zero
+   (bit out) xhc-hb04.button-safe-z
+
+ROW 4
+   (bit out) xhc-hb04.button-home
+   (bit out) xhc-hb04.button-macro-1
+   (bit out) xhc-hb04.button-macro-2
+   (bit out) xhc-hb04.button-macro-3
+
+ROW 5
+   (bit out) xhc-hb04.button-step
+   (bit out) xhc-hb04.button-mode
+   (bit out) xhc-hb04.button-macro-6
+   (bit out) xhc-hb04.button-macro-7</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_synthesized_button_pins">Synthesized button pins</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Additional buttons are synthesized for buttons named <strong>zero</strong>, <strong>goto-zero</strong>, and <strong>half</strong>. These synthesized buttons are active when the button is pressed AND the selector-switch is set to the corresponding axis [xyza].</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>   (bit out) xhc-hb04.button-zero-[xyza]
+   (bit out) xhc-hb04.button-goto-zero-[xyza]
+   (bit out) xhc-hb04.button-half-[xyza]</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_debugging">DEBUGGING</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>For debugging USB activity, use environmental variable LIBUSB_DEBUG:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">export LIBUSB_DEBUG=[2 | 3 | 4]; xhc-hb04 [options]</dt>
+<dd>
+<p>2:warning, 3:info, 4:debug</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_sim_configs">Sim Configs</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The distribution includes several simulation configurations in the directory:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>   /usr/share/doc/linuxcnc/examples/sample-configs/sim/axis/xhc-hb04/
+or for a RIP build:
+   rip_base_dir/configs/sim/axis/xhc-hb04/</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>These configurations use a distribution-provided script (xhc-hb04.tcl)
+to configure the pendant and make necessary HAL connections according to
+a number of INI file settings. The script uses an additional HAL
+component (xhc_hb04_util) to provide common functionality and includes
+support for a standard method for the start-pause button.</p>
+</div>
+<div class="paragraph">
+<p>The settings available include:
+ * Specify button-cfg-file for standard layout1 or layout2,
+ * select axes (up to 4 axes from set of x y z a b c u v w),
+ * implement per-axis filtering coefficients,
+ * implement per-axis acceleration for mpg jogging,
+ * implement per-axis scale settings,
+ * select normal or velocity based jog modes,
+ * select stepsize sequence,
+ * option to initialize pin for inch or mm display icon,
+ * option to require pendant on startup.</p>
+</div>
+<div class="paragraph">
+<p>The sim configs illustrate button connections that:
+ * Connect pendant stepsize-up button to the step input pin,
+ * connect buttons to halui.* pins,
+ * connect buttons to motion.* pins.</p>
+</div>
+<div class="paragraph">
+<p>Another script is included to monitor the pendant and report loss of USB connectivity.
+See the README and .txt files in the above directory for usage.</p>
+</div>
+<div class="sect2">
+<h3 id="_note">Note</h3>
+<div class="paragraph">
+<p>The sim configs use the AXIS GUI but the scripts are available
+with any HAL configuration or GUI. The same scripts can be used to adapt
+the xhc-hb04 to existing configurations provided that the halui, motion,
+and axis.<em>N</em> pins needed are not otherwise claimed. Instructions are
+included in README file in the directory named above.</p>
+</div>
+<div class="paragraph">
+<p>Use halcmd to display the pins and signals used by the xhc-hb04.tcl script:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>halcmd show pin xhc-hb04       (show all xhc-hb04 pins)
+halcmd show pin pendant_util   (show all pendant_util pins)
+halcmd show sig pendant:       (show all pendant signals)</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Frederick Rible (<a href="mailto:frible@teaser.fr">frible@teaser.fr</a>)</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

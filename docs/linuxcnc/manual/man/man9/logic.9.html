@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>LOGIC(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../rouge-github.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="logic.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/logic.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/logic.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/logic.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/logic.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/logic.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/logic.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/logic.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>LOGIC(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>logic - LinuxCNC HAL component providing configurable logic functions</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt</strong> <strong>logic</strong> [<strong>count</strong>=<em>N</em>|<strong>names</strong>=<em>name1</em>[,<em>name2</em>&#8230;&#8203;]] <strong>personality</strong>=<em>0xXXXX</em>[,<em>0xXXXX</em>&#8230;&#8203;]</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>count</strong></dt>
+<dd>
+<p>The number of logical gates.</p>
+</dd>
+<dt class="hdlist1"><strong>names</strong></dt>
+<dd>
+<p>The named logical gates to create.</p>
+</dd>
+<dt class="hdlist1"><strong>personality</strong></dt>
+<dd>
+<p>Comma separated list of hexadecimal number.
+Each number defines the behaviour of the individual logic gate.  The
+list must have the same number of personalities as the N count.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>General &#8216;logic function&#8217; component.  Can perform &#8216;and&#8217;, &#8216;or&#8217;,
+&#8216;nand&#8217;, &#8216;nor&#8217; and &#8216;xor&#8217; of up to 16 inputs.</p>
+</div>
+<div class="paragraph">
+<p>Determine the proper value for &#8216;personality&#8217;
+by adding the inputs and outputs then convert to hex:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The number of input pins, usually from 2 to 16</p>
+</li>
+<li>
+<p>256 (0x100)  if the &#8216;and&#8217; output is desired</p>
+</li>
+<li>
+<p>512 (0x200)  if the &#8216;or&#8217; output is desired</p>
+</li>
+<li>
+<p>1024 (0x400)  if the &#8216;xor&#8217; (exclusive or) output is desired</p>
+</li>
+<li>
+<p>2048 (0x800)  if the &#8216;nand&#8217; output is desired</p>
+</li>
+<li>
+<p>4096 (0x1000)  if the &#8216;nor&#8217; output is desired</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Outputs can be combined, for example 2 + 256 + 1024 = 1282 converted to hex
+would be 0x502 and would have two inputs and have both &#8216;xor&#8217; and &#8216;and&#8217; outputs.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>logic</strong>.<em>N</em></dt>
+<dd>
+<p>Read the inputs and toggle the output bit.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>logic</strong>.<em>N</em>.<strong>in-<em>MM</em></strong> bit in  (MM=00..personality &amp; 0xff) </dt>
+<dt class="hdlist1"><strong>logic</strong>.<em>N</em>.<strong>and</strong> bit out  [if personality &amp; 0x100] </dt>
+<dt class="hdlist1"><strong>logic</strong>.<em>N</em>.<strong>or</strong> bit out  [if personality &amp; 0x200] </dt>
+<dt class="hdlist1"><strong>logic</strong>.<em>N</em>.<strong>xor</strong> bit out  [if personality &amp; 0x400] </dt>
+<dt class="hdlist1"><strong>logic</strong>.<em>N</em>.<strong>nand</strong> bit out  [if personality &amp; 0x800] </dt>
+<dt class="hdlist1"><strong>logic</strong>.<em>N</em>.<strong>nor</strong> bit out  [if personality &amp; 0x1000] </dt>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_examples">EXAMPLES</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This is an OR circuit connected to three different signals, two inputs
+named sig-in-0 and sig-in-1, and one output named sig-out.  First the
+circuit is defined, then its function is connected to the servo real
+time thread, last, its pins are connected to the wanted signals.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadrt</span> <span class="n">logic</span> <span class="n">count</span><span class="o">=</span><span class="mi">1</span> <span class="n">personality</span><span class="o">=</span><span class="mh">0x202</span>
+<span class="k">addf</span> <span class="na">logic.0</span> <span class="n">servo-thread</span>
+<span class="k">net</span> <span class="n">sig-in-0</span> <span class="o">=&gt;</span> <span class="na">logic.0.in-00</span>
+<span class="k">net</span> <span class="n">sig-in-1</span> <span class="o">=&gt;</span> <span class="na">logic.0.in-01</span>
+<span class="k">net</span> <span class="n">sig-out</span>  <span class="o">&lt;=</span> <span class="na">logic.0.or</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This is a named AND circuit with two inputs and one output.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadrt</span> <span class="n">logic</span> <span class="n">names</span><span class="o">=</span><span class="n">both</span> <span class="n">personality</span><span class="o">=</span><span class="mh">0x102</span>
+<span class="k">addf</span> <span class="n">both</span> <span class="n">servo-thread</span>
+<span class="k">net</span> <span class="n">sig-in-0</span> <span class="o">=&gt;</span> <span class="na">both.in-00</span>
+<span class="k">net</span> <span class="n">sig-in-1</span> <span class="o">=&gt;</span> <span class="na">both.in-01</span>
+<span class="k">net</span> <span class="n">sig-out</span>  <span class="o">&lt;=</span> <span class="na">both.and</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>and2</strong>(9),
+<strong>lut5</strong>(9),
+<strong>not</strong>(9),
+<strong>or2</strong>(9),
+<strong>xor2</strong>(9)</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Jeff Epler</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:30:13 UTC
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,1598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>PyVCP</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../rouge-github.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:pyvcp" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="pyvcp.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/gui/pyvcp.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/gui/pyvcp.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/gui/pyvcp.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/gui/pyvcp.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/gui/pyvcp.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/gui/pyvcp.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/gui/pyvcp.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>PyVCP</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="../config/stepconf.html">Stepper Configuration Wizard</a><a href="../config/pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="../config/integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><a href="../config/ini-config.html">INI Configuration</a><a href="../config/ini-homing.html">Homing Configuration</a><a href="../config/lathe-config.html">Lathe Configuration</a><a href="../config/stepper-quickstart.html">Stepper Quickstart</a><a href="../config/stepper.html">Stepper Configuration</a><a href="../config/stepper-diagnostics.html">Stepper Diagnostics</a><a href="filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="../config/core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="../config/moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details open><summary>Usage</summary><details><summary>User Interfaces</summary><a href="axis.html">AXIS GUI</a><a href="gmoccapy.html">GMOCCAPY</a><a href="touchy.html">The Touchy Graphical User Interface</a><a href="gscreen.html">Gscreen</a><a href="qtdragon.html">QtDragon GUI</a><a href="ngcgui.html">NGCGUI</a><a href="tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details open><summary>Virtual Control Panels</summary><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>PyVCP</summary><ul class="sectlevel1">
+<li><a href="pyvcp.html#_introduction">1. Introduction</a></li>
+<li><a href="pyvcp.html#_panel_construction">2. Panel Construction</a></li>
+<li><a href="pyvcp.html#_security">3. Security</a></li>
+<li><a href="pyvcp.html#sec:pyvcp-with-axis">4. AXIS</a>
+<ul class="sectlevel2">
+<li><a href="pyvcp.html#_example_panel">4.1. Example Panel</a></li>
+</ul>
+</li>
+<li><a href="pyvcp.html#_stand_alone">5. Stand Alone</a></li>
+<li><a href="pyvcp.html#sec:pyvcp:widgets">6. Widgets</a>
+<ul class="sectlevel2">
+<li><a href="pyvcp.html#_syntax">6.1. Syntax</a></li>
+<li><a href="pyvcp.html#_general_notes">6.2. General Notes</a></li>
+<li><a href="pyvcp.html#_label">6.3. Label</a></li>
+<li><a href="pyvcp.html#_multi_label">6.4. Multi_Label</a></li>
+<li><a href="pyvcp.html#_leds">6.5. LEDs</a></li>
+<li><a href="pyvcp.html#_buttons">6.6. Buttons</a></li>
+<li><a href="pyvcp.html#_number_displays">6.7. Number Displays</a></li>
+<li><a href="pyvcp.html#_number_inputs">6.8. Number Inputs</a></li>
+<li><a href="pyvcp.html#_images">6.9. Images</a></li>
+<li><a href="pyvcp.html#_containers">6.10. Containers</a></li>
+</ul>
+</li>
+</ul></details><a href="pyvcp-examples.html">PyVCP Examples</a><a href="gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="gladevcp-libraries.html">GladeVCP Library modules</a><a href="gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="qtvcp.html">QtVCP</a><a href="qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="qtvcp-widgets.html">QtVCP Widgets</a><a href="qtvcp-libraries.html">QtVCP Libraries modules</a><a href="qtvcp-vismach.html">QtVismach</a><a href="qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="panelui.html">Panelui</a><a href="../config/python-interface.html">The LinuxCNC Python module</a><a href="../config/python-hal-interface.html">The HAL Python module</a><a href="gstat.html">GStat Python Module</a><a href="vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_introduction">1. Introduction</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>PyVCP, <strong>Py</strong>thon <strong>V</strong>irtual <strong>C</strong>ontrol <strong>P</strong>anel, is designed to give the
+integrator the ability to customize the AXIS interface with buttons and
+indicators to do special tasks.</p>
+</div>
+<div class="paragraph">
+<p>Hardware machine control panels can use up a lot of I/O pins and can
+be expensive. That is where Virtual Control Panels have the advantage
+as well as it cost nothing to build a PyVCP.</p>
+</div>
+<div class="paragraph">
+<p>Virtual Control Panels can be used for testing or monitoring things to
+temporarily replace real I/O devices while debugging ladder logic, or
+to simulate a physical panel before you build it and wire it to an I/O
+board.</p>
+</div>
+<div class="paragraph">
+<p>The following graphic displays many of the PyVCP widgets.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/pyvcp_group.png" alt="pyvcp group">
+</div>
+<div class="title">Figure 1. PyVCP Widgets Showcase</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_panel_construction">2. Panel Construction</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The layout of a PyVCP panel is specified with an XML file that
+contains widget tags between &lt;pyvcp&gt; and &lt;/pyvcp&gt;. For example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;pyvcp&gt;</span>
+    <span class="nt">&lt;label</span> <span class="na">text=</span><span class="s">"This is a LED indicator"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;led/&gt;</span>
+<span class="nt">&lt;/pyvcp&gt;</span></code></pre>
+</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/pyvcp_mypanel.png" alt="pyvcp mypanel">
+</div>
+<div class="title">Figure 2. Simple PyVCP LED Panel Example</div>
+</div>
+<div class="paragraph">
+<p>If you place this text in a file called tiny.xml, and run</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>halcmd loadusr pyvcp -c mypanel tiny.xml</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>PyVCP will create the panel for you, which includes two widgets, a
+Label with the text <em>This is a LED indicator</em>, and a LED, used for
+displaying the state of a HAL BIT signal. It will also create a HAL
+component named <em>mypanel</em> (all widgets in this panel are connected to
+pins that start with <em>mypanel.</em>). Since no &lt;halpin&gt; tag was present
+inside the &lt;led&gt; tag, PyVCP will automatically name the HAL pin for the
+LED widget mypanel.led.0</p>
+</div>
+<div class="paragraph">
+<p>For a list of widgets and their tags and options, see the
+<a href="pyvcp.html#sec:pyvcp:widgets">widget reference</a> below.</p>
+</div>
+<div class="paragraph">
+<p>Once you have created your panel, connecting HAL signals to and from
+the PyVCP pins is done with the halcmd:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">net</span> &lt;<span class="n">signal-name</span>&gt; &lt;<span class="n">pin-name</span>&gt; &lt;<span class="n">opt-direction</span>&gt; &lt;<span class="n">opt-pin-name</span>&gt;<span class="n">signal-name</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you are new to HAL, the HAL basics chapter in the Integrator
+Manual is a good place to start.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_security">3. Security</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Parts of PyVCP files are evaluated as Python code, and can take any action available to Python programs.
+Only use PyVCP XML files from a source that you trust.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:pyvcp-with-axis">4. AXIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+Since AXIS uses the same GUI toolkit (Tkinter) as PyVCP,
+it is possible to include a PyVCP panel at either the right side or the bottom of the AXIS user interface.
+It is not possible to display a panel in both of these positions simultaneously.
+A typical example is explained below.</p>
+</div>
+<div class="paragraph">
+<p>In addition to or instead of displaying a PyVCP panel as described above,
+it is possible to display one or more PyVCP panels as embedded tabs in the AXIS GUI.
+This is achieved by the following in the <code>[DISPLAY]</code> section of the INI file:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="py">EMBED_TAB_NAME</span>    <span class="p">=</span> <span class="s">Spindle</span>
+<span class="py">EMBED_TAB_COMMAND</span> <span class="p">=</span> <span class="s">pyvcp spindle.xml</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The text label of the AXIS tab will display <code>Spindle</code>.</p>
+</div>
+<div class="sect2">
+<h3 id="_example_panel">4.1. Example Panel</h3>
+<div class="paragraph">
+<p>Place your PyVCP XML file describing the panel in the same directory where your INI file is.
+Say we we want to display the current spindle speed using a Bar widget.
+Place the following in a file called spindle.xml:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;pyvcp&gt;</span>
+    <span class="nt">&lt;label&gt;</span>
+        <span class="nt">&lt;text&gt;</span>"Spindle speed:"<span class="nt">&lt;/text&gt;</span>
+    <span class="nt">&lt;/label&gt;</span>
+    <span class="nt">&lt;bar&gt;</span>
+        <span class="nt">&lt;halpin&gt;</span>"spindle-speed"<span class="nt">&lt;/halpin&gt;</span>
+        <span class="nt">&lt;max_&gt;</span>5000<span class="nt">&lt;/max_&gt;</span>
+    <span class="nt">&lt;/bar&gt;</span>
+<span class="nt">&lt;/pyvcp&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here we&#8217;ve made a panel with a Label and a Bar widget,
+specified that the HAL pin connected to the Bar should be named <em>spindle-speed</em>,
+and set the maximum value of the bar to 5000 (see <a href="pyvcp.html#sec:pyvcp:widgets">widget reference</a> below for all options).
+To make AXIS aware of this file, and call it at start up,
+we need to specify the following in the <code>[DISPLAY]</code> section of the INI file:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="py">PYVCP</span> <span class="p">=</span> <span class="s">spindle.xml</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If the panel should appear at the bottom of the AXIS user interface
+then we need to specify the following in the <code>[DISPLAY]</code> section of the INI file:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="py">PYVCP_POSITION</span> <span class="p">=</span> <span class="s">BOTTOM</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Anything other than BOTTOM or omitting this variable will place the PYVCP panel at the right.</p>
+</div>
+<div class="paragraph">
+<p>To make our widget actually display the spindle-speed it needs to be hooked up to the appropriate HAL signal.
+A HAL file that will be run once AXIS and PyVCP have started can be specified in the [HAL] section of the INI file:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="py">POSTGUI_HALFILE</span> <span class="p">=</span> <span class="s">spindle_to_pyvcp.hal</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This change will run the HAL commands specified in <em>spindle_to_pyvcp.hal</em>.
+In our example the contents could look like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">net</span> <span class="n">spindle-rpm-filtered</span> <span class="o">=&gt;</span> <span class="na">pyvcp.spindle-speed</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>assuming that a signal called <em>spindle-rpm-filtered</em> already exists.
+Note that when running together with AXIS, all PyVCP panel widget HAL pins have names that start with <em>pyvcp.</em>,
+all PyVCP embedded tab widget HAL pins start with the name specified as EMBED_TAB_NAME converted to lower case.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/pyvcp_axis_lathe.png" alt="pyvcp axis lathe">
+</div>
+</div>
+<div class="paragraph">
+<p>This is what the newly created PyVCP panel should look like in AXIS.
+The <em>sim/lathe</em> configuration is already configured this way.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_stand_alone">5. Stand Alone</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This section describes how PyVCP panels can be displayed on their own with or without LinuxCNC&#8217;s machine controller.</p>
+</div>
+<div class="paragraph">
+<p>To load a stand alone PyVCP panel with LinuxCNC use these commands:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadusr</span> -<span class="n">Wn</span> <span class="n">mypanel</span> <span class="n">pyvcp</span> -<span class="n">g</span> <span class="n">WxH</span>+<span class="n">X</span>+<span class="n">Y</span> -<span class="n">c</span> <span class="n">mypanel</span> &lt;<span class="n">path</span>/&gt;<span class="na">panel_file.xml</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You would use this if you wanted a floating panel or a panel with a
+GUI other than AXIS.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>-Wn panelname</em> -
+makes HAL wait for the component <em>panelname</em> to finish loading (<em>become ready</em> in HAL speak) before processing more HAL commands.
+This is important because PyVCP panels export HAL pins, and other HAL components will need them present to connect to them.
+Note the capital W and lowercase n.
+If you use the -Wn option you must use the -c option to name the panel.</p>
+</li>
+<li>
+<p><em>pyvcp &lt; -g&gt; &lt; -c&gt; panel.xml</em> -
+builds the panel with the optional geometry and/or panelname from the XML panel file.
+The panel.xml can be any name that ends in .xml.
+The .xml file is the file that describes how to build the panel.
+You must add the path name if the panel is not in the directory that the HAL script is in.</p>
+</li>
+<li>
+<p><em>-g &lt;WxH&gt;&lt;+X+Y&gt;</em> -
+specifies the geometry to be used when constructing the panel.
+The syntax is <em>Width x Height + X Anchor + Y Anchor</em>.
+You can set the size or position or both.
+The anchor point is the upper left corner of the panel.
+An example is -g 250x500+800+0 This sets the panel at 250 pixels wide, 500 pixels tall, and anchors it at X800 Y0.</p>
+</li>
+<li>
+<p><em>-c panelname</em> -
+tells PyVCP what to call the component and also the title of the window.
+The panelname can be any name without spaces.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>To load a <em>stand alone</em> PyVCP panel without LinuxCNC use this command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadusr</span> -<span class="n">Wn</span> <span class="n">mypanel</span> <span class="n">pyvcp</span> -<span class="n">g</span> <span class="mi">250</span><span class="n">x500</span><span class="mi">+800+0</span> -<span class="n">c</span> <span class="n">mypanel</span> <span class="na">mypanel.xml</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The minimum command to load a PyVCP panel is:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadusr</span> <span class="n">pyvcp</span> <span class="na">mypanel.xml</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You would use this if you want a panel without LinuxCNC&#8217;s machine
+controller such as for testing or a standalone DRO.</p>
+</div>
+<div class="paragraph">
+<p>The loadusr command is used when you also load a component that will stop HAL from closing until it&#8217;s done.
+If you loaded a panel and then loaded Classic Ladder using <em>loadusr -w classicladder</em>,
+CL would hold HAL open (and the panel)  until you closed CL.
+The <em>-Wn</em> above means wait for the component <em>-Wn "name"</em> to become ready.
+(<em>name</em> can be any name. Note the capital W and lowercase n.)
+The -c tells PyVCP to build a panel with the name <em>panelname</em> using the info in <em>panel_file_name.xml</em>.
+The name <em>panel_file_name.xml</em> can be any name but must end in .xml - it is the file that describes how to build the panel.
+You must add the path name if the panel is not in the directory that the HAL script is in.</p>
+</div>
+<div class="paragraph">
+<p>An optional command to use if you want the panel to stop HAL from continuing commands / shutting down.
+After loading any other components you want the last HAL command to be:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">waitusr</span> <span class="n">panelname</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This tells HAL to wait for component <em>panelname</em> to close before continuing HAL commands.
+This is usually set as the last command so that HAL shuts down when the panel is closed.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:pyvcp:widgets">6. Widgets</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+HAL signals come in two variants, bits and numbers.
+Bits are off/on signals. Numbers can be <em>float</em>, <em>s32</em>, <em>u32</em>, <em>s64</em> or <em>u64</em>.
+For more information on HAL data types see the <a href="../hal/basic-hal.html#sec:hal-data">HAL Data</a> section.
+The PyVCP widget can either display the value of the signal with an indicator widget,
+or modify the signal value with a control widget.
+Thus there are four classes of PyVCP widgets that you can connect to a HAL signal.
+A fifth class of helper widgets allow you to organize and label your panel.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Widgets for indicating <em>bit</em> signals: <code>led</code>, <code>rectled</code>.</p>
+</li>
+<li>
+<p>Widgets for controlling <em>bit</em> signals: <code>button</code>, <code>checkbutton</code>, <code>radiobutton</code>.</p>
+</li>
+<li>
+<p>Widgets for indicating <em>number</em> signals: <code>number</code>, <code>s32</code>, <code>u32</code>, <code>bar</code>, <code>meter</code>.</p>
+</li>
+<li>
+<p>Widgets for controlling <em>number</em> signals: <code>spinbox</code>, <code>scale</code>, <code>jogwheel</code>.</p>
+</li>
+<li>
+<p>Helper widgets: <code>hbox</code>, <code>vbox</code>, <code>table</code>, <code>label</code>, <code>labelframe</code>.</p>
+</li>
+</ul>
+</div>
+<div class="sect2">
+<h3 id="_syntax">6.1. Syntax</h3>
+<div class="paragraph">
+<p>Each widget is described briefly, followed by the markup used, and a screen shot.
+All tags inside the main widget tag are optional.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_general_notes">6.2. General Notes</h3>
+<div class="paragraph">
+<p>At the present time, both a tag-based and an attribute-based syntax are supported.
+For instance, the following XML fragments are treated identically:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;led</span> <span class="na">halpin=</span><span class="s">"my-led"</span><span class="nt">/&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;led&gt;&lt;halpin&gt;</span>"my-led"<span class="nt">&lt;/halpin&gt;&lt;/led&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When the attribute-based syntax is used, the following rules are used
+to turn the attributes value into a Python value:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>If the first character of the attribute is one of the following,
+it is evaluated as a Python expression: <code>{(["'</code> .</p>
+</li>
+<li>
+<p>If the string is accepted by int(), the value is treated as an integer.</p>
+</li>
+<li>
+<p>If the string is accepted by float(), the value is treated as floating-point.</p>
+</li>
+<li>
+<p>Otherwise, the string is accepted as a string.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>When the tag-based syntax is used, the text within the tag is always evaluated as a Python expression.</p>
+</div>
+<div class="paragraph">
+<p>The examples below show a mix of formats.</p>
+</div>
+<div class="paragraph">
+<div class="title">Comments</div>
+<p>To add a comment use the xml syntax for a comment.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="c">&lt;!-- My Comment --&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<div class="title">Editing the XML file</div>
+<p>Edit the XML file with a text editor.
+In most cases you can right click on the file and select <em>open with text editor</em> or similar.</p>
+</div>
+<div id="pyvcp:colors" class="paragraph">
+<div class="title">Colors</div>
+<p>Colors can be specified using the X11 rgb colors by name <em>gray75</em> or hex <em>#0000ff</em>.
+A complete list is located here <a href="https://sedition.com/perl/rgb.html">https://sedition.com/perl/rgb.html</a>.</p>
+</div>
+<div class="paragraph">
+<p>Common Colors (colors with numbers indicate shades of that color)</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>white</p>
+</li>
+<li>
+<p>black</p>
+</li>
+<li>
+<p>blue and blue1 - 4</p>
+</li>
+<li>
+<p>cyan and cyan1 - 4</p>
+</li>
+<li>
+<p>green and green1 - 4</p>
+</li>
+<li>
+<p>yellow and yellow1 - 4</p>
+</li>
+<li>
+<p>red and red1 - 4</p>
+</li>
+<li>
+<p>purple and purple1 - 4</p>
+</li>
+<li>
+<p>gray and gray0 - 100</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<div class="title">HAL Pins</div>
+<p>HAL pins provide a means to <em>connect</em> the widget to something. Once
+you create a HAL pin for your widget you can <em>connect</em> it to another
+HAL pin with a <em>net</em> command in a .hal file. For more information on
+the <em>net</em> command see the <a href="../hal/basic-hal.html#sec:hal-commands">HAL Commands</a> section.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_label">6.3. Label</h3>
+<div class="paragraph">
+<p>A label is a way to add text to your panel.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>&lt;label&gt;&lt;/label&gt;</em> - creates a label.</p>
+</li>
+<li>
+<p><em>&lt;text&gt;"text"&lt;/text&gt;</em> - the text to put in your label,
+a blank label can be used as a spacer to align other objects.</p>
+</li>
+<li>
+<p><em>&lt;font&gt;("Helvetica",20)&lt;/font&gt;</em> - specify the font and size of the text.</p>
+</li>
+<li>
+<p><em>&lt;relief&gt;FLAT&lt;/relief&gt;</em> - specify the border around the label (<em>FLAT</em>, <em>RAISED</em>, <em>SUNKEN</em>) default is <em>FLAT</em>.</p>
+</li>
+<li>
+<p><em>&lt;bd&gt;_n_&lt;/bd&gt;</em> - where <em>n</em> is the border width when <em>RAISED</em> or <em>SUNKEN</em> borders are used.</p>
+</li>
+<li>
+<p><em>&lt;padx&gt;_n_&lt;/padx&gt;</em> - where <em>n</em> is the amount of extra horizontal extra space.</p>
+</li>
+<li>
+<p><em>&lt;pady&gt;_n_&lt;/pady&gt;</em> - where <em>n</em> is the amount of extra vertical extra space.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The label has an optional disable pin that is created when you add
+<em>&lt;disable_pin&gt;True&lt;/disable_pin&gt;</em>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;label&gt;</span>
+    <span class="nt">&lt;text&gt;</span>"This is a Label:"<span class="nt">&lt;/text&gt;</span>
+    <span class="nt">&lt;font&gt;</span>("Helvetica",20)<span class="nt">&lt;/font&gt;</span>
+<span class="nt">&lt;/label&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above code produced this example:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/pyvcp_label.png" alt="pyvcp label">
+</div>
+<div class="title">Figure 3. Simple Label Example</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_multi_label">6.4. Multi_Label</h3>
+<div class="paragraph">
+<p>An extension of the text label.</p>
+</div>
+<div class="paragraph">
+<p>Selectable text label, can display up to 6 label legends when associated bit pin is activated.</p>
+</div>
+<div class="paragraph">
+<p>Attach each legend pin to a signal and get a descriptive label when the signal is TRUE.</p>
+</div>
+<div class="paragraph">
+<p>If more than one legend pin is TRUE, the highest numbered <em>TRUE</em> legend will be displayed.</p>
+</div>
+<div class="paragraph">
+<p>If a disable pin is created with <em>&lt;disable_pin&gt;True&lt;/disable_pin&gt;</em> and that pin is set to true the label changes to a grayed out state.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;multilabel&gt;</span>
+    <span class="nt">&lt;legends&gt;</span>["Label1", "Label2", "Label3", "Label4", "Label5", "Label6"]<span class="nt">&lt;/legends&gt;</span>
+    <span class="nt">&lt;font&gt;</span>("Helvetica",20)<span class="nt">&lt;/font&gt;</span>
+    <span class="nt">&lt;disable_pin&gt;</span>True<span class="nt">&lt;/disable_pin&gt;</span>
+<span class="nt">&lt;/multilabel&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above example would create the following pins.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>pyvcp.multilabel.0.disable
+pyvcp.multilabel.0.legend0
+pyvcp.multilabel.0.legend1
+pyvcp.multilabel.0.legend2
+pyvcp.multilabel.0.legend3
+pyvcp.multilabel.0.legend4
+pyvcp.multilabel.0.legend5</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you have more than one multilabel the pins created would increment the number like this <em>pyvcp.multilabel.1.legend1</em>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_leds">6.5. LEDs</h3>
+<div class="paragraph">
+<p>A LED is used to indicate the status of a <em>bit</em> halpin.
+The LED color will be on_color when the halpin is true, and off_color otherwise.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>&lt;led&gt;&lt;/led&gt;</em> - makes a round LED</p>
+</li>
+<li>
+<p><em>&lt;rectled&gt;&lt;/rectled&gt;</em> - makes a rectangle LED</p>
+</li>
+<li>
+<p><em>&lt;halpin&gt;<em>name</em>&lt;/halpin&gt;</em> - <em>name</em> of the pin, default is <em>led.<em>n</em></em>, where <em>n</em> is an integer that is incremented for each LED.</p>
+</li>
+<li>
+<p><em>&lt;size&gt;<em>n</em>&lt;/size&gt;</em> - <em>n</em> is the size of the led in pixels, default is 20.</p>
+</li>
+<li>
+<p><em>&lt;on_color&gt;<em>color</em>&lt;/on_color&gt;</em> - sets the color of the LED to <em>color</em> when the pin is true.
+Default is <em>green</em>. See section on <a href="pyvcp.html#pyvcp:colors">colors</a> for more info.</p>
+</li>
+<li>
+<p><em>&lt;off_color&gt;<em>color</em>&lt;/off_color&gt;</em> - sets the color of the LED to <em>color</em> when the pin is
+false. Default is <em>red</em>.</p>
+</li>
+<li>
+<p><em>&lt;height&gt;<em>n</em>&lt;/height&gt;</em> - sets the height of the LED in pixels.</p>
+</li>
+<li>
+<p><em>&lt;width&gt;<em>n</em>&lt;/width&gt;</em> - sets the width of the LED in pixels.</p>
+</li>
+<li>
+<p><em>&lt;disable_pin&gt;false&lt;/disable_pin&gt;</em> - when true adds a disable pin to the led.</p>
+</li>
+<li>
+<p><em>&lt;disabled_color&gt;<em>color</em>&lt;/disabled_color&gt;</em> - sets the color of the LED to <em>color</em> when the pin is disabled.</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="title">Round LED</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;led&gt;</span>
+    <span class="nt">&lt;halpin&gt;</span>"my-led"<span class="nt">&lt;/halpin&gt;</span>
+    <span class="nt">&lt;size&gt;</span>50<span class="nt">&lt;/size&gt;</span>
+    <span class="nt">&lt;on_color&gt;</span>"green"<span class="nt">&lt;/on_color&gt;</span>
+    <span class="nt">&lt;off_color&gt;</span>"red"<span class="nt">&lt;/off_color&gt;</span>
+<span class="nt">&lt;/led&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above code produced this example:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/pyvcp_led.png" alt="pyvcp led">
+</div>
+<div class="title">Figure 4. Round LED Example</div>
+</div>
+<div class="paragraph">
+<div class="title">Rectangle LED</div>
+<p>This is a variant of the <em>led</em> widget.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;vbox&gt;</span>
+    <span class="nt">&lt;relief&gt;</span>RIDGE<span class="nt">&lt;/relief&gt;</span>
+    <span class="nt">&lt;bd&gt;</span>6<span class="nt">&lt;/bd&gt;</span>
+    <span class="nt">&lt;rectled&gt;</span>
+        <span class="nt">&lt;halpin&gt;</span>"my-led"<span class="nt">&lt;/halpin&gt;</span>
+        <span class="nt">&lt;height&gt;</span>"50"<span class="nt">&lt;/height&gt;</span>
+        <span class="nt">&lt;width&gt;</span>"100"<span class="nt">&lt;/width&gt;</span>
+        <span class="nt">&lt;on_color&gt;</span>"green"<span class="nt">&lt;/on_color&gt;</span>
+        <span class="nt">&lt;off_color&gt;</span>"red"<span class="nt">&lt;/off_color&gt;</span>
+    <span class="nt">&lt;/rectled&gt;</span>
+<span class="nt">&lt;/vbox&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above code produced this example.
+Also showing a vertical box with relief.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/pyvcp_rectled.png" alt="pyvcp rectled">
+</div>
+<div class="title">Figure 5. Simple Rectangle LED Example</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_buttons">6.6. Buttons</h3>
+<div class="paragraph">
+<p>A button is used to control a BIT pin.
+The pin will be set True when the button is pressed and held down, and will be set False when the button is released.
+Buttons can use the following optional options.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>&lt;padx&gt;<em>n</em>&lt;/padx&gt;</em> - where <em>n</em> is the amount of extra horizontal extra space.</p>
+</li>
+<li>
+<p><em>&lt;pady&gt;<em>n</em>&lt;/pady&gt;</em> - where <em>n</em> is the amount of extra vertical extra space.</p>
+</li>
+<li>
+<p><em>&lt;activebackground&gt;"<em>color</em>"&lt;/activebackground&gt;</em> - the cursor over color set to <em>color</em>.</p>
+</li>
+<li>
+<p><em>&lt;fg&gt;"<em>color</em>"&lt;/fg&gt;</em> - the foreground color set to <em>color</em>.</p>
+</li>
+<li>
+<p><em>&lt;bg&gt;"<em>color</em>"&lt;/bg&gt;</em> - the background color set to <em>color</em>.</p>
+</li>
+<li>
+<p><em>&lt;disable_pin&gt;True&lt;/disable_pin&gt;</em> - disable pin.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<div class="title">Text Button</div>
+<p>A text button controls a <em>bit</em> halpin.
+The halpin is false until the button is pressed then it is true.
+The button is a momentary button.</p>
+</div>
+<div class="paragraph">
+<p>The text button has an optional disable pin that is created when you add &lt;disable_pin&gt;True&lt;/disable_pin&gt;.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;button&gt;</span>
+    <span class="nt">&lt;halpin&gt;</span>"ok-button"<span class="nt">&lt;/halpin&gt;</span>
+    <span class="nt">&lt;text&gt;</span>"OK"<span class="nt">&lt;/text&gt;</span>
+<span class="nt">&lt;/button&gt;</span>
+<span class="nt">&lt;button&gt;</span>
+    <span class="nt">&lt;halpin&gt;</span>"abort-button"<span class="nt">&lt;/halpin&gt;</span>
+    <span class="nt">&lt;text&gt;</span>"Abort"<span class="nt">&lt;/text&gt;</span>
+<span class="nt">&lt;/button&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above code produced this example:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/pyvcp_button.png" alt="pyvcp button">
+</div>
+<div class="title">Figure 6. Simple Buttons Example</div>
+</div>
+<div class="paragraph">
+<div class="title">Checkbutton</div>
+<p>A checkbutton controls a bit halpin.
+The halpin will be set True when the button is checked, and false when the button is unchecked.
+The checkbutton is a toggle type button.
+The checkbuttons may be set initially as TRUE or FALSE the initval field A pin called changepin is also created automatically,
+which can toggle the Checkbutton via HAL, if the value linked is changed, to update the display remotely.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/pyvcp_checkbutton1.png" alt="pyvcp checkbutton1">
+</div>
+<div class="title">Figure 7. Unchecked button</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/pyvcp_checkbutton2.png" alt="pyvcp checkbutton2">
+</div>
+<div class="title">Figure 8. Checked button</div>
+</div>
+<div class="listingblock">
+<div class="title">Checkbutton Code Example</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;checkbutton&gt;</span>
+    <span class="nt">&lt;halpin&gt;</span>"coolant-chkbtn"<span class="nt">&lt;/halpin&gt;</span>
+    <span class="nt">&lt;text&gt;</span>"Coolant"<span class="nt">&lt;/text&gt;</span>
+    <span class="nt">&lt;initval&gt;</span>1<span class="nt">&lt;/initval&gt;</span>
+<span class="nt">&lt;/checkbutton&gt;</span>
+<span class="nt">&lt;checkbutton&gt;</span>
+    <span class="nt">&lt;halpin&gt;</span>"chip-chkbtn"<span class="nt">&lt;/halpin&gt;</span>
+    <span class="nt">&lt;text&gt;</span>"Chips    "<span class="nt">&lt;/text&gt;</span>
+    <span class="nt">&lt;initval&gt;</span>0<span class="nt">&lt;/initval&gt;</span>
+<span class="nt">&lt;/checkbutton&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above code produced this example:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/pyvcp_checkbutton.png" alt="pyvcp checkbutton">
+</div>
+<div class="title">Figure 9. Simple Checkbutton Example</div>
+</div>
+<div class="paragraph">
+<p>The coolant checkbutton is checked.<br>
+Notice the extra spaces in the "Chips" text to keep the checkbuttons aligned.</p>
+</div>
+<div class="paragraph">
+<div class="title">Radiobutton</div>
+<p>A radiobutton will set one of the halpins true. The other pins are set false.
+The initval field may be set to choose the default selection when the panel displays.
+Only one radio button may be set to TRUE (1) or only the highest number pin set TRUE will have that value.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;radiobutton&gt;</span>
+    <span class="nt">&lt;choices&gt;</span>["one","two","three"]<span class="nt">&lt;/choices&gt;</span>
+    <span class="nt">&lt;halpin&gt;</span>"my-radio"<span class="nt">&lt;/halpin&gt;</span>
+    <span class="nt">&lt;initval&gt;</span>0<span class="nt">&lt;/initval&gt;</span>
+<span class="nt">&lt;/radiobutton&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above code produced this example:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/pyvcp_radiobutton.png" alt="pyvcp radiobutton">
+</div>
+<div class="title">Figure 10. Simple Radiobutton Example</div>
+</div>
+<div class="paragraph">
+<p>Note that the HAL pins in the example above will be named
+my-radio.one, my-radio.two, and my-radio.three.
+In the image above, <em>one</em> is the selected value.
+Use the tag <code>&lt;orient&gt;HORIZONTAL&lt;/orient&gt;</code> to display horizontally.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_number_displays">6.7. Number Displays</h3>
+<div class="paragraph">
+<p>Number displays can use the following formatting options</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>&lt;font&gt;("Font Name",n)&lt;/font&gt;</code>, where <em>n</em> is the font size.</p>
+</li>
+<li>
+<p><code>&lt;width&gt;_n_&lt;/width&gt;</code>, where <em>n</em> is the overall width of the space used.</p>
+</li>
+<li>
+<p><code>&lt;justify&gt;_pos_&lt;/justify&gt;</code>, where <em>pos</em> is LEFT, CENTER, or RIGHT (doesn&#8217;t work).</p>
+</li>
+<li>
+<p><code>&lt;padx&gt;_n_&lt;/padx&gt;</code>, where <em>n</em> is the amount of extra horizontal extra space.</p>
+</li>
+<li>
+<p><code>&lt;pady&gt;_n_&lt;/pady&gt;</code>, where <em>n</em> is the amount of extra vertical extra space.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<div class="title">Number</div>
+<p>The number widget displays the value of a float signal.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;number&gt;</span>
+    <span class="nt">&lt;halpin&gt;</span>"my-number"<span class="nt">&lt;/halpin&gt;</span>
+    <span class="nt">&lt;font&gt;</span>("Helvetica",24)<span class="nt">&lt;/font&gt;</span>
+    <span class="nt">&lt;format&gt;</span>"+4.4f"<span class="nt">&lt;/format&gt;</span>
+<span class="nt">&lt;/number&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above code produced this example:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/pyvcp_number.png" alt="pyvcp number">
+</div>
+<div class="title">Figure 11. Simple Number Example</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>&lt;font&gt;</em> - is a Tkinter font type and size specification.
+One font that will show up to at least size 200 is <em>courier 10 pitch</em>,
+so for a really big Number widget you could specify:</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;font&gt;</span>("courier 10 pitch",100)<span class="nt">&lt;/font&gt;</span></code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>&lt;format&gt;</em> - is a <em>C-style</em> format specified that determines how the number is displayed.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<div class="title">s32 Number</div>
+<p>The s32 number widget displays the value of a s32 number.
+The syntax is the same as <em>number</em> except the name which is &lt;s32&gt;.
+Make sure the width is wide enough to cover the largest number you expect to use.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;s32&gt;</span>
+    <span class="nt">&lt;halpin&gt;</span>"my-number"<span class="nt">&lt;/halpin&gt;</span>
+    <span class="nt">&lt;font&gt;</span>("Helvetica",24)<span class="nt">&lt;/font&gt;</span>
+    <span class="nt">&lt;format&gt;</span>"6d"<span class="nt">&lt;/format&gt;</span>
+    <span class="nt">&lt;width&gt;</span>6<span class="nt">&lt;/width&gt;</span>
+<span class="nt">&lt;/s32&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above code produced this example:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/pyvcp_s32.png" alt="pyvcp s32">
+</div>
+<div class="title">Figure 12. Simple s32 Number Example</div>
+</div>
+<div class="paragraph">
+<div class="title">u32 Number</div>
+<p>The u32 number widget displays the value of a u32 number.
+The syntax is the same as <em>number</em> except the name which is &lt;u32&gt;.</p>
+</div>
+<div class="paragraph">
+<div class="title">Bar</div>
+<p>A bar widget displays the value of a FLOAT signal both graphically using a bar display and numerically.
+The color of the bar can be set as one color throughout its range (default using fillcolor) or set to change color,
+dependent upon the value of the halpin (range1, range2 range3 must all be set, if you only want 2 ranges, set 2 of them to the same color).</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>&lt;halpin&gt;"my-bar"&lt;/halpin&gt;</code> (text), derives and sets the pin name: <code>pyvcp.my-bar</code>.</p>
+</li>
+<li>
+<p><code>&lt;min_&gt;0&lt;/min_&gt;</code> (number), sets the minimum scale.</p>
+</li>
+<li>
+<p><code>&lt;max_&gt;140&lt;/max_&gt;</code> (number), sets the maximum scale.</p>
+</li>
+<li>
+<p><code>&lt;format&gt;"3.1f"&lt;/format&gt;</code> (text), sets the number format using Python number formatting.</p>
+</li>
+<li>
+<p><code>&lt;bgcolor&gt;"grey"&lt;/bgcolor&gt;</code> (text), sets the background color.</p>
+</li>
+<li>
+<p><code>&lt;fillcolor&gt;"red"&lt;/fillcolor&gt;</code> (text), sets the fill color.</p>
+</li>
+<li>
+<p><code>&lt;range1&gt;0,100,"green"&lt;/range1&gt;</code> (number, number, text), sets the first range and color.</p>
+</li>
+<li>
+<p><code>&lt;range2&gt;101,135,"orange"&lt;/range2&gt;</code> (number, number, text), sets the first range and color.</p>
+</li>
+<li>
+<p><code>&lt;range3&gt;136, 150,"red"&lt;/range3&gt;</code> number, number, text), sets the first range and color.</p>
+</li>
+<li>
+<p><code>&lt;canvas_width&gt;200&lt;/canvas_width&gt;</code> (number), sets the overall width.</p>
+</li>
+<li>
+<p><code>&lt;canvas_height&gt;50&lt;/canvas_height&gt;</code> (number), sets the overall height.</p>
+</li>
+<li>
+<p><code>&lt;bar_height&gt;30&lt;/bar_height&gt;</code> (number), sets the bar height, must be less than canvas_height.</p>
+</li>
+<li>
+<p><code>&lt;bar_width&gt;150&lt;/bar_width&gt;</code> (number), sets the bar width, must be less than canvas_width.</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;bar&gt;</span>
+    <span class="nt">&lt;halpin&gt;</span>"my-bar"<span class="nt">&lt;/halpin&gt;</span>
+    <span class="nt">&lt;min_&gt;</span>0<span class="nt">&lt;/min_&gt;</span>
+    <span class="nt">&lt;max_&gt;</span>123<span class="nt">&lt;/max_&gt;</span>
+    <span class="nt">&lt;format&gt;</span>"3.1f"<span class="nt">&lt;/format&gt;</span>
+    <span class="nt">&lt;bgcolor&gt;</span>"grey"<span class="nt">&lt;/bgcolor&gt;</span>
+    <span class="nt">&lt;fillcolor&gt;</span>"red"<span class="nt">&lt;/fillcolor&gt;</span>
+    <span class="nt">&lt;range1&gt;</span>0,100,"green"<span class="nt">&lt;/range1&gt;</span>
+    <span class="nt">&lt;range2&gt;</span>101,135,"orange"<span class="nt">&lt;/range2&gt;</span>
+    <span class="nt">&lt;range3&gt;</span>136, 150,"red"<span class="nt">&lt;/range3&gt;</span>
+    <span class="nt">&lt;canvas_width&gt;</span>200<span class="nt">&lt;/canvas_width&gt;</span>
+    <span class="nt">&lt;canvas_height&gt;</span>50<span class="nt">&lt;/canvas_height&gt;</span>
+    <span class="nt">&lt;bar_height&gt;</span>30<span class="nt">&lt;/bar_height&gt;</span>
+    <span class="nt">&lt;bar_width&gt;</span>150<span class="nt">&lt;/bar_width&gt;</span>
+<span class="nt">&lt;/bar&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above code produced this example:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/pyvcp_bar.png" alt="pyvcp bar">
+</div>
+<div class="title">Figure 13. Simple Bar Example</div>
+</div>
+<div class="paragraph">
+<div class="title">Meter</div>
+<p>Meter displays the value of a FLOAT signal using a traditional dial indicator.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;meter&gt;</span>
+    <span class="nt">&lt;halpin&gt;</span>"mymeter"<span class="nt">&lt;/halpin&gt;</span>
+    <span class="nt">&lt;text&gt;</span>"Battery"<span class="nt">&lt;/text&gt;</span>
+    <span class="nt">&lt;subtext&gt;</span>"Volts"<span class="nt">&lt;/subtext&gt;</span>
+    <span class="nt">&lt;size&gt;</span>250<span class="nt">&lt;/size&gt;</span>
+    <span class="nt">&lt;min_&gt;</span>0<span class="nt">&lt;/min_&gt;</span>
+    <span class="nt">&lt;max_&gt;</span>15.5<span class="nt">&lt;/max_&gt;</span>
+    <span class="nt">&lt;majorscale&gt;</span>1<span class="nt">&lt;/majorscale&gt;</span>
+    <span class="nt">&lt;minorscale&gt;</span>0.2<span class="nt">&lt;/minorscale&gt;</span>
+    <span class="nt">&lt;region1&gt;</span>(14.5,15.5,"yellow")<span class="nt">&lt;/region1&gt;</span>
+    <span class="nt">&lt;region2&gt;</span>(12,14.5,"green")<span class="nt">&lt;/region2&gt;</span>
+    <span class="nt">&lt;region3&gt;</span>(0,12,"red")<span class="nt">&lt;/region3&gt;</span>
+<span class="nt">&lt;/meter&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above code produced this example:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/pyvcp_meter.png" alt="pyvcp meter">
+</div>
+<div class="title">Figure 14. Simple Meter Example</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_number_inputs">6.8. Number Inputs</h3>
+<div class="paragraph">
+<div class="title">Spinbox</div>
+<p>A spinbox controls a FLOAT pin.
+You increase or decrease the value of the pin by either pressing on the arrows,
+or pointing at the spinbox and rolling your mouse-wheel.
+If the param_pin field is set TRUE(1),
+a pin will be created that can be used to set the spinbox to an initial value and to remotely alter its value without HID input.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;spinbox&gt;</span>
+    <span class="nt">&lt;halpin&gt;</span>"my-spinbox"<span class="nt">&lt;/halpin&gt;</span>
+    <span class="nt">&lt;min_&gt;</span>-12<span class="nt">&lt;/min_&gt;</span>
+    <span class="nt">&lt;max_&gt;</span>33<span class="nt">&lt;/max_&gt;</span>
+    <span class="nt">&lt;initval&gt;</span>0<span class="nt">&lt;/initval&gt;</span>
+    <span class="nt">&lt;resolution&gt;</span>0.1<span class="nt">&lt;/resolution&gt;</span>
+    <span class="nt">&lt;format&gt;</span>"2.3f"<span class="nt">&lt;/format&gt;</span>
+    <span class="nt">&lt;font&gt;</span>("Arial",30)<span class="nt">&lt;/font&gt;</span>
+    <span class="nt">&lt;param_pin&gt;</span>1<span class="nt">&lt;/param_pin&gt;</span>
+<span class="nt">&lt;/spinbox&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above code produced this example:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/pyvcp_spinbox.png" alt="pyvcp spinbox">
+</div>
+<div class="title">Figure 15. Simple Spinbox Example</div>
+</div>
+<div class="paragraph">
+<div class="title">Scale</div>
+<p>A scale controls a float or a s32 pin.
+You increase or decrease the value of the pin be either dragging the slider,
+or pointing at the scale and rolling your mouse-wheel.
+The <em>halpin</em> will have both <em>-f</em> and <em>-i</em> added to it to form the float and s32 pins.
+Width is the width of the slider in vertical and the height of the slider in horizontal orientation.
+If the param_pin field is set TRUE(1),
+a pin will be created that can be used to set the spinbox to an initial value and to remotely alter its value without HID input.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;scale&gt;</span>
+    <span class="nt">&lt;font&gt;</span>("Helvetica",16)<span class="nt">&lt;/font&gt;</span>
+    <span class="nt">&lt;width&gt;</span>"25"<span class="nt">&lt;/width&gt;</span>
+    <span class="nt">&lt;halpin&gt;</span>"my-hscale"<span class="nt">&lt;/halpin&gt;</span>
+    <span class="nt">&lt;resolution&gt;</span>0.1<span class="nt">&lt;/resolution&gt;</span>
+    <span class="nt">&lt;orient&gt;</span>HORIZONTAL<span class="nt">&lt;/orient&gt;</span>
+    <span class="nt">&lt;initval&gt;</span>-15<span class="nt">&lt;/initval&gt;</span>
+    <span class="nt">&lt;min_&gt;</span>-33<span class="nt">&lt;/min_&gt;</span>
+    <span class="nt">&lt;max_&gt;</span>26<span class="nt">&lt;/max_&gt;</span>
+    <span class="nt">&lt;param_pin&gt;</span>1<span class="nt">&lt;/param_pin&gt;</span>
+<span class="nt">&lt;/scale&gt;</span>
+<span class="nt">&lt;scale&gt;</span>
+    <span class="nt">&lt;font&gt;</span>("Helvetica",16)<span class="nt">&lt;/font&gt;</span>
+    <span class="nt">&lt;width&gt;</span>"50"<span class="nt">&lt;/width&gt;</span>
+    <span class="nt">&lt;halpin&gt;</span>"my-vscale"<span class="nt">&lt;/halpin&gt;</span>
+    <span class="nt">&lt;resolution&gt;</span>1<span class="nt">&lt;/resolution&gt;</span>
+    <span class="nt">&lt;orient&gt;</span>VERTICAL<span class="nt">&lt;/orient&gt;</span>
+    <span class="nt">&lt;min_&gt;</span>100<span class="nt">&lt;/min_&gt;</span>
+    <span class="nt">&lt;max_&gt;</span>0<span class="nt">&lt;/max_&gt;</span>
+    <span class="nt">&lt;param_pin&gt;</span>1<span class="nt">&lt;/param_pin&gt;</span>
+<span class="nt">&lt;/scale&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above code produced this example:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/pyvcp_scale.png" alt="pyvcp scale">
+</div>
+<div class="title">Figure 16. Simple Scale Example</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Note that by default it is "min" which is displayed even if it is
+greater than "max", unless "min" is negative.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<div class="title">Dial</div>
+<p>The Dial outputs a HAL float and reacts to both mouse wheel and dragging.
+Double left click to increase the resolution and double right click to reduce the resolution by one digit.
+The output is capped by the min and max values.
+The &lt;cpr&gt; is how many tick marks are on the outside of the ring (beware of high numbers).
+If the param_pin field is set TRUE(1),
+a pin will be created that can be used to set the spinbox to an initial value and to remotely alter its value without HID input.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;dial&gt;</span>
+    <span class="nt">&lt;size&gt;</span>200<span class="nt">&lt;/size&gt;</span>
+    <span class="nt">&lt;cpr&gt;</span>100<span class="nt">&lt;/cpr&gt;</span>
+    <span class="nt">&lt;min_&gt;</span>-15<span class="nt">&lt;/min_&gt;</span>
+    <span class="nt">&lt;max_&gt;</span>15<span class="nt">&lt;/max_&gt;</span>
+    <span class="nt">&lt;text&gt;</span>"Dial"<span class="nt">&lt;/text&gt;</span>
+    <span class="nt">&lt;initval&gt;</span>0<span class="nt">&lt;/initval&gt;</span>
+    <span class="nt">&lt;resolution&gt;</span>0.001<span class="nt">&lt;/resolution&gt;</span>
+    <span class="nt">&lt;halpin&gt;</span>"anaout"<span class="nt">&lt;/halpin&gt;</span>
+    <span class="nt">&lt;dialcolor&gt;</span>"yellow"<span class="nt">&lt;/dialcolor&gt;</span>
+    <span class="nt">&lt;edgecolor&gt;</span>"green"<span class="nt">&lt;/edgecolor&gt;</span>
+    <span class="nt">&lt;dotcolor&gt;</span>"black"<span class="nt">&lt;/dotcolor&gt;</span>
+    <span class="nt">&lt;param_pin&gt;</span>1<span class="nt">&lt;/param_pin&gt;</span>
+<span class="nt">&lt;/dial&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above code produced this example:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/pyvcp_dial.png" alt="pyvcp dial">
+</div>
+<div class="title">Figure 17. Simple Dial Example</div>
+</div>
+<div class="paragraph">
+<div class="title">Jogwheel</div>
+<p>Jogwheel mimics a real jogwheel by outputting a FLOAT pin which counts
+up or down as the wheel is turned, either by dragging in a circular
+motion, or by rolling the mouse-wheel.</p>
+</div>
+<div class="paragraph">
+<p>Optional tags:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>&lt;text&gt;"My Text"&lt;/text&gt;</em> displays text</p>
+</li>
+<li>
+<p><em>&lt;bgcolor&gt;"grey"&lt;/bgcolor&gt; &lt;fillcolor&gt;"green"&lt;/fillcolor&gt;</em> background &amp; active colors</p>
+</li>
+<li>
+<p><em>&lt;scale_pin&gt;1&lt;/scale_pin&gt;</em> creates scale text and a <code>FLOAT.scale</code> pin to display jog scale</p>
+</li>
+<li>
+<p><em>&lt;clear_pin&gt;1&lt;/clear_pin&gt;</em> creates <code>DRO</code> and a <code>BIT.reset</code> pin to reset DRO.
+Needs scale_pin for scaled DRO. Shift+click resets DRO also</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;jogwheel&gt;</span>
+    <span class="nt">&lt;halpin&gt;</span>"my-wheel"<span class="nt">&lt;/halpin&gt;</span>
+    <span class="nt">&lt;cpr&gt;</span>45<span class="nt">&lt;/cpr&gt;</span>
+    <span class="nt">&lt;size&gt;</span>250<span class="nt">&lt;/size&gt;</span>
+<span class="nt">&lt;/jogwheel&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above code produced this example:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/pyvcp_jogwheel.png" alt="pyvcp jogwheel">
+</div>
+<div class="title">Figure 18. Simple Jogwheel Example</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_images">6.9. Images</h3>
+<div class="paragraph">
+<p>Image displays use only .gif image format.
+All of the images must be the same size.
+The images must be in the same directory as your INI file (or in the current directory if running from the command line with halrun/halcmd).</p>
+</div>
+<div class="paragraph">
+<div class="title">Image Bit</div>
+<p>The <em>image_bit</em> toggles between two images by setting the halpin to true or false.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;image</span> <span class="na">name=</span><span class="s">'fwd'</span> <span class="na">file=</span><span class="s">'fwd.gif'</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;image</span> <span class="na">name=</span><span class="s">'rev'</span> <span class="na">file=</span><span class="s">'rev.gif'</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;vbox&gt;</span>
+    <span class="nt">&lt;image_bit</span> <span class="na">halpin=</span><span class="s">'selectimage'</span> <span class="na">images=</span><span class="s">'fwd rev'</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/vbox&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This example was produced from the above code.
+Using the two image files fwd.gif and rev.gif.
+FWD is displayed when <em>selectimage</em> is false and REV is displayed when <em>selectimage</em> is true.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/pyvcp_image01.png" alt="pyvcp image01">
+</div>
+<div class="title">Figure 19. Selectimage False Example</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/pyvcp_image02.png" alt="pyvcp image02">
+</div>
+<div class="title">Figure 20. Selectimage True Example</div>
+</div>
+<div class="paragraph">
+<div class="title">Image u32</div>
+<p>The <em>image_u32</em> is the same as <em>image_bit</em>,
+except you have essentially an unlimited number of images and
+you <em>select</em> the image by setting the halpin to a integer value with 0 for the first image in the images list and 1 for the second image, etc.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;image</span> <span class="na">name=</span><span class="s">'stb'</span> <span class="na">file=</span><span class="s">'stb.gif'</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;image</span> <span class="na">name=</span><span class="s">'fwd'</span> <span class="na">file=</span><span class="s">'fwd.gif'</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;image</span> <span class="na">name=</span><span class="s">'rev'</span> <span class="na">file=</span><span class="s">'rev.gif'</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;vbox&gt;</span>
+    <span class="nt">&lt;image_u32</span> <span class="na">halpin=</span><span class="s">'selectimage'</span> <span class="na">images=</span><span class="s">'stb fwd rev'</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/vbox&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above code produced the following example by adding the stb.gif image.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/pyvcp_image_u32_01.png" alt="pyvcp image u32 01">
+</div>
+<div class="title">Figure 21. Simple image_u32 Example with halpin=0</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/pyvcp_image01.png" alt="pyvcp image01">
+</div>
+<div class="title">Figure 22. Simple image_u32 Example withhalpin=1</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/pyvcp_image02.png" alt="pyvcp image02">
+</div>
+<div class="title">Figure 23. Simple image_u32 Example withhalpin=2</div>
+</div>
+<div class="paragraph">
+<p>Notice that the default is the min even though it is set higher than
+max unless there is a negative min.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_containers">6.10. Containers</h3>
+<div class="paragraph">
+<p>Containers are widgets that contain other widgets.
+Containers are used to group other widgets.</p>
+</div>
+<div class="paragraph">
+<div class="title">Borders</div>
+<p>Container borders are specified with two tags used together.
+The &lt;relief&gt; tag specifies the type of border and the &lt;bd&gt; specifies the width of the border.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><em>&lt;relief&gt;_type_&lt;/relief&gt;</em></dt>
+<dd>
+<p>Where <em>type</em> is FLAT, SUNKEN, RAISED, GROOVE, or RIDGE.</p>
+</dd>
+<dt class="hdlist1"><em>&lt;bd&gt;_n_&lt;/bd&gt;</em></dt>
+<dd>
+<p>Where <em>n</em> is the width of the border.</p>
+</dd>
+</dl>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;hbox&gt;</span>
+    <span class="nt">&lt;button&gt;</span>
+        <span class="nt">&lt;relief&gt;</span>FLAT<span class="nt">&lt;/relief&gt;</span>
+        <span class="nt">&lt;text&gt;</span>"FLAT"<span class="nt">&lt;/text&gt;</span>
+        <span class="nt">&lt;bd&gt;</span>3<span class="nt">&lt;/bd&gt;</span>
+    <span class="nt">&lt;/button&gt;</span>
+    <span class="nt">&lt;button&gt;</span>
+        <span class="nt">&lt;relief&gt;</span>SUNKEN<span class="nt">&lt;/relief&gt;</span>
+        <span class="nt">&lt;text&gt;</span>"SUNKEN"<span class="nt">&lt;/text&gt;</span>
+        <span class="nt">&lt;bd&gt;</span>3<span class="nt">&lt;/bd&gt;</span>
+    <span class="nt">&lt;/button&gt;</span>
+    <span class="nt">&lt;button&gt;</span>
+        <span class="nt">&lt;relief&gt;</span>RAISED<span class="nt">&lt;/relief&gt;</span>
+        <span class="nt">&lt;text&gt;</span>"RAISED"<span class="nt">&lt;/text&gt;</span>
+        <span class="nt">&lt;bd&gt;</span>3<span class="nt">&lt;/bd&gt;</span>
+    <span class="nt">&lt;/button&gt;</span>
+    <span class="nt">&lt;button&gt;</span>
+        <span class="nt">&lt;relief&gt;</span>GROOVE<span class="nt">&lt;/relief&gt;</span>
+        <span class="nt">&lt;text&gt;</span>"GROOVE"<span class="nt">&lt;/text&gt;</span>
+        <span class="nt">&lt;bd&gt;</span>3<span class="nt">&lt;/bd&gt;</span>
+    <span class="nt">&lt;/button&gt;</span>
+    <span class="nt">&lt;button&gt;</span>
+        <span class="nt">&lt;relief&gt;</span>RIDGE<span class="nt">&lt;/relief&gt;</span>
+        <span class="nt">&lt;text&gt;</span>"RIDGE"<span class="nt">&lt;/text&gt;</span>
+        <span class="nt">&lt;bd&gt;</span>3<span class="nt">&lt;/bd&gt;</span>
+    <span class="nt">&lt;/button&gt;</span>
+<span class="nt">&lt;/hbox&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above code produced this example:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/pyvcp_borders.png" alt="pyvcp borders">
+</div>
+<div class="title">Figure 24. Containers Borders Showcase</div>
+</div>
+<div class="paragraph">
+<div class="title">Fill</div>
+<p>Container fill are specified with the <em>&lt;boxfill fill=""/&gt;</em> tag.
+Valid entries are none, x, y and both.
+The x fill is a horizontal fill and the y fill is a vertical fill</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>&lt;boxfill fill ="style"/&gt;</code></dt>
+<dd>
+<p>Where <em>style</em> is none, x, y, or both. Default is x for Vbox and y for Hbox.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<div class="title">Anchor</div>
+<p>Container anchors are specified with the &lt;boxanchor anchor=""/&gt; tag.
+The anchor specifies where to position each slave in its parcel.
+Valid entries are center, n, s, e, w, for center, north, south, east and west.
+Combinations like sw, se, nw and ne are also valid.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>&lt;boxanchor anchor="position"/&gt;</code></dt>
+<dd>
+<p>Where <em>position</em> is center, n, s, e, w, ne, nw, se or sw. Default is center.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<div class="title">Expand</div>
+<p>Container expand is specified with the boolean &lt;boxexpand expand=""/&gt; tag.
+Valid entries are "yes", "no".</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>&lt;boxexpand expand="boolean"/&gt;</code></dt>
+<dd>
+<p>Where <em>boolean</em> is either "yes" or "no". Default is yes.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<div class="title">Hbox</div>
+<p>Use an Hbox when you want to stack widgets horizontally next to each other.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;hbox&gt;</span>
+    <span class="nt">&lt;relief&gt;</span>RIDGE<span class="nt">&lt;/relief&gt;</span>
+    <span class="nt">&lt;bd&gt;</span>6<span class="nt">&lt;/bd&gt;</span>
+    <span class="nt">&lt;label&gt;&lt;text&gt;</span>"a hbox:"<span class="nt">&lt;/text&gt;&lt;/label&gt;</span>
+    <span class="nt">&lt;led&gt;&lt;/led&gt;</span>
+    <span class="nt">&lt;number&gt;&lt;/number&gt;</span>
+    <span class="nt">&lt;bar&gt;&lt;/bar&gt;</span>
+<span class="nt">&lt;/hbox&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above code produced this example:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/pyvcp_hbox.png" alt="pyvcp hbox">
+</div>
+<div class="title">Figure 25. Simple hbox Example</div>
+</div>
+<div class="paragraph">
+<p>Inside an Hbox, you can use the <em>&lt;boxfill fill=""/&gt;</em>, <em>&lt;boxanchor anchor=""/&gt;</em>,
+and <em>&lt;boxexpand expand=""/&gt;</em> tags to choose how items in the box behave when the window is re-sized.
+The default is <em>fill="y"</em>, <em>anchor="center"</em>, <em>expand="yes"</em> for an Hbox.</p>
+</div>
+<div class="paragraph">
+<div class="title">Vbox</div>
+<p>Use a Vbox when you want to stack widgets vertically on top of each other.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;vbox&gt;</span>
+    <span class="nt">&lt;relief&gt;</span>RIDGE<span class="nt">&lt;/relief&gt;</span>
+    <span class="nt">&lt;bd&gt;</span>6<span class="nt">&lt;/bd&gt;</span>
+    <span class="nt">&lt;label&gt;&lt;text&gt;</span>"a vbox:"<span class="nt">&lt;/text&gt;&lt;/label&gt;</span>
+    <span class="nt">&lt;led&gt;&lt;/led&gt;</span>
+    <span class="nt">&lt;number&gt;&lt;/number&gt;</span>
+    <span class="nt">&lt;bar&gt;&lt;/bar&gt;</span>
+<span class="nt">&lt;/vbox&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above code produced this example:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/pyvcp_vbox.png" alt="pyvcp vbox">
+</div>
+<div class="title">Figure 26. Simple vbox Example</div>
+</div>
+<div class="paragraph">
+<p>Inside a Vbox, you can use the <em>&lt;boxfill fill=""/&gt;</em>, <em>&lt;boxanchor anchor=""/&gt;</em>,
+and <em>&lt;boxexpand expand=""/&gt;</em> tags to choose how items in the box behave when the window is re-sized.
+The default is <em>fill="x"</em>, <em>anchor="center"</em>, <em>expand="yes"</em> for a Vbox.</p>
+</div>
+<div class="paragraph">
+<div class="title">Labelframe</div>
+<p>A labelframe is a frame with a groove and a label at the upper-left corner.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>&lt;labelframe text="Label: Leds groupées"&gt;</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;labelframe</span> <span class="na">text=</span><span class="s">"Group Title"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;font&gt;</span>("Helvetica",16)<span class="nt">&lt;/font&gt;</span>
+    <span class="nt">&lt;hbox&gt;</span>
+    <span class="nt">&lt;led/&gt;</span>
+    <span class="nt">&lt;led/&gt;</span>
+    <span class="nt">&lt;/hbox&gt;</span>
+<span class="nt">&lt;/labelframe&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above code produced this example:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/pyvcp_labelframe.png" alt="pyvcp labelframe">
+</div>
+<div class="title">Figure 27. Simple labelframe Example</div>
+</div>
+<div class="paragraph">
+<div class="title">Table</div>
+<p>A table is a container that allows layout in a grid of rows and columns.
+Each row is started by a <em>&lt;tablerow/&gt;</em> tag.
+A contained widget may span rows or columns through the use of the <em>&lt;tablespan rows= cols=/&gt;</em> tag.
+The sides of the cells to which the contained widgets "stick" may be set through the use of the <em>&lt;tablesticky sticky=/&gt;</em> tag.
+A table expands on its flexible rows and columns.</p>
+</div>
+<div class="listingblock">
+<div class="title">Table Code Example</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;table</span> <span class="na">flexible_rows=</span><span class="s">"[2]"</span> <span class="na">flexible_columns=</span><span class="s">"[1,4]"</span><span class="nt">&gt;</span>
+<span class="nt">&lt;tablesticky</span> <span class="na">sticky=</span><span class="s">"new"</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;tablerow/&gt;</span>
+    <span class="nt">&lt;label&gt;</span>
+        <span class="nt">&lt;text&gt;</span>" A (cell 1,1) "<span class="nt">&lt;/text&gt;</span>
+        <span class="nt">&lt;relief&gt;</span>RIDGE<span class="nt">&lt;/relief&gt;</span>
+        <span class="nt">&lt;bd&gt;</span>3<span class="nt">&lt;/bd&gt;</span>
+    <span class="nt">&lt;/label&gt;</span>
+    <span class="nt">&lt;label</span> <span class="na">text=</span><span class="s">"B (cell 1,2)"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;tablespan</span> <span class="na">columns=</span><span class="s">"2"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;label</span> <span class="na">text=</span><span class="s">"C, D (cells 1,3 and 1,4)"</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;tablerow/&gt;</span>
+    <span class="nt">&lt;label</span> <span class="na">text=</span><span class="s">"E (cell 2,1)"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;tablesticky</span> <span class="na">sticky=</span><span class="s">"nsew"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;tablespan</span> <span class="na">rows=</span><span class="s">"2"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;label</span> <span class="na">text=</span><span class="s">"'spans\n2 rows'"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;tablesticky</span> <span class="na">sticky=</span><span class="s">"new"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;label</span> <span class="na">text=</span><span class="s">"G (cell 2,3)"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;label</span> <span class="na">text=</span><span class="s">"H (cell 2,4)"</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;tablerow/&gt;</span>
+    <span class="nt">&lt;label</span> <span class="na">text=</span><span class="s">"J (cell 3,1)"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;label</span> <span class="na">text=</span><span class="s">"K (cell 3,2)"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;u32</span> <span class="na">halpin=</span><span class="s">"test"</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/table&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above code produced this example:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/pyvcp_table.png" alt="pyvcp table">
+</div>
+<div class="title">Figure 28. Table Example</div>
+</div>
+<div class="paragraph">
+<div class="title">Tabs</div>
+<p>A tabbed interface can save quite a bit of space.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;tabs&gt;</span>
+    <span class="nt">&lt;names&gt;</span> ["spindle","green eggs"]<span class="nt">&lt;/names&gt;</span>
+<span class="nt">&lt;/tabs&gt;</span>
+<span class="nt">&lt;tabs&gt;</span>
+    <span class="nt">&lt;names&gt;</span>["Spindle", "Green Eggs", "Ham"]<span class="nt">&lt;/names&gt;</span>
+    <span class="nt">&lt;vbox&gt;</span>
+        <span class="nt">&lt;label&gt;</span>
+            <span class="nt">&lt;text&gt;</span>"Spindle speed:"<span class="nt">&lt;/text&gt;</span>
+        <span class="nt">&lt;/label&gt;</span>
+        <span class="nt">&lt;bar&gt;</span>
+            <span class="nt">&lt;halpin&gt;</span>"spindle-speed"<span class="nt">&lt;/halpin&gt;</span>
+            <span class="nt">&lt;max_&gt;</span>5000<span class="nt">&lt;/max_&gt;</span>
+        <span class="nt">&lt;/bar&gt;</span>
+    <span class="nt">&lt;/vbox&gt;</span>
+    <span class="nt">&lt;vbox&gt;</span>
+        <span class="nt">&lt;label&gt;</span>
+            <span class="nt">&lt;text&gt;</span>"(this is the green eggs tab)"<span class="nt">&lt;/text&gt;</span>
+        <span class="nt">&lt;/label&gt;</span>
+    <span class="nt">&lt;/vbox&gt;</span>
+    <span class="nt">&lt;vbox&gt;</span>
+        <span class="nt">&lt;label&gt;</span>
+            <span class="nt">&lt;text&gt;</span>"(this tab has nothing on it)"<span class="nt">&lt;/text&gt;</span>
+        <span class="nt">&lt;/label&gt;</span>
+    <span class="nt">&lt;/vbox&gt;</span>
+<span class="nt">&lt;/tabs&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above code produced this example showing each tab selected.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/pyvcp_tabs1.png" alt="pyvcp tabs1">
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/pyvcp_tabs2.png" alt="pyvcp tabs2">
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/pyvcp_tabs3.png" alt="pyvcp tabs3">
+</div>
+<div class="title">Figure 29. Simple Tabs Example</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

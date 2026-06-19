@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>MESA_UART(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../rouge-github.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="mesa_uart.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/mesa_uart.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/mesa_uart.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/mesa_uart.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/mesa_uart.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/mesa_uart.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/mesa_uart.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/mesa_uart.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>MESA_UART(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>mesa_uart - An example component demonstrating how to access the Hostmot2 UART</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt mesa_uart</strong> [<strong>count</strong>=<em>N</em>|<strong>names</strong>=<em>name1</em>[,<em>name2</em>&#8230;&#8203;]]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This component creates 16 input and 16 output pins. It transmits
+{name}.N.tx-bytes on the selected UART every thread cycle and reads up to 16
+bytes each cycle out of the receive FIFO and writes the values to the associated
+output pins. {name}.rx-bytes indicates how many pins have been written to.
+(pins &gt; rx-bytes simply hold their previous value)</p>
+</div>
+<div class="paragraph">
+<p>This module uses the names= mode of loadrt declaration to specify which UART
+instances to enable. A check is included to ensure that the count= option is
+not used instead.</p>
+</div>
+<div class="paragraph">
+<p>The component takes parameters in the form of a comma-separated
+list of UART instance names, for example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadrt</span> <span class="n">mesa_uart</span> <span class="n">names</span><span class="o">=</span><span class="na">hm2_5i23.0.uart.0</span>,<span class="na">hm2_5i23.0.uart.7</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that no spaces are allowed in the string unless it is delimited by double
+quotes.</p>
+</div>
+<div class="paragraph">
+<p>The UART instance names are printed to the dmesg buffer during the Hostmot2
+setup sequence, one for each UART instance included in the bitfile loaded to
+each installed card during the Hostmot2 setup sequence. Type "dmesg" at the
+terminal prompt to view the output.</p>
+</div>
+<div class="paragraph">
+<p>The component exports two functions, send and receive, which need to be added
+to a realtime thread.</p>
+</div>
+<div class="paragraph">
+<p>The above example will output data on UART channels 0 and 7 and the pins will
+have the names of the individual UARTS. (they need not be on the same card, or
+even the same bus).</p>
+</div>
+<div class="paragraph">
+<p>Read the documents on "halcompile" for help with writing realtime components:
+<a href="http://linuxcnc.org/docs/html/hal/comp.html" class="bare">http://linuxcnc.org/docs/html/hal/comp.html</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>mesa-uart</strong>.<em>N</em>.<strong>send</strong></dt>
+<dt class="hdlist1"><strong>mesa-uart</strong>.<em>N</em>.<strong>receive</strong></dt>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>mesa-uart</strong>.<em>N</em>.<strong>tx-data-<em>MM</em></strong> u32 in  (MM=00..15) </dt>
+<dd>
+<p>Data to be transmitted</p>
+</dd>
+<dt class="hdlist1"><strong>mesa-uart</strong>.<em>N</em>.<strong>rx-data-<em>MM</em></strong> u32 out  (MM=00..15) </dt>
+<dd>
+<p>Data received</p>
+</dd>
+<dt class="hdlist1"><strong>mesa-uart</strong>.<em>N</em>.<strong>tx-bytes</strong> s32 in </dt>
+<dd>
+<p>Number of bytes to transmit</p>
+</dd>
+<dt class="hdlist1"><strong>mesa-uart</strong>.<em>N</em>.<strong>rx-bytes</strong> s32 out </dt>
+<dd>
+<p>Number of Bytes received</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Andy Pugh <a href="mailto:andy@bodgesoc.org">andy@bodgesoc.org</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:30:13 UTC
+</div>
+</div>
+</body>
+</html>

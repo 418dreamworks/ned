@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>threads(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="threads.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/threads.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/threads.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/threads.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/threads.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/threads.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/threads.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/threads.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>threads(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>threads - creates hard realtime HAL threads</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt threads name1=<em>name</em></strong> <strong>period1=</strong><em>period</em> [<strong>fp1</strong>=&lt;<strong>0</strong>|<strong>1</strong>&gt;] [&lt;_thread-2-info_&gt;] [&lt;_thread-3-info_&gt;]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>threads</strong> is used to create hard realtime threads which can execute HAL
+functions at specific intervals. It is not a true HAL component, in that
+it does not export any functions, pins, or parameters of its own. Once
+it has created one or more threads, the threads stand alone, and the
+<strong>threads</strong> component can be unloaded without affecting them. In fact, it
+can be unloaded and then reloaded to create additional threads, as many
+times as needed.</p>
+</div>
+<div class="paragraph">
+<p><strong>threads</strong> can create up to three realtime threads. Threads must be
+created in order, from fastest to slowest. Each thread is specified by
+three arguments. <strong>name1</strong> is used to specify the name of the first thread
+(thread 1). <strong>period1</strong> is used to specify the period of thread 1 in
+nanoseconds. Both <em>name</em> and <em>period</em> are required. The third argument,
+<strong>fp1</strong> is optional, and is used to specify if thread 1 will be used to
+execute floating point code. If not specified, it defaults to <strong>1</strong>, which
+means that the thread will support floating point. Specify <strong>0</strong> to
+disable floating point support, which saves a small amount of execution
+time by not saving the FPU context. For additional threads, <strong>name2</strong>,
+<strong>period2</strong>, <strong>fp2</strong>, <strong>name3</strong>, <strong>period3</strong>, and <strong>fp3</strong> work exactly the same.
+If more than three threads are needed, unload threads, then reload it to
+create more threads.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>None</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>None</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parameters">PARAMETERS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>None</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_bugs">BUGS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The existence of <strong>threads</strong> might be considered a bug. Ideally, creation
+and deletion of threads would be done directly with <strong>halcmd</strong> commands,
+such as "<strong>newthread</strong> <em>name period</em>", "<strong>delthread</strong> <em>name</em>", or similar.
+However, limitations in the current HAL implementation require thread
+creation to take place in kernel space, and loading a component is the
+most straightforward way to do that.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

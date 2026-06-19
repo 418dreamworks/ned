@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>halcmd(1)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="halcmd.1.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man1/halcmd.1.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man1/halcmd.1.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man1/halcmd.1.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man1/halcmd.1.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man1/halcmd.1.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man1/halcmd.1.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man1/halcmd.1.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>halcmd(1) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>halcmd - manipulate the LinuxCNC HAL from the command line</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>halcmd</strong> [<em>OPTIONS</em>] [<em>COMMAND</em> [<em>ARG</em>]]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The tool <strong>halcmd</strong> is used to manipulate the HAL (Hardware Abstraction Layer) from
+the command line. <strong>halcmd</strong> can optionally read commands from a file,
+allowing complex HAL configurations to be set up with a single command.</p>
+</div>
+<div class="paragraph">
+<p>If the <strong>readline</strong> library is available when LinuxCNC is compiled,
+then <strong>halcmd</strong> offers commandline editing and completion when running interactively.
+Use the up arrow to recall previous commands,
+and press tab to complete the names of items such as pins and signals.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_options">OPTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>-I</strong></dt>
+<dd>
+<p>Before tearing down the realtime environment, run an interactive
+halcmd. <strong>halrun</strong> only. If <strong>-I</strong> is used, it must precede all other
+commandline arguments.</p>
+</dd>
+<dt class="hdlist1"><strong>-f</strong> [<em>&lt;file&gt;</em>]</dt>
+<dd>
+<p>Ignore commands on command line, take input from <em>file</em> instead. If
+<em>file</em> is not specified, take input from <em>stdin</em>.</p>
+</dd>
+<dt class="hdlist1"><strong>-i</strong> <em>&lt;INI file&gt;</em></dt>
+<dd>
+<p>Use variables from the specified <em>INI file</em> for substitutions. See
+<strong>SUBSTITUTION</strong> below.</p>
+</dd>
+<dt class="hdlist1"><strong>-k</strong></dt>
+<dd>
+<p>Keep going after failed command(s). The default is to stop and return
+failure if any command fails.</p>
+</dd>
+<dt class="hdlist1"><strong>-q</strong></dt>
+<dd>
+<p>display errors only (default)</p>
+</dd>
+<dt class="hdlist1"><strong>-Q</strong></dt>
+<dd>
+<p>display nothing, execute commands silently</p>
+</dd>
+<dt class="hdlist1"><strong>-s</strong></dt>
+<dd>
+<p>Script-friendly mode. In this mode, <em>show</em> will not output titles for
+the items shown. Also, module names will be printed instead of ID
+codes in pin, param, and funct listings. Threads are printed on a
+single line, with the thread period, FP usage and name first, followed
+by all of the functions in the thread, in execution order. Signals are
+printed on a single line, with the type, value, and signal name first,
+followed by a list of pins connected to the signal, showing both the
+direction and the pin name.</p>
+</dd>
+<dt class="hdlist1"><strong>-R</strong></dt>
+<dd>
+<p>Release the HAL mutex. This is useful for recovering when a HAL
+component has crashed while holding the HAL mutex.</p>
+</dd>
+<dt class="hdlist1"><strong>-v</strong></dt>
+<dd>
+<p>display results of each command</p>
+</dd>
+<dt class="hdlist1"><strong>-V</strong></dt>
+<dd>
+<p>display lots of debugging junk</p>
+</dd>
+<dt class="hdlist1"><strong>-h</strong> [<em>command</em>]</dt>
+<dd>
+<p>display a help screen and exit, displays extended help on <em>command</em> if
+specified</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_commands">COMMANDS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Commands tell <strong>halcmd</strong> what to do. Normally <strong>halcmd</strong> reads a single
+command from the command line and executes it. If the <em><strong>-f</strong></em> option is
+used to read commands from a file, <strong>halcmd</strong> reads each line of the file
+as a new command. Anything following <em><strong>#</strong></em> on a line is a comment.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>loadrt</strong> <em>modname</em></dt>
+<dd>
+<p>(short for "load realtime module")
+Loads a realtime HAL module called <em>modname</em>.
+<strong>halcmd</strong> looks for the module in a directory specified at compile time.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>In systems with kernel-based realtime support (e.g. RTAI), <strong>halcmd</strong>
+calls the <strong>linuxcnc_module_helper</strong> to load realtime modules.
+<strong>linuxcnc_module_helper</strong> is a setuid program and is compiled with a
+whitelist of modules it is allowed to load. This is currently just a
+list of <strong>LinuxCNC</strong>-related modules. The <strong>linuxcnc_module_helper</strong> execs
+insmod, so return codes and error messages are those from insmod.
+Administrators who wish to restrict which users can load these
+<strong>LinuxCNC</strong>-related kernel modules can do this by setting the permissions
+and group on <strong>linuxcnc_module_helper</strong> appropriately.</p>
+</div>
+<div class="paragraph">
+<p>In systems with userspace-based realtime support (e.g. Preempt-RT) and
+in systems without realtime support <strong>halcmd</strong> calls the <strong>rtapi_app</strong> which
+creates the realtime environment (simulated realtime, on systems with no
+userspace realtime support) if it did not yet exist, and then loads the
+requested component with a call to <strong>dlopen(3)</strong>.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>unloadrt</strong> <em>modname</em></dt>
+<dd>
+<p>(<em>unload</em> <em>r</em>eal<em>t</em>ime module) Unloads a realtime HAL module
+called <em>modname</em>. If <em>modname</em> is "all", it will unload all currently
+loaded realtime HAL modules. <strong>unloadrt</strong> also works by execing
+<strong>linuxcnc_module_helper</strong> or <strong>rtapi_app</strong>, just like <strong>loadrt</strong>.</p>
+</dd>
+<dt class="hdlist1"><strong>loadusr</strong> [<em>flags</em>] <em>UNIX-command</em></dt>
+<dd>
+<p>(<em>load</em> <em>Us</em>e<em>r</em>space component) Executes the given
+<em>UNIX-command</em>, usually to load a non-realtime component. <em>[flags]</em>
+may be one or more of:
++</p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>-W</strong> to wait for the component to become ready.
+The component is assumed to have the same name as the first argument of the command.</p>
+</li>
+<li>
+<p><strong>-Wn name</strong> to wait for the component, which will have the given name.</p>
+</li>
+<li>
+<p><strong>-w</strong> to wait for the program to exit</p>
+</li>
+<li>
+<p><strong>-i</strong> to ignore the program return value (with -w)</p>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1"><strong>waitusr</strong> <em>name</em></dt>
+<dd>
+<p>(<em>wait</em> for <em>Us</em>e<em>r</em>space component) Waits for non-realtime
+component <em>name</em> to disconnect from HAL (usually on exit). The
+component must already be loaded. Useful near the end of a HAL file to
+wait until the user closes some user interface component before
+cleaning up and exiting.</p>
+</dd>
+<dt class="hdlist1"><strong>unloadusr</strong> <em>compname</em></dt>
+<dd>
+<p>(<em>unload</em> <em>Us</em>e<em>r</em>space component) Unloads a non-realtime
+component called <em>compname</em>. If <em>compname</em> is "all", it will unload
+all non-realtime components. <strong>unloadusr</strong> works by sending SIGTERM to
+all non-realtime components.</p>
+</dd>
+<dt class="hdlist1"><strong>unload</strong> <em>compname</em></dt>
+<dd>
+<p>Unloads a non-realtime component or realtime module. If <em>compname</em> is
+"all", it will unload all non-realtime components and realtime
+modules.</p>
+</dd>
+<dt class="hdlist1"><strong>newsig</strong> <em>signame</em> <em>type</em></dt>
+<dd>
+<p>(OBSOLETE - use <strong>net</strong> instead) (<em>new</em> <em>sig</em>nal) Creates a new HAL
+signal called <em>signame</em> that may later be used to connect two or more
+HAL component pins. <em>type</em> is the data type of the new signal, and
+must be one of "<strong>bit</strong>", "<strong>s32</strong>", "<strong>u32</strong>", or "<strong>float</strong>". Fails if a
+signal of the same name already exists.</p>
+</dd>
+<dt class="hdlist1"><strong>delsig</strong> <em>signame</em></dt>
+<dd>
+<p>(<em>del</em>ete <em>sig</em>nal) Deletes HAL signal <em>signame</em>. Any pins
+currently linked to the signal will be unlinked. Fails if <em>signame</em>
+does not exist.</p>
+</dd>
+<dt class="hdlist1"><strong>sets</strong> <em>signame</em> <em>value</em></dt>
+<dd>
+<p>(<em>set</em> <em>s</em>ignal) Sets the value of signal <em>signame</em> to <em>value</em>.
+Fails if <em>signame</em> does not exist, if it already has a writer,
+or if <em>value</em> is not a legal value.
+Legal values depend on the signals&#8217;s type.</p>
+</dd>
+<dt class="hdlist1"><strong>stype</strong> <em>name</em></dt>
+<dd>
+<p>(<em>s</em>ignal type) Gets the type of signal <em>name</em>.
+Fails if <em>name</em> does not exist as a signal.</p>
+</dd>
+<dt class="hdlist1"><strong>gets</strong> <em>signame</em></dt>
+<dd>
+<p>(<em>get</em> <em>s</em>ignal) Gets the value of signal <em>signame</em>.
+Fails if <em>signame</em> does not exist.</p>
+</dd>
+<dt class="hdlist1"><strong>linkps</strong> <em>pinname</em> [<em>arrow</em>] <em>signame</em></dt>
+<dd>
+<p>(OBSOLETE - use <strong>net</strong> instead) (<em>link</em> <em>p</em>in to <em>s</em>ignal)
+Establishes a link between a HAL component pin <em>pinname</em> and a HAL
+signal <em>signame</em>. Any previous link to <em>pinname</em> will be broken.
+<em>arrow</em> can be "<code>=&gt;</code>", "<code>&lt;=</code>", "<code>&lt;=&gt;</code>", or omitted. <strong>halcmd</strong> ignores
+arrows, but they can be useful in command files to document the
+direction of data flow. Arrows should not be used on the command line
+since the shell might try to interpret them. Fails if either <em>pinname</em>
+or <em>signame</em> does not exist, or if they are not the same type type.</p>
+</dd>
+<dt class="hdlist1"><strong>linksp</strong> <em>signame</em> [<em>arrow</em>] <em>pinname</em></dt>
+<dd>
+<p>(OBSOLETE - use <strong>net</strong> instead) (<em>link</em> <em>s</em>ignal to <em>p</em>in) Works
+like <strong>linkps</strong> but reverses the order of the arguments. <strong>halcmd</strong> treats
+both link commands exactly the same. Use whichever you prefer.</p>
+</dd>
+<dt class="hdlist1"><strong>linkpp</strong> <em>pinname1</em> [<em>arrow</em>] <em>pinname2</em></dt>
+<dd>
+<p>(OBSOLETE - use <strong>net</strong> instead) (<em>link</em> <em>p</em>in to <em>p</em>in) Shortcut
+for <strong>linkps</strong> that creates the signal (named like the first pin), then
+links them both to that signal. <strong>halcmd</strong> treats this just as if it
+were: <strong>halcmd</strong> <strong>newsig</strong> pinname1 <strong>halcmd</strong> <strong>linksp</strong> pinname1 pinname1
+<strong>halcmd</strong> <strong>linksp</strong> pinname1 pinname2</p>
+</dd>
+<dt class="hdlist1"><strong>net</strong> <em>signame</em> <em>pinname</em> <em>&#8230;&#8203;</em></dt>
+<dd>
+<p>Create <em>signname</em> to match the type of <em>pinname</em> if it does not yet
+exist. Then, link <em>signame</em> to each <em>pinname</em> in turn. Arrows may be
+used as in <strong>linkps</strong>. When linking a pin to a signal for the first
+time, the signal value will inherit the pin&#8217;s default value.</p>
+</dd>
+<dt class="hdlist1"><strong>unlinkp</strong> <em>pinname</em></dt>
+<dd>
+<p>(<em>unlink</em> <em>p</em>in) Breaks any previous link to <em>pinname</em>. Fails if
+<em>pinname</em> does not exist. An unlinked pin will retain the last value
+of the signal it was linked to.</p>
+</dd>
+<dt class="hdlist1"><strong>setp</strong> <em>name</em> <em>value</em></dt>
+<dd>
+<p>(<em>set</em> <em>p</em>arameter or <em>p</em>in) Sets the value of parameter or pin
+<em>name</em> to <em>value</em>. Fails if <em>name</em> does not exist as a pin or
+parameter, if it is a parameter that is not writable, if it is a pin
+that is an output, if it is a pin that is already attached to a
+signal, or if <em>value</em> is not a legal value. Legal values depend on the
+type of the pin or parameter. If a pin and a parameter both exist with
+the given name, the parameter is acted on.</p>
+</dd>
+<dt class="hdlist1"><em>paramname</em> <strong>=</strong> <em>value</em></dt>
+<dt class="hdlist1"><em>pinname</em> <strong>=</strong> <em>value</em></dt>
+<dd>
+<p>Identical to <strong>setp</strong>. This alternate form of the command may be more
+convenient and readable when used in a file.</p>
+</dd>
+<dt class="hdlist1"><strong>ptype</strong> <em>name</em></dt>
+<dd>
+<p>(<em>p</em>arameter or <em>p</em>in <em>type</em>) Gets the type of parameter or pin
+<em>name</em>. Fails if <em>name</em> does not exist as a pin or parameter. If a pin
+and a parameter both exist with the given name, the parameter is acted
+on.</p>
+</dd>
+<dt class="hdlist1"><strong>getp</strong> <em>name</em></dt>
+<dd>
+<p>(<em>get</em> <em>p</em>arameter or <em>p</em>in) Gets the value of parameter or pin
+<em>name</em>. Fails if <em>name</em> does not exist as a pin or parameter. If a pin
+and a parameter both exist with the given name, the parameter is acted
+on.</p>
+</dd>
+<dt class="hdlist1"><strong>addf</strong> <em>functname</em> <em>threadname</em></dt>
+<dd>
+<p>(<em>add</em> <em>f</em>unction) Adds function <em>functname</em> to realtime thread
+<em>threadname</em>. <em>functname</em> will run after any functions that were
+previously added to the thread. Fails if either <em>functname</em> or
+<em>threadname</em> does not exist, or if they are incompatible.</p>
+</dd>
+<dt class="hdlist1"><strong>initf</strong> <em>functname</em> <em>threadname</em></dt>
+<dd>
+<p>(<em>init</em> <em>f</em>unction) Registers <em>functname</em> to run once in realtime
+context on a dedicated init cycle of <em>threadname</em>, before the cyclic
+function list executes. Intended for one-shot setup that must run in
+the realtime task (for example EtherCAT slave configuration). Once
+the init cycle has run, further <strong>initf</strong> calls on that thread are
+rejected. Fails if either <em>functname</em> or <em>threadname</em> does not exist.</p>
+</dd>
+<dt class="hdlist1"><strong>delf</strong> <em>functname</em> <em>threadname</em></dt>
+<dd>
+<p>(<em>del</em>ete <em>f</em>unction) Removes function <em>functname</em> from realtime
+thread <em>threadname</em>. Fails if either <em>functname</em> or <em>threadname</em> does
+not exist, or if <em>functname</em> is not currently part of <em>threadname</em>.</p>
+</dd>
+<dt class="hdlist1"><strong>start</strong></dt>
+<dd>
+<p>Starts execution of realtime threads. Each thread periodically calls
+all of the functions that were added to it with the <strong>addf</strong> command, in
+the order in which they were added.</p>
+</dd>
+<dt class="hdlist1"><strong>stop</strong></dt>
+<dd>
+<p>Stops execution of realtime threads. The threads will no longer call
+their functions.</p>
+</dd>
+<dt class="hdlist1"><strong>show</strong> [<em>item</em>]</dt>
+<dd>
+<p>Prints HAL items to <em>stdout</em> in human readable format. <em>item</em> can be
+one of "<strong>comp</strong>" (components), "<strong>pin</strong>", "<strong>sig</strong>" (signals), "<strong>param</strong>"
+(parameters), "<strong>funct</strong>" (functions), "<strong>thread</strong>", or "<strong>alias</strong>". The
+type "<strong>all</strong>" can be used to show matching items of all the preceding
+types. If <em>item</em> is omitted, <strong>show</strong> will print everything.</p>
+</dd>
+<dt class="hdlist1"><strong>save</strong> [<em>item</em>]</dt>
+<dd>
+<p>Prints HAL items to <em>stdout</em> in the form of HAL commands. These
+commands can be redirected to a file and later executed using <strong>halcmd
+-f</strong> to restore the saved configuration. <em>item</em> can be one of the
+following:</p>
+<div class="paragraph">
+<p>"<strong>comp</strong>" generates a <strong>loadrt</strong> command for realtime component.</p>
+</div>
+<div class="paragraph">
+<p>"<strong>alias</strong>" generates an <strong>alias</strong> command for each pin or parameter alias pairing</p>
+</div>
+<div class="paragraph">
+<p>"<strong>sig</strong>" (or "<strong>signal</strong>") generates a <strong>newsig</strong> command for each signal,
+and "<strong>sigu</strong>" generates a <strong>newsig</strong> command for each unlinked signal (for
+use with <strong>netl</strong> and <strong>netla</strong>).</p>
+</div>
+<div class="paragraph">
+<p>"<strong>link</strong>" and "<strong>linka</strong>" both generate <strong>linkps</strong> commands for each link.
+(<strong>linka</strong> includes arrows, while <strong>link</strong> does not.)</p>
+</div>
+<div class="paragraph">
+<p>"<strong>net</strong>" and "<strong>neta</strong>" both generate one <strong>newsig</strong> command for each signal,
+followed by <strong>linksp</strong> commands for each pin linked to that signal.
+(<strong>neta</strong> includes arrows.)</p>
+</div>
+<div class="paragraph">
+<p>"<strong>netl</strong>" generates one <strong>net</strong> command for each linked signal, and
+"<strong>netla</strong>" (or "<strong>netal</strong>") generates a similar command using arrows.</p>
+</div>
+<div class="paragraph">
+<p>"<strong>param</strong>" (or "<strong>parameter</strong>) "generates one <strong>setp</strong> command for each parameter.</p>
+</div>
+<div class="paragraph">
+<p>"<strong>thread</strong>" generates one <strong>addf</strong> command for each function in each
+realtime thread.</p>
+</div>
+<div class="paragraph">
+<p>"<strong>unconnectedinpins</strong>" generates a setp command for each unconnected HAL input pin.</p>
+</div>
+<div class="paragraph">
+<p>If <em>item</em> is <strong>allu</strong>, <strong>save</strong> does the equivalent of <strong>comp</strong>, <strong>alias</strong>, <strong>sigu</strong>, <strong>netla</strong>, <strong>param</strong>, <strong>thread</strong>, and <strong>unconnectedinpins</strong>.</p>
+</div>
+<div class="paragraph">
+<p>If <em>item</em> is omitted (or <strong>all</strong>), <strong>save</strong> does the equivalent of <strong>comp</strong>, <strong>alias</strong>, <strong>sigu</strong>, <strong>netla</strong>, <strong>param</strong>, and <strong>thread</strong>.</p>
+</div>
+</dd>
+<dt class="hdlist1"><strong>source</strong> <em>filename.hal</em></dt>
+<dd>
+<p>Executes the commands from <em>filename.hal</em>.</p>
+</dd>
+<dt class="hdlist1"><strong>alias</strong> <em>type</em> <em>name</em> <em>alias</em></dt>
+<dd>
+<p>Assigns "<strong>alias</strong>" as a second name for the pin or parameter "name".
+For most operations, an alias provides a second name that can be used
+to refer to a pin or parameter, both the original name and the alias
+will work. "type" must be <strong>pin</strong> or <strong>param</strong>. "name" must be an existing
+name or <strong>alias</strong> of the specified type. Note that the "show" command
+will only show the aliased name, but the original name is still valid
+to use in HAL. The original names can still be seen with "show all" or
+"show alias" Existing nets will be preserved when a pin name is aliased.</p>
+</dd>
+<dt class="hdlist1"><strong>unalias</strong> <em>type</em> <em>alias</em></dt>
+<dd>
+<p>Removes any alias from the pin or parameter alias.
+"type" must be <strong>pin</strong> or <strong>param</strong> "alias" must be an existing name
+or <strong>alias</strong> of the specified type.</p>
+</dd>
+<dt class="hdlist1"><strong>list</strong> <em>type</em> [<em>pattern</em>]</dt>
+<dd>
+<p>Prints the names of HAL items of the specified type. <em>type</em> is
+<em><strong>comp</strong></em>, <em><strong>pin</strong></em>, <em><strong>sig</strong></em>, <em><strong>param</strong></em>, <em><strong>funct</strong></em>, or <em><strong>thread</strong></em>. If
+<em>pattern</em> is specified it prints only those names that match the
+pattern, which may be a <em>shell glob</em>. For <em><strong>sig</strong></em>, <em><strong>pin</strong></em> and
+<em><strong>param</strong></em>, the first pattern may be -t<strong>datatype</strong> where datatype is
+the data type (e.g., <em>float</em>) in this case, the listed pins, signals,
+or parameters are restricted to the given data type Names are printed
+on a single line, space separated.</p>
+</dd>
+<dt class="hdlist1"><strong>print</strong> [<em>message</em>]</dt>
+<dd>
+<p>Prints the filename, linenumber and an optional message. wrap the
+message in quotes if it has spaces.</p>
+</dd>
+<dt class="hdlist1"><strong>lock</strong> [<em>all</em>|<em>tune</em>|<em>none</em>]</dt>
+<dd>
+<p>Locks HAL to some degree. none - no locking done. tune - some tuning
+is possible (<strong>setp</strong> &amp; such). all - HAL completely locked.</p>
+</dd>
+<dt class="hdlist1"><strong>unlock</strong> [<em>all</em>|<em>tune</em>]</dt>
+<dd>
+<p>Unlocks HAL to some degree. tune - some tuning is possible (<strong>setp</strong> &amp;
+such). all - HAL completely unlocked.</p>
+</dd>
+<dt class="hdlist1"><strong>status</strong> [<em>type</em>]</dt>
+<dd>
+<p>Prints status info about HAL. <em>type</em> is <em><strong>lock</strong></em>, <em><strong>mem</strong></em>, or <em><strong>all</strong></em>.
+If <em>type</em> is omitted, it assumes <em><strong>all</strong></em>.</p>
+</dd>
+<dt class="hdlist1"><strong>debug</strong> [<em>level</em>]</dt>
+<dd>
+<p>Sets the rtapi messaging level (see man3 rtapi_set_msg_level).</p>
+</dd>
+<dt class="hdlist1"><strong>help</strong> [<em>command</em>]</dt>
+<dd>
+<p>Give help information for command. If <em>command</em> is omitted, list
+command and brief description.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_substitution">SUBSTITUTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>After a command is read but before it is executed, several types of
+variable substitution take place.</p>
+</div>
+<div class="sect2">
+<h3 id="_environment_variables">Environment Variables</h3>
+<div class="paragraph">
+<p>Environment variables have the following formats:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>$ENVVAR</strong> followed by end-of-line or whitespace</p>
+</li>
+<li>
+<p><strong>$(ENVVAR)</strong></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_ini_file_variables">INI file variables</h3>
+<div class="paragraph">
+<p>INI file variables are available only when an INI file was specified
+with the halcmd <strong>-i</strong> flag. They have the following formats:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>[SECTION]VAR</strong> followed by end-of-line or whitespace</p>
+</li>
+<li>
+<p><strong>[SECTION](VAR)</strong></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_line_continuation">LINE CONTINUATION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The backslash character (<strong>\</strong>) may be used to indicate the line is
+extended to the next line. The backslash character must be the last
+character before the newline.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_bugs">BUGS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>None known at this time.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Original version by John Kasunich, as part of the LinuxCNC project. Now
+includes major contributions by several members of the project.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reporting_bugs">REPORTING BUGS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Report bugs at <a href="https://github.com/LinuxCNC/linuxcnc/issues" class="bare">https://github.com/LinuxCNC/linuxcnc/issues</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_copyright">COPYRIGHT</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Copyright © 2003 John Kasunich.</p>
+</div>
+<div class="paragraph">
+<p>This is free software; see the source for copying conditions. There is
+NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>halrun(1)&#8201;&#8212;&#8201;a convenience script to start a realtime environment,
+process a HAL or a .tcl file, and optionally start an interactive
+command session using <strong>halcmd</strong> (described here) or haltcl(1).</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

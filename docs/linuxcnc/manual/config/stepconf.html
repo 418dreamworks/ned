@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>Stepper Configuration Wizard</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:stepconf-wizard" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="stepconf.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/config/stepconf.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/config/stepconf.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/config/stepconf.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/config/stepconf.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/config/stepconf.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/config/stepconf.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/config/stepconf.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>Stepper Configuration Wizard</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details open><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details open><summary>Configuration Wizards</summary><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>Stepper Configuration Wizard</summary><ul class="sectlevel1">
+<li><a href="stepconf.html#_introduction">1. Introduction</a></li>
+<li><a href="stepconf.html#_start_page">2. Start Page</a></li>
+<li><a href="stepconf.html#sec:Basic-Information">3. Basic Information</a></li>
+<li><a href="stepconf.html#_parallel_port_setup">4. Parallel Port Setup</a></li>
+<li><a href="stepconf.html#_parallel_port_2_setup">5. Parallel Port 2 Setup</a></li>
+<li><a href="stepconf.html#sec:Axis-Configuration">6. Axis Configuration</a>
+<ul class="sectlevel2">
+<li><a href="stepconf.html#sub:finding-maximum-velocity">6.1. Finding Maximum Velocity</a></li>
+<li><a href="stepconf.html#sub:finding-maximum-acceleration">6.2. Finding Maximum Acceleration</a></li>
+</ul>
+</li>
+<li><a href="stepconf.html#_spindle_configuration">7. Spindle Configuration</a>
+<ul class="sectlevel2">
+<li><a href="stepconf.html#_spindle_speed_control">7.1. Spindle Speed Control</a></li>
+<li><a href="stepconf.html#_spindle_synchronized_motion">7.2. Spindle-synchronized motion</a></li>
+<li><a href="stepconf.html#sub:determining-spindle-calibration">7.3. Determining Spindle Calibration</a></li>
+</ul>
+</li>
+<li><a href="stepconf.html#_options">8. Options</a></li>
+<li><a href="stepconf.html#_complete_machine_configuration">9. Complete Machine Configuration</a></li>
+<li><a href="stepconf.html#_axis_travels_and_homes">10. Axis Travels and Homes</a>
+<ul class="sectlevel2">
+<li><a href="stepconf.html#_operating_without_limit_switches">10.1. Operating without Limit Switches</a></li>
+<li><a href="stepconf.html#_operating_without_home_switches">10.2. Operating without Home Switches</a></li>
+<li><a href="stepconf.html#_home_and_limit_switch_wiring_options">10.3. Home and Limit Switch wiring options</a></li>
+</ul>
+</li>
+</ul></details><a href="pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><a href="ini-config.html">INI Configuration</a><a href="ini-homing.html">Homing Configuration</a><a href="lathe-config.html">Lathe Configuration</a><a href="stepper-quickstart.html">Stepper Quickstart</a><a href="stepper.html">Stepper Configuration</a><a href="stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="python-interface.html">The LinuxCNC Python module</a><a href="python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_introduction">1. Introduction</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+LinuxCNC is capable of controlling a wide range of machinery
+using many different hardware interfaces.</p>
+</div>
+<div class="paragraph">
+<p>StepConf is a program that generates configuration files for LinuxCNC
+for a specific class of CNC machine:
+those that are controlled via a <em>standard parallel port</em>, and
+controlled by signals of type <em>step &amp; direction</em>.</p>
+</div>
+<div class="paragraph">
+<p>StepConf is installed when you install LinuxCNC and is in the CNC menu.</p>
+</div>
+<div class="paragraph">
+<p>StepConf places a file in the linuxcnc/config directory
+to store the choices for each configuration you create.
+When you change something, you need to pick the file
+that matches your configuration name.
+The file extension is .stepconf.</p>
+</div>
+<div class="paragraph">
+<p>The StepConf Wizard works best with at least 800 x 600 screen resolution.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_start_page">2. Start Page</h2>
+<div class="sectionbody">
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/stepconf-start_en.png" alt="StepConf Entry Page">
+</div>
+<div class="title">Figure 1. StepConf Entry Page</div>
+</div>
+<div class="paragraph">
+<p>The three first radio buttons are self-explanatory:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>Create New</em> - Creates a fresh configuration.</p>
+</li>
+<li>
+<p><em>Modify</em> - Modify an existing configuration.
+After selecting this a file picker pops up so you can select the .stepconf file for modification.
+If you made any modifications to the main HAL or the INI file these will be lost.
+Modifications to custom.hal and custom_postgui.hal will not be changed by the StepConf Wizard.
+StepConf will highlight the lastconf that was built.</p>
+</li>
+<li>
+<p><em>Import</em> - Import a Mach configuration file and attempt to convert it to a LinuxCNC config file.
+After the import, you will go though the pages of StepConf to confirm/modify the entries.
+The original mach XML file will not be changed.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>These next options will be recorded in a preference file for the next run of StepConf.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>Create Desktop Shortcut</em> - This will place a link on your desktop to the files.</p>
+</li>
+<li>
+<p><em>Create Desktop Launcher</em> - This will place a launcher on your desktop to start your application.</p>
+</li>
+<li>
+<p><em>Create Simulated Hardware</em> - This allows you to build a config for testing, even if you don&#8217;t have the actual hardware.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:Basic-Information">3. Basic Information</h2>
+<div class="sectionbody">
+<div id="cap:Basic-Information-Page" class="imageblock text-center">
+<div class="content">
+<img src="images/stepconf-base_en.png" alt="Basic Information Page">
+</div>
+<div class="title">Figure 2. Basic Information Page</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>Create Simulated Hardware</em> - This allows you to build a config for testing,
+even if you don&#8217;t have the actual hardware.</p>
+</li>
+<li>
+<p><em>Machine Name</em> - 
+Choose a name for your machine.
+Use only uppercase letters, lowercase letters, digits, - and _.</p>
+</li>
+<li>
+<p><em>Axis Configuration</em> - 
+Choose XYZ (Mill), XYZA (4-axis mill) or XZ (Lathe).</p>
+</li>
+<li>
+<p><em>Machine Units</em> - 
+Choose Inch or mm. All subsequent entries will be in the
+chosen units. Changing this also changes the default values in the Axes section.
+If you change this after selecting values in any of the axes sections, they will
+be over-written by the default values of the selected units.</p>
+</li>
+<li>
+<p><em>Driver Type</em> - 
+If you have one of the stepper drivers listed in the pull down box, choose it.
+Otherwise, select <em>Other</em> and find the timing values in your
+driver&#8217;s data sheet and enter them as <em>nano seconds</em> in the <em>Driver Timing Settings</em>.
+If the data sheet gives a value in microseconds, multiply by 1000.
+For example, enter 4.5 µs as 4500 ns.</p>
+<div class="paragraph">
+<p>A list of some popular drives, along with their timing values, is on the
+LinuxCNC.org Wiki under
+<a href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl?Stepper_Drive_Timing">Stepper Drive Timing</a>.</p>
+</div>
+<div class="paragraph">
+<p>Additional signal conditioning or isolation such as optocouplers and RC filters
+on break out boards can impose timing constraints of their own, in addition
+to those of the driver. You may find it necessary to add some time to the
+drive requirements to allow for this.</p>
+</div>
+<div class="paragraph">
+<p>The LinuxCNC Configuration Selector has configs for Sherline already configured.</p>
+</div>
+</li>
+<li>
+<p><em>Step Time</em> - How long the step pulse is <em>on</em> in nano seconds. If your not
+sure about this setting a value of 20,000 will work with most drives.</p>
+</li>
+<li>
+<p><em>Step Space</em> - Minimum time between step pulses in nano seconds. If your
+not sure about this setting a value of 20,000 will work with most drives.</p>
+</li>
+<li>
+<p><em>Direction Hold</em> - How long the direction pin is held after a change of
+direction in nanoseconds. If your not sure about this setting a value of
+20,000 will work with most drives.</p>
+</li>
+<li>
+<p><em>Direction Setup</em> - How long before a direction change after the last
+step pulse in nanoseconds. If your not sure about this setting a value of
+20,000 will work with most drives.</p>
+</li>
+<li>
+<p><em>One / Two Parport</em> - Select how many parallel port are to be configured.</p>
+</li>
+<li>
+<p><em>Base Period Maximum Jitter</em> - 
+Enter the result of the Latency Test here.
+To run a latency test press the <em>Test Base Period Jitter</em> button. See the
+<a href="../install/latency-test.html#sec:latency-test">Latency Test</a> section for more details.</p>
+</li>
+</ul>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/latency-test_en.png" alt="Latency Test">
+</div>
+<div class="title">Figure 3. Latency Test</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>Max Step Rate</em> -
+StepConf automatically calculates the Max Step Rate based
+on the driver characteristics entered and the latency test result.</p>
+</li>
+<li>
+<p><em>Min Base Period</em> - 
+StepConf automatically determines the Min Base Period
+based on the driver characteristics entered and latency test result.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The important number from the result of the Latency Test is the <em>max jitter</em>. In the example above, 9075
+nanoseconds (ns), or 9.075 microseconds (µs), is the highest jitter.
+Enter the max jitter it in the Base Period Maximum Jitter box.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parallel_port_setup">4. Parallel Port Setup</h2>
+<div class="sectionbody">
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/stepconf-parallel-1_en.png" alt="Parallel Port 1 Setup Page">
+</div>
+<div class="title">Figure 4. Parallel Port Setup Page</div>
+</div>
+<div class="paragraph">
+<p>You may specify the address as a hexadecimal (often 0x378) or as linux&#8217;s default port number (probably 0)</p>
+</div>
+<div class="paragraph">
+<p>For each pin, choose the signal which matches your parallel port pinout.
+Turn on the <em>invert</em> check box if the signal is inverted (0V for true/active, 5V for false/inactive).</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>Output pinout presets</em> - Automatically set pins 2 through 9 according to
+the Sherline standard (Direction on pins 2, 4, 6, 8) or the Xylotex standard
+(Direction on pins 3, 5, 7, 9).</p>
+</li>
+<li>
+<p><em>Inputs and Outputs</em> - If the input or output is not used set the option to <em>Unused</em>.</p>
+</li>
+<li>
+<p><em>External E-Stop</em> - This can be selected from an input pin drop down box.
+A typical E-Stop chain uses all normally closed contacts.</p>
+</li>
+<li>
+<p><em>Homing &amp; Limit Switches</em> -
+These can be selected from an input pin drop down box for most configurations.</p>
+</li>
+<li>
+<p><em>Charge Pump</em> - If your driver board requires a charge pump signal select Charge Pump from
+the drop down list for the output pin you wish to connect to your charge pump input.
+The charge pump output is connected to the base thread by StepConf.
+The charge pump output will be about 1/2 of the maximum step rate shown on the Basic Machine Configuration page.</p>
+</li>
+<li>
+<p><em>Plasma Arc Voltage</em> - If you require a Mesa THCAD to input a plasma arc voltage then select Plasma Arc Voltage from the list of output pins.
+This will enable a THCAD page during the setup procedure for the entry of the card parameters.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parallel_port_2_setup">5. Parallel Port 2 Setup</h2>
+<div class="sectionbody">
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/stepconf-parallel-2_en.png" alt="Parallel Port 2 Setup Page">
+</div>
+<div class="title">Figure 5. Parallel Port 2 Setup Page</div>
+</div>
+<div class="paragraph">
+<p>The second Parallel port (if selected) can be configured and It&#8217;s pins assigned on this page.
+No step and direction signals can be selected.
+You may select in or out to maximizes the number of input/output pins that are available.
+You may specify the address as a hexadecimal (often 0x378) or as linux&#8217;s default port number (probably 1).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:Axis-Configuration">6. Axis Configuration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p></p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/stepconf-axis-x_en.png" alt="Axis X Configuration Page">
+</div>
+<div class="title">Figure 6. Axis Configuration Screen</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>Motor Steps Per Revolution</em> - 
+The number of full steps per motor revolution.
+If you know how many degrees per step the motor is (e.g., 1.8 degree), then divide 360 by the degrees per step to find the number of steps per motor revolution.</p>
+</li>
+<li>
+<p><em>Driver Microstepping</em> -  The amount of microstepping performed by the driver. Enter <em>2</em> for half-stepping.</p>
+</li>
+<li>
+<p><em>Pulley Ratio</em> - 
+If your machine has pulleys between the motor and leadscrew, enter the ratio here.  If not, enter <em>1:1</em>.</p>
+</li>
+<li>
+<p><em>Leadscrew Pitch</em> -  Enter the pitch of the leadscrew here.
+If you chose <em>Inch</em> units, enter the number of threads per inch.
+If you chose <em>mm</em> units, enter the number of millimeters per revolution (e.g., enter 2 for 2mm/rev).
+If the machine travels in the wrong direction, enter a negative number here instead of a positive number, or invert the direction pin for the axis.</p>
+</li>
+<li>
+<p><em>Maximum Velocity</em> - 
+Enter the maximum velocity for the axis in units per second.</p>
+</li>
+<li>
+<p><em>Maximum Acceleration</em> - 
+The correct values for these items can only be determined through experimentation.  See <a href="stepconf.html#sub:finding-maximum-velocity">Finding Maximum Velocity</a> to set the speed and <a href="stepconf.html#sub:finding-maximum-acceleration">Finding Maximum Acceleration</a> to set the acceleration.</p>
+</li>
+<li>
+<p><em>Home Location</em> - 
+The position the machine moves to after completing the homing procedure for this axis.  For machines without home switches, this is the location the operator manually moves the machine to before pressing the Home button.  If you combine the home and limit switches you must move off of the switch to the home position or you will get a joint limit error.</p>
+</li>
+<li>
+<p><em>Table Travel</em> - 
+The range of travel for that axis based on the machine origin.
+The home location must be inside the <em>Table Travel</em> and not equal to one of the Table Travel values.</p>
+</li>
+<li>
+<p><em>Home Switch Location</em> - 
+The location at which the home switch trips or releases relative to the machine origin.  This item and the two below only appear when Home Switches were chosen in the Parallel Port Pinout.  If you combine home and limit switches the home switch location can not be the same as the home position or you will get a joint limit error.</p>
+</li>
+<li>
+<p><em>Home Search Velocity</em> -  The velocity to use when searching for the home switch.  If the switch is near the end of travel, this velocity must be chosen so that the axis can decelerate to a stop before hitting the end of travel.  If the switch is only closed for a short range of travel (instead of being closed from its trip point to one end of travel), this velocity must be chosen so that the axis can decelerate to a stop before the switch opens again, and homing must always be started from the same side of the switch.  If the machine moves the wrong direction at the beginning of the homing procedure, negate the value of <em>Home Search Velocity</em>.</p>
+</li>
+<li>
+<p><em>Home Latch Direction</em> -  Choose <em>Same</em> to have the axis back off the switch, then approach it again at a very low speed.
+The second time the switch closes, the home position is set.
+Choose <em>Opposite</em> to have the axis back off the switch and when the switch opens, the home position is set.</p>
+</li>
+<li>
+<p><em>Time to accelerate to max speed</em> - 
+Time to reach maximum speed calculated from <em>Max Acceleration</em> and <em>Max Velocity</em>.</p>
+</li>
+<li>
+<p><em>Distance to accelerate to max speed</em> - 
+Distance to reach maximum speed from a standstill.</p>
+</li>
+<li>
+<p><em>Pulse rate at max speed</em> - 
+Information computed based on the values entered above.
+The greatest <em>Pulse rate at max speed</em> determines the <em>BASE_PERIOD</em>.
+Values above 20000Hz may lead to slow response time or even lockups (the fastest usable pulse rate varies from computer to computer)</p>
+</li>
+<li>
+<p><em>Axis SCALE</em> - The number that will be used in the INI file [SCALE] setting.
+This is how many steps per user unit.</p>
+</li>
+<li>
+<p><em>Test this axis</em> - 
+This will open a window to allow testing for each axis. This can be used after filling out all the information for this axis.</p>
+</li>
+</ul>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/stepconf-x-test_en.png" alt="Axis Test">
+</div>
+<div class="title">Figure 7. Axis Test</div>
+</div>
+<div class="paragraph">
+<p>Test this axis is a basic tester that only outputs step and direction signals
+to try different values for acceleration and velocity.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">
+In order to use test this axis you have to manually enable the axis if this
+is required. If your driver has a charge pump you will have to bypass it.
+Test this axis does not react to limit switch inputs. Use with caution.
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="sub:finding-maximum-velocity">6.1. Finding Maximum Velocity</h3>
+<div class="paragraph">
+<p>
+Begin with a low Acceleration
+(for example, <strong><code>2 inches/s<sup>2</sup></code></strong> or <strong><code>50 mm/s<sup>2</sup></code></strong>)
+and the velocity you hope to attain.
+Using the buttons provided, jog the axis to near the center of travel.
+Take care because with a low acceleration value,
+it can take a surprising distance for the axis to decelerate to a stop.</p>
+</div>
+<div class="paragraph">
+<p>After gauging the amount of travel available,
+enter a safe distance in Test Area, keeping in mind that
+after a stall the motor may next start to move in an unexpected direction.
+Then click Run.
+The machine will begin to move back and forth along this axis.
+In this test, it is important that the combination of Acceleration and
+Test Area allow the machine to reach the selected Velocity and <em>cruise</em> for
+at least a short distance&#8201;&#8212;&#8201;the more distance, the better this test is.
+The formula <strong><code>d = 0.5 * v * v/a</code></strong>
+gives the minimum distance required to reach the
+specified velocity with the given acceleration.
+If it is convenient and safe to do so,
+push the table against the direction of motion to simulate cutting forces.
+If the machine stalls, reduce the speed and start the test again.</p>
+</div>
+<div class="paragraph">
+<p>If the machine did not obviously stall, click the <em>Run</em> button off. The axis
+now returns to the position where it started. If the position is incorrect,
+then the axis stalled or lost steps during the test. Reduce Velocity and start
+the test again.</p>
+</div>
+<div class="paragraph">
+<p>If the machine doesn&#8217;t move, stalls, or loses steps, no matter how low
+you turn Velocity, verify the following:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Correct step waveform timings</p>
+</li>
+<li>
+<p>Correct pinout, including <em>Invert</em> on step pins</p>
+</li>
+<li>
+<p>Correct, well-shielded cabling</p>
+</li>
+<li>
+<p>Physical problems with the motor, motor coupling, leadscrew, etc.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Once you have found a speed at which the axis does not stall or lose steps
+during this testing procedure, reduce it by 10% and use that as the axis <em>Maximum Velocity</em>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:finding-maximum-acceleration">6.2. Finding Maximum Acceleration</h3>
+<div class="paragraph">
+<p>
+With the Maximum Velocity you found in the previous step,
+enter the acceleration value to test.
+Using the same procedure as above,
+adjust the Acceleration value up or down as necessary.
+In this test, it is important that the combination of
+Acceleration and Test Area allow the machine to reach the selected Velocity.
+Once you have found a value at which the axis
+does not stall or lose steps during this testing procedure,
+reduce it by 10% and use that as the axis Maximum Acceleration.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_spindle_configuration">7. Spindle Configuration</h2>
+<div class="sectionbody">
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/stepconf-spindle_en.png" alt="Spindle Configuration Page">
+</div>
+<div class="title">Figure 8. Spindle Configuration Page</div>
+</div>
+<div class="paragraph">
+<p>This page only appears when <em>Spindle PWM</em> is chosen in the <em>Parallel Port Pinout</em> page for one of the outputs.</p>
+</div>
+<div class="sect2">
+<h3 id="_spindle_speed_control">7.1. Spindle Speed Control</h3>
+<div class="paragraph">
+<p>
+If <em>Spindle PWM</em> appears on the pinout, the following information should be entered:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>PWM Rate</em> - The <em>carrier frequency</em> of the PWM signal to the spindle. Enter
+<em>0</em> for PDM mode, which is useful for generating an analog control voltage.
+Refer to the documentation for your spindle controller for the appropriate value.</p>
+</li>
+<li>
+<p><em>Speed 1 and 2, PWM 1 and 2</em> - The generated configuration file uses a simple
+linear relationship to determine the PWM value for a given RPM value. If the
+values are not known, they can be determined. For more information see
+<a href="stepconf.html#sub:determining-spindle-calibration">Determining Spindle Calibration</a>.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_spindle_synchronized_motion">7.2. Spindle-synchronized motion</h3>
+<div class="paragraph">
+<p>
+When the appropriate signals from a spindle encoder are connected to
+LinuxCNC via HAL, LinuxCNC supports lathe threading.
+These signals are:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>Spindle Index</em> - Is a pulse that occurs once per revolution of the spindle.</p>
+</li>
+<li>
+<p><em>Spindle Phase A</em> - This is a pulse that occurs in multiple equally-spaced
+locations as the spindle turns.</p>
+</li>
+<li>
+<p><em>Spindle Phase B (optional)</em> - This is a second pulse that occurs, but with
+an offset from Spindle Phase A. The advantages to using both A and B are
+direction sensing, increased noise immunity, and increased resolution.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>If <em>Spindle Phase A</em> and <em>Spindle Index</em> appear
+on the pinout, the following information should be entered:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>Use Spindle-At-Speed</em> - With encoder feedback one can choose to have LinuxCNC
+wait for the spindle to reach the commanded speed before feed moves. Select this
+option and set the <em>close enough</em> scale.</p>
+</li>
+<li>
+<p><em>Speed Display Filter Gain</em> - Setting for adjusting the stability of the visual spindle speed display.</p>
+</li>
+<li>
+<p><em>Cycles per revolution</em> - The number of cycles of the <em>Spindle A</em> signal
+during one revolution of the spindle. This option is only enabled when an
+input has been set to <em>Spindle Phase A</em></p>
+</li>
+<li>
+<p><em>Maximum speed in thread</em> - The maximum spindle speed used in threading.
+For a high spindle RPM or a spindle encoder with high resolution, a low value
+of <em>BASE_PERIOD</em> is required.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:determining-spindle-calibration">7.3. Determining Spindle Calibration</h3>
+<div class="paragraph">
+<p>
+Enter the following values in the Spindle Configuration page:</p>
+</div>
+<table class="tableblock frame-all grid-all" style="width: 80%;">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<tbody>
+<tr>
+<th class="tableblock halign-center valign-top"><p class="tableblock">Speed 1:</p></th>
+<td class="tableblock halign-center valign-top"><p class="tableblock">0</p></td>
+<th class="tableblock halign-center valign-top"><p class="tableblock">PWM 1:</p></th>
+<td class="tableblock halign-center valign-top"><p class="tableblock">0</p></td>
+</tr>
+<tr>
+<th class="tableblock halign-center valign-top"><p class="tableblock">Speed 2:</p></th>
+<td class="tableblock halign-center valign-top"><p class="tableblock">1000</p></td>
+<th class="tableblock halign-center valign-top"><p class="tableblock">PWM 2:</p></th>
+<td class="tableblock halign-center valign-top"><p class="tableblock">1</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Finish the remaining steps of the configuration process,
+then launch LinuxCNC with your configuration.
+Turn the machine on and select the MDI tab.
+Start the spindle turning by entering: <em>M3 S100</em>.
+Change the spindle speed by entering a different S-number: <em>S800</em>.
+Valid numbers (at this point) range from 1 to 1000.</p>
+</div>
+<div class="paragraph">
+<p>For two different S-numbers, measure the actual spindle speed in RPM.
+Record the S-numbers and actual spindle speeds. Run StepConf again.
+For <em>Speed</em> enter the measured speed, and for <em>PWM</em> enter the S-number divided by 1000.</p>
+</div>
+<div class="paragraph">
+<p>Because most spindle drivers are somewhat nonlinear in their response
+curves, it is best to:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Make sure the two calibration speeds are not too close together in RPM.</p>
+</li>
+<li>
+<p>Make sure the two calibration speeds are in the range of speeds you will typically use while milling.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For instance, if your spindle will go from 0 RPM to 8000 RPM,
+but you generally use speeds from 400 RPM (10%) to 4000 RPM (100%),
+then find the PWM values that give 1600 RPM (40%) and 2800 RPM (70%).</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_options">8. Options</h2>
+<div class="sectionbody">
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/stepconf-options_en.png" alt="Advanced Options Configuration">
+</div>
+<div class="title">Figure 9. Advanced Options Configuration</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>Include Halui</em> - This will add the Halui user interface component. See the
+<a href="../gui/halui.html#cha:hal-user-interface">HALUI Chapter</a> for more information on.</p>
+</li>
+<li>
+<p><em>Include PyVCP</em> - This option adds the PyVCP panel base file or a sample file
+to work on. See the <a href="../gui/pyvcp.html#cha:pyvcp">PyVCP Chapter</a> for more information.</p>
+</li>
+<li>
+<p><em>Include ClassicLadder PLC</em> - This option will add the ClassicLadder PLC
+(Programmable Logic Controller). See the
+<a href="../ladder/ladder-intro.html#cha:classicladder">ClassicLadder Chapter</a> for more information.</p>
+</li>
+<li>
+<p><em>Onscreen Prompt For Tool Change</em> - If this box is checked, LinuxCNC will
+pause and prompt you to change the tool when <em>M6</em> is encountered. This feature
+is usually only useful if you have presettable tools.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_complete_machine_configuration">9. Complete Machine Configuration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+Click <em>Apply</em> to write the configuration files.
+Later, you can re-run this program and tweak the settings you entered before.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_axis_travels_and_homes">10. Axis Travels and Homes</h2>
+<div class="sectionbody">
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/HomeAxisTravel.png" alt="Axis Travel and Home">
+</div>
+<div class="title">Figure 10. Axis Travel and Home</div>
+</div>
+<div class="paragraph">
+<p>For each axis, there is a limited range of travel.
+The physical end of travel is called the <em>hard stop</em>.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">
+<span class="red">If a mechanical hard stop were to be exceeded,
+the screw or the machine frame would be damaged!</span>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Before the <em>hard stop</em> there is a <em>limit switch</em>.
+If the limit switch is encountered during normal operation,
+LinuxCNC shuts down the motor amplifier.
+The distance between the <em>hard stop</em> and <em>limit switch</em>
+must be long enough to allow an unpowered motor to coast to a stop.</p>
+</div>
+<div class="paragraph">
+<p>Before the <em>limit switch</em> there is a <em>soft limit</em>.
+This is a limit enforced in software after homing.
+If a MDI command or G-code program would pass the soft limit, it is not executed.
+If a jog would pass the soft limit, it is terminated at the soft limit.</p>
+</div>
+<div class="paragraph">
+<p>The <em>home switch</em> can be placed anywhere within the travel (between hard stops).
+As long as external hardware does not deactivate the motor amplifiers
+when the limit switch is reached, one of the limit switches
+can be used as a home switch.</p>
+</div>
+<div class="paragraph">
+<p>The <em>zero position</em> is the location on the axis that is 0 in
+the machine coordinate system.
+Usually the <em>zero position</em> will be within the <em>soft limits</em>.
+On lathes, constant surface speed mode requires that machine <em>X=0</em>
+correspond to the center of spindle rotation when no tool offset is in effect.</p>
+</div>
+<div class="paragraph">
+<p>The <em>home position</em> is the location within travel that the axis will
+be moved to at the end of the homing sequence.
+This value must be within the <em>soft limits</em>.
+In particular, the <em>home position</em>
+should never be exactly equal to a <em>soft limit</em>.</p>
+</div>
+<div class="sect2">
+<h3 id="_operating_without_limit_switches">10.1. Operating without Limit Switches</h3>
+<div class="paragraph">
+<p>A machine can be operated without limit switches. In this case, only
+the soft limits stop the machine from reaching the hard stop.
+Soft limits only operate after the machine has been homed.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_operating_without_home_switches">10.2. Operating without Home Switches</h3>
+<div class="paragraph">
+<p>
+A machine can be operated without home switches.
+If the machine has limit switches, but no home switches,
+it is best to use a limit switch as the home switch
+(e.g., choose <em>Minimum Limit + Home X</em> in the pinout).
+If the machine has no switches at all, or the limit
+switches cannot be used as home switches for another reason, then the
+machine must be homed <em>by eye</em> or by using match marks. Homing by eye
+is not as repeatable as homing to switches, but it still allows the
+soft limits to be useful.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_home_and_limit_switch_wiring_options">10.3. Home and Limit Switch wiring options</h3>
+<div class="paragraph">
+<p>The ideal wiring for external switches would be one input per switch.
+However, the PC parallel port only offers a total of 5 inputs,
+while there are as many as 9 switches on a 3-axis machine.
+Instead, multiple switches are wired together in various
+ways so that a smaller number of inputs are required.</p>
+</div>
+<div class="paragraph">
+<p>The figures below show the general idea of wiring multiple switches to a single input pin.
+In each case, when one switch is actuated, the value seen on INPUT goes from logic HIGH to LOW.
+However, LinuxCNC expects a TRUE value when a switch is closed, so the corresponding <em>Invert</em> box
+must be checked on the pinout configuration page.
+The pull up resistor show in the diagrams pulls the input high
+until the connection to ground is made and then the input goes low.
+Otherwise the input might float between on and off when the circuit is open.
+Typically for a parallel port you might use 47 kΩ;.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/switch-nc-series_en.svg" alt="Normally Closed Switches">
+</div>
+<div class="title">Figure 11. Normally Closed Switches (N/C) wiring in series (simplified diagram)</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/switch-no-parallel_en.svg" alt="Normally Open Switches">
+</div>
+<div class="title">Figure 12. Normally Open Switches (N/O) wiring in parallel (simplified diagram)</div>
+</div>
+<div class="paragraph">
+<p>The following combinations of switches are permitted in StepConf:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Combine home switches for all axes</p>
+</li>
+<li>
+<p>Combine limit switches for all axes</p>
+</li>
+<li>
+<p>Combine both limit switches for one axis</p>
+</li>
+<li>
+<p>Combine both limit switches and the home switch for one axis</p>
+</li>
+<li>
+<p>Combine one limit switch and the home switch for one axis</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The last two combinations are also appropriate when the type
+contact + home is used.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

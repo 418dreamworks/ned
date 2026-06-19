@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>Homing Configuration</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../rouge-github.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:homing-configuration" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="ini-homing.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/config/ini-homing.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/config/ini-homing.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/config/ini-homing.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/config/ini-homing.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/config/ini-homing.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/config/ini-homing.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/config/ini-homing.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>Homing Configuration</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details open><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="stepconf.html">Stepper Configuration Wizard</a><a href="pncconf.html">Mesa Configuration Wizard</a></details><details open><summary>Configuration</summary><a href="integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><a href="ini-config.html">INI Configuration</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>Homing Configuration</summary><ul class="sectlevel1">
+<li><a href="ini-homing.html#_overview">1. Overview</a></li>
+<li><a href="ini-homing.html#_prerequisite">2. Prerequisite</a></li>
+<li><a href="ini-homing.html#_separate_home_switch_example_layout">3. Separate Home Switch Example Layout</a></li>
+<li><a href="ini-homing.html#_shared_limithome_switch_example_layout">4. Shared Limit/Home Switch Example Layout</a></li>
+<li><a href="ini-homing.html#_homing_sequence">5. Homing Sequence</a></li>
+<li><a href="ini-homing.html#_configuration">6. Configuration</a>
+<ul class="sectlevel2">
+<li><a href="ini-homing.html#_home_search_vel">6.1. HOME_SEARCH_VEL</a></li>
+<li><a href="ini-homing.html#_home_latch_vel">6.2. HOME_LATCH_VEL</a></li>
+<li><a href="ini-homing.html#_home_final_vel">6.3. HOME_FINAL_VEL</a></li>
+<li><a href="ini-homing.html#_home_ignore_limits">6.4. HOME_IGNORE_LIMITS</a></li>
+<li><a href="ini-homing.html#_home_use_index">6.5. HOME_USE_INDEX</a></li>
+<li><a href="ini-homing.html#_home_index_no_encoder_reset">6.6. HOME_INDEX_NO_ENCODER_RESET</a></li>
+<li><a href="ini-homing.html#_home_offset">6.7. HOME_OFFSET</a></li>
+<li><a href="ini-homing.html#_home">6.8. HOME</a></li>
+<li><a href="ini-homing.html#_home_is_shared">6.9. HOME_IS_SHARED</a></li>
+<li><a href="ini-homing.html#_home_absolute_encoder">6.10. HOME_ABSOLUTE_ENCODER</a></li>
+<li><a href="ini-homing.html#sec:homing-section">6.11. HOME_SEQUENCE</a></li>
+<li><a href="ini-homing.html#_volatile_home">6.12. VOLATILE_HOME</a></li>
+<li><a href="ini-homing.html#_locking_indexer">6.13. LOCKING_INDEXER</a></li>
+<li><a href="ini-homing.html#_immediate_homing">6.14. Immediate Homing</a></li>
+<li><a href="ini-homing.html#_inhibiting_homing">6.15. Inhibiting Homing</a></li>
+</ul>
+</li>
+</ul></details><a href="lathe-config.html">Lathe Configuration</a><a href="stepper-quickstart.html">Stepper Quickstart</a><a href="stepper.html">Stepper Configuration</a><a href="stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="python-interface.html">The LinuxCNC Python module</a><a href="python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_overview">1. Overview</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Homing sets the zero origin of the G53 machine coordinates.
+Soft limits are defined relative to the machine origin.
+The soft limits automatically decelerate and stop the axes before they hit the limits switches
+A properly configured and functioning machine will not move beyond soft(ware) limits and will have the machine origin set as repeatable as the home switch/index mechanism is.
+Linuxcnc can be homed by eye (alignment marks), with switches, with switches and an encoder index, or by using absolute encoders.
+Homing seems simple enough - just move each joint to a known location, and set LinuxCNC&#8217;s internal variables accordingly.
+However, different machines have different requirements, and homing is actually quite complicated.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+While it is possible to use LinuxCNC without homing switches/home procedures or limit switches,
+It defeats the extra security of the soft limits.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prerequisite">2. Prerequisite</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Homing relies on some fundamental machine assumptions.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The negative and positive directions are based on <a href="../user/user-concepts.html#sec:machine-configurations">Tool Movement</a> which can be different from the actual machine movement.
+I.e., on a mill typically the table moves rather then the tool.</p>
+</li>
+<li>
+<p>Everything is referenced from the G53 machine zero origin, the origin can be anywhere (even outside where you can move)</p>
+</li>
+<li>
+<p>The G53 machine zero origin is typically inside the soft limits area but not necessarily.</p>
+</li>
+<li>
+<p>The homing switch offset sets where the origin is, but even it is referenced from the origin.</p>
+</li>
+<li>
+<p>When using encoder index homing, the home switch offset is calculated from the encoder reference position, after the home switch has been tripped.</p>
+</li>
+<li>
+<p>The negative soft(ware) limits are the most you can move in the negative direction after homing.
+(but they might not be negative in the absolute sense)</p>
+</li>
+<li>
+<p>The positive soft(ware) limits are the most you can move in the positive direction after homing.
+(but they might not be positive in the absolute sense, though it is usual to set it as a positive number)</p>
+</li>
+<li>
+<p>Soft(ware) limits are inside the limit switch area.</p>
+</li>
+<li>
+<p>(Final) Homed Position is inside the soft limit area</p>
+</li>
+<li>
+<p>(If using switch based homing) the homing switch(es) either utilize the limit switches (shared home / limit switch),
+or when using a separate home switch, are inside the limit switch area.</p>
+</li>
+<li>
+<p>If using a separate homing switch, it is possible to start homing on the wrong side of the home switch,
+which combined with HOME_IGNORE_LIMITS option will lead to a hard crash.
+You can avoid this by making the home switch toggle its state when the trip dog is on a particular side until it returns passed the trip point again.
+Said another way, the home switch state must represent the position of the dog relative to the switch (i.e. <em>before</em> or <em>after</em> the switch),
+and must stay that way even if the dog coasts past the switch in the same direction.</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+While it is possible to use LinuxCNC with the G53 machine origin outside the soft machine limits, if you use G28 or G30 without setting the parameters it goes to the origin by default.
+This would trip the limit switches before getting to position.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_separate_home_switch_example_layout">3. Separate Home Switch Example Layout</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This example shows minimum and maximum limit switches with a separate home switch.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/HomeAxisTravel_V2.png" alt="Example Homing Switch layout">
+</div>
+<div class="title">Figure 1. Demonstrative Separate Switch Layout</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A is the negative soft limit</p>
+</li>
+<li>
+<p>B is the G53 machine coordinate Origin</p>
+</li>
+<li>
+<p>C is the home switch trip point</p>
+</li>
+<li>
+<p>D is the positive soft limit</p>
+</li>
+<li>
+<p>H is the final home position (HOME) = 0 units</p>
+</li>
+<li>
+<p>The -L and +L are the limit switches trip points</p>
+</li>
+<li>
+<p>A&lt;&#8594;B is the negative soft limits (MIN_LIMITS) = -3 units</p>
+</li>
+<li>
+<p>B&lt;&#8594;C is the home_offset (HOME_OFFSET) = -2.3 units</p>
+</li>
+<li>
+<p>B&lt;&#8594;D is the positive soft limits (MAX_LIMITS) = 7 units</p>
+</li>
+<li>
+<p>A&lt;&#8594;D is the total travel = 10 units</p>
+</li>
+<li>
+<p>The distance between the limit switches and soft limits (-L&lt;&#8594;A and D&#8592;+L) is magnified in this example</p>
+</li>
+<li>
+<p>Note that there is distance between the limit switches and actual physical hard contact for coasting after the amplifier is disabled.</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Homing sets the G53 coordinate system, while the machine origin (zero point) can be anywhere,
+setting the zero point at the negative soft limit makes all G53 coordinates positive,
+which is probably easiest to remember. Do this by setting MIN_LIMIT = 0 and make sure MAX_LIMIT is positive.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_shared_limithome_switch_example_layout">4. Shared Limit/Home Switch Example Layout</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This example shows a maximum limit switch and a combined minimum limit/home switch.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/HomeAxisTravel_V3.png" alt="Example shared Home Limit Switch layout">
+</div>
+<div class="title">Figure 2. Demonstrative Shared Switch Layout</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A is the negative soft limit.</p>
+</li>
+<li>
+<p>B is the G53 machine coordinate Origin.</p>
+</li>
+<li>
+<p>C is the home switch trip point shared with (-L) minimum limit trip.</p>
+</li>
+<li>
+<p>D is the positive soft limit.</p>
+</li>
+<li>
+<p>H is the final home position (HOME) = 3 units.</p>
+</li>
+<li>
+<p>The -L and +L are the limit switch trip points.</p>
+</li>
+<li>
+<p>A&lt;&#8594;B is the negative soft limits (MIN_LIMITS) = 0 units.</p>
+</li>
+<li>
+<p>B&lt;&#8594;C is the home_offset (HOME_OFFSET) = -0.7 units.</p>
+</li>
+<li>
+<p>B&lt;&#8594;D is the positive soft limits (MAX_LIMITS) 10 units.</p>
+</li>
+<li>
+<p>A&lt;&#8594;D is the total travel = 10 units.</p>
+</li>
+<li>
+<p>The distance between the limits switches and soft limits (-L&lt;&#8594;A and D&lt;&#8594;+L) is magnified in this example.</p>
+</li>
+<li>
+<p>Note that there is distance between the limit switches and actual physical hard contact for coasting after the amplifier is disabled.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_homing_sequence">5. Homing Sequence</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>There are four possible homing sequences defined by the sign of HOME_SEARCH_VEL and HOME_LATCH_VEL, along with the associated configuration parameters as shown in the following table.
+Two basic conditions exist, HOME_SEARCH_VEL and HOME_LATCH_VEL are the same sign or they are opposite signs.
+For a more detailed description of what each configuration parameter does, see the following section.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/emc2-motion-homing-diag.png" alt="Homing Sequences">
+</div>
+<div class="title">Figure 3. Homing Sequences</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_configuration">6. Configuration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following determines exactly how the home sequence behaves.
+They are defined in an [JOINT_n] section of the INI file.</p>
+</div>
+<table class="tableblock frame-all grid-all" style="width: 80%;">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-center valign-top">Homing Type</th>
+<th class="tableblock halign-center valign-top">HOME_SEARCH_VEL</th>
+<th class="tableblock halign-center valign-top">HOME_LATCH_VEL</th>
+<th class="tableblock halign-center valign-top">HOME_USE_INDEX</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">Immediate</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">NO</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">Index-only</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">nonzero</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">YES</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">Switch-only</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">nonzero</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">nonzero</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">NO</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">Switch and Index</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">nonzero</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">nonzero</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">YES</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Any other combinations may result in an error.
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_home_search_vel">6.1. HOME_SEARCH_VEL</h3>
+<div class="paragraph">
+<p>
+This variable has units of machine-units per second.</p>
+</div>
+<div class="paragraph">
+<p>The default value is zero. A value of zero causes LinuxCNC to assume that
+there is no home switch; the search stage of homing is skipped.</p>
+</div>
+<div class="paragraph">
+<p>If HOME_SEARCH_VEL is non-zero, then LinuxCNC assumes that there is a home switch.
+It begins by checking whether the home switch is already tripped.
+If tripped it backs off the switch at HOME_SEARCH_VEL.
+The direction of the back-off is opposite the sign of HOME_SEARCH_VEL.
+Then it searches for the home switch by moving in the direction specified by the sign of HOME_SEARCH_VEL, at a speed determined by its absolute value.
+When the home switch is detected, the joint will stop as fast as possible, but there will always be some overshoot.
+The amount of overshoot depends on the speed.
+If it is too high, the joint might overshoot enough to hit a limit switch or crash into the end of travel.
+On the other hand, if HOME_SEARCH_VEL is too low, homing can take a long time.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_home_latch_vel">6.2. HOME_LATCH_VEL</h3>
+<div class="paragraph">
+<p>
+This variable has units of machine-units per second.</p>
+</div>
+<div class="paragraph">
+<p>Specifies the speed and direction that LinuxCNC uses when it makes its final accurate determination of the home switch (if present) and index pulse location (if present).
+It will usually be slower than the search velocity to maximize accuracy.
+If HOME_SEARCH_VEL and HOME_LATCH_VEL have the same sign, then the latch phase is done while moving in the same direction as the search phase.
+(In that case, LinuxCNC first backs off the switch, before moving towards it again at the latch velocity.)
+If HOME_SEARCH_VEL and HOME_LATCH_VEL have opposite signs, the latch phase is done while moving in the opposite direction from the search phase.
+That means LinuxCNC will latch the first pulse after it moves off the switch.
+If HOME_SEARCH_VEL is zero (meaning there is no home switch), and this parameter is nonzero, LinuxCNC goes ahead to the index pulse search.
+If HOME_SEARCH_VEL is non-zero and this parameter is zero, it is an error and the homing operation will fail.
+The default value is zero.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_home_final_vel">6.3. HOME_FINAL_VEL</h3>
+<div class="paragraph">
+<p>This variable has units of machine-units per second.</p>
+</div>
+<div class="paragraph">
+<p>It specifies the speed that LinuxCNC uses when it makes its move from
+HOME_OFFSET to the HOME position. If the HOME_FINAL_VEL is missing from
+the INI file, then the maximum joint speed is used to make this move.
+The value must be a positive number.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_home_ignore_limits">6.4. HOME_IGNORE_LIMITS</h3>
+<div class="paragraph">
+<p>
+Can hold the values YES / NO. The default value for this parameter is NO.
+This flag determines whether LinuxCNC will ignore the limit switch input for this joint while homing.
+This setting will not ignore limit inputs for other joints.
+If you do not have a separate home switch set this to YES and connect the limit switch signal to the joint home switch input in HAL.
+LinuxCNC will ignore the limit switch input for this joint while homing.
+To use only one input for all homing and limits you will have to block the limit signals of the joints not homing in HAL and home one joint at a time.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_home_use_index">6.5. HOME_USE_INDEX</h3>
+<div class="paragraph">
+<p>
+Specifies whether or not there is an index pulse.
+If the flag is true (HOME_USE_INDEX = YES), LinuxCNC will latch on the rising edge of the index pulse.
+If false, LinuxCNC will latch on either the rising or falling edge of the home switch (depending on the signs of HOME_SEARCH_VEL and HOME_LATCH_VEL).
+The default value is NO.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+HOME_USE_INDEX requires connections in your HAL file to <code>joint.n.index-enable</code> from the <code>encoder.n.index-enable</code>.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_home_index_no_encoder_reset">6.6. HOME_INDEX_NO_ENCODER_RESET</h3>
+<div class="paragraph">
+<p>
+Default is NO.
+Use YES if the encoder used for this joint does not reset its counter when an index pulse is detected after assertion of the joint index_enable HAL pin.
+Applicable only for HOME_USE_INDEX = YES.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_home_offset">6.7. HOME_OFFSET</h3>
+<div class="paragraph">
+<p>
+This defines the location of the origin zero point of the G53 machine coordinate system.
+It is the distance (offset), in joint units, from the machine origin to the home switch trip point or index pulse.
+After detecting the switch trip point/index pulse, LinuxCNC sets the joint coordinate position to HOME_OFFSET, thus defining the origin, which the soft limits references from.
+The default value is zero.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The home switch location, as indicated by the HOME_OFFSET variable, can be inside or outside the soft limits.
+They will be shared with or inside the hard limit switches.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_home">6.8. HOME</h3>
+<div class="paragraph">
+<p>
+The position that the joint will go to upon completion of the homing sequence.
+After detecting the home switch or home switch then index pulse (depending on configuration),
+and setting the coordinate of that point to HOME_OFFSET, LinuxCNC makes a move to HOME as the final step of the homing process.
+The default value is zero.
+Note that even if this parameter is the same as HOME_OFFSET, the joint will slightly overshoot the latched position as it stops.
+Therefore there will always be a small move at this time (unless HOME_SEARCH_VEL is zero, and the entire search/latch stage was skipped).
+This final move will be made at the joint&#8217;s maximum velocity unless HOME_FINAL_VEL has been set.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The distinction between <em>HOME_OFFSET</em> and <em>HOME</em> is that <em>HOME_OFFSET</em> first establishes the origin location and scale on the machine
+by applying the <em>HOME_OFFSET</em> value to the location where home was found, and then <em>HOME</em> says where the joint should move to on that scale.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_home_is_shared">6.9. HOME_IS_SHARED</h3>
+<div class="paragraph">
+<p>
+If there is not a separate home switch input for this joint, but a number of momentary switches wired to the same pin, set this value to 1 to prevent homing from starting if one of the shared switches is already closed.
+Set this value to 0 to permit homing even if the switch is already closed.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_home_absolute_encoder">6.10. HOME_ABSOLUTE_ENCODER</h3>
+<div class="paragraph">
+<p>
+Use for absolute encoders.  When a request is made to home the joint, the current joint position is set to the <em>[JOINT_n]HOME_OFFSET</em> value.</p>
+</div>
+<div class="paragraph">
+<p>The final move to the <em>[JOINT_n]HOME</em> position is optional according to the <em>HOME_ABSOLUTE_ENCODER</em> setting:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>HOME_ABSOLUTE_ENCODER = 0 (Default) joint does not use an absolute encoder
+HOME_ABSOLUTE_ENCODER = 1 Absolute encoder, final move to [JOINT_n]HOME
+HOME_ABSOLUTE_ENCODER = 2 Absolute encoder, NO final move to [JOINT_n]HOME</pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+A HOME_IS_SHARED setting is silently ignored.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+A request to rehome the joint is silently ignored.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sec:homing-section">6.11. HOME_SEQUENCE</h3>
+<div class="paragraph">
+<p>
+Used to define a multi-joint homing sequence <strong>HOME ALL</strong> and enforce homing order (e.g., Z may not be homed if X is not yet homed).
+A joint may be homed after all joints with a lower (absolute value) HOME_SEQUENCE have already been homed and are at the HOME_OFFSET.
+If two joints have the same HOME_SEQUENCE, they may be homed at the same time.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+If HOME_SEQUENCE is not specified then the joint will not be homed by the <strong>HOME ALL</strong> sequence (but may be homed by individual joint-specific homing commands).
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The initial HOME_SEQUENCE number may be 0, 1 (or -1).
+The absolute value of sequence numbers must increment by one&#8201;&#8212;&#8201;skipping sequence numbers is not supported.
+If a sequence number is omitted, <strong>HOME ALL</strong> homing will stop upon completion of the last valid sequence number.</p>
+</div>
+<div class="paragraph">
+<p><strong>Negative</strong> HOME_SEQUENCE values indicate that joints in the sequence should <strong>synchronize the final move</strong> to [JOINT_n]HOME by waiting until all joints in the sequence are ready.
+If any joint has a <strong>negative</strong> HOME_SEQUENCE value, then all joints with the same absolute value (positive or negative) of the HOME_SEQUENCE item value will synchronize the final move.</p>
+</div>
+<div class="paragraph">
+<p>A <strong>negative</strong> HOME_SEQUENCE also applies to commands to home a single joint.
+If the HOME_SEQUENCE value is <strong>negative</strong>, all joints having the same absolute value of that HOME_SEQUENCE will be <strong>homed together with a synchronized final move</strong>.
+If the HOME_SEQUENCE value is zero or positive, a command to home the joint will home only the specified joint.</p>
+</div>
+<div class="paragraph">
+<p>Joint mode jogging of joints having a negative HOME_SEQUENCE is disallowed.
+In common gantry applications, such jogging can lead to misalignment (racking).
+Note that conventional jogging in world coordinates is always available once a machine is homed.</p>
+</div>
+<div class="paragraph">
+<p>Examples for a 3 joint system</p>
+</div>
+<div class="paragraph">
+<p>Two sequences (0,1), no synchronization</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="p">[</span><span class="nn">JOINT_0</span><span class="p">]</span><span class="py">HOME_SEQUENCE</span> <span class="p">=</span> <span class="s">0</span>
+<span class="p">[</span><span class="nn">JOINT_1</span><span class="p">]</span><span class="py">HOME_SEQUENCE</span> <span class="p">=</span> <span class="s">1</span>
+<span class="p">[</span><span class="nn">JOINT_2</span><span class="p">]</span><span class="py">HOME_SEQUENCE</span> <span class="p">=</span> <span class="s">1</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Two sequences, joints 1 and 2 synchronized</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="p">[</span><span class="nn">JOINT_0</span><span class="p">]</span><span class="py">HOME_SEQUENCE</span> <span class="p">=</span>  <span class="s">0</span>
+<span class="p">[</span><span class="nn">JOINT_1</span><span class="p">]</span><span class="py">HOME_SEQUENCE</span> <span class="p">=</span> <span class="s">-1</span>
+<span class="p">[</span><span class="nn">JOINT_2</span><span class="p">]</span><span class="py">HOME_SEQUENCE</span> <span class="p">=</span> <span class="s">-1</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>With mixed positive and negative values, joints 1 and 2 synchronized</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="p">[</span><span class="nn">JOINT_0</span><span class="p">]</span><span class="py">HOME_SEQUENCE</span> <span class="p">=</span>  <span class="s">0</span>
+<span class="p">[</span><span class="nn">JOINT_1</span><span class="p">]</span><span class="py">HOME_SEQUENCE</span> <span class="p">=</span> <span class="s">-1</span>
+<span class="p">[</span><span class="nn">JOINT_2</span><span class="p">]</span><span class="py">HOME_SEQUENCE</span> <span class="p">=</span>  <span class="s">1</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>One sequence, no synchronization</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="p">[</span><span class="nn">JOINT_0</span><span class="p">]</span><span class="py">HOME_SEQUENCE</span> <span class="p">=</span>  <span class="s">0</span>
+<span class="p">[</span><span class="nn">JOINT_1</span><span class="p">]</span><span class="py">HOME_SEQUENCE</span> <span class="p">=</span>  <span class="s">0</span>
+<span class="p">[</span><span class="nn">JOINT_2</span><span class="p">]</span><span class="py">HOME_SEQUENCE</span> <span class="p">=</span>  <span class="s">0</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>One sequence, all joints synchronized</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="p">[</span><span class="nn">JOINT_0</span><span class="p">]</span><span class="py">HOME_SEQUENCE</span> <span class="p">=</span> <span class="s">-1</span>
+<span class="p">[</span><span class="nn">JOINT_1</span><span class="p">]</span><span class="py">HOME_SEQUENCE</span> <span class="p">=</span> <span class="s">-1</span>
+<span class="p">[</span><span class="nn">JOINT_2</span><span class="p">]</span><span class="py">HOME_SEQUENCE</span> <span class="p">=</span> <span class="s">-1</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_volatile_home">6.12. VOLATILE_HOME</h3>
+<div class="paragraph">
+<p>
+If this setting is true, this joint becomes unhomed whenever the machine transitions into the OFF state.
+This is appropriate for any joint that does not maintain position when the joint drive is off.
+Some stepper drives, especially microstep drives, may need this.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_locking_indexer">6.13. LOCKING_INDEXER</h3>
+<div class="paragraph">
+<p>
+If this joint is a locking rotary indexer, it will unlock before homing, and lock afterward.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_immediate_homing">6.14. Immediate Homing</h3>
+<div class="paragraph">
+<p>
+If a joint does not have home switches or does not have a logical home position like a rotary joint and you want that joint to home at the current position when the "Home All" button is pressed in the AXIS GUI,
+then the following INI entries for that joint are needed.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>HOME_SEARCH_VEL = 0
+HOME_LATCH_VEL = 0
+HOME_USE_INDEX = NO
+HOME_OFFSET = 0 (Or the home position offset (HOME))
+HOME_SEQUENCE = 0 (or other valid sequence number)</pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The default values for unspecified HOME_SEARCH_VEL, HOME_LATCH_VEL, HOME_USE_INDEX, HOME, and HOME_OFFSET are <strong>zero</strong>, so they may be omitted when requesting immediate homing.
+A valid HOME_SEQUENCE number should usually be included since omitting a HOME_SEQUENCE eliminates the joint from <strong>HOME ALL</strong> behavior as noted above.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_inhibiting_homing">6.15. Inhibiting Homing</h3>
+<div class="paragraph">
+<p>
+A HAL pin (motion.homing-inhibit) is provided to disallow homing initiation for both "Home All" and individual joint homing.</p>
+</div>
+<div class="paragraph">
+<p>Some systems take advantage of the provisions for synchronizing final joint homing moves as controlled by negative [JOINT_N]HOME_SEQUENCE= INI file items.
+By default, the synchronization provisions disallow <strong>joint</strong> jogging prior to homing in order to prevent <strong>joint</strong> jogs that could misalign the machine (gantry racking for example).</p>
+</div>
+<div class="paragraph">
+<p>System integrator can allow <strong>joint</strong> jogging prior to homing with HAL logic that switches the [JOINT_N]HOME_SEQUENCE items.
+This logic should also assert the <strong>motion.homing-inhibit</strong> pin to ensure that homing is not inadvertently initiated when <strong>joint</strong> jogging is enabled.</p>
+</div>
+<div class="paragraph">
+<p>Example: Synced joints 0,1 using negative sequence (-1) for synchronized homing with a switch (allow_jjog) that selects a positive sequence (1) for individual <strong>joint</strong> jogging prior to homing (partial HAL code):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadrt</span> <span class="n">mux2</span>           <span class="n">names</span><span class="o">=</span><span class="n">home_sequence_mux</span>
+<span class="k">loadrt</span> <span class="n">conv_float_s32</span> <span class="n">names</span><span class="o">=</span><span class="n">home_sequence_s32</span>
+<span class="k">setp</span> <span class="na">home_sequence_mux.in0</span> <span class="mi">-1</span>
+<span class="k">setp</span> <span class="na">home_sequence_mux.in1</span>  <span class="mi">1</span>
+<span class="k">addf</span> <span class="n">home_sequence_mux</span> <span class="n">servo-thread</span>
+<span class="k">addf</span> <span class="n">home_sequence_s32</span> <span class="n">servo-thread</span>
+...
+<span class="k">net</span> <span class="n">home_seq_float</span> <span class="o">&lt;=</span> <span class="na">home_sequence_mux.out</span>
+<span class="k">net</span> <span class="n">home_seq_float</span> <span class="o">=&gt;</span> <span class="na">home_sequence_s32.in</span>
+<span class="k">net</span> <span class="n">home_seq_s32</span>   <span class="o">&lt;=</span> <span class="na">home_sequence_s32.out</span>
+<span class="k">net</span> <span class="n">home_seq_s32</span>   <span class="o">=&gt;</span> <span class="na">ini.0.home_sequence</span>
+<span class="k">net</span> <span class="n">home_seq_s32</span>   <span class="o">=&gt;</span> <span class="na">ini.1.home_sequence</span>
+...
+<span class="c1"># allow_jjog: pin created by a virtual panel or hardware switch</span>
+<span class="k">net</span> <span class="n">hsequence_select</span> <span class="o">&lt;=</span> <span class="n">allow_jjog</span>
+<span class="k">net</span> <span class="n">hsequence_select</span> <span class="o">=&gt;</span> <span class="na">home_sequence_mux.sel</span>
+<span class="k">net</span> <span class="n">hsequence_select</span> <span class="o">=&gt;</span> <span class="na">motion.homing-inhibit</span></code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+INI HAL pins (like ini.N.home_sequence) are not available until milltask starts so execution of the above HAL commands should be deferred using a postgui HAL file or a delayed [APPLICATION]APP= script.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Realtime synchronization of joint jogging for multiple joints requires additional HAL connections for the Manual-Pulse-Generator (MPG) type jog pins (<code>joint.N.enable</code>, <code>joint.N.scale</code>, <code>joint.N.counts</code>).
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>An example simulation config (gantry_jjog.ini) that demonstrates joint jogging when using negative home sequences is located in the: configs/sim/axis/gantry/ directory.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

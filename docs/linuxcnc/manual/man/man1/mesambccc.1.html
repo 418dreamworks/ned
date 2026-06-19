@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>mesambccc(1)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../rouge-github.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="mesambccc.1.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man1/mesambccc.1.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man1/mesambccc.1.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man1/mesambccc.1.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man1/mesambccc.1.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man1/mesambccc.1.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man1/mesambccc.1.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man1/mesambccc.1.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>mesambccc(1) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>mesambccc - Utility for compiling hm2_modbus command control description files</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>mesambccc</strong> [<em>-h</em>|<em>--help</em>] [<em>-v</em>|<em>--verbose</em>] [<em>-o</em> file|<em>--output</em>=file] &lt;filename.source.mbccs&gt;</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <strong>mesambccc</strong> utility is used to compile hm2_modbus driver command control
+description files for running Modbus devices with Mesa cards using the
+PktUARTs. The MBCCS source file is an XML formatted document which describes
+the devices connected, pins to create and commands to issue to the PktUART port
+using the Modbus protocol. See <a href="mesambccc.1.html#_mbccs_file_format"><strong>MBCCS FILE FORMAT</strong></a>
+below.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_options">OPTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>-h</strong>, <strong>--help</strong></dt>
+<dd>
+<p>Show a brief help message and exit.</p>
+</dd>
+<dt class="hdlist1"><strong>-o file</strong>, <strong>--output=file</strong></dt>
+<dd>
+<p>Save the compiled output to <strong>file</strong>. The file name <em>mesamodbus.output.mbccb</em>
+is used if no file is specified on the command line.</p>
+</dd>
+<dt class="hdlist1"><strong>-v</strong>, <strong>--verbose</strong></dt>
+<dd>
+<p>Output a verbose list of configuration parameters, devices, Modbus messages
+and HAL pins.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_mbccs_file_format">MBCCS FILE FORMAT</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Modbus command control source file (mbccs file) is an XML formatted
+document describing the communication parameters, connected devices, HAL pins
+and command functions to be sent over Modbus. The overall layout is as follows:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="cp">&lt;?xml version="1.0" encoding="UTF-8"?&gt;</span>
+<span class="nt">&lt;mesamodbus</span> <span class="err">[attributes...]</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;devices&gt;</span>...<span class="nt">&lt;/devices&gt;</span>
+  <span class="nt">&lt;initlist&gt;</span>...<span class="nt">&lt;/initlist&gt;</span>
+  <span class="nt">&lt;commands&gt;</span>...<span class="nt">&lt;/commands&gt;</span>
+<span class="nt">&lt;/mesamodbus&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <em>&lt;devices&gt;</em> tag must be defined before either <em>&lt;initlist&gt;</em> or <em>&lt;commands&gt;</em>
+are defined.</p>
+</div>
+<div class="sect2">
+<h3 id="_attribute_values">ATTRIBUTE VALUES</h3>
+<div class="paragraph">
+<p>Attribute values are generally case insensitive, except for the <em>name</em>
+attributes, which should always be lower case.</p>
+</div>
+<div class="paragraph">
+<p>Boolean attributes accept values "false" and "0" for false and "true" and "1"
+for true. Integer numerical values can be entered in decimal, hexadecimal,
+octal or binary form. The latter three require the value to be prefixed with
+"0x", "0o" or "0b" respectively. Floating point values follow standard rules
+for floating point values.</p>
+</div>
+<div class="paragraph">
+<p>All values are checked to be within an acceptable range. Errors and warnings
+are emitted when values are out of bounds. In case of a warning they may be
+clamped to the acceptable range.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_modbus_functions">MODBUS FUNCTIONS</h3>
+<div class="paragraph">
+<p>A subset of the Modbus functions is supported (with function number in parentheses):</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>R_COILS</code> (<code>1</code>):
+Maps to 1..2000 HAL output pins of type <em>HAL_BIT</em>.</p>
+</li>
+<li>
+<p><code>R_INPUTS</code> (<code>2</code>):
+Maps to 1..2000 HAL output pins of type <em>HAL_BIT</em>.</p>
+</li>
+<li>
+<p><code>R_REGISTERS</code> (<code>3</code>):
+Maps to 1..125 HAL output pins depending <em>haltype</em> and <em>scale</em> attributes.</p>
+</li>
+<li>
+<p><code>R_INPUTREGS</code> (<code>4</code>):
+Maps to 1..125 HAL output pins depending <em>haltype</em> and <em>scale</em> attributes.</p>
+</li>
+<li>
+<p><code>W_COIL</code> (<code>5</code>):
+Maps to single HAL input pin of type <em>HAL_BIT</em>.</p>
+</li>
+<li>
+<p><code>W_REGISTER</code> (<code>6</code>):
+Maps to single HAL input pins depending <em>haltype</em> and <em>scale</em> attributes.</p>
+</li>
+<li>
+<p><code>W_COILS</code> (<code>15</code>):
+Maps to 1..2000 HAL input pins of type <em>HAL_BIT</em>.</p>
+</li>
+<li>
+<p><code>W_REGISTERS</code> (<code>16</code>):
+Maps to 1..125 HAL input pins depending <em>haltype</em> and <em>scale</em> attributes.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>You can use the function&#8217;s symbolic name or numerical value in <em>&lt;command&gt;</em> in
+the <em>function</em> attribute (as in <code>function="W_REGISTERS"</code> or <code>function="16"</code>).</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_modbus_types">MODBUS TYPES</h3>
+<div class="paragraph">
+<p>The <em>modbustype</em> attribute declares the interpretation of values to or from a
+Modbus device&#8217;s registers. They can be a signed integer (S), unsigned integer
+(U) or a floating point value (F). The size of the value can be 16-bit, 32-bit
+or 64-bit and the byte-ordering must be specified. The Modbus default, when
+speaking in "register" quantities, is an unsigned 16-bit value in big-endian
+(U_AB).</p>
+</div>
+<div class="paragraph">
+<p>Modbus devices may implement other interpretations covering multiple
+consecutive registers to create larger or other types. In doing so, multiple
+device vendors have created some different interpretations of the data that
+needs to be covered. Differences are primarily byte-ordering.</p>
+</div>
+<div class="paragraph">
+<p>The byte-ordering is specified with one of the following suffixes:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>_A</code>, <code>_B</code></p>
+</li>
+<li>
+<p><code>_AB</code>, <code>_BA</code></p>
+</li>
+<li>
+<p><code>_ABCD</code>, <code>_BADC</code>, <code>_CDAB</code>, <code>_DCBA</code></p>
+</li>
+<li>
+<p><code>_ABCDEFGH</code>, <code>_BADCFEHG</code>, <code>_CDABGHEF</code>, <code>_DCBAHGFE</code>,
+<code>_EFGHABCD</code>, <code>_FEHGBADC</code>, <code>_GHEFCDAB</code>, <code>_HGFEDCBA</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Modbus standard byte-ordering is big-endian, which is the first in each list
+(<code>_AB</code>, <code>_ABCD</code> and <code>_ABCDEFGH</code>). Little-endian is the last in each list. The user
+may use any of the byte-orderings necessary and required because some device
+vendors have not paid attention to the proper on-wire ordering.</p>
+</div>
+<div class="paragraph">
+<p>The orderings <code>_A</code> and <code>_B</code> are single byte values from a modbus register. A
+single byte will be taken from the register value. You cannot access successive
+bytes from the same register using these types. (You require a second component
+that de-multiplexes the HAL value(s) into individual bytes from the data stream
+using the hm2_modbus presented pin values.)<br>
+The ordering <code>_A</code> will use the the least significant byte (LSB), with respect
+to the default big endian order for Modbus. Ordering <code>_B</code> will use the most
+significant byte (MSB). Note that there is no floating point type when only
+using sizes of one single byte.<br>
+Single byte values have the additional restriction that they cannot be used as
+data values in <em>&lt;initlist&gt;/&lt;command&gt;/&lt;data&gt;</em>.</p>
+</div>
+<div class="paragraph">
+<p>The byte-ordering suffix is prefixed with S (signed), U (unsigned) or F (float)
+to complete the <em>modbustype</em> attribute value. For example, a 32-bit float in
+big-endian is named <code>F_ABCD</code>. A 64-bit signed integer value in little-endian is
+S_HGFEDCBA.</p>
+</div>
+<div class="paragraph">
+<p>The types have following ranges and will be clamped to the min/max values if
+the <em>clamp</em> attribute is set in the <em>&lt;command&gt;</em>:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>8-bit:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>signed integer [-128..+127] (<code>S_A</code>, <code>S_B</code>)</p>
+</li>
+<li>
+<p>unsigned integer [0..255] (<code>U_A</code>, <code>U_B</code>)</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>16-bit:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>float16 [-65504.0..+65504.0] (<code>F_AB</code>, <code>F_BA</code>)</p>
+</li>
+<li>
+<p>signed integer [-32768..+32767] (<code>S_AB</code>, <code>S_BA</code>)</p>
+</li>
+<li>
+<p>unsigned integers [0..65535] (<code>U_AB</code>, <code>U_BA</code>)</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>32-bit:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>float [-3.4e38..+3.4e38] (<code>F_ABCD</code>&#8230;&#8203;<code>F_DCBA</code>)</p>
+</li>
+<li>
+<p>signed integer [-2147483648..+2147483647] (<code>S_ABCD</code>&#8230;&#8203;<code>S_DCBA</code>)</p>
+</li>
+<li>
+<p>unsigned integer [0..4294967296] (<code>U_ABCD</code>&#8230;&#8203;<code>U_DCBA</code>)</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>64-bit:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>double [-1.7e308..+1.7e308] (<code>F_ABCDEFGH</code>&#8230;&#8203;<code>F_HGFEDCBA</code>)</p>
+</li>
+<li>
+<p>signed integer [-9223372036854775808..9223372036854775807]
+(<code>S_ABCDEFGH</code>&#8230;&#8203;<code>S_HGFEDCBA</code>)</p>
+</li>
+<li>
+<p>unsigned integer [0..18446744073709551615] (<code>U_ABCDEFGH</code>&#8230;&#8203;<code>U_HGFEDCBA</code>)</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_mesamodbus">&lt;mesamodbus&gt;</h3>
+<div class="paragraph">
+<p>The main enclosing tag <em>&lt;mesamodbus&gt;</em> contains the communication parameters and
+other setup values as attributes:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>baudrate</strong> [1200..1000000]</dt>
+<dd>
+<p>Communication speed. Any speed over 460800 will result in side-effects
+because the internal hardware timers may overflow to keep track of the Modbus
+protocol requirements. Default 9600.</p>
+</dd>
+<dt class="hdlist1"><strong>drivedelay</strong> [auto, 1..31]</dt>
+<dd>
+<p>The delay, in bit-times, before transmission begins after enabling the
+transmitter hardware output driver. Default auto.</p>
+</dd>
+<dt class="hdlist1"><strong>duplex</strong> [full, half]</dt>
+<dd>
+<p>Whether 2-wire (half duplex) or 4-wire (full duplex) communication is set.
+Default half.</p>
+</dd>
+<dt class="hdlist1"><strong>icdelay</strong> [auto, 1..255]</dt>
+<dd>
+<p>The maximum allowed inter-character delay between two received characters in
+bit-times. Default: auto.</p>
+</dd>
+<dt class="hdlist1"><strong>interval</strong> [0..3600000000]</dt>
+<dd>
+<p>The default command repeat interval in micro-seconds. This is effectively the
+time between repeating the <em>&lt;commands&gt;</em> list (sending writes and receiving
+reads from the Modbus devices). An interval shorter than the time it takes to
+work through the <em>&lt;commands&gt;</em> list will just repeat the <em>&lt;commands&gt;</em> list as
+fast as possible.<br>
+The <em>interval</em> may be overridden in the individual <em>&lt;commands&gt;&lt;command&gt;</em>
+instructions. Default 0.</p>
+</dd>
+<dt class="hdlist1"><strong>parity</strong> [N, O, E]</dt>
+<dd>
+<p>Communication parity none (N), odd (O) or even (E). Default E.</p>
+</dd>
+<dt class="hdlist1"><strong>rxdelay</strong>, <strong>txdelay</strong> [auto, 1..1020]</dt>
+<dd>
+<p>Inter frame delay between packets sent/received. The value is in bit-times.
+The appropriate value will be calculated automatically when this attribute is
+omitted. If set manually, the <em>txdelay</em> value should generally be larger
+than <em>rxdelay</em> value. The value is limited to [1..255] for PktUART V2.
+Default auto.</p>
+</dd>
+<dt class="hdlist1"><strong>stopbits</strong> [1, 2]</dt>
+<dd>
+<p>Communication number of stopbits. This attribute requires PktUART V3+ to have
+any effect. Default 1.</p>
+</dd>
+<dt class="hdlist1"><strong>suspend</strong> [Boolean]</dt>
+<dd>
+<p>Start with suspended communication when set. This enables you to setup pin,
+scale and offset values in the HAL file(s) using setp/sets commands before
+data is written to any Modbus device. Default false.</p>
+</dd>
+<dt class="hdlist1"><strong>timeout</strong> [auto, 10000..10000000]</dt>
+<dd>
+<p>The standard time a command may take in micro-seconds (send request plus
+handling plus receive reply) before the command is deemed lost. The special
+value of <em>auto</em> will calculate an appropriate timeout value from the request
+and reply sizes. The <em>timeout</em> value can be overridden in the <em>&lt;command&gt;</em>
+definitions. Default auto.</p>
+</dd>
+<dt class="hdlist1"><strong>writeflush</strong> [Boolean]</dt>
+<dd>
+<p>Set to true when the first round of write commands must synchronize the
+internal state to the pin state. The writes are calculated but not sent to
+the Modbus device (i.e. flushed). This flush happens either once when the
+module starts, each time when the module comes out of <em>suspend</em>, or
+specifically for a command when it gets re-enabled.<br>
+The write flush is necessary when you need to ensure proper and correct pin
+data is present <em>before</em> the Modbus commands start sending potentially
+harmful or invalid data because the pins have not yet been initialized to
+their proper values. When set, only pin values that are changed from their
+initial values are propagated in Modbus write commands.<br>
+This value represents the global default used buy the individual commands
+from the <em>&lt;commands&gt;</em> section and can be overridden in the
+individual <em>&lt;command&gt;</em> instructions. Default true.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>The default parameters, without any attributes defined in <em>&lt;mesamodbus&gt;</em>, are
+half duplex serial setup using 8E1@9600 and running all commands as fast as
+possible. Timeouts and other timing parameters are calculated automatically.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_devices">&lt;devices&gt;</h3>
+<div class="paragraph">
+<p>Each connected device to the physical bus must be declared in a <em>&lt;device&gt;</em> tag
+with a <em>name</em> and an <em>address</em> attribute. A device with name <em>broadcast</em> is
+implicitly added with address zero (0). Device entries may include
+a <em>&lt;description&gt;</em> tag, which serves as a user&#8217;s comment.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;devices&gt;</span>
+  <span class="nt">&lt;device</span> <span class="na">address=</span><span class="s">"0x01"</span> <span class="na">name=</span><span class="s">"binbox"</span> <span class="nt">/&gt;</span>
+  <span class="nt">&lt;device</span> <span class="na">address=</span><span class="s">"0x02"</span> <span class="na">name=</span><span class="s">"vroom"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;description&gt;</span>Round and round and round...<span class="nt">&lt;/description&gt;</span>
+  <span class="nt">&lt;/device&gt;</span>
+  <span class="nt">&lt;device</span> <span class="na">address=</span><span class="s">"0x66"</span> <span class="na">name=</span><span class="s">"clickies"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;description&gt;</span>Many, many relays<span class="nt">&lt;/description&gt;</span>
+  <span class="nt">&lt;/device&gt;</span>
+<span class="nt">&lt;/devices&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Recognized <em>&lt;devices&gt;/&lt;device&gt;</em> attributes:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>address</strong> [1..247]</dt>
+<dd>
+<p>The Modbus slave device ID. The Modbus reserved address range 248..255 is
+accepted, but a warning is emitted.</p>
+</dd>
+<dt class="hdlist1"><strong>name</strong></dt>
+<dd>
+<p>The <em>name</em> of the device. The name must be in lower case ASCII and adhere to
+the HAL specification comprising of letters and numbers with optional dash
+and period. It is strongly advised to use letters only in a descriptive
+word. The device&#8217;s <em>name</em> is used to construct the HAL pin names.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_initlist">&lt;initlist&gt;</h3>
+<div class="paragraph">
+<p>The <em>&lt;initlist&gt;</em> tag contains a list of <em>&lt;command&gt;</em> tags that are only sent
+<em>once</em> at the startup of the system. The commands can be used to initialize any
+devices on the bus prior to normal operation. Commands can be both read and
+write functions. Write functions must have data defined to be sent.
+Each <em>&lt;command&gt;</em> entry may include a <em>&lt;description&gt;</em> tag, which serves as a
+user&#8217;s comment.</p>
+</div>
+<div class="paragraph">
+<p>Note: if the driver starts in suspended mode (<code>supend="true"</code> in <em>&lt;mesamodbus&gt;</em>),
+then the <em>&lt;initlist&gt;</em> commands are first sent when the driver comes out of
+suspend.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;initlist&gt;</span>
+  <span class="nt">&lt;command</span> <span class="na">device=</span><span class="s">"scd30"</span> <span class="na">function=</span><span class="s">"W_REGISTER"</span> <span class="na">address=</span><span class="s">"0x0034"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;description&gt;</span>Soft reset<span class="nt">&lt;/description&gt;</span>
+    <span class="nt">&lt;data</span> <span class="na">value=</span><span class="s">"1"</span> <span class="nt">/&gt;</span>
+  <span class="nt">&lt;/command&gt;</span>
+  <span class="nt">&lt;command</span> <span class="na">device=</span><span class="s">"relay"</span> <span class="na">function=</span><span class="s">"W_COILS"</span> <span class="na">address=</span><span class="s">"0"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;data</span> <span class="na">value=</span><span class="s">"0"</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;data</span> <span class="na">value=</span><span class="s">"1"</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;data</span> <span class="na">value=</span><span class="s">"1"</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;data</span> <span class="na">value=</span><span class="s">"0"</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;description&gt;</span>Four relays set to off-on-on-off<span class="nt">&lt;/description&gt;</span>
+  <span class="nt">&lt;/command&gt;</span>
+  <span class="nt">&lt;command</span> <span class="na">device=</span><span class="s">"boombox"</span> <span class="na">function=</span><span class="s">"W_COIL"</span> <span class="na">address=</span><span class="s">"0"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;data</span> <span class="na">value=</span><span class="s">"0xff00"</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;description&gt;</span>Single output set to on to hear the boombox<span class="nt">&lt;/description&gt;</span>
+  <span class="nt">&lt;/command&gt;</span>
+  <span class="nt">&lt;command</span> <span class="na">delay=</span><span class="s">"2000000"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;description&gt;</span>Wait for reset to finish<span class="nt">&lt;/description&gt;</span>
+  <span class="nt">&lt;/command&gt;</span>
+  <span class="nt">&lt;command</span> <span class="na">device=</span><span class="s">"fltbox"</span> <span class="na">function=</span><span class="s">"W_REGISTERS"</span> <span class="na">address=</span><span class="s">"0xcafe"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;data</span> <span class="na">modbustype=</span><span class="s">"F_ABCD"</span> <span class="na">value=</span><span class="s">"0.53"</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;data</span> <span class="na">modbustype=</span><span class="s">"F_ABCD"</span> <span class="na">value=</span><span class="s">"99.999"</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;description&gt;</span>Send four 16-bit words: 0x3f07 0xae14 0x42c7 0xff7d
+                 (floats in binary, big-endian)<span class="nt">&lt;/description&gt;</span>
+  <span class="nt">&lt;/command&gt;</span>
+<span class="nt">&lt;/initlist&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A <em>&lt;command&gt;</em> is either a delay instruction, a communication parameter change
+or a Modbus transaction to perform. Only the <em>delay</em> attribute is supported in
+case of a delay instruction and all activity is suspended during the specified
+delay. A communication parameter change can use any communication related
+attribute from the <em>&lt;mesamodbus&gt;</em> tag and must revert to the defaults set in
+the <em>&lt;mesamodbus&gt;</em> tag at the end on the <em>&lt;initlist&gt;</em>.</p>
+</div>
+<div class="paragraph">
+<p>Modbus write functions must include one or more <em>&lt;data&gt;</em> tags to encapsulate
+the data to send. The <em>&lt;data&gt;</em> tag has a mandatory attribute <em>value</em> to capture
+the value to send. An optional <em>modbustype</em> attribute models the data to send
+to the format of the <em>modbustype</em>. The default is U_AB if the type is not
+specified.</p>
+</div>
+<div class="paragraph">
+<p>The write coils Modbus function <code>W_COILS</code> (<code>15</code>) further restrict the <em>value</em> to
+zero (0) or one (1). The write coil <code>W_COIL</code> (<code>5</code>) has a fixed type of U_AB and
+expects a value of 0x0000 or 0xff00. Other values may be given, but a warning
+will then be emitted.</p>
+</div>
+<div class="paragraph">
+<p>The Modbus read functions <code>R_COILS</code> (<code>1</code>), <code>R_INPUTS</code> (<code>2</code>), <code>R_REGISTERS</code> (<code>3</code>) and
+<code>R_INPUTREGS</code> (<code>4</code>) are supported in the <em>&lt;initlist&gt;/&lt;command&gt;</em> but the returned
+data is ignored and discarded. Read functions are supported because some
+devices require a read function as a trigger.</p>
+</div>
+<div class="paragraph">
+<p>Recognized <em>&lt;initlist&gt;/&lt;command&gt;</em> attributes when sending Modbus commands:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>address</strong> [0..65535]</dt>
+<dd>
+<p>The Modbus coil/input/register starting address.</p>
+</dd>
+<dt class="hdlist1"><strong>bcanswer</strong> [Boolean]</dt>
+<dd>
+<p>Set to true if a device sends an answer on broadcast, which must be ignored.
+Default false.</p>
+</dd>
+<dt class="hdlist1"><strong>count</strong> [1..2000]/[1..125]</dt>
+<dd>
+<p>Modbus read functions <code>R_COILS</code> (<code>1</code>), <code>R_INPUTS</code> (<code>2</code>), <code>R_REGISTERS</code> (<code>3</code>) and
+<code>R_INPUTREGS</code> (<code>4</code>) must specify the number of coils, inputs, registers or
+inputregs to read. Write functions do not require the <em>count</em> attribute
+because the <em>&lt;data&gt;</em> tags dictate the size of the packet to send.</p>
+</dd>
+<dt class="hdlist1"><strong>device</strong></dt>
+<dd>
+<p>The Modbus device to communicate with. The <em>device</em> attribute
+references <em>&lt;device&gt;[name]</em>.<br>
+The device name <em><code>broadcast</code></em> will send the command to all devices on the bus.</p>
+</dd>
+<dt class="hdlist1"><strong>function</strong> [see <a href="mesambccc.1.html#_modbus_functions"><strong>MODBUS FUNCTIONS</strong></a>]</dt>
+<dd>
+<p>The attribute value is one of the supported Modbus functions.</p>
+</dd>
+<dt class="hdlist1"><strong>noanswer</strong> [Boolean]</dt>
+<dd>
+<p>Set to true if a device does not return a reply to a command. This can be
+intentional if you send a command to a non-existing device. Default false.</p>
+</dd>
+<dt class="hdlist1"><strong>timeout</strong> [auto, 1..60000000]</dt>
+<dd>
+<p>The override timeout of <em>&lt;mesamodbus&gt;[timeout]</em> for this command in
+<strong>micro-seconds</strong> (send request plus handling plus receive reply) before the
+command is deemed lost. See also <em>timeoutbits</em> below.
+Default <em>&lt;mesamodbus&gt;[timeout]</em>.</p>
+</dd>
+<dt class="hdlist1"><strong>timeoutbits</strong> [0..1000000]</dt>
+<dd>
+<p>The override timeout of <em>&lt;mesamodbus&gt;[timeout]</em> for this command
+in <strong>bit times</strong> (send request plus handling plus receive reply) before the
+command is deemed lost. The actual timeout is automatically calculated and
+scaled by the <em>&lt;mesamodbus&gt;[baudrate]</em> setting. See also <em>timeout</em> above.
+Default use <em>timeout</em> attribute.</p>
+</dd>
+<dt class="hdlist1"><strong>timesout</strong> [Boolean]</dt>
+<dd>
+<p>Set to true if the command is known to (periodically) timeout and no error
+should be emitted when it does. This differs from <em>noanswer</em> in that a reply
+may be expected within the timeout period but not after the timeout expires.
+This may be required for flaky devices. Default false.</p>
+</dd>
+</dl>
+</div>
+<div class="sect3">
+<h4 id="_delay_instruction">Delay instruction</h4>
+<div class="paragraph">
+<p>Recognized <em>&lt;initlist&gt;/&lt;command&gt;</em> attributes in delay commands:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>delay</strong> [0..60000000]</dt>
+<dd>
+<p>Communication will be suspended by <em>delay</em> micro-seconds.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_communication_parameter_change">Communication parameter change</h4>
+<div class="paragraph">
+<p>Communication parameters may be temporarily changed to perform live setup of
+Modbus devices to change their own communication parameters. Some devices will
+start with a fixed rate and must be reprogrammed at start to change to a
+different rate. The default setup from <em>&lt;mesamodbus&gt;</em> must be restored if one
+or more parameters were changed or a warning will be emitted.</p>
+</div>
+<div class="paragraph">
+<p>Recognized <em>&lt;initlist&gt;/&lt;command&gt;</em> attributes in communication parameter change
+commands. Attributes not specified will be taken from the <em>&lt;mesamodbus&gt;</em> tag&#8217;s
+attributes:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>baudrate</strong> [1200..1000000]</dt>
+<dd>
+<p>Communication speed override.</p>
+</dd>
+<dt class="hdlist1"><strong>drivedelay</strong> [auto, 1..31]</dt>
+<dd>
+<p>The TX driver delay override.</p>
+</dd>
+<dt class="hdlist1"><strong>icdelay</strong> [auto, 1..255]</dt>
+<dd>
+<p>The inter-character delay override.</p>
+</dd>
+<dt class="hdlist1"><strong>parity</strong> [N, O, E]</dt>
+<dd>
+<p>Communication parity override.</p>
+</dd>
+<dt class="hdlist1"><strong>rxdelay</strong>, <strong>txdelay</strong> [auto, 1..1020]</dt>
+<dd>
+<p>Inter frame delay override.</p>
+</dd>
+<dt class="hdlist1"><strong>stopbits</strong> [1, 2]</dt>
+<dd>
+<p>Communication number of stopbits override.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_initialization_data">Initialization data</h4>
+<div class="paragraph">
+<p>Recognized <em>&lt;initlist&gt;/&lt;command&gt;/&lt;data&gt;</em> attributes:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>modbustype</strong> [see <a href="mesambccc.1.html#_modbus_types"><strong>MODBUS TYPES</strong></a>]</dt>
+<dd>
+<p>The destination format and translation of the <em>value</em> attribute.</p>
+</dd>
+<dt class="hdlist1"><strong>value</strong></dt>
+<dd>
+<p>The numerical value of the data to send. The format defaults to unsigned
+16-bit integer but depends on the <em>modbustype</em> attribute and the range of
+acceptable values depends on the Modbus function.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_hal_types">HAL TYPES</h3>
+<div class="paragraph">
+<p>A <em>&lt;command&gt;</em> in the <em>&lt;commands&gt;</em> section maps to one or more HAL pins with
+specific type using the <em>haltype</em> attribute. Recognized are:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>HAL_BIT</em></p>
+</li>
+<li>
+<p><em>HAL_FLOAT</em></p>
+</li>
+<li>
+<p><em>HAL_S32</em></p>
+</li>
+<li>
+<p><em>HAL_U32</em></p>
+</li>
+<li>
+<p><em>HAL_S64</em></p>
+</li>
+<li>
+<p><em>HAL_U64</em></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The types are also recognized without the HAL_ prefix. Note that coil and
+binary input functions <code>R_COILS</code> (<code>1</code>), <code>R_INPUTS</code> (<code>2</code>), <code>W_COIL</code> (<code>5</code>)
+and <code>W_COILS</code> (<code>15</code>) can only map to <em>HAL_BIT</em> and do so implicitly.</p>
+</div>
+<div class="paragraph">
+<p>The <em>HAL_BIT</em>, <em>HAL_U32</em> and <em>HAL_U64</em> types always map to one single HAL pin.</p>
+</div>
+<div class="paragraph">
+<p>The <em>HAL_FLOAT</em>, <em>HAL_S32</em> and <em>HAL_S64</em> types can generate one single pin or
+can generate multiple pins with <em>offset</em> and <em>scale</em>. Output pins
+with <code>R_REGISTERS</code> (<code>3</code>) and <code>R_INPUTREGS</code> (<code>4</code>) can add a <em>scaled</em> pin to
+the set.</p>
+</div>
+<div class="paragraph">
+<p>Mapping HAL pins to commands requires a <em>modbustype</em> attribute to encode the
+format and necessary conversions. Register functions <code>R_REGISTERS</code> (<code>3</code>),
+ <code>R_INPUTREGS</code> (<code>4</code>), <code>W_REGISTER</code> (<code>6</code>) and <code>W_REGISTERS</code> (<code>16</code>) may map
+to <em>HAL_BIT</em> only when using unsigned <em>modbustype</em> where a value of zero (0)
+is <em>false</em> and any other value is <em>true</em> for write functions or one (1) for
+read functions.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_commands">&lt;commands&gt;</h3>
+<div class="paragraph">
+<p>The <em>&lt;commands&gt;</em> section defines one or more <em>&lt;command&gt;</em> tags to describe the
+Modbus function(s) to execute in a periodical way. Each <em>&lt;command&gt;</em> tag maps to
+one or more HAL pins and specifies data conversion between device data and HAL
+pin data.</p>
+</div>
+<div class="paragraph">
+<p>A delay command may be added using the <em>delay</em> attribute causing the
+communication to be suspended for the specified time. This may be required in
+broadcast situations where the Modbus devices must have time for internal
+processing before the next data is sent or requested.</p>
+</div>
+<div class="paragraph">
+<p>The <em>&lt;command&gt;</em> entries may include a <em>&lt;description&gt;</em> child-tag, which serves
+as a user&#8217;s comment.
+Additionally, the <em>&lt;command&gt;</em> tag may have one or more <em>&lt;pin&gt;</em> child-tags to
+create user-defined HAL pin names. Each <em>&lt;pin&gt;</em> tag may again include
+a <em>&lt;description&gt;</em> child-tag.</p>
+</div>
+<div class="paragraph">
+<p>Modbus read functions <code>R_COILS</code> (<code>1</code>), <code>R_INPUTS</code> (<code>2</code>), <code>R_REGISTERS</code> (<code>3</code>)
+and <code>R_INPUTREGS</code> (<code>4</code>) will always be sent at the specified interval.
+However, the Modbus write functions <code>W_COIL</code> (<code>5</code>), <code>W_REGISTER</code> (<code>6</code>),
+ <code>W_COILS</code> (<code>15</code>) and <code>W_REGISTERS</code> (<code>16</code>) are <em>only</em> sent when the source data
+(pin value) changed. You must specify the <em>resend</em> attribute to force repeated
+writes at the specified interval.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;commands&gt;</span>
+  <span class="nt">&lt;command</span> <span class="na">device=</span><span class="s">"wavebox"</span> <span class="na">function=</span><span class="s">"R_COILS"</span> <span class="na">address=</span><span class="s">"0x0000"</span> <span class="na">count=</span><span class="s">"4"</span> <span class="na">name=</span><span class="s">"state"</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;description&gt;</span>Type is implicit HAL_BIT, will become HAL pins:
+       - (out) hm2_modbus.0.wavebox.state-00
+       - (out) hm2_modbus.0.wavebox.state-01
+       - (out) hm2_modbus.0.wavebox.state-02
+       - (out) hm2_modbus.0.wavebox.state-03
+    <span class="nt">&lt;/description&gt;</span>
+  <span class="nt">&lt;/command&gt;</span>
+  <span class="nt">&lt;command</span> <span class="na">device=</span><span class="s">"scd30"</span> <span class="na">modbustype=</span><span class="s">"F_ABCD"</span> <span class="na">haltype=</span><span class="s">"HAL_FLOAT"</span> <span class="na">function=</span><span class="s">"R_REGISTERS"</span>
+           <span class="na">address=</span><span class="s">"0x0028"</span> <span class="na">scale=</span><span class="s">"0"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;pin</span> <span class="na">name=</span><span class="s">"co2"</span><span class="nt">&gt;&lt;description&gt;</span>Too much will kill you...<span class="nt">&lt;/description&gt;&lt;/pin&gt;</span>
+    <span class="nt">&lt;pin</span> <span class="na">name=</span><span class="s">"temperature"</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;pin</span> <span class="na">name=</span><span class="s">"humidity"</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;description&gt;</span>Will become HAL pins:
+       - (out) hm2_modbus.0.scd30.co2
+       - (out) hm2_modbus.0.scd30.temperature
+       - (out) hm2_modbus.0.scd30.humidity
+       Count will automatically be calculated (6 Modbus 16-bit registers).
+    <span class="nt">&lt;/description&gt;</span>
+  <span class="nt">&lt;/command&gt;</span>
+  <span class="nt">&lt;command</span> <span class="na">device=</span><span class="s">"broadcast"</span> <span class="na">function=</span><span class="s">"W_COILS"</span> <span class="na">address=</span><span class="s">"0x1234"</span> <span class="na">count=</span><span class="s">"2"</span>
+           <span class="na">name=</span><span class="s">"anyandall"</span> <span class="na">bcanswer=</span><span class="s">"1"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;description&gt;</span>Will create HAL_BIT pins:
+      - (in) hm2_modbus.0.anyandall-00
+      - (in) hm2_modbus.0.anyandall-01
+      The bcanswer flag signifies that a device erroneously sends a reply on
+      broadcast (oopsie), which needs to be ignored .
+    <span class="nt">&lt;/description&gt;</span>
+  <span class="nt">&lt;/command&gt;</span>
+  <span class="c">&lt;!-- A delay is suggested after a broadcast to allow devices to handle the data --&gt;</span>
+  <span class="nt">&lt;command</span> <span class="na">delay=</span><span class="s">"10000"</span> <span class="nt">/&gt;</span>
+  <span class="nt">&lt;command</span> <span class="na">device=</span><span class="s">"watcher"</span> <span class="na">function=</span><span class="s">"W_REGISTER"</span> <span class="na">haltype=</span><span class="s">"HAL_U32"</span> <span class="na">modbustype=</span><span class="s">"U_AB"</span>
+           <span class="na">address=</span><span class="s">"0x1ee7"</span> <span class="na">noanswer=</span><span class="s">"1"</span> <span class="na">resend=</span><span class="s">"1"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;pin</span> <span class="na">name=</span><span class="s">"watcher"</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;description&gt;</span>Will create a HAL_U32 pin
+      - (in) hm2_modbus.0.watcher
+      The 'count' is implicit 1. The data is mapped to U_AB and is clamped.
+      The data is sent every time (resend=1), regardless whether the HAL pin
+      changed. No answer is expected to be received (noanswer=1). This
+      command generates a (valid) Modbus packet on the bus and nothing more.
+      You must be sure that no reply is sent from the device or errors will
+      occur (for example silent watchdog).
+    <span class="nt">&lt;/description&gt;</span>
+  <span class="nt">&lt;/command&gt;</span>
+<span class="nt">&lt;/commands&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Recognized <em>&lt;commands&gt;/&lt;command&gt;</em> attributes:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>address</strong> [0..65535]</dt>
+<dd>
+<p>The Modbus coil/input/register starting address.</p>
+</dd>
+<dt class="hdlist1"><strong>bcanswer</strong> [Boolean]</dt>
+<dd>
+<p>Set to true if a device sends an answer on broadcast, which must be ignored.
+Default false.</p>
+</dd>
+<dt class="hdlist1"><strong>clamp</strong> [Boolean]</dt>
+<dd>
+<p>Conversion from larger to smaller types are automatically clamped to their
+maximum/minimum values. It works in both ways: read &#8658; HAL-out and write &#8656;
+HAL-in. Setting this to false can result in truncated values. Default is true.</p>
+</dd>
+<dt class="hdlist1"><strong>count</strong> [1..2000]/[1..125]/[1..62]/[1..31]</dt>
+<dd>
+<p>The <em>count</em> specifies the number of HAL pins to create. The data from these pins
+is read from or written to the Modbus device. Alternatively, you can specify
+the HAL pins using the <em>&lt;pin&gt;</em> child-tags. If both <em>count</em> and <em>&lt;pin&gt;</em> are
+specified and <em>count</em> is larger than the number of <em>&lt;pin&gt;</em> tags, then
+additional HAL pins will be created to match the count.<br>
+(the range depends on <em>haltype</em> and <em>modbustype</em>)</p>
+</dd>
+<dt class="hdlist1"><strong>delay</strong> [0..60000000]</dt>
+<dd>
+<p>Suspend activity and delay the next <em>&lt;command&gt;</em> by <em>delay</em> micro-seconds.</p>
+</dd>
+<dt class="hdlist1"><strong>device</strong></dt>
+<dd>
+<p>The Modbus device to communicate with. The <em>device</em> attribute
+references <em>&lt;device&gt;[name]</em>.<br>
+The device name <em><code>broadcast</code></em> will send the command to all devices on the bus.</p>
+</dd>
+<dt class="hdlist1"><strong>disabled</strong> [Boolean]</dt>
+<dd>
+<p>Start the command in disabled state when set, preventing it from being
+executed. Using the <em>disabled</em> flag is a fine grain per command control.
+In contrast, <em>suspend</em> works on the entire state machine and controls
+operation of all commands in an all-or-nothing way. A command in the disabled
+state can be enabled by toggling the reset pin of the command. Using <em>disable</em>
+can be particularly useful when you need to delay one particular command
+while others may already be run. The <em>writeflush</em> setting is honored when
+coming out of the disabled state. Default false.</p>
+</dd>
+<dt class="hdlist1"><strong>function</strong> [see <a href="mesambccc.1.html#_modbus_functions"><strong>MODBUS FUNCTIONS</strong></a>]</dt>
+<dd>
+<p>The attribute value is one of the supported Modbus functions.</p>
+</dd>
+<dt class="hdlist1"><strong>haltype</strong> [see <a href="mesambccc.1.html#_hal_types"><strong>HAL TYPES</strong></a>]</dt>
+<dd>
+<p>The HAL pin type for interactions. You do not need to specify this attribute
+for the Modbus functions read/write coil(s) or inputs, <code>R_COILS</code> (<code>1</code>),
+<code>R_INPUTS</code> (<code>2</code>), <code>W_COIL</code> (<code>5</code>) and <code>W_COILS</code> (<code>15</code>), as these always use
+the <em>HAL_BIT</em> type.</p>
+</dd>
+<dt class="hdlist1"><strong>interval</strong> [once,0..3600000000]</dt>
+<dd>
+<p>The command repeat interval in micro-seconds. This is the time between
+repeating this <em>&lt;command&gt;</em>. An interval shorter than the time it takes to work
+through the <em>&lt;commands&gt;</em> list will just repeat this <em>&lt;command&gt;</em> as fast as
+possible.<br>
+A special value of <em>once</em> will run this command only once. However, it will
+be retried is an error occurred.  You normally do not need the value <em>once</em>
+and it may be better to use an entry in the <em>&lt;initlist&gt;</em>. But sometimes you
+need to have other periodic commands before a <em>once</em> marked command that
+cannot be achieved in the <em>&lt;initlist&gt;</em> sequence. Default <em>&lt;mesamodbus&gt;[interval]</em>.</p>
+</dd>
+<dt class="hdlist1"><strong>modbustype</strong> [see <a href="mesambccc.1.html#_modbus_types"><strong>MODBUS TYPES</strong></a>]</dt>
+<dd>
+<p>The Modbus data mapping from/to register(s) for Modbus functions read/write
+register(s) <code>R_REGISTERS</code> (<code>3</code>), <code>R_INPUTREGS</code> (<code>4</code>), <code>W_REGISTER</code> (<code>6</code>) and
+<code>W_REGISTERS</code> (<code>16</code>). The default is U_AB if not specified.</p>
+</dd>
+<dt class="hdlist1"><strong>name</strong></dt>
+<dd>
+<p>The name for HAL pin names.<br>
+Example: if <code>count="2"</code> and <code>name="myname"</code>, then the pins will have
+names <em>myname-00</em> and <em>myname-01</em>, unless one or more <em>&lt;pin&gt;</em> tags override
+the name.</p>
+</dd>
+<dt class="hdlist1"><strong>noanswer</strong> [Boolean]</dt>
+<dd>
+<p>Set to true if a device does not return a reply to a command. This can be
+intentional if you send a command to a non-existing device. Default false.</p>
+</dd>
+<dt class="hdlist1"><strong>resend</strong> [Boolean]</dt>
+<dd>
+<p>Resend Modbus write command even though no HAL pin change (data to send
+change) was detected. Normally, only data changes are sent using Modbus write
+commands. Some devices require a constant "reminder" (like watchdogs) and
+you need to send the data regularly. Default false.</p>
+</dd>
+<dt class="hdlist1"><strong>scale</strong> [Boolean]</dt>
+<dd>
+<p>Add scaling HAL pins. Modbus read functions <code>R_REGISTERS</code> (<code>3</code>) and <code>R_INPUTREGS</code> (<code>4</code>)
+add extra HAL pins <strong>pin.name.offset</strong> (in, 64-bit <em>haltype</em>), <strong>pin.name.scale</strong>
+(in, <em>HAL_FLOAT</em>) and <strong>pin.name.scaled</strong> (out, <em>HAL_FLOAT</em>).<br>
+The Modbus write functions <code>W_REGISTER</code> (<code>6</code>) and <code>W_REGISTERS</code> (<code>16</code>) create
+extra HAL pins <strong>pin.name.offset</strong> (in, 64-bit <em>haltype</em>) and <strong>pin.name.scale</strong>
+(in, <em>HAL_FLOAT</em>).<br>
+The <em>scale</em> attribute is only supported for <em>HAL_FLOAT</em>, <em>HAL_S32</em> and <em>HAL_S64</em>.
+Default is true for <em>HAL_FLOAT</em> and false for others. The <strong>scale</strong> pin is
+initialized to one (1.0) and the <strong>offset</strong> pin is initialized to zero (0).<br>
+Scaling is always multiplicative to prevent division-by-zero. The offset is
+always subtracted before scaling. The scaling action performed and subject to
+clamping is:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>read: <code>pin.name = "readvalue"</code></p>
+</li>
+<li>
+<p>read: <code>pin.name.scaled = ("readvalue" - pin.name.offset) * pin.name.scale</code></p>
+</li>
+<li>
+<p>write: <code>"sendvalue" = (pin.name - pin.name.offset) * pin.name.scale</code></p>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1"><strong>timeout</strong> [auto, 1..60000000]</dt>
+<dd>
+<p>The override timeout of <em>&lt;mesamodbus&gt;[timeout]</em> for this command in
+<strong>micro-seconds</strong> (send request plus handling plus receive reply) before the
+command is deemed lost. See also <em>timeoutbits</em> below.
+Default <em>&lt;mesamodbus&gt;[timeout]</em>.</p>
+</dd>
+<dt class="hdlist1"><strong>timeoutbits</strong> [0..1000000]</dt>
+<dd>
+<p>The override timeout of <em>&lt;mesamodbus&gt;[timeout]</em> for this command
+in <strong>bit times</strong> (send request plus handling plus receive reply) before the
+command is deemed lost. The actual timeout is automatically calculated and
+scaled by the <em>&lt;mesamodbus&gt;[baudrate]</em> setting. See also <em>timeout</em> above.
+Default <em>&lt;mesamodbus&gt;[timeout]</em>.</p>
+</dd>
+<dt class="hdlist1"><strong>timesout</strong> [Boolean]</dt>
+<dd>
+<p>Set to true if the command is known to (periodically) timeout and no error
+should be emitted when it does. This differs from <em>noanswer</em> in that a reply
+may be expected within the timeout period but not after the timeout expires.
+This may be required for flaky devices. Default false.</p>
+</dd>
+<dt class="hdlist1"><strong>unaligned</strong> [Boolean]</dt>
+<dd>
+<p>Set to true to suppress the alignment warning in multi-register reads or
+writes where 32-bit or 64-bit values are not aligned to their natural Modbus
+address boundaries. This is useful for devices that do not care about
+alignment or do not use Modbus addresses in conventional ways.<br>
+Setting <em>unaligned</em> is purely a cosmetic attribute to suppress console
+clutter when compiling the mbccs file. It has no functional effect on the
+communication with the device. Default false.</p>
+</dd>
+<dt class="hdlist1"><strong>writeflush</strong> [Boolean]</dt>
+<dd>
+<p>The override the <em>writeflush</em> value. See <em>&lt;mesamodbus&gt;[writeflush]</em> for
+details. Default <em>&lt;mesamodbus&gt;[writeflush]</em>.</p>
+</dd>
+</dl>
+</div>
+<div class="sect3">
+<h4 id="_pins">Pins</h4>
+<div class="paragraph">
+<p>Defining <em>&lt;pin&gt;</em> tags allows for custom naming schemes and allows reducing read
+and write function overhead. Using <em>&lt;pin&gt;</em> tags enables you to combine
+different <em>modbustype</em> and <em>haltype</em> values to be read or written to or from
+consecutive addresses. A warning is emitted if 32-bit and 64-bit values are not
+aligned to their native boundary (it may be an error, depending device). The
+attributes of the <em>&lt;command&gt;</em> tag set the defaults for the <em>&lt;pin&gt;</em> tag
+attributes and can be overridden by adding them to the <em>&lt;pin&gt;</em> tag.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;command</span> <span class="na">device=</span><span class="s">"booboo"</span>
+         <span class="na">function=</span><span class="s">"R_REGISTERS"</span>
+         <span class="na">address=</span><span class="s">"0x0240"</span>
+         <span class="na">haltype=</span><span class="s">"HAL_FLOAT"</span>
+         <span class="na">modbustype=</span><span class="s">"F_ABCD"</span>
+         <span class="na">scale=</span><span class="s">"1"</span><span class="nt">&gt;</span>
+  <span class="c">&lt;!-- addr: 0x0240-0x0241; disable scaling pins --&gt;</span>
+  <span class="nt">&lt;pin</span> <span class="na">name=</span><span class="s">"speed"</span> <span class="na">scale=</span><span class="s">"0"</span> <span class="nt">/&gt;</span>
+  <span class="c">&lt;!-- addr:0x0242; one register to bit--&gt;</span>
+  <span class="nt">&lt;pin</span> <span class="na">name=</span><span class="s">"ping"</span> <span class="na">haltype=</span><span class="s">"HAL_BIT"</span> <span class="na">modbustype=</span><span class="s">"U_AB"</span> <span class="nt">/&gt;</span>
+  <span class="c">&lt;!-- Align the next value --&gt;</span>
+  <span class="nt">&lt;pin</span> <span class="na">skip=</span><span class="s">"1"</span> <span class="nt">/&gt;</span>
+  <span class="c">&lt;!-- addr: 0x0244-0x0245; use defaults from this command --&gt;</span>
+  <span class="nt">&lt;pin</span> <span class="na">name=</span><span class="s">"afloat"</span> <span class="nt">/&gt;</span>
+<span class="c">&lt;!--
+  The above &lt;command&gt;&lt;pin&gt; tags read 6 registers and generate pins:
+  hm2_modbus.0.speed         HAL_FLOAT (out)
+  hm2_modbus.0.ping          HAL_BIT   (out)
+  hm2_modbud.0.afloat        HAL_FLOAT (out)
+  hm2_modbud.0.afloat.offset HAL_FLOAT (in)
+  hm2_modbud.0.afloat.scale  HAL_FLOAT (in)
+  hm2_modbud.0.afloat.scaled HAL_FLOAT (out)
+--&gt;</span>
+<span class="nt">&lt;/command&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Recognized <em>&lt;commands&gt;/&lt;command&gt;/&lt;pin&gt;</em> attributes:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>clamp</strong> [Boolean]</dt>
+<dd>
+<p>The clamp setting override for this pin.</p>
+</dd>
+<dt class="hdlist1"><strong>haltype</strong> [see <a href="mesambccc.1.html#_hal_types"><strong>HAL TYPES</strong></a>]</dt>
+<dd>
+<p>The HAL type override for this pin.</p>
+</dd>
+<dt class="hdlist1"><strong>modbustype</strong> [see <a href="mesambccc.1.html#_modbus_types"><strong>MODBUS TYPES</strong></a>]</dt>
+<dd>
+<p>The Modbus type override for this pin.</p>
+</dd>
+<dt class="hdlist1"><strong>name</strong></dt>
+<dd>
+<p>Specifies the pin name overriding the default <em>&lt;command&gt;[name]-xx</em> sequence.
+This makes the HAL names more human readable.</p>
+</dd>
+<dt class="hdlist1"><strong>scale</strong> [Boolean]</dt>
+<dd>
+<p>The scale setting override for this pin.</p>
+</dd>
+<dt class="hdlist1"><strong>skip</strong> [0..24]</dt>
+<dd>
+<p>Skip a number of registers ignoring them for read functions and writing
+zero (0) for write functions. There can not be other attributes if the <em>skip</em>
+attribute is used.<br>
+Using a <em>skip</em> value larger than 11 will emit a warning. Large skips make the
+transfers less efficient and skipping 12+ registers may be better off by
+splitting the function in two commands. An exception may be atomicity where
+the device allows access to the intermediate (unused) register addresses and
+only guarantees atomicity in a single read/write transaction.<br>
+Beware that the skipped registers <strong>must</strong> be readable or writable (depending
+function). The skipped values must be transferred in the Modbus transaction
+and the target device must allow read or write access to the skipped register
+addresses.<br>
+Beware:
+using <em>skip</em> in write commands <strong>writes value zero (0) to the skipped registers</strong>.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>linuxcnc</strong>(1),
+<strong>hm2_modbus</strong>(9).</p>
+</div>
+<div class="paragraph">
+<p><a href="https://linuxcnc.org/docs/devel/html/drivers/mesa_modbus.html" class="bare">https://linuxcnc.org/docs/devel/html/drivers/mesa_modbus.html</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This man page written by B.Stultiens, as part of the LinuxCNC project.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reporting_bugs">REPORTING BUGS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Report bugs at <a href="https://github.com/LinuxCNC/linuxcnc/issues" class="bare">https://github.com/LinuxCNC/linuxcnc/issues</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_copyright">COPYRIGHT</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Copyright © 2025 B.Stultiens</p>
+</div>
+<div class="paragraph">
+<p>This is free software; see the source for copying conditions. There is
+NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

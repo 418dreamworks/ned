@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>sserial(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="sserial.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/sserial.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/sserial.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/sserial.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/sserial.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/sserial.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/sserial.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/sserial.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>sserial(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>sserial - Smart Serial LinuxCNC HAL driver for the Mesa Electronics HostMot2 Smart-Serial remote cards</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Mesa Smart-Serial interface is a 2.5Mbs proprietary interface
+between the Mesa Anything-IO cards and a range of subsidiary devices
+termed "smart-serial remotes". The remote cards perform a variety of
+functions, but typically they combine various classes of IO. The remote
+cards are self-configuring, in that they tell the main LinuxCNC Hostmot2
+driver what their pin functions are and what they should be named.</p>
+</div>
+<div class="paragraph">
+<p>Many sserial remotes offer different pinouts depending on the mode they
+are started up in. This is set using the sserial_port_N= option in the
+hm2_pci modparam. See the hostmot2 manpage for further details.</p>
+</div>
+<div class="paragraph">
+<p>It is likely that this documentation will be permanently out of date.</p>
+</div>
+<div class="paragraph">
+<p>Each Anything-IO board can attach up to 8 sserial remotes to each header
+(either the 50-pin headers on the 5I20/5I22/5I23/7I43 or the 25-pin
+connectors on the 5I25, 6I25 and 7I80). The remotes are grouped into
+"ports" of up to 8 "channels". Typically each header will be a single 8
+channel port, but this is not necessarily always the case.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_ports">PORTS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In addition to the per-channel/device pins detailed below there are
+three per-port pins and three parameters.</p>
+</div>
+<div class="paragraph">
+<p><strong>Pins:</strong></p>
+</div>
+<div class="literalblock">
+<div class="title">sserial.port-<em>N</em>.run (bit, in):: Enables the specific Smart Serial module.</div>
+<div class="content">
+<pre>Setting this pin low will disable all boards on the port and puts the
+port in a pass-through mode where device parameter setting is possible.
+It is necessary to toggle the state of this pin if there is a
+requirement to alter a remote parameter on a live system.
+This pin defaults to TRUE and can be left unconnected.
+However, toggling the pin low-to-high will re-enable a faulted drive,
+so the pin could usefully be connected to the `iocontrol.0.user-enable-out` pin.</pre>
+</div>
+</div>
+<div class="literalblock">
+<div class="title">run_state (u32, ro):: Shows the state of the sserial communications state-machine.</div>
+<div class="content">
+<pre>This pin will generally show a value of 0x03 in normal operation, 0x07 in setup mode and 0x00 when the "run" pin is false.</pre>
+</div>
+</div>
+<div class="paragraph">
+<div class="title">error-count (u32, ro):: Indicates the state of the Smart Serial error handler, see the parameters section for more details.</div>
+<p><strong>Parameters:</strong></p>
+</div>
+<div class="literalblock">
+<div class="title">fault-inc (u32 r/w):: Any over-run or handshaking error in the</div>
+<div class="content">
+<pre>SmartSerial communications will increment the .fault-count pin by the
+amount specified by this parameter. Default = 10.</pre>
+</div>
+</div>
+<div class="literalblock">
+<div class="title">fault-lim (u32 r/w):: When the fault counter reaches this threshold the</div>
+<div class="content">
+<pre>Smart Serial interface on the corresponding port will be stopped and an
+error printed in dmesg. Together these three pins allow for control over
+the degree of fault- tolerance allowed in the interface. The default
+values mean that if more than one transaction in ten fails, more than 20
+times, then a hard error will be raised. If the increment were to be set
+to zero then no error would ever be raised, and the system would carry
+on regardless. Conversely setting decrement to zero, threshold to 1 and
+limit to 1 means that absolutely no errors will be tolerated.
+(This structure is copied directly from vehicle ECU practice.)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Any other parameters than the ones above are created by the card itself
+from data in the remote firmware. They may be set in the HAL file using
+"setp" in the usual way.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Because a Smart-Serial remote can only communicate non-process data to the host card in setup mode,
+it is necessary to stop and re-start the smart-serial port associated with the card to alter the value of a parameter.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+In the case of parameters beginning with "nv" (which are stored in non-volatile memory) the effect will not be seen until after the next power cycle of the drive.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Unchanged values will not be re-written so it is safe to leave the
+"setp" commands in the HAL file or delete them as you see fit.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_devices">DEVICES</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The other pins and parameters created in HAL depend on the devices detected.
+The following list of Smart Serial devices is by no means exhaustive.</p>
+</div>
+<div class="sect2">
+<h3 id="_8i20">8I20</h3>
+<div class="paragraph">
+<p>The 8I20 is a 2.2 kW three-phase drive for brushless DC motors and AC
+servo motors. 8I20 pins and parameters have names like
+"hm2__&lt;BoardType&gt;_.<em>&lt;BoardNum&gt;</em>.8i20.<em>&lt;PortNum&gt;</em>.<em>&lt;ChanNum&gt;</em>.<em>&lt;Pin&gt;</em>",
+for example "hm2_5i23.0.8i20.1.3.current" would set the phase current
+for the drive connected to the fourth channel of the second sserial port
+of the first 5I23 board. Note that the sserial ports do not necessarily
+correlate in layout or number to the physical ports on the card.</p>
+</div>
+<div class="paragraph">
+<p><strong>Pins:</strong></p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">angle (float in)</dt>
+<dd>
+<p>The rotor angle of the motor in fractions of a full <strong>phase</strong> revolution.
+An angle of 0.5 indicates that the motor is half a turn / 180 degrees / π radians from the zero position.
+The zero position is taken to be the position that the motor adopts under no load with a
+positive voltage applied to the A (or U) phase and both B and C (or V and W) connected to -V or 0 V.
+A 6 pole motor will have 3 zero positions per physical rotation.
+Note that the 8I20 drive automatically adds the phase lead/lag angle, and that this pin should see the raw rotor angle.
+There is a HAL module (bldc) which handles the complexity of differing motor and drive types.</p>
+</dd>
+<dt class="hdlist1">current (float, in)</dt>
+<dd>
+<p>The phase current command to the drive.
+This is scaled from -1 to +1 for forwards and reverse maximum currents.
+The absolute value of the current is set by the max_current parameter.</p>
+</dd>
+<dt class="hdlist1">bus-voltage (float, ro)</dt>
+<dd>
+<p>The drive bus voltage in V.
+This will tend to show 25.6 V when the drive is unpowered and the drive will not operate below about 50 V.</p>
+</dd>
+<dt class="hdlist1">temp (float, ro)</dt>
+<dd>
+<p>The temperature of the driver in degrees C.</p>
+</dd>
+<dt class="hdlist1">comms (u32, ro)</dt>
+<dd>
+<p>The communication status of the drive. See the manual for more details.</p>
+</dd>
+<dt class="hdlist1">status and fault. (bit, ro)</dt>
+<dd>
+<p>The following fault/status bits are exported.
+For further details see the 8I20 manual:<br>
+fault.U-current / fault.U-current-not fault.V-current
+/ fault.V-current-not fault.W-current / fault.W-current-not
+fault.bus-high / fault.bus-high-not fault.bus-overv /
+fault.bus-overv-not fault.bus-underv / fault.bus-underv-not
+fault.framingr / fault.framingr-not fault.module / fault.module-not
+fault.no-enable / fault.no-enable-not fault.overcurrent /
+fault.overcurrent-not fault.overrun / fault.overrun-not fault.overtemp
+/ fault.overtemp-not fault.watchdog / fault.watchdog-not<br>
++
+status.brake-old / status.brake-old-not status.brake-on /
+status.brake-on-not status.bus-underv / status.bus-underv-not
+status.current-lim / status.current-lim-no status.ext-reset /
+status.ext-reset-not status.no-enable / status.no-enable-not
+status.pid-on / status.pid-on-not status.sw-reset / status.sw-reset-not
+status.wd-reset / status.wd-reset-not</p>
+</dd>
+<dt class="hdlist1"><strong>Parameters:</strong></dt>
+<dd>
+<p>The following parameters are exported. See the PDF documentation downloadable from Mesa for further details:</p>
+</dd>
+<dt class="hdlist1">hm2_5i25.0.8i20.0.1.angle-maxlim</dt>
+<dt class="hdlist1">hm2_5i25.0.8i20.0.1.angle-minlim</dt>
+<dt class="hdlist1">hm2_5i25.0.8i20.0.1.angle-scalemax</dt>
+<dt class="hdlist1">hm2_5i25.0.8i20.0.1.current-maxlim</dt>
+<dt class="hdlist1">hm2_5i25.0.8i20.0.1.current-minlim</dt>
+<dt class="hdlist1">hm2_5i25.0.8i20.0.1.current-scalemax</dt>
+<dt class="hdlist1">hm2_5i25.0.8i20.0.1.nvbrakeoffv</dt>
+<dt class="hdlist1">hm2_5i25.0.8i20.0.1.nvbrakeonv</dt>
+<dt class="hdlist1">hm2_5i25.0.8i20.0.1.nvbusoverv</dt>
+<dt class="hdlist1">hm2_5i25.0.8i20.0.1.nvbusundervmax</dt>
+<dt class="hdlist1">hm2_5i25.0.8i20.0.1.nvbusundervmin</dt>
+<dt class="hdlist1">hm2_5i25.0.8i20.0.1.nvkdihi</dt>
+<dt class="hdlist1">hm2_5i25.0.8i20.0.1.nvkdil</dt>
+<dt class="hdlist1">hm2_5i25.0.8i20.0.1.nvkdilo</dt>
+<dt class="hdlist1">hm2_5i25.0.8i20.0.1.nvkdp</dt>
+<dt class="hdlist1">hm2_5i25.0.8i20.0.1.nvkqihi</dt>
+<dt class="hdlist1">hm2_5i25.0.8i20.0.1.nvkqil</dt>
+<dt class="hdlist1">hm2_5i25.0.8i20.0.1.nvkqilo</dt>
+<dt class="hdlist1">hm2_5i25.0.8i20.0.1.nvkqp</dt>
+<dt class="hdlist1">hm2_5i25.0.8i20.0.1.nvmaxcurrent</dt>
+<dt class="hdlist1">hm2_5i25.0.8i20.0.1.nvrembaudrate</dt>
+<dt class="hdlist1">hm2_5i25.0.8i20.0.1.swrevision</dt>
+<dt class="hdlist1">hm2_5i25.0.8i20.0.1.unitnumber</dt>
+<dt class="hdlist1">max_current (float, rw)</dt>
+<dd>
+<p>Sets the maximum drive current in Amps.
+The default value is the maximum current programmed into the drive EEPROM.
+The value must be positive, and an error will be raised if a current in excess of the
+drive maximum is requested.</p>
+</dd>
+<dt class="hdlist1">serial_number (u32, ro)</dt>
+<dd>
+<p>The serial number of the connected drive. This is also shown on the label on the drive.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_7i64">7I64</h3>
+<div class="paragraph">
+<p>The 7I64 is a 24-input 24-output IO card. 7I64 pins and parameters have
+names like "hm2<em>&lt;BoardType&gt;</em>.<em>&lt;BoardNum&gt;</em>.7i64.<em>&lt;PortNum&gt;</em>.<em>&lt;ChanNum&gt;</em>.<em>&lt;Pin&gt;</em>",
+for example <code>hm2_5i23.0.7i64.1.3.output-01</code>.</p>
+</div>
+<div class="paragraph">
+<p><strong>Pins:</strong></p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">7i64.0.0.output-<em>NN</em> (bit, in)</dt>
+<dd>
+<p>Writing a 1 or TRUE to this pin will enable output driver <em>NN</em>.
+Note that the outputs are drivers (switches) rather than voltage outputs.
+The LED adjacent to the connector on the board shows the status.
+The output can be inverted by setting a parameter.</p>
+</dd>
+<dt class="hdlist1">7i64.0.0.input-<em>NN</em> (bit, out)</dt>
+<dd>
+<p>The value of input <em>NN</em>.
+Note that the inputs are isolated and both pins of each input must be connected,
+typically to signal and the ground of the signal.
+(This need not be the ground of the board.)</p>
+</dd>
+<dt class="hdlist1">7i64.0.0.input-<em>NN</em>-not (bit, out)</dt>
+<dd>
+<p>An inverted copy of the corresponding input.</p>
+</dd>
+<dt class="hdlist1">7i64.0.0.analog0 &amp; 7i64.0.0.analog1 (float, out)</dt>
+<dd>
+<p>The two analogue inputs (0 to 3.3 V) on the board.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p><strong>Parameters:</strong></p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">7i64.0.0.output-<em>NN</em>-invert (bit, rw)</dt>
+<dd>
+<p>Setting this parameter to 1 / TRUE will invert the output value,
+such that writing 0 to <code>.gpio.NN.out</code> will enable the output and vice-versa.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_7i76">7I76</h3>
+<div class="paragraph">
+<p>The 7I76 is not really a smart-serial device.
+It serves as a breakout for a number of other Hostmot2 functions.
+There are connections for 5 step generators (for which see the main hostmot2 manpage).
+The stepgen pins are associated with the 5I25 (<code>hm2_5i25.0.stepgen.00</code>&#8230;&#8203;.),
+whereas the smart-serial pins are associated with the 7I76 (<code>hm2_5i25.0.7i76.0.0.output-00</code>).</p>
+</div>
+<div class="paragraph">
+<p><strong>Pins:</strong></p>
+</div>
+<div class="literalblock">
+<div class="title">7i76.0.0.spinout (float in):: This controls the analogue output of the 7I76.</div>
+<div class="content">
+<pre>  This is intended as a speed control signal for a VFD.
+.7i76.0.0.output-__NN__ (bit out):: (_NN_ = 0 to 15). 16 digital outputs.
+  The sense of the signal can be set via a parameter.
+.7i76.0.0.input-__NN__ (bit out):: (_NN_ = 0 to 31) 32 digital inputs.
+.7i76.0.0.input-__NN__-not (bit in):: (_NN_ = 0 to 31) An inverted copy of the inputs provided for convenience.
+  The two complementary pins may be connected to different signal nets.</pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Parameters:</strong></p>
+</div>
+<div class="literalblock">
+<div class="title">7i76.0.0.nvunitnumber (u32 ro):: Indicates the serial number of the device and should match a sticker on the card.</div>
+<div class="content">
+<pre>  This can be useful for working out which card is which.
+.7i76.0.0.nvwatchdogtimeout (u32 ro):: The sserial remote watchdog timeout.
+  This is separate from the Anything-IO card timeout.
+  This is unlikely to need to be changed.
+.7i76.0.0.output-__NN__-invert (bit rw):: Invert the sense of the corresponding output pin.
+.7i76.0.0.spindir-invert (bit rw):: Invert the senseof the spindle direction pin.
+.7i76.0.0.spinena-invert (bit rw):: Invert the sense of the spindle-enable pin.
+.7i76.0.0.spinout-maxlim (float rw):: The maximum speed request allowable
+.7i76.0.0.spinout-minlim (float rw):: The minimum speed request.
+.7i76.0.0.spinout-scalemax (float rw):: The spindle speed scaling.
+  This is the speed request which would correspond to full-scale output from the spindle control pin.
+  For example with a 10 V drive voltage and a 10000 RPM scalemax a value of 10,000 RPM on the spinout pin would produce 10 V output.
+  However, if spinout-maxlim were set to 5000 RPM then no voltage above 5 V would be output.
+.7i76.0.0.swrevision (u32 ro):: The onboard firmware revision number.
+  Utilities (man setsserial for details) exist to update and change this firmware.</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_7i77">7I77</h3>
+<div class="paragraph">
+<p>The 7I77 is an 6-axis servo control card. The analogue outputs are
+smart-serial devices, but the encoders are conventional hostmot2
+encoders and further details of them may be found in the hostmot2 manpage.</p>
+</div>
+<div class="paragraph">
+<p><strong>Pins:</strong></p>
+</div>
+<div class="paragraph">
+<div class="title">7i77.0.1.analogout<em>N</em> (float in):: (<em>N</em> = 0 to 5) This controls the analog output of the 7I77.</div>
+<p><strong>Parameters:</strong></p>
+</div>
+<div class="literalblock">
+<div class="title">7i77.0.0.spinout-scalemax (float rw):: The spindle speed scaling.</div>
+<div class="content">
+<pre>  This is the speed request which would correspond to full-scale output from the spindle control pin.
+  For example with a 10&amp;#8201;V drive voltage and a 10000&amp;#8201;RPM scalemax a value of 10000&amp;#8201;RPM on the spinout pin would produce 10&amp;#8201;V output.
+  However, if spinout-maxlim were set to 5000&amp;#8201;RPM then no voltage above 5&amp;#8201;V would be output.
+.7i77.0.0.analogout__N__-maxlim (float rw):: (_N_ = 0 to 5) The maximum speed request allowable
+.7i77.0.0.analogout__N__-minlim (float rw):: (_N_ = 0 to 5) The minimum speed request.
+.7i77.0.0.analogout__N__-scalemax (float rw):: (_N_ = 0 to 5) The analog speed scaling.
+  This is the speed request which would correspond to full-scale output from the spindle control pin.
+  For example with a 10&amp;#8201;V drive voltage and a 10000&amp;#8201;RPM scalemax a value of 10000&amp;#8201;RPM on the spinout pin would produce 10V output.
+  However, if spinout-maxlim were set to 5000&amp;#8201;RPM then no voltage above 5&amp;#8201;V would be output.</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_7i69">7I69</h3>
+<div class="paragraph">
+<p>The 7I69 is a 48 channel digital IO card.
+It can be configured in four different modes:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">MODE 0</dt>
+<dd>
+<p>Bidirectional mode (48 bits in 48 bits out)</p>
+</dd>
+<dt class="hdlist1">MODE 1</dt>
+<dd>
+<p>Input only mode (48 bits in)</p>
+</dd>
+<dt class="hdlist1">MODE 2</dt>
+<dd>
+<p>Output only mode (48 bits out)</p>
+</dd>
+<dt class="hdlist1">MODE 3</dt>
+<dd>
+<p>24/24mode (24 bits in = bits 0..23 and 24 bits out = bits 24..47)</p>
+</dd>
+<dt class="hdlist1">MODE 4</dt>
+<dd>
+<p>Bidirectional mode (48 bits in 48 bits out) plus 4 MPG encoder channels oninputs 0 through 7</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p><strong>Pins:</strong></p>
+</div>
+<div class="paragraph">
+<div class="title">7i69.0.0.input-<em>NN</em>-not (bit out):: Digital input, inverted.</div>
+<p><strong>Parameters:</strong></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_7i70">7I70</h3>
+<div class="paragraph">
+<div class="title">7i69.0.0.swrevision (u32 ro):: The onboard firmware revision number. Utilities exist to update and change this firmware.</div>
+<p>The 7I70 is a remote isolated 48 input card. The 7I70 inputs sense
+positive inputs relative to a common field ground. Input impedance is
+10&#8201;KΩ and input voltage can range from 5&#8201;VDC to 32&#8201;VDC.
+All inputs have LED status indicators.
+The input common field ground is galvanically isolated from the communications link.</p>
+</div>
+<div class="paragraph">
+<p>The 7I70 has three software selectable modes. These different modes
+select different sets of 7I70 data to be transferred between the host
+and the 7I70 during real time process data exchanges. For high speed
+applications, choosing the correct mode can reduced the data transfer
+sizes, resulting in higher maximum update rates.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">MODE 0</dt>
+<dd>
+<p>Input mode (48 bits input data only)</p>
+</dd>
+<dt class="hdlist1">MODE 1</dt>
+<dd>
+<p>Input plus analog mode (48 bits input data plus 6 channels of analog data)</p>
+</dd>
+<dt class="hdlist1">MODE 2</dt>
+<dd>
+<p>Input plus field voltage</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p><strong>Pins:</strong></p>
+</div>
+<div class="paragraph">
+<div class="title">7i70.0.0.input-<em>NN</em>-not (bit in):: (<em>NN</em> = 0 to 47) An inverted copy of the inputs provided for convenience. The two complementary pins may be connected to different signal nets.</div>
+<p><strong>Parameters:</strong></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_7i71">7I71</h3>
+<div class="paragraph">
+<div class="title">7i69.0.0.swrevision (u32 ro):: The onboard firmware revision number. Utilities exist to update and change this firmware.</div>
+<p>The 7I71 is a remote isolated 48 output card. The 48 outputs are 8&#8201;VDC to
+28&#8201;VDC sourcing drivers (common + field power) with 300&#8201;mA maximum
+current capability. All outputs have LED status indicators.</p>
+</div>
+<div class="paragraph">
+<p>The 7I71 has two software selectable modes. For high speed applications,
+choosing the correct mode can reduced the data transfer sizes, resulting
+in higher maximum update rates:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">MODE 0</dt>
+<dd>
+<p>Output only mode (48 bits output data only)</p>
+</dd>
+<dt class="hdlist1">MODE 1</dt>
+<dd>
+<p>Outputs plus read back field voltage</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p><strong>Pins:</strong></p>
+</div>
+<div class="literalblock">
+<div class="title">7i71.0.0.output-<em>NN</em> (bit out):: (<em>NN</em> = 0 to 47) 48 digital outputs.</div>
+<div class="content">
+<pre>  The sense may be inverted by the invert parameter.
+.7i71.0.0.output-__NN__ (bit out):: (_NN_ = 0 to 47) 48 digital outputs.
+  The sense may be inverted by the invert parameter.</pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Parameters:</strong></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_7i73">7I73</h3>
+<div class="paragraph">
+<div class="title">7i69.0.0.swrevision (u32 ro):: The onboard firmware revision number. Utilities exist to update and change this firmware.</div>
+<p>The 7I73 is a remote real time pendant or control panel interface.</p>
+</div>
+<div class="paragraph">
+<p>The 7I73 supports up to four 50 kHz encoder inputs for MPGs, 8 digital
+inputs and 6 digital outputs and up to a 64 Key keypad. If a smaller
+keypad is used, more digital inputs and outputs become available.
+Up to eight 0.0&#8201;V to 3.3&#8201;V analog inputs are also provided.
+The 7I73 can drive a 4 line 20 character LCD for local DRO applications.</p>
+</div>
+<div class="paragraph">
+<p>The 7I73 has 3 software selectable process data modes. These different
+modes select different sets of 7I73 data to be transferred between the
+host and the 7I73 during real time process data exchanges. For high
+speed applications, choosing the correct mode can reduced the data
+transfer sizes, resulting in higher maximum update rates</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">MODE 0</dt>
+<dd>
+<p>I/O + ENCODER</p>
+</dd>
+<dt class="hdlist1">MODE 1</dt>
+<dd>
+<p>I/O + ENCODER + ANALOG IN</p>
+</dd>
+<dt class="hdlist1">MODE 2</dt>
+<dd>
+<p>I/O + ENCODER + ANALOG IN FAST DISPLAY</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p><strong>Pins:</strong></p>
+</div>
+<div class="literalblock">
+<div class="title">7i73.0.0.analogin<em>N</em> (float out):: Analogue inputs.</div>
+<div class="content">
+<pre>Up to 8 channels may be available dependent on software and hardware configuration modes
+(see the PDF manual downloadable from https://www.mesanet.com).</pre>
+</div>
+</div>
+<div class="literalblock">
+<div class="title">7i73.0.1.display (modes 1 and 2) (u32 in):: Data for LCD display.</div>
+<div class="content">
+<pre>This pin may be conveniently driven by the HAL "lcd" component which allows
+the formatted display of the values any number of HAL pins and textual content.</pre>
+</div>
+</div>
+<div class="paragraph">
+<div class="title">7i73.0.1.output-<em>NN</em> (bit in):: Up to 22 digital outputs (dependent on config)</div>
+<p><strong>Parameters:</strong></p>
+</div>
+<div class="paragraph">
+<div class="title">7i73.0.1.output-00-invert (u32 ro)::</div>
+<p>For further details of the use of the above see the Mesa manual.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

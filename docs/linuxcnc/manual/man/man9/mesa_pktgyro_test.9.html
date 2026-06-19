@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>MESA_PKTGYRO_TEST(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../rouge-github.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="mesa_pktgyro_test.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/mesa_pktgyro_test.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/mesa_pktgyro_test.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/mesa_pktgyro_test.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/mesa_pktgyro_test.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/mesa_pktgyro_test.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/mesa_pktgyro_test.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/mesa_pktgyro_test.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>MESA_PKTGYRO_TEST(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>mesa_pktgyro_test - PktUART simple test with Microstrain 3DM-GX3-15 gyro</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt mesa_pktgyro_test</strong> [<strong>count</strong>=<em>N</em>|<strong>names</strong>=<em>name1</em>[,<em>name2</em>&#8230;&#8203;]]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This component is written in order to test
+the PktUART driver for Mesa. It resembles partly Andy Pugh&#8217;s mesa_uart.comp .</p>
+</div>
+<div class="paragraph">
+<p>This module uses the names= mode of loadrt declaration to specify which PktUART
+instances to enable. A check is included to ensure that the count= option is
+not used instead.
+For simplicity we test only one PktUART instance, therefore load the component
+like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadrt</span> <span class="n">mesa_uart</span> <span class="n">names</span><span class="o">=</span><span class="na">hm2_5i25.0.pktuart.0</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The PktUART instance names are printed to the dmesg buffer during the Hostmot2
+setup sequence, one for each PktUART instance included in the bitfile loaded to
+each installed card during the Hostmot2 setup sequence. Type "dmesg" at the
+terminal prompt to view the output.
+If you want to work with more than one PktUART instance, consult Andy Pugh&#8217;s
+mesa_uart.comp</p>
+</div>
+<div class="paragraph">
+<p>In order to compile and install do:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>halcompile --install src/hal/drivers/mesa_pktgyro_test.comp</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The component exports only one function, namely receive, which needs to be added
+to a realtime thread.
+To test this component  set DEBUG=5 before and execute this HAL script:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadrt</span> <span class="n">hostmot2</span>
+<span class="k">loadrt</span> <span class="n">hm2_pci</span>
+<span class="k">loadrt</span> <span class="n">mesa_pktgyro_test</span> <span class="n">names</span><span class="o">=</span><span class="na">hm2_5i25.0.pktuart.0</span>
+<span class="k">loadrt</span> <span class="n">threads</span> <span class="n">name1</span><span class="o">=</span><span class="n">test1</span> <span class="n">period1</span><span class="o">=</span><span class="mi">10000000</span>
+<span class="k">addf</span> <span class="na">hm2_5i25.0.pktuart.0.receive</span> <span class="n">test1</span>
+<span class="k">start</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Check linuxcnc.log for debug output.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>mesa-pktgyro-test</strong>.<em>N</em>.<strong>receive</strong></dt>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>mesa-pktgyro-test</strong>.<em>N</em>.<strong>rxbytes</strong> s32 out </dt>
+<dd>
+<p>Number of Bytes received or negative Error code</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Boris Skegin</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:30:13 UTC
+</div>
+</div>
+</body>
+</html>

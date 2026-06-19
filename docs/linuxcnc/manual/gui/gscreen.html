@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>Gscreen</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../rouge-github.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:gscreen" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="gscreen.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/gui/gscreen.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/gui/gscreen.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/gui/gscreen.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/gui/gscreen.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/gui/gscreen.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/gui/gscreen.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/gui/gscreen.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>Gscreen</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="../config/stepconf.html">Stepper Configuration Wizard</a><a href="../config/pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="../config/integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><a href="../config/ini-config.html">INI Configuration</a><a href="../config/ini-homing.html">Homing Configuration</a><a href="../config/lathe-config.html">Lathe Configuration</a><a href="../config/stepper-quickstart.html">Stepper Quickstart</a><a href="../config/stepper.html">Stepper Configuration</a><a href="../config/stepper-diagnostics.html">Stepper Diagnostics</a><a href="filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="../config/core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="../config/moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details open><summary>Usage</summary><details open><summary>User Interfaces</summary><a href="axis.html">AXIS GUI</a><a href="gmoccapy.html">GMOCCAPY</a><a href="touchy.html">The Touchy Graphical User Interface</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>Gscreen</summary><ul class="sectlevel1">
+<li><a href="gscreen.html#_introduction">1. Introduction</a>
+<ul class="sectlevel2">
+<li><a href="gscreen.html#_glade_file">1.1. Glade File</a></li>
+<li><a href="gscreen.html#_pygtk">1.2. PyGTK</a></li>
+</ul>
+</li>
+<li><a href="gscreen.html#_gladevcp">2. GladeVCP</a>
+<ul class="sectlevel2">
+<li><a href="gscreen.html#_overview">2.1. Overview</a></li>
+<li><a href="gscreen.html#_build_a_gladevcp_panel">2.2. Build a GladeVCP Panel</a></li>
+</ul>
+</li>
+<li><a href="gscreen.html#_building_a_simple_clean_sheet_custom_screen">3. Building a simple clean-sheet custom screen</a></li>
+<li><a href="gscreen.html#_handler_file_example">4. Handler file example</a>
+<ul class="sectlevel2">
+<li><a href="gscreen.html#_adding_keybindings_functions">4.1. Adding Keybindings Functions</a></li>
+<li><a href="gscreen.html#_linuxcnc_state_status">4.2. Linuxcnc State Status</a></li>
+<li><a href="gscreen.html#_jogging_keys">4.3. Jogging Keys</a></li>
+</ul>
+</li>
+<li><a href="gscreen.html#_gscreen_start_up">5. Gscreen Start Up</a></li>
+<li><a href="gscreen.html#_ini_settings">6. INI Settings</a></li>
+<li><a href="gscreen.html#_user_dialog_messages">7. User Dialog Messages</a>
+<ul class="sectlevel2">
+<li><a href="gscreen.html#_copy_the_stock_handlerglade_file_for_modification">7.1. Copy the Stock Handler/Glade File For Modification</a></li>
+</ul>
+</li>
+</ul></details><a href="qtdragon.html">QtDragon GUI</a><a href="ngcgui.html">NGCGUI</a><a href="tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="pyvcp.html">PyVCP</a><a href="pyvcp-examples.html">PyVCP Examples</a><a href="gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="gladevcp-libraries.html">GladeVCP Library modules</a><a href="gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="qtvcp.html">QtVCP</a><a href="qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="qtvcp-widgets.html">QtVCP Widgets</a><a href="qtvcp-libraries.html">QtVCP Libraries modules</a><a href="qtvcp-vismach.html">QtVismach</a><a href="qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="panelui.html">Panelui</a><a href="../config/python-interface.html">The LinuxCNC Python module</a><a href="../config/python-hal-interface.html">The HAL Python module</a><a href="gstat.html">GStat Python Module</a><a href="vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_introduction">1. Introduction</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Gscreen is an infrastructure to display a custom screen to control LinuxCNC.
+Gscreen borrows heavily from GladeVCP. GladeVCP uses the GTK widget editor GLADE to build virtual control panels (VCP) by point and click.
+Gscreen combines this with Python programming to create a GUI screen for running a CNC machine.</p>
+</div>
+<div class="paragraph">
+<p>Gscreen is customizable if you want different buttons and status LEDs.
+Gscreen supports GladeVCP which is used to add controls and indicators.
+To customize Gscreen you use the Glade editor.
+Gscreen is not restricted to adding a custom panel on the right or a custom tab it is fully editable.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/gscreen-mill.png" alt="Gscreen Mill Based Screen">
+</div>
+<div class="title">Figure 1. Gscreen Default Screen</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/silverdragon.png" alt="Gscreen Silverdragon Screen">
+</div>
+<div class="title">Figure 2. Gscreen Silverdragon Screen</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/spartan.png" alt="Gscreen Spartan Screen">
+</div>
+<div class="title">Figure 3. Gscreen Spartan Screen</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/gaxis.png" alt="Gscreen Gaxis Screen">
+</div>
+<div class="title">Figure 4. Gscreen Gaxis Screen</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/industrial.png" alt="Gscreen Industrial Screen">
+</div>
+<div class="title">Figure 5. Gscreen Industrial Screen</div>
+</div>
+<div class="paragraph">
+<p>Gscreen is based on <em>Glade</em> (the editor), <em>PyGTK</em> (the widget toolkit), and <em>GladeVCP</em> (LinuxCNC&#8217;s connection to Glade and PyGTK).
+GladeVCP has some special widgets and actions added just for LinuxCNC A widget is just the generic name used for the buttons, sliders, labels etc of the PyGTK toolkit.</p>
+</div>
+<div class="sect2">
+<h3 id="_glade_file">1.1. Glade File</h3>
+<div class="paragraph">
+<p>A Glade file is a text file organized in the XML standard that describes the layout and the widgets of the screen.
+PyGTK uses this file to actually display and react to those widgets.
+The Glade editor makes it relatively easy to build and edit this file You must use the Glade 3.38.2 editor that uses the GTK3 widgets.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_pygtk">1.2. PyGTK</h3>
+<div class="paragraph">
+<p>PyGTK is the Python binding to GTK. GTK is the <em>toolkit</em> of visual widgets, it is programmed in C.
+PyGTK uses Python to <em>bind</em> with GTK.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_gladevcp">2. GladeVCP</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="gladevcp.html#cha:glade-vcp">GladeVCP</a> binds LinuxCNC, HAL, PyGTK and Glade all together.
+LinuxCNC requires some special widgets so GladeVCP supplies them.
+Many are just HAL extensions to existing PyGTK widgets.
+GladeVCP creates the HAL pins for the special widgets described in the Glade file.
+GladeVCP also allows one to add Python commands to interact with the widgets, to make them do things not available in their default form.
+If you can build a GladeVCP panel you can customize Gscreen!</p>
+</div>
+<div class="sect2">
+<h3 id="_overview">2.1. Overview</h3>
+<div class="paragraph">
+<p>There are two files that can be used, individually or in combination to add customizations.
+Local Glade files and handler files.
+Normally Gscreen uses the stock Glade file and possibly a handler file (if using a sample <em>skin</em>).
+You can specify Gscreen to use <em>local</em> Glade and handler files.
+Gscreen looks in the folder that holds all the configuration files for the configuration you selected.</p>
+</div>
+<div class="paragraph">
+<div class="title">Local Glade Files</div>
+<p>If present, local Glade files in the configuration folder will be loaded instead of the stock Glade files.
+Local Glade files allow you to use your customized designs rather then the default screens.
+There is a switch in the INI file to set set the base name: -c name so Gscreen looks for MYNAME.glade and MYNAME_handler.py.</p>
+</div>
+<div class="paragraph">
+<p>You can tell Gscreen to just load the Glade file and not connect its internal signals to it.
+This allows gscreen to load any GTK builder saved Glade file.
+This means you can display a completely custom screen, but also requires you to use a handler file.
+Gscreen uses the Glade file to define the widgets, so it can show and interact with them.
+Many of them have specific names, others have Glade given generic names.
+If the widget will be displayed but never changed then a generic name is fine.
+If one needs to control or interact with the widget then a hopefully purposeful name is given (all names must be unique).
+Widgets can also have signals defined for them in the GLADE editor.
+It defines what signal is given and what method to call.</p>
+</div>
+<div class="paragraph">
+<div class="title">Modifying Stock Skins</div>
+<p>If you change the name of a widget, Gscreen might not be able to find it.
+If this widget is referenced to from Python code,
+at best this makes the widget not work anymore at worst it will cause an error when loading Gscreen&#8217;s default screens don&#8217;t use many signals defined in the editor,
+it defines them in the Python code.
+If you move (cut and paste) a widget with signals, the signals will not be copied. You must add them again manually.</p>
+</div>
+<div class="paragraph">
+<div class="title">Handler Files</div>
+<p>A handler file is a file containing Python code, which Gscreen adds to its default routines.
+A handler file allows one to modify defaults, or add logic to a Gscreen skin without having to modify Gscreen proper.
+You can combine new functions with Gscreen&#8217;s function to modify behavior as you like.
+You can completely bypass all of Gscreen&#8217;s functions and make if work completely differently.
+If present a handler file named gscreen_handler.py (or MYNAME_handler.py if using the INI switch) will be loaded and registered only one file is allowed Gscreen looks for the handler file,
+if found it will look for specific function names and call them instead of the default ones.
+If adding widgets you can set up signal calls from the Glade editor to call routines you have written in the handler file.
+In this way you can have custom behavior. Handler routines can call Gscreen&#8217;s default routines, either before or after running its own code.
+In this way you can tack on extra behavior such as adding a sound. Please see the <a href="gladevcp.html#cha:glade-vcp">GladeVCP Chapter</a> for the basics to GladeVCP handler files.
+Gscreen uses a very similar technique.</p>
+</div>
+<div class="paragraph">
+<div class="title">Themes</div>
+<p>Gscreen uses the PyGTK toolkit to display the screen.
+PyGTK is the Python language binding to GTK.
+GTK supports <em>themes</em>.
+Themes are a way to modify the look and feel of the widgets on the screen.
+For instance the color or size of buttons and sliders can be changed using themes.
+There are many GTK themes available on the web.
+Themes can also be customized to modify visuals of particular named widgets.
+This ties the theme file to the Glade file more tightly.
+Some of the sample screen skins allow the user to select any of the themes on the system.
+The sample <em>gscreen</em> is an example.
+Some will load the theme that is the same name in the config file.
+The sample <em>gscreen-gaxis</em> is an example.
+This is done by putting the theme folder in the config folder that has the INI and HAL files and naming it:
+SCREENNAME_theme (SCREENNAME being the base name of the files eg. gaxis_theme).
+Inside this folder is another folder call gtk-2.0, inside that is the theme files.
+If you add this file, Gscreen will default to this theme on start up.
+gscreen-gaxis has a sample custom theme that looks for certain named widgets and changes the visual behavior of those specific widgets.
+The Estop and machine-on buttons use different colors then the rest of the buttons so that they stand out.
+This is done in the handler file by giving them specific names an by adding specific commands in the theme&#8217;s gtkrc file.
+For some info on GTK theming (the sample theme uses the pixmap theme engine), see:
+<a href="https://wiki.gnome.org/Attic/GnomeArt/Tutorials/GtkThemes">GTK Themes</a>,
+<a href="https://wiki.gnome.org/Attic/GnomeArt/Tutorials/GtkEngines/PixmapEngine">Pixmap Theme Engine</a>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_build_a_gladevcp_panel">2.2. Build a GladeVCP Panel</h3>
+<div class="paragraph">
+<p>Gscreen is just a big complicated GladeVCP panel, with Python code to control it.
+To customize it we need the Glade file loaded in the Glade editor.</p>
+</div>
+<div class="paragraph">
+<div class="title">Installed LinuxCNC</div>
+<p>If you have LinuxCNC 2.6+ installed on Ubuntu 10.04 just start the Glade editor from the applications menu or from the terminal.
+Newer versions of Linux will require you to install Glade 3.8.0 - 3.8.6 (you may need to compile it yourself).</p>
+</div>
+<div class="paragraph">
+<div class="title">RIP compiled commands</div>
+<p>Using a compiled from source version of <a href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl?Installing_LinuxCNC">LinuxCNC</a> open a terminal and <a href="../common/linux-faq.html#faq:cd">cd</a> to the top of the LinuxCNC folder.
+Set up the environment by entering <em>. ./scripts/rip-environment</em> now enter <em>glade</em>, you see a bunch of warnings in the terminal that you can ignore and the editor should open.
+The stock Gscreen Glade file is in: src/emc/usr_intf/gscreen/ sample skins are in /share/gscreen/skins/.
+This should be copied to a configuration folder.
+Or you can make a clean-sheet Glade file by saving it in a configuration folder.</p>
+</div>
+<div class="paragraph">
+<p>Ok you have loaded the stock Glade file and now can edit it.
+The first thing you notice is it does not look in the editor like what it is displayed like Gscreen uses some tricks, such as hiding all boxes of buttons except one and changing that one depending on the mode.
+The same goes for notebooks, some screens use notebooks with the tabs not shown.
+To change pages in the editor you need to temporarily show those tabs.</p>
+</div>
+<div class="paragraph">
+<p>When making changes it is far easier to add widgets then subtract widgets and still have the screen work properly making objects <em>not visible</em> is one way to change the display without getting errors.
+This won&#8217;t always work some widgets will be set visible again.
+Changing the names of Gscreen&#8217;s regular widgets is probably not gonna work well without changing the Python code, but moving a widget while keeping the name is usually workable.</p>
+</div>
+<div class="paragraph">
+<p>Gscreen leverages GladeVCP widgets as much as possible, to avoid adding Python code.
+Learning about <a href="gladevcp.html#cha:glade-vcp">GladeVCP</a> widgets is a prerequisite.
+If the existing widgets give you the function you want or need then no Python code needs be added, just save the Glade file in your configuration folder.
+If you need something more custom then you must do some Python programming.
+The name of the parent window needs to be window1. Gscreen assumes this name.</p>
+</div>
+<div class="paragraph">
+<p>Remember, if you use a custom screen option YOU are responsible for fixing it (if required) when updating LinuxCNC.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_building_a_simple_clean_sheet_custom_screen">3. Building a simple clean-sheet custom screen</h2>
+<div class="sectionbody">
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/tester.png" alt="Gscreen simple usable screen">
+</div>
+</div>
+<div class="paragraph">
+<p>Lets build a simple usable screen. Build this in the Glade editor (if using a RIP package run it from a terminal after using . scripts/rip-environment ).</p>
+</div>
+<div class="ulist">
+<div class="title">Things to note:</div>
+<ul>
+<li>
+<p>The top level window must be called the default name, <em>window1</em> - Gscreen relies on this.</p>
+</li>
+<li>
+<p>Add actions by right clicking, and selecting <em>add as toplevel widget</em> they don&#8217;t add anything visual to the window but are added to the right most action list.
+Add all the ones you see on the top right.</p>
+</li>
+<li>
+<p>After adding the actions we must link the buttons to the actions for them to work (see below).</p>
+</li>
+<li>
+<p>The gremlin widget doesn&#8217;t have a default size so setting a requested size is helpful (see below).</p>
+</li>
+<li>
+<p>The sourceview widget will try to use the whole window so adding it to a scrolled window will cover this. (This is already done in the example.)</p>
+</li>
+<li>
+<p>The buttons will expand as the window is made larger which is ugly so we will set the box they are in, to not expand (see below).</p>
+</li>
+<li>
+<p>The button types to use depend on the VCP_action used -eg vcp_toggle_action usually require toggle buttons (Follow the example for now).</p>
+</li>
+<li>
+<p>The buttons in this example are regular buttons not HAL buttons. We don&#8217;t need the HAL pins.</p>
+</li>
+</ul>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/tester_editor.png" alt="Glade editor tester.glade">
+</div>
+</div>
+<div class="paragraph">
+<p>In this screen we are using VCP_actions to communicate to LinuxCNC the actions we want.
+This allows us standard functions without adding Python code in the handler file.
+Let&#8217;s link the estop toggle button to the estop action Select the estop toggle button and under the general tab look for <em>Related Action</em> and click the button beside it.
+Now select the toggle estop action.
+Now the button will toggle estop on and off when clicked. Under the general tab you can change the text of the button&#8217;s label to describe its function.
+Do this for all the buttons.</p>
+</div>
+<div class="paragraph">
+<p>Select the gremlin widget click the common tab and set the requested height to 100 and click the checkbox beside it.</p>
+</div>
+<div class="paragraph">
+<p>Click the horizontal box that holds the buttons.
+Click the packing tab and click <em>expand</em> to <em>No</em>.</p>
+</div>
+<div class="paragraph">
+<p>Save it as tester.glade and save it in sim/gscreen/gscreen_custom/ folder.
+Now launch LinuxCNC and click to sim/gscreen/gscreen_custom/tester and start it.
+If all goes well our screen will pop up and the buttons will do their job.
+This works because the tester.ini tells gscreen to look for and load tester.glade and tester_handler.py.
+The tester_handler.py file is included in that folder and is coded just show the screen and not much else.
+Since the special widgets directly communicate with LinuxCNC you can still do useful things.
+If your screen needs are covered by the available special widgets then this is as far as you need to go to build a screen.
+If you want something more there are still many tricks available from just adding <em>function calls</em> to get canned behaviour.
+To coding your own Python code to customize exactly what you want.
+But that means learning about handler files.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_handler_file_example">4. Handler file example</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>There are special functions Gscreen checks the handler file for.
+If you add these in you handler file Gscreen will call them instead of gscreen&#8217;s internal same-named functions.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>initialize_preferences(self): You can install new preference routines.</p>
+</li>
+<li>
+<p>initialize_keybindings(self) You can install new keybinding routines.
+In most cases you won&#8217;t want to do this, you will want to override the individual keybinding calls.
+You can also add more keybindings that will call an arbitrary function.</p>
+</li>
+<li>
+<p>initialize_pins(self): makes / initializes HAL pins</p>
+</li>
+<li>
+<p>connect_signals(self,handlers):
+If you are using a completely different screen the default Gscreen you must add this or gscreen will try to connect signals to widgets that are not there.
+Gscreen&#8217;s default function is called with self.gscreen.connect_signals(handlers).
+If you wish to just add extra signals to your screen but still want the default ones call this first then add more signals.
+If you signals are simple (no user data passed) then you can also use the Glade signal selection in the Glade editor.</p>
+</li>
+<li>
+<p>initialize_widgets(self): You can use this to set up any widgets.
+Gscreen usually calls <em>self.gscreen.initialize_widgets()</em> which actually calls many separate functions.
+If you wish to incorporate some of those widgets then just call those functions directly. Or add self.gscreen.init_show_windows() so widgets are just shown.
+Then if desired, initialize/adjust your new widgets.</p>
+</li>
+<li>
+<p>initialize_manual_toolchange(self): allows a complete revamp of the manual toolchange system.</p>
+</li>
+<li>
+<p>set_restart_line(self.line):</p>
+</li>
+<li>
+<p>timer_interrupt(self): allows one to complete redefine the interrupt routine.
+This is used for calling periodic() and checking for errors from linuxcnc.status.</p>
+</li>
+<li>
+<p>check_mode(self): used to check what mode the screen is in. Returns a list[]
+0 -manual 1- mdi 2- auto 3- jog.</p>
+</li>
+<li>
+<p>on_tool_change(self,widget): You can use this to override the manual tool change dialog -this is called when <em>gscreen.tool-change</em> changes state.</p>
+</li>
+<li>
+<p>dialog_return(self,dialog_widget,displaytype,pinname): Use this to override any user message or manual tool change dialog.
+Called when the dialog is closed.</p>
+</li>
+<li>
+<p>periodic(self): This is called every (default 100) milliseconds.
+Use it to update your widgets/HAL pins. You can call Gscreen regular periodic afterwards too, self.gscreen.update_position() or just add pass to not update anything.
+Gscreen&#8217;s update_position() actually calls many separate functions.
+If you wish to incorporate some of those widgets then just call those functions directly.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>You can also add you own functions to be called in this file. Usually you
+would add a signal to a widget to call your function.</p>
+</div>
+<div class="sect2">
+<h3 id="_adding_keybindings_functions">4.1. Adding Keybindings Functions</h3>
+<div class="paragraph">
+<p>Our tester example would be more useful if it responded to keyboard commands.
+There is a function called keybindings() that tries to set this up.
+While you can override it completely, we didn&#8217;t - but it assumes some things:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>It assumes the estop toggle button is call <em>button_estop</em> and that F1 key controls it.</p>
+</li>
+<li>
+<p>It assumes the power button is called <em>button_machine_on</em> and the F2 key controls it.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>These are easily fixed by renaming the buttons in the Glade editor to match.
+But instead we are going to override the standard calls and add our own.</p>
+</div>
+<div class="paragraph">
+<p>Add these command to the handler file:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="c1"># override Gscreen Functions
+# keybinding calls
+</span><span class="k">def</span> <span class="nf">on_keycall_ESTOP</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">state</span><span class="p">,</span><span class="n">SHIFT</span><span class="p">,</span><span class="n">CNTRL</span><span class="p">,</span><span class="n">ALT</span><span class="p">):</span>
+  <span class="k">if</span> <span class="n">state</span><span class="p">:</span> <span class="c1"># only if pressed, not released
+</span>    <span class="n">self</span><span class="p">.</span><span class="n">widgets</span><span class="p">.</span><span class="n">togglebutton1</span><span class="p">.</span><span class="nf">emit</span><span class="p">(</span><span class="sh">'</span><span class="s">activate</span><span class="sh">'</span><span class="p">)</span>
+    <span class="n">self</span><span class="p">.</span><span class="n">gscreen</span><span class="p">.</span><span class="n">audio</span><span class="p">.</span><span class="nf">set_sound</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">alert_sound</span><span class="p">)</span>
+    <span class="n">self</span><span class="p">.</span><span class="n">gscreen</span><span class="p">.</span><span class="n">audio</span><span class="p">.</span><span class="nf">run</span><span class="p">()</span>
+    <span class="k">return</span> <span class="bp">True</span> <span class="c1"># stop progression of signal to other widgets
+</span><span class="k">def</span> <span class="nf">on_keycall_POWER</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">state</span><span class="p">,</span><span class="n">SHIFT</span><span class="p">,</span><span class="n">CNTRL</span><span class="p">,</span><span class="n">ALT</span><span class="p">):</span>
+  <span class="k">if</span> <span class="n">state</span><span class="p">:</span>
+    <span class="n">self</span><span class="p">.</span><span class="n">widgets</span><span class="p">.</span><span class="n">togglebutton2</span><span class="p">.</span><span class="nf">emit</span><span class="p">(</span><span class="sh">'</span><span class="s">activate</span><span class="sh">'</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">True</span>
+<span class="k">def</span> <span class="nf">on_keycall_ABORT</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">state</span><span class="p">,</span><span class="n">SHIFT</span><span class="p">,</span><span class="n">CNTRL</span><span class="p">,</span><span class="n">ALT</span><span class="p">):</span>
+  <span class="k">if</span> <span class="n">state</span><span class="p">:</span>
+    <span class="n">self</span><span class="p">.</span><span class="n">widgets</span><span class="p">.</span><span class="n">button3</span><span class="p">.</span><span class="nf">emit</span><span class="p">(</span><span class="sh">'</span><span class="s">activate</span><span class="sh">'</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">True</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>So now we have overridden Gscreen&#8217;s function calls of the same name and deal with them in our handler file
+We now reference the widgets by the name we used in the Glade editor.
+We also added a built in gscreen function to make a sound when Estop changes.
+Note that we we call Gscreen&#8217;s built in functions we must use self.gscreen.[FUNCTION NAME]()
+If we used self.[FUNCTION NAME]() it would call the function in our handler file.</p>
+</div>
+<div class="paragraph">
+<p>Lets add another key binding that loads halmeter when F4 is pressed.</p>
+</div>
+<div class="paragraph">
+<p>In the handler file under <em>def initialize_widgets(self):</em> change to:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python">  <span class="k">def</span> <span class="nf">initialize_widgets</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+    <span class="n">self</span><span class="p">.</span><span class="n">gscreen</span><span class="p">.</span><span class="nf">init_show_windows</span><span class="p">()</span>
+    <span class="n">self</span><span class="p">.</span><span class="n">gscreen</span><span class="p">.</span><span class="n">keylookup</span><span class="p">.</span><span class="nf">add_conversion</span><span class="p">(</span><span class="sh">'</span><span class="s">F4</span><span class="sh">'</span><span class="p">,</span><span class="sh">'</span><span class="s">TEST</span><span class="sh">'</span><span class="p">,</span><span class="sh">'</span><span class="s">on_keycall_HALMETER</span><span class="sh">'</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then add these functions under the <em>HandlerClass</em> class:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python">  <span class="k">def</span> <span class="nf">on_keycall_HALMETER</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">state</span><span class="p">,</span><span class="n">SHIFT</span><span class="p">,</span><span class="n">CNTRL</span><span class="p">,</span><span class="n">ALT</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">state</span><span class="p">:</span>
+      <span class="n">self</span><span class="p">.</span><span class="n">gscreen</span><span class="p">.</span><span class="nf">on_halmeter</span><span class="p">()</span>
+      <span class="k">return</span> <span class="bp">True</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This adds a keybinding conversion that directs gscreen to call on_keycall_HALMETER when F4 is pressed.
+Then we add the function to the handle file to call a Gscreen builtin function to start halmeter.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_linuxcnc_state_status">4.2. Linuxcnc State Status</h3>
+<div class="paragraph">
+<p>The module <em>Gstat</em> polls LinuxCNC&#8217;s state every 100ms and sends callback messages to user functions when state changes.
+You can register messages to act on specific state changes.
+As an example we will register to get <em>file-loaded</em> messages when LinuxCNC loads a new file.
+First we must import the module and instantiate it:
+In the import section of the handler file add:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="kn">from</span> <span class="n">hal_glib</span> <span class="kn">import</span> <span class="n">GStat</span>
+<span class="n">GSTAT</span> <span class="o">=</span> <span class="nc">GStat</span><span class="p">()</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In the handler file under <em>def _\_init__(self):</em> add:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="n">GSTAT</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="sh">'</span><span class="s">file-loaded</span><span class="sh">'</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">update_filepath</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then in the <em>HandlerClass</em>, add the function:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="n">self</span><span class="p">.</span><span class="nf">update_filepath</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+    <span class="n">self</span><span class="p">.</span><span class="n">widgets</span><span class="p">.</span><span class="n">my_path_label</span><span class="p">.</span><span class="nf">set_text</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When LinuxCNC loads a new file, Gstat will send a callback message to the function <em>update_filepath</em>.
+In this example we update a label with that path name (assuming there is a label named <em>my_path_label</em>) in the GLADE file.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_jogging_keys">4.3. Jogging Keys</h3>
+<div class="paragraph">
+<p>There are no special widgets to do screen-button jogging, so we must do it with Python code.
+Under the connect_signals function add this code:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python">        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span><span class="p">(</span><span class="sh">'</span><span class="s">x</span><span class="sh">'</span><span class="p">,</span><span class="sh">'</span><span class="s">y</span><span class="sh">'</span><span class="p">,</span><span class="sh">'</span><span class="s">z</span><span class="sh">'</span><span class="p">):</span>
+            <span class="n">self</span><span class="p">.</span><span class="n">widgets</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="sh">'</span><span class="s">neg</span><span class="sh">'</span><span class="p">].</span><span class="nf">connect</span><span class="p">(</span><span class="sh">"</span><span class="s">pressed</span><span class="sh">"</span><span class="p">,</span> <span class="n">self</span><span class="p">[</span><span class="sh">'</span><span class="s">jog_</span><span class="sh">'</span><span class="o">+</span><span class="n">i</span><span class="p">],</span><span class="mi">0</span><span class="p">,</span><span class="bp">True</span><span class="p">)</span>
+            <span class="n">self</span><span class="p">.</span><span class="n">widgets</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="sh">'</span><span class="s">neg</span><span class="sh">'</span><span class="p">].</span><span class="nf">connect</span><span class="p">(</span><span class="sh">"</span><span class="s">released</span><span class="sh">"</span><span class="p">,</span> <span class="n">self</span><span class="p">[</span><span class="sh">'</span><span class="s">jog_</span><span class="sh">'</span><span class="o">+</span><span class="n">i</span><span class="p">],</span><span class="mi">0</span><span class="p">,</span><span class="bp">False</span><span class="p">)</span>
+            <span class="n">self</span><span class="p">.</span><span class="n">widgets</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="sh">'</span><span class="s">pos</span><span class="sh">'</span><span class="p">].</span><span class="nf">connect</span><span class="p">(</span><span class="sh">"</span><span class="s">pressed</span><span class="sh">"</span><span class="p">,</span> <span class="n">self</span><span class="p">[</span><span class="sh">'</span><span class="s">jog_</span><span class="sh">'</span><span class="o">+</span><span class="n">i</span><span class="p">],</span><span class="mi">1</span><span class="p">,</span><span class="bp">True</span><span class="p">)</span>
+            <span class="n">self</span><span class="p">.</span><span class="n">widgets</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="sh">'</span><span class="s">pos</span><span class="sh">'</span><span class="p">].</span><span class="nf">connect</span><span class="p">(</span><span class="sh">"</span><span class="s">released</span><span class="sh">"</span><span class="p">,</span> <span class="n">self</span><span class="p">[</span><span class="sh">'</span><span class="s">jog_</span><span class="sh">'</span><span class="o">+</span><span class="n">i</span><span class="p">],</span><span class="mi">1</span><span class="p">,</span><span class="bp">False</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">widgets</span><span class="p">.</span><span class="n">jog_speed</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="sh">"</span><span class="s">value_changed</span><span class="sh">"</span><span class="p">,</span><span class="n">self</span><span class="p">.</span><span class="n">jog_speed_changed</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Add these functions under the HandlerClass class:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python">    <span class="k">def</span> <span class="nf">jog_x</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">widget</span><span class="p">,</span><span class="n">direction</span><span class="p">,</span><span class="n">state</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">gscreen</span><span class="p">.</span><span class="nf">do_key_jog</span><span class="p">(</span><span class="n">_X</span><span class="p">,</span><span class="n">direction</span><span class="p">,</span><span class="n">state</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">jog_y</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">widget</span><span class="p">,</span><span class="n">direction</span><span class="p">,</span><span class="n">state</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">gscreen</span><span class="p">.</span><span class="nf">do_key_jog</span><span class="p">(</span><span class="n">_Y</span><span class="p">,</span><span class="n">direction</span><span class="p">,</span><span class="n">state</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">jog_z</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">widget</span><span class="p">,</span><span class="n">direction</span><span class="p">,</span><span class="n">state</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">gscreen</span><span class="p">.</span><span class="nf">do_key_jog</span><span class="p">(</span><span class="n">_Z</span><span class="p">,</span><span class="n">direction</span><span class="p">,</span><span class="n">state</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">jog_speed_changed</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">widget</span><span class="p">,</span><span class="n">value</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">gscreen</span><span class="p">.</span><span class="nf">set_jog_rate</span><span class="p">(</span><span class="n">absolute</span> <span class="o">=</span> <span class="n">value</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Finally add two buttons to the GLADE file for each axis - one for positive, one for negative direction jogging.
+Name these buttons xneg, xpos, yneg, ypos zneg, zpos respectively.
+add a SpeedControl widget to the GLADE file and name it jog_speed.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_gscreen_start_up">5. Gscreen Start Up</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Gscreen is really just infrastructure to load a custom GladeVCP file and
+interact with it.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Gscreen reads the options it was started with.</p>
+</li>
+<li>
+<p>Gscreen sets the debug mode and set the optional skin name.</p>
+</li>
+<li>
+<p>Gscreen checks to see if there are <em>local</em> XML, handler and/or locale files in the configuration folder.
+It will use them instead of the default ones (in share/gscreen/skins/) (There can be two separate screens displayed).</p>
+</li>
+<li>
+<p>The main screen is loaded and translations set up.
+If present the second screen will be loaded and translations set up.</p>
+</li>
+<li>
+<p>Optional Audio is initialized if available.</p>
+</li>
+<li>
+<p>It reads some of the INI file to initialize the units, and the number/type of axes.</p>
+</li>
+<li>
+<p>Initializes Python&#8217;s binding to HAL to build a non-realtime component with the Gscreen name.</p>
+</li>
+<li>
+<p>GladeVCP&#8217;s makepins is called to parse the XML file to build HAL pins for the HAL widgets and register the LinuxCNC connected widgets.</p>
+</li>
+<li>
+<p>Checks for a <em>local</em> handler file in the configuration folder or else uses the stock one from the skin folder.</p>
+</li>
+<li>
+<p>If there is a handler file gscreen parses it, and registers the function calls into Gscreen&#8217;s namespace.</p>
+</li>
+<li>
+<p>Glade matches/registers all signal calls to functions in gscreen and the handler file.</p>
+</li>
+<li>
+<p>Gscreen checks the INI file for an option preference file name otherwise it uses <em>.gscreen_preferences</em> =.</p>
+</li>
+<li>
+<p>Gscreen checks to see if there is a preference function call (<em>initialize_preferences(self)</em>) in the handler file otherwise it uses the stock Gscreen one.</p>
+</li>
+<li>
+<p>Gscreen checks for ClassicLadder realtime component.</p>
+</li>
+<li>
+<p>Gscreen checks for the system wide GTK theme.</p>
+</li>
+<li>
+<p>Gscreen collects the jogging increments from the INI file.</p>
+</li>
+<li>
+<p>Gscreen collects the angular jogging increments from the INI file.</p>
+</li>
+<li>
+<p>Gscreen collects the default and max jog rate from the INI.</p>
+</li>
+<li>
+<p>Gscreen collects the max velocity of any axes from the INI&#8217;s TRAJ section.</p>
+</li>
+<li>
+<p>Gscreen checks to see if there is angular axes then collects the default and max velocity from the INI file.</p>
+</li>
+<li>
+<p>Gscreen collect all the override setting from the INI.</p>
+</li>
+<li>
+<p>Gscreen checks if its a lathe configuration from the INI file.</p>
+</li>
+<li>
+<p>Gscreen finds the name of the tool_table,tool editor and param file from the INI.</p>
+</li>
+<li>
+<p>Gscreen checks the handler file for keybindings function (<em>initialize_keybindings(self)</em>) or else use Gscreen stock one.</p>
+</li>
+<li>
+<p>Gscreen checks the handler file for pins function (<em>initialize_pins(self)</em>) or else use Gscreen stock one.</p>
+</li>
+<li>
+<p>Gscreen checks the handler file for manual_toolchange function (<em>initialize_manual_toolchange(self)</em>) or else use Gscreen stock one.</p>
+</li>
+<li>
+<p>Gscreen checks the handler file for connect_signals function (<em>initialize_connect_signals(self)</em>) or else use Gscreen stock one.</p>
+</li>
+<li>
+<p>Gscreen checka the handler file for widgets function (<em>initialize_widgets(self)</em>) or else use Gscreen stock one.</p>
+</li>
+<li>
+<p>Gscreen set up messages specified in the INI file.</p>
+</li>
+<li>
+<p>Gscreen tells HAL the Gscreen HAL component is finished making pins and is ready.
+If there is a terminal widget in the screen it will print all the Gscreen pins to it.</p>
+</li>
+<li>
+<p>Gscreen sets the display cycle time based on the INI file.</p>
+</li>
+<li>
+<p>Gscreen checks the handler file for <em>timer_interupt(self)</em> function call otherwise use Gscreen&#8217;s default function call.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_ini_settings">6. INI Settings</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Under the [DISPLAY] heading:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="py">DISPLAY</span> <span class="p">=</span> <span class="s">gscreen -c tester</span>
+  <span class="err">options:</span>
+   <span class="err">-d</span> <span class="err">debugging</span> <span class="err">on</span>
+   <span class="err">-v</span> <span class="err">verbose</span> <span class="err">debugging</span> <span class="err">on</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The -c switch allows one to select a <em>skin</em>. Gscreen assumes the Glade file and the handler file use this same name.
+The optional second screen will be the same name with a 2 (e.g., tester2.glade).
+There is no second handler file allowed.
+It will only be loaded if it is present.
+Gscreen will search the LinuxCNC configuration file that was launched first for the files, then in the system skin folder.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_user_dialog_messages">7. User Dialog Messages</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This function is used to display pop up dialog messages on the screen.
+These are defined in the INI file and controlled by HAL pins:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">MESSAGE_BOLDTEXT</dt>
+<dd>
+<p>is generally a title.</p>
+</dd>
+<dt class="hdlist1">MESSAGE_TEXT</dt>
+<dd>
+<p>is below that and usually longer.</p>
+</dd>
+<dt class="hdlist1">MESSAGE_DETAILS</dt>
+<dd>
+<p>is hidden unless clicked on.</p>
+</dd>
+<dt class="hdlist1">MESSAGE_PINNAME</dt>
+<dd>
+<p>is the basename of the HAL pins.</p>
+</dd>
+<dt class="hdlist1">MESSAGE_TYPE</dt>
+<dd>
+<p>specifies whether its a yes/no, ok, or status message</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Status messages</p>
+<div class="ulist">
+<ul>
+<li>
+<p>will be shown in the status bar and the notify dialog,</p>
+</li>
+<li>
+<p>require no user intervention.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>ok messages</p>
+<div class="ulist">
+<ul>
+<li>
+<p>require the user to click ok to close the dialog.</p>
+</li>
+<li>
+<p>have one HAL pin to launch the dialog and one to signify it is waiting for response.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>yes/no messages</p>
+<div class="ulist">
+<ul>
+<li>
+<p>require the user to select yes or no buttons to close the dialog.</p>
+</li>
+<li>
+<p>have three HAL pins:</p>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>one to show the dialog,</p>
+</li>
+<li>
+<p>one for waiting, and</p>
+</li>
+<li>
+<p>one for the answer.</p>
+</li>
+</ol>
+</div>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>Here is a sample INI code. It would be under the [DISPLAY] heading.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="c"># This just shows in the status bar and desktop notify popup.
+</span><span class="py">MESSAGE_BOLDTEXT</span> <span class="p">=</span> <span class="s">NONE</span>
+<span class="py">MESSAGE_TEXT</span> <span class="p">=</span> <span class="s">This is a statusbar test</span>
+<span class="py">MESSAGE_DETAILS</span> <span class="p">=</span> <span class="s">STATUS DETAILS</span>
+<span class="py">MESSAGE_TYPE</span> <span class="p">=</span> <span class="s">status</span>
+<span class="py">MESSAGE_PINNAME</span> <span class="p">=</span> <span class="s">statustest</span>
+
+<span class="c"># This will pop up a dialog that asks a yes no question
+</span><span class="py">MESSAGE_BOLDTEXT</span> <span class="p">=</span> <span class="s">NONE</span>
+<span class="py">MESSAGE_TEXT</span> <span class="p">=</span> <span class="s">This is a yes no dialog test</span>
+<span class="py">MESSAGE_DETAILS</span> <span class="p">=</span> <span class="s">Y/N DETAILS</span>
+<span class="py">MESSAGE_TYPE</span> <span class="p">=</span> <span class="s">yesnodialog</span>
+<span class="py">MESSAGE_PINNAME</span> <span class="p">=</span> <span class="s">yndialogtest</span>
+
+<span class="c"># This pops up a dialog that requires an ok response and it shows in the status bar and
+# the desktop notify popup.
+</span><span class="py">MESSAGE_BOLDTEXT</span> <span class="p">=</span> <span class="s">This is the short text</span>
+<span class="py">MESSAGE_TEXT</span> <span class="p">=</span> <span class="s">This is the longer text of the both type test. It can be longer then the status bar text</span>
+<span class="py">MESSAGE_DETAILS</span> <span class="p">=</span> <span class="s">BOTH DETAILS</span>
+<span class="py">MESSAGE_TYPE</span> <span class="p">=</span> <span class="s">okdialog status</span>
+<span class="py">MESSAGE_PINNAME</span> <span class="p">=</span> <span class="s">bothtest</span></code></pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_copy_the_stock_handlerglade_file_for_modification">7.1. Copy the Stock Handler/Glade File For Modification</h3>
+<div class="paragraph">
+<p>If you wish to use a stock screen but modify its handler file, you need to copy the stock file to your config file folder.
+Gscreen will see this and use the copied file.
+But where is the original file?
+If using a RIP LinuxCNC the sample skins are in /share/gscreen/skins/<em>SCREENNAME</em> Installed versions of LinuxCNC have them in slightly different places depending on the distribution used.
+An easy way to find the location is to open a terminal and start the sim screen you wish to use.
+In the terminal the file locations will be printed.
+It may help to add the -d switch to the gscreen load line in the INI.</p>
+</div>
+<div class="paragraph">
+<p>Here is a sample:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>chris@chris-ThinkPad-T500 ~/emc-dev/src $ linuxcnc
+LINUXCNC - 2.7.14
+Machine configuration directory is '/home/chris/emc-dev/configs/sim/gscreen/gscreen_custom'
+Machine configuration file is 'industrial_lathe.ini'
+Starting LinuxCNC...
+Found file(lib): /home/chris/emc-dev/lib/hallib/core_sim.hal
+Note: Using POSIX non-realtime
+Found file(lib): /home/chris/emc-dev/lib/hallib/sim_spindle_encoder.hal
+Found file(lib): /home/chris/emc-dev/lib/hallib/axis_manualtoolchange.hal
+Found file(lib): /home/chris/emc-dev/lib/hallib/simulated_home.hal
+**** GSCREEN WARNING: no audio alerts available - Is python-gst0.10 library installed?
+**** GSCREEN INFO ini: /home/chris/emc-dev/configs/sim/gscreen/gscreen_custom/industrial_lathe.ini
+**** GSCREEN INFO: Skin name = industrial
+
+**** GSCREEN INFO:  Using SKIN glade file from /home/chris/emc-dev/share/gscreen/skins/industrial/industrial.glade ****
+
+**** GSCREEN INFO:  No Screen 2 glade file present
+**** GSCREEN INFO: handler file path: ['/home/chris/emc-dev/share/gscreen/skins/industrial/industrial_handler.py']</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The line:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>**** GSCREEN INFO: handler file path: ['/home/chris/emc-dev/share/gscreen/skins/industrial/industrial_handler.py']</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>shows where the stock file lives. Copy this file to your config folder.
+This works the same for the Glade file.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

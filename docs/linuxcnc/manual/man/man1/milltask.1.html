@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>milltask(1)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="milltask.1.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man1/milltask.1.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man1/milltask.1.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man1/milltask.1.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man1/milltask.1.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man1/milltask.1.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man1/milltask.1.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man1/milltask.1.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>milltask(1) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>milltask - Non-realtime task controller for LinuxCNC</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The internal process <strong>milltask</strong> of LinuxCNC is generally not
+invoked directly but by an INI file setting:
+<code>[TASK]TASK=milltask`</code>.
+The <strong>milltask</strong> process creates the <code>ini.*</code> HAL pins listed below and owned by the <strong>inihal</strong> component.
+These pins may be modified while LinuxCNC is running to alter values
+that are typically specified statically in an INI file.</p>
+</div>
+<div class="paragraph">
+<p>The <strong>inihal</strong> pins are sampled in every task cycle, however, commands
+affected by their values typically use the value present at the time
+when the command is processed. Such commands include all codes handled
+by the interpreter (<strong>G-code</strong> programs and <strong>MDI</strong> commands) and NML <strong>jogging</strong> commands issued by a GUI (including <strong>halui</strong>). <strong>Wheel jogging</strong>
+is implemented in the realtime motion module so <strong>inihal</strong> pin changes
+(e.g., <code>ini.*.max_velocity</code>, <code>ini.*.max_acceleration</code>) may be honored as
+soon as altered values are propagated to the motion module.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_per_joint_pins_n_joint_number">Per-joint pins (N == joint number)</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>ini.</strong><em>N</em><strong>.backlash</strong></dt>
+<dd>
+<p>Allows adjustment of [JOINT_N]<strong>BACKLASH</strong></p>
+</dd>
+<dt class="hdlist1"><strong>ini.</strong><em>N</em><strong>.ferror</strong></dt>
+<dd>
+<p>Allows adjustment of [JOINT_N]<strong>FERROR</strong></p>
+</dd>
+<dt class="hdlist1"><strong>ini.</strong><em>N</em><strong>.min_ferror</strong></dt>
+<dd>
+<p>Allows adjustment of [JOINT_N]<strong>MIN_FERROR</strong></p>
+</dd>
+<dt class="hdlist1"><strong>ini.</strong><em>N</em><strong>.min_limit</strong></dt>
+<dd>
+<p>Allows adjustment of [JOINT_N]<strong>MIN_LIMIT</strong></p>
+</dd>
+<dt class="hdlist1"><strong>ini.</strong><em>N</em><strong>.max_limit</strong></dt>
+<dd>
+<p>Allows adjustment of [JOINT_N]<strong>MAX_LIMIT</strong></p>
+</dd>
+<dt class="hdlist1"><strong>ini.</strong><em>N</em><strong>.max_velocity</strong></dt>
+<dd>
+<p>Allows adjustment of [JOINT_N]<strong>MAX_VELOCITY</strong></p>
+</dd>
+<dt class="hdlist1"><strong>ini.</strong><em>N</em><strong>.max_acceleration</strong></dt>
+<dd>
+<p>Allows adjustment of [JOINT_N]<strong>MAX_ACCELERATION</strong></p>
+</dd>
+<dt class="hdlist1"><strong>ini.</strong><em>N</em><strong>.home</strong></dt>
+<dd>
+<p>Allows adjustment of [JOINT_N]<strong>HOME</strong></p>
+</dd>
+<dt class="hdlist1"><strong>ini.</strong><em>N</em><strong>.home_offset</strong></dt>
+<dd>
+<p>Allows adjustment of [JOINT_N]<strong>HOME_OFFSET</strong></p>
+</dd>
+<dt class="hdlist1"><strong>ini.</strong><em>N</em><strong>.home_offset</strong></dt>
+<dd>
+<p>Allows adjustment of [JOINT_N]<strong>HOME_SEQUENCE</strong></p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_per_axis_pins_l_axis_letter">Per-axis pins (L == axis letter)</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>ini.</strong><em>L</em><strong>.min_limit</strong></dt>
+<dd>
+<p>Allows adjustment of [AXIS_L]<strong>MIN_LIMIT</strong></p>
+</dd>
+<dt class="hdlist1"><strong>ini.</strong><em>L</em><strong>.max_limit</strong></dt>
+<dd>
+<p>Allows adjustment of [AXIS_L]<strong>MAX_LIMIT</strong></p>
+</dd>
+<dt class="hdlist1"><strong>ini.</strong><em>L</em><strong>.max_velocity</strong></dt>
+<dd>
+<p>Allows adjustment of [AXIS_L]<strong>MAX_VELOCITY</strong></p>
+</dd>
+<dt class="hdlist1"><strong>ini.</strong><em>L</em><strong>.max_acceleration</strong></dt>
+<dd>
+<p>Allows adjustment of [AXIS_L]<strong>MAX_ACCELERATION</strong></p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_global_pins">Global pins</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>ini.traj_default_acceleration</strong></dt>
+<dd>
+<p>Allows adjustment of [TRAJ]<strong>DEFAULT_ACCELERATION</strong></p>
+</dd>
+<dt class="hdlist1"><strong>ini.traj_default_velocity</strong></dt>
+<dd>
+<p>Allows adjustment of [TRAJ]<strong>DEFAULT_VELOCITY</strong></p>
+</dd>
+<dt class="hdlist1"><strong>ini.traj_max_acceleration</strong></dt>
+<dd>
+<p>Allows adjustment of [TRAJ]<strong>MAX_ACCELERATION</strong></p>
+</dd>
+<dt class="hdlist1"><strong>ini.traj_max_velocity</strong></dt>
+<dd>
+<p>Allows adjustment of [TRAJ]<strong>MAX_VELOCITY</strong></p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_global_pins_arc_blend_trajectory_planner">Global pins (arc_blend trajectory planner)</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>ini.traj_arc_blend_enable</strong></dt>
+<dd>
+<p>Allows adjustment of [TRAJ]<strong>ARC_BLEND_ENABLE</strong></p>
+</dd>
+<dt class="hdlist1"><strong>ini.traj_arc_blend_fallback_enable</strong></dt>
+<dd>
+<p>Allows adjustment of [TRAJ]<strong>ARC_BLEND_FALLBACK_ENABLE</strong></p>
+</dd>
+<dt class="hdlist1"><strong>ini.traj_arc_blend_gap_cycles</strong></dt>
+<dd>
+<p>Allows adjustment of [TRAJ]<strong>ARC_OPTIMIZATION_DEPTH</strong></p>
+</dd>
+<dt class="hdlist1"><strong>ini.traj_arc_blend_optimization_depth</strong></dt>
+<dd>
+<p>Allows adjustment of [TRAJ]<strong>ARC_BLEND_GAP_CYCLES</strong></p>
+</dd>
+<dt class="hdlist1"><strong>ini.traj_arc_blend_ramp_freq</strong></dt>
+<dd>
+<p>Allows adjustment of [TRAJ]<strong>ARC_BLEND_RAMP_FREQ</strong></p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_notes">NOTES</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <strong>inihal</strong> pins cannot be linked or set in a HAL file that is
+specified by an INI file <code>[HAL]HALFILE</code> item because they are not
+created until <strong>milltask</strong> is started. The <strong>inihal</strong> pin values can be
+altered by independent halcmd programs specified by <code>[APPLICATION]APP</code>
+items or by GUIs that support a <code>[HAL]POSTGUI_HALFILE</code>.</p>
+</div>
+<div class="paragraph">
+<p>The INI file is not automatically updated with values altered by <strong>inihal</strong> pin settings but can be updated using the calibration program (emccalib.tcl) when using a <code>[HAL]POSTGUI_HALFILE</code>.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

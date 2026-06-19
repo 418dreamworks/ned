@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>Integrator Concepts</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:integrator-concepts" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="integrator-concepts.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/config/integrator-concepts.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/config/integrator-concepts.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/config/integrator-concepts.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/config/integrator-concepts.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/config/integrator-concepts.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/config/integrator-concepts.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/config/integrator-concepts.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>Integrator Concepts</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details open><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="stepconf.html">Stepper Configuration Wizard</a><a href="pncconf.html">Mesa Configuration Wizard</a></details><details open><summary>Configuration</summary><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>Integrator Concepts</summary><ul class="sectlevel1">
+<li><a href="integrator-concepts.html#_file_locations">1. File Locations</a>
+<ul class="sectlevel2">
+<li><a href="integrator-concepts.html#_installed">1.1. Installed</a></li>
+<li><a href="integrator-concepts.html#_command_line">1.2. Command Line</a></li>
+</ul>
+</li>
+<li><a href="integrator-concepts.html#_files">2. Files</a></li>
+<li><a href="integrator-concepts.html#_stepper_systems">3. Stepper Systems</a>
+<ul class="sectlevel2">
+<li><a href="integrator-concepts.html#_base_period">3.1. Base Period</a></li>
+<li><a href="integrator-concepts.html#_step_timing">3.2. Step Timing</a></li>
+</ul>
+</li>
+<li><a href="integrator-concepts.html#_servo_systems">4. Servo Systems</a>
+<ul class="sectlevel2">
+<li><a href="integrator-concepts.html#_basic_operation">4.1. Basic Operation</a></li>
+<li><a href="integrator-concepts.html#_proportional_term">4.2. Proportional term</a></li>
+<li><a href="integrator-concepts.html#_integral_term">4.3. Integral term</a></li>
+<li><a href="integrator-concepts.html#_derivative_term">4.4. Derivative term</a></li>
+<li><a href="integrator-concepts.html#_loop_tuning">4.5. Loop tuning</a></li>
+<li><a href="integrator-concepts.html#_manual_tuning">4.6. Manual tuning</a></li>
+</ul>
+</li>
+<li><a href="integrator-concepts.html#_s_curve_trajectory_planning">5. S-Curve Trajectory Planning</a>
+<ul class="sectlevel2">
+<li><a href="integrator-concepts.html#_enabling">5.1. Enabling</a></li>
+<li><a href="integrator-concepts.html#_tuning">5.2. Tuning</a></li>
+</ul>
+</li>
+<li><a href="integrator-concepts.html#_rtai">6. RTAI</a>
+<ul class="sectlevel2">
+<li><a href="integrator-concepts.html#_acpi">6.1. ACPI</a></li>
+</ul>
+</li>
+<li><a href="integrator-concepts.html#_computermachine_interface_hardware_options">7. Computer/Machine Interface Hardware Options</a>
+<ul class="sectlevel2">
+<li><a href="integrator-concepts.html#_litehm2rv901t">7.1. litehm2/rv901t</a></li>
+</ul>
+</li>
+</ul></details><a href="../install/latency-test.html">Latency Testing</a><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><a href="ini-config.html">INI Configuration</a><a href="ini-homing.html">Homing Configuration</a><a href="lathe-config.html">Lathe Configuration</a><a href="stepper-quickstart.html">Stepper Quickstart</a><a href="stepper.html">Stepper Configuration</a><a href="stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="python-interface.html">The LinuxCNC Python module</a><a href="python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_file_locations">1. File Locations</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>LinuxCNC looks for the configuration and G-code files in a specific place. The
+location depends on how you run LinuxCNC.</p>
+</div>
+<div class="sect2">
+<h3 id="_installed">1.1. Installed</h3>
+<div class="paragraph">
+<p>If your running LinuxCNC from the Live CD or you installed via a .deb and use the
+configuration picker <em>LinuxCNC</em> from the menu LinuxCNC looks in the following
+directories:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The LinuxCNC directory is located at <em>/home/user-name/linuxcnc</em>.</p>
+</li>
+<li>
+<p>The Configuration directories are located at <em>/home/user-name/linuxcnc/configs</em>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Configuration files are located at <em>/home/user-name/linuxcnc/configs/name-of-config</em>.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>G-code files are located at /home/user-name/linuxcnc/nc_files'.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For example for a configuration called Mill and a user name Fred the directory
+and file structure would look like this.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>/home/fred/linuxcnc</em></p>
+</li>
+<li>
+<p><em>/home/fred/linuxcnc/nc_files</em></p>
+</li>
+<li>
+<p><em>/home/fred/linuxcnc/configs/mill</em></p>
+<div class="ulist">
+<ul>
+<li>
+<p><em>/home/fred/linuxcnc/configs/mill/mill.ini</em></p>
+</li>
+<li>
+<p><em>/home/fred/linuxcnc/configs/mill/mill.hal</em></p>
+</li>
+<li>
+<p><em>/home/fred/linuxcnc/configs/mill/mill.var</em></p>
+</li>
+<li>
+<p><em>/home/fred/linuxcnc/configs/mill/tool.tbl</em></p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_command_line">1.2. Command Line</h3>
+<div class="paragraph">
+<p>If you run LinuxCNC from the command line and specify the name and location of
+the INI file the file locations can be in a different place. To view the
+options for running LinuxCNC from the command line run <em>linuxcnc -h</em>.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Optional locations for some files can be configured in the INI file. See the
+<code>link:ini-config.html#sub:ini:sec:display[[DISPLAY\]]</code> section and the
+<code>link:ini-config.html#sub:ini:sec:rs274ngc[[RS274NGC\]]</code> section.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_files">2. Files</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Each configuration directory requires at least the following files:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>An INI file .ini</p>
+</li>
+<li>
+<p>A HAL file .hal or HALTCL file .tcl specified in the <a href="ini-config.html#sub:ini:sec:hal">HAL</a>
+section of the INI file.</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Other files may be required for some GUIs.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Optionally you can also have:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A Variables file .var</p>
+<div class="ulist">
+<ul>
+<li>
+<p>If you omit a .var file in a directory but include
+<code>link:ini-config.html#sub:ini:sec:rs274ngc[[RS274NGC\]]</code> PARAMETER_FILE=somefilename.var, the file
+will be created for you when LinuxCNC starts.</p>
+</li>
+<li>
+<p>If you omit a .var file  and  omit the item [RS274NGC] PARAMETER_FILE, a var
+file named rs274ngc.var will be created when LinuxCNC starts. There may be
+some confusing messages if [RS274NGC]PARAMETER_FILE is omitted.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>A Tool Table file .tbl if <code>link:ini-config.html#sub:ini:sec:emcmot[[EMCMOT\]]</code> TOOL_TABLE has been
+specified in the INI file. Some configurations do not need a tool table.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_stepper_systems">3. Stepper Systems</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_base_period">3.1. Base Period</h3>
+<div class="paragraph">
+<p>BASE_PERIOD is the <em>heartbeat</em> of your LinuxCNC computer.<sup class="footnote">[<a id="_footnoteref_1" class="footnote" href="integrator-concepts.html#_footnotedef_1" title="View footnote.">1</a>]</sup> Every period, the
+software step generator decides if it is time for another step pulse.
+A shorter period will allow you to generate more pulses per second,
+within limits. But if you go too short, your computer will spend so
+much time generating step pulses that everything else will slow to a
+crawl, or maybe even lock up. Latency and stepper drive requirements
+affect the shortest period you can use.</p>
+</div>
+<div class="paragraph">
+<p>Worst case latencies might only happen a few times a minute, and the
+odds of bad latency happening just as the motor is changing direction
+are low. So you can get very rare errors that ruin a part every once in
+a while and are impossible to troubleshoot.</p>
+</div>
+<div class="paragraph">
+<p>The simplest way to avoid this problem is to choose a BASE_PERIOD that
+is the sum of the longest timing requirement of your drive, and the
+worst case latency of your computer. This is not always the best choice.
+For example, if you are running a drive with a 20 µs  direction signal hold time
+requirement, and your latency test said you have a maximum latency of
+11 µs , then if you set the BASE_PERIOD to 20+11 = 31 µs  you get a
+not-so-nice 32,258 steps per second in one mode and 16,129 steps per
+second in another mode.</p>
+</div>
+<div class="paragraph">
+<p>The problem is with the 20 µs  hold time requirement. That plus the 11 µs
+latency is what forces us to use a slow 31 µs  period. But the LinuxCNC
+software step generator has some parameters that let you increase the
+various times from one period to several. For example, if <em>steplen</em> <sup class="footnote">[<a id="_footnoteref_2" class="footnote" href="integrator-concepts.html#_footnotedef_2" title="View footnote.">2</a>]</sup> is
+changed from 1 to 2, then there will be two periods between the
+beginning and end of the step pulse. Likewise, if <em>dirhold</em> <sup class="footnote">[<a id="_footnoteref_3" class="footnote" href="integrator-concepts.html#_footnotedef_3" title="View footnote.">3</a>]</sup> is
+changed from 1 to 3, there will be at least three periods between the step
+pulse and a change of the direction pin.</p>
+</div>
+<div class="paragraph">
+<p>If we can use <em>dirhold</em> to meet the 20 µs  hold time requirement, then the
+next longest time is the 4.5 µs  high time. Add the 11 µs  latency to the
+4.5 µs  high time, and you get a minimum period of 15.5 µs . When you try
+15.5 µs , you find that the computer is sluggish, so you settle on 16 µs .
+If we leave <em>dirhold</em> at 1 (the default), then the minimum time between
+step and direction is the 16 µs  period minus the 11 µs  latency = 5 µs ,
+which is not enough. We need another 15 µs . Since the period is 16 µs , we
+need one more period. So we change <em>dirhold</em> from 1 to 2. Now the minimum
+time from the end of the step pulse to the changing direction pin is
+5+16=21 µs , and we don&#8217;t have to worry about the drive stepping the
+wrong direction because of latency.</p>
+</div>
+<div class="paragraph">
+<p>For more information on stepgen see the <a href="../hal/rtcomps.html#sec:stepgen">stepgen section</a>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_step_timing">3.2. Step Timing</h3>
+<div class="paragraph">
+<p>Step Timing and Step Space on some drives are different. In this case
+the Step point becomes important. If the drive steps on the falling
+edge then the output pin should be inverted.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_servo_systems">4. Servo Systems</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_basic_operation">4.1. Basic Operation</h3>
+<div class="paragraph">
+<p>Servo systems are capable of greater speed and accuracy than equivalent
+stepper systems, but are more costly and complex.
+Unlike stepper systems, servo systems require some type of position
+feedback device, and must be adjusted or <em>tuned</em>, as they don&#8217;t quite
+work right out of the box as a stepper system might. These differences
+exist because servos are a <em>closed loop</em> system,
+unlike stepper motors which are generally run <em>open loop</em>. What does
+<em>closed loop</em> mean? Let&#8217;s look at a simplified diagram of how a servomotor
+system is connected.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/servo-feedback.png" alt="simplified diagram of how a servomotor system is connected">
+</div>
+<div class="title">Figure 1. Servo Loop</div>
+</div>
+<div class="paragraph">
+<p>This diagram shows that the input signal (and the feedback signal) drive
+the summing amplifier, the summing amplifier drives the power amplifier,
+the power amplifier drives the motor, the motor drives the load
+(and the feedback device), and the feedback device (and the input signal)
+drive the motor.  This looks very much like a circle (a closed loop) where
+A controls B, B controls C, C controls D, and D controls A.</p>
+</div>
+<div class="paragraph">
+<p>If you have not worked with servo systems before, this will no doubt seem a
+very strange idea at first, especially as compared to more normal electronic
+circuits, where the inputs proceed smoothly to the outputs, and never go
+back.<sup class="footnote">[<a id="_footnoteref_4" class="footnote" href="integrator-concepts.html#_footnotedef_4" title="View footnote.">4</a>]</sup> If <em>everything</em>
+controls <em>everything else</em>, how can that ever work, who&#8217;s in
+charge? The answer is that LinuxCNC <em>can</em> control this system,
+but it has to do it by choosing one of several control methods.
+The control method that LinuxCNC uses, one of the simplest and best,
+is called PID.</p>
+</div>
+<div class="paragraph">
+<p>PID stands for Proportional, Integral, and Derivative. The Proportional
+value determines the reaction to the current error, the Integral value
+determines the reaction based on the sum of recent errors, and the
+Derivative value determines the reaction based on the rate at which the
+error has been changing. They are three common mathematical techniques
+that are applied to the task of getting a working process to follow a
+set point. In the case of LinuxCNC the process we want to control is actual
+axis position and the set point is the commanded axis position.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/pid-feedback.png" alt="PID Loop, PID stands for Proportional, Integral, and Derivative">
+</div>
+<div class="title">Figure 2. PID Loop</div>
+</div>
+<div class="paragraph">
+<p>By <em>tuning</em> the three constants in the PID controller algorithm, the
+controller can provide control action designed for specific process
+requirements. The response of the controller can be described in terms
+of the responsiveness of the controller to an error, the degree to
+which the controller overshoots the set point and the degree of system
+oscillation.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_proportional_term">4.2. Proportional term</h3>
+<div class="paragraph">
+<p>The proportional term (sometimes called gain) makes a change to the
+output that is proportional to the current error value. A high
+proportional gain results in a large change in the output for a given
+change in the error. If the proportional gain is too high, the system
+can become unstable. In contrast, a small gain results in a small
+output response to a large input error. If the proportional gain is too
+low, the control action may be too small when responding to system
+disturbances.</p>
+</div>
+<div class="paragraph">
+<p>In the absence of disturbances, pure proportional control will not
+settle at its target value, but will retain a steady state error that
+is a function of the proportional gain and the process gain. Despite
+the steady-state offset, both tuning theory and industrial practice
+indicate that it is the proportional term that should contribute the
+bulk of the output change.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_integral_term">4.3. Integral term</h3>
+<div class="paragraph">
+<p>The contribution from the integral term (sometimes called reset) is
+proportional to both the magnitude of the error and the duration of the
+error. Summing the instantaneous error over time (integrating the
+error) gives the accumulated offset that should have been corrected
+previously. The accumulated error is then multiplied by the integral
+gain and added to the controller output.</p>
+</div>
+<div class="paragraph">
+<p>The integral term (when added to the proportional term) accelerates
+the movement of the process towards set point and eliminates the
+residual steady-state error that occurs with a proportional only
+controller. However, since the integral term is responding to
+accumulated errors from the past, it can cause the present value to
+overshoot the set point value (cross over the set point and then create
+a deviation in the other direction).</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_derivative_term">4.4. Derivative term</h3>
+<div class="paragraph">
+<p>The rate of change of the process error is calculated by determining
+the slope of the error over time (i.e., its first derivative with
+respect to time) and multiplying this rate of change by the derivative
+gain.</p>
+</div>
+<div class="paragraph">
+<p>The derivative term slows the rate of change of the controller output
+and this effect is most noticeable close to the controller set point.
+Hence, derivative control is used to reduce the magnitude of the
+overshoot produced by the integral component and improve the combined
+controller-process stability.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_loop_tuning">4.5. Loop tuning</h3>
+<div class="paragraph">
+<p>If the PID controller parameters (the gains of the proportional,
+integral and derivative terms) are chosen incorrectly, the controlled
+process input can be unstable, i.e., its output diverges, with or
+without oscillation, and is limited only by saturation or mechanical
+breakage. Tuning a control loop is the adjustment of its control
+parameters (gain/proportional band, integral gain/reset, derivative
+gain/rate) to the optimum values for the desired control response.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_manual_tuning">4.6. Manual tuning</h3>
+<div class="paragraph">
+<p>A simple tuning method is to first set the I and D values to zero.
+Increase the P until the output of the loop oscillates, then the P
+should be set to be approximately half of that value for a <em>quarter
+amplitude decay</em> type response. Then increase I until any offset is
+correct in sufficient time for the process. However, too much I will
+cause instability. Finally, increase D, if required, until the loop is
+acceptably quick to reach its reference after a load disturbance.
+However, too much D will cause excessive response and overshoot. A fast
+PID loop tuning usually overshoots slightly to reach the set point more
+quickly; however, some systems cannot accept overshoot, in which case
+an <em>over-damped</em> closed-loop system is required, which will require a P
+setting significantly less than half that of the P setting causing
+oscillation.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_s_curve_trajectory_planning">5. S-Curve Trajectory Planning</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>S-curve trajectory planning limits jerk (the rate of change of acceleration)
+to provide smoother motion. This can reduce machine vibration and improve
+surface finish, but requires tuning additional parameters.</p>
+</div>
+<div class="sect2">
+<h3 id="_enabling">5.1. Enabling</h3>
+<div class="paragraph">
+<p>Set in the INI file:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>[TRAJ]
+PLANNER_TYPE = 1              # 0=trapezoidal (default), 1=S-curve
+MAX_LINEAR_JERK = 1000.0      # Machine units/s^3
+
+[JOINT_n]
+MAX_JERK = 1000.0</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>S-curve planning is only active when <code>PLANNER_TYPE = 1</code> and <code>MAX_LINEAR_JERK &gt; 0</code>.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+If <code>MAX_LINEAR_JERK</code> is not specified, it defaults to 1e9 (1 billion), which effectively disables jerk limiting while maintaining S-curve calculations. This produces motion similar to trapezoidal planning but not identical. The maximum allowed value is 1e9 to prevent numerical instability.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_tuning">5.2. Tuning</h3>
+<div class="paragraph">
+<p>Start with a conservative jerk value and increase gradually:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>MAX_JERK ≈ 10 to 100 × MAX_ACCELERATION</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Typical values: 100-100,000 units/s<sup>3</sup> depending on machine rigidity and units
+(mm values are typically 1000x larger than inch values).</p>
+</div>
+<div class="paragraph">
+<p>Increase <code>MAX_LINEAR_JERK</code> until motion becomes sluggish or following errors
+increase, then reduce slightly. Test with coordinated moves and arcs.</p>
+</div>
+<div class="paragraph">
+<p>Values above 1e9 are automatically clamped to 1e9 to avoid numerical issues in the S-curve trajectory calculations.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_rtai">6. RTAI</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Real Time Application Interface (RTAI) is used to provide the best
+Real Time (RT) performance. The RTAI patched kernel lets you write
+applications with strict timing constraints. RTAI gives you the ability
+to have things like software step generation which require precise
+timing.</p>
+</div>
+<div class="sect2">
+<h3 id="_acpi">6.1. ACPI</h3>
+<div class="paragraph">
+<p>The Advanced Configuration and Power Interface (ACPI) has a lot of
+different functions, most of which interfere with RT performance (for
+example: power management, CPU power down, CPU frequency scaling, etc).
+The LinuxCNC kernel (and probably all RTAI-patched kernels) has ACPI
+disabled. ACPI also takes care of powering down the system after a
+shutdown has been started, and that&#8217;s why you might need to push the power
+button to completely turn off your computer. The RTAI group has been
+improving this in recent releases, so your LinuxCNC system may shut off by
+itself after all.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_computermachine_interface_hardware_options">7. Computer/Machine Interface Hardware Options</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_litehm2rv901t">7.1. litehm2/rv901t</h3>
+<div class="paragraph">
+<p>Litehm2 is a board-agnostic port of the HostMot2 FPGA firmware. The first
+board it supports is the linsn rv901t, which was originally built as a LED
+controller board, but due to the available I/O it is well suited to act as
+a machine controller. It offers around 80 5V-buffered I/O ports and can
+switch between all input and all output. it is also easily modified to split
+the ports half/half between input and output. The rv901t interfaces to the
+computer via Gigabit or 100Mbit Ethernet.</p>
+</div>
+<div class="paragraph">
+<p>Litehm2 is based on the LiteX framework which supports a wide range of
+FPGA boards. Currently only the rv901t is supported, but support for more
+boards is under development.</p>
+</div>
+<div class="paragraph">
+<p>More information can be found at <a href="https://github.com/sensille/litehm2" class="bare">https://github.com/sensille/litehm2</a>.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footnotes">
+<hr>
+<div class="footnote" id="_footnotedef_1">
+<a href="integrator-concepts.html#_footnoteref_1">1</a>. This section refers to using <strong>stepgen</strong>, LinuxCNC&#8217;s built-in step generator. Some hardware devices have their own step generator and do not use LinuxCNC&#8217;s built-in one. In that case, refer to your hardware manual.
+</div>
+<div class="footnote" id="_footnotedef_2">
+<a href="integrator-concepts.html#_footnoteref_2">2</a>. steplen refers to a parameter that adjusts the performance of LinuxCNC&#8217;s built-in step generator, <em>stepgen</em>, which is a HAL component. This parameter adjusts the length of the step pulse itself. Keep reading, all will be explained eventually.
+</div>
+<div class="footnote" id="_footnotedef_3">
+<a href="integrator-concepts.html#_footnoteref_3">3</a>. dirhold refers to a parameter that adjusts the length of the direction hold time.
+</div>
+<div class="footnote" id="_footnotedef_4">
+<a href="integrator-concepts.html#_footnoteref_4">4</a>. If it helps, the closest equivalent to this in the digital world are <em>state machines</em>, <em>sequential machines</em> and so forth, where what the outputs are doing <em>now</em> depends on what the inputs (and the outputs) were doing <em>before</em>. If it doesn&#8217;t help, then nevermind.
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

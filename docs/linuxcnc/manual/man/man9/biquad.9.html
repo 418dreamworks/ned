@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>BIQUAD(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="biquad.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/biquad.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/biquad.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/biquad.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/biquad.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/biquad.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/biquad.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/biquad.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>BIQUAD(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>biquad - Biquad IIR filter</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt biquad</strong> [<strong>count</strong>=<em>N</em>|<strong>names</strong>=<em>name1</em>[,<em>name2</em>&#8230;&#8203;]]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Biquad IIR filter. Implements the following transfer function:
+H(z) = (n<sub>0</sub> + n<sub>1</sub>z<sup>-1</sup> + n<sub>2</sub>z<sup>-2</sup>) / (1 + d<sub>1</sub>z<sup>-1</sup> + d<sub>2</sub>z<sup>-2</sup>)</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>biquad</strong>.<em>N</em></dt>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>biquad</strong>.<em>N</em>.<strong>in</strong> float in </dt>
+<dd>
+<p>Filter input.</p>
+</dd>
+<dt class="hdlist1"><strong>biquad</strong>.<em>N</em>.<strong>out</strong> float out </dt>
+<dd>
+<p>Filter output.</p>
+</dd>
+<dt class="hdlist1"><strong>biquad</strong>.<em>N</em>.<strong>enable</strong> bit in (default: <em>0</em>)</dt>
+<dd>
+<p>Filter enable. When false, the <strong>in</strong> pin is passed to the <strong>out</strong> pin without any filtering.  A <strong>transition from false to true</strong> causes filter coefficients to be calculated according to the current <strong>type</strong> and the describing pin and parameter settings</p>
+</dd>
+<dt class="hdlist1"><strong>biquad</strong>.<em>N</em>.<strong>valid</strong> bit out (default: <em>0</em>)</dt>
+<dd>
+<p>When false, indicates an error occurred when calculating filter coefficients (require 2&gt;<strong>Q</strong>&gt;0.5 and <strong>f0</strong>&gt;sampleRate/2)</p>
+</dd>
+<dt class="hdlist1"><strong>biquad</strong>.<em>N</em>.<strong>type-</strong> u32 in (default: <em>0</em>)</dt>
+<dd>
+<p>Filter type determines the type of filter coefficients calculated.  When 0, coefficients must be loaded directly from the <strong>n0,n1,n2,d1</strong> params.  When 1, a low pass filter is created specified by the <strong>f0,Q</strong> pins.  When 2, a notch filter is created specified by the <strong>f0,Q</strong> pins.</p>
+</dd>
+<dt class="hdlist1"><strong>biquad</strong>.<em>N</em>.<strong>f0</strong> float in (default: <em>250.0</em>)</dt>
+<dd>
+<p>The corner frequency of the filter.</p>
+</dd>
+<dt class="hdlist1"><strong>biquad</strong>.<em>N</em>.<strong>Q</strong> float in (default: <em>0.7071</em>)</dt>
+<dd>
+<p>The Q of the filter.</p>
+</dd>
+<dt class="hdlist1"><strong>biquad</strong>.<em>N</em>.<strong>s1</strong> float out (default: <em>0.0</em>)</dt>
+<dd>
+<p>1st-delayed internal state (for debug only)</p>
+</dd>
+<dt class="hdlist1"><strong>biquad</strong>.<em>N</em>.<strong>s2</strong> float out (default: <em>0.0</em>)</dt>
+<dd>
+<p>2nd-delayed internal state (for debug only)</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parameters">PARAMETERS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>biquad</strong>.<em>N</em>.<strong>d1</strong> float rw (default: <em>0.0</em>)</dt>
+<dd>
+<p>1st-delayed denominator coef</p>
+</dd>
+<dt class="hdlist1"><strong>biquad</strong>.<em>N</em>.<strong>d2</strong> float rw (default: <em>0.0</em>)</dt>
+<dd>
+<p>2nd-delayed denominator coef</p>
+</dd>
+<dt class="hdlist1"><strong>biquad</strong>.<em>N</em>.<strong>n0</strong> float rw (default: <em>1.0</em>)</dt>
+<dd>
+<p>non-delayed numerator coef</p>
+</dd>
+<dt class="hdlist1"><strong>biquad</strong>.<em>N</em>.<strong>n1</strong> float rw (default: <em>0.0</em>)</dt>
+<dd>
+<p>1st-delayed numerator coef</p>
+</dd>
+<dt class="hdlist1"><strong>biquad</strong>.<em>N</em>.<strong>n2</strong> float rw (default: <em>0.0</em>)</dt>
+<dd>
+<p>2nd-delayed numerator coef</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Peter G. Vavaroutsos</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:30:10 UTC
+</div>
+</div>
+</body>
+</html>

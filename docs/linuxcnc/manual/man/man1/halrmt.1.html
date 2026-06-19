@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>halrmt(1)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="halrmt.1.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man1/halrmt.1.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man1/halrmt.1.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man1/halrmt.1.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man1/halrmt.1.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man1/halrmt.1.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man1/halrmt.1.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man1/halrmt.1.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>halrmt(1) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>halrmt - remote-control interface for LinuxCNC</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>halrmt</strong> [<strong>--port</strong> <em>&lt;port number&gt;</em>] [<strong>--name</strong> <em>&lt;server name&gt;</em>] [<strong>--connectpw</strong> <em>&lt;password&gt;</em>] [<strong>--enablepw</strong> <em>&lt;password&gt;</em>] [<strong>--sessions</strong> <em>&lt;max sessions&gt;</em>] [<strong>-ini</strong> <em>&lt;INI file&gt;</em>]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_options">OPTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1">--port <em>port</em></dt>
+<dd>
+<p>Waits for socket connections (telnet) on specified
+socket, without port specification it uses default port 5006.
+(Note: linuxcncrsh uses 5007 as default.)</p>
+</dd>
+<dt class="hdlist1">--name <em>server_name</em></dt>
+<dd>
+<p>Sets the server name to specified name for Hello.</p>
+</dd>
+<dt class="hdlist1">--connectpw <em>password</em></dt>
+<dd>
+<p>Sets the connection password to <em>password</em>. Default: EMC.</p>
+</dd>
+<dt class="hdlist1">--enablepw <em>password</em></dt>
+<dd>
+<p>Sets the enable password to <em>password</em>. Default EMCTOO.</p>
+</dd>
+<dt class="hdlist1">--sessions &lt;max sessions&gt;</dt>
+<dd>
+<p>Sets the maximum number of simultaneous connextions to max sessions. Default is no limit (-1).</p>
+</dd>
+<dt class="hdlist1">-ini <em>&lt;INI file&gt;</em></dt>
+<dd>
+<p>Uses the specified <em>INI file</em> instead of the default emc.ini.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The application <strong>halrmt</strong> supports six commands that are meant to be sent
+to an instance of HAL that is running on another machine. Of these, the commands <em>set</em> and <em>get</em> contain HAL specific sub-commands that are based
+on the commands supported by <em>halcmd</em>.</p>
+</div>
+<div class="paragraph">
+<p>Commands and most parameters are not case sensitive.
+The exceptions are passwords, file paths and text strings.
+The supported commands are as follows:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Hello &lt;password&gt; &lt;client&gt; &lt;version&gt;</dt>
+<dd>
+<p>If a valid password was entered the server will respond with "HELLO ACK
+<em>&lt;Server Name&gt;</em> <em>&lt;Server Version&gt;</em>" where server name and server version are
+looked up from the implementation. If an invalid password or any other
+syntax error occurs then the server responds with "HELLO NAK".</p>
+</dd>
+<dt class="hdlist1">Get</dt>
+<dd>
+<p>The get command includes one of the HAL sub-commands,
+described below and zero or more additional parameters.</p>
+</dd>
+<dt class="hdlist1">Set</dt>
+<dd>
+<p>The set command inclides one of the HAL sub-commands,
+described below and one or more additional parameters.</p>
+</dd>
+<dt class="hdlist1">Quit</dt>
+<dd>
+<p>The quit command disconnects the associated socket connection.</p>
+</dd>
+<dt class="hdlist1">Shutdown</dt>
+<dd>
+<p>The shutdown command tells LinuxCNC to shut down
+before quitting the connection. This command may only be issued if the
+Hello has been successfully negotiated and the connection has control of
+the CNC (see enable sub-command below). This command has no parameters.</p>
+</dd>
+<dt class="hdlist1">Help</dt>
+<dd>
+<p>The help command will return help information in text format over the
+telnet connection. If no parameters are specified, it will itemize the
+available commands. If a command is specified, it will provide usage
+information for the specified command. Help will respond regardless of
+whether a "Hello" has been successfully negotiated.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p><strong>HAL sub-commands:</strong></p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">echo on | off</dt>
+<dd>
+<p>With get will return the current echo
+state, with set, sets the echo state. When echo is on, all commands will
+be echoed upon receipt. This state is local to each connection.</p>
+</dd>
+<dt class="hdlist1">verbose on | off</dt>
+<dd>
+<p>With get will return the current verbose state, with set, sets
+the verbose state. When in verbose mode is on, all set commands return
+positive acknowledgement in the form SET &lt;COMMAND&gt; ACK. In addition,
+text error messages will be issued when in verbose mode. This state is
+local to each connection.</p>
+</dd>
+<dt class="hdlist1">enable &lt;pwd&gt; | off</dt>
+<dd>
+<p>With get will return On or
+Off to indicate whether the current connection is enabled to perform
+control functions. With set and a valid password, the current connection
+is enabled for control functions. "OFF" may not be used as a password
+and disables control functions for this connection.</p>
+</dd>
+<dt class="hdlist1">config [TBD] comm_mode ascii | binary</dt>
+<dd>
+<p>With get, will return the current
+communications mode. With set, will set the communications mode to the
+specified mode. The binary protocol is TBD.</p>
+</dd>
+<dt class="hdlist1">comm_prot &lt;version no&gt;</dt>
+<dd>
+<p>With get, returns the current protocol version used by the server,
+with set, sets the server to use the specified protocol version, provided it is
+lower than or equal to the highest version number supported by the server implementation.</p>
+</dd>
+<dt class="hdlist1">Comps [&lt;substring&gt;]</dt>
+<dd>
+<p>Get only, returns all components beginning with the specified substring.
+If no substring is specified then it returns all components.</p>
+</dd>
+<dt class="hdlist1">Pins [&lt;substring&gt;]</dt>
+<dd>
+<p>Get only, returns all information about all pins beginning with the
+specified substring. If no substring is specified then it returns all
+pins.</p>
+</dd>
+<dt class="hdlist1">PinVals [&lt;substring&gt;]</dt>
+<dd>
+<p>Get only, returns only value information about all pins beginning with
+the specified substring. If no substring is specified then it returns
+all pins.</p>
+</dd>
+<dt class="hdlist1">Signals [&lt;substring&gt;]</dt>
+<dd>
+<p>Get only, returns all information about all signals beginning with the
+specified substring. If no substring is specified then it returns all
+signals.</p>
+</dd>
+<dt class="hdlist1">SigVals [&lt;substring&gt;]</dt>
+<dd>
+<p>Get only, returns only value information about all signals beginning
+with the specified substring. If no substring is specified then it
+returns all pins.</p>
+</dd>
+<dt class="hdlist1">Params [&lt;substring&gt;]</dt>
+<dd>
+<p>Get only, returns all information about all parameters beginning with
+the specified substring. If no substring is specified then it returns
+all parameters.</p>
+</dd>
+<dt class="hdlist1">ParamVals [&lt;substring&gt;]</dt>
+<dd>
+<p>Get only, returns only value information about all parameters beginning
+with the specified substring. If no substring is specified then it
+returns all pins parameters.</p>
+</dd>
+<dt class="hdlist1">Functs [&lt;substring&gt;]</dt>
+<dd>
+<p>Get only, returns all information about all functions beginning with the
+specified substring. If no substring is specified then it returns all
+functions.</p>
+</dd>
+<dt class="hdlist1">Threads</dt>
+<dd>
+<p>Get only, returns all information about all functions.</p>
+</dd>
+<dt class="hdlist1">Comp &lt;name&gt;</dt>
+<dd>
+<p>Get only, returns the component matching the specified name.</p>
+</dd>
+<dt class="hdlist1">Pin &lt;name&gt;</dt>
+<dd>
+<p>Get only, returns all information about the pin matching the specified name.</p>
+</dd>
+<dt class="hdlist1">PinVal &lt;name&gt;</dt>
+<dd>
+<p>Get only, returns the value of the pin matching the specified name.</p>
+</dd>
+<dt class="hdlist1">Sig &lt;name&gt;</dt>
+<dd>
+<p>Get only, returns all information about the pin matching the specified name.</p>
+</dd>
+<dt class="hdlist1">SigVal &lt;name&gt;</dt>
+<dd>
+<p>Get only, returns just the value of the signal matching the specified name.</p>
+</dd>
+<dt class="hdlist1">Param &lt;name&gt;</dt>
+<dd>
+<p>Get only, returns all information about the parameter matching the specified name.</p>
+</dd>
+<dt class="hdlist1">ParamVal &lt;name&gt;</dt>
+<dd>
+<p>Get only, returns just the value of the parameter matching the specified name.</p>
+</dd>
+<dt class="hdlist1">Funct &lt;name&gt;</dt>
+<dd>
+<p>Get only, returns all information about the parameter matching the
+specified name.</p>
+</dd>
+<dt class="hdlist1">Thread &lt;name&gt;</dt>
+<dd>
+<p>Get only, returns all information about the thread matching the
+specified name.</p>
+</dd>
+<dt class="hdlist1">LoadRt &lt;name&gt;</dt>
+<dd>
+<p>Set only, loads the real time executable specified by name.</p>
+</dd>
+<dt class="hdlist1">Unload &lt;name&gt;</dt>
+<dd>
+<p>Set only, unloads the executable specified by name.</p>
+</dd>
+<dt class="hdlist1">LoadUsr &lt;name&gt;</dt>
+<dd>
+<p>Set only, loads the user executable specified by name.</p>
+</dd>
+<dt class="hdlist1">Linkps &lt;pin name&gt; &lt;signal name&gt;</dt>
+<dd>
+<p>Set only, links the specified pin to the specified signal.</p>
+</dd>
+<dt class="hdlist1">Linksp &lt;signal name&gt; &lt;pin name&gt;</dt>
+<dd>
+<p>Set only, links the specified signal to the specified pin.</p>
+</dd>
+<dt class="hdlist1">Linkpp &lt;pin name 1&gt; &lt;pin name 2&gt;</dt>
+<dd>
+<p>Set only, links the pin specified by pin 1 with the pin specified by pin 2.</p>
+</dd>
+<dt class="hdlist1">Net &lt;net list&gt;</dt>
+<dd>
+<p>Set only, nets the specified net list.</p>
+</dd>
+<dt class="hdlist1">Unlinkp &lt;pin name 1&gt; &lt;pin name 2&gt;</dt>
+<dd>
+<p>Set only, unlinks the specified pins.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>Lock</p>
+</div>
+<div class="paragraph">
+<p>Unlock</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">NewSig &lt;name&gt; &lt;type&gt;</dt>
+<dd>
+<p>Set only, creates the signal specified by name and of type specified by
+type.</p>
+</dd>
+<dt class="hdlist1">DelSig &lt;name&gt;</dt>
+<dd>
+<p>Set only, deletes the signal specified by name.</p>
+</dd>
+<dt class="hdlist1">SetP &lt;name&gt; &lt;value&gt;</dt>
+<dd>
+<p>Set only, sets the parameter specified by name to the value specified by
+value.</p>
+</dd>
+<dt class="hdlist1">SetS &lt;name&gt; &lt;value&gt;</dt>
+<dd>
+<p>Set only, sets the signal specified by name to the value specified by
+value.</p>
+</dd>
+<dt class="hdlist1">AddF &lt;name&gt; &lt;thread&gt; [&lt;parameters&gt;]</dt>
+<dd>
+<p>Set only, adds the function specified by name, to the thread specified
+by thread, with the optional parameters specified by parameters.</p>
+</dd>
+<dt class="hdlist1">DelF &lt;name&gt;</dt>
+<dd>
+<p>Set only, deletes the function specified by name.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>Save</p>
+</div>
+<div class="paragraph">
+<p>Start</p>
+</div>
+<div class="paragraph">
+<p>Stop</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>linuxcnc(1)</p>
+</div>
+<div class="paragraph">
+<p>Much more information about LinuxCNC and HAL is available in the
+LinuxCNC and HAL User Manuals, found at /usr/share/doc/LinuxCNC/.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_bugs">BUGS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>It is not known if this interface currently works.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This man page written by Andy Pugh, as part of the LinuxCNC project.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reporting_bugs">REPORTING BUGS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Report bugs at <a href="https://github.com/LinuxCNC/linuxcnc/issues" class="bare">https://github.com/LinuxCNC/linuxcnc/issues</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_copyright">COPYRIGHT</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Copyright © 2020 Andy Pugh.</p>
+</div>
+<div class="paragraph">
+<p>This is free software; see the source for copying conditions. There is
+NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

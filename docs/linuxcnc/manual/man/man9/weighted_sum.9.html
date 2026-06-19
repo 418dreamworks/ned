@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>weighted_sum(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="weighted_sum.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/weighted_sum.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/weighted_sum.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/weighted_sum.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/weighted_sum.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/weighted_sum.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/weighted_sum.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/weighted_sum.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>weighted_sum(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>weighted_sum - convert a group of bits to an integer</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt weighted_sum wsum_sizes=</strong><em>size</em>[,<em>size</em>,&#8230;&#8203;]</p>
+</div>
+<div class="paragraph">
+<p>Creates weighted sum groups each with the given number of input bits (<em>size</em>).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The weighted_sum converts a group of bits to an integer. The conversion
+is the sum of the weights of the bits that are on plus any offset. The
+weight of the m-th bit is 2^m. This is similar to a binary coded decimal
+but with more options. The hold bit stops processing the input changes
+so the sum will not change.</p>
+</div>
+<div class="paragraph">
+<p>The default value for each weight is 2^m where m is the bit number.
+This results in a binary to unsigned conversion.</p>
+</div>
+<div class="paragraph">
+<p>There is a limit of 8 weighted summers and each may have up to 16 input bits.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>process_wsums</strong> (requires a floating point thread)</dt>
+<dd>
+<p>Read all input values and update all output values.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>wsum.</strong><em>N</em><strong>.bit.</strong><em>M</em><strong>.in</strong> bit in</dt>
+<dd>
+<p>The <em>m</em><sup>th</sup> input of weighted summer <em>n</em>.</p>
+</dd>
+<dt class="hdlist1"><strong>wsum.</strong><em>N</em><strong>.hold</strong> bit in</dt>
+<dd>
+<p>When TRUE, the <em>sum</em> output does not change.
+When FALSE, the <em>sum</em> output tracks the <em>bit</em> inputs according to the weights and offset.</p>
+</dd>
+<dt class="hdlist1"><strong>wsum.</strong><em>N</em><strong>.sum</strong> signed out</dt>
+<dd>
+<p>The output of the weighted summer.</p>
+</dd>
+<dt class="hdlist1"><strong>wsum.</strong><em>N</em><strong>.bit.</strong><em>M</em><strong>.weight</strong> signed rw</dt>
+<dd>
+<p>The weight of the <em>m</em><sup>th</sup> input of weighted summer <em>n</em>.
+The default value is 2<sup><em>m</em></sup>.</p>
+</dd>
+<dt class="hdlist1"><strong>wsum.</strong><em>N</em><strong>.offset</strong> signed rw</dt>
+<dd>
+<p>The offset is added to the weights corresponding to all TRUE inputs to give the final sum.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>scaled_s32_sums(9), sum2(9)</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

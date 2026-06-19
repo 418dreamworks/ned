@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>setsserial(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../rouge-github.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="setsserial.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/setsserial.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/setsserial.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/setsserial.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/setsserial.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/setsserial.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/setsserial.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/setsserial.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>setsserial(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>setsserial - a utility for setting Smart Serial NVRAM parameters.</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt setsserial cmd="</strong><em>command parameter</em>/<em>device value</em>/<em>filename</em><strong>"</strong></p>
+</div>
+<div class="paragraph">
+<p><strong>NOTE:</strong> This rather clunky utility is no longer needed except for flashing new smart-serial remote firmware.
+Smart-serial remote parameters can now be set in the HAL file in the normal way.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>None</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>None</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_usage">USAGE</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadrt</span> <span class="n">setsserial</span> <span class="n">cmd</span><span class="o">=</span><span class="s2">"set hm2_8i20.001f.nvmaxcurrent 750"</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Commands available are <strong>set</strong> and <strong>flash</strong>.</p>
+</div>
+<div class="paragraph">
+<p>This utility should be used under halcmd, without LinuxCNC running or
+any realtime threads running.</p>
+</div>
+<div class="paragraph">
+<p>A typical command sequence would be:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="n">halrun</span>
+<span class="k">loadrt</span> <span class="n">hostmot2</span> <span class="n">use_serial_numbers</span><span class="o">=</span><span class="mi">1</span> <span class="k">loadrt</span> <span class="n">hm2_pci</span> <span class="n">config</span><span class="o">=</span><span class="s2">"firmware=hm2/5i23/svss8_8.bit"</span>
+<span class="k">show</span> <span class="n">param</span>
+<span class="k">loadrt</span> <span class="n">setsserial</span> <span class="n">cmd</span><span class="o">=</span><span class="s2">"set hm2_8i20.001f.nvmaxcurrent 750"</span>
+<span class="n">exit</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This example uses the option to have the HAL pins and parameters labelled by the serial number of the remote.
+This is not necessary but can reduce the scope for confusion.
+(The serial number is normally on a sticker on the device.)</p>
+</div>
+<div class="paragraph">
+<p>The next line loads the hm2_pci driver in the normal way.
+The hm2_7i43 driver should work equally well, as should any future 7i80 driver.
+If the card has already been strted up and a firmware has been loaded, then the config string may be omitted.</p>
+</div>
+<div class="paragraph">
+<p>"show param" is optional, but provides a handy list of all the devices and parameters.
+It also shows the current values of the parameters which can be useful for determining scaling.
+u32 pin values are always shown in hex, but new values can be entered in decimal or hex.
+Use the Ox123ABC format to enter a hex value.</p>
+</div>
+<div class="paragraph">
+<p>The next line invokes setsserial. This is run in a slightly strange way
+in order to have kernel-level access to a live Hostmot2 config.
+It is basically a HAL module that always fails to load.
+This may lead to error messages being printed to the <code>halcmd:</code> prompt.
+These can often be ignored. All the real feedback is via the dmesg command.
+It is suggested to have a second terminal window open to run dmesg after each command.</p>
+</div>
+<div class="paragraph">
+<p>On exiting there will typically be a further error message related to
+the driver failing to unload setsserial. This can be ignored.</p>
+</div>
+<div class="paragraph">
+<p>The parameter changes will not show up until the drivers are reloaded.</p>
+</div>
+<div class="paragraph">
+<p><strong>Flashing Firmware</strong> To flash new firmware to an FPGA card such as the
+5i25 or 5i20 the "mesaflash" utility should be used. Setsserial is only
+useful for changing/updating the firmware on smart-serial remote such as
+the 8i20. The firmware should be placed somewhere in the
+/lib/firmware/hm2 tree, where the Linux firmware loading macros can find
+it.</p>
+</div>
+<div class="paragraph">
+<p>The flashing routine operates in a realtime thread, and can only send
+prompts to the user through the kernel log (dmesg). It is most
+convenient to open two terminal windows, one for command entry and one
+to monitor progress.</p>
+</div>
+<div class="paragraph">
+<p>In the first terminal enter</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sh"><span class="nb">tail</span> <span class="nt">-f</span> /var/log/kern.log</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This terminal will now display status information.</p>
+</div>
+<div class="paragraph">
+<p>The second window will be used to enter the commands. It is important
+that LinuxCNC and/or HAL are not already loaded when the process is
+started. To flash new firmware it is necessary to move a jumper on the
+smart-serial remote drive and to switch smart-serial communication to a
+slower baudrate.</p>
+</div>
+<div class="paragraph">
+<p>A typical command sequence is then</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="n">halrun</span>
+<span class="k">loadrt</span> <span class="n">hostmot2</span> <span class="n">sserial_baudrate</span><span class="o">=</span><span class="mi">115200</span> <span class="k">loadrt</span> <span class="n">hm2_pci</span> <span class="n">config</span><span class="o">=</span><span class="s2">"firmware=hm2/5i23/svss8_8.bit"</span>
+<span class="k">loadrt</span> <span class="n">setsserial</span> <span class="n">cmd</span><span class="o">=</span><span class="s2">"flash hm2_5i23.0.8i20.0.1 hm2/8i20/8i20T.BIN"</span>
+<span class="n">exit</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It is not necessary (or useful) to specify a config string in a system using the 5i25 or 6i25 cards.</p>
+</div>
+<div class="paragraph">
+<p>Note that it is necessary to exit halrun and unload the realtime
+environment before flashing the next card (exit)</p>
+</div>
+<div class="paragraph">
+<p>The correct sserial channel name to use can be seen in the dmesg output
+in the feedback terminal after the loadrt hm2_pci step of the sequence.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

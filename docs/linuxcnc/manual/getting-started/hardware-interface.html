@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>Hardware Interface</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:hardware-interface" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="hardware-interface.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/getting-started/hardware-interface.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/getting-started/hardware-interface.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/getting-started/hardware-interface.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/getting-started/hardware-interface.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/getting-started/hardware-interface.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/getting-started/hardware-interface.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/getting-started/hardware-interface.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>Hardware Interface</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details open><summary>Getting Started &amp; Configuration</summary><details open><summary>Getting Started with LinuxCNC</summary><a href="about-linuxcnc.html">About LinuxCNC</a><a href="system-requirements.html">System Requirements</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>Hardware Interface</summary><ul class="sectlevel1">
+<li><a href="hardware-interface.html#_hardware_to_run_the_linuxcnc_software">1. Hardware to run the LinuxCNC software</a></li>
+<li><a href="hardware-interface.html#_hardware_interface_to_cnc_machine">2. Hardware Interface to CNC machine</a></li>
+<li><a href="hardware-interface.html#_parallel_port">3. Parallel Port</a></li>
+<li><a href="hardware-interface.html#_parallel_port_software_interface">4. Parallel Port Software Interface</a></li>
+<li><a href="hardware-interface.html#_parallel_port_fpga_communication">5. Parallel Port FPGA Communication</a>
+<ul class="sectlevel2">
+<li><a href="hardware-interface.html#_mesa_via_parallel_port">5.1. Mesa via Parallel Port</a></li>
+<li><a href="hardware-interface.html#_pico_systems_via_parallel_port">5.2. Pico Systems via Parallel Port</a></li>
+</ul>
+</li>
+<li><a href="hardware-interface.html#_ethernet">6. Ethernet</a>
+<ul class="sectlevel2">
+<li><a href="hardware-interface.html#_mesa_ethernet">6.1. Mesa Ethernet</a></li>
+<li><a href="hardware-interface.html#_remora_ethernet">6.2. Remora Ethernet</a></li>
+<li><a href="hardware-interface.html#_litex_cnc">6.3. Litex-CNC</a></li>
+<li><a href="hardware-interface.html#_linuxcnc_rio">6.4. LinuxCNC-RIO</a></li>
+</ul>
+</li>
+<li><a href="hardware-interface.html#_ethercat">7. EtherCAT</a></li>
+<li><a href="hardware-interface.html#_pci_pcie">8. PCI / PCIe</a>
+<ul class="sectlevel2">
+<li><a href="hardware-interface.html#_mesa">8.1. Mesa</a></li>
+</ul>
+</li>
+<li><a href="hardware-interface.html#_spi">9. SPI</a>
+<ul class="sectlevel2">
+<li><a href="hardware-interface.html#_remora_spi">9.1. Remora SPI</a></li>
+<li><a href="hardware-interface.html#_linuxcnc_rio_2">9.2. LinuxCNC-RIO</a></li>
+<li><a href="hardware-interface.html#_mesa_2">9.3. Mesa</a></li>
+</ul>
+</li>
+<li><a href="hardware-interface.html#_usb">10. USB</a>
+<ul class="sectlevel2">
+<li><a href="hardware-interface.html#_linuxcnc_arduinoconnector">10.1. LinuxCNC_ArduinoConnector</a></li>
+<li><a href="hardware-interface.html#_usb_to_rs485_modbus">10.2. USB to RS485 / Modbus</a></li>
+</ul>
+</li>
+</ul></details><a href="getting-linuxcnc.html">Getting LinuxCNC</a><a href="running-linuxcnc.html">Running LinuxCNC</a><a href="updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="../config/stepconf.html">Stepper Configuration Wizard</a><a href="../config/pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="../config/integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><a href="../config/ini-config.html">INI Configuration</a><a href="../config/ini-homing.html">Homing Configuration</a><a href="../config/lathe-config.html">Lathe Configuration</a><a href="../config/stepper-quickstart.html">Stepper Quickstart</a><a href="../config/stepper.html">Stepper Configuration</a><a href="../config/stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="../config/core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="../config/moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="../config/python-interface.html">The LinuxCNC Python module</a><a href="../config/python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_hardware_to_run_the_linuxcnc_software">1. Hardware to run the LinuxCNC software</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A computer is required to run LinuxCNC itself. See <a href="system-requirements.html#cha:system-requirements">Computer System Requirements</a></p>
+</div>
+<div class="paragraph">
+<p>The most common is to use a x86 computer (standard Intel / AMD computer)</p>
+</div>
+<div class="paragraph">
+<p>ARM computers such as the Raspberry Pi or Orange Pi can be used</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_hardware_interface_to_cnc_machine">2. Hardware Interface to CNC machine</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>An interface is necessary to transmit (and convert) signals and information between LinuxCNC (the software on the computer) and CNC hardware (such as stepper / servo drivers, limit switches, inputs and outputs etc.). There are multiple different ways to interface.</p>
+</div>
+<div class="paragraph">
+<p>Interfaces include:
+- Parallel Port
+- Ethernet
+- EtherCAT
+- PCI / PCIe
+- SPI (where the computer has a native SPI interface, such as Raspberry Pi)
+- USB (<em>not</em> realtime interface)</p>
+</div>
+<div class="paragraph">
+<p>A mix of different interfaces can be used. For example, a combination of ethercat for servo drives, and parallel port for additional General Purpose Inputs / Outputs (GPIO)</p>
+</div>
+<div class="paragraph">
+<p>Some of these solutions are usable for all aspects of hardware interfacing, and some have specific roles (e.g. non-realtime GPIO for an operator interface with switches).</p>
+</div>
+<div class="paragraph">
+<p>Hardware interface options change over time. This list is not a 100% complete list of all hardware interfaces that can be used with LinuxCNC.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parallel_port">3. Parallel Port</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Using onboard motherboard parallel port, or a PCI/PCIe parallel port card.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parallel_port_software_interface">4. Parallel Port Software Interface</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Realtime (time critical) tasks such as step generation are done in software on the LinuxCNC host - this means the parallel port interface is much more sensitive to the LinuxCNC computer&#8217;s latency.</p>
+</div>
+<div class="paragraph">
+<p><em>Advantages:</em>
+- Low cost
+- Simple configuration</p>
+</div>
+<div class="paragraph">
+<p><em>Disadvantages:</em>
+- Sensitive to the LinuxCNC computer&#8217;s latency
+- Limited inputs/outputs
+- Some PCI/PCIe parallel port cards do not work well or do not properly support the EPP mode (EPP mode is required for parallel port interface to Mesa / PICO cards).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parallel_port_fpga_communication">5. Parallel Port FPGA Communication</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Realtime (time critical) tasks such as step generation are done in hardware (not on the computer)</p>
+</div>
+<div class="sect2">
+<h3 id="_mesa_via_parallel_port">5.1. Mesa via Parallel Port</h3>
+<div class="paragraph">
+<p>Mesa use Field-programmable gate array (FPGA) interfaced via parallel port - e.g. 7i43</p>
+</div>
+<div class="paragraph">
+<p>Website: <a href="https://mesanet.com/" class="bare">https://mesanet.com/</a>    Store: <a href="https://store.mesanet.com/" class="bare">https://store.mesanet.com/</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_pico_systems_via_parallel_port">5.2. Pico Systems via Parallel Port</h3>
+<div class="paragraph">
+<p><a href="https://pico-systems.com/univstep.html" class="bare">https://pico-systems.com/univstep.html</a></p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_ethernet">6. Ethernet</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_mesa_ethernet">6.1. Mesa Ethernet</h3>
+<div class="paragraph">
+<p>Mesa cards with a Field-programmable gate array (FPGA), interfaced to LinuxCNC computer via Ethernet. Time critical (realtime) tasks are performed on the FPGA card.</p>
+</div>
+<div class="paragraph">
+<p>Multiple ethernet interface FPGA cards are available, with many expansion cards</p>
+</div>
+<div class="paragraph">
+<p>Website: <a href="https://mesanet.com/" class="bare">https://mesanet.com/</a>    Store: <a href="https://store.mesanet.com/" class="bare">https://store.mesanet.com/</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_remora_ethernet">6.2. Remora Ethernet</h3>
+<div class="paragraph">
+<p>Realtime requirements are offloaded onto a controller board. Multiple different controller boards are supported - see <a href="https://remora-docs.readthedocs.io">Remora docs</a>.</p>
+</div>
+<div class="paragraph">
+<p>Note that some of these controller boards (e.g. NVEM, EC300, EC500) are designed / sold for use with Mach3. Use with LinuxCNC requires flashing new firmware, which has been developed by the LinuxCNC community. The manufacturer does not support LinuxCNC.</p>
+</div>
+<div class="paragraph">
+<p>Expatria Technologies PicoBOB-DLX was designed for LinuxCNC Remora.</p>
+</div>
+<div class="paragraph">
+<p>Remora docs: <a href="https://remora-docs.readthedocs.io" class="bare">https://remora-docs.readthedocs.io</a></p>
+</div>
+<div class="paragraph">
+<p>As of March 2024:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>STM32 based controller boards
+
+    NVEM - an STM32F207 based board with Ethernet PHY chip, originally intended for Mach3. [No longer in production, Legacy Support - no new features]
+
+    EC500 - an STM32F407 based board with Ethernet PHY chip, originally intended for Mach3. [No longer in production, Legacy Support - no new features]
+
+    Expatria Technologies Flexi-HAL with uFlexiNET Ethernet adapter - an STM32F446 based board with W5500 Ethernet SPI adapter designed for Remora
+
+iMX RT1052 based controller boards
+
+    NVEM, EC300 &amp; EC500 - iMXRT1052 based controller boards with Ethernet PHY chip, originally intended for Mach3. [In active development]
+
+RP2040 based controller boards
+
+    WIZnet W5500-EVB-Pico - Raspberry Pi RP2040 based development board with on-board W5500 Ethernet SPI adapter
+
+    Expatria Technologies PicoBOB-DLX - Raspberry Pi RP2040 based board with on-board W5500 Ethernet SPI adapter designed for Remora</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_litex_cnc">6.3. Litex-CNC</h3>
+<div class="paragraph">
+<p>This project aims to make a generic CNC firmware and driver for FPGA cards which are supported by LiteX. Configuration of the board and driver is done using json-files. The supported boards are the Colorlight boards 5A-75B and 5A-75E, as these are fully supported with the open source toolchain.</p>
+</div>
+<div class="paragraph">
+<p>Colorlight 5A-75B and 5A-75E cards are designed as a LED receiver card - it outputs to LED matrix panels. These cards have outputs only - hardware modification is required to enable use for inputs. Soldering required. Output buffers can be replaced with an input buffer.</p>
+</div>
+<div class="paragraph">
+<p><a href="https://litex-cnc.readthedocs.io" class="bare">https://litex-cnc.readthedocs.io</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_linuxcnc_rio">6.4. LinuxCNC-RIO</h3>
+<div class="paragraph">
+<p>RealtimeIO for LinuxCNC based on an FPGA</p>
+</div>
+<div class="paragraph">
+<p>Ethernet interface can be used with a Ethernet to SPI interface.</p>
+</div>
+<div class="paragraph">
+<p><a href="https://github.com/multigcs/LinuxCNC-RIO" class="bare">https://github.com/multigcs/LinuxCNC-RIO</a></p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_ethercat">7. EtherCAT</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Beckhoff EtherCAT&#8482; and compatible systems can be made to work with LinuxCNC using the open source etherlab software.</p>
+</div>
+<div class="paragraph">
+<p>EtherCAT is the open real-time Ethernet network originally developed by Beckhoff.
+The EtherCAT master (LinuxCNC computer) uses a standard ethernet (network) interface - no special hardware is needed on the master. The slaves use special hardware.
+There are many EtherCAT slave devices available including servo drives, stepper drives, input, output interfaces, VFDs, and others.</p>
+</div>
+<div class="paragraph">
+<p><a href="https://github.com/linuxcnc-ethercat/linuxcnc-ethercat" class="bare">https://github.com/linuxcnc-ethercat/linuxcnc-ethercat</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pci_pcie">8. PCI / PCIe</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_mesa">8.1. Mesa</h3>
+<div class="paragraph">
+<p>Mesa PCI / PCIe cards with a Field-programmable gate array (FPGA). Time critical (realtime) tasks are performed on the FPGA card.</p>
+</div>
+<div class="paragraph">
+<p>Multiple daughter / expansion cards are available</p>
+</div>
+<div class="paragraph">
+<p>Website: <a href="https://mesanet.com/" class="bare">https://mesanet.com/</a>    Store: <a href="https://store.mesanet.com/" class="bare">https://store.mesanet.com/</a></p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_spi">9. SPI</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>SPI = Serial Peripheral Interface. SPI interfaces can be found on single board computers like Raspberry Pi, or Orange Pi. SPI interface is <em>not</em> generally present on standard computers (AMD/Intel).</p>
+</div>
+<div class="sect2">
+<h3 id="_remora_spi">9.1. Remora SPI</h3>
+<div class="paragraph">
+<p>Realtime requirements are offloaded onto a controller board. <a href="https://remora-docs.readthedocs.io" class="bare">https://remora-docs.readthedocs.io</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_linuxcnc_rio_2">9.2. LinuxCNC-RIO</h3>
+<div class="paragraph">
+<p>RealtimeIO for LinuxCNC based on an FPGA</p>
+</div>
+<div class="paragraph">
+<p><a href="https://github.com/multigcs/LinuxCNC-RIO" class="bare">https://github.com/multigcs/LinuxCNC-RIO</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_mesa_2">9.3. Mesa</h3>
+<div class="paragraph">
+<p>Mesa cards with a Field-programmable gate array (FPGA), interfaced to LinuxCNC computer via SPI. Time critical (realtime) tasks are performed on the FPGA card.</p>
+</div>
+<div class="paragraph">
+<p>Example: 7C80 for Raspberry Pi</p>
+</div>
+<div class="paragraph">
+<p>Website: <a href="https://mesanet.com/" class="bare">https://mesanet.com/</a>    Store: <a href="https://store.mesanet.com/" class="bare">https://store.mesanet.com/</a></p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_usb">10. USB</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>USB devices cannot be used to control motors or perform other <em>"real time"</em> tasks.</p>
+</div>
+<div class="paragraph">
+<p>USB to Parallel port converters are <em><em>NOT</em></em> usable / suitable for CNC use.</p>
+</div>
+<div class="sect2">
+<h3 id="_linuxcnc_arduinoconnector">10.1. LinuxCNC_ArduinoConnector</h3>
+<div class="paragraph">
+<p>This Project enables you to connect an Arduino to LinuxCNC and provides as many I/Os as you could ever wish for. This Software is used as I/O Expansion for LinuxCNC.
+It is NOT intended for timing and security relevant I/Os. Do not use it for Emergency Stops or Endstop switches!</p>
+</div>
+<div class="paragraph">
+<p>Site: <a href="https://github.com/AlexmagToast/LinuxCNC_ArduinoConnector" class="bare">https://github.com/AlexmagToast/LinuxCNC_ArduinoConnector</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_usb_to_rs485_modbus">10.2. USB to RS485 / Modbus</h3>
+<div class="paragraph">
+<p>USB to serial (RS485 / Modbus) adaptors can be used for control of <em>non-realtime</em> hardware such as variable frequency drives (VFD) for spindle control. Not suitable for time critical tasks.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

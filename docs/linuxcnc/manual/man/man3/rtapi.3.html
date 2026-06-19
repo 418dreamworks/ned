@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>rtapi(3)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="rtapi.3.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man3/rtapi.3.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man3/rtapi.3.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man3/rtapi.3.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man3/rtapi.3.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man3/rtapi.3.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man3/rtapi.3.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man3/rtapi.3.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>rtapi(3) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>rtapi - Introduction to the RTAPI API</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>RTAPI is a library providing a uniform API for several real time operating systems.
+As of LinuxCNC 2.7, POSIX threads and RTAI are supported.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_header_files">HEADER FILES</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_rtapi_h">rtapi.h</h3>
+<div class="paragraph">
+<p>The file <strong>rtapi.h</strong> defines the RTAPI for both realtime and non-realtime code.
+This is a change from Rev 2, where the non-realtime API was
+defined in ulapi.h and used different function names.
+The symbols RTAPI and ULAPI are used to determine which mode is being compiled,
+RTAPI for realtime and ULAPI for non-realtime.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_rtapi_math_h">rtapi_math.h</h3>
+<div class="paragraph">
+<p>The file rtapi_math.h defines floating-point functions and constants.
+It should be used instead of &lt;math.h&gt; in rtapi real-time components.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_rtapi_string_h">rtapi_string.h</h3>
+<div class="paragraph">
+<p>The file rtapi_string.h defines string-related functions.
+It should be used instead of &lt;string.h&gt; in rtapi real-time components.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_rtapi_byteorder_h">rtapi_byteorder.h</h3>
+<div class="paragraph">
+<p>This file defines the preprocessor macros RTAPI_BIG_ENDIAN, RTAPI_LITTLE_ENDIAN, and RTAPI_FLOAT_BIG_ENDIAN as true or false depending on the characteristics of the target system.  It should be used instead of <strong>&lt;endian.h&gt;</strong> (userspace) or <strong>&lt;linux/byteorder.h&gt;</strong> (kernel space).</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_rtapi_limits_h">rtapi_limits.h</h3>
+<div class="paragraph">
+<p>This file defines the minimum and maximum value of some fundamental
+integral types, such as INT_MIN and INT_MAX. This should be used instead
+of <strong>&lt;limits.h&gt;</strong> because that header file is not available to kernel modules.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_realtime_considerations">REALTIME CONSIDERATIONS</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_non_realtime_code">Non-realtime code</h3>
+<div class="paragraph">
+<p>Certain functions are not available in non-realtime code.
+This includes functions that perform direct device access such as <strong>rtapi_inb(3)</strong>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_initcleanup_code">Init/cleanup code</h3>
+<div class="paragraph">
+<p>Certain functions may only be called from realtime init/cleanup code.
+This includes functions that perform memory allocation, such as <strong>rtapi_shmem_new(3)</strong>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_realtime_code">Realtime code</h3>
+<div class="paragraph">
+<p>Only a few functions may be called from realtime code.
+This includes functions that perform direct device access such as <strong>rtapi_inb(3)</strong>.
+It excludes most Linux kernel APIs such as do_gettimeofday(3)
+and many rtapi APIs such as rtapi_shmem_new(3).</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_simulator">Simulator</h3>
+<div class="paragraph">
+<p>For an RTAPI module to be buildable in the "sim" environment
+(fake realtime system without special privileges),
+it must not use <strong>any</strong> linux kernel APIs,
+and must not use the RTAPI APIs for direct device access such as <strong>rtapi_inb(3)</strong>.
+This automatically includes any hardware device drivers,
+and also devices which use Linux kernel APIs to do things like
+create special devices or entries in the <strong>/proc</strong> filesystem.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_rtapi_status_codes">RTAPI STATUS CODES</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Except as noted in specific manual pages,
+RTAPI returns negative errno values for errors, and nonnegative values for success.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

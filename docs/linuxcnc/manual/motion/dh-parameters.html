@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>Setting up "modified" Denavit-Hartenberg (DH) parameters for genserkins</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:dh-parameters" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="dh-parameters.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/motion/dh-parameters.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/motion/dh-parameters.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/motion/dh-parameters.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/motion/dh-parameters.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/motion/dh-parameters.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/motion/dh-parameters.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/motion/dh-parameters.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>Setting up "modified" Denavit-Hartenberg (DH) parameters for <em>genserkins</em></h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details open><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="../config/stepconf.html">Stepper Configuration Wizard</a><a href="../config/pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="../config/integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="tweaking-steppers.html">Stepper Tuning</a><a href="../config/ini-config.html">INI Configuration</a><a href="../config/ini-homing.html">Homing Configuration</a><a href="../config/lathe-config.html">Lathe Configuration</a><a href="../config/stepper-quickstart.html">Stepper Quickstart</a><a href="../config/stepper.html">Stepper Configuration</a><a href="../config/stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="../config/core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details open><summary>Advanced Topics</summary><a href="kinematics.html">Kinematics</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</summary><ul class="sectlevel1">
+<li><a href="dh-parameters.html#_prelude">1. Prelude</a></li>
+<li><a href="dh-parameters.html#_general">2. General</a></li>
+<li><a href="dh-parameters.html#_modified_dh_parameters">3. Modified DH-Parameters</a></li>
+<li><a href="dh-parameters.html#_modified_dh_parameters_as_used_in_genserkins">4. Modified DH-Parameters as used in <em>genserkins</em></a></li>
+<li><a href="dh-parameters.html#_numbering_of_joints_and_parameters">5. Numbering of joints and parameters</a></li>
+<li><a href="dh-parameters.html#_how_to_start">6. How to start</a></li>
+<li><a href="dh-parameters.html#_special_cases">7. Special cases</a></li>
+<li><a href="dh-parameters.html#_detailed_example_rv_6sl">8. Detailed Example (RV-6SL)</a></li>
+<li><a href="dh-parameters.html#_credits">9. Credits</a></li>
+</ul></details><a href="5-axis-kinematics.html">5-Axis Kinematics</a><a href="switchkins.html">Switchable Kinematics (switchkins)</a><a href="pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="../config/moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="../config/python-interface.html">The LinuxCNC Python module</a><a href="../config/python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prelude">1. Prelude</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>LinuxCNC supports a number of kinematics modules including one that
+supports a generalized set of serial kinematics commonly specified via
+Denavit-Hartenberg parameters.</p>
+</div>
+<div class="paragraph">
+<p>This document illustrates a method to set up the DH-parameters for a
+Mitsubishi RV-6SDL in LinuxCNC using <em>genserkins</em> kinematics.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+This document does not cover the creation of a <em>vismach</em> model which,
+while certainly very useful, requires just as much careful modeling
+if it is to match the <em>genserkins</em> model derived in this document.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+There may be errors and/or shortcomings&#8201;&#8212;&#8201;use at your own risk!
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_general">2. General</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>With the proliferation of industrial robots comes an increased
+interest to control used robots with LinuxCNC.  A common type of robot
+used in industry and manufacturing is the "serial manipulator"
+designed as a series of motorized joints connected by rigid links.
+Serial robots often have six joints as required for the six degrees of
+freedom needed to both position (XYZ) and orient (ABC or pitch, roll,
+yaw) an object in space.  Often these robots have an arm structure
+that extends from a base to an end-effector.</p>
+</div>
+<div class="paragraph">
+<p>Control of such a serial robot requires the calculation of the
+end-effector&#8217;s position and orientation in relation to a reference
+coordinate system when the joint angles are known (<strong>forward kinematics</strong>)
+and also the more complex reverse calculation of the
+required joint angles for a given end-effector position and
+orientation in relation to the reference coordinate system (<strong>inverse kinematics</strong>).
+The standard mathematical tools used for these
+calculations are matrices which are basically tables of parameters and
+formulas that make it easier to handle the rotations and translations
+involved in forward and inverse kinematics calculations.</p>
+</div>
+<div class="paragraph">
+<p>Detailed familiarity with the math is not required for a serial robot
+since LinuxCNC provides a kinematics module that implements an
+algorithm called <em>genserkins</em> to calculate the forward and inverse
+kinematics for a generic serial robot.  In order to control a specific
+serial robot, <em>genserkins</em> must be provided with data so that it can
+build a mathematical model of the robot&#8217;s mechanical structure and
+thus do the math.</p>
+</div>
+<div class="paragraph">
+<p>The required data needs to be in a standardized form that has been
+introduced by Jacques Denavit and Richard Hartenberg back in the
+fifties and are called the DH-Parameters.  Denavit and Hartenberg used
+four parameters to describe how one joint is linked to the next.
+These parameters describe basically two rotations (<em>alpha</em> and
+<em>theta</em>) and two translations (<em>a</em> and <em>d</em>).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_modified_dh_parameters">3. Modified DH-Parameters</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>As is often the case, this "standard" has been modified by other
+authors who have introduced "modified DH-parameters" and one must be
+very careful because <em>genserkins</em> uses "modified DH-parameters" as
+described in the publication "Introduction to Robotics, Mechanics and
+Control" by John J. Craig.  Beware there is a lot of information to be
+found on <em>DH-parameters</em> but rarely does the author define which
+convention is actually used.  In addition, some people have found it
+necessary to change the parameter named <em>a</em> to <em>r</em> and have thus added
+to the confusion.  This document adheres to the convention in the
+above mentioned publication by Craig with the difference that joint
+and parameter enumeration begins with the number <em>0</em> in order to be
+consistent with <em>genserkins</em> and its HAL pins.</p>
+</div>
+<div class="paragraph">
+<p>Standard and Modified DH-Parameters consist of four numeric values for
+each joint (<em>a</em>, <em>d</em>, <em>alpha</em> and <em>theta</em>) that describe how the
+coordinate system (CS) sitting in one joint has to be moved and
+rotated to be aligned with the next joint.  Aligned means that the
+Z-axis of our CS coincides with the axis of rotation of the joint and
+points in the positive direction such that, using the right hand rule
+with the thumb pointing in the positive direction of the Z-axis, the
+fingers point in the positive direction of rotation of the joint.
+It becomes clear that in order to do this, one must decide on
+the positive directions of all joints before starting to derive the
+parameters!</p>
+</div>
+<div class="paragraph">
+<p>The difference between "standard" and "modified" notations is in how the
+parameters are allocated to the links.  Using the "standard" DH-Parameters
+in <em>genserkins</em> will <strong>not</strong> give the correct mathematical model.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_modified_dh_parameters_as_used_in_genserkins">4. Modified DH-Parameters as used in <em>genserkins</em></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Note that <em>genserkins</em> does not handle offsets to theta-values&#8201;&#8212;&#8201;theta
+is the joint variable that is <strong>controlled</strong> by LinuxCNC.  With the CS
+aligned with the joint, a rotation around its Z-Axis is identical to
+the rotation commanded to that joint by LinuxCNC. This makes it
+impossible to define the 0° position of our robots joints arbitrarily.</p>
+</div>
+<div class="paragraph">
+<p>The three configurable parameters are:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>alpha</strong> : positive or negative rotation (in radians) around the X-axis
+of the "current coordinate system"</p>
+</li>
+<li>
+<p><strong>a</strong> : positive distance, along X, between two joint axes specified in
+<em>machine units</em> (mm or inch) defined in the system&#8217;s INI file.</p>
+</li>
+<li>
+<p><strong>d</strong> : positive or negative length along Z (also in <em>machine units</em>)</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>The parameter sets are always derived in the same order and a set is
+completed by setting the d-parameter.  This does not leave the Z-axis
+of our CS aligned with the next joint!  This may seem confusing but
+sticking to this rule will yield a working set of parameters.  Once
+the <strong>d</strong>-parameter is set, the X-axis of our-CS needs to point to the
+axis of the next joint.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_numbering_of_joints_and_parameters">5. Numbering of joints and parameters</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The first joint in LinuxCNC is joint-0 (because in software counting starts
+with 0) while most publications start with the number <em>1</em>.
+That goes for all the parameters as well.
+That is, numbering starts with a-0, alpha-0, d-0 and ends with a-5, alpha-5 and d-5.
+Keep this in mind when following a publication to set up <em>genserkins</em> parameters.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_how_to_start">6. How to start</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Convention is to start by placing the reference-CS in the base of
+the robot with it&#8217;s Z-axis coinciding with the axis of the first joint
+and its X-axis pointing toward the next joint&#8217;s axis.</p>
+</div>
+<div class="paragraph">
+<p>This will also result in the DRO values in LinuxCNC being referenced
+to that point.  Having done so sets a-0 and alpha-0 to 0.  The above
+mentioned publication (Craig) also sets d-0 to 0, which is confusing
+when a displacement offset is needed in order to have the
+reference-CS at the bottom of the base.  Setting d-0 = to the
+displacement gives correct results.  In this manner, the first set of
+parameters are alpha-0 = 0, a-0 = 0, d0 = displacement, and the X-axis
+of the CS points to the axis of the next joint (joint-1).</p>
+</div>
+<div class="paragraph">
+<p>Derivation of the net set (alpha-1, a-1, d-1) follows&#8201;&#8212;&#8201;always using
+the same sequence all the way to the sixth set (alpha-5, a-5, d-5).</p>
+</div>
+<div class="paragraph">
+<p>And thus, the TCP-CS of the end-effector is sitting in the center of the
+hand flange.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_special_cases">7. Special cases</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If the next joint-axis is parallel to the last then one could
+arbitrarily choose a value for the d-parameter but there is no
+point in setting it other than 0.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_detailed_example_rv_6sl">8. Detailed Example (RV-6SL)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Described below is a method to derive the required "modified DH-parameters"
+for a Mitsubishi RV-6SDL and how to set the parameters in the HAL file to
+be used with the <em>genserkins</em> kinematics in LinuxCNC.
+The necessary dimensions are best taken from a dimensional
+drawing provided by the manufacturer of the robot.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="rv-6sl/rv-6sl-001.jpg" alt="rv 6sl 001">
+</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="rv-6sl/rv-6sl-002.jpg" alt="rv 6sl 002">
+</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="rv-6sl/rv-6sl-003.jpg" alt="rv 6sl 003">
+</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="rv-6sl/rv-6sl-004.jpg" alt="rv 6sl 004">
+</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="rv-6sl/rv-6sl-005.jpg" alt="rv 6sl 005">
+</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="rv-6sl/rv-6sl-006.jpg" alt="rv 6sl 006">
+</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="rv-6sl/rv-6sl-007.jpg" alt="rv 6sl 007">
+</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="rv-6sl/rv-6sl-008.jpg" alt="rv 6sl 008">
+</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="rv-6sl/rv-6sl-009.jpg" alt="rv 6sl 009">
+</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="rv-6sl/rv-6sl-010.jpg" alt="rv 6sl 010">
+</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="rv-6sl/rv-6sl-011.jpg" alt="rv 6sl 011">
+</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="rv-6sl/rv-6sl-012.jpg" alt="rv 6sl 012">
+</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="rv-6sl/rv-6sl-013.jpg" alt="rv 6sl 013">
+</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="rv-6sl/rv-6sl-014.jpg" alt="rv 6sl 014">
+</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="rv-6sl/rv-6sl-015.jpg" alt="rv 6sl 015">
+</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="rv-6sl/rv-6sl-016.jpg" alt="rv 6sl 016">
+</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="rv-6sl/rv-6sl-017.jpg" alt="rv 6sl 017">
+</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="rv-6sl/rv-6sl-018.jpg" alt="rv 6sl 018">
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_credits">9. Credits</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Thanks to user Aciera for all text and the graphics
+for the RV-6SL robot!</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

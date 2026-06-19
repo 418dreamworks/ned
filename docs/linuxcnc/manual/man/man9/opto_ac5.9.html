@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>opto_ac5(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../rouge-github.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="opto_ac5.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/opto_ac5.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/opto_ac5.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/opto_ac5.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/opto_ac5.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/opto_ac5.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/opto_ac5.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/opto_ac5.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>opto_ac5(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>opto_ac5 - Realtime driver for opto22 PCI-AC5 cards</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt opto_ac5</strong> [<strong>portconfig0=0x</strong><em>N</em>] [<strong>portconfig1=0x</strong><em>N</em>]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>These pins and parameters are created by the realtime <strong>opto_ac5</strong> module.
+The portconfig0 and portconfig1 variables are used to configure the two
+ports of each card. The first 24 bits of a 32 bit number represent the
+24 i/o points of each port. The lowest (rightmost) bit would be HAL pin
+0 which is header connector pin 47. Then next bit to the left would be
+HAL pin 1, header connector pin 45 and so on, until bit 24 would be HAL
+pin 23, header connector pin 1. "1" bits represent output points. So
+channel 0..11 as inputs and 12..23 as outputs would be represented by
+(in binary) 111111111111000000000000 which is 0xfff000 in hexadecimal.
+That is the number you would use, e.g.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadrt</span> <span class="n">opto_ac5</span> <span class="n">portconfig0</span><span class="o">=</span><span class="mh">0xfff000</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If no portconfig variable is specified the default configuration is 12
+inputs then 12 outputs.</p>
+</div>
+<div class="paragraph">
+<p>Up to 4 boards are supported. Boards are numbered starting at 0.</p>
+</div>
+<div class="paragraph">
+<p>Portnumber can be 0 or 1. Port 0 is closest to the card bracket.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>opto_ac5.</strong><em>BOARDNUMBER</em><strong>.port.</strong><em>PORTNUMBER</em><strong>.in-</strong><em>PINNUMBER</em> OUT bit</dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>opto_ac5.</strong><em>BOARDNUMBER</em><strong>.port.</strong><em>PORTNUMBER</em><strong>.in-</strong><em>PINNUMBER</em><strong>-not</strong> OUT bit</dt>
+<dd>
+<p>Connect a HAL bit signal to this pin to read an i/o point from the card.
+The PINNUMBER represents the position in the relay rack.  E.g., PINNUMBER 0 is
+position 0 in a opto22 relay rack and would be pin 47 on the 50 pin header connector.
+The <strong>-not</strong> pin is inverted so that LOW gives TRUE and HIGH gives FALSE.</p>
+</dd>
+<dt class="hdlist1"><strong>opto_ac5.</strong><em>BOARDNUMBER</em><strong>.port.</strong><em>PORTNUMBER</em><strong>.out-</strong><em>PINNUMBER</em> IN bit</dt>
+<dd>
+<p>Connect a HAL bit signal to this pin to write to an i/o point of the
+card. The PINNUMBER represents the position in the relay rack. E.g.,
+PINNUMBER 23 is position 23 in a opto22 relay rack and would be pin 1
+on the 50 pin header connector.</p>
+</dd>
+<dt class="hdlist1"><strong>opto_ac5.</strong><em>BOARDNUMBER</em><strong>.led.</strong><em>NUMBER</em> OUT bit</dt>
+<dd>
+<p>Turns one of the on board LEDS on/off. LEDS are numbered 0 to 3.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parameters">PARAMETERS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>opto_ac5.</strong><em>BOARDNUMBER</em><strong>.port.</strong><em>PORTNUMBER</em><strong>.out-</strong><em>PINNUMBER</em><strong>-invert</strong> W bit</dt>
+<dd>
+<p>When TRUE, invert the meaning of the corresponding <strong>-out</strong> pin so that
+TRUE gives LOW and FALSE gives HIGH.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>opto_ac5.0.digital-read</strong></dt>
+<dd>
+<p>Add this to a thread to read all the input points.</p>
+</dd>
+<dt class="hdlist1"><strong>opto_ac5.0.digital-write</strong></dt>
+<dd>
+<p>Add this to a thread to write all the output points and LEDS.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_bugs">BUGS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>All boards are loaded with the same port configurations as the first board.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl?OptoPciAc5" class="bare">https://wiki.linuxcnc.org/cgi-bin/wiki.pl?OptoPciAc5</a></p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

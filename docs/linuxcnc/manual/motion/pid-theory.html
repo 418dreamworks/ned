@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>PID Tuning</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:pid-tuning" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="pid-theory.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/motion/pid-theory.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/motion/pid-theory.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/motion/pid-theory.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/motion/pid-theory.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/motion/pid-theory.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/motion/pid-theory.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/motion/pid-theory.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>PID Tuning</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details open><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="../config/stepconf.html">Stepper Configuration Wizard</a><a href="../config/pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="../config/integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="tweaking-steppers.html">Stepper Tuning</a><a href="../config/ini-config.html">INI Configuration</a><a href="../config/ini-homing.html">Homing Configuration</a><a href="../config/lathe-config.html">Lathe Configuration</a><a href="../config/stepper-quickstart.html">Stepper Quickstart</a><a href="../config/stepper.html">Stepper Configuration</a><a href="../config/stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="../config/core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details open><summary>Advanced Topics</summary><a href="kinematics.html">Kinematics</a><a href="dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="5-axis-kinematics.html">5-Axis Kinematics</a><a href="switchkins.html">Switchable Kinematics (switchkins)</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>PID Tuning</summary><ul class="sectlevel1">
+<li><a href="pid-theory.html#_pid_controller">1. PID Controller</a>
+<ul class="sectlevel2">
+<li><a href="pid-theory.html#_control_loop_basics">1.1. Control loop basics</a></li>
+<li><a href="pid-theory.html#_theory">1.2. Theory</a></li>
+<li><a href="pid-theory.html#_loop_tuning">1.3. Loop Tuning</a></li>
+<li><a href="pid-theory.html#_automatic_pid_tuning">1.4. Automatic PID tuning</a></li>
+</ul>
+</li>
+</ul></details><a href="../remap/remap.html">Remap Extending G-code</a><a href="../config/moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="../config/python-interface.html">The LinuxCNC Python module</a><a href="../config/python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pid_controller">1. PID Controller</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A proportional-integral-derivative controller (PID controller) is a
+common feedback loop component in industrial control
+systems. <sup class="footnote">[<a id="_footnoteref_1" class="footnote" href="pid-theory.html#_footnotedef_1" title="View footnote.">1</a>]</sup></p>
+</div>
+<div class="paragraph">
+<p>The Controller compares a measured value from a process (typically an
+industrial process) with a reference set point value. The difference
+(or <em>error</em> signal) is then used to calculate a new value for a
+manipulable input to the process that brings the process measured value
+back to its desired set point.</p>
+</div>
+<div class="paragraph">
+<p>Unlike simpler control algorithms, the PID controller can adjust
+process outputs based on the history and rate of change of the error
+signal, which gives more accurate and stable control. (It can be shown
+mathematically that a PID loop will produce accurate, stable control in
+cases where a simple proportional control would either have a
+steady-state error or would cause the process to oscillate).</p>
+</div>
+<div class="sect2">
+<h3 id="_control_loop_basics">1.1. Control loop basics</h3>
+<div class="paragraph">
+<p>Intuitively, the PID loop tries to automate what an intelligent
+operator with a gauge and a control knob would do. The operator would
+read a gauge showing the output measurement of a process, and use the
+knob to adjust the input of the process (the <em>action</em>) until the
+process&#8217;s output measurement stabilizes at the desired value on the
+gauge.</p>
+</div>
+<div class="paragraph">
+<p>In older control literature this adjustment process is called a
+<em>reset</em> action. The position of the needle on the gauge is a
+<em>measurement</em>, <em>process value</em> or <em>process variable</em>. The desired value
+on the gauge is called a <em>set point</em> (also called <em>set value</em>). The
+difference between the gauge&#8217;s needle and the set point is the <em>error</em>.</p>
+</div>
+<div class="paragraph">
+<p>A control loop consists of three parts:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Measurement by a sensor connected to the process (e.g. encoder),</p>
+</li>
+<li>
+<p>Decision in a controller element,</p>
+</li>
+<li>
+<p>Action through an output device such as an motor.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>As the controller reads a sensor, it subtracts this measurement from
+the <em>set point</em> to determine the <em>error</em>. It then uses the error to
+calculate a correction to the process&#8217;s input variable (the <em>action</em>)
+so that this correction will remove the error from the process&#8217;s output
+measurement.</p>
+</div>
+<div class="paragraph">
+<p>In a PID loop, correction is calculated from the error in three ways:
+cancel out the current error directly (Proportional), the amount of
+time the error has continued uncorrected (Integral), and anticipate the
+future error from the rate of change of the error over time
+(Derivative).</p>
+</div>
+<div class="paragraph">
+<p>A PID controller can be used to control any measurable variable which
+can be affected by manipulating some other process variable. For
+example, it can be used to control temperature, pressure, flow rate,
+chemical composition, speed, or other variables. Automobile cruise
+control is an example of a process outside of industry which utilizes
+crude PID control.</p>
+</div>
+<div class="paragraph">
+<p>Some control systems arrange PID controllers in cascades or networks.
+That is, a <em>master</em> control produces signals used by <em>slave</em>
+controllers. One common situation is motor controls: one often wants
+the motor to have a controlled speed, with the <em>slave</em> controller
+(often built into a variable frequency drive) directly managing the
+speed based on a proportional input. This <em>slave</em> input is fed by the
+<em>master</em> controller&#8217;s output, which is controlling based upon a related
+variable.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_theory">1.2. Theory</h3>
+<div class="paragraph">
+<p><em>PID</em> is named after its three correcting calculations, which all add
+to and adjust the controlled quantity. These additions are actually
+<em>subtractions</em> of error, because the proportions are usually negative:</p>
+</div>
+<div class="paragraph">
+<div class="title">Proportional</div>
+<p>To handle the present, the error is multiplied by a (negative)
+constant P (for <em>proportional</em>), and added to (subtracting error from)
+the controlled quantity. P is only valid in the band over which a
+controller&#8217;s output is proportional to the error of the system. Note
+that when the error is zero, a proportional controller&#8217;s output is
+zero.</p>
+</div>
+<div class="paragraph">
+<div class="title">Integral</div>
+<p>To learn from the past, the error is integrated (added up) over a
+period of time, and then multiplied by a (negative) constant I (making
+an average), and added to (subtracting error from) the controlled
+quantity. I averages the measured error to find the process output&#8217;s
+average error from the set point. A simple proportional system either
+oscillates, moving back and forth around the set point because there&#8217;s
+nothing to remove the error when it overshoots, or oscillates and/or
+stabilizes at a too low or too high value. By adding a negative
+proportion of (i.e. subtracting part of) the average error from the
+process input, the average difference between the process output and
+the set point is always being reduced. Therefore, eventually, a
+well-tuned PID loop&#8217;s process output will settle down at the set point.</p>
+</div>
+<div class="paragraph">
+<div class="title">Derivative</div>
+<p>To handle the future, the first derivative (the slope of the error)
+over time is calculated, and multiplied by another (negative) constant
+D, and also added to (subtracting error from) the controlled quantity.
+The derivative term controls the response to a change in the system.
+The larger the derivative term, the more rapidly the controller
+responds to changes in the process&#8217;s output.</p>
+</div>
+<div class="paragraph">
+<p>More technically, a PID loop can be characterized as a filter applied
+to a complex frequency-domain system. This is useful in order to
+calculate whether it will actually reach a stable value. If the values
+are chosen incorrectly, the controlled process input can oscillate, and
+the process output may never stay at the set point.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_loop_tuning">1.3. Loop Tuning</h3>
+<div class="paragraph">
+<p><em>Tuning</em> a control loop is the adjustment of its control parameters
+(gain/proportional band, integral gain/reset, derivative gain/rate) to
+the optimum values for the desired control response. The optimum
+behavior on a process change or set point change varies depending on
+the application. Some processes must not allow an overshoot of the
+process variable from the set point. Other processes must minimize the
+energy expended in reaching a new set point. Generally stability of
+response is required and the process must not oscillate for any
+combination of process conditions and set points.</p>
+</div>
+<div class="paragraph">
+<p>Tuning of loops is made more complicated by the response time of the
+process; it may take minutes or hours for a set point change to produce
+a stable effect. Some processes have a degree of non-linearity and so
+parameters that work well at full-load conditions don&#8217;t work when the
+process is starting up from no-load. This section describes some
+traditional manual methods for loop tuning.</p>
+</div>
+<div class="paragraph">
+<p>There are several methods for tuning a PID loop. The choice of method
+will depend largely on whether or not the loop can be taken <em>offline</em>
+for tuning, and the response speed of the system. If the system can be
+taken offline, the best tuning method often involves subjecting the
+system to a step change in input, measuring the output as a function of
+time, and using this response to determine the control parameters.</p>
+</div>
+<div class="paragraph">
+<div class="title">Simple method</div>
+<p>If the system must remain on line, one tuning method is to first set
+the I and D values to zero. Increase the P until the output of the loop
+oscillates. Then increase I until oscillation stops. Finally, increase
+D until the loop is acceptably quick to reach its reference. A fast PID
+loop tuning usually overshoots slightly to reach the set point more
+quickly; however, some systems cannot accept overshoot.</p>
+</div>
+<table class="tableblock frame-all grid-all" style="width: 90%;">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-center valign-top">Parameter</th>
+<th class="tableblock halign-left valign-top">Rise Time</th>
+<th class="tableblock halign-left valign-top">Overshoot</th>
+<th class="tableblock halign-left valign-top">Settling Time</th>
+<th class="tableblock halign-left valign-top">Steady State Error</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">P</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Decrease</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Increase</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Small Change</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Decrease</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">I</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Decrease</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Increase</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Increase</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Eliminate</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">D</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Small Change</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Decrease</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Decrease</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Small Change</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Effects of increasing parameters</p>
+</div>
+<div class="paragraph">
+<div class="title">Ziegler-Nichols method Another tuning method is formally known as the</div>
+<p><em>Ziegler-Nichols method</em>, introduced by John G. Ziegler and Nathaniel
+B. Nichols in 1942 <sup class="footnote">[<a id="_footnoteref_2" class="footnote" href="pid-theory.html#_footnotedef_2" title="View footnote.">2</a>]</sup>. It starts in the same way as the method described
+before: first set the I and D gains to zero and then increase the P
+gain and expose the loop to external interference for example knocking
+the motor axis to cause it to move out of equilibrium in order to
+determine critical gain and period of oscillation until the output of
+the loop starts to oscillate.  Write down the critical gain (K<sub>c</sub>) and
+the oscillation period of the output (P<sub>c</sub>). Then adjust the P, I and
+D controls as the table shows:</p>
+</div>
+<table class="tableblock frame-all grid-all" style="width: 90%;">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-center valign-top">Control type</th>
+<th class="tableblock halign-center valign-top">P</th>
+<th class="tableblock halign-center valign-top">I</th>
+<th class="tableblock halign-center valign-top">D</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">P</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">.5K<sub>c</sub></p></td>
+<td class="tableblock halign-center valign-top"></td>
+<td class="tableblock halign-center valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">PI</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">.45K<sub>c</sub></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">P<sub>c</sub>/1.2</p></td>
+<td class="tableblock halign-center valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">PID</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">.6K<sub>c</sub></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">P<sub>c</sub>/2</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">P<sub>c</sub>/8</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<div class="title">Final Steps</div>
+<p>After tuning the axis check the following error with Halscope to make
+sure it is within your machine requirements. More information on
+Halscope is in the HAL User manual.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_automatic_pid_tuning">1.4. Automatic PID tuning</h3>
+<div class="paragraph">
+<p>Since LinuxCNC version 2.9, the pid component support automatic tuning
+using the Relay method <sup class="footnote">[<a id="_footnoteref_3" class="footnote" href="pid-theory.html#_footnotedef_3" title="View footnote.">3</a>]</sup>.
+This is a replacement for the now removed and obsolete at_pid
+component.</p>
+</div>
+<div class="paragraph">
+<p>The pid component uses several constants to calculate the output value
+based on current and wanted state, the most important among them being
+Pgain', <em>Igain</em>, <em>Dgain</em>, <em>bias</em>, <em>FF0</em>, <em>FF1</em>, <em>FF2</em> and <em>FF3</em>. All
+of these need to have a sensible value for the controller to behave
+properly.</p>
+</div>
+<div class="paragraph">
+<p>The current implementation of automatic tuning implement two different
+algorithms, selected using the tune-type pin.  When tune-type is zero,
+it affects <em>Pgain</em>, <em>Igain</em> and <em>Dgain</em> while setting <em>FF0</em>, <em>FF1</em> and
+<em>FF2</em> to zero.  If tune-type is 1, it affects <em>Pgain</em>, <em>Igain</em> and
+<em>FF1</em> while setting <em>Dgain</em>, <em>FF0</em> and <em>FF2</em> to zero.  Note type 1
+require scaling be set so output is in user units per second.</p>
+</div>
+<div class="paragraph">
+<p>When autotuning a motor with tune-type 0, the algorithm will produce a
+square wave pattern centered around the <em>bias</em> value on the output pin
+of the PID controller, moving from the positive extreme to the
+negative extreme of the output range.  This can be seen using the HAL
+Scope provided by LinuxCNC.  For a motor controller taking +-10 V as
+its control signal, this might accelerate the motor full speed in one
+direction for a short period before telling it to go full speed in the
+opposite direction.  Make sure to have a lot of room on either side of
+the starting position, and start with a low <code>tune-effort</code> value to
+limit the speed used.  The <code>tune-effort</code> value define the extreme
+<code>output</code> value used, so if <code>tune-effort</code> is 1, the <code>output</code> value
+during tuning will move from 1 to -1. In other words, the extremes of
+the wave pattern is controlled by the <em>tune-effort</em> pin.  Using too
+high <em>tune-effort</em> might overload the motor driver.</p>
+</div>
+<div class="paragraph">
+<p>The number of cycles in the tune pattern is controlled by the
+<em>tune-cycles</em> pin.  Of course, trying to change the direction of a
+physical object instantly (as in going directly from a positive
+voltage to the equivalent negative voltage in the motor controller
+case) do not change velocity instantly, and it take some time for the
+object to slow down and move in the opposite direction.  This result
+in a more smooth wave form on the position pin, as the axis in
+question were vibrating back and forth.  When the axis reached the
+target speed in the opposing direction, the auto tuner change
+direction again.  After several of these changes, the average time
+delay between the "peaks" and "valleys" of this movement graph is used
+to calculate proposed values for <code>Pgain</code>, <code>Igain</code> and <code>Dgain</code>, and
+insert them into the HAL model to use by the pid controller.  The auto
+tuned settings are not perfect, but might provide a good starting
+point for further parameter tuning.</p>
+</div>
+<div class="paragraph">
+<p>FIXME: The author of these instructions have not tested automatic
+tuning with tune-type set to 1, so this approach remain to be
+documented.</p>
+</div>
+<div class="paragraph">
+<p>Armed with this knowledge, it is time to look at how to do the tuning.
+Lets say the HAL configuration in question load the PID component for
+X, Y and Z like this, using named pin names instead of <em>count=3</em>:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>loadrt pid names=pid.x,pid.y,pid.z</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If the component had used <em>count=3</em> instead, all use of pid.x, pid,y
+and pid.z need to be changed to pid.1, pid.2 and pid.3 respectively.
+To start tuning the X axis, move the axis to the middle of its range,
+to make sure it do not hit anything when it start moving back and
+forth.  You also want to extend the axis ferror limit (following
+error) to make LinuxCNC accept the higher position deviation during
+tuning.  The sensible ferror limit depends on the machine and setup, but
+1 inch or 20 mm might be useful starting points.  Next, set the
+initial <em>tune-effort</em> to a low number in the output range, for example
+1/100 of the maximum output, and slowly increase it to get more
+accurate tuning values.  Assign 1 to the <em>tune-mode</em> value.  Note,
+this will disable the pid controlling part and feed the <em>bias</em> value
+to the output pin, which can cause a lot of drift.  It might be a good
+idea to tune the motor driver to ensure zero input voltage do not
+cause any motor rotation, or adjust the <em>bias</em> value for the same
+effect.  Finally, after setting <em>tune-mode</em>, set <em>tune-start</em> to 1 to
+activate the auto tuning.  If all go well, your axis will vibrate and
+move back and forth for a few seconds and when it is done, new values
+for Pgain, Igain and Dgain will be active.  To test them, change
+<em>tune-mode</em> back to 0.  Note that setting <em>tune-mode</em> back to zero
+might cause the axis to suddenly jerk as it bring the axis back to its
+commanded position, which it might have drifted away from during
+tuning.  To summarize, these are the halcmd instructions you need to
+issue to do automatic tuning:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>setp pid.x.tune-effort 0.1
+setp pid.x.tune-mode 1
+setp pid.x.tune-start 1
+# wait for the tuning to complete
+setp pid.x.tune-mode 0</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A script to help doing the automatic tuning is provided in the
+LinuxCNC code repository as <em>scripts/run-auto-pid-tuner</em>.  This will
+ensure the machine is powered on and ready to run, home all axes if it
+is not already done, check that the extra tuning pins are available,
+move the axis to its mid point, run the auto tuning and re-enable the
+pid controller when it is done.  It can be run several times.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footnotes">
+<hr>
+<div class="footnote" id="_footnotedef_1">
+<a href="pid-theory.html#_footnoteref_1">1</a>. This Subsection is taken from an much more extensive article found at <a href="https://en.wikipedia.org/wiki/PID_controller" class="bare">https://en.wikipedia.org/wiki/PID_controller</a>
+</div>
+<div class="footnote" id="_footnotedef_2">
+<a href="pid-theory.html#_footnoteref_2">2</a>. Ziegler, J. G. and Nichols, N. B. (1942), <em>Optimum Settings for Automatic Controllers</em>, Transactions of the ASME, <a href="https://doi.org/10.1115/1.2899060">DOI 10.1115/1.2899060</a> and <a href="https://web.archive.org/web/20170918055307/http://staff.guilan.ac.ir/staff/users/chaibakhsh/fckeditor_repo/file/documents/Optimum%20Settings%20for%20Automatic%20Controllers%20(Ziegler%20and%20Nichols,%201942).pdf">The Internet Archive</a>.
+</div>
+<div class="footnote" id="_footnotedef_3">
+<a href="pid-theory.html#_footnoteref_3">3</a>. Åström, Karl Johan and Hägglund, Tore (1984), <em>Automation paper Automatic Tuning of Simple Regulators with Specifications on Phase and Amplitude Margins</em>, <a href="https://doi.org/10.1016/0005-1098(84)90014-1">DOI 10.1016/0005-1098(84)90014-1</a>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

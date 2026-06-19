@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>hm2_bspi_set_read_function(3)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="hm2_bspi_set_read_function.3.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man3/hm2_bspi_set_read_function.3.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man3/hm2_bspi_set_read_function.3.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man3/hm2_bspi_set_read_function.3.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man3/hm2_bspi_set_read_function.3.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man3/hm2_bspi_set_read_function.3.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man3/hm2_bspi_set_read_function.3.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man3/hm2_bspi_set_read_function.3.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>hm2_bspi_set_read_function(3) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>hm2_bspi_set_read_function - Register a function to handle the tram write phase of a hostmot2 buffered SPI driver.</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_syntax">SYNTAX</h2>
+<div class="sectionbody">
+<div class="literalblock">
+<div class="content">
+<pre>#include &lt;hostmot2-serial.h&gt;
+int hm2_bspi_set_read_function(char *name, void *func, void *subdata)</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>hm2_bspi_set_read_function</strong> registers a function in an external driver
+to be called every time that the main Hostmot2 driver calls the generic
+"process_tram_read" function. The names of the available channels are
+printed with rtapi_print_msg during the driver loading process and take
+the form:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>hm2_&lt;board name&gt;.&lt;board index&gt;.bspi.&lt;index&gt;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For example hm2_5i23.0.bspi.0.</p>
+</div>
+<div class="paragraph">
+<p>"func" should be a pointer to a function in the sub driver which is to
+be called to process the results of the BSPI TRAM read phase. The
+function must take a single argument, a pointer to an individual
+instance of the internal driver. If defined in comp then the function
+must <strong>not</strong> use the FUNCTION() convenience macro, and the argument to the
+function in the definition must <strong>always</strong> be (struct state *inst).</p>
+</div>
+<div class="paragraph">
+<p>"subdata" is a pointer to the driver instance internal data. In the case
+of a driver written in comp this will always be "inst" in the function
+call and the call should be anywhere in the EXTRA_SETUP code.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_realtime_considerations">REALTIME CONSIDERATIONS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Call only from realtime init code, not from other realtime code or
+non-realtime components.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_return_value">RETURN VALUE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Returns 0 on success and -1 on failure.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>hm2_allocate_bspi_tram(3), hm2_bspi_setup_chan(3),
+hm2_bspi_set_write_function(3), hm2_bspi_write_chan(3),
+hm2_tram_add_bspi_frame(3), src/hal/drivers mesa_7i65.comp in the
+LinuxCNC source distribution.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

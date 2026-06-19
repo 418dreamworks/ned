@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>Contributing to LinuxCNC</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../rouge-github.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="contributing-to-linuxcnc.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/code/contributing-to-linuxcnc.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/code/contributing-to-linuxcnc.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/code/contributing-to-linuxcnc.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/code/contributing-to-linuxcnc.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/code/contributing-to-linuxcnc.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/code/contributing-to-linuxcnc.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/code/contributing-to-linuxcnc.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>Contributing to LinuxCNC</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="../config/stepconf.html">Stepper Configuration Wizard</a><a href="../config/pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="../config/integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><a href="../config/ini-config.html">INI Configuration</a><a href="../config/ini-homing.html">Homing Configuration</a><a href="../config/lathe-config.html">Lathe Configuration</a><a href="../config/stepper-quickstart.html">Stepper Quickstart</a><a href="../config/stepper.html">Stepper Configuration</a><a href="../config/stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="../config/core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="../config/moveoff.html">Moveoff Component</a><a href="rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="../config/python-interface.html">The LinuxCNC Python module</a><a href="../config/python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details open><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="code-notes.html">Code Notes</a><a href="nml-messages.html">NML Messages</a><a href="style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="building-linuxcnc.html">Building LinuxCNC</a><a href="adding-configs.html">Adding Configuration Selection Items</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>Contributing to LinuxCNC</summary><ul class="sectlevel1">
+<li><a href="contributing-to-linuxcnc.html#_introduction">1. Introduction</a></li>
+<li><a href="contributing-to-linuxcnc.html#_communication_among_linuxcnc_developers">2. Communication among LinuxCNC developers</a></li>
+<li><a href="contributing-to-linuxcnc.html#_the_linuxcnc_source_forge_project">3. The LinuxCNC Source Forge project</a></li>
+<li><a href="contributing-to-linuxcnc.html#_the_git_revision_control_system">4. The Git Revision Control System</a>
+<ul class="sectlevel2">
+<li><a href="contributing-to-linuxcnc.html#_linuxcnc_official_git_repo">4.1. LinuxCNC official Git repo</a></li>
+<li><a href="contributing-to-linuxcnc.html#_use_of_git_in_the_linuxcnc_project">4.2. Use of Git in the LinuxCNC project</a></li>
+<li><a href="contributing-to-linuxcnc.html#_git_tutorials">4.3. git tutorials</a></li>
+</ul>
+</li>
+<li><a href="contributing-to-linuxcnc.html#_overview_of_the_process">5. Overview of the process</a></li>
+<li><a href="contributing-to-linuxcnc.html#_git_configuration">6. git configuration</a></li>
+<li><a href="contributing-to-linuxcnc.html#_effective_use_of_git">7. Effective use of git</a>
+<ul class="sectlevel2">
+<li><a href="contributing-to-linuxcnc.html#_commit_contents">7.1. Commit contents</a></li>
+<li><a href="contributing-to-linuxcnc.html#_write_good_commit_messages">7.2. Write good commit messages</a></li>
+<li><a href="contributing-to-linuxcnc.html#_commit_to_the_proper_branch">7.3. Commit to the proper branch</a></li>
+<li><a href="contributing-to-linuxcnc.html#_use_multiple_commits_to_organize_changes">7.4. Use multiple commits to organize changes</a></li>
+<li><a href="contributing-to-linuxcnc.html#_follow_the_style_of_the_surrounding_code">7.5. Follow the style of the surrounding code</a></li>
+<li><a href="contributing-to-linuxcnc.html#_get_rid_of_rtapi_success_use_0_instead">7.6. Get rid of RTAPI_SUCCESS, use 0 instead</a></li>
+<li><a href="contributing-to-linuxcnc.html#_simplify_complicated_history_before_sharing_with_fellow_developers">7.7. Simplify complicated history before sharing with fellow developers</a></li>
+<li><a href="contributing-to-linuxcnc.html#_make_sure_every_commit_builds">7.8. Make sure every commit builds</a></li>
+<li><a href="contributing-to-linuxcnc.html#_renaming_files">7.9. Renaming files</a></li>
+<li><a href="contributing-to-linuxcnc.html#_prefer_rebase">7.10. Prefer "rebase"</a></li>
+</ul>
+</li>
+<li><a href="contributing-to-linuxcnc.html#sec:contributing-translations">8. Translations</a>
+<ul class="sectlevel2">
+<li><a href="contributing-to-linuxcnc.html#_previewing_a_translation_locally">8.1. Previewing a translation locally</a></li>
+</ul>
+</li>
+<li><a href="contributing-to-linuxcnc.html#_other_ways_to_contribute">9. Other ways to contribute</a></li>
+</ul></details><a href="writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_introduction">1. Introduction</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This document contains information for developers about LinuxCNC
+infrastructure, and describes the best practices for contributing code
+and documentation updates to the LinuxCNC project.</p>
+</div>
+<div class="paragraph">
+<p>Throughout this document, "source" means both the source code to the
+programs and libraries, and the source text for the documentation.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_communication_among_linuxcnc_developers">2. Communication among LinuxCNC developers</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The two main ways that project developers communicate with each other are:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Via IRC, at <a href="irc://irc.libera.chat/#linuxcnc-devel">#linuxcnc-devel</a>
+on <a href="https://libera.chat/">Libera.chat</a>.</p>
+</li>
+<li>
+<p>Via email, on the <a href="https://lists.sourceforge.net/lists/listinfo/emc-developers">developers' mailing list</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_linuxcnc_source_forge_project">3. The LinuxCNC Source Forge project</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>We use Source Forge for
+<a href="https://sourceforge.net/p/emc/mailman/">mailing lists</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_git_revision_control_system">4. The Git Revision Control System</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>All of the LinuxCNC source is maintained in the
+<a href="https://git-scm.com/">Git revision control system</a>.</p>
+</div>
+<div class="sect2">
+<h3 id="_linuxcnc_official_git_repo">4.1. LinuxCNC official Git repo</h3>
+<div class="paragraph">
+<p>The official LinuxCNC git repo is at <a href="https://github.com/linuxcnc/linuxcnc/" class="bare">https://github.com/linuxcnc/linuxcnc/</a></p>
+</div>
+<div class="paragraph">
+<p>Anyone can get a read-only copy of the LinuxCNC source tree via git:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>git clone https://github.com/linuxcnc/linuxcnc linuxcnc-dev</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you are a developer with push access, then follow github&#8217;s instructions
+for setting up a repository that you can push from.</p>
+</div>
+<div class="paragraph">
+<p>Note that the clone command put the local LinuxCNC repo in a
+directory called <code>linuxcnc-dev</code>, instead of the default <code>linuxcnc</code>.
+This is because the LinuxCNC software by default expects configs and
+G-code programs in a directory called <code>$HOME/linuxcnc</code>, and having the
+git repo there too is confusing.</p>
+</div>
+<div class="paragraph">
+<p>Issues and pull requests (abbreviated PRs) are welcome on GitHub:
+. <a href="https://github.com/LinuxCNC/linuxcnc/issues" class="bare">https://github.com/LinuxCNC/linuxcnc/issues</a>
+. <a href="https://github.com/LinuxCNC/linuxcnc/pulls" class="bare">https://github.com/LinuxCNC/linuxcnc/pulls</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_use_of_git_in_the_linuxcnc_project">4.2. Use of Git in the LinuxCNC project</h3>
+<div class="paragraph">
+<p>We use the "merging upwards" and "topic branches" git workflows described
+here:</p>
+</div>
+<div class="paragraph">
+<p><a href="https://www.kernel.org/pub/software/scm/git/docs/gitworkflows.html" class="bare">https://www.kernel.org/pub/software/scm/git/docs/gitworkflows.html</a></p>
+</div>
+<div class="paragraph">
+<p>We have a development branch called <code>master</code>, and one or more stable
+branches with names like <code>2.6</code> and <code>2.7</code> indicating the version number
+of the releases we make from it.</p>
+</div>
+<div class="paragraph">
+<p>Bugfixes go in the oldest applicable stable branch, and that branch gets
+merged into the next newer stable branch, and so on up to <code>master</code>.
+The committer of the bugfix may do the merges themselves, or they may
+leave the merges for someone else.</p>
+</div>
+<div class="paragraph">
+<p>New features generally go in the <code>master</code> branch, but some kinds of
+features (specifically well isolated device drivers and documentation)
+may (at the discretion of the stable branch release managers) go into
+a stable branch and get merged up just like bugfixes do.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_git_tutorials">4.3. git tutorials</h3>
+<div class="paragraph">
+<p>There are many excellent, free git tutorials on the internet.</p>
+</div>
+<div class="paragraph">
+<p>The first place to look is probably the "gittutorial" manpage.
+This manpage is accessible by running "man gittutorial" in a terminal
+(if you have the git manpages installed).  The gittutorial and its
+follow-on documentation are also available online here:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>git tutorial:
+<a href="https://www.kernel.org/pub/software/scm/git/docs/gittutorial.html" class="bare">https://www.kernel.org/pub/software/scm/git/docs/gittutorial.html</a></p>
+</li>
+<li>
+<p>git tutorial 2:
+<a href="https://www.kernel.org/pub/software/scm/git/docs/gittutorial-2.html" class="bare">https://www.kernel.org/pub/software/scm/git/docs/gittutorial-2.html</a></p>
+</li>
+<li>
+<p>Everyday git with 20 commands or so:
+<a href="https://www.kernel.org/pub/software/scm/git/docs/giteveryday.html" class="bare">https://www.kernel.org/pub/software/scm/git/docs/giteveryday.html</a></p>
+</li>
+<li>
+<p>Git User&#8217;s Manual:
+<a href="https://www.kernel.org/pub/software/scm/git/docs/user-manual.html" class="bare">https://www.kernel.org/pub/software/scm/git/docs/user-manual.html</a></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For a more thorough documentation of git see the "Pro Git" book:
+<a href="https://git-scm.com/book" class="bare">https://git-scm.com/book</a></p>
+</div>
+<div class="paragraph">
+<p>Another online tutorial that has been recommended is "Git for the Lazy":
+<a href="https://wiki.spheredev.org/index.php/Git_for_the_lazy" class="bare">https://wiki.spheredev.org/index.php/Git_for_the_lazy</a></p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_overview_of_the_process">5. Overview of the process</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The high-level overview of how to contribute changes to the source goes
+like this:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Communicate with the project developers and let us know what you&#8217;re hacking on.  Explain what you are doing, and why.</p>
+</li>
+<li>
+<p>Clone the git repo.</p>
+</li>
+<li>
+<p>Make your changes in a local branch.</p>
+</li>
+<li>
+<p>Adding documentation and <a href="writing-tests.html#cha:writing-tests">writing tests</a> is an important part of adding a new feature.  Otherwise, others won&#8217;t know how to use your feature, and if other changes break your feature it can go unnoticed without a test.</p>
+</li>
+<li>
+<p>Share your changes with the other project developers in one of these ways:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Push your branch to github and create a github pull request to <a href="https://github.com/linuxcnc/linuxcnc" class="bare">https://github.com/linuxcnc/linuxcnc</a> (this requires a github account), or</p>
+</li>
+<li>
+<p>Push your branch to a publicly visible git repo (such as github, or your own publicly-accessible server, etc) and share that location on the emc-developers mailing list, or</p>
+</li>
+<li>
+<p>Email your commits to the LinuxCNC-developers mailing list (&lt;<a href="mailto:emc-developers@lists.sourceforge.net">emc-developers@lists.sourceforge.net</a>&gt;) (use <code>git format-patch</code> to create the patches).</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Advocate for your patch:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Explain what problem it addresses and why it should be included in LinuxCNC.</p>
+</li>
+<li>
+<p>Be receptive to questions and feedback from the developer community.</p>
+</li>
+<li>
+<p>It is not uncommon for a patch to go through several revisions before it is accepted.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_git_configuration">6. git configuration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In order to be considered for inclusion in the LinuxCNC source, commits
+must have correct Author fields identifying the author of the commit.
+A good way to ensure this is to set your global git config:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>git config --global user.name "Your full name"
+git config --global user.email "you@example.com"</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Use your real name (not a handle), and use an unobfuscated e-mail address.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_effective_use_of_git">7. Effective use of git</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_commit_contents">7.1. Commit contents</h3>
+<div class="paragraph">
+<p>Keep your commits small and to the point.
+Each commit should accomplish one logical change to the repo.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_write_good_commit_messages">7.2. Write good commit messages</h3>
+<div class="paragraph">
+<p>Keep commit messages around 72 columns wide (so that in a default-size
+terminal window, they don&#8217;t wrap when shown by <code>git log</code>).</p>
+</div>
+<div class="paragraph">
+<p>Use the first line as a summary of the intent of the change (almost
+like the subject line of an e-mail). Follow it with a blank line,
+then a longer message explaining the change. Example:</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_commit_to_the_proper_branch">7.3. Commit to the proper branch</h3>
+<div class="paragraph">
+<p>Bugfixes should go on the oldest applicable branch.  New features should
+go in the master branch.  If you&#8217;re not sure where a change belongs,
+ask on irc or on the mailing list.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_use_multiple_commits_to_organize_changes">7.4. Use multiple commits to organize changes</h3>
+<div class="paragraph">
+<p>When appropriate, organize your changes into a branch (a series of
+commits) where each commit is a logical step towards your ultimate
+goal. For example, first factor out some complex code into a new
+function. Then, in a second commit, fix an underlying bug. Then, in the
+third commit, add a new feature which is made easier by the refactoring
+and which would not have worked without fixing that bug.</p>
+</div>
+<div class="paragraph">
+<p>This is helpful to reviewers, because it is easier to see that the
+"factor out code into new function" step was right when there aren&#8217;t
+other edits mixed in; it&#8217;s easier to see that the bug is fixed when
+the change that fixes it is separate from the new feature; and so on.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_follow_the_style_of_the_surrounding_code">7.5. Follow the style of the surrounding code</h3>
+<div class="paragraph">
+<p>Make an effort to follow the prevailing indentation style of surrounding
+code. In particular, changes to whitespace make it harder for other
+developers to track changes over time. When reformatting code must be
+done, do it as a commit separate from any semantic changes.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_get_rid_of_rtapi_success_use_0_instead">7.6. Get rid of RTAPI_SUCCESS, use 0 instead</h3>
+<div class="paragraph">
+<p>The test "retval &lt; 0" should feel familiar; it&#8217;s the same kind of
+test you use in userspace (returns -1 for error) and in kernel space
+(returns -ERRNO for error).</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_simplify_complicated_history_before_sharing_with_fellow_developers">7.7. Simplify complicated history before sharing with fellow developers</h3>
+<div class="paragraph">
+<p>With git, it&#8217;s possible to record every edit and false start as a
+separate commit. This is very convenient as a way to create checkpoints
+during development, but often you don&#8217;t want to share these false
+starts with others.</p>
+</div>
+<div class="paragraph">
+<p>Git provides two main ways to clean history, both of which can be done
+freely before you share the change:</p>
+</div>
+<div class="paragraph">
+<p><code>git commit --amend</code> lets you make additional changes to the last thing
+you committed, optionally modifying the commit message as well. Use this
+if you realized right away that you left something out of the commit,
+or if you typo&#8217;d the commit message.</p>
+</div>
+<div class="paragraph">
+<p><code>git rebase --interactive</code> upstream-branch lets you go back through each
+commit made since you forked your feature branch from the upstream branch,
+possibly editing commits, dropping commits, or squashing (combining)
+commits with others. Rebase can also be used to split individual commits
+into multiple new commits.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_make_sure_every_commit_builds">7.8. Make sure every commit builds</h3>
+<div class="paragraph">
+<p>If your change consists of several patches, <code>git rebase -i</code> may be used to
+reorder these patches into a sequence of commits which more clearly lays
+out the steps of your work.  A potential consequence of reordering patches
+is that one might get dependencies wrong - for instance, introducing a
+use of a variable, and the declaration of that variable only follows in
+a later patch.</p>
+</div>
+<div class="paragraph">
+<p>While the branch HEAD will build, not every commit might build in such
+a case.  That breaks <code>git bisect</code> - something somebody else might use
+later on to find the commit which introduced a bug.  So beyond making
+sure your branch builds, it is important to assure every single commit
+builds as well.</p>
+</div>
+<div class="paragraph">
+<p>There&#8217;s an automatic way to check a branch for each commit being
+buildable - see <a href="https://dustin.sallings.org/2010/03/28/git-test-sequence.html" class="bare">https://dustin.sallings.org/2010/03/28/git-test-sequence.html</a>
+and the code at <a href="https://github.com/dustin/bindir/blob/master/git-test-sequence" class="bare">https://github.com/dustin/bindir/blob/master/git-test-sequence</a>.
+Use as follows (in this case testing every commit from origin/master to
+HEAD, including running regression tests):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>cd linuxcnc-dev
+git-test-sequence origin/master..  '(cd src &amp;&amp; make &amp;&amp; ../scripts/runtests)'</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This will either report <em>All is well</em> or <em>Broke on &lt;commit&gt;</em></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_renaming_files">7.9. Renaming files</h3>
+<div class="paragraph">
+<p>Please use the ability to rename files very cautiously. Like running
+indent on single files, renames still make it more difficult to follow
+changes over time. At a minimum, you should seek consensus on irc or
+the mailing list that the rename is an improvement.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_prefer_rebase">7.10. Prefer "rebase"</h3>
+<div class="paragraph">
+<p>Use <code>git pull --rebase</code> instead of bare <code>git pull</code> in order to keep a
+nice linear history. When you rebase, you always retain your work as
+revisions that are ahead of origin/master, so you can do things like
+<code>git format-patch</code> them to share with others without pushing to the
+central repository.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:contributing-translations">8. Translations</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The LinuxCNC project uses <code>gettext</code> to translate the software into
+many languages. We welcome contributions and help in this area!
+Improving and extending the translations is easy: you don&#8217;t need to know
+any programming, and you don&#8217;t need to install any special translation
+programs or other software.</p>
+</div>
+<div class="paragraph">
+<p>The easiest way to help with translations is using Weblate,
+an open-source web service. Our translation project is here:</p>
+</div>
+<div class="paragraph">
+<p><a href="https://hosted.weblate.org/projects/linuxcnc/" class="bare">https://hosted.weblate.org/projects/linuxcnc/</a></p>
+</div>
+<div class="paragraph">
+<p>Documentation on how to use Weblate is here:
+<a href="https://docs.weblate.org/en/latest/user/basic.html" class="bare">https://docs.weblate.org/en/latest/user/basic.html</a></p>
+</div>
+<div class="sect2">
+<h3 id="_previewing_a_translation_locally">8.1. Previewing a translation locally</h3>
+<div class="paragraph">
+<p>Every translated HTML page is emitted regardless of how much of its
+source has actually been translated. The topbar language switcher
+greys out entries whose underlying <code>.po</code> coverage for that specific
+master falls below <strong>80%</strong> by default. Greyed entries are still in the
+DOM (so deep links keep working) but rendered as plain text rather
+than clickable links, signalling to readers that the page is mostly
+English.</p>
+</div>
+<div class="paragraph">
+<p>If you are actively translating and want your work-in-progress to
+appear as a live link on its companion pages, lower the threshold at
+build time:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sh"><span class="nb">cd </span>src
+make <span class="nv">POKEEP</span><span class="o">=</span>30 docs   <span class="c"># any page &gt;= 30% translated stays clickable</span>
+make <span class="nv">POKEEP</span><span class="o">=</span>0  docs   <span class="c"># everything clickable, even untouched pages</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>POKEEP</code> is consumed by the post-process pass that walks every HTML
+file once at the end of the build. The default value, used by the
+published build, is 80.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_other_ways_to_contribute">9. Other ways to contribute</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>There are many ways to contribute to LinuxCNC, that are not addressed
+by this document. These ways include:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Answering questions on the forum, mailing lists, and in IRC</p>
+</li>
+<li>
+<p>Reporting bugs on the bug tracker, forum, mailing lists, or in IRC</p>
+</li>
+<li>
+<p>Helping test experimental features</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

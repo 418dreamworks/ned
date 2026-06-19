@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>linuxcncrsh(1)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="linuxcncrsh.1.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man1/linuxcncrsh.1.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man1/linuxcncrsh.1.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man1/linuxcncrsh.1.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man1/linuxcncrsh.1.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man1/linuxcncrsh.1.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man1/linuxcncrsh.1.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man1/linuxcncrsh.1.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>linuxcncrsh(1) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>linuxcncrsh - text-mode interface for commanding LinuxCNC over the network</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>linuxcncrsh</strong> [OPTIONS] [-- LINUXCNC_OPTIONS]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The command <strong>linuxcncrsh</strong> is a fully-functional text-based user
+interface for LinuxCNC.
+Instead of popping up a GUI window like AXIS(1) and Touchy(1) do, it
+processes text-mode commands that it receives via the network.
+A human (or a program) can interface with <strong>linuxcncrsh</strong> using telnet(1),
+nc(1) or similar programs.</p>
+</div>
+<div class="paragraph">
+<p>It cannot be stressed enough that all features of LinuxCNC are available
+via the <strong>linuxcncrsh</strong> interface. It can substitute a graphical UI or be
+started in addition to it. If your environment needs to control/monitor
+more than one machine from a single location, this text interface may raise
+your interest. Also, a speech to text interface may be easier to adapt to
+this text-based interface than to a graphical one.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_options">OPTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>-d</strong>,<strong>--path</strong> <em>PATH</em>[:<em>PATH</em>&#8230;&#8203;]</dt>
+<dd>
+<p>Specify a colon separated list of paths used when opening files. The search
+path is used for both nc files and tool table files.
+The default search path is set to "$HOME/nc_files" if this option is not
+specified.</p>
+</dd>
+<dt class="hdlist1"><strong>-e</strong>,<strong>--enablepw</strong> <em>PASSWORD</em></dt>
+<dd>
+<p>Specify the password required to enable LinuxCNC via <strong>linuxcncrsh</strong>.
+Note that the password is sent in the clear, so it can be read by anyone
+who can read packets on the network between the server and the client.
+Defaults to EMCTOO if omitted.</p>
+</dd>
+<dt class="hdlist1"><strong>-h</strong>,<strong>--help</strong></dt>
+<dd>
+<p>Prints a brief description of the command line options and exits.</p>
+</dd>
+<dt class="hdlist1"><strong>-n</strong>,<strong>--name</strong> <em>SERVER_NAME</em></dt>
+<dd>
+<p>Sets the server name that <strong>linuxcncrsh</strong> will use to identify itself during
+handshaking with a new client. Defaults to EMCNETSVR if omitted.</p>
+</dd>
+<dt class="hdlist1"><strong>-p</strong>,<strong>--port</strong> <em>PORT_NUMBER</em></dt>
+<dd>
+<p>Specify the port for <strong>linuxcncrsh</strong> to listen on. Defaults to 5007 if omitted.</p>
+</dd>
+<dt class="hdlist1"><strong>-q</strong>,<strong>--quiet</strong></dt>
+<dd>
+<p>Suppress informational messages to stdout like (dis)connecting clients
+and client&#8217;s enable state.</p>
+</dd>
+<dt class="hdlist1"><strong>-s</strong>,<strong>--sessions</strong> <em>MAX_SESSIONS</em></dt>
+<dd>
+<p>Specify the maximum number of simultaneous connections.
+Defaults to 0 (zero) (no limit) if not specified.</p>
+</dd>
+<dt class="hdlist1"><strong>-w</strong>,<strong>--connectpw</strong> <em>PASSWORD</em></dt>
+<dd>
+<p>Specify the connection password to use during handshaking with a new client.
+Note that the password is sent in the clear, so it can be read by anyone
+who can read packets on the network between the server and the client.
+Defaults to EMC if omitted.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>In addition to the options listed above, <strong>linuxcncrsh</strong> accepts an optional
+special LINUXCNC_OPTION at the end:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>-ini</strong> <em>LINUXCNC_INI_FILE</em></dt>
+<dd>
+<p>LinuxCNC INI file to use. The -ini option <strong>must</strong> be preceded by two dashes: "--".
+Defaults to <em>emc.ini</em> if omitted.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_running_linuxcncrsh">RUNNING LINUXCNCRSH</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To use <strong>linuxcncrsh</strong> instead of a normal LinuxCNC GUI like AXIS or Touchy,
+specify it in your INI file like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>[DISPLAY]
+
+DISPLAY=linuxcncrsh
+
+# You can also add options like this:
+# DISPLAY=linuxcncrsh -n BigMachine</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To use <strong>linuxcncrsh</strong> in addition to a normal GUI, you can either
+1) start it at the end of your HAL file, or
+2) run it by hand in a terminal window.</p>
+</div>
+<div class="paragraph">
+<p>To start it from HAL, add a line like this to the end of your HAL file:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>loadusr linuxcncrsh [OPTIONS] [-- LINUXCNC_OPTIONS]</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To start it from the terminal, run <strong>linuxcncrsh</strong> manually like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>linuxcncrsh [OPTIONS] [-- LINUXCNC_OPTIONS]</pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_connecting">CONNECTING</h3>
+<div class="paragraph">
+<p>Once LinuxCNC is up and <strong>linuxcncrsh</strong> is running, you can connect to it
+using <strong>telnet</strong> or <strong>nc</strong> or similar:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>telnet</strong> <em>HOST</em> <em>PORT</em></dt>
+<dd>
+<p><em>HOST</em> is the hostname or IP address of the computer running <strong>linuxcncrsh</strong>,
+and <em>PORT</em> is the port it&#8217;s listening on
+(5007 if you did not give <strong>linuxcncrsh</strong> the --port option).</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_network_protocol">NETWORK PROTOCOL</h3>
+<div class="paragraph">
+<p>The <strong>linuxcncrsh</strong> server accepts TCP connections on the port specified by
+the --port option, or 5007 if not specified.</p>
+</div>
+<div class="paragraph">
+<p>The client sends requests, and the <strong>linuxcncrsh</strong> server returns replies.
+Requests consist of a command word followed by optional command-specific
+parameters. Requests and most request parameters are case insensitive. The
+exceptions are passwords, file paths and text strings.</p>
+</div>
+<div class="paragraph">
+<p>Requests to <strong>linuxcncrsh</strong> are terminated with line endings, any combination
+of one or more <em>\r</em> and <em>\n</em> characters.  Replies from <strong>linuxcncrsh</strong> are
+terminated with the sequence <em>\r\n</em>.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_commands">COMMANDS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The supported commands are as follows:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>hello</strong> <em>&lt;password&gt;</em> <em>&lt;client&gt;</em> [<em>&lt;version&gt;</em>]</dt>
+<dd>
+<p>&lt;password&gt; must match <strong>linuxcncrsh</strong>'s connect password, or "EMC" if
+no --connectpw was supplied.  The three arguments may not contain
+whitespace.
+If a valid password was entered the server will respond with:
++
+<code>HELLO ACK &lt;ServerName&gt; &lt;ServerVersion&gt;</code>
++
+If an invalid password or any other syntax error occurs then the server
+responds with:
++
+<code>HELLO NAK</code>
++
+The <em>&lt;version&gt;</em> argument is optional and defaults to "1.1". It is
+compared to the [EMC]VERSION field of the INI file. An older INI file
+version than the requested version will result in a warning.</p>
+</dd>
+<dt class="hdlist1"><strong>get</strong> <em>&lt;subcommand&gt;</em> [<em>&lt;parameters&gt;</em>]</dt>
+<dd>
+<p>The <em>GET</em> command takes one of the LinuxCNC sub-commands
+(see <a href="linuxcncrsh.1.html#_subcommands"><strong>SUBCOMMANDS</strong></a> below) and zero or
+more additional subcommand-specific parameters.</p>
+</dd>
+<dt class="hdlist1"><strong>set</strong> <em>&lt;subcommand&gt;</em> [<em>&lt;parameters&gt;</em>]</dt>
+<dd>
+<p>The <em>SET</em> command takes one of the LinuxCNC sub-commands
+(see <a href="linuxcncrsh.1.html#_subcommands"><strong>SUBCOMMANDS</strong></a> below) and zero or
+more additional parameters.</p>
+</dd>
+<dt class="hdlist1"><strong>quit</strong></dt>
+<dd>
+<p>The <em>QUIT</em> command disconnects the associated socket connection but
+does not change the state of the machine. You can connect later to
+continue work on the machine, but you must again pass <em>HELLO</em>
+and <em>SET ENABLE</em> if you want control the machine again.</p>
+</dd>
+<dt class="hdlist1"><strong>shutdown</strong></dt>
+<dd>
+<p>The <em>SHUTDOWN</em> command tells LinuxCNC to shutdown and disconnect the
+session. This command may only be issued if the <em>HELLO</em> has been
+successfully negotiated and the connection has control of the CNC
+(see <em>SET ENABLE</em> sub-command in the <a href="linuxcncrsh.1.html#_subcommands"><strong>SUBCOMMANDS</strong></a>
+section below).
++
+Note that LinuxCNC will only shutdown automatically if <strong>linuxcncrsh</strong>
+is the DISPLAY program set in the INI file.</p>
+</dd>
+<dt class="hdlist1"><strong>help</strong></dt>
+<dd>
+<p>The <em>HELP</em> command will return help information in text format over
+the connection. If no parameters are specified, it will itemize the
+available commands. If a command is specified, it will provide usage
+information for the specified command.
+Help will respond regardless of whether a <em>HELLO</em> has been
+successfully negotiated.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_subcommands">SUBCOMMANDS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Commands and parameters are not case sensitive, except for the
+password to <em>SET ENABLE</em>. Notes on the format of the parameters:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>{on,off} values may be:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><em>on</em> <em>1</em>, <em>true</em>, <em>yes</em></p>
+</li>
+<li>
+<p><em>off</em>, <em>0</em>, <em>false</em>, <em>no</em></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><em>&lt;spindle&gt;</em> is the spindle number as specified in the INI file,
+starting with 0 (zero) and up to the number of available spindles.
+A value of -1 (minus one) indicates "all spindles". An error will be
+emitted if <em>&lt;spindle&gt;</em> is not configured in the INI file.</p>
+</li>
+<li>
+<p><em>&lt;joint&gt;</em> is the joint number as specified in the INI file, starting
+with 0 (zero) and up to the number of available joints.
+A value of -1 (minus one) indicates "all joints". An error will be
+emitted if <em>&lt;joint&gt;</em> is not configured in the INI file.</p>
+</li>
+<li>
+<p><em>&lt;axis&gt;</em> is one of the letters XYZABCUVW or numbers 0 (zero) through 8
+(eight) respectively. A value of -1 (minus one) indicates "all
+configured axes".
+An error will be emitted if <em>&lt;axis&gt;</em> is not configured in the INI
+file.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Subcommands for <em>GET</em> and <em>SET</em> are:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>set abort</strong></dt>
+<dd>
+<p>Abort program or MDI execution.</p>
+</dd>
+<dt class="hdlist1"><strong>get abs_cmd_pos</strong> [<em>&lt;axis&gt;</em>|-1]</dt>
+<dd>
+<p>Returns the specified axis' commanded position in absolute coordinates.
+If no axis is specified, returns all axes' commanded absolute position.
+The <em>&lt;axis&gt;</em> can be specified as a letter (XYZABCUVW), an index 0..8 or -1.</p>
+</dd>
+<dt class="hdlist1"><strong>get abs_act_pos</strong> [<em>&lt;axis&gt;</em>|-1]</dt>
+<dd>
+<p>Returns the specified axis' actual position in absolute coordinates.
+If no axis is specified, returns all axes' actual absolute position.
+The <em>&lt;axis&gt;</em> can be specified as a letter (XYZABCUVW), an index 0..8 or -1.</p>
+</dd>
+<dt class="hdlist1"><strong>get angular_unit_conversion</strong></dt>
+<dt class="hdlist1"><strong>set angular_unit_conversion</strong> {deg|rad|grad|auto}</dt>
+<dd>
+<p>With get, the active unit conversion is returned.
+With set, sets the units to be displayed.
+If it&#8217;s <em>AUTO</em>, the units to be displayed match the program units.</p>
+</dd>
+<dt class="hdlist1"><strong>get axis_velocity</strong> [<em>&lt;axis&gt;</em>|-1]</dt>
+<dd>
+<p>Returns the current velocity of the specified axis.
+If no axis is specified, returns all axes' velocity.
+The <em>&lt;axis&gt;</em> can be specified as a letter (XYZABCUVW), an index 0..8 or -1.</p>
+</dd>
+<dt class="hdlist1"><strong>get brake</strong> [<em>&lt;spindle&gt;</em>|-1]</dt>
+<dt class="hdlist1"><strong>set brake</strong> {on|off} [<em>&lt;spindle&gt;</em>]</dt>
+<dd>
+<p>With get, the current brake setting is returned.
+With set, the brake is set as specified.
+If <em>&lt;spindle&gt;</em> is omitted, spindle 0 is selected.
+If <em>&lt;spindle&gt;</em> is -1, all spindles are selected.</p>
+</dd>
+<dt class="hdlist1"><strong>get clients</strong></dt>
+<dd>
+<p>Get the list of all connected clients and information which is in the
+linked and enabled state.</p>
+</dd>
+<dt class="hdlist1"><strong>get comm_prot</strong></dt>
+<dd>
+<p><strong>DEPRECATED</strong> - API versioning is too complicated.
++
+Shows the version from the <em>HELLO</em>.</p>
+</dd>
+<dt class="hdlist1"><strong>get debug</strong></dt>
+<dt class="hdlist1"><strong>set debug</strong> <em>&lt;value&gt;</em></dt>
+<dd>
+<p>With get, the current integer value of EMC_DEBUG is returned. Note
+that the value of EMC_DEBUG returned is the from the UI&#8217;s INI file,
+which may be different than emc&#8217;s INI file. With set, sends a command
+to the EMC to set the new debug level, and sets the EMC_DEBUG global
+here to the same value. This will make the two values the same, since
+they really ought to be the same.</p>
+</dd>
+<dt class="hdlist1"><strong>set disable</strong> [<em>&lt;client&gt;</em>|-1]</dt>
+<dd>
+<p>Force <em>&lt;client&gt;</em> to relinquish the enabled state. All clients will be
+searched and the enabled client is forced to relinquish the enabled
+state if <em>&lt;client&gt;</em> is not present or -1.</p>
+</dd>
+<dt class="hdlist1"><strong>get display_angular_units</strong></dt>
+<dd>
+<p>Returns <em>DEG</em>, <em>RAD</em>, <em>GRAD</em>, or <em>CUSTOM</em>, for the angular units that
+are active in the display.
+This is effectively the value of angularUnitConversion.</p>
+</dd>
+<dt class="hdlist1"><strong>get display_linear_units</strong></dt>
+<dd>
+<p>Returns <em>INCH</em>, <em>MM</em>, <em>CM</em>, or <em>CUSTOM</em>, for the linear units that are
+active in the display.
+This is effectively the value of linearUnitConversion.</p>
+</dd>
+<dt class="hdlist1"><strong>get echo</strong></dt>
+<dt class="hdlist1"><strong>set echo</strong> {on|off}</dt>
+<dd>
+<p>With get, any on/off parameter is ignored and the current echo state
+is returned.
+With set, sets the echo state as specified.
+Echo defaults to on when the connection is first established. When
+echo is on, all commands will be echoed upon receipt. This state is
+local to each connection.</p>
+</dd>
+<dt class="hdlist1"><strong>get enable</strong></dt>
+<dt class="hdlist1"><strong>set enable</strong> <em>&lt;passwd&gt;</em>|off</dt>
+<dd>
+<p>The session&#8217;s enable state indicates whether the current connection is
+enabled to perform control functions.
+With get, the current enable state is returned.
+With set, the current connection is enabled for control functions and
+a valid (case sensitive) password matching <strong>linuxcncrsh</strong><em>s --enablepw
+(EMCTOO if not specified).
+A password of 'OFF</em> (case insensitive) can not be used as a password
+and disables control functions for this connection.</p>
+</dd>
+<dt class="hdlist1"><strong>get error</strong></dt>
+<dd>
+<p>Returns the current LinuxCNC error string, or <em>OK</em> if no error.</p>
+</dd>
+<dt class="hdlist1"><strong>get estop</strong></dt>
+<dt class="hdlist1"><strong>set estop</strong> {on|off}</dt>
+<dd>
+<p>With get, returns the current estop setting as <em>ON</em> or <em>OFF</em>.
+With set, sets the estop as specified. E-stop <em>ON</em> means the machine
+is in the estop state and won&#8217;t run.</p>
+</dd>
+<dt class="hdlist1"><strong>get feed_override</strong></dt>
+<dt class="hdlist1"><strong>set feed_override</strong> <em>&lt;percent&gt;</em></dt>
+<dd>
+<p>With get, the current feed override is returned (as a percentage of
+commanded feed).
+With set, sets the feed override as specified.</p>
+</dd>
+<dt class="hdlist1"><strong>get flood</strong></dt>
+<dt class="hdlist1"><strong>set flood</strong> {on|off}</dt>
+<dd>
+<p>With get, returns the current flood coolant setting.
+With set, sets the flood setting as specified.</p>
+</dd>
+<dt class="hdlist1"><strong>set home</strong> [<em>&lt;joint&gt;</em>|-1]</dt>
+<dd>
+<p>Alias for <strong>joint_home</strong>.</p>
+</dd>
+<dt class="hdlist1"><strong>get ini</strong> <em>&lt;var&gt;</em> <em>&lt;section&gt;</em></dt>
+<dd>
+<p>Return the string value of <em>&lt;var&gt;</em> in section <em>&lt;section&gt;</em> of the INI
+file.</p>
+</dd>
+<dt class="hdlist1"><strong>get inifile</strong></dt>
+<dd>
+<p>Returns the INI file&#8217;s name set at startup.</p>
+</dd>
+<dt class="hdlist1"><strong>set jog</strong> <em>&lt;joint&gt;</em>|<em>&lt;axis&gt;</em> <em>&lt;speed&gt;</em></dt>
+<dd>
+<p>Jog the specified joint or axis at <em>&lt;speed&gt;</em>; sign of speed is
+direction.
+If <em>TELEOP_ENABLE</em> is <em>OFF</em>, use <em>&lt;joint&gt;</em> number.
+If <em>TELEOP_ENABLE</em> is <em>ON</em>, use <em>&lt;axis&gt;</em> letter (XYZABCUVW) or index 0..8.</p>
+</dd>
+<dt class="hdlist1"><strong>set jog_incr</strong> <em>&lt;joint&gt;</em>|<em>&lt;axis&gt;</em> <em>&lt;speed&gt;</em> <em>&lt;incr&gt;</em></dt>
+<dd>
+<p>Jog the indicated joint or axis by increment <em>&lt;incr&gt;</em> at the <em>&lt;speed&gt;</em>;
+sign of speed is direction.
+If <em>TELEOP_ENABLE</em> is <em>OFF</em>, use <em>&lt;joint&gt;</em> number.
+If <em>TELEOP_ENABLE</em> is <em>ON</em>, use <em>&lt;axis&gt;</em> letter (XYZABCUVW).</p>
+</dd>
+<dt class="hdlist1"><strong>set jog_stop</strong> <em>&lt;joint&gt;</em>|<em>&lt;axis&gt;</em></dt>
+<dd>
+<p>Stop any in-progress jog on the specified joint or axis.
+If <em>TELEOP_ENABLE</em> is <em>OFF</em>, use <em>&lt;joint&gt;</em> number.
+If <em>TELEOP_ENABLE</em> is <em>ON</em>, use <em>&lt;axis&gt;</em> letter (XYZABCUVW) or index 0..8.</p>
+</dd>
+<dt class="hdlist1"><strong>get joint_fault</strong> [<em>&lt;joint&gt;</em>|-1]</dt>
+<dd>
+<p>Returns the fault status of the specified joint as <em>OK</em> or <em>FAULT</em>.
+Returns the fault status of all joints if no <em>&lt;joint&gt;</em> is specified or
+is -1.</p>
+</dd>
+<dt class="hdlist1"><strong>set joint_home</strong> [<em>&lt;joint&gt;</em>|-1]</dt>
+<dd>
+<p>Homes the indicated joint or, if not specified or -1, homes all joints.</p>
+</dd>
+<dt class="hdlist1"><strong>get joint_homed</strong> [<em>&lt;joint&gt;</em>|-1]</dt>
+<dd>
+<p>Returns the homed status of the specified joint as <em>YES</em> or <em>NO</em>.
+Returns the homed status of all joints if no <em>&lt;joint&gt;</em> is specified or
+is -1.</p>
+</dd>
+<dt class="hdlist1"><strong>get joint_limit</strong> [<em>&lt;joint&gt;</em>|-1]</dt>
+<dd>
+<p>Returns limit status of the specified joint as <em>OK</em>, <em>MINSOFT</em>,
+<em>MINHARD</em>, <em>MAXSOFT</em>, or <em>MAXHARD</em>.
+Returns the limit status of all joints if no <em>&lt;joint&gt;</em> is specified or
+is -1.</p>
+</dd>
+<dt class="hdlist1"><strong>get joint_pos</strong> [<em>&lt;joint&gt;</em>|-1]</dt>
+<dd>
+<p>Returns the specified joint&#8217;s actual position in absolute coordinates,
+excluding tool length offset.
+If no joint is specified or -1, returns all joints' actual absolute
+position.</p>
+</dd>
+<dt class="hdlist1"><strong>get joint_type</strong> [<em>&lt;joint&gt;</em>|-1]</dt>
+<dd>
+<p>Returns <em>LINEAR</em>, <em>ANGULAR</em>, or <em>CUSTOM</em> for the type of the
+specified <em>&lt;joint&gt;</em> or for all joints if not specified or is -1.</p>
+</dd>
+<dt class="hdlist1"><strong>set joint_unhome</strong> [<em>&lt;joint&gt;</em>|-1]</dt>
+<dd>
+<p>Unhomes the indicated <em>&lt;joint&gt;</em> or unhomes all joints if -1 or not
+specified. If <em>&lt;joint&gt;</em> is -2, then all joints marked as
+"VOLATILE_HOME" are unhomed.
+Note that <em>TELEOP_ENABLE</em> must be <em>OFF</em> for unhoming.</p>
+</dd>
+<dt class="hdlist1"><strong>get joint_units</strong> [<em>&lt;joint&gt;</em>|-1]</dt>
+<dd>
+<p>Returns <em>INCH</em>, <em>MM</em>, <em>CM</em>, OR <em>DEG</em>, <em>RAD</em>, <em>GRAD</em>, or <em>CUSTOM</em>, for
+the corresponding native units of the specified <em>&lt;joint&gt;</em> or all
+joints if not specified or is -1.
+The type of the joint (linear or angular) is used to resolve which
+type of units are returned. The units are obtained heuristically,
+based on the EMC_AXIS_STAT::units numerical value of user units per mm
+or deg.
+For linear joints, something close to 0.03937 is deemed <em>INCH</em>, 1.000
+is <em>MM</em>, 0.1 is <em>CM</em>, otherwise it&#8217;s <em>CUSTOM</em>. For angular joints,
+something close to 1.000 is deemed <em>DEG</em>, PI/180 is <em>RAD</em>, 100/90
+is <em>GRAD</em>, otherwise it&#8217;s <em>CUSTOM</em>.</p>
+</dd>
+<dt class="hdlist1"><strong>get joint_velocity</strong> [<em>&lt;joint&gt;</em>|-1]</dt>
+<dd>
+<p>Returns the specified joint&#8217;s current velocity.
+If no joint is specified or -1, returns all joints' velocities.</p>
+</dd>
+<dt class="hdlist1"><strong>set joint_wait_homed</strong> [<em>&lt;joint&gt;</em>|-1] [<em>&lt;timeout&gt;</em>]</dt>
+<dd>
+<p>Wait and stall until <em>&lt;joint&gt;</em> is homed. The joint must be currently
+homing or be homed. The <em>&lt;timeout&gt;</em> can be used to set the wait period
+maximum and is 10 seconds if not specified.
+If <em>&lt;joint&gt;</em> is not present or -1, then it waits for <strong>all</strong> non-homed
+joints currently in the process of homing.
++
+Note: executing <strong>joint_wait_homed</strong> will currently cause the
+entire <strong>linuxcncrsh</strong> process to wait and input will not be
+read or processed <em>from any connected client</em> while it is
+running. The function will run until homing is finished or a
+timeout happens. This function cannot be interrupted.
+On timeout it will print <em>SET JOINT_WAIT NAK</em>.</p>
+</dd>
+<dt class="hdlist1"><strong>get kinematics_type</strong></dt>
+<dd>
+<p>Returns the type of kinematics functions used (identity=1, serial=2,
+parallel=3, custom=4).</p>
+</dd>
+<dt class="hdlist1"><strong>get linear_unit_conversion</strong></dt>
+<dt class="hdlist1"><strong>set linear_unit_conversion</strong> {inch|mm|cm|auto}</dt>
+<dd>
+<p>With get, returns the active unit conversion.
+With set, sets the unit to be displayed.
+If it&#8217;s <em>AUTO</em>, the units to be displayed match the program units.</p>
+</dd>
+<dt class="hdlist1"><strong>set load_tool_table</strong> <em>&lt;filename&gt;</em></dt>
+<dd>
+<p>Loads the tool table specified by <em>&lt;filename&gt;</em>.</p>
+</dd>
+<dt class="hdlist1"><strong>get machine</strong></dt>
+<dt class="hdlist1"><strong>set machine</strong> {on|off}</dt>
+<dd>
+<p>With get, returns the current machine power setting as <em>ON</em> or <em>OFF</em>.
+With set, sets the machine on or off as specified.</p>
+</dd>
+<dt class="hdlist1"><strong>set mdi</strong> <em>&lt;string&gt;</em></dt>
+<dd>
+<p>Sends <em>&lt;string&gt;</em> as an MDI command.</p>
+</dd>
+<dt class="hdlist1"><strong>get mist</strong></dt>
+<dt class="hdlist1"><strong>set mist</strong> {on|off}</dt>
+<dd>
+<p>With get, returns the current mist coolant setting.
+With set, sets the mist setting as specified.</p>
+</dd>
+<dt class="hdlist1"><strong>get mode</strong></dt>
+<dt class="hdlist1"><strong>set mode</strong> {manual|auto|mdi}</dt>
+<dd>
+<p>With get, returns the current machine mode.
+With set, sets the machine mode as specified.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p><strong>get open</strong>
+<strong>set open</strong> <em>&lt;filename&gt;</em>::
+  With get, returns the last filename opened or <em>NONE</em> if no file was
+  ever opened in this session.
+  With set, opens the named file. The <em>&lt;filename&gt;</em> is opened by <strong>linuxcncrsh</strong>,
+  so it should either be an absolute path or a relative path.
+  A relative path filename is searched on a list of paths as set by the <strong>-d</strong>
+  command line option.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>get operator_display</strong></dt>
+<dd>
+<p>Returns the current operator display string, or <em>OK</em> if none.</p>
+</dd>
+<dt class="hdlist1"><strong>get operator_text</strong></dt>
+<dd>
+<p>With get, returns the current operator text string, or <em>OK</em> if none.</p>
+</dd>
+<dt class="hdlist1"><strong>get optional_stop</strong></dt>
+<dt class="hdlist1"><strong>set optional_stop</strong> {on|off}</dt>
+<dd>
+<p>With get, the current "optional stop on M1" setting is returned.
+With set, the setting is set as specified.</p>
+</dd>
+<dt class="hdlist1"><strong>get override_limits</strong></dt>
+<dt class="hdlist1"><strong>set override_limits</strong> {on|off}</dt>
+<dd>
+<p>With get, the override_limits setting is returned.
+With set, the override_limits parameter is set as specified.
+If override_limits is on, disables end of travel hardware limits to
+allow jogging off of a limit.
+If parameters is off, then hardware limits are enabled.</p>
+</dd>
+<dt class="hdlist1"><strong>set pause</strong></dt>
+<dd>
+<p>Pause program execution.
++
+WARNING: You must <em>SET WAIT_MODE RECEIVED</em> in order to run pause.
+If you don&#8217;t then <em>SET PAUSE</em> will fail with an error. The reason
+behind this is that pausing execution will cause the internal pause
+command never to be done until you <em>SET RESUME</em>.</p>
+</dd>
+<dt class="hdlist1"><strong>get plat</strong></dt>
+<dd>
+<p>With get, returns the string <em>Linux</em>.</p>
+</dd>
+<dt class="hdlist1"><strong>get pos_offset</strong> [<em>&lt;axis&gt;</em>|-1]</dt>
+<dd>
+<p>Returns the position offset associated with the world coordinate
+provided.
+The <em>&lt;axis&gt;</em> can be specified as a letter (XYZABCUVW), an index 0..8
+or -1.</p>
+</dd>
+<dt class="hdlist1"><strong>set probe</strong> <em>&lt;x&gt;</em> <em>&lt;y&gt;</em> <em>&lt;z&gt;</em></dt>
+<dd>
+<p>Move toward a certain location. If the probe is tripped on the way
+stop motion, record the position and raise the probe tripped flag.
++
+Important: the <em>SET PROBE</em> command is run as an MDI command by sending
+and executing "G38.2 X&lt;x&gt; Y&lt;y&gt; Z&lt;z&gt;". This is necessary because probing
+requires velocity, acceleration and jerk parameters to be specified
+that are only available in the LinuxCNC internal canon interface.
+Additionally, many sanity and boundary condition checks are performed
+that are hard to duplicate outside of the canon interface.
++
+The <em>SET PROBE</em> command can only be run in MDI mode (use <em>SET MODE MDI</em>).
+Additionally, <em>SET PROBE</em> never returns a <em>SET PROBE NAK</em> if the probe
+fails to make contact. However, an error is produced (use <em>GET ERROR</em>)
+and the <em>GET PROBE_TRIPPED</em> returns <em>NO</em> in that case.
++
+If you need more control over probing, then you should send the
+appropriate MDI command (G38.2, G38.3, G38.4 or G38.5) via
+the <em>SET MDI &#8230;&#8203;</em> command. You can still use the other probe functions
+to determine whether the probe value, if it tripped and clearing it.</p>
+</dd>
+<dt class="hdlist1"><strong>set probe_clear</strong></dt>
+<dd>
+<p>Clear the probe tripped flag.</p>
+</dd>
+<dt class="hdlist1"><strong>get probe_tripped</strong></dt>
+<dd>
+<p>Return the probe state - has the probe tripped since the last clear?</p>
+</dd>
+<dt class="hdlist1"><strong>get probe_value</strong></dt>
+<dd>
+<p>Return the current value of the probe signal.</p>
+</dd>
+<dt class="hdlist1"><strong>get program</strong></dt>
+<dd>
+<p>Returns the name of the currently opened program, or <em>NONE</em>.</p>
+</dd>
+<dt class="hdlist1"><strong>get program_angular_units</strong></dt>
+<dd>
+<p>Always returns <em>DEG</em>.</p>
+</dd>
+<dt class="hdlist1"><strong>get program_codes</strong></dt>
+<dd>
+<p>Returns the string for the currently active program codes.</p>
+</dd>
+<dt class="hdlist1"><strong>get program_line</strong></dt>
+<dd>
+<p>Returns the currently executing line of the program.</p>
+</dd>
+<dt class="hdlist1"><strong>get program_linear_units</strong></dt>
+<dd>
+<p>Returns <em>INCH</em>, <em>MM</em>, <em>CM</em>, or <em>CUSTOM</em>, for the corresponding linear
+units that are active in the program interpreter.</p>
+</dd>
+<dt class="hdlist1"><strong>get program_status</strong></dt>
+<dd>
+<p>Returns <em>IDLE</em>, <em>RUNNING</em>, or <em>PAUSED</em>.</p>
+</dd>
+<dt class="hdlist1"><strong>get program_units</strong></dt>
+<dd>
+<p>Synonym for <em>program_linear_units</em>.</p>
+</dd>
+<dt class="hdlist1"><strong>get rel_act_pos</strong> [<em>&lt;axis&gt;</em>|-1]</dt>
+<dd>
+<p>Returns the specified axis' actual position in relative coordinates,
+including tool length offset.
+If no axis is specified, returns all axes' actual relative position.
+The <em>&lt;axis&gt;</em> can be specified as a letter (XYZABCUVW), an index 0..8
+or -1.</p>
+</dd>
+<dt class="hdlist1"><strong>get rel_cmd_pos</strong> [<em>&lt;axis&gt;</em>|-1]</dt>
+<dd>
+<p>Returns the specified axis' commanded position in relative
+coordinates, including tool length offset.
+If no axis is specified, returns all axes' commanded relative
+position.
+The <em>&lt;axis&gt;</em> can be specified as a letter (XYZABCUVW), an index 0..8
+or -1.</p>
+</dd>
+<dt class="hdlist1"><strong>set resume</strong></dt>
+<dd>
+<p>Resume program execution.
++
+WARNING: You should <em>SET WAIT_MODE DONE</em> before you run resume.
+If you don&#8217;t then <em>SET RESUME</em> may return too early before the system
+is actually resumed. See also <em>SET PAUSE</em>.</p>
+</dd>
+<dt class="hdlist1"><strong>set run</strong> [<em>&lt;startline&gt;</em>]</dt>
+<dd>
+<p>Runs the opened program. Runs from the beginning if no <em>&lt;startline&gt;</em>
+is specified and from the <em>&lt;startline&gt;</em> if specified.
+A <em>&lt;startline&gt;</em> of -1 runs in verify mode.</p>
+</dd>
+<dt class="hdlist1"><strong>get spindle</strong> [<em>&lt;spindle&gt;</em>|-1]</dt>
+<dt class="hdlist1"><strong>set spindle</strong> {forward|reverse|increase|decrease|constant|off} [<em>&lt;spindle&gt;</em>]</dt>
+<dd>
+<p>With get, the current spindle state is returned as <em>FORWARD</em>,
+<em>REVERSE</em>, <em>INCREASE</em>, <em>DECREASE</em>, or <em>OFF</em>.
+With set, sets the spindle as specified. Note that <em>INCREASE</em> and
+<em>DECREASE</em> will cause a speed change in the corresponding direction
+until a <em>CONSTANT</em> command is sent.
+If <em>&lt;spindle&gt;</em> is omitted, spindle 0 is selected.
+If  <em>&lt;spindle&gt;</em> is -1, all spindles are selected.</p>
+</dd>
+<dt class="hdlist1"><strong>get spindle_override</strong></dt>
+<dt class="hdlist1"><strong>set spindle_override</strong> <em>&lt;percent&gt;</em> [<em>&lt;spindle&gt;</em>|-1]</dt>
+<dd>
+<p>With get, the current spindle override is returned (as a percentage of
+commanded speed).
+With set, sets the spindle override as specified.
+If <em>&lt;spindle&gt;</em> is omitted, spindle 0 is selected.
+If <em>&lt;spindle&gt;</em> is -1, all spindles are selected.</p>
+</dd>
+<dt class="hdlist1"><strong>set step</strong></dt>
+<dd>
+<p>Step the program one line.</p>
+</dd>
+<dt class="hdlist1"><strong>set task_plan_init</strong></dt>
+<dd>
+<p>Initializes the program interpreter.</p>
+</dd>
+<dt class="hdlist1"><strong>get teleop_enable</strong></dt>
+<dt class="hdlist1"><strong>set teleop_enable</strong> {on|off}</dt>
+<dd>
+<p>With get, the current teleop mode is returned.
+With set, sets the teleop mode as specified.
++
+Note on <em>GET TELEOP_ENABLE</em>: There is a possible race condition on
+activation of teleop mode just after all joints are homed. The teleop
+mode will automatically switch to <em>TELEOP_ENABLE ON</em> after homing, but
+that is done while the motion controller is run in the servo-thread.
+It may therefore take one [EMCMOT]SERVO_PERIOD time period for the
+automatic mode switch.
++
+Using <em>SET JOINT_WAIT_HOMED</em> will automatically add a one servo-thread
+delay to prevent the race in normal use-cases. However, if you do not
+call <em>SET JOINT_WAIT_HOMED</em>, then you can use <em>SET WAIT_HEARTBEAT</em>
+if you just ran a homing process, ensuring the servo-thread has run at
+least once and updated the status.</p>
+</dd>
+<dt class="hdlist1"><strong>get time</strong></dt>
+<dd>
+<p>Returns the time, in seconds, from the start of the epoch.
+The starting time depends on the platform.</p>
+</dd>
+<dt class="hdlist1"><strong>get timeout</strong></dt>
+<dt class="hdlist1"><strong>set timeout</strong> <em>&lt;timeout&gt;</em></dt>
+<dd>
+<p>With set, set the timeout for commands functions send to LinuxCNC&#8217;s
+core to return to <em>&lt;timeout&gt;</em> seconds. <em>&lt;timeout&gt;</em> is a real number.
+If it&#8217;s &#8656; 0.0, it means wait forever.
+Default is 0.0, wait forever.</p>
+</dd>
+<dt class="hdlist1"><strong>get timestamp</strong></dt>
+<dt class="hdlist1"><strong>set timestamp</strong> {on|off} [{on|off}]</dt>
+<dd>
+<p>Enable or disable printing of a timestamp on messages sent back from
+the server to the user. The optional format argument selects human
+readable date/time format when the format is on and seconds since
+epoch when off or not specified.</p>
+</dd>
+<dt class="hdlist1"><strong>get tool</strong></dt>
+<dd>
+<p>Returns the id of the currently loaded tool.</p>
+</dd>
+<dt class="hdlist1"><strong>get tool_offset</strong></dt>
+<dt class="hdlist1"><strong>set tool_offset</strong> <em>&lt;tool&gt;</em> <em>&lt;length&gt;</em> <em>&lt;diameter&gt;</em></dt>
+<dd>
+<p>With get, returns the currently applied tool length offset.
+With set, sets the specified <em>&lt;tool&gt;</em> to <em>&lt;length&gt;</em> and <em>&lt;diameter&gt;</em>.</p>
+</dd>
+<dt class="hdlist1"><strong>get update</strong></dt>
+<dt class="hdlist1"><strong>set update</strong> {none|auto}</dt>
+<dd>
+<p><strong>DEPRECATED</strong> - Don&#8217;t use, it breaks things.
++
+The update mode controls whether to return fresh or stale values for
+<em>GET</em> requests.
+When the update mode is <em>NONE</em> it returns stale values, when it&#8217;s
+<em>AUTO</em> it returns fresh values.
+Defaults to <em>AUTO</em> for new connections.
++
+WARNING: Only set this to <em>NONE</em> if you really know what you are
+doing. Things <strong>will</strong> break when you do.</p>
+</dd>
+<dt class="hdlist1"><strong>set update_status</strong></dt>
+<dd>
+<p><strong>DEPRECATED</strong> - You should use automatic status updates (the default).
++
+Manually read and update the machine status as seen by <strong>linuxcncrsh</strong>.
+This necessary when <em>SET UPDATE</em> is set to <em>NONE</em>.
+WARNING: when this is required, it <strong>will</strong> break things.</p>
+</dd>
+<dt class="hdlist1"><strong>get user_angular_units</strong></dt>
+<dd>
+<p>Returns <em>DEG</em>, <em>RAD</em>, <em>GRAD</em>, or <em>CUSTOM</em> for the corresponding native
+user angular units of the LinuxCNC trajectory level.
+Like with linear units, this is obtained heuristically.</p>
+</dd>
+<dt class="hdlist1"><strong>get user_linear_units</strong></dt>
+<dd>
+<p>Returns <em>INCH</em>, <em>MM</em>, <em>CM</em>, or <em>CUSTOM</em>, for the corresponding
+native user linear units of the LinuxCNC trajectory level. This is
+obtained heuristically, based on the EMC_TRAJ_STAT::linearUnits
+numerical value of user units per mm. Something close to 0.03937 is
+deemed <em>INCH</em>, 1.000 is <em>MM</em>, 0.1 is <em>CM</em>, otherwise it&#8217;s <em>CUSTOM</em>.</p>
+</dd>
+<dt class="hdlist1"><strong>get verbose</strong></dt>
+<dt class="hdlist1"><strong>set verbose</strong> {on|off}</dt>
+<dd>
+<p>With get the current verbose state is returned.
+With set, sets the verbose state as specified. When verbose mode is on
+all set commands return positive acknowledgement in the form
++
+SET &lt;COMMAND&gt; ACK
++
+The verbose state is local to each connection, and starts out <em>OFF</em> on
+new connections.</p>
+</dd>
+<dt class="hdlist1"><strong>set wait</strong> {received|done}</dt>
+<dd>
+<p>Force a wait for the previous command to be received, or done.</p>
+</dd>
+<dt class="hdlist1"><strong>set wait_heartbeat</strong> [<em>&lt;periods&gt;</em>]</dt>
+<dd>
+<p>Wait for the motion-controller function in the servo-thread to run at
+least for <em>&lt;periods&gt;</em> times before returning. It sleeps [EMCMOT]SERVO_PERIOD
+nanoseconds between checks to ensure other processes can run
+unimpeded.
+The value of <em>&lt;periods&gt;</em> must be 1 or larger and defaults to 1 when
+not specified. The maximum value of <em>&lt;periods&gt;</em> depends on the value
+of [EMCMOT]SERVO_PERIOD. The number of periods waiting may not result
+in a wait longer than 1.0 seconds.
+This function will wait and return with a failure if it times out. If
+the functions times out you probably have a non-functional LinuxCNC.</p>
+</dd>
+<dt class="hdlist1"><strong>get wait_mode</strong></dt>
+<dt class="hdlist1"><strong>set wait_mode</strong> {received|done}</dt>
+<dd>
+<p>The wait_mode setting controls the wait after receiving a command. It
+can be <em>RECEIVED</em> (after the command was sent and received) or <em>DONE</em>
+(after the command was done).
+With get, the current <em>WAIT_MODE</em> setting is returned.
+With set, set the <em>WAIT_MODE</em> setting to the specified value.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_session">EXAMPLE SESSION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This section shows an example session to the local machine (<strong>localhost</strong>).
+Bold items are typed by you, non-bold is machine output.
+Default values are shown for --port <em>PORT_NUMBER</em> (<strong>5007</strong>), --conectpw <em>PASSWORD</em> (<strong>EMC</strong>),
+and --enablepw <em>PASSWORD</em> (<strong>EMCTOO</strong>).</p>
+</div>
+<div class="paragraph">
+<p>The user connects to <strong>linuxcncrsh</strong>, handshakes with the server
+(<em>HELLO</em>), enables machine commanding from this session (<em>SET ENABLE</em>),
+brings the machine out of E-stop (<em>SET ESTOP OFF</em>) and turns it
+on (<em>SET MACHINE ON</em>), homes all the axes, switches the machine to mdi
+mode, sends an MDI G-code command, then disconnects and shuts down
+LinuxCNC.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ telnet localhost 5007
+Trying 127.0.0.1...
+Connected to 127.0.0.1
+Escape character is '^]'.
+hello EMC user-typing-at-telnet 1.2
+HELLO ACK EMCNETSVR 1.2
+set echo off
+set verbose on
+SET VERBOSE ACK
+set enable EMCTOO
+SET ENABLE ACK
+set wait_mode done
+SET WAIT_MODE ACK
+set estop off
+SET ESTOP ACK
+set machine on
+SET MACHINE ACK
+set mode manual
+SET MODE ACK
+set joint_home -1
+SET JOINT_HOME ACK
+set joint_wait_homed -1
+SET JOINT_WAIT_HOMED ACK
+set mode mdi
+SET MODE ACK
+set mdi g0x1
+SET MDI ACK
+...
+set shutdown
+  Connection closed by foreign host.</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>linuxcnc</strong>(1),
+<strong>axis</strong>(1)</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

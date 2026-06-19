@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>hm2_spi(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="hm2_spi.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/hm2_spi.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/hm2_spi.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/hm2_spi.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/hm2_spi.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/hm2_spi.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/hm2_spi.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/hm2_spi.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>hm2_spi(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>hm2_spi - This driver has been superseded by the hm2_spix driver. LinuxCNC HAL driver for the Mesa Electronics SPI Anything IO boards, with HostMot2 firmware.</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt hm2_spi</strong> [<strong>config=</strong>"<em>str</em>[,<em>str</em>&#8230;&#8203;]"] [ <strong>spidev_path=</strong><em>path</em>[,<em>path</em>&#8230;&#8203;] ] [<strong>spidev_rate=</strong><em>rate</em>[,<em>rate</em>&#8230;&#8203;] ]</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>config</strong> [default: ""]</dt>
+<dd>
+<p>HostMot2 config strings, described in the hostmot2(9) manpage.</p>
+</dd>
+<dt class="hdlist1"><strong>spidev_path</strong> [default: "/dev/spidev1.0"]</dt>
+<dd>
+<p>The path to the spi device node, a character special device in /dev</p>
+</dd>
+<dt class="hdlist1"><strong>spidev_rate</strong> [default: 24000]</dt>
+<dd>
+<p>The desired rate of the SPI clock in kHz. If the exact specified clock
+is not available, a lower clock is used. Due to shortcomings in the
+spidev API, it is not possible for hal to report the actual clock used.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>hm2_spi is a device driver that interfaces Mesa&#8217;s SPI based Anything I/O
+boards (with the HostMot2 firmware) to the LinuxCNC HAL.</p>
+</div>
+<div class="paragraph">
+<p>The supported boards are: 7I90HD.</p>
+</div>
+<div class="paragraph">
+<p>The board must have a compatible firmware loaded on the board by the
+mesaflash(1) program.</p>
+</div>
+<div class="paragraph">
+<p>hm2_spi is only available when LinuxCNC is configured with "uspace" realtime.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_interface_configuration">INTERFACE CONFIGURATION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>It is possible for one SPI bus to connect several devices; in this
+configuration, a master device has several chip select lines. In order
+to meet realtime deadlines, hm2_spi should be used on a dedicated SPI
+interface not shared with any other slaves.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_realtime_performance_of_linux_spidev_drivers">REALTIME PERFORMANCE OF LINUX SPIDEV DRIVERS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>As of kernel 3.8, most or all kernel SPI drivers do not achieve the high
+realtime response rate required for a typical LinuxCNC configuration.
+The driver was tested with a modified version of the spi-s3c64xx SPI
+driver on the Odroid U3 platform. The patched kernel resides
+<a href="https://github.com/jepler/odroid-linux/tree/odroid-3.8.13-rt">on github</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_spi_clock_rates">SPI CLOCK RATES</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The maximum SPI clock of the 7i90 is documented as 50MHz. Other elements
+of the data path between HAL and the 7i90 may impose other limitations.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_note">NOTE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This driver has been superseded for most purposes by the hm2_spix driver.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>hostmot2(9)
+hm2_spix(9)</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

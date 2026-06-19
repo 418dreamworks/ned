@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>Core Components</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../rouge-github.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:core-components" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="core-components.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/config/core-components.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/config/core-components.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/config/core-components.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/config/core-components.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/config/core-components.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/config/core-components.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/config/core-components.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>Core Components</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details open><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="stepconf.html">Stepper Configuration Wizard</a><a href="pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><a href="ini-config.html">INI Configuration</a><a href="ini-homing.html">Homing Configuration</a><a href="lathe-config.html">Lathe Configuration</a><a href="stepper-quickstart.html">Stepper Quickstart</a><a href="stepper.html">Stepper Configuration</a><a href="stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details open><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>Core Components</summary><ul class="sectlevel1">
+<li><a href="core-components.html#sec:motion">1. Motion</a>
+<ul class="sectlevel2">
+<li><a href="core-components.html#_options">1.1. Options</a></li>
+<li><a href="core-components.html#sec:motion-pins">1.2. Pins</a></li>
+<li><a href="core-components.html#_parameters">1.3. Parameters</a></li>
+<li><a href="core-components.html#_functions">1.4. Functions</a></li>
+</ul>
+</li>
+<li><a href="core-components.html#_spindle">2. Spindle</a>
+<ul class="sectlevel2">
+<li><a href="core-components.html#sec:spindle-pins">2.1. Pins</a></li>
+</ul>
+</li>
+<li><a href="core-components.html#_axis_and_joint_pins_and_parameters">3. Axis and Joint Pins and Parameters</a></li>
+<li><a href="core-components.html#_iocontrol">4. iocontrol</a>
+<ul class="sectlevel2">
+<li><a href="core-components.html#_pins">4.1. Pins</a></li>
+</ul>
+</li>
+<li><a href="core-components.html#_ini_settings">5. INI settings</a>
+<ul class="sectlevel2">
+<li><a href="core-components.html#_pins_2">5.1. Pins</a></li>
+</ul>
+</li>
+</ul></details><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="python-interface.html">The LinuxCNC Python module</a><a href="python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+See also the man pages <em>motion(9)</em>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:motion">1. Motion</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+These pins and parameters are created by the realtime <em>motmod</em> module.</p>
+</div>
+<div class="paragraph">
+<p>This module provides a HAL interface for LinuxCNC&#8217;s motion planner.</p>
+</div>
+<div class="paragraph">
+<p>Basically motmod takes in a list of waypoints and generates a nice
+blended and constraint-limited stream of joint positions to be fed
+to the motor drives.</p>
+</div>
+<div class="paragraph">
+<p>Optionally the number of Digital I/O is set with <em>num_dio</em>.
+The number of Analog I/O is set with <em>num_aio</em>, default is 4 each.
+The number of Spindles is set with <em>num_spindles</em>, default is 1.</p>
+</div>
+<div class="paragraph">
+<p>Pin and parameter names starting with <em>axis.<em>L</em></em> and <em>joint.<em>N</em></em> are read and
+updated by the motion-controller function.</p>
+</div>
+<div class="paragraph">
+<p>Motion is loaded with the motmod command. A kins should be loaded before
+motion.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadrt</span> <span class="n">motmod</span> <span class="n">base_period_nsec</span><span class="o">=</span>[<span class="s1">'period'</span>] <span class="n">servo_period_nsec</span><span class="o">=</span>[<span class="s1">'period'</span>]
+              <span class="n">traj_period_nsec</span><span class="o">=</span>[<span class="s1">'period'</span>] <span class="n">num_joints</span><span class="o">=</span>[<span class="s1">'0-9'</span>]
+              <span class="n">num_dio</span><span class="o">=</span>[<span class="s1">'1-64'</span>] <span class="n">num_aio</span><span class="o">=</span>[<span class="s1">'1-16'</span>] <span class="n">unlock_joints_mask</span><span class="o">=</span>[<span class="s1">'0xNN'</span>]
+              <span class="n">num_spindles</span><span class="o">=</span>[<span class="s1">'1-8'</span>]</code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>base_period_nsec = 50000</em> - the <em>Base</em> task period in nanoseconds.
+This is the fastest thread in the machine.</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+On servo-based systems, there is generally no reason for
+<em>base_period_nsec</em> to be smaller than <em>servo_period_nsec</em>.
+On machines with software step generation, the <em>base_period_nsec</em>
+determines the maximum number of steps per second. In the absence of
+long step length and step space requirements, the absolute maximum step
+rate is one step per <em>base_period_nsec</em>. Thus, the <em>base_period_nsec</em> shown
+above gives an absolute maximum step rate of 20,000 steps per
+second. 50,000 ns (50 us) is a fairly conservative value.
+The smallest usable value is related to the Latency Test result, the
+necessary step length, and the processor speed.
+Choosing a <em>base_period_nsec</em> that is too low can lead to the "Unexpected
+real time delay" message, lockups, or spontaneous reboots.
+</td>
+</tr>
+</table>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>servo_period_nsec = 1000000</em> - This is the <em>Servo</em> task period in
+nanoseconds. This value will be rounded to an integer multiple of
+<em>base_period_nsec</em>. This period is used even on systems based on
+stepper motors.</p>
+<div class="paragraph">
+<p>This is the rate at which new motor positions are computed, following
+error is checked, PID output values are updated, and so on.
+Most systems will not need to change this value. It is the update rate
+of the low level motion planner.</p>
+</div>
+</li>
+<li>
+<p><em>traj_period_nsec = 100000</em> - This is the <em>Trajectory Planner</em>
+task period in nanoseconds. This value will be rounded to an integer
+multiple of <em>servo_period_nsec</em>. Except for machines with unusual
+kinematics (e.g., hexapods) there is no reason to make this value larger
+than <em>servo_period_nsec</em>.</p>
+</li>
+</ul>
+</div>
+<div class="sect2">
+<h3 id="_options">1.1. Options</h3>
+<div class="paragraph">
+<p>If the number of digital I/O needed is more than the default of 4 you can
+add up to 64 digital I/O by using the num_dio option when loading <em>motmod</em>.</p>
+</div>
+<div class="paragraph">
+<p>If the number of analog I/O needed is more than the default of 4 you can add
+up to 16 analog I/O by using the num_aio option when loading <em>motmod</em>.</p>
+</div>
+<div class="paragraph">
+<p>The unlock_joints_mask parameter is used to create pins for a joint used
+as a locking indexer (typically a rotary).  The mask bits select the
+joint(s).  The LSB of the mask selects joint 0.
+Example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="n">unlock_joints_mask</span><span class="o">=</span><span class="mh">0x38</span> <span class="n">selects</span> <span class="n">joints</span> <span class="mi">3</span>,<span class="mi">4</span>,<span class="mi">5</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sec:motion-pins">1.2. Pins</h3>
+<div class="paragraph">
+<p>
+These pins, parameters, and functions are created by the realtime <em>motmod</em> module.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>motion.adaptive-feed</em> - (float, in) When adaptive feed is enabled with <em>M52 P1</em> , the
+commanded velocity is multiplied by this value. This effect is
+multiplicative with the NML-level feed override value and
+<em>motion.feed-hold</em>. As of version 2.9 of LinuxCNC it is possible to
+use a negative adaptive feed value to run the G-code path in reverse.</p>
+</li>
+<li>
+<p><em>motion.analog-in-00</em> - (float, in) These pins (00, 01, 02, 03 or more if configured) are
+controlled by M66.</p>
+</li>
+<li>
+<p><em>motion.analog-out-00</em> - (float, out) These pins (00, 01, 02, 03 or more if configured) are
+controlled by M67 or M68.</p>
+</li>
+<li>
+<p><em>motion.coord-error</em> - (bit, out) TRUE when motion has encountered an error, such as
+exceeding a soft limit</p>
+</li>
+<li>
+<p><em>motion.coord-mode</em> - (bit, out) TRUE when motion is in <em>coordinated mode</em>, as opposed to <em>teleop mode</em></p>
+</li>
+<li>
+<p><em>motion.current-vel</em> - (float, out) The current tool velocity in user units per second.</p>
+</li>
+<li>
+<p><em>motion.digital-in-00</em> - (bit, in) These pins (00, 01, 02, 03 or more if configured) are controlled by M62-65.</p>
+</li>
+<li>
+<p><em>motion.digital-out-00</em> - (bit, out) These pins (00, 01, 02, 03 or more if configured) are controlled by the <em>M62-65</em>.</p>
+</li>
+<li>
+<p><em>motion.distance-to-go</em> - (float,out) The distance remaining in the current move.</p>
+</li>
+<li>
+<p><em>motion.enable</em> - (bit, in) If this bit is driven FALSE, motion stops, the machine is
+placed in the <em>machine off</em> state, and a message is displayed for the
+operator. For normal motion, drive this bit TRUE.</p>
+</li>
+<li>
+<p><em>motion.feed-hold</em> - (bit, in) When Feed Stop Control is enabled with <em>M53 P1</em>, and this
+bit is TRUE, the feed rate is set to 0.</p>
+</li>
+<li>
+<p><em>motion.feed-inhibit</em> - (bit, in) When this bit is TRUE, the feed rate is set to 0.
+This will be delayed during spindle synch moves till the end of the move.</p>
+</li>
+<li>
+<p><em>motion.in-position</em> - (bit, out) TRUE if the machine is in position.</p>
+</li>
+<li>
+<p><em>motion.motion-enabled</em> - (bit, out) TRUE when in <em>machine on</em> state.</p>
+</li>
+<li>
+<p><em>motion.motion-type</em> - (s32, out) These values are from src/emc/nml_intf/motion_types.h</p>
+<div class="ulist">
+<ul>
+<li>
+<p>0: Idle (no motion)</p>
+</li>
+<li>
+<p>1: Traverse</p>
+</li>
+<li>
+<p>2: Linear feed</p>
+</li>
+<li>
+<p>3: Arc feed</p>
+</li>
+<li>
+<p>4: Tool change</p>
+</li>
+<li>
+<p>5: Probing</p>
+</li>
+<li>
+<p>6: Rotary axis indexing</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><em>motion.on-soft-limit</em> - (bit, out) TRUE when the machine is on a soft limit.</p>
+</li>
+<li>
+<p><em>motion.probe-input</em> - (bit, in)
+<em>G38.n</em> uses the value on this pin to determine when the probe has made contact.
+TRUE for probe contact closed (touching), FALSE for probe contact open.</p>
+</li>
+<li>
+<p><em>motion.program-line</em> - (s32, out) The current program line while executing.
+Zero if not running or between lines while single stepping.</p>
+</li>
+<li>
+<p><em>motion.requested-vel</em> - (float, out)
+The current requested velocity in user units per second.
+This value is the F-word setting from the G-code file, possibly reduced to accommodate machine velocity and acceleration limits.
+The value on this pin does not reflect the feed override or any other adjustments.</p>
+</li>
+<li>
+<p><em>motion.teleop-mode</em> - (bit, out) TRUE when motion is in <em>teleop mode</em>, as opposed to <em>coordinated mode</em></p>
+</li>
+<li>
+<p><em>motion.tooloffset.x &#8230;&#8203; motion.tooloffset.w</em> - (float, out, one per axis) shows the tool offset in effect;
+it could come from the tool table (<em>G43</em> active), or it could come from the G-code (<em>G43.1</em> active)</p>
+</li>
+<li>
+<p><em>motion.on-soft-limit</em> - (bit, out) TRUE when the machine is on a soft limit.</p>
+</li>
+<li>
+<p><em>motion.probe-input</em> - (bit, in) <em>G38.n</em>  uses the value on this pin to determine when the probe has made contact.
+TRUE for probe contact closed (touching),
+FALSE for probe contact open.</p>
+</li>
+<li>
+<p><em>motion.program-line</em> - (s32, out) The current program line while executing.
+Zero if not running or between lines while single stepping.</p>
+</li>
+<li>
+<p><em>motion.requested-vel</em> - (float, out) The current requested velocity in user units per second.
+This value is the F-word setting from the G-code file, possibly reduced to accommodate machine velocity and acceleration limits.
+The value on this pin does not reflect the feed override or any other adjustments.</p>
+</li>
+<li>
+<p><em>motion.teleop-mode</em> - (bit, out) TRUE when motion is in <em>teleop mode</em>, as opposed to <em>coordinated mode</em></p>
+</li>
+<li>
+<p><em>motion.tooloffset.x &#8230;&#8203; motion.tooloffset.w</em> - (float, out, one per axis) shows the tool offset in effect;
+it could come from the tool table (<em>G43</em> active), or it could come from the G-code (<em>G43.1</em> active)</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_parameters">1.3. Parameters</h3>
+<div class="paragraph">
+<p>Many of these parameters serve as debugging aids, and are subject to
+change or removal at any time.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>motion-command-handler.time</em> - (s32, RO)</p>
+</li>
+<li>
+<p><em>motion-command-handler.tmax</em> - (s32, RW)</p>
+</li>
+<li>
+<p><em>motion-controller.time</em> - (s32, RO)</p>
+</li>
+<li>
+<p><em>motion-controller.tmax</em> - (s32, RW)</p>
+</li>
+<li>
+<p><em>motion.debug-bit-0</em> - (bit, RO) This is used for debugging purposes.</p>
+</li>
+<li>
+<p><em>motion.debug-bit-1</em> - (bit, RO) This is used for debugging purposes.</p>
+</li>
+<li>
+<p><em>motion.debug-float-0</em> - (float, RO) This is used for debugging purposes.</p>
+</li>
+<li>
+<p><em>motion.debug-float-1</em> - (float, RO) This is used for debugging purposes.</p>
+</li>
+<li>
+<p><em>motion.debug-float-2</em> - (float, RO) This is used for debugging purposes.</p>
+</li>
+<li>
+<p><em>motion.debug-float-3</em> - (float, RO) This is used for debugging purposes.</p>
+</li>
+<li>
+<p><em>motion.debug-s32-0</em> - (s32, RO) This is used for debugging purposes.</p>
+</li>
+<li>
+<p><em>motion.debug-s32-1</em> - (s32, RO) This is used for debugging purposes.</p>
+</li>
+<li>
+<p><em>motion.servo.last-period</em> - (u32, RO) The time in ns between invocations of the servo thread.
+This number can be used to determine whether the realtime motion controller is meeting its timing constraints</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_functions">1.4. Functions</h3>
+<div class="paragraph">
+<p>Generally, these functions are both added to the servo-thread in the
+order shown.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>motion-command-handler</em> - Receives and processes motion commands</p>
+</li>
+<li>
+<p><em>motion-controller</em> - Runs the LinuxCNC motion controller</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_spindle">2. Spindle</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>LinuxCNC can control upto eight spindles.
+Motion will produce the following pins:
+The <em>N</em> (integer between 0 and 7) substitutes the spindle number.</p>
+</div>
+<div class="sect2">
+<h3 id="sec:spindle-pins">2.1. Pins</h3>
+<div class="paragraph">
+<p></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>spindle.<em>N</em>.at-speed</em> - (bit, in)
+Motion will pause until this pin is TRUE, under the following conditions:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>before the first feed move after each spindle start or speed change;</p>
+</li>
+<li>
+<p>before the start of every chain of spindle-synchronized moves;</p>
+</li>
+<li>
+<p>and if in CSS mode, at every rapid to feed transition.
+This input can be used to ensure that the spindle is up to speed before
+starting a cut, or that a lathe spindle in CSS mode has slowed down
+after a large to small facing pass before starting the next pass at
+the large diameter.
+Many VFDs have an <em>at speed</em> output.
+Otherwise, it is easy to generate this signal with the <em>HAL near</em>
+component, by comparing requested and actual spindle speeds.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><em>spindle.<em>N</em>.brake</em> - (bit, out) TRUE when the spindle brake should be applied.</p>
+</li>
+<li>
+<p><em>spindle.<em>N</em>.forward</em> - (bit, out) TRUE when the spindle should rotate forward.</p>
+</li>
+<li>
+<p><em>spindle.<em>N</em>.index-enable</em> - (bit, I/O) For correct operation of spindle synchronized moves, this
+pin must be hooked to the index-enable pin of the spindle encoder.</p>
+</li>
+<li>
+<p><em>spindle.<em>N</em>.inhibit</em> - (bit, in) When this bit is TRUE, the spindle speed is set to 0.</p>
+</li>
+<li>
+<p><em>spindle.<em>N</em>.on</em> - (bit, out) TRUE when spindle should rotate.</p>
+</li>
+<li>
+<p><em>spindle.<em>N</em>.reverse</em> - (bit, out) TRUE when the spindle should rotate backward</p>
+</li>
+<li>
+<p><em>spindle.<em>N</em>.revs</em> - (float, in) For correct operation of spindle synchronized moves, this
+signal must be hooked to the position pin of the spindle encoder. The
+spindle encoder position should be scaled such that spindle-revs
+increases by 1.0 for each rotation of the spindle in the clockwise (<em>M3</em>) direction.</p>
+</li>
+<li>
+<p><em>spindle.<em>N</em>.speed-in</em> - (float, in) Feedback of actual spindle speed in rotations per second.
+This is used by feed-per-revolution motion (<em>G95</em>).
+If your spindle encoder driver does not have a velocity output, you can generate
+a suitable one by sending the spindle position through a <em>ddt</em> component.
+If you do not have a spindle encoder, you can loop back <em>spindle.<em>N</em>.speed-out-rps</em>.</p>
+</li>
+<li>
+<p><em>spindle.<em>N</em>.speed-out</em> - (float, out) Commanded spindle speed in rotations per minute. Positive
+for spindle forward (<em>M3</em>), negative for spindle reverse (<em>M4</em>).</p>
+</li>
+<li>
+<p><em>spindle.<em>N</em>.speed-out-abs</em> - (float, out) Commanded spindle speed in rotations per minute. This will
+always be a positive number.</p>
+</li>
+<li>
+<p><em>spindle.<em>N</em>.speed-out-rps</em> - (float, out) Commanded spindle speed in rotations per second. Positive
+for spindle forward (<em>M3</em>), negative for spindle reverse (<em>M4</em>).</p>
+</li>
+<li>
+<p><em>spindle.<em>N</em>.speed-out-rps-abs</em> - (float, out) Commanded spindle speed in rotations per second. This will
+always be a positive number.</p>
+</li>
+<li>
+<p><em>spindle.<em>N</em>.orient-angle</em> - (float,out) Desired spindle orientation for M19. Value of the
+M19 R word parameter plus the value of the [RS274NGC]ORIENT_OFFSET INI parameter.</p>
+</li>
+<li>
+<p><em>spindle.<em>N</em>.orient-mode</em> - (s32,out) Desired spindle rotation mode M19. Default 0.</p>
+</li>
+<li>
+<p><em>spindle.<em>N</em>.orient</em> - (out,bit)
+Indicates start of spindle orient cycle. Set by M19. Cleared by any of M3, M4, or M5.
+If spindle-orient-fault is not zero during spindle-orient
+true, the M19 command fails with an error message.</p>
+</li>
+<li>
+<p><em>spindle.<em>N</em>.is-oriented</em> - (in, bit) Acknowledge pin for spindle-orient. Completes orient cycle.
+If spindle-orient was true when spindle-is-oriented was asserted, the spindle-orient pin is cleared and the
+spindle-locked pin is asserted. Also, the spindle-brake pin is asserted.</p>
+</li>
+<li>
+<p><em>spindle.<em>N</em>.orient-fault</em> - (s32, in) Fault code input for orient cycle. Any value other
+than zero  will cause the orient cycle to abort.</p>
+</li>
+<li>
+<p><em>spindle.<em>N</em>.lock</em> - (bit, out) Spindle orient complete pin. Cleared by any of M3, M4, or M5.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<div class="title">HAL pin usage for M19 orient spindle</div>
+<p>Conceptually the spindle is in one of the following modes:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>rotation mode (the default)</p>
+</li>
+<li>
+<p>searching for desired orientation mode</p>
+</li>
+<li>
+<p>orientation complete mode.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>When an M19 is executed, the spindle changes to <em>searching for desired
+orientation</em>, and the <code>spindle.__N__.orient</code> HAL pin is asserted.
+The desired target position is specified by the <code>spindle.__N__.orient-angle</code>
+and <code>spindle.__N__.orient-fwd</code> pins and driven by the M19 R and P parameters.</p>
+</div>
+<div class="paragraph">
+<p>The HAL support logic is expected to react to <code>spindle.__N__.orient</code> by
+moving the spindle to the desired position. When this is complete, the
+HAL logic is expected to acknowledge this by asserting the <code>spindle.__N__.is-oriented</code> pin.</p>
+</div>
+<div class="paragraph">
+<p>Motion then acknowledges this by deasserting the <code>spindle.__N__.orient</code> pin
+and asserts the <code>spindle.__N__.locked</code> pin to indicate <em>orientation complete</em> mode.
+It also raises the <code>spindle.__N__.brake</code> pin. The spindle now is in <em>orientation complete</em> mode.</p>
+</div>
+<div class="paragraph">
+<p>If, during <code>spindle.__N__.orient</code> being true, and <code>spindle.__N__.is-oriented</code> not
+yet asserted the <code>spindle.__N__.orient-fault</code> pin has a value other than
+zero, the M19 command is aborted, a message including the fault code
+is displayed, and the motion queue is flushed.
+The spindle reverts to rotation mode.</p>
+</div>
+<div class="paragraph">
+<p>Also, any of the M3, M4 or M5 commands cancel
+either <em>searching for desired orientation</em> or <em>orientation complete</em> mode.
+This is indicated by deasserting both the <code>spindle-orient</code> and <code>spindle-locked</code> pins.</p>
+</div>
+<div class="paragraph">
+<p>The <code>spindle-orient-mode</code> pin reflects the M19 P word and shall be
+interpreted as follows:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>0: rotate clockwise or counterclockwise for smallest angular movement</p>
+</li>
+<li>
+<p>1: always rotate clockwise</p>
+</li>
+<li>
+<p>2: always rotate counterclockwise</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>It can be used with the <code>orient</code> HAL component which provides a PID
+command value based on spindle encoder position, <code>spindle-orient-angle</code>
+and <code>spindle-orient-mode</code>.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_axis_and_joint_pins_and_parameters">3. Axis and Joint Pins and Parameters</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>These pins and parameters are created by the realtime <em>motmod</em>
+module.  [In <em>trivial kinematics</em> machines, there is a one-to-one
+correspondence between joints and axes.]
+They are read and updated by the <em>motion-controller</em> function.</p>
+</div>
+<div class="paragraph">
+<p>See the motion man page <em>motion(9)</em> for details on the pins and parameters.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_iocontrol">4. iocontrol</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>iocontrol - accepts non-realtime I/O commands via NML, interacts with HAL.</p>
+</div>
+<div class="paragraph">
+<p>iocontrol&#8217;s HAL pins are turned on and off in non-realtime context.  If you have strict timing requirements or simply need more I/O, consider using the realtime synchronized I/O provided by <a href="core-components.html#sec:motion">motion</a> instead.</p>
+</div>
+<div class="sect2">
+<h3 id="_pins">4.1. Pins</h3>
+<div class="paragraph">
+<p></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>iocontrol.0.coolant-flood</em> (bit, out) TRUE when flood coolant is requested.</p>
+</li>
+<li>
+<p><em>iocontrol.0.coolant-mist</em> (bit, out) TRUE when mist coolant is requested.</p>
+</li>
+<li>
+<p><em>iocontrol.0.emc-enable-in</em> (bit, in) Should be driven FALSE when an external E-Stop condition exists.</p>
+</li>
+<li>
+<p><em>iocontrol.0.tool-change</em> (bit, out) TRUE when a tool change is requested.</p>
+</li>
+<li>
+<p><em>iocontrol.0.tool-changed</em> (bit, in) Should be driven TRUE when a tool change is completed.</p>
+</li>
+<li>
+<p><em>iocontrol.0.tool-number</em> (s32, out) The current tool number.</p>
+</li>
+<li>
+<p><em>iocontrol.0.tool-prep-number</em> (s32, out) The number of the next tool, from the RS274NGC T-word.</p>
+</li>
+<li>
+<p><em>iocontrol.0.tool-prepare</em> (bit, out) TRUE when a tool prepare is requested.</p>
+</li>
+<li>
+<p><em>iocontrol.0.tool-prepared</em> (bit, in) Should be driven TRUE when a tool prepare is completed.</p>
+</li>
+<li>
+<p><em>iocontrol.0.user-enable-out</em> (bit, out) FALSE when an internal E-Stop condition exists.</p>
+</li>
+<li>
+<p><em>iocontrol.0.user-request-enable</em> (bit, out) TRUE when the user has requested that E-Stop be cleared.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_ini_settings">5. INI settings</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A number of INI settings are made available as HAL input pins.</p>
+</div>
+<div class="sect2">
+<h3 id="_pins_2">5.1. Pins</h3>
+<div class="paragraph">
+<p>
+<em>N</em> refers to a joint number, <em>L</em> refers to an axis letter.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>ini.<em>N</em>.ferror</em> - (float, in) [JOINT_N]FERROR</p>
+</li>
+<li>
+<p><em>ini.<em>N</em>.min_ferror</em> - (float, in) [JOINT_N]MIN_FERROR</p>
+</li>
+<li>
+<p><em>ini.<em>N</em>.backlash</em> - (float, in) [JOINT_N]BACKLASH</p>
+</li>
+<li>
+<p><em>ini.<em>N</em>.min_limit</em> - (float, in) [JOINT_N]MIN_LIMIT</p>
+</li>
+<li>
+<p><em>ini.<em>N</em>.max_limit</em> - (float, in) [JOINT_N]MAX_LIMIT</p>
+</li>
+<li>
+<p><em>ini.<em>N</em>.max_velocity</em> - (float, in) [JOINT_N]MAX_VELOCITY</p>
+</li>
+<li>
+<p><em>ini.<em>N</em>.max_acceleration</em> - (float, in) [JOINT_N]MAX_ACCELERATION</p>
+</li>
+<li>
+<p><em>ini.<em>N</em>.home</em> - (float, in) [JOINT_N]HOME</p>
+</li>
+<li>
+<p><em>ini.<em>N</em>.home_offset</em> - (float, in) [JOINT_N]HOME_OFFSET</p>
+</li>
+<li>
+<p><em>ini.<em>N</em>.home_offset</em> - (s32, in) [JOINT_N]HOME_SEQUENCE</p>
+</li>
+<li>
+<p><em>ini.<em>L</em>.min_limit</em> - (float, in) [AXIS_L]MIN_LIMIT</p>
+</li>
+<li>
+<p><em>ini.<em>L</em>.max_limit</em> - (float, in) [AXIS_L]MAX_LIMIT</p>
+</li>
+<li>
+<p><em>ini.<em>L</em>.max_velocity</em> - (float, in) [AXIS_L]MAX_VELOCITY</p>
+</li>
+<li>
+<p><em>ini.<em>L</em>.max_acceleration</em> - (float, in) [AXIS_L]MAX_ACCELERATION</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The per-axis min_limit and max_limit pins are honored continuously after homing.
+The per-axis ferror and min_ferror pins are honored when the machine is on and
+not in position.
+The per-axis max_velocity and max_acceleration pins are sampled when the
+machine is on and the motion_state is free (homing or jogging) but are not
+sampled when in a program is running (auto mode) or in MDI mode.  Consequently,
+changing the pin values when a program is running will not have effect until
+the program is stopped and the motion_state is again free.
+</td>
+</tr>
+</table>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>ini.traj_arc_blend_enable</em> - (bit, in) [TRAJ]ARC_BLEND_ENABLE</p>
+</li>
+<li>
+<p><em>ini.traj_arc_blend_fallback_enable</em> - (bit, in) [TRAJ]ARC_BLEND_FALLBACK_ENABLE</p>
+</li>
+<li>
+<p><em>ini.traj_arc_blend_gap_cycles</em> - (float, in) [TRAJ]ARC_BLEND_GAP_CYCLES</p>
+</li>
+<li>
+<p><em>ini.traj_arc_blend_optimization_depth</em> - (float, in) [TRAJ]ARC_BLEND_OPTIMIZATION_DEPTH</p>
+</li>
+<li>
+<p><em>ini.traj_arc_blend_ramp_freq</em> - (float, in) [TRAJ]ARC_BLEND_RAMP_FREQ</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The traj_arc_blend pins are sampled continuously but changing pin values
+while a program is running may not have immediate effect due to queueing
+of commands.
+</td>
+</tr>
+</table>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>ini.traj_default_acceleration</em> - (float, in) [TRAJ]DEFAULT_ACCELERATION</p>
+</li>
+<li>
+<p><em>ini.traj_default_velocity</em> - (float, in) [TRAJ]DEFAULT_VELOCITY</p>
+</li>
+<li>
+<p><em>ini.traj_max_acceleration</em> - (float, in) [TRAJ]MAX_ACCELERATION</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>S-curve trajectory planning pins (sampled continuously, can be changed at runtime):</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>ini.traj_planner_type</em> - (s32, in) [TRAJ]PLANNER_TYPE</p>
+</li>
+<li>
+<p><em>ini.traj_max_jerk</em> - (float, in) [TRAJ]MAX_LINEAR_JERK</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Per-axis jerk limit pins (where <em>L</em> is x, y, z, a, b, c, u, v, or w):</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>ini.<em>L</em>.max_jerk</em> - (float, in) [AXIS__L_]MAX_JERK</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Per-joint jerk limit pins (where <em>N</em> is the joint number 0-8):</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>ini.<em>N</em>.max_jerk</em> - (float, in) [JOINT__N_]MAX_JERK</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

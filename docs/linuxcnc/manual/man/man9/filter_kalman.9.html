@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>FILTER_KALMAN(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="filter_kalman.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/filter_kalman.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/filter_kalman.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/filter_kalman.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/filter_kalman.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/filter_kalman.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/filter_kalman.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/filter_kalman.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>FILTER_KALMAN(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>filter_kalman - Unidimensional Kalman filter, also known as linear quadratic estimation (LQE)</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt filter_kalman</strong> [<strong>count</strong>=<em>N</em>|<strong>names</strong>=<em>name1</em>[,<em>name2</em>&#8230;&#8203;]]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Useful for reducing input signal noise (e.g. from the voltage or temperature sensor).</p>
+</div>
+<div class="paragraph">
+<p>More information can be found at <a href="https://en.wikipedia.org/wiki/Kalman_filter" class="bare">https://en.wikipedia.org/wiki/Kalman_filter</a>.</p>
+</div>
+<div class="paragraph">
+<p>Adjusting <strong>Qr</strong> and <strong>Qk</strong> covariances:</p>
+</div>
+<div class="paragraph">
+<p>Default values of <strong>Rk</strong> and <strong>Qk</strong> are given for informational purpose only. The nature of the
+filter requires the parameters to be individually computed.</p>
+</div>
+<div class="paragraph">
+<p>One of the possible and quite practical method (probably far from being the best) of
+estimating the <strong>Rk</strong> covariance is to collect the raw data from the sensor by
+either asserting the <strong>debug</strong> pin or using <strong>halscope</strong> and then compute the covariance
+using <strong>cov()</strong> function from <strong>Octave</strong> package. Ready to use script can be found at
+<a href="https://github.com/dwrobel/TrivialKalmanFilter/blob/master/examples/DS18B20Test/covariance.m" class="bare">https://github.com/dwrobel/TrivialKalmanFilter/blob/master/examples/DS18B20Test/covariance.m</a>.</p>
+</div>
+<div class="paragraph">
+<p>Adjusting <strong>Qk</strong> covariance mostly depends on the required response time of the filter.
+There is a relationship between <strong>Qk</strong> and response time of the filter that the lower
+the <strong>Qk</strong> covariance is the slower the response of the filter is.</p>
+</div>
+<div class="paragraph">
+<p>Common practice is also to conservatively set <strong>Rk</strong> and <strong>Qk</strong> slightly larger then computed
+ones to get robustness.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>filter-kalman</strong>.<em>N</em></dt>
+<dd>
+<p>Update <strong>xk-out</strong> based on <strong>zk</strong> input.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>filter-kalman</strong>.<em>N</em>.<strong>debug</strong> bit in (default: <em>FALSE</em>)</dt>
+<dd>
+<p>When asserted, prints out measured and estimated values.</p>
+</dd>
+<dt class="hdlist1"><strong>filter-kalman</strong>.<em>N</em>.<strong>passthrough</strong> bit in (default: <em>FALSE</em>)</dt>
+<dd>
+<p>When asserted, copies measured value into estimated value.</p>
+</dd>
+<dt class="hdlist1"><strong>filter-kalman</strong>.<em>N</em>.<strong>reset</strong> bit in (default: <em>FALSE</em>)</dt>
+<dd>
+<p>When asserted, resets filter to its initial state and returns 0 as an estimated value (<strong>reset</strong> pin
+has higher priority than <strong>passthrough</strong> pin).</p>
+</dd>
+<dt class="hdlist1"><strong>filter-kalman</strong>.<em>N</em>.<strong>zk</strong> float in </dt>
+<dd>
+<p>Measured value.</p>
+</dd>
+<dt class="hdlist1"><strong>filter-kalman</strong>.<em>N</em>.<strong>xk-out</strong> float out </dt>
+<dd>
+<p>Estimated value.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parameters">PARAMETERS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>filter-kalman</strong>.<em>N</em>.<strong>Rk</strong> float rw (default: <em>1.17549e-38</em>)</dt>
+<dd>
+<p>Estimation of the noise covariances (process).</p>
+</dd>
+<dt class="hdlist1"><strong>filter-kalman</strong>.<em>N</em>.<strong>Qk</strong> float rw (default: <em>1.17549e-38</em>)</dt>
+<dd>
+<p>Estimation of the noise covariances (observation).</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Dmian Wrobel dwrobel.AT.ertelnet.rybnik.pl</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL-2.0-or-later</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:30:09 UTC
+</div>
+</div>
+</body>
+</html>

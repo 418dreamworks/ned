@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>SPINDLE(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="spindle.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/spindle.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/spindle.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/spindle.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/spindle.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/spindle.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/spindle.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/spindle.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>SPINDLE(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>spindle - Control a spindle with different acceleration and deceleration and optional gear change scaling</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt spindle</strong> [<strong>count</strong>=<em>N</em>|<strong>names</strong>=<em>name1</em>[,<em>name2</em>&#8230;&#8203;]]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This component will control a spindle with adjustable acceleration and deceleration.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>NOTE: This component is unfortunately named and creates pins with names very much like those created by the motion component.
+In nearly every case this is not the documentation page that you are looking for.
+See http://linuxcnc.org/docs/html/man/man9/motion.9.html instead.</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It is designed for use with non-servo spindle drives that have separate fwd/reverse inputs, such as DC drives and inverters.
+If a spindle encoder is available it is used to tailor the acceleration and deceleration to the spindle load.
+If not the spindle speed is simulated. The component allows for gearboxes with up to 16 gears.
+Each gear has individual control of speeds, acceleration, driver gain and direction.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>spindle</strong>.<em>N</em></dt>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>spindle</strong>.<em>N</em>.<strong>select-gear</strong> u32 in </dt>
+<dd>
+<p>Select a gear. Must be in the range 0 &#8594; number of available gears -1. If you use this, do not use the select.x input pins.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle</strong>.<em>N</em>.<strong>commanded-speed</strong> float in </dt>
+<dd>
+<p>Commanded spindle speed (in RPM)</p>
+</dd>
+<dt class="hdlist1"><strong>spindle</strong>.<em>N</em>.<strong>actual-speed</strong> float in </dt>
+<dd>
+<p>Actual spindle speed from a spindle encoder (in RPS).
+If you do not have a spindle encoder set the simulate_encoder parameter to 1.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle</strong>.<em>N</em>.<strong>simulate-encoder</strong> bit in </dt>
+<dd>
+<p>If you do not have an encoder, set this to 1.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle</strong>.<em>N</em>.<strong>enable</strong> bit in </dt>
+<dd>
+<p>If FALSE, the spindle is stopped at the gear&#8217;s maximum deceleration.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle</strong>.<em>N</em>.<strong>spindle-lpf</strong> float in </dt>
+<dd>
+<p>Smooth the spindle-rpm-abs output when at speed, 0 = disabled.
+Suitable values are probably between 1 and 20 depending on how stable your spindle is.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle</strong>.<em>N</em>.<strong>spindle-rpm</strong> float out </dt>
+<dd>
+<p>Current spindle speed in RPM.+ve = forward, -ve = reverse.
+Uses the encoder input if available. If not, uses a simulated encoder speed.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle</strong>.<em>N</em>.<strong>spindle-rpm-abs</strong> float out </dt>
+<dd>
+<p>Absolute spindle speed in RPM. Useful for spindle speed displays.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle</strong>.<em>N</em>.<strong>output</strong> float out </dt>
+<dd>
+<p>Scaled output</p>
+</dd>
+<dt class="hdlist1"><strong>spindle</strong>.<em>N</em>.<strong>current-gear</strong> u32 out </dt>
+<dd>
+<p>Currently selected gear.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle</strong>.<em>N</em>.<strong>at-speed</strong> bit out </dt>
+<dd>
+<p>TRUE when the spindle is at speed</p>
+</dd>
+<dt class="hdlist1"><strong>spindle</strong>.<em>N</em>.<strong>forward</strong> bit out </dt>
+<dd>
+<p>TRUE for forward rotation</p>
+</dd>
+<dt class="hdlist1"><strong>spindle</strong>.<em>N</em>.<strong>reverse</strong> bit out </dt>
+<dd>
+<p>TRUE for reverse rotation. Both forward and reverse are false when the spindle is stopped.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle</strong>.<em>N</em>.<strong>brake</strong> bit out </dt>
+<dd>
+<p>TRUE when decelerating</p>
+</dd>
+<dt class="hdlist1"><strong>spindle</strong>.<em>N</em>.<strong>zero-speed</strong> bit out </dt>
+<dd>
+<p>TRUE when the spindle is stationary</p>
+</dd>
+<dt class="hdlist1"><strong>spindle</strong>.<em>N</em>.<strong>limited</strong> bit out </dt>
+<dd>
+<p>TRUE when the commanded spindle speed is &gt;max or &lt;min.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>motion</strong>(9)</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_notes">NOTES</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following pins are created depending the <em>numgears=</em> parameter.
+One of each pin is created for each gear. If no gears are specified then one gear will be created.
+For instance if you have gears=2 on your command line, you will have two scale pins:<br>
+<strong>spindle</strong>.<em>N</em>.<strong>scale</strong>.<strong>0</strong><br>
+<strong>spindle</strong>.<em>N</em>.<strong>scale</strong>.<strong>1</strong></p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>spindle</strong>.<em>N</em>.<strong>scale</strong>.x float in</dt>
+<dd>
+<p>Scale the output. For multiple gears you would use a different scale for each gear.
+If you need to reverse the output for some gears, use a negative scale.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle</strong>.<em>N</em>.<strong>min</strong>.x float in</dt>
+<dd>
+<p>Set the minimum speed allowed (in RPM).
+The limit output will be TRUE while the commanded speed is between 0 RPM and the min speed.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle</strong>.<em>N</em>.<strong>max</strong>.x float in</dt>
+<dd>
+<p>Set the maximum speed allowed (in RPM).
+The limit output will be TRUE while the commanded speed is above this value.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle</strong>.<em>N</em>.<strong>accel</strong>.x float in</dt>
+<dd>
+<p>Set the maximum acceleration.
+If you do not have a spindle encoder this is in RPM/second.
+If you do have an encoder the output is the actual speed plus this value.
+This way the acceleration can be dependent on the spindle load.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle</strong>.<em>N</em>.<strong>decel</strong>.x float in</dt>
+<dd>
+<p>Set the minimum deceleration. If you do not have a spindle encoder this is in RPM/second.
+If you do have an encoder the output is the actual speed minus this value.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle</strong>.<em>N</em>.<strong>speed-tolerance</strong>.x float in</dt>
+<dd>
+<p>Tolerance for <em>at-speed</em> signal (in RPM).
+Actual spindle speeds within this amount of the commanded speed will cause the at-speed signal to go TRUE.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle</strong>.<em>N</em>.<strong>zero-tolerance</strong>.x float in</dt>
+<dd>
+<p>Tolerance for <em>zero-speed</em> signal (in RPM).</p>
+</dd>
+<dt class="hdlist1"><strong>spindle</strong>.<em>N</em>.<strong>offset</strong>.x float in</dt>
+<dd>
+<p>The output command is offset by this amount (in RPM).</p>
+</dd>
+<dt class="hdlist1"><strong>spindle</strong>.<em>N</em>.<strong>select</strong>.x bit in</dt>
+<dd>
+<p>Selects this gear. If no select inputs are active, gear 0 is selected.
+If multiple select inputs are active then the highest is selected.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Les Newell</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:30:12 UTC
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,1561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>Mesa HostMot2 Driver</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../rouge-github.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:mesa-hostmot2-driver" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="hostmot2.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/drivers/hostmot2.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/drivers/hostmot2.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/drivers/hostmot2.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/drivers/hostmot2.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/drivers/hostmot2.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/drivers/hostmot2.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/drivers/hostmot2.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>Mesa HostMot2 Driver</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details open><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="../config/stepconf.html">Stepper Configuration Wizard</a><a href="../config/pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="../config/integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><a href="../config/ini-config.html">INI Configuration</a><a href="../config/ini-homing.html">Homing Configuration</a><a href="../config/lathe-config.html">Lathe Configuration</a><a href="../config/stepper-quickstart.html">Stepper Quickstart</a><a href="../config/stepper.html">Stepper Configuration</a><a href="../config/stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="../config/core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details open><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="ax5214h.html">AX5214H Driver</a><a href="gm.html">General Mechatronics Driver</a><a href="gs2.html">GS2 VFD Driver</a><a href="hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>Mesa HostMot2 Driver</summary><ul class="sectlevel1">
+<li><a href="hostmot2.html#_introduction">1. Introduction</a></li>
+<li><a href="hostmot2.html#_firmware_binaries">2. Firmware Binaries</a></li>
+<li><a href="hostmot2.html#_installing_firmware">3. Installing Firmware</a></li>
+<li><a href="hostmot2.html#_loading_hostmot2">4. Loading HostMot2</a></li>
+<li><a href="hostmot2.html#_watchdog">5. Watchdog</a>
+<ul class="sectlevel2">
+<li><a href="hostmot2.html#_pins">5.1. Pins</a></li>
+<li><a href="hostmot2.html#_parameters">5.2. Parameters</a></li>
+</ul>
+</li>
+<li><a href="hostmot2.html#_hostmot2_functions">6. HostMot2 Functions</a></li>
+<li><a href="hostmot2.html#_pinouts">7. Pinouts</a></li>
+<li><a href="hostmot2.html#_pin_files">8. PIN Files</a></li>
+<li><a href="hostmot2.html#_firmware">9. Firmware</a></li>
+<li><a href="hostmot2.html#_hal_pins">10. HAL Pins</a></li>
+<li><a href="hostmot2.html#_configurations">11. Configurations</a></li>
+<li><a href="hostmot2.html#_gpio">12. GPIO</a>
+<ul class="sectlevel2">
+<li><a href="hostmot2.html#_pins_2">12.1. Pins</a></li>
+<li><a href="hostmot2.html#_parameters_2">12.2. Parameters</a></li>
+</ul>
+</li>
+<li><a href="hostmot2.html#_stepgen">13. StepGen</a>
+<ul class="sectlevel2">
+<li><a href="hostmot2.html#_pins_3">13.1. Pins</a></li>
+<li><a href="hostmot2.html#_parameters_3">13.2. Parameters</a></li>
+<li><a href="hostmot2.html#_output_parameters">13.3. Output Parameters</a></li>
+</ul>
+</li>
+<li><a href="hostmot2.html#_pwmgen">14. PWMGen</a>
+<ul class="sectlevel2">
+<li><a href="hostmot2.html#_pins_4">14.1. Pins</a></li>
+<li><a href="hostmot2.html#_parameters_4">14.2. Parameters</a></li>
+<li><a href="hostmot2.html#_output_parameters_2">14.3. Output Parameters</a></li>
+</ul>
+</li>
+<li><a href="hostmot2.html#sec:hm2-encoder">15. Encoder</a>
+<ul class="sectlevel2">
+<li><a href="hostmot2.html#_pins_5">15.1. Pins</a></li>
+<li><a href="hostmot2.html#_parameters_5">15.2. Parameters</a></li>
+</ul>
+</li>
+<li><a href="hostmot2.html#_5i25_configuration">16. 5I25 Configuration</a>
+<ul class="sectlevel2">
+<li><a href="hostmot2.html#_firmware_2">16.1. Firmware</a></li>
+<li><a href="hostmot2.html#_configuration">16.2. Configuration</a></li>
+<li><a href="hostmot2.html#_sserial_configuration">16.3. SSERIAL Configuration</a></li>
+<li><a href="hostmot2.html#_7i77_limits">16.4. 7I77 Limits</a></li>
+</ul>
+</li>
+<li><a href="hostmot2.html#_example_configurations">17. Example Configurations</a></li>
+</ul></details><a href="mb2hal.html">MB2HAL</a><a href="mesa_modbus.html">Mesa Modbus =</a><a href="mitsub-vfd.html">Mitsub VFD Driver</a><a href="motenc.html">Motenc Driver</a><a href="opto22.html">Opto22 Driver</a><a href="pico-ppmc.html">Pico Drivers</a><a href="pluto-p.html">Pluto P Driver</a><a href="pmx485.html">Powermax Modbus Driver</a><a href="servo-to-go.html">Servo To Go Driver</a><a href="shuttle.html">Shuttle</a><a href="vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="../config/moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="../config/python-interface.html">The LinuxCNC Python module</a><a href="../config/python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_introduction">1. Introduction</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>HostMot2 is an FPGA configuration developed by Mesa Electronics for
+their line of <em>Anything I/O</em> motion control cards.
+The firmware is open source, portable and flexible.
+It can be configured (at compile-time)
+with zero or more instances (an object created at runtime) of each of several Modules:
+encoders (quadrature counters), PWM generators, and step/dir generators.
+The firmware can be configured (at run-time) to connect each of these instances to pins on the I/O headers.
+I/O pins not driven by a Module instance revert to general-purpose bi-directional digital I/O.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_firmware_binaries">2. Firmware Binaries</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<div class="title">50 Pin Header FPGA cards</div>
+<p>Several pre-compiled HostMot2 firmware binaries are available for the different Anything I/O boards.
+This list is incomplete, check the hostmot2-firmware distribution for up-to-date firmware lists.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>3x20 (144 I/O pins): using hm2_pci module</p>
+<div class="ulist">
+<ul>
+<li>
+<p>24-channel servo</p>
+</li>
+<li>
+<p>16-channel servo plus 24 step/dir generators</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>5I22 (96 I/O pins): using hm2_pci module</p>
+<div class="ulist">
+<ul>
+<li>
+<p>16-channel servo</p>
+</li>
+<li>
+<p>8-channel servo plus 24 step/dir generators</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>5I20, 5I23, 4I65, 4I68 (72 I/O pins): using hm2_pci module</p>
+<div class="ulist">
+<ul>
+<li>
+<p>12-channel servo</p>
+</li>
+<li>
+<p>8-channel servo plus 4 step/dir generators</p>
+</li>
+<li>
+<p>4-channel servo plus 8 step/dir generators</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>7I43 (48 I/O pins): using hm2_7i43 module</p>
+<div class="ulist">
+<ul>
+<li>
+<p>8-channel servo (8 PWM generators &amp; 8 encoders)</p>
+</li>
+<li>
+<p>4-channel servo plus 4 step/dir generators</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<div class="title">DB25 FPGA cards</div>
+<p>The 5I25 Superport FPGA card is preprogrammed when purchased and does not
+need a firmware binary.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_installing_firmware">3. Installing Firmware</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Depending on how you installed LinuxCNC you may have to open the Synaptic
+Package Manager from the System menu and install the package for your
+Mesa card. The quickest way to find them is to do a search for
+<em>hostmot2</em> in the Synaptic Package Manager. Mark the firmware for
+installation, then apply.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_loading_hostmot2">4. Loading HostMot2</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The LinuxCNC support for the HostMot2 firmware is split into a generic
+driver called <em>hostmot2</em> and two low-level I/O drivers for the Anything
+I/O boards. The low-level I/O drivers are <em>hm2_7i43</em> and <em>hm2_pci</em> (for
+all the PCI- and PC-104/Plus-based Anything I/O boards). The hostmot2 driver
+must be loaded first, using a HAL command like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadrt</span> <span class="n">hostmot2</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>See the hostmot2(9) man page for details.</p>
+</div>
+<div class="paragraph">
+<p>The hostmot2 driver by itself does nothing, it needs access to actual
+boards running the HostMot2 firmware. The low-level I/O drivers provide
+this access. The low-level I/O drivers are loaded with commands like
+this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadrt</span> <span class="n">hm2_pci</span> <span class="n">config</span><span class="o">=</span>"<span class="n">firmware</span><span class="o">=</span><span class="n">hm2</span>/<span class="mi">5</span><span class="n">i20</span>/<span class="na">SVST8_4.BIT</span>
+       <span class="n">num_encoders</span><span class="o">=</span><span class="mi">3</span> <span class="n">num_pwmgens</span><span class="o">=</span><span class="mi">3</span> <span class="n">num_stepgens</span><span class="o">=</span><span class="mi">1</span>"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The config parameters are described in the hostmot2 man page.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_watchdog">5. Watchdog</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The HostMot2 firmware may include a watchdog Module; if it does, the
+hostmot2 driver will use it.</p>
+</div>
+<div class="paragraph">
+<p>The watchdog must be petted by LinuxCNC periodically or it will bite.
+The hm2 write function (see below) pets the watchdog.</p>
+</div>
+<div class="paragraph">
+<p>When the watchdog bites, all the board&#8217;s I/O pins are disconnected from
+their Module instances and become high-impedance inputs (pulled high).
+The state of the HostMot2 firmware modules is not disturbed (except
+for the configuration of the I/O Pins). Encoder instances keep counting
+quadrature pulses, and pwm- and step-generators keep generating signals
+(which are not relayed to the motors, because the I/O Pins have become
+inputs).</p>
+</div>
+<div class="paragraph">
+<p>Resetting the watchdog resets the I/O pins to the configuration chosen
+at load-time.</p>
+</div>
+<div class="paragraph">
+<p>If the firmware includes a watchdog, the following HAL objects will be
+exported:</p>
+</div>
+<div class="sect2">
+<h3 id="_pins">5.1. Pins</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><em>has_bit</em> - (bit i/o) True if the watchdog has bit, False if the
+watchdog has not bit. If the watchdog has bit and the has_bit bit is
+True, the user can reset it to False to resume operation.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_parameters">5.2. Parameters</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><em>timeout_ns</em> - (u32 read/write) Watchdog timeout, in nanoseconds.
+This is initialized to 5,000,000 (5 milliseconds) at module load time.
+If more than this amount of time passes between calls to the hm2 write
+function, the watchdog will bite.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_hostmot2_functions">6. HostMot2 Functions</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><em>hm2_&lt;BoardType&gt;.&lt;BoardNum&gt;.read</em> - Read all inputs, update input HAL pins.</p>
+</li>
+<li>
+<p><em>hm2_&lt;BoardType&gt;.&lt;BoardNum&gt;.write</em> - Write all outputs.</p>
+</li>
+<li>
+<p><em>hm2_&lt;BoardType&gt;.&lt;BoardNum&gt;.read_gpio</em> - Read the GPIO input pins only.
+(This function is not available on the 7I43 due to limitations of the EPP bus.)</p>
+</li>
+<li>
+<p><em>hm2_&lt;BoardType&gt;.&lt;BoardNum&gt;.write_gpio</em> - Write the GPIO control registers and output pins only.
+(This function is not available on the 7I43 due to limitations of the EPP bus.)</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The above <em>read_gpio</em> and <em>write_gpio</em> functions should not
+normally be needed, since the GPIO bits are read and written along
+with everything else in the standard <em>read</em> and <em>write</em>
+functions above, which are normally run in the servo thread.</p>
+</div>
+<div class="paragraph">
+<p>The <em>read_gpio</em> and <em>write_gpio</em> functions were provided in
+case some very fast (frequently updated) I/O is needed. These
+functions should be run in the base thread. If you have need for
+this, please send an email and tell us about it, and what your
+application is.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pinouts">7. Pinouts</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The hostmot2 driver does not have a particular pinout. The pinout
+comes from the firmware that the hostmot2 driver sends to the Anything I/O
+board. Each firmware has different pinout, and the pinout depends on
+how many of the available encoders, pwmgens, and stepgens are used. To
+get a pinout list for your configuration after loading LinuxCNC in the
+terminal window type:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>dmesg &gt; hm2.txt</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The resulting text file will contain lots of information as well as
+the pinout for the HostMot2 and any error and warning messages.</p>
+</div>
+<div class="paragraph">
+<p>To reduce the clutter by clearing the message buffer before loading
+LinuxCNC type the following in the terminal window:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>sudo dmesg -c</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now when you run LinuxCNC and then do a <em>dmesg &gt; hm2.txt</em> in the terminal
+only the info from the time you loaded LinuxCNC will be in your file along
+with your pinout. The file will be in the current directory of the
+terminal window. Each line will contain the card name, the card number,
+the I/O Pin number, the connector and pin, and the usage. From this
+printout you will know the physical connections to your card based on
+your configuration.</p>
+</div>
+<div class="paragraph">
+<p>An example of a 5I20 configuration:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="p">[</span><span class="nn">HOSTMOT2</span><span class="p">]</span>
+<span class="py">DRIVER</span><span class="p">=</span><span class="s">hm2_pci</span>
+<span class="py">BOARD</span><span class="p">=</span><span class="s">5i20</span>
+<span class="py">CONFIG</span><span class="p">=</span><span class="s">"firmware=hm2/5i20/SVST8_4.BIT num_encoders=1 num_pwmgens=1 num_stepgens=3"</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above configuration produced this printout.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>[ 1141.053386] hm2/hm2_5i20.0: 72 I/O Pins used:
+[ 1141.053394] hm2/hm2_5i20.0: IO Pin 000 (P2-01): IOPort
+[ 1141.053397] hm2/hm2_5i20.0: IO Pin 001 (P2-03): IOPort
+[ 1141.053401] hm2/hm2_5i20.0: IO Pin 002 (P2-05): Encoder #0, pin B (Input)
+[ 1141.053405] hm2/hm2_5i20.0: IO Pin 003 (P2-07): Encoder #0, pin A (Input)
+[ 1141.053408] hm2/hm2_5i20.0: IO Pin 004 (P2-09): IOPort
+[ 1141.053411] hm2/hm2_5i20.0: IO Pin 005 (P2-11): Encoder #0, pin Index (Input)
+[ 1141.053415] hm2/hm2_5i20.0: IO Pin 006 (P2-13): IOPort
+[ 1141.053418] hm2/hm2_5i20.0: IO Pin 007 (P2-15): PWMGen #0, pin Out0 (PWM or Up) (Output)
+[ 1141.053422] hm2/hm2_5i20.0: IO Pin 008 (P2-17): IOPort
+[ 1141.053425] hm2/hm2_5i20.0: IO Pin 009 (P2-19): PWMGen #0, pin Out1 (Dir or Down) (Output)
+[ 1141.053429] hm2/hm2_5i20.0: IO Pin 010 (P2-21): IOPort
+[ 1141.053432] hm2/hm2_5i20.0: IO Pin 011 (P2-23): PWMGen #0, pin Not-Enable (Output)
+&lt;snip&gt;...
+[ 1141.053589] hm2/hm2_5i20.0: IO Pin 060 (P4-25): StepGen #2, pin Step (Output)
+[ 1141.053593] hm2/hm2_5i20.0: IO Pin 061 (P4-27): StepGen #2, pin Direction (Output)
+[ 1141.053597] hm2/hm2_5i20.0: IO Pin 062 (P4-29): StepGen #2, pin (unused) (Output)
+[ 1141.053601] hm2/hm2_5i20.0: IO Pin 063 (P4-31): StepGen #2, pin (unused) (Output)
+[ 1141.053605] hm2/hm2_5i20.0: IO Pin 064 (P4-33): StepGen #2, pin (unused) (Output)
+[ 1141.053609] hm2/hm2_5i20.0: IO Pin 065 (P4-35): StepGen #2, pin (unused) (Output)
+[ 1141.053613] hm2/hm2_5i20.0: IO Pin 066 (P4-37): IOPort
+[ 1141.053616] hm2/hm2_5i20.0: IO Pin 067 (P4-39): IOPort
+[ 1141.053619] hm2/hm2_5i20.0: IO Pin 068 (P4-41): IOPort
+[ 1141.053621] hm2/hm2_5i20.0: IO Pin 069 (P4-43): IOPort
+[ 1141.053624] hm2/hm2_5i20.0: IO Pin 070 (P4-45): IOPort
+[ 1141.053627] hm2/hm2_5i20.0: IO Pin 071 (P4-47): IOPort
+[ 1141.053811] hm2/hm2_5i20.0: registered
+[ 1141.053815] hm2_5i20.0: initialized AnyIO board at 0000:02:02.0</pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+That the I/O Pin nnn will correspond to the pin number shown on
+the HAL Configuration screen for GPIOs. Some of the StepGen, Encoder
+and PWMGen will also show up as GPIOs in the HAL Configuration screen.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pin_files">8. PIN Files</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The default pinout is described in a .PIN file (human-readable text).
+When you install a firmware package the .PIN files are installed in</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>/usr/share/doc/hostmot2-firmware-&lt;board&gt;/</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_firmware">9. Firmware</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The selected firmware (.BIT file) and configuration is uploaded from
+the PC motherboard to the Mesa mothercard on LinuxCNC startup.
+If you are using Run In Place, you must still install a
+hostmot2-firmware-&lt;board&gt; package. There is more information about
+firmware and configuration in the <em>Configurations</em> section.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_hal_pins">10. HAL Pins</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The HAL pins for each configuration can be seen by opening up <em>Show
+HAL Configuration</em> from the Machine menu. All the HAL pins and
+parameters can be found there. The following figure is of the 5I20
+configuration used above.</p>
+</div>
+<div id="cap:5i20-HAL-Pins" class="imageblock">
+<div class="content">
+<img src="images/5i20-halpins.png" alt="5i20 HAL Pins">
+</div>
+<div class="title">Figure 1. 5i20 HAL Pins</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_configurations">11. Configurations</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Hostmot2 firmware is available in several versions, depending on
+what you are trying to accomplish. You can get a reminder of what a
+particular firmware is for by looking at the name. Let&#8217;s look at a
+couple of examples.</p>
+</div>
+<div class="paragraph">
+<p>In the 7I43 (two ports), SV8 (<em>Servo 8</em>) would be for having 8 servos
+or fewer, using the <em>classic</em> 7I33 4-axis (per port) servo board.
+So 8 servos would use up all 48 signals in the two ports. But if
+you only needed 3 servos, you could say <em>num_encoders=3</em> and <em>num_pwmgens=3</em>
+and recover 5 servos at 6 signals each, thus gaining 30 bits of GPIO.</p>
+</div>
+<div class="paragraph">
+<p>Or, in the 5I22 (four ports), SVST8_24 (<em>Servo 8, Stepper 24</em>) would be
+for having 8 servos or fewer (7I33 x2 again), and 24 steppers or fewer
+(7I47 x2). This would use up all four ports.
+If you only needed 4 servos you could say <em>num_encoders=4</em> and
+<em>num_pwmgens=4</em> and recover 1 port (and save a 7I33).
+And if you only needed 12 steppers you could say <em>num_stepgens=12</em> and
+free up one port (and save a 7I47).
+So in this way we can save two ports (48 bits) for GPIO.</p>
+</div>
+<div class="paragraph">
+<p>Here are tables of the firmwares available in the official packages.
+There may be additional firmwares available at the Mesanet.com website
+that have not yet made it into the LinuxCNC official firmware packages, so
+check there too.</p>
+</div>
+<div class="paragraph">
+<p>3x20 (6-port various) Default Configurations (The 3x20 comes in 1M,
+1.5M, and 2M gate versions.
+So far, all firmware is available in all gate sizes.)</p>
+</div>
+<table class="tableblock frame-all grid-all" style="width: 90%;">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Firmware</th>
+<th class="tableblock halign-left valign-top">Encoder</th>
+<th class="tableblock halign-left valign-top">PWMGen</th>
+<th class="tableblock halign-left valign-top">StepGen</th>
+<th class="tableblock halign-left valign-top">GPIO</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SV24</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">24</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">24</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST16_24</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">16</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">16</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">24</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>5I22 (4-port PCI) Default Configurations (The 5I22 comes in 1M and 1.5M
+gate versions.
+So far, all firmware is available in all gate sizes.)</p>
+</div>
+<table class="tableblock frame-all grid-all" style="width: 90%;">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Firmware</th>
+<th class="tableblock halign-left valign-top">Encoder</th>
+<th class="tableblock halign-left valign-top">PWM</th>
+<th class="tableblock halign-left valign-top">StepGen</th>
+<th class="tableblock halign-left valign-top">GPIO</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SV16</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">16</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">16</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST2_4_7I47</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">72</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST8_8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST8_24</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">24</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>5I23 (3-port PCI) Default Configurations (The 5I23 has 400k gates.)</p>
+</div>
+<table class="tableblock frame-all grid-all" style="width: 90%;">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Firmware</th>
+<th class="tableblock halign-left valign-top">Encoder</th>
+<th class="tableblock halign-left valign-top">PWM</th>
+<th class="tableblock halign-left valign-top">StepGen</th>
+<th class="tableblock halign-left valign-top">GPIO</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SV12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST2_8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8 (tbl5)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST2_4_7I47</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">48</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SV12_2X7I48_72</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">24</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SV12IM_2X7I48_72</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12 (+IM)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST4_8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8 (tbl5)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST8_4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4 (tbl5)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST8_4IM2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8 (+IM)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST8_8IM2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8 (+IM)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVTP6_7I39</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0 (6 BLDC)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>5I20 (3-port PCI) Default Configurations (The 5I20 has 200k gates.)</p>
+</div>
+<table class="tableblock frame-all grid-all" style="width: 90%;">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Firmware</th>
+<th class="tableblock halign-left valign-top">Encoder</th>
+<th class="tableblock halign-left valign-top">PWM</th>
+<th class="tableblock halign-left valign-top">StepGen</th>
+<th class="tableblock halign-left valign-top">GPIO</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SV12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST2_8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8 (tbl5)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST2_4_7I47</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">48</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SV12_2X7I48_72</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">24</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SV12IM_2X7I48_72</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12 (+IM)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST8_4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4 (tbl5)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST8_4IM2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8 (+IM)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>4I68 (3-port PC/104) Default Configurations (The 4I68 has 400k gates.)</p>
+</div>
+<table class="tableblock frame-all grid-all" style="width: 90%;">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Firmware</th>
+<th class="tableblock halign-left valign-top">Encoder</th>
+<th class="tableblock halign-left valign-top">PWM</th>
+<th class="tableblock halign-left valign-top">StepGen</th>
+<th class="tableblock halign-left valign-top">GPIO</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SV12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST2_4_7I47</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">48</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST4_8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST8_4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST8_4IM2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8 (+IM)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST8_8IM2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8 (+IM)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>4I65 (3-port PC/104) Default Configurations (The 4I65 has 200k gates.)</p>
+</div>
+<table class="tableblock frame-all grid-all" style="width: 90%;">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Firmware</th>
+<th class="tableblock halign-left valign-top">Encoder</th>
+<th class="tableblock halign-left valign-top">PWM</th>
+<th class="tableblock halign-left valign-top">StepGen</th>
+<th class="tableblock halign-left valign-top">GPIO</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SV12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST8_4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST8_4IM2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8 (+IM)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>7I43 (2-port parallel) 400k gate versions, Default Configurations</p>
+</div>
+<table class="tableblock frame-all grid-all" style="width: 90%;">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Firmware</th>
+<th class="tableblock halign-left valign-top">Encoder</th>
+<th class="tableblock halign-left valign-top">PWM</th>
+<th class="tableblock halign-left valign-top">StepGen</th>
+<th class="tableblock halign-left valign-top">GPIO</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SV8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST4_4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4 (tbl5)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST4_6</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6 (tbl3)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST4_12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST2_4_7I47</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">24</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>7I43 (2-port parallel) 200k gate versions, Default Configurations</p>
+</div>
+<table class="tableblock frame-all grid-all" style="width: 90%;">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Firmware</th>
+<th class="tableblock halign-left valign-top">Encoder</th>
+<th class="tableblock halign-left valign-top">PWM</th>
+<th class="tableblock halign-left valign-top">StepGen</th>
+<th class="tableblock halign-left valign-top">GPIO</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SV8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST4_4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4 (tbl5)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST4_6</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6 (tbl3)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SVST2_4_7I47</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">24</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Even though several cards may have the same named .BIT file you cannot use
+a .BIT file that is not for that card. Different cards have different
+clock frequencies so make sure you load the proper .BIT file for your
+card. Custom hm2 firmwares can be created for special applications and
+you may see some custom hm2 firmwares in the directories with the
+default ones.</p>
+</div>
+<div class="paragraph">
+<p>When you load the board-driver (hm2_pci or hm2_7i43), you can tell it
+to disable instances of the three primary modules (pwmgen, stepgen, and
+encoder) by setting the count lower. Any I/O pins belonging to disabled
+module instances become GPIOs.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_gpio">12. GPIO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>General Purpose I/O pins on the board which are not used by a module
+instance are exported to HAL as <em>full</em> GPIO pins. Full GPIO pins can be
+configured at run-time to be inputs, outputs, or open drains, and have
+a HAL interface that exposes this flexibility. I/O pins that are owned
+by an active module instance are constrained by the requirements of the
+owning module, and have a restricted HAL interface.</p>
+</div>
+<div class="paragraph">
+<p>GPIOs have names like <em>hm2_&lt;BoardType&gt;.&lt;BoardNum&gt;.gpio.&lt;IONum&gt;.</em>
+IONum is a three-digit number. The mapping from IONum to connector and
+pin-on-that-connector is written to the syslog when the driver loads,
+and it&#8217;s documented in Mesa&#8217;s manual for the Anything I/O boards.</p>
+</div>
+<div class="paragraph">
+<p>The hm2 GPIO representation is modeled after the Digital Inputs and
+Digital Outputs described in the Canonical Device Interface (part of
+the HAL General Reference document).</p>
+</div>
+<div class="paragraph">
+<p>GPIO pins default to input.</p>
+</div>
+<div class="sect2">
+<h3 id="_pins_2">12.1. Pins</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><em>in</em> - (Bit, Out) Normal state of the hardware input pin.
+Both full GPIO pins and I/O pins used as inputs by active module
+instances have this pin.</p>
+</li>
+<li>
+<p><em>in_not</em> - (Bit, Out) Inverted state of the hardware input pin.
+Both full GPIO pins and I/O pins used as inputs by active module
+instances have this pin.</p>
+</li>
+<li>
+<p><em>out</em> - (Bit, In) Value to be written (possibly inverted) to the
+hardware output pin.
+Only full GPIO pins have this pin.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_parameters_2">12.2. Parameters</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><em>invert_output</em> - (Bit, RW) This parameter only has an effect if the
+<em>is_output</em> parameter is true.
+If this parameter is true, the output value of the
+GPIO will be the inverse of the value on the <em>out</em> HAL pin. Only full
+GPIO pins and I/O pins used as outputs by active module instances have
+this parameter. To invert an active module pin you have to invert the
+GPIO pin not the module pin.</p>
+</li>
+<li>
+<p><em>is_opendrain</em> - (Bit, RW) This parameter only has an effect if the
+<em>is_output</em> parameter is true.
+If this parameter is false, the GPIO behaves as a
+normal output pin: the I/O pin on the connector is driven to the value
+specified by the <em>out</em> HAL pin (possibly inverted), and the value of
+the <em>in</em> and <em>in_not</em> HAL pins is undefined. If this parameter is true,
+the GPIO behaves as an open-drain pin. Writing 0 to the <em>out</em> HAL pin
+drives the I/O pin low, writing 1 to the <em>out</em> HAL pin puts the I/O pin
+in a high-impedance state. In this high-impedance state the I/O pin
+floats (weakly pulled high), and other devices can drive the value; the
+resulting value on the I/O pin is available on the <em>in</em> and <em>in_not</em>
+pins. Only full GPIO pins and I/O pins used as outputs by active module
+instances have this parameter.</p>
+</li>
+<li>
+<p><em>is_output</em> - (Bit, RW) If set to 0, the GPIO is an input.
+The I/O pin is put in a
+high-impedance state (weakly pulled high), to be driven by other
+devices. The logic value on the I/O pin is available in the <em>in</em> and
+<em>in_not</em> HAL pins. Writes to the <em>out</em> HAL pin have no effect. If this
+parameter is set to 1, the GPIO is an output; its behavior then depends
+on the <em>is_opendrain</em> parameter. Only full GPIO pins have this parameter.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_stepgen">13. StepGen</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>StepGens have names like <em>hm2_&lt;BoardType&gt;.&lt;BoardNum&gt;.stepgen.&lt;Instance&gt;</em>.
+<em>Instance</em> is a two-digit number that corresponds to the HostMot2 stepgen
+instance number.
+There are <em>num_stepgens</em> instances, starting with 00.</p>
+</div>
+<div class="paragraph">
+<p>Each stepgen allocates 2-6 I/O pins (selected at firmware compile
+time), but currently only uses two: Step and Direction outputs.
+<sup class="footnote">[<a id="_footnoteref_1" class="footnote" href="hostmot2.html#_footnotedef_1" title="View footnote.">1</a>]</sup></p>
+</div>
+<div class="paragraph">
+<p>The StepGen representation is modeled on the stepgen software
+component. StepGen default is active high step output (high during step
+time low during step space). To invert a StepGen output pin you invert
+the corresponding GPIO pin that is being used by StepGen. To find the
+GPIO pin being used for the StepGen output run <em>dmesg</em> as shown above.</p>
+</div>
+<div class="paragraph">
+<p>Each StepGen instance has the following pins and parameters:</p>
+</div>
+<div class="sect2">
+<h3 id="_pins_3">13.1. Pins</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><em>control-type</em> - (Bit, In) Switches between position control mode (0)
+and velocity control mode (1).
+Defaults to position control (0).</p>
+</li>
+<li>
+<p><em>counts</em> - (s32, Out) Feedback position in counts (number of steps).</p>
+</li>
+<li>
+<p><em>enable</em> - (Bit, In) Enables output steps. When false, no steps are
+generated.</p>
+</li>
+<li>
+<p><em>position-cmd</em> - (Float, In) Target position of stepper motion, in
+user-defined position units.</p>
+</li>
+<li>
+<p><em>position-fb</em> - (Float, Out) Feedback position in user-defined position
+units (counts / position_scale).</p>
+</li>
+<li>
+<p><em>velocity-cmd</em> - (Float, In) Target velocity of stepper motion, in
+user-defined position units per second.
+This pin is only used when the stepgen is in velocity control mode
+(control-type=1).</p>
+</li>
+<li>
+<p><em>velocity-fb</em> - (Float, Out) Feedback velocity in user-defined position
+units per second.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_parameters_3">13.2. Parameters</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><em>dirhold</em> - (u32, RW) Minimum duration of stable Direction signal
+after a step ends, in nanoseconds.</p>
+</li>
+<li>
+<p><em>dirsetup</em> - (u32, RW) Minimum duration of stable Direction signal
+before a step begins, in nanoseconds.</p>
+</li>
+<li>
+<p><em>maxaccel</em> - (Float, RW) Maximum acceleration, in position units per
+second per second.
+If set to 0, the driver will not limit its acceleration.</p>
+</li>
+<li>
+<p><em>maxvel</em> - (Float, RW) Maximum speed, in position units per second.
+If set to 0, the driver will choose the maximum velocity based on the
+values of steplen and stepspace (at the time that maxvel was set to 0).</p>
+</li>
+<li>
+<p><em>position-scale</em> - (Float, RW) Converts from counts to position units.
+position = counts / position_scale</p>
+</li>
+<li>
+<p><em>step_type</em> - (u32, RW) Output format, like the step_type modparam to
+the software stegen(9) component.
+0 = Step/Dir, 1 = Up/Down, 2 = Quadrature. In
+Quadrature mode (step_type=2), the stepgen outputs one complete Gray
+cycle (00 -&gt; 01 -&gt; 11 -&gt; 10 -&gt; 00) for each <em>step</em> it takes.</p>
+</li>
+<li>
+<p><em>steplen</em> - (u32, RW) Duration of the step signal, in nanoseconds.</p>
+</li>
+<li>
+<p><em>stepspace</em> - (u32, RW) Minimum interval between step signals, in
+nanoseconds.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_output_parameters">13.3. Output Parameters</h3>
+<div class="paragraph">
+<p>The Step and Direction pins of each StepGen have two additional
+parameters. To find which I/O pin belongs to which step and direction
+output run <em>dmesg</em> as described above.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>invert_output</em> - (Bit, RW) This parameter only has an effect if the
+<em>is_output</em> parameter is true.
+If this parameter is true, the output value of the
+GPIO will be the inverse of the value on the <em>out</em> HAL pin.</p>
+</li>
+<li>
+<p><em>is_opendrain</em> - (Bit, RW) If this parameter is false, the GPIO
+behaves as a normal output pin: the I/O pin on the connector is driven
+to the value specified by the <em>out</em> HAL pin (possibly inverted).
+If this parameter
+is true, the GPIO behaves as an open-drain pin. Writing 0 to the <em>out</em>
+HAL pin drives the I/O pin low, writing 1 to the <em>out</em> HAL pin puts the
+I/O pin in a high-impedance state. In this high-impedance state the I/O
+pin floats (weakly pulled high), and other devices can drive the value;
+the resulting value on the I/O pin is available on the <em>in</em> and <em>in_not</em>
+pins. Only full GPIO pins and I/O pins used as outputs by active module
+instances have this parameter.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pwmgen">14. PWMGen</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>PWMgens have names like
+<em>hm2_&lt;BoardType&gt;.&lt;BoardNum&gt;.pwmgen.&lt;Instance&gt;</em>. <em>Instance</em> is a
+two-digit number that corresponds to the HostMot2 pwmgen instance
+number. There are <em>num_pwmgens</em> instances, starting with 00.</p>
+</div>
+<div class="paragraph">
+<p>In HM2, each pwmgen uses three output I/O pins: Not-Enable, Out0, and
+Out1. To invert a PWMGen output pin you invert the corresponding GPIO
+pin that is being used by PWMGen. To find the GPIO pin being used for
+the PWMGen output run <em>dmesg</em> as shown above.</p>
+</div>
+<div class="paragraph">
+<p>The function of the Out0 and Out1 I/O pins varies with output-type
+parameter (see below).</p>
+</div>
+<div class="paragraph">
+<p>The hm2 pwmgen representation is similar to the software pwmgen
+component. Each pwmgen instance has the following pins and parameters:</p>
+</div>
+<div class="sect2">
+<h3 id="_pins_4">14.1. Pins</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><em>enable</em> - (Bit, In) If true, the pwmgen will set its Not-Enable pin
+false and output its pulses.
+If <em>enable</em> is false, pwmgen will set its Not-Enable pin true and not
+output any signals.</p>
+</li>
+<li>
+<p><em>value</em> - (Float, In) The current pwmgen command value, in arbitrary
+units.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_parameters_4">14.2. Parameters</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><em>output-type</em> - (s32, RW) This emulates the output_type load-time argument to the software pwmgen component.
+This parameter may be changed at runtime, but most of the time you probably want to set it at startup and then leave it alone.
+Accepted values are 1 (PWM on Out0 and Direction on Out1), 2 (Up on Out0 and Down on Out1),
+3 (PDM mode, PDM on Out0 and Dir on Out1), and 4 (Direction on Out0 and PWM on Out1, <em>for locked antiphase</em>).</p>
+</li>
+<li>
+<p><em>scale</em> - (Float, RW) Scaling factor to convert <em>value</em> from arbitrary units to duty cycle: dc = value / scale.
+Duty cycle has an effective range of -1.0 to +1.0 inclusive, anything outside that range gets clipped.</p>
+</li>
+<li>
+<p><em>pdm_frequency</em> - (u32, RW) This specifies the PDM frequency, in Hz,
+of all the pwmgen instances running in PDM mode (mode 3).
+This is the <em>pulse slot frequency</em>; the frequency at which the pdm
+generator in the Anything I/O board chooses whether to emit a pulse or a space.
+Each pulse (and space) in the PDM pulse train has a duration of 1/pdm_frequency seconds.
+For example, setting the pdm_frequency to 2*10<sup>6</sup> Hz (2 MHz) and the duty cycle to 50% results in a 1 MHz square wave,
+identical to a 1 MHz PWM signal with 50% duty cycle.
+The effective range of this parameter is from about 1525 Hz up to just under 100 MHz.
+Note that the max frequency is determined by the ClockHigh frequency of the Anything I/O board;
+the 5I20 and 7I43 both have a 100 MHz clock, resulting in a 100 MHz max PDM frequency.
+Other boards may have different clocks, resulting in different max PDM frequencies.
+If the user attempts to set the frequency too high, then it will be clipped to the max supported frequency of the board.</p>
+</li>
+<li>
+<p><em>pwm_frequency</em> - (u32, RW) This specifies the PWM frequency, in Hz,
+of all the pwmgen instances running in the PWM modes (modes 1 and 2).
+This is the frequency of the variable-duty-cycle wave.
+Its effective range is from 1 Hz up to 193 kHz.
+Note that the max frequency is determined by the ClockHigh frequency of the Anything I/O board;
+the 5i20 and 7i43 both have a 100 MHz clock, resulting in a 193 kHz max PWM frequency.
+Other boards may have different clocks, resulting in different max PWM frequencies.
+If the user attempts to set the frequency too high,
+then it will be clipped to the max supported frequency of the board.
+Frequencies below about 5 Hz are not terribly accurate, but above 5 Hz they are pretty close.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_output_parameters_2">14.3. Output Parameters</h3>
+<div class="paragraph">
+<p>The output pins of each PWMGen have two additional parameters. To find
+which I/O pin belongs to which output run <code>dmesg</code> as described above.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>invert_output</code> - (Bit, RW) This parameter only has an effect if the <code>is_output</code> parameter is true.
+If this parameter is true, the output value of the GPIO will be the inverse of the value on the <code>out</code> HAL pin.</p>
+</li>
+<li>
+<p><code>is_opendrain</code> - (Bit, RW) If this parameter is false, the GPIO behaves as a normal output pin:
+The I/O pin on the connector is driven to the value specified by the <code>out</code> HAL pin (possibly inverted).
+If this parameter is true, the GPIO behaves as an open-drain pin.
+Writing 0 to the <code>out</code> HAL pin drives the I/O pin low, writing 1 to the <code>out</code> HAL pin puts the I/O pin in a high-impedance state.
+In this high-impedance state the I/O pin floats (weakly pulled high),
+and other devices can drive the value; the resulting value on the I/O pin is available on the <code>in</code> and <code>in_not</code> pins.
+Only full GPIO pins and I/O pins used as outputs by active module instances have this parameter.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:hm2-encoder">15. Encoder</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Encoders have names like <code>hm2_&lt;BoardType&gt;.&lt;BoardNum&gt;.encoder.&lt;Instance&gt;.</code>.
+<code>Instance</code> is a two-digit number that corresponds to the HostMot2 encoder instance number.
+There are <em>num_encoders</em> instances, starting with 00.</p>
+</div>
+<div class="paragraph">
+<p>Each encoder uses three or four input I/O pins, depending on how the firmware was compiled.
+Three-pin encoders use A, B, and Index (sometimes also known as Z).
+Four-pin encoders use A, B, Index, and Index-mask.</p>
+</div>
+<div class="paragraph">
+<p>The hm2 encoder representation is similar to the one described by the Canonical Device Interface
+(in the HAL General Reference document), and to the software encoder component.
+Each encoder instance has the following pins and parameters:</p>
+</div>
+<div class="sect2">
+<h3 id="_pins_5">15.1. Pins</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><code>count</code> - (s32, Out) Number of encoder counts since the previous reset.</p>
+</li>
+<li>
+<p><code>index-enable</code> - (Bit, I/O) When this pin is set to True,
+the count (and therefore also position) are reset to zero on the next Index (Phase-Z) pulse.
+At the same time, index-enable is reset to zero to indicate that the pulse has occurred.</p>
+</li>
+<li>
+<p><code>position</code> - (Float, Out) Encoder position in position units (count / scale).</p>
+</li>
+<li>
+<p><code>rawcounts</code> - (s32, Out) Total number of encoder counts since the start, not adjusted for index or reset.</p>
+</li>
+<li>
+<p><code>reset</code> - (Bit, In) When this pin is TRUE, the count and position pins are set to 0.
+The value of the velocity pin is not affected by this.
+The driver does not reset this pin to FALSE after resetting the count to 0, that is the user&#8217;s job.</p>
+</li>
+<li>
+<p><code>velocity</code> - (Float, Out) Estimated encoder velocity in position units per second.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_parameters_5">15.2. Parameters</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><code>counter-mode</code> - (Bit, RW) Set to False (the default) for Quadrature.
+Set to True for Up/Down or for single input on Phase A.
+Can be used for a frequency to velocity converter with a single input on Phase A when set to true.</p>
+</li>
+<li>
+<p><code>filter</code> - (Bit, RW) If set to True (the default), the quadrature
+counter needs 15 clocks to register a change on any of the three input
+lines (any pulse shorter than this is rejected as noise).
+If set to False, the quadrature counter needs only 3 clocks to register a change.
+The encoder sample clock runs at 33 MHz on the PCI Anything I/O cards and 50 MHz on the 7I43.</p>
+</li>
+<li>
+<p><code>index-invert</code> - (Bit, RW) If set to True, the rising edge of the
+Index input pin triggers the Index event (if index-enable is True).
+If set to False, the falling edge triggers.</p>
+</li>
+<li>
+<p><code>index-mask</code> - (Bit, RW) If set to True, the Index input pin only has
+an effect if the Index-Mask input pin is True (or False, depending on
+the <code>index-mask-invert</code> pin below).</p>
+</li>
+<li>
+<p><code>index-mask-invert</code> - (Bit, RW) If set to True, Index-Mask must be
+False for Index to have an effect.
+If set to False, the <code>Index-Mask</code> pin must be True.</p>
+</li>
+<li>
+<p><code>scale</code> - (Float, RW) Converts from <em>count</em> units to <em>position</em> units.
+A quadrature encoder will normally have 4 counts per pulse so a 100 PPR
+encoder would be 400 counts per revolution. In <code>.counter-mode</code> a 100
+PPR encoder would have 100 counts per revolution as it only uses the
+rising edge of A and direction is B.</p>
+</li>
+<li>
+<p><code>vel-timeout</code> - (Float, RW) When the encoder is moving slower than one
+pulse for each time that the driver reads the count from the FPGA (in
+the hm2_read() function), the velocity is harder to estimate.
+The driver can wait several iterations for the next pulse to arrive,
+all the while reporting the upper bound of the encoder velocity, which
+can be accurately guessed.
+This parameter specifies how long to wait for the next pulse, before
+reporting the encoder stopped.
+This parameter is in seconds.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_5i25_configuration">16. 5I25 Configuration</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_firmware_2">16.1. Firmware</h3>
+<div class="paragraph">
+<p>The 5I25 firmware comes preloaded for the daughter card it is purchased with.
+So the <code>firmware=xxx.BIT</code> is not part of the hm2_pci configuration string when
+using a 5I25.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_configuration">16.2. Configuration</h3>
+<div class="paragraph">
+<p>Example configurations of the 5I25/7I76 and 5I25/7I77 cards are included in
+the <a href="../user/starting-linuxcnc.html#sub:configuration-selector">Configuration Selector</a>.</p>
+</div>
+<div class="paragraph">
+<p>If you like to roll your own configuration the following examples show how
+to load the drivers in the HAL file.</p>
+</div>
+<div class="listingblock">
+<div class="title">5I25 + 7I76 Card</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="c1"># load the generic driver</span>
+<span class="k">loadrt</span> <span class="n">hostmot2</span>
+
+<span class="c1"># load the PCI driver and configure</span>
+<span class="k">loadrt</span> <span class="n">hm2_pci</span> <span class="n">config</span><span class="o">=</span><span class="s2">"num_encoders=1 num_stepgens=5 sserial_port_0=0XXX"</span></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">5I25 + 7I77 Card</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="c1"># load the generic driver</span>
+<span class="k">loadrt</span> <span class="n">hostmot2</span>
+
+<span class="c1"># load the PCI driver and configure</span>
+<span class="k">loadrt</span> <span class="n">hm2_pci</span> <span class="n">config</span><span class="o">=</span><span class="s2">"num_encoders=6 num_pwmgens=6 sserial_port_0=0XXX"</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_sserial_configuration">16.3. SSERIAL Configuration</h3>
+<div class="paragraph">
+<p>The <code>sserial_port_0=0XXX</code> configuration string sets some options for the smart
+serial daughter card. These options are specific for each daughter card. See
+the Mesa manual for more information on the exact usage (typically in the section
+called SOFTWARE PROCESS DATA MODES) or see the manual page of
+<a href="../man/man9/sserial.9.html">SSERIAL(9)</a>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_7i77_limits">16.4. 7I77 Limits</h3>
+<div class="paragraph">
+<p>The minlimit and maxlimit are bounds on the pin value (in this case the analog
+out value) fullscalemax is the scale factor.</p>
+</div>
+<div class="paragraph">
+<p>These are by default set to the analog in or analog range (most likely in Volts).</p>
+</div>
+<div class="paragraph">
+<p>So for example on the 7I77 +-10 V analog outputs, the default values are:</p>
+</div>
+<div class="paragraph">
+<p>minlimit: -10<br>
+maxlimit: +10<br>
+maxfullscale: 10<br></p>
+</div>
+<div class="paragraph">
+<p>If you wanted to say scale the analog out of a channel to IPS for a velocity
+mode servo (say 24 IPS max) you could set the limits like this:</p>
+</div>
+<div class="paragraph">
+<p>minlimit: -24<br>
+maxlimit: +24<br>
+maxfullscale: 24<br></p>
+</div>
+<div class="paragraph">
+<p>If you wanted to scale the analog out of a channel to RPM for a 0 to 6000 RPM
+spindle with 0-10 V control you could set the limits like this:</p>
+</div>
+<div class="paragraph">
+<p>minlimit: 0<br>
+maxlimit: 6000<br>
+maxfullscale: 6000<br>
+(this would prevent unwanted negative output voltages from being set)</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_configurations">17. Example Configurations</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Several example configurations for Mesa hardware are included with LinuxCNC.
+The configurations are located in the hm2-servo and hm2-stepper sections of
+the <a href="../user/starting-linuxcnc.html#sub:configuration-selector">Configuration Selector</a>.
+Typically you will need the board installed for the configuration you pick to load.
+The examples are a good place to start and will save you time.
+Just pick the proper example from the LinuxCNC Configuration Selector and
+save a copy to your computer so you can edit it.
+To see the exact pins and parameters that your configuration gave you, open the Show HAL
+Configuration window from the Machine menu, or do <code>dmesg</code> as outlined above.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footnotes">
+<hr>
+<div class="footnote" id="_footnotedef_1">
+<a href="hostmot2.html#_footnoteref_1">1</a>. At present, the firmware supports multi-phase stepper outputs, but the driver doesn&#8217;t. Interested volunteers are solicited.
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

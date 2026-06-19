@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>LIMIT_AXIS(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../rouge-github.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="limit_axis.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/limit_axis.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/limit_axis.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/limit_axis.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/limit_axis.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/limit_axis.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/limit_axis.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/limit_axis.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>LIMIT_AXIS(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>limit_axis - Dynamic range based axis limits</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt limit_axis</strong> [<strong>count</strong>=<em>N</em>|<strong>names</strong>=<em>name1</em>[,<em>name2</em>&#8230;&#8203;]] [<strong>personality</strong>=<em>P1</em>[,<em>P2</em>&#8230;&#8203;]]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Limit axis to certain limits at varying inputs.</p>
+</div>
+<div class="paragraph">
+<p>For example on a spindle with C rotation, to avoid hitting a gantry when the
+height is above Z-10.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Use Z axis as feedback</p>
+</li>
+<li>
+<p>Use 2 ranges (0,-10) (-10, -40)</p>
+</li>
+<li>
+<p>When Z is above 10, C rotation is limited to range 0</p>
+</li>
+<li>
+<p>When Z is below 10, C rotation is limited to range 1</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Usage:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadrt</span> <span class="n">limit_axis</span> <span class="n">count</span><span class="o">=</span><span class="mi">3</span> <span class="n">personality</span><span class="o">=</span><span class="mi">2</span>,<span class="mi">3</span>,<span class="mi">2</span>
+<span class="c1"># or</span>
+<span class="k">loadrt</span> <span class="n">limit_axis</span> <span class="n">names</span><span class="o">=</span><span class="n">limit_x</span>,<span class="n">limit_y</span>,<span class="n">limit_z</span> <span class="n">personality</span><span class="o">=</span><span class="mi">2</span>,<span class="mi">3</span>,<span class="mi">2</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <strong>personality</strong> argument defines how many ranges are supported by each
+instance. Note that no spaces can be used in the <strong>names</strong>= and <strong>personality</strong>=
+parameters.</p>
+</div>
+<div class="paragraph">
+<p>Caveats:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Searches ranges from 0 to 9 and will take the first range that matches</p>
+</li>
+<li>
+<p>Ranges are inclusive <strong>min_range</strong> ≤ feedback ≤ <strong>max_range</strong></p>
+</li>
+<li>
+<p>Max can not be less than minimum for any group</p>
+</li>
+<li>
+<p><strong>sticky</strong> indicates, to not check other ranges if the feedback is still in the current range</p>
+</li>
+<li>
+<p><strong>enable</strong> allows for a range to be turned on/off, for cases such as avoiding a tool changer, but allowing sometimes</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>limit-axis</strong>.<em>N</em></dt>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>limit-axis</strong>.<em>N</em>.<strong>error-no-range</strong> bit out </dt>
+<dd>
+<p>error pin indicating that no range matches the fb</p>
+</dd>
+<dt class="hdlist1"><strong>limit-axis</strong>.<em>N</em>.<strong>min-output</strong> float out </dt>
+<dd>
+<p>Minimum limit output</p>
+</dd>
+<dt class="hdlist1"><strong>limit-axis</strong>.<em>N</em>.<strong>max-output</strong> float out </dt>
+<dd>
+<p>Maximum limit output</p>
+</dd>
+<dt class="hdlist1"><strong>limit-axis</strong>.<em>N</em>.<strong>fb</strong> float in </dt>
+<dd>
+<p>Feedback pin, the value of this pin determines which range is active</p>
+</dd>
+<dt class="hdlist1"><strong>limit-axis</strong>.<em>N</em>.<strong>current-range</strong> u32 out </dt>
+<dd>
+<p>Indicates which range is currently active</p>
+</dd>
+<dt class="hdlist1"><strong>limit-axis</strong>.<em>N</em>.<strong>min-limit-<em>MM</em></strong> float in  (MM=00..personality) </dt>
+<dd>
+<p>The array of minimum limits to select from</p>
+</dd>
+<dt class="hdlist1"><strong>limit-axis</strong>.<em>N</em>.<strong>max-limit-<em>MM</em></strong> float in  (MM=00..personality) </dt>
+<dd>
+<p>The array of macimum limits</p>
+</dd>
+<dt class="hdlist1"><strong>limit-axis</strong>.<em>N</em>.<strong>min-range-<em>MM</em></strong> float in  (MM=00..personality) </dt>
+<dd>
+<p>Defines the range of values with which the fb is compared to set the range</p>
+</dd>
+<dt class="hdlist1"><strong>limit-axis</strong>.<em>N</em>.<strong>max-range-<em>MM</em></strong> float in  (MM=00..personality) </dt>
+<dd>
+<p>Defines the range of values with which the fb is compared to set the range</p>
+</dd>
+<dt class="hdlist1"><strong>limit-axis</strong>.<em>N</em>.<strong>enable-<em>MM</em></strong> bit in  (MM=00..personality) </dt>
+<dd>
+<p>Used to enable and disable a specific range</p>
+</dd>
+<dt class="hdlist1"><strong>limit-axis</strong>.<em>N</em>.<strong>sticky-<em>MM</em></strong> bit in  (MM=00..personality) </dt>
+<dd>
+<p>Used to make specific range <em>sticky</em> or not</p>
+</dd>
+<dt class="hdlist1"><strong>limit-axis</strong>.<em>N</em>.<strong>error-range-<em>MM</em></strong> bit out  (MM=00..personality) (default: <em>1</em>)</dt>
+<dd>
+<p>Error bit indicating that the fb pin falls outside all ranges</p>
+</dd>
+<dt class="hdlist1"><strong>limit-axis</strong>.<em>N</em>.<strong>error-limit-<em>MM</em></strong> bit out  (MM=00..personality) (default: <em>1</em>)</dt>
+<dd>
+<p>Error bit indicating that the max limit is not larger than the min limit</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Chad Woitas</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:30:08 UTC
+</div>
+</div>
+</body>
+</html>

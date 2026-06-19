@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>kins(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="kins.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/kins.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/kins.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/kins.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/kins.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/kins.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/kins.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/kins.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>kins(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>kins, genhexkins, genserkins, maxkins, pentakins, pumakins, rotatekins, scarakins, tripodkins, trivkins - kinematics definitions for LinuxCNC</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt trivkins</strong> (use for most cartesian machines)</p>
+</div>
+<div class="paragraph">
+<p><strong>loadrt corexykins</strong></p>
+</div>
+<div class="paragraph">
+<p><strong>loadrt genhexkins</strong></p>
+</div>
+<div class="paragraph">
+<p><strong>loadrt genserkins</strong></p>
+</div>
+<div class="paragraph">
+<p><strong>loadrt lineardeltakins</strong> (see separate manpage)</p>
+</div>
+<div class="paragraph">
+<p><strong>loadrt matrixkins</strong></p>
+</div>
+<div class="paragraph">
+<p><strong>loadrt maxkins</strong></p>
+</div>
+<div class="paragraph">
+<p><strong>loadrt pentakins</strong></p>
+</div>
+<div class="paragraph">
+<p><strong>loadrt pumakins</strong></p>
+</div>
+<div class="paragraph">
+<p><strong>loadrt rosekins</strong></p>
+</div>
+<div class="paragraph">
+<p><strong>loadrt rotarydeltakins</strong></p>
+</div>
+<div class="paragraph">
+<p><strong>loadrt rotatekins</strong></p>
+</div>
+<div class="paragraph">
+<p><strong>loadrt scarakins</strong></p>
+</div>
+<div class="paragraph">
+<p><strong>loadrt tripodkins</strong></p>
+</div>
+<div class="paragraph">
+<p><strong>loadrt xyzab_tdr_kins</strong></p>
+</div>
+<div class="paragraph">
+<p><strong>loadrt xyzac-trt-kins</strong></p>
+</div>
+<div class="paragraph">
+<p><strong>loadrt xyzbc-trt-kins</strong></p>
+</div>
+<div class="paragraph">
+<p><strong>loadrt 5axiskins</strong></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Rather than exporting HAL pins and functions, these components provide
+the forward and inverse kinematics definitions for LinuxCNC.</p>
+</div>
+<div class="sect2">
+<h3 id="_trivkins_generalized_trivial_kinematics">trivkins - generalized trivial kinematics</h3>
+<div class="paragraph">
+<p>Joint numbers are assigned sequentially according to the axis letters
+specified with the <strong>coordinates=</strong> parameter.</p>
+</div>
+<div class="paragraph">
+<p>If the coordinates= parameter is omitted, joint numbers are assigned
+<strong>sequentially</strong> to every known axis letter ("xyzabcuvw").</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Example: loadrt <strong>trivkins</strong></dt>
+<dd>
+<p>Assigns all axis letters to joint numbers in sequence:
+x==joint0, y==joint1, z==joint2 a==joint3, b==joint4, c==joint5
+u==joint6, v==joint7, w==joint8</p>
+</dd>
+<dt class="hdlist1">Example: loadrt <strong>trivkins coordinates=xyz</strong></dt>
+<dd>
+<p>Assigns: x==joint0, y==joint1, z==joint2</p>
+</dd>
+<dt class="hdlist1">Example: loadrt <strong>trivkins coordinates=xz</strong></dt>
+<dd>
+<p>Assigns: x==joint0, z==joint1</p>
+</dd>
+<dt class="hdlist1">Example: loadrt <strong>trivkins coordinates=xyzy</strong></dt>
+<dd>
+<p>Assigns: x==joint0, y0==joint1, z==joint2, y1==joint3:</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>The default kinematics type is <strong>KINEMATICS_IDENTITY</strong>. GUIs may provide
+special features for configurations using this default kinematics type.
+For instance, the AXIS GUI automatically handles joint and world mode
+operations so that the distinctions between joints and axes are not
+visible to the operator. This is feasible since there is an exact
+correspondence between a joint number and its matching axis letter.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">The kinematics type can be set with the <strong>kinstype=</strong> parameter</dt>
+<dd>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">kinstype=<strong>1</strong> for KINEMATICS_IDENTITY (default if kinstype= omitted)</dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1">kinstype=[<strong>b</strong>|<strong>B</strong>] for KINEMATICS_BOTH</dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1">kinstype=[<strong>f</strong>|<strong>F</strong>] for KINEMATICS_FORWARD_ONLY</dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1">kinstype=[<strong>i</strong>|<strong>I</strong>] for KINEMATICS_INVERSE_ONLY</dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1">Example: loadrt <strong>trivkins coordinates=xyz kinstype=b</strong></dt>
+<dd>
+<p>Use kinstype=<strong>B</strong> (KINEMATICS_BOTH) for configurations that need to
+move joints independently (joint mode) or as coordinated (teleop)
+movements in world coordinates.</p>
+<div class="paragraph">
+<p>When using the axis gui with KINEMATICS_BOTH, the <em><strong>$</strong></em> key is used to
+toggle between joint and teleop (world) modes.</p>
+</div>
+<div class="paragraph">
+<p>An axis letter may be used more than once (<strong>duplicated</strong>) to assign
+multiple joints to a single axis coordinate letter.</p>
+</div>
+</dd>
+<dt class="hdlist1">Example: coordinates=<strong>xyyzw</strong> kinstype=<strong>B</strong></dt>
+<dd>
+<p>Assigns: x==joint0, y==joint1 <strong>AND</strong> joint2, z==joint3, w==joint4</p>
+</dd>
+</dl>
+</div>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>The above example illustrates a gantry configuration that uses
+<strong>duplicated</strong> coordinate letters to indicate that two joints (joint1 and
+joint2) move a single axis (y). Using kinstype=<strong>B</strong> allows the
+configuration to be toggled between joint and world modes of operation.
+Homing configuration options are available to synchronize the final
+homing move for selected joints&#8201;&#8212;&#8201;see the documentation for <strong>Homing
+Configuration</strong>.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>NOTES</strong> for <strong>duplicated</strong> coordinates</dt>
+<dd>
+<p>When <strong>duplicated</strong> coordinate letters are used, specifying
+KINEMATICS_BOTH (kinstype=<strong>B</strong>) allows a gui to support jogging of each
+individual joint in <strong>joint mode</strong>. <strong>Caution</strong> is required for machines
+where the movement of a single joint (in a set specified by a
+<strong>duplicated</strong> coordinate letter) can lead to gantry racking or other
+unwanted outcomes. When the kinstype= parameter is omitted, operation
+defaults to KINEMATICS_IDENTITY (kinstype=<strong>1</strong>) and a gui may allow
+jogging based upon a selected axis coordinate letter (or by a keyboard
+key) before homing is completed and the machine is still in <strong>joint
+mode</strong>. The joint selected will depend upon the gui implementation but
+typically only one of the multiple joints in the set will jog.
+Consequently, specifying KINEMATICS_BOTH is recommended as it enables
+support for unambiguous, independent jogging of each individual joint.
+Machines that implement homing for all joints (including the provisions
+for synchronizing the final homing move for multiple joints) may be
+homed at machine startup and automatically switch to <strong>world</strong> mode where
+per-coordinate jogging is available.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_corexykins_corexy_kinematics">corexykins - CoreXY Kinematics</h3>
+<div class="paragraph">
+<p>X = 0.5*(JOINT_0 + JOINT_1)</p>
+</div>
+<div class="paragraph">
+<p>Y = 0.5*(JOINT_0 - JOINT_1)</p>
+</div>
+<div class="paragraph">
+<p>Z = JOINT_2</p>
+</div>
+<div class="paragraph">
+<p>[KINS]JOINTS= must specify 3 or more joints (maximum 9).
+If enabled by the number of [KINS]JOINTS= specified, JOINT_3,4,5,6,7,8
+correspond to coordinates A,B,C,U,V,W respectively.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_genhexkins_hexapod_kinematics">genhexkins - Hexapod Kinematics</h3>
+<div class="paragraph">
+<p>Gives six degrees of freedom in position and orientation (XYZABC). The
+location of base and platform joints is defined by HAL parameters. The
+forward kinematics iteration is controlled by HAL pins. (See switchkins
+documentation for more info)</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>genhexkins.base.</strong><em>N</em><strong>.x</strong></dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>genhexkins.base.</strong><em>N</em><strong>.y</strong></dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>genhexkins.base.</strong><em>N</em><strong>.z</strong></dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>genhexkins.platform.</strong><em>N</em><strong>.x</strong></dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>genhexkins.platform.</strong><em>N</em><strong>.y</strong></dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>genhexkins.platform.</strong><em>N</em><strong>.z</strong></dt>
+<dd>
+<p>Parameters describing the <em>N</em>th joint&#8217;s coordinates.</p>
+</dd>
+<dt class="hdlist1"><strong>genhexkins.spindle-offset</strong></dt>
+<dd>
+<p>Added to all joints Z coordinates to change the machine origin.
+Facilitates adjusting spindle position.</p>
+</dd>
+<dt class="hdlist1"><strong>genhexkins.base-n.</strong><em>N</em><strong>.x</strong></dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>genhexkins.base-n.</strong><em>N</em><strong>.y</strong></dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>genhexkins.base-n.</strong><em>N</em><strong>.z</strong></dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>genhexkins.platform-n.</strong><em>N</em><strong>.x</strong></dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>genhexkins.platform-n.</strong><em>N</em><strong>.y</strong></dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>genhexkins.platform-n.</strong><em>N</em><strong>.z</strong></dt>
+<dd>
+<p>Parameters describing unit vectors of <em>N</em>th joint&#8217;s axis. Used to
+calculate strut length correction for cardanic joints and non-captive
+actuators.</p>
+</dd>
+<dt class="hdlist1"><strong>genhexkins.screw-lead</strong></dt>
+<dd>
+<p>Lead of strut actuator screw, positive for the right-handed thread.
+Default is 0 (strut length correction disabled).</p>
+</dd>
+<dt class="hdlist1"><strong>genhexkins.correction.</strong><em>N</em></dt>
+<dd>
+<p>Current values of strut length correction for non-captive actuators
+with cardanic joints.</p>
+</dd>
+<dt class="hdlist1"><strong>genhexkins.convergence-criterion</strong></dt>
+<dd>
+<p>Minimum error value that ends iterations with converged solution.</p>
+</dd>
+<dt class="hdlist1"><strong>genhexkins.limit-iterations</strong></dt>
+<dd>
+<p>Limit of iterations, if exceeded iterations stop with no convergence.</p>
+</dd>
+<dt class="hdlist1"><strong>genhexkins.max-error</strong></dt>
+<dd>
+<p>Maximum error value, if exceeded iterations stop with no convergence.</p>
+</dd>
+<dt class="hdlist1"><strong>genhexkins.last-iterations</strong></dt>
+<dd>
+<p>Number of iterations spent for the last forward kinematics solution.</p>
+</dd>
+<dt class="hdlist1"><strong>genhexkins.max-iterations</strong></dt>
+<dd>
+<p>Maximum number of iterations spent for a converged solution during current session.</p>
+</dd>
+<dt class="hdlist1"><strong>genhexkins.tool-offset</strong></dt>
+<dd>
+<p>TCP offset from platform origin along Z to implement RTCP function.
+To avoid joints jump change tool offset only when the platform is not tilted.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_genserkins_generalized_serial_kinematics">genserkins - generalized serial kinematics</h3>
+<div class="paragraph">
+<p>Kinematics that can model a general serial-link manipulator with up to 6 angular joints.
+See switchkins documentation for more info.</p>
+</div>
+<div class="paragraph">
+<p>The kinematics use Denavit-Hartenberg definition for the joint and links.
+The DH definitions are the ones used by John J Craig in
+"Introduction to Robotics: Mechanics and Control" The parameters for the
+manipulator are defined by HAL pins. Note that this uses a convention
+sometimes known as "Modified DH Parameters" and this must be borne in
+mind when setting up the system. <a href="https://w.wiki/NcY" class="bare">https://w.wiki/NcY</a></p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>genserkins.A-</strong><em>N</em></dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>genserkins.ALPHA-</strong><em>N</em></dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>genserkins.D-</strong><em>N</em></dt>
+<dd>
+<p>Parameters describing the <em>N</em><sup>th</sup> joint&#8217;s geometry.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_matrixkins_calibrated_kinematics_for_3_axis_cartesian_machines">matrixkins - Calibrated kinematics for 3-axis cartesian machines</h3>
+<div class="paragraph">
+<p>Similar to trivkins, but allows calibrating out small imperfections in axis alignment.
+See matrixkins(9) man page for detailed instructions.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_maxkins_5_axis_kinematics_example">maxkins - 5-axis kinematics example</h3>
+<div class="paragraph">
+<p>Kinematics for Chris Radek&#8217;s tabletop 5 axis mill named <em>max</em> with
+tilting head (B axis) and horizontal rotary mounted to the table (C axis).
+Provides UVW motion in the rotated coordinate system.
+The source file, maxkins.c, may be a useful starting point for other 5-axis systems.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_pentakins_pentapod_kinematics">pentakins - Pentapod Kinematics</h3>
+<div class="paragraph">
+<p>Gives five degrees of freedom in position and orientation (XYZAB).
+The location of base and effector joints is defined by HAL parameters.
+The forward kinematics iteration is controlled by HAL pins.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>pentakins.base.</strong><em>N</em><strong>.x</strong></dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>pentakins.base.</strong><em>N</em><strong>.y</strong></dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>pentakins.base.</strong><em>N</em><strong>.z</strong></dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>pentakins.effector.</strong><em>N</em><strong>.r</strong></dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>pentakins.effector.</strong><em>N</em><strong>.z</strong></dt>
+<dd>
+<p>Parameters describing the <em>N</em><sup>th</sup> effector joint&#8217;s radius and axial position.</p>
+</dd>
+<dt class="hdlist1"><strong>pentakins.convergence-criterion</strong></dt>
+<dd>
+<p>Minimum error value that ends iterations with converged solution.</p>
+</dd>
+<dt class="hdlist1"><strong>pentakins.limit-iterations</strong></dt>
+<dd>
+<p>Limit of iterations, if exceeded iterations stop with no convergence.</p>
+</dd>
+<dt class="hdlist1"><strong>pentakins.max-error</strong></dt>
+<dd>
+<p>Maximum error value, if exceeded iterations stop with no convergence.</p>
+</dd>
+<dt class="hdlist1"><strong>pentakins.last-iterations</strong></dt>
+<dd>
+<p>Number of iterations spent for the last forward kinematics solution.</p>
+</dd>
+<dt class="hdlist1"><strong>pentakins.max-iterations</strong></dt>
+<dd>
+<p>Maximum number of iterations spent for a converged solution during current session.</p>
+</dd>
+<dt class="hdlist1"><strong>pentakins.tool-offset</strong></dt>
+<dd>
+<p>TCP offset from effector origin along Z to implement RTCP function.
+To avoid joints jump change tool offset only when the platform is not tilted.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_pumakins_kinematics_for_puma_typed_robots">pumakins - kinematics for puma typed robots</h3>
+<div class="paragraph">
+<p>Kinematics for a puma-style robot with 6 joints:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>pumakins.A2</strong></dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>pumakins.A3</strong></dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>pumakins.D3</strong></dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>pumakins.D4</strong></dt>
+<dd>
+<p>Describe the geometry of the robot</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_rosekins_kinematics_for_a_rose_engine_using">rosekins - kinematics for a rose engine using</h3>
+<div class="paragraph">
+<p>a transverse, longitudinal, and rotary joint (3 joints)</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_rotarydeltakins_kinematics_for_a_rotary_delta_machine">rotarydeltakins - kinematics for a rotary delta machine</h3>
+<div class="paragraph">
+<p>Rotary delta robot (3 Joints)</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_rotatekins_rotated_kinematics">rotatekins - Rotated Kinematics</h3>
+<div class="paragraph">
+<p>The X and Y axes are rotated 45 degrees compared to the joints 0 and 1.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_scarakins_kinematics_for_scara_type_robots">scarakins - kinematics for SCARA-type robots</h3>
+<div class="paragraph">
+<p>(See switchkins documentation for more info)</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>scarakins.D1</strong></dt>
+<dd>
+<p>Vertical distance from the ground plane to the center of the inner arm.</p>
+</dd>
+<dt class="hdlist1"><strong>scarakins.D2</strong></dt>
+<dd>
+<p>Horizontal distance between joint[0] axis and joint[1] axis,
+i.e., the length of the inner arm.</p>
+</dd>
+<dt class="hdlist1"><strong>scarakins.D3</strong></dt>
+<dd>
+<p>Vertical distance from the center of the inner arm to the center of the outer arm.
+May be positive or negative depending on the structure of the robot.</p>
+</dd>
+<dt class="hdlist1"><strong>scarakins.D4</strong></dt>
+<dd>
+<p>Horizontal distance between joint[1] axis and joint[2] axis, i.e., the length of the outer arm.</p>
+</dd>
+<dt class="hdlist1"><strong>scarakins.D5</strong></dt>
+<dd>
+<p>Vertical distance from the end effector to the tooltip.
+Positive means the tooltip is lower than the end effector, and is the normal case.</p>
+</dd>
+<dt class="hdlist1"><strong>scarakins.D6</strong></dt>
+<dd>
+<p>Horizontal distance from the centerline of the end effector (and the
+joints 2 and 3 axis) and the tooltip. Zero means the tooltip is on the
+centerline. Non-zero values should be positive, if negative they
+introduce a 180 degree offset on the value of joint[3].</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_tripodkins_tripod_kinematics">tripodkins - Tripod Kinematics</h3>
+<div class="paragraph">
+<p>The joints represent the distance of the controlled point from three
+predefined locations (the motors), giving three degrees of freedom in
+position (XYZ)</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>tripodkins.Bx</strong></dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>tripodkins.Cx</strong></dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>tripodkins.Cy</strong></dt>
+<dd>
+<p>The location of the three motors is (0,0), (Bx,0), and (Cx,Cy)</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_xyzac_trt_kins_5_axis_mill_table_rotarytilting">xyzac-trt-kins - 5 Axis mill (Table Rotary/Tilting)</h3>
+<div class="paragraph">
+<p>Tilting table (A) and horizontal rotary mounted to table (C axis) (5
+Joints 0:x,1:y,2:z,3:a,4:c) with provisions to switch between xyzac and
+trivkins kinematic types. The joint mapping can be altered with the
+coordinates parameter in the same way as supported by trivkins. (See
+switchkins documentation for more info)</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_xyzbc_trt_kins_5_axis_mill_table_rotarytilting">xyzbc-trt-kins - 5 Axis mill (Table Rotary/Tilting)</h3>
+<div class="paragraph">
+<p>(5 Joints 0:x,1:y,2:z,3:b,4:c) with provisions to switch between xyzbc
+and trivkins kinematic types. The joint mapping can be altered with the
+coordinates parameter in the same way as supported by trivkins. (See
+switchkins documentation for more info)</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_5axiskins_5_axis_bridge_mill">5axiskins - 5 Axis bridge mill</h3>
+<div class="paragraph">
+<p>XYZBCW&#8201;&#8212;&#8201;the W coordinate values (typically used for tool motion) are
+incorporated into XYZ positioning. (Only 5 joints are needed by the
+kinematics module but an additional joint is needed to display W
+values). (See switchkins documentation for more info)</p>
+</div>
+<div class="paragraph">
+<p>By default, 5axiskins uses coordinates XYZBCW assigned consecutively to
+joints 0..5. The module coordinates parameter may be used to assign
+multiple joints to an axis letter and/or to assign joints to additional
+coordinates A,U,V with a one-to-one correspondence to the assigned
+joints. Example: XYZBCWYV (8 joints total numbered 0..7) uses two joints
+for Y (joints 1,6) and adds an additional coordinate V that has a
+one-to-one relation to joint 7.</p>
+</div>
+<div class="paragraph">
+<p>Note: These kinematics may be used with the vismach 5axisgui providing
+that the joint-letter assignments agree with the default ordering
+expected by it (XYZBCW <code>-&gt;</code> joints 0..5)</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>For additional information, see following subsections of the section <em>Advanced Topics</em> of the LinuxCNC documentation:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Kinematics</strong></p>
+</li>
+<li>
+<p><strong>5-Axis Kinematics</strong></p>
+</li>
+<li>
+<p><strong>Switchable Kinematics</strong></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The HAL component <strong>userkins.comp</strong> is a template for making kinematic
+modules using the halcompile tool. The unmodified template supports an
+identity xyz configuration that uses 3 joints.
+See <strong>userkins</strong>(9) for more info.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

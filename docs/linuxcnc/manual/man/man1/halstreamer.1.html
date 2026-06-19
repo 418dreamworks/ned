@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>halstreamer(1)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="halstreamer.1.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man1/halstreamer.1.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man1/halstreamer.1.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man1/halstreamer.1.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man1/halstreamer.1.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man1/halstreamer.1.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man1/halstreamer.1.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man1/halstreamer.1.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>halstreamer(1) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>halstreamer - stream file data into HAL in real-time</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>halstreamer</strong> [<em>options</em>]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The HAL component <strong>streamer</strong>(9) and the program <strong>halstreamer</strong> are used together to stream data from a file into the HAL in real-time.
+In real-time, <strong>streamer</strong> exports HAL pins and creates a FIFO (first in, first out queue) in shared memory.
+The non-realtime program <strong>halstreamer</strong> copies data from stdin into the FIFO, so that <strong>streamer</strong> can write it to the HAL pins.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_options">OPTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>-c</strong> <em>CHAN</em></dt>
+<dd>
+<p>Instructs <strong>halstreamer</strong> to write to FIFO <em>CHAN</em>.
+FIFOs are numbered from zero, and the default value is zero,
+so this option is not needed unless multiple FIFOs have been created.</p>
+</dd>
+<dt class="hdlist1"><em>FILENAME</em></dt>
+<dd>
+<p>Instructs <strong>halsampler</strong> to read from <em>FILENAME</em> instead of from stdin.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_usage">USAGE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A FIFO must first be created by loading <strong>streamer</strong>(9) with <strong>halcmd loadrt</strong> or a <strong>loadrt</strong> command in a HAL file.
+Then <strong>halstreamer</strong> can be invoked to begin writing data into the FIFO.</p>
+</div>
+<div class="paragraph">
+<p>Data is read from stdin, and is almost always either redirected from
+a file or piped from some other program, since keyboard input would be
+unable to keep up with even slow streaming rates.</p>
+</div>
+<div class="paragraph">
+<p>Each line of input must match the pins that are attached to the FIFO,
+for example, if the <strong>streamer</strong> config string was "ffbs"
+then each line of input must consist of two floats, a bit, and a signed integer,
+in that order and separated by whitespace.  Floats must be formatted as required by <strong>strtod</strong>(3),
+signed and unsigned integers must be formatted as required by <strong>strtol</strong>(3) and <strong>strtoul</strong>(3),
+and bits must be either <em>0</em> or <em>1</em>.</p>
+</div>
+<div class="paragraph">
+<p>Input lines that begin with <em>#</em> will be treated as comments and silently skipped.</p>
+</div>
+<div class="paragraph">
+<p><strong>halstreamer</strong> transfers data to the FIFO as fast as possible until the FIFO is full,
+then it retries at regular intervals, until it is either killed or reads EOF from stdin.
+Data can be redirected from a file or piped from some other program.</p>
+</div>
+<div class="paragraph">
+<p>The FIFO size should be chosen to ride through any momentary disruptions in the flow of data,
+such as disk seeks.  If the FIFO is big enough, <strong>halstreamer</strong> can be restarted with the same or a new file
+before the FIFO empties, resulting in a continuous stream of data.</p>
+</div>
+<div class="paragraph">
+<p>The data format for <strong>halstreamer</strong> input is the same as for <strong>halsampler</strong>(1) output,
+so <em>waveforms</em> captured with <strong>halsampler</strong> can be replayed using <strong>halstreamer</strong>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_exit_status">EXIT STATUS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If a problem is encountered during initialization,
+<strong>halstreamer</strong> prints a message to stderr and returns failure.</p>
+</div>
+<div class="paragraph">
+<p>If a badly formatted line is encountered while writing to the FIFO,
+it prints a message to stderr, skips the line, and continues
+(this behavior may be revised in the future).</p>
+</div>
+<div class="paragraph">
+<p>Upon reading EOF from the input, it returns success.
+If it is terminated before the input ends, it returns failure.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>streamer(9), sampler(9), halsampler(1)</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Original version by John Kasunich, as part of the LinuxCNC project.
+Improvements by several other members of the LinuxCNC development team.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reporting_bugs">REPORTING BUGS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Report bugs at <a href="https://github.com/LinuxCNC/linuxcnc/issues" class="bare">https://github.com/LinuxCNC/linuxcnc/issues</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_copyright">COPYRIGHT</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Copyright © 2006 John Kasunich.</p>
+</div>
+<div class="paragraph">
+<p>This is free software; see the source for copying conditions.  There
+is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

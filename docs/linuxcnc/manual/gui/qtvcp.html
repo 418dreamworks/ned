@@ -1,0 +1,1781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>QtVCP</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../rouge-github.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:qtvcp" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="qtvcp.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/gui/qtvcp.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/gui/qtvcp.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/gui/qtvcp.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/gui/qtvcp.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/gui/qtvcp.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/gui/qtvcp.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/gui/qtvcp.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>QtVCP</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="../config/stepconf.html">Stepper Configuration Wizard</a><a href="../config/pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="../config/integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><a href="../config/ini-config.html">INI Configuration</a><a href="../config/ini-homing.html">Homing Configuration</a><a href="../config/lathe-config.html">Lathe Configuration</a><a href="../config/stepper-quickstart.html">Stepper Quickstart</a><a href="../config/stepper.html">Stepper Configuration</a><a href="../config/stepper-diagnostics.html">Stepper Diagnostics</a><a href="filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="../config/core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="../config/moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details open><summary>Usage</summary><details><summary>User Interfaces</summary><a href="axis.html">AXIS GUI</a><a href="gmoccapy.html">GMOCCAPY</a><a href="touchy.html">The Touchy Graphical User Interface</a><a href="gscreen.html">Gscreen</a><a href="qtdragon.html">QtDragon GUI</a><a href="ngcgui.html">NGCGUI</a><a href="tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details open><summary>Virtual Control Panels</summary><a href="pyvcp.html">PyVCP</a><a href="pyvcp-examples.html">PyVCP Examples</a><a href="gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="gladevcp-libraries.html">GladeVCP Library modules</a><a href="gladevcp-panels.html">GladeVCP Builtin Panels</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>QtVCP</summary><ul class="sectlevel1">
+<li><a href="qtvcp.html#_showcase">1. Showcase</a></li>
+<li><a href="qtvcp.html#sec:qtvcp-overview">2. Overview</a>
+<ul class="sectlevel2">
+<li><a href="qtvcp.html#_qtvcp_widgets">2.1. QtVCP Widgets</a></li>
+<li><a href="qtvcp.html#_ini_settings">2.2. INI Settings</a></li>
+<li><a href="qtvcp.html#_qt_designer_ui_file">2.3. Qt Designer UI File</a></li>
+<li><a href="qtvcp.html#_handler_files">2.4. Handler Files</a></li>
+<li><a href="qtvcp.html#_libraries_modules">2.5. Libraries Modules</a></li>
+<li><a href="qtvcp.html#_themes">2.6. Themes</a></li>
+<li><a href="qtvcp.html#_local_files">2.7. Local Files</a></li>
+<li><a href="qtvcp.html#cha:qtvcp:modifying-screens">2.8. Modifying Stock Screens</a></li>
+</ul>
+</li>
+<li><a href="qtvcp.html#sec:qtvcp:vcp-panels">3. VCP Panels</a>
+<ul class="sectlevel2">
+<li><a href="qtvcp.html#_builtin_panels">3.1. Builtin Panels</a></li>
+<li><a href="qtvcp.html#_custom_panels">3.2. Custom Panels</a></li>
+</ul>
+</li>
+<li><a href="qtvcp.html#_build_a_simple_clean_sheet_custom_screen">4. Build A Simple Clean-sheet Custom Screen</a>
+<ul class="sectlevel2">
+<li><a href="qtvcp.html#_overview">4.1. Overview</a></li>
+<li><a href="qtvcp.html#_get_qt_designer_to_include_linuxcnc_widgets">4.2. Get Qt Designer To Include LinuxCNC Widgets</a></li>
+<li><a href="qtvcp.html#_build_the_screen_ui_file">4.3. Build The Screen <code>.ui</code> File</a></li>
+<li><a href="qtvcp.html#_handler_file">4.4. Handler file</a></li>
+<li><a href="qtvcp.html#_ini_configuration">4.5. INI Configuration</a></li>
+</ul>
+</li>
+<li><a href="qtvcp.html#_handler_file_in_detail">5. Handler File In Detail</a>
+<ul class="sectlevel2">
+<li><a href="qtvcp.html#_overview_2">5.1. Overview</a></li>
+<li><a href="qtvcp.html#_import_section">5.2. IMPORT Section</a></li>
+<li><a href="qtvcp.html#_instantiate_libraries_section">5.3. INSTANTIATE LIBRARIES Section</a></li>
+<li><a href="qtvcp.html#_handler_class_section">5.4. HANDLER CLASS Section</a></li>
+<li><a href="qtvcp.html#_initialize_section">5.5. INITIALIZE Section</a></li>
+<li><a href="qtvcp.html#_special_functions_section">5.6. SPECIAL FUNCTIONS Section</a></li>
+<li><a href="qtvcp.html#_status_callbacks_section">5.7. STATUS CALLBACKS Section</a></li>
+<li><a href="qtvcp.html#_callbacks_from_form_section">5.8. CALLBACKS FROM FORM Section</a></li>
+<li><a href="qtvcp.html#_general_functions_section">5.9. GENERAL FUNCTIONS Section</a></li>
+<li><a href="qtvcp.html#_key_binding_section">5.10. KEY BINDING Section</a></li>
+<li><a href="qtvcp.html#_closing_event_section">5.11. CLOSING EVENT Section</a></li>
+</ul>
+</li>
+<li><a href="qtvcp.html#_connecting_widgets_to_python_code">6. Connecting Widgets to Python Code</a>
+<ul class="sectlevel2">
+<li><a href="qtvcp.html#_overview_3">6.1. Overview</a></li>
+<li><a href="qtvcp.html#sub:qtvcp:designer-slots">6.2. Using Qt Designer to add Slots</a></li>
+<li><a href="qtvcp.html#_python_handler_changes">6.3. Python Handler Changes</a></li>
+</ul>
+</li>
+<li><a href="qtvcp.html#_more_information">7. More Information</a></li>
+</ul></details><a href="qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="qtvcp-widgets.html">QtVCP Widgets</a><a href="qtvcp-libraries.html">QtVCP Libraries modules</a><a href="qtvcp-vismach.html">QtVismach</a><a href="qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="panelui.html">Panelui</a><a href="../config/python-interface.html">The LinuxCNC Python module</a><a href="../config/python-hal-interface.html">The HAL Python module</a><a href="gstat.html">GStat Python Module</a><a href="vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>QtVCP is an <strong>infrastructure to build custom CNC screens or control panels for LinuxCNC</strong>.</p>
+</div>
+<div class="paragraph">
+<p>It displays a <em>`.ui` file built with Qt Designer</em> screen editor
+and combines this with <em>Python programming</em> to create a GUI screen for running a CNC machine.</p>
+</div>
+<div class="paragraph">
+<p>QtVCP is completely <em>customizable</em>: you can add different buttons and status LEDs etc.,
+or add Python code for even finer grain customization.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_showcase">1. Showcase</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Few examples of QtVCP built screens and virtual control panels:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/silverdragon.png" alt="QtDragon Router">
+</div>
+<div class="title">Figure 1. QtDragon - 3/4-Axis Sample</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/qt_cnc.png" alt="Qtscreen Mill">
+</div>
+<div class="title">Figure 2. QtDefault - 3-Axis Sample</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/qtaxis.png" alt="Qtscreen QtAxis">
+</div>
+<div class="title">Figure 3. QtAxis - Self Adjusting Axis Sample</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/blender.png" alt="Qtscreen Blender">
+</div>
+<div class="title">Figure 4. Blender - 4-Axis Sample</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/x1mill.png" alt="Qtscreen x1mill">
+</div>
+<div class="title">Figure 5. X1mill - 4-Axis Sample</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/qtvcp-cam-align.png" alt="Qtscreen x1mill">
+</div>
+<div class="title">Figure 6. cam_align - Camera Alignment VCP</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/test_panel.png" alt="Test Panel">
+</div>
+<div class="title">Figure 7. test_panel - Test Panel VCP</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:qtvcp-overview">2. Overview</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+<em>Two files are used, individually or in combination</em>, to add customizations:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A <strong>UI file</strong> that is a <em>XML</em> file made with <em>Qt Designer</em> graphical editor.</p>
+</li>
+<li>
+<p>A <strong>handler file</strong> which is a <em>Python</em> code text file.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Normally QtVCP uses the stock UI and handler file, but you can specify QtVCP to use <em>local</em> UI and handler files.<br>
+A <strong><em>local</em> file</strong> is one that is in the <em>configuration folder</em> that defines the rest of the machine&#8217;s requirements.</p>
+</div>
+<div class="paragraph">
+<p>One is not restricted to adding a custom panel on the right or a custom tab as QtVCP leverages <em>Qt Designer</em> (the editor)
+and <em>PyQt5</em> (the widget toolkit).</p>
+</div>
+<div class="paragraph">
+<p>QtVCP has some added <strong>special LinuxCNC widgets and actions</strong>.<br>
+There are special widgets to bridge third party widgets to HAL pins.<br>
+It&#8217;s possible to create widget responses by connecting signals to Python code in the handler file.</p>
+</div>
+<div class="sect2">
+<h3 id="_qtvcp_widgets">2.1. QtVCP Widgets</h3>
+<div class="paragraph">
+<p>QtVCP uses the <strong>PyQt5 toolkit&#8217;s widgets</strong> for LinuxCNC integration.</p>
+</div>
+<div class="paragraph">
+<p><strong>Widget</strong> is the <em>general name for user interface objects</em> such as buttons and labels in PyQt5.</p>
+</div>
+<div class="paragraph">
+<p>You are free to use any available <strong>default widgets</strong> in the Qt Designer editor.</p>
+</div>
+<div class="paragraph">
+<p>There are also <strong>special widgets</strong> made for LinuxCNC that make integration easier.<br>
+These are split in three heading on the left side of the editor:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>One is for <em>HAL only widgets</em>;</p>
+</li>
+<li>
+<p>One is for <em>CNC control widgets</em>;</p>
+</li>
+<li>
+<p>One is for <em>Dialog widgets</em>.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>You are free to mix them in any way on your panel.</p>
+</div>
+<div class="paragraph">
+<p>A very important widget for CNC control is the <strong><code>ScreenOptions</code> widget</strong>:
+It does not add anything visually to the screen but, allows important details to be selected rather then be coded in the handler file.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_ini_settings">2.2. INI Settings</h3>
+<div class="paragraph">
+<p>If you are using QtVCP to make a CNC motion control screen (rather then a HAL based panel), in the INI file, in the <code>[DISPLAY]</code> section, add a line with the following pattern:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="py">DISPLAY</span> <span class="p">=</span> <span class="s">qtvcp &lt;options&gt; &lt;screen_name&gt;</span></code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+All <code>&lt;options&gt;</code> must appear before <code>&lt;screen_name&gt;</code>.
+</td>
+</tr>
+</table>
+</div>
+<div class="ulist">
+<div class="title">Options</div>
+<ul>
+<li>
+<p><code>-d</code> Debugging on.</p>
+</li>
+<li>
+<p><code>-i</code> Enable info output.</p>
+</li>
+<li>
+<p><code>-v</code> Enable verbose debug output.</p>
+</li>
+<li>
+<p><code>-q</code> Enable only error debug output.</p>
+</li>
+<li>
+<p><code>-a</code> Set window always on top.</p>
+</li>
+<li>
+<p><code>-c NAME</code> HAL component name. Default is to use the UI file name.</p>
+</li>
+<li>
+<p><code>-g GEOMETRY</code> Set geometry WIDTHxHEIGHT+XOFFSET+YOFFSET. Values are in pixel units,
+XOFFSET/YOFFSET is referenced from top left of screen.
+Use -g WIDTHxHEIGHT for just setting size or -g +XOFFSET+YOFFSET for just position.
+Example: <code>-g 200x400+0+100</code></p>
+</li>
+<li>
+<p><code>-H FILE</code> Execute hal statements from FILE with halcmd after the component is set up and ready.</p>
+</li>
+<li>
+<p><code>-m</code> Maximize window.</p>
+</li>
+<li>
+<p><code>-f</code> Fullscreen the window.</p>
+</li>
+<li>
+<p><code>-t THEME</code> Default is system theme</p>
+</li>
+<li>
+<p><code>-x XID</code> Embed into a X11 window that doesn&#8217;t support embedding.</p>
+</li>
+<li>
+<p><code>--push_xid</code> Send QtVCP&#8217;s X11 window id number to standard output; for embedding.</p>
+</li>
+<li>
+<p><code>-u USERMOD</code> File path of a substitute handler file.</p>
+</li>
+<li>
+<p><code>-o USEROPTS</code> Pass a string to QtVCP&#8217;s handler file under <code>self.w.USEROPTIONS_</code> list variable. Can be multiple -o.</p>
+</li>
+<li>
+<p><code>-force_pyqt=6</code> Forces QtVCP to use PyQt6, if it&#8217;s availble, otherwise uses PyQt5</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<div class="title">&lt;screen_name&gt;</div>
+<p><code>&lt;screen_name&gt;</code> is the <em>base name of the .ui and _handler.py files</em>.
+If <code>&lt;screen_name&gt;</code> is missing, the default screen will be loaded.</p>
+</div>
+<div class="paragraph">
+<p>QtVCP assumes the UI file and the handler file use the <strong>same base name</strong>.
+QtVCP will first search the LinuxCNC configuration directory that was launched for the files, then in the system skin folder holding standard screens.</p>
+</div>
+<div class="listingblock">
+<div class="title">Cycle Times</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="p">[</span><span class="nn">DISPLAY</span><span class="p">]</span>
+<span class="py">CYCLE_TIME</span> <span class="p">=</span> <span class="s">100</span>
+<span class="py">GRAPHICS_CYCLE_TIME</span> <span class="p">=</span> <span class="s">100</span>
+<span class="py">HALPIN_CYCLE</span> <span class="p">=</span> <span class="s">100</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Adjusts the response rate of the GUI updates in milliseconds.
+Defaults to 100, useable range 50 - 200.</p>
+</div>
+<div class="paragraph">
+<p>The widgets, graphics and HAL pin update can be set separately.</p>
+</div>
+<div class="paragraph">
+<p>If the update time is not set right the screen can become unresponsive or very jerky.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_qt_designer_ui_file">2.3. Qt Designer UI File</h3>
+<div class="paragraph">
+<p>A Qt Designer file is a text file organized in the <em>XML</em> standard that describes the <strong>layout and widgets</strong> of the screen.</p>
+</div>
+<div class="paragraph">
+<p><em>PyQt5</em> uses this file to build the display and react to those widgets.</p>
+</div>
+<div class="paragraph">
+<p>The Qt Designer editor makes it relatively easy to build and edit this file.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_handler_files">2.4. Handler Files</h3>
+<div class="paragraph">
+<p>A handler file is a file containing <em>Python</em> code, which <strong>adds to QtVCP default routines</strong>.</p>
+</div>
+<div class="paragraph">
+<p>A handler file allows one to <em>modify defaults</em>, or <em>add logic</em> to a QtVCP screen without having to modify QtVCP&#8217;s core code.
+In this way you can have <strong>custom behaviors</strong>.</p>
+</div>
+<div class="paragraph">
+<p>If present a handler file will be loaded.
+<strong>Only one file</strong> is allowed.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_libraries_modules">2.5. Libraries Modules</h3>
+<div class="paragraph">
+<p>QtVCP, as built, does little more than display the screen and react to widgets.
+For more <strong>prebuilt behaviors</strong> there are available libraries (found in <code>lib/python/qtvcp/lib</code> in RIP LinuxCNC install).</p>
+</div>
+<div class="paragraph">
+<p><strong>Libraries</strong> are prebuilt <em>Python modules</em> that <strong>add features</strong> to QtVCP.
+In this way you can select what features you want - yet don&#8217;t have to build common ones yourself.</p>
+</div>
+<div class="paragraph">
+<p>Such libraries include:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>audio_player</code></p>
+</li>
+<li>
+<p><code>aux_program_loader</code></p>
+</li>
+<li>
+<p><code>keybindings</code></p>
+</li>
+<li>
+<p><code>message</code></p>
+</li>
+<li>
+<p><code>preferences</code></p>
+</li>
+<li>
+<p><code>notify</code></p>
+</li>
+<li>
+<p><code>virtual_keyboard</code></p>
+</li>
+<li>
+<p><code>machine_log</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_themes">2.6. Themes</h3>
+<div class="paragraph">
+<p>Themes are a way to modify the <strong>look and feel</strong> of the widgets on the screen.</p>
+</div>
+<div class="paragraph">
+<p>For instance the <em>color</em> or <em>size</em> of buttons and sliders can be changed using themes.</p>
+</div>
+<div class="paragraph">
+<p>The <em>Windows theme</em> is default for screens.<br>
+The <em>System theme</em> is default for panels.</p>
+</div>
+<div class="paragraph">
+<p>To see available themes, they can be loaded by running the following command in a terminal:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>qtvcp -d -t &lt;theme_name&gt;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>QtVCP can also be customized with <em>Qt stylesheets (QSS)</em> using CSS.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_local_files">2.7. Local Files</h3>
+<div class="paragraph">
+<p>If present, local UI/QSS/Python files in the configuration folder will be loaded instead of the stock UI files.</p>
+</div>
+<div class="paragraph">
+<p>Local UI/QSS/Python files allow you to use your customized designs rather than the default screens.</p>
+</div>
+<div class="paragraph">
+<p>QtVCP will look for a folder named &lt;screen_name&gt; (in the launched configuration folder that holds the INI file).</p>
+</div>
+<div class="paragraph">
+<p>In that folder, QtVCP will load any of the available following files:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>&lt;screen_name&gt;.ui</code>,</p>
+</li>
+<li>
+<p><code>&lt;screen_name&gt;_handler.py</code>, and</p>
+</li>
+<li>
+<p><code>&lt;screen_name&gt;.qss</code>.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="cha:qtvcp:modifying-screens">2.8. Modifying Stock Screens</h3>
+<div class="paragraph">
+<p>There are <em>three ways</em> to customize a screen/panel.</p>
+</div>
+<div class="sect3">
+<h4 id="_minor_stylesheet_changes">2.8.1. Minor StyleSheet Changes</h4>
+<div class="paragraph">
+<p>Stylesheets can be used to <strong>set Qt properties</strong>.
+If a widget uses properties then they usually can be modified by stylesheets.</p>
+</div>
+<div class="listingblock">
+<div class="title">Example of a widget with accompanying style sheet settings.</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="css"><span class="nt">State_LED</span> <span class="nf">#name_of_led</span><span class="p">{</span>
+  <span class="py">qproperty-color</span><span class="p">:</span> <span class="no">red</span><span class="p">;</span>
+  <span class="py">qproperty-diameter</span><span class="p">:</span> <span class="m">20</span><span class="p">;</span>
+  <span class="py">qproperty-flashRate</span><span class="p">:</span> <span class="m">150</span><span class="p">;</span>
+  <span class="p">}</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_handler_patching_subclassing_builtin_screens">2.8.2. Handler Patching - Subclassing Builtin Screens</h4>
+<div class="paragraph">
+<p>We can have QtVCP load a subclassed version of the standard handler file. In that file we can manipulate the original functions or add new ones.<br>
+Subclassing just means our handler file first loads the original handler file and adds our new code on top of it - effectively a patch of changes.<br>
+This is useful for changing/adding behaviour while still retaining standard handler updates from LinuxCNC repositories.</p>
+</div>
+<div class="paragraph">
+<p>You may still need to use the handler copy dialog to copy the original handler file to decide how to patch it.
+See <em>custom handler file</em>.</p>
+</div>
+<div class="paragraph">
+<p>There should be a folder in the config folder; for screens: named <em>&lt;CONFIG FOLDER&gt;/qtvcp/screens/&lt;SCREEN NAME&gt;/</em><br>
+add the handle patch file there, named like so &lt;ORIGINAL SCREEN NAME&gt;_handler.py,<br>
+e.g., for QtDragon the file would be called <em>qtdragon_handler.py</em>.</p>
+</div>
+<div class="paragraph">
+<p>Here is a sample to add X axis jog pins to a screen like QtDragon:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="kn">import</span> <span class="n">sys</span>
+<span class="kn">import</span> <span class="n">importlib</span>
+<span class="kn">from</span> <span class="n">qtvcp.core</span> <span class="kn">import</span> <span class="n">Path</span><span class="p">,</span> <span class="n">Qhal</span><span class="p">,</span> <span class="n">Action</span>
+<span class="n">PATH</span> <span class="o">=</span> <span class="nc">Path</span><span class="p">()</span>
+<span class="n">QHAL</span> <span class="o">=</span> <span class="nc">Qhal</span><span class="p">()</span>
+<span class="n">ACTION</span> <span class="o">=</span> <span class="nc">Action</span><span class="p">()</span>
+
+<span class="c1"># get reference to original handler file so we can subclass it
+</span><span class="n">sys</span><span class="p">.</span><span class="n">path</span><span class="p">.</span><span class="nf">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">PATH</span><span class="p">.</span><span class="n">SCREENDIR</span><span class="p">)</span>
+<span class="n">module</span> <span class="o">=</span> <span class="sh">"</span><span class="s">{}.{}_handler</span><span class="sh">"</span><span class="p">.</span><span class="nf">format</span><span class="p">(</span><span class="n">PATH</span><span class="p">.</span><span class="n">BASEPATH</span><span class="p">,</span><span class="n">PATH</span><span class="p">.</span><span class="n">BASEPATH</span><span class="p">)</span>
+<span class="n">mod</span> <span class="o">=</span> <span class="n">importlib</span><span class="p">.</span><span class="nf">import_module</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">PATH</span><span class="p">.</span><span class="n">SCREENDIR</span><span class="p">)</span>
+<span class="n">sys</span><span class="p">.</span><span class="n">path</span><span class="p">.</span><span class="nf">remove</span><span class="p">(</span><span class="n">PATH</span><span class="p">.</span><span class="n">SCREENDIR</span><span class="p">)</span>
+<span class="n">HandlerClass</span> <span class="o">=</span> <span class="n">mod</span><span class="p">.</span><span class="n">HandlerClass</span>
+
+<span class="c1"># return our subclassed handler object to QtVCP
+</span><span class="k">def</span> <span class="nf">get_handlers</span><span class="p">(</span><span class="n">halcomp</span><span class="p">,</span> <span class="n">widgets</span><span class="p">,</span> <span class="n">paths</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="nc">UserHandlerClass</span><span class="p">(</span><span class="n">halcomp</span><span class="p">,</span> <span class="n">widgets</span><span class="p">,</span> <span class="n">paths</span><span class="p">)]</span>
+
+<span class="c1"># sub class HandlerClass which was imported above
+</span><span class="k">class</span> <span class="nc">UserHandlerClass</span><span class="p">(</span><span class="n">HandlerClass</span><span class="p">):</span>
+    <span class="c1"># add a terminal message so we know this got loaded
+</span>    <span class="nf">print</span><span class="p">(</span><span class="sh">'</span><span class="se">\n</span><span class="s">Custom subclassed handler patch loaded.</span><span class="se">\n</span><span class="sh">'</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">init_pins</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="c1"># call original handler init_pins function
+</span>        <span class="nf">super</span><span class="p">().</span><span class="nf">init_pins</span><span class="p">()</span>
+
+        <span class="c1"># add jog pins X axis
+</span>        <span class="n">pin</span> <span class="o">=</span> <span class="n">QHAL</span><span class="p">.</span><span class="nf">newpin</span><span class="p">(</span><span class="sh">"</span><span class="s">jog.axis.jog-x-plus</span><span class="sh">"</span><span class="p">,</span> <span class="n">QHAL</span><span class="p">.</span><span class="n">HAL_BIT</span><span class="p">,</span> <span class="n">QHAL</span><span class="p">.</span><span class="n">HAL_IN</span><span class="p">)</span>
+        <span class="n">pin</span><span class="p">.</span><span class="n">value_changed</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">self</span><span class="p">.</span><span class="nf">kb_jog</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">fast</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">linear</span> <span class="o">=</span> <span class="bp">True</span><span class="p">))</span>
+
+        <span class="n">pin</span> <span class="o">=</span> <span class="n">QHAL</span><span class="p">.</span><span class="nf">newpin</span><span class="p">(</span><span class="sh">"</span><span class="s">jog.axis.jog-x-minus</span><span class="sh">"</span><span class="p">,</span> <span class="n">QHAL</span><span class="p">.</span><span class="n">HAL_BIT</span><span class="p">,</span> <span class="n">QHAL</span><span class="p">.</span><span class="n">HAL_IN</span><span class="p">)</span>
+        <span class="n">pin</span><span class="p">.</span><span class="n">value_changed</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">self</span><span class="p">.</span><span class="nf">kb_jog</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">fast</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">linear</span> <span class="o">=</span> <span class="bp">True</span><span class="p">))</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_minor_python_code_changes">2.8.3. Minor Python Code Changes</h4>
+<div class="paragraph">
+<p>Another Python file can be used to <strong>add commands</strong> to the screen, after the handler file is parsed.
+This can be useful for minor changes while still honouring standard handler updates from LinuxCNC repositories.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Handler patching is a better way to add changes - instance patching is black magic voodoo - this is here for legacy reasons.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>In the <em>INI file</em> under the <code>[DISPLAY]</code> heading add <strong><code>USER_COMMAND_FILE = _PATH_</code></strong><br>
+<em>PATH</em> can be any valid path.
+It can use <code>~</code> for home directory or <code>WORKINGFOLDER</code> or <code>CONFIGFOLDER</code> to represent QtVCP&#8217;s idea of those directories, e.g.:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="p">[</span><span class="nn">DISPLAY</span><span class="p">]</span>
+<span class="py">USER_COMMAND_FILE</span> <span class="p">=</span> <span class="s">CONFIGFOLDER/&lt;screen_name_added_commands&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If no entry is found in the <em>INI</em>, QtVCP will look in the <strong>default path</strong>.
+The default path is in the configuration directory as a hidden file using the screen basename and rc, e.g., <strong><code>CONFIGURATION DIRECTORY/.&lt;screen_name&gt;rc</code></strong>.</p>
+</div>
+<div class="paragraph">
+<p>This file will be read and executed as Python code in the <strong>handler file context</strong>.</p>
+</div>
+<div class="paragraph">
+<p><strong>Only local functions and local attributes</strong> can be referenced.<br>
+Global libraries defined in the screen&#8217;s handler file can be referenced by importing the handler file.<br>
+These are usually seen as all capital words with no preceding self.<br>
+<em>self</em> references the window class functions.<br>
+<em>self.w</em> typically references the widgets.</p>
+</div>
+<div class="paragraph">
+<p>What can be used can vary by screen and development cycle.</p>
+</div>
+<div class="paragraph">
+<div class="title">A simple example</div>
+<p>Reference the main window to change the title (won&#8217;t show if using INI entries for title change).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="n">self</span><span class="p">.</span><span class="n">w</span><span class="p">.</span><span class="nf">setWindowTitle</span><span class="p">(</span><span class="sh">'</span><span class="s">My Title Test</span><span class="sh">'</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<div class="title">An advanced instance patching example</div>
+<p>This could work with the QtDragon screen&#8217;s handler file.<br>
+Here we show how to add new functions and override existing ones.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="c1"># Needed to instance patch.
+# reference: https://ruivieira.dev/python-monkey-patching-for-readability.html
+</span><span class="kn">import</span> <span class="n">types</span>
+
+<span class="c1"># import the handlerfile to get reference to its libraries.
+# use &lt;screenname&gt;_handler
+</span><span class="kn">import</span> <span class="n">qtdragon_handler</span> <span class="k">as</span> <span class="n">hdlr</span>
+
+<span class="c1"># This is actually an unbounded function with 'obj' as a parameter.
+# You call this function without the usual preceding 'self.'.
+# This is because will will not be patching it into the original handler class instance
+# It will only be called from code in this file.
+</span><span class="k">def</span> <span class="nf">test_function</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+    <span class="nf">print</span><span class="p">(</span><span class="nf">dir</span><span class="p">(</span><span class="n">obj</span><span class="p">))</span>
+
+<span class="c1"># This is a new function we will added to the existing handler class instance.
+# Notice it calls the unbounded function with 'self' as an parameter 'self' is the only global reference available.
+# It references the window instance.
+</span><span class="k">def</span> <span class="nf">on_keycall_F10</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">event</span><span class="p">,</span><span class="n">state</span><span class="p">,</span><span class="n">shift</span><span class="p">,</span><span class="n">cntrl</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">state</span><span class="p">:</span>
+        <span class="nf">print </span><span class="p">(</span><span class="sh">'</span><span class="s">F10</span><span class="sh">'</span><span class="p">)</span>
+        <span class="nf">test_function</span><span class="p">(</span><span class="n">self</span><span class="p">)</span>
+
+<span class="c1"># This will be used to override an existing function in the existing handler class instance.
+# Note, we also call a copy of the original function too.
+# This shows how to extend an existing function to do extra functions.
+</span><span class="k">def</span> <span class="nf">on_keycall_F11</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">event</span><span class="p">,</span><span class="n">state</span><span class="p">,</span><span class="n">shift</span><span class="p">,</span><span class="n">cntrl</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">state</span><span class="p">:</span>
+        <span class="n">self</span><span class="p">.</span><span class="nf">on_keycall_F11_super</span><span class="p">(</span><span class="n">event</span><span class="p">,</span><span class="n">state</span><span class="p">,</span><span class="n">shift</span><span class="p">,</span><span class="n">cntrl</span><span class="p">)</span>
+        <span class="nf">print </span><span class="p">(</span><span class="sh">'</span><span class="s">Hello</span><span class="sh">'</span><span class="p">)</span>
+
+<span class="c1"># We are referencing the KEYBIND library that was instantiated in the original handler class instance
+# by adding 'hdlr.' to it (from the imp).
+# This function tells KEYBIND to call 'on_keycall_F10' when F10 is pressed.
+</span><span class="n">hdlr</span><span class="p">.</span><span class="n">KEYBIND</span><span class="p">.</span><span class="nf">add_call</span><span class="p">(</span><span class="sh">'</span><span class="s">Key_F10</span><span class="sh">'</span><span class="p">,</span><span class="sh">'</span><span class="s">on_keycall_F10</span><span class="sh">'</span><span class="p">)</span>
+
+<span class="c1"># Here we are instance patching the original handler file to add a new function
+# that calls our new function (of the same name) defined in this file.
+</span><span class="n">self</span><span class="p">.</span><span class="n">on_keycall_F10</span> <span class="o">=</span> <span class="n">types</span><span class="p">.</span><span class="nc">MethodType</span><span class="p">(</span><span class="n">on_keycall_F10</span><span class="p">,</span> <span class="n">self</span><span class="p">)</span>
+
+<span class="c1"># Here we are defining a copy of the original 'on_keycall_F11' function,
+# so we can call it later. We can use any valid, unused function name.
+# We need to do this before overriding the original function.
+</span><span class="n">self</span><span class="p">.</span><span class="n">on_keycall_F11_super</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">on_keycall_F11</span>
+
+<span class="c1"># Here we are instance patching the original handler file to override an existing function
+# to point to our new function (of the same name) defined in this file.
+</span><span class="n">self</span><span class="p">.</span><span class="n">on_keycall_F11</span> <span class="o">=</span> <span class="n">types</span><span class="p">.</span><span class="nc">MethodType</span><span class="p">(</span><span class="n">on_keycall_F11</span><span class="p">,</span> <span class="n">self</span><span class="p">)</span>
+
+
+<span class="c1"># add a new pin to the screen:
+</span>
+<span class="c1"># pin callback to print the state
+</span><span class="k">def</span> <span class="nf">new_pin_changed</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+    <span class="nf">print</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+<span class="c1"># Special function that gets called before the HAL component is set ready.
+# Here we used the function to add a bit input pin with a callback.
+</span><span class="k">def</span> <span class="nf">after_override__</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">pin</span> <span class="o">=</span> <span class="n">hdlr</span><span class="p">.</span><span class="n">QHAL</span><span class="p">.</span><span class="nf">newpin</span><span class="p">(</span><span class="sh">"</span><span class="s">new_pin</span><span class="sh">"</span><span class="p">,</span> <span class="n">hdlr</span><span class="p">.</span><span class="n">QHAL</span><span class="p">.</span><span class="n">HAL_BIT</span><span class="p">,</span> <span class="n">hdlr</span><span class="p">.</span><span class="n">QHAL</span><span class="p">.</span><span class="n">HAL_IN</span><span class="p">)</span>
+        <span class="n">pin</span><span class="p">.</span><span class="n">value_changed</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="n">new_pin_changed</span><span class="p">)</span>
+    <span class="k">except</span> <span class="nb">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nf">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+<span class="c1"># Here we are instance patching the original handler file to add a new function
+# that calls our new function (of the same name) defined in this file.
+</span><span class="n">self</span><span class="p">.</span><span class="n">after_override__</span> <span class="o">=</span> <span class="n">types</span><span class="p">.</span><span class="nc">MethodType</span><span class="p">(</span><span class="n">after_override__</span><span class="p">,</span> <span class="n">self</span><span class="p">)</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_full_creative_control_with_custom_handlerui_files">2.8.4. Full Creative Control with custom handler/ui files</h4>
+<div class="paragraph">
+<p>If you wish to <strong>modify a stock screen</strong> with full control, <em>copy its UI
+and handler file to your configuration folder</em>.</p>
+</div>
+<div class="paragraph">
+<p>There is a QtVCP panel to help with this:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Open a terminal and run the following command:</p>
+<div class="listingblock">
+<div class="content">
+<pre>qtvcp copy</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Select the screen and destination folder in the dialog</p>
+</li>
+<li>
+<p>If you wish to <strong>name your screen</strong> differently than the builtin screen&#8217;s default name, change the <em>basename</em> in the edit box.</p>
+</li>
+<li>
+<p>There should be a folder in the config folder; for screens: named <em>&lt;CONFIG FOLDER&gt;/qtvcp/screens/</em> for panels:  named <em>&lt;CONFIG FOLDER&gt;/qtvcp/panels/</em> add the folders if they are missing and copy your folder/files in it.</p>
+</li>
+<li>
+<p>Validate to copy all the files</p>
+</li>
+<li>
+<p>Delete the files you don&#8217;t wish to modify so that the original files will be used.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:qtvcp:vcp-panels">3. VCP Panels</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>QtVCP can be used to create control panels that interface with <strong>HAL</strong>.</p>
+</div>
+<div class="sect2">
+<h3 id="_builtin_panels">3.1. Builtin Panels</h3>
+<div class="paragraph">
+<p>There are several <strong>builtin HAL panels</strong> available.</p>
+</div>
+<div class="paragraph">
+<p>In a terminal type <code>qtvcp &lt;return&gt;</code> to see a list:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong><code>test_panel</code></strong></dt>
+<dd>
+<p>Collection of useful widgets for testing HAL components, including speech of LED state.</p>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/qtvcp_test_panel.png" alt="QtVCP HAL Test Builtin Panel">
+</div>
+<div class="title">Figure 8. QtVCP HAL Test Builtin Panel</div>
+</div>
+</dd>
+<dt class="hdlist1"><strong><code>cam_align</code></strong></dt>
+<dd>
+<p>A camera display widget for rotational alignment.</p>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/qtvcp-cam-align.png" alt="Qtscreen x1mill">
+</div>
+<div class="title">Figure 9. cam_align - Camera Alignment VCP</div>
+</div>
+</dd>
+<dt class="hdlist1"><strong><code>sim_panel</code></strong></dt>
+<dd>
+<p>A small control panel to simulate MPG jogging controls etc.<br>
+For simulated configurations.</p>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/qtvcp_sim_panel.png" alt="QtVCP Sim Builtin Panel">
+</div>
+<div class="title">Figure 10. QtVCP Sim Builtin Panel</div>
+</div>
+</dd>
+<dt class="hdlist1"><strong><code>vismach_mill_xyz</code></strong></dt>
+<dd>
+<p>3D OpenGL view of a 3-axis milling machine.</p>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/qtvismach.png" alt="QtVismach - 3-Axis Mill Builtin Panel">
+</div>
+<div class="title">Figure 11. QtVismach - 3-Axis Mill Builtin Panel</div>
+</div>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>You can load these from the terminal or from a HAL file with this basic command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadusr</span> <span class="n">qtvcp</span> <span class="n">test_panel</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>But more typically like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadusr</span> -<span class="n">Wn</span> <span class="n">test_panel</span> <span class="n">qtvcp</span> <span class="n">test_panel</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In this way HAL will wait till the HAL pins are made before continuing on.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_custom_panels">3.2. Custom Panels</h3>
+<div class="paragraph">
+<p>You can of course <strong>make your own panel and load it</strong>.</p>
+</div>
+<div class="paragraph">
+<p>If you made a UI file named <code>my_panel.ui</code> and a HAL file named <code>my_panel.hal</code>, you would then load this from a terminal with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>halrun -I -f my_panel.hal</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example HAL file loading a QtVCP panel</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="c1"># load realtime components</span>
+<span class="k">loadrt</span> <span class="n">threads</span>
+<span class="k">loadrt</span> <span class="n">classicladder_rt</span>
+
+<span class="c1"># load non-realtime programs</span>
+<span class="k">loadusr</span> <span class="n">classicladder</span>
+<span class="k">loadusr</span> -<span class="n">Wn</span> <span class="n">my_panel</span> <span class="n">qtvcp</span> <span class="na">my_panel.ui</span>  # <b class="conum">(1)</b>
+
+<span class="c1"># add components to thread</span>
+<span class="k">addf</span> <span class="na">classicladder.0.refresh</span> <span class="n">thread1</span>
+
+
+<span class="c1"># connect pins</span>
+<span class="k">net</span> <span class="n">bit-input1</span>     <span class="na">test_panel.checkbox_1</span>        <span class="na">classicladder.0.in-00</span>
+<span class="k">net</span> <span class="n">bit-hide</span>       <span class="na">test_panel.checkbox_4</span>        <span class="na">classicladder.0.hide_gui</span>
+
+<span class="k">net</span> <span class="n">bit-output1</span>    <span class="na">test_panel.led_1</span>             <span class="na">classicladder.0.out-00</span>
+
+<span class="k">net</span> <span class="n">s32-in1</span>        <span class="na">test_panel.doublescale_1-s</span>   <span class="na">classicladder.0.s32in-00</span>
+
+<span class="c1"># start thread</span>
+<span class="k">start</span></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<ol>
+<li>
+<p>In this case we load <code>qtvcp</code> using <strong><code>-Wn</code></strong> which waits for the panel to finish loading before continuing to run the next HAL command.<br>
+This is to <em>ensure that the panel created HAL pins are actually done</em> in case they are used in the rest of the file.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_build_a_simple_clean_sheet_custom_screen">4. Build A Simple Clean-sheet Custom Screen</h2>
+<div class="sectionbody">
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/qtvcp_tester.png" alt="QtVCP Ugly custom screen">
+</div>
+<div class="title">Figure 12. QtVCP Ugly custom screen</div>
+</div>
+<div class="sect2">
+<h3 id="_overview">4.1. Overview</h3>
+<div class="paragraph">
+<p>To build a panel or screen:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Use Qt Designer to build a design you like and save it to your configuration folder with a name of your choice, ending with <code>.ui</code></p>
+</li>
+<li>
+<p>Modify the configuration INI file to load QtVCP using your new <code>.ui</code> file.</p>
+</li>
+<li>
+<p>Then connect any required HAL pins in a HAL file.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_get_qt_designer_to_include_linuxcnc_widgets">4.2. Get Qt Designer To Include LinuxCNC Widgets</h3>
+<div class="paragraph">
+<div class="title">Install Qt Designer</div>
+<p>First you must have the <strong>Qt Designer installed</strong>.<br>
+The following commands should add it to your system, or use your package manager to do the same:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>sudo apt-get install qttools5-dev-tools qttools5-dev libpython3-dev</pre>
+</div>
+</div>
+<div class="paragraph">
+<div class="title">Add <code>qtvcp_plugin.py</code> link to the Qt Designer Search Path</div>
+<p>Then you must add a link to the <code>qtvcp_plugin.py</code> in one of the folders that Qt Designer will search into.</p>
+</div>
+<div class="paragraph">
+<p>In a <em>RIP</em> version of LinuxCNC <code>qtvcp_plugin.py</code> will be:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>'~/LINUXCNC_PROJECT_NAME/lib/python/qtvcp/plugins/qtvcp_plugin.py'</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For a <em>Package installed</em> version it should be:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>'usr/lib/python2.7/qtvcp/plugins/qtvcp_plugin.py' or
+'usr/lib/python2.7/dist-packages/qtvcp/plugins/qtvcp_plugin.py'</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Make a symbolic link to the above file and move it to one of the places Qt Designer searches in.</p>
+</div>
+<div class="paragraph">
+<p>Qt Designer searches in these two place for links (pick one):</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>'/usr/lib/x86_64-linux-gnu/qt5/plugins/designer/python' or
+'~/.designer/plugins/python'</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You may need to create the <code>plugins/python</code> folder.</p>
+</div>
+<div class="ulist">
+<div class="title">Start Qt Designer:</div>
+<ul>
+<li>
+<p>For a <em>RIP install</em>:<br>
+Open a terminal, set the environment for LinuxCNC &lt;1&gt;, then load Qt Designer &lt;2&gt; with :</p>
+<div class="listingblock">
+<div class="content">
+<pre>. scripts/rip-environment   <b class="conum">(1)</b>
+designer -qt=5              <b class="conum">(2)</b></pre>
+</div>
+</div>
+</li>
+<li>
+<p>For a <em>package install</em>:<br>
+Open a terminal and type:</p>
+<div class="listingblock">
+<div class="content">
+<pre>designer -qt=5</pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>If all goes right, Qt Designer will launch and you will see the selectable LinuxCNC widgets on the left hand side.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_build_the_screen_ui_file">4.3. Build The Screen <code>.ui</code> File</h3>
+<div class="paragraph">
+<div class="title">Create <code>MainWindow</code> Widget</div>
+<p>When Qt Designer is first started there is a <em>'New Form' dialog</em> displayed.<br>
+Pick <em>'Main Window'</em> and press the <em>'Create'</em> button.<br>
+A <em>`MainWindow` widget</em> is displayed.</p>
+</div>
+<div class="paragraph">
+<p>We are going to make this window a specific non resizeable size:</p>
+</div>
+<div class="ulist">
+<div class="title">Set <code>MainWindow</code> Minimum and Maximum Size</div>
+<ul>
+<li>
+<p>Grab the corner of the window and resize to an appropriate size, say 1000x600.<br></p>
+</li>
+<li>
+<p>Right click on the window and click set <em>minimum size</em>.</p>
+</li>
+<li>
+<p>Do it again and set <em>maximum size</em>.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Our sample widget will now not be resizable.</p>
+</div>
+<div class="paragraph">
+<div class="title">Add the <code>ScreenOptions</code> Widget</div>
+<p>Drag and drop the <code>ScreenOptions</code> widget anywhere onto the main window.</p>
+</div>
+<div class="paragraph">
+<p>This widget doesn&#8217;t add anything visually but sets up some <strong>common options</strong>.</p>
+</div>
+<div class="paragraph">
+<p>It&#8217;s recommended to always <em>add this widget before any other</em>.</p>
+</div>
+<div class="paragraph">
+<p>Right click on the main window, not the <code>ScreenOptions</code> widget, and set the <em>layout</em> as vertical to make the <code>ScreenOptions</code> fullsized.</p>
+</div>
+<div class="paragraph">
+<div class="title">Add Panel Content</div>
+<p>On the right hand side there is a panel with tabs for a <em>Property editor</em> and an <em>Object inspector</em>.</p>
+</div>
+<div class="paragraph">
+<p>On the Object inspector click on the <em>ScreenOptions</em>.<br>
+Then switch to the Property Editor and, under the <em>ScreenOptions</em> heading, toggle <strong><code>filedialog_option</code></strong>.</p>
+</div>
+<div class="paragraph">
+<p>Drag and drop a <strong><code>GCodeGraphics</code></strong> <em>widget</em> and a <strong><code>GcodeEditor</code></strong> <em>widget</em>.<br>
+Place and resize them as you see fit leaving some room for buttons.</p>
+</div>
+<div class="paragraph">
+<div class="title">Add Action Buttons</div>
+<p>Add 7 action buttons on to the main window.</p>
+</div>
+<div class="paragraph">
+<p>If you double click the button, you can add text.<br>
+Edit the button labels for <em>Estop</em>, <em>Machine On</em>, <em>Home</em>, <em>Load</em>, <em>Run</em>, <em>Pause</em> and <em>stop</em>.</p>
+</div>
+<div class="paragraph">
+<p>Action buttons <em>default to no action</em> so we must change the properties for defined functions. You can edit the properties:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>directly in the <em>property editor</em> on the right side of Qt Designer, or</p>
+</li>
+<li>
+<p>conveniently, left double clicking on the button to launch a <em>properties dialog</em> that allows selecting actions while only displaying relevant data to the action.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>We will describe the convenient way first:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Right click the <em>Machine On</em> button and select <em>Set Actions</em>.</p>
+</li>
+<li>
+<p>When the dialog displays, use the combobox to navigate to <code>MACHINE CONTROLS - Machine On</code>.</p>
+</li>
+<li>
+<p>In this case there is no option for this action so select <em>OK</em>.<br></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Now the button will turn the machine on when pressed.</p>
+</div>
+<div class="paragraph">
+<p>And now the direct way with Qt Designer&#8217;s property editor:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Select the <em>Machine On</em> button.</p>
+</li>
+<li>
+<p>Go to the Property Editor on the right side of Qt Designer.</p>
+</li>
+<li>
+<p>Scroll down until you find the <em>ActionButton</em> heading.</p>
+</li>
+<li>
+<p>Click  the <code>machine_on</code> action checkbox you will see in the list of properties and values.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The button will now control machine on/off.</p>
+</div>
+<div class="paragraph">
+<p>Do the same for all the other button with the addition of:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>With the <em>Home</em> button we must also change the <code>joint_number</code> property to <code>-1</code>.<br>
+This tells the controller to <em>home all the axes</em> rather then a specific axis.</p>
+</li>
+<li>
+<p>With the <em>Pause</em> button:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Under the <code>Indicated_PushButton</code> heading check the <code>indicator_option</code>.</p>
+</li>
+<li>
+<p>Under the <code>QAbstactButton</code> heading check <code>checkable</code>.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/designer_button_property.png" alt="Qt Designer: Selecting Pause Button&#8217;s Properties">
+</div>
+<div class="title">Figure 13. Qt Designer: Selecting Pause Button&#8217;s Properties</div>
+</div>
+<div class="paragraph">
+<div class="title">Save The <code>.ui</code> File</div>
+<p>We then need to save this design as <code>tester.ui</code> in the <code>sim/qtvcp</code> folder.</p>
+</div>
+<div class="paragraph">
+<p>We are saving it as <em>tester</em> as that is a file name that QtVCP recognizes and will use a built in handler file to display it.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_handler_file">4.4. Handler file</h3>
+<div class="paragraph">
+<p>A handler file is <strong>required</strong>.</p>
+</div>
+<div class="paragraph">
+<p>It allows customizations to be written in Python.</p>
+</div>
+<div class="paragraph">
+<p>For instance, <em>keyboard controls</em> are usually written in the handler file.</p>
+</div>
+<div class="paragraph">
+<p>In this example, the built in file <code>tester_handler.py</code> is automatically used:
+It does the minimum required to display the <code>tester.ui</code> defined screen and do basic keyboard jogging.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_ini_configuration">4.5. INI Configuration</h3>
+<div class="paragraph">
+<div class="title">[DISPLAY] Section</div>
+<p>If you are using QtVCP to make a CNC control screen, under the <em>INI file</em> <code>[DISPLAY]</code> heading, set:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="py">DISPLAY</span> <span class="p">=</span> <span class="s">qtvcp &lt;screen_name&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>&lt;screen_name&gt;</code> is the <em>base name</em> of the <code>.ui</code> and <code>_handler.py</code> files.</p>
+</div>
+<div class="paragraph">
+<p>In our example there is already a sim configuration called tester, that we will use to display our test screen.</p>
+</div>
+<div class="paragraph">
+<div class="title">[HAL] Section</div>
+<p>If your screen used <em>widgets with HAL pins</em>, then you must <strong>connect them in a HAL file</strong>.</p>
+</div>
+<div class="paragraph">
+<p>QtVCP looks in the <em>INI file</em>, under the <code>[HAL]</code> heading for the entries below:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong><code>POSTGUI_HALFILE=&lt;filename&gt;</code></strong></dt>
+<dd>
+<p>Typically <code>&lt;filename&gt;</code> would be <code>+&lt;screen_name&gt;_postgui.hal+</code>, but can be any legal filename.<br>
+You can have <em>multiple <code>POSTGUI_HALFILE</code> lines</em> in the INI: each will be run one after the other in the order they appear.<br>
+These commands are <em>executed after the screen is built</em>, guaranteeing the widget HAL pins are available.</p>
+</dd>
+<dt class="hdlist1"><strong><code>POSTGUI_HALCMD=&lt;command&gt;</code></strong></dt>
+<dd>
+<p><code>&lt;command&gt;</code> would be <em>any valid HAL command</em>.<br>
+You can have <em>multiple <code>POSTGUI_HALCMD</code> lines</em> in the INI: each will be run one after the other in the order they appear.<br>
+To guaranty the widget HAL pins are available, these commands are executed:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><em>after the screen is built</em>,</p>
+</li>
+<li>
+<p><em>after all the POSTGUI_HALFILEs are run</em>.</p>
+</li>
+</ul>
+</div>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>In our example there are no HAL pins to connect.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_handler_file_in_detail">5. Handler File In Detail</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Handler files are used to <em>create custom controls using Python</em>.</p>
+</div>
+<div class="sect2">
+<h3 id="_overview_2">5.1. Overview</h3>
+<div class="paragraph">
+<p>Here is a sample handler file.</p>
+</div>
+<div class="paragraph">
+<p>It&#8217;s broken up in sections for ease of discussion.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="c1">############################
+# **** IMPORT SECTION **** #
+############################
+</span><span class="kn">import</span> <span class="n">sys</span>
+<span class="kn">import</span> <span class="n">os</span>
+<span class="kn">import</span> <span class="n">linuxcnc</span>
+
+<span class="kn">from</span> <span class="n">PyQt5</span> <span class="kn">import</span> <span class="n">QtCore</span><span class="p">,</span> <span class="n">QtWidgets</span>
+
+<span class="kn">from</span> <span class="n">qtvcp.widgets.mdi_line</span> <span class="kn">import</span> <span class="n">MDILine</span> <span class="k">as</span> <span class="n">MDI_WIDGET</span>
+<span class="kn">from</span> <span class="n">qtvcp.widgets.gcode_editor</span> <span class="kn">import</span> <span class="n">GcodeEditor</span> <span class="k">as</span> <span class="n">GCODE</span>
+<span class="kn">from</span> <span class="n">qtvcp.lib.keybindings</span> <span class="kn">import</span> <span class="n">Keylookup</span>
+<span class="kn">from</span> <span class="n">qtvcp.core</span> <span class="kn">import</span> <span class="n">Status</span><span class="p">,</span> <span class="n">Action</span>
+
+<span class="c1"># Set up logging
+</span><span class="kn">from</span> <span class="n">qtvcp</span> <span class="kn">import</span> <span class="n">logger</span>
+<span class="n">LOG</span> <span class="o">=</span> <span class="n">logger</span><span class="p">.</span><span class="nf">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+<span class="c1"># Set the log level for this module
+#LOG.setLevel(logger.INFO) # One of DEBUG, INFO, WARNING, ERROR, CRITICAL
+</span>
+<span class="c1">###########################################
+# **** INSTANTIATE LIBRARIES SECTION **** #
+###########################################
+</span>
+<span class="n">KEYBIND</span> <span class="o">=</span> <span class="nc">Keylookup</span><span class="p">()</span>
+<span class="n">STATUS</span> <span class="o">=</span> <span class="nc">Status</span><span class="p">()</span>
+<span class="n">ACTION</span> <span class="o">=</span> <span class="nc">Action</span><span class="p">()</span>
+<span class="c1">###################################
+# **** HANDLER CLASS SECTION **** #
+###################################
+</span>
+<span class="k">class</span> <span class="nc">HandlerClass</span><span class="p">:</span>
+
+    <span class="c1">########################
+</span>    <span class="c1"># **** INITIALIZE **** #
+</span>    <span class="c1">########################
+</span>    <span class="c1"># widgets allows access to  widgets from the QtVCP files
+</span>    <span class="c1"># at this point the widgets and hal pins are not instantiated
+</span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">halcomp</span><span class="p">,</span><span class="n">widgets</span><span class="p">,</span><span class="n">paths</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">hal</span> <span class="o">=</span> <span class="n">halcomp</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">widgets</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">PATHS</span> <span class="o">=</span> <span class="n">paths</span>
+
+    <span class="c1">##########################################
+</span>    <span class="c1"># SPECIAL FUNCTIONS SECTION              #
+</span>    <span class="c1">##########################################
+</span>
+    <span class="c1"># at this point:
+</span>    <span class="c1"># the widgets are instantiated.
+</span>    <span class="c1"># the HAL pins are built but HAL is not set ready
+</span>    <span class="c1"># This is where you make HAL pins or initialize state of widgets etc
+</span>    <span class="k">def</span> <span class="nf">initialized__</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">processed_key_event__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">receiver</span><span class="p">,</span><span class="n">event</span><span class="p">,</span><span class="n">is_pressed</span><span class="p">,</span><span class="n">key</span><span class="p">,</span><span class="n">code</span><span class="p">,</span><span class="n">shift</span><span class="p">,</span><span class="n">cntrl</span><span class="p">):</span>
+        <span class="c1"># when typing in MDI, we don't want keybinding to call functions
+</span>        <span class="c1"># so we catch and process the events directly.
+</span>        <span class="c1"># We do want ESC, F1 and F2 to call keybinding functions though
+</span>        <span class="k">if</span> <span class="n">code</span> <span class="ow">not</span> <span class="ow">in</span><span class="p">(</span><span class="n">QtCore</span><span class="p">.</span><span class="n">Qt</span><span class="p">.</span><span class="n">Key_Escape</span><span class="p">,</span><span class="n">QtCore</span><span class="p">.</span><span class="n">Qt</span><span class="p">.</span><span class="n">Key_F1</span> <span class="p">,</span><span class="n">QtCore</span><span class="p">.</span><span class="n">Qt</span><span class="p">.</span><span class="n">Key_F2</span><span class="p">,</span>
+                    <span class="n">QtCore</span><span class="p">.</span><span class="n">Qt</span><span class="p">.</span><span class="n">Key_F3</span><span class="p">,</span><span class="n">QtCore</span><span class="p">.</span><span class="n">Qt</span><span class="p">.</span><span class="n">Key_F5</span><span class="p">,</span><span class="n">QtCore</span><span class="p">.</span><span class="n">Qt</span><span class="p">.</span><span class="n">Key_F5</span><span class="p">):</span>
+
+            <span class="c1"># search for the top widget of whatever widget received the event
+</span>            <span class="c1"># then check if it is one we want the keypress events to go to
+</span>            <span class="n">flag</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="n">receiver2</span> <span class="o">=</span> <span class="n">receiver</span>
+            <span class="k">while</span> <span class="n">receiver2</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">flag</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nf">isinstance</span><span class="p">(</span><span class="n">receiver2</span><span class="p">,</span> <span class="n">QtWidgets</span><span class="p">.</span><span class="n">QDialog</span><span class="p">):</span>
+                    <span class="n">flag</span> <span class="o">=</span> <span class="bp">True</span>
+                    <span class="k">break</span>
+                <span class="k">if</span> <span class="nf">isinstance</span><span class="p">(</span><span class="n">receiver2</span><span class="p">,</span> <span class="n">MDI_WIDGET</span><span class="p">):</span>
+                    <span class="n">flag</span> <span class="o">=</span> <span class="bp">True</span>
+                    <span class="k">break</span>
+                <span class="k">if</span> <span class="nf">isinstance</span><span class="p">(</span><span class="n">receiver2</span><span class="p">,</span> <span class="n">GCODE</span><span class="p">):</span>
+                    <span class="n">flag</span> <span class="o">=</span> <span class="bp">True</span>
+                    <span class="k">break</span>
+                <span class="n">receiver2</span> <span class="o">=</span> <span class="n">receiver2</span><span class="p">.</span><span class="nf">parent</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nf">isinstance</span><span class="p">(</span><span class="n">receiver2</span><span class="p">,</span> <span class="n">GCODE</span><span class="p">):</span>
+                    <span class="c1"># if in manual do our keybindings - otherwise
+</span>                    <span class="c1"># send events to G-code widget
+</span>                    <span class="k">if</span> <span class="n">STATUS</span><span class="p">.</span><span class="nf">is_man_mode</span><span class="p">()</span> <span class="o">==</span> <span class="bp">False</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">is_pressed</span><span class="p">:</span>
+                            <span class="n">receiver</span><span class="p">.</span><span class="nf">keyPressEvent</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+                            <span class="n">event</span><span class="p">.</span><span class="nf">accept</span><span class="p">()</span>
+                        <span class="k">return</span> <span class="bp">True</span>
+                <span class="k">elif</span> <span class="n">is_pressed</span><span class="p">:</span>
+                    <span class="n">receiver</span><span class="p">.</span><span class="nf">keyPressEvent</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+                    <span class="n">event</span><span class="p">.</span><span class="nf">accept</span><span class="p">()</span>
+                    <span class="k">return</span> <span class="bp">True</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">event</span><span class="p">.</span><span class="nf">accept</span><span class="p">()</span>
+                    <span class="k">return</span> <span class="bp">True</span>
+
+        <span class="k">if</span> <span class="n">event</span><span class="p">.</span><span class="nf">isAutoRepeat</span><span class="p">():</span><span class="k">return</span> <span class="bp">True</span>
+
+        <span class="c1"># ok if we got here then try keybindings
+</span>        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">KEYBIND</span><span class="p">.</span><span class="nf">call</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">event</span><span class="p">,</span><span class="n">is_pressed</span><span class="p">,</span><span class="n">shift</span><span class="p">,</span><span class="n">cntrl</span><span class="p">)</span>
+        <span class="k">except</span> <span class="nb">NameError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">LOG</span><span class="p">.</span><span class="nf">debug</span><span class="p">(</span><span class="sh">'</span><span class="s">Exception in KEYBINDING: {}</span><span class="sh">'</span><span class="p">.</span><span class="nf">format </span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        <span class="k">except</span> <span class="nb">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">LOG</span><span class="p">.</span><span class="nf">debug</span><span class="p">(</span><span class="sh">'</span><span class="s">Exception in KEYBINDING:</span><span class="sh">'</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="n">e</span><span class="p">)</span>
+            <span class="nf">print</span><span class="p">(</span><span class="sh">'</span><span class="s">Error in, or no function for: %s in handler file for-%s</span><span class="sh">'</span><span class="o">%</span><span class="p">(</span><span class="n">KEYBIND</span><span class="p">.</span><span class="nf">convert</span><span class="p">(</span><span class="n">event</span><span class="p">),</span><span class="n">key</span><span class="p">))</span>
+            <span class="k">return</span> <span class="bp">False</span>
+
+    <span class="c1">########################
+</span>    <span class="c1"># CALLBACKS FROM STATUS #
+</span>    <span class="c1">########################
+</span>
+    <span class="c1">#######################
+</span>    <span class="c1"># CALLBACKS FROM FORM #
+</span>    <span class="c1">#######################
+</span>
+    <span class="c1">#####################
+</span>    <span class="c1"># GENERAL FUNCTIONS #
+</span>    <span class="c1">#####################
+</span>
+    <span class="c1"># keyboard jogging from key binding calls
+</span>    <span class="c1"># double the rate if fast is true
+</span>    <span class="k">def</span> <span class="nf">kb_jog</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">joint</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span> <span class="n">fast</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">linear</span> <span class="o">=</span> <span class="bp">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">STATUS</span><span class="p">.</span><span class="nf">is_man_mode</span><span class="p">()</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">STATUS</span><span class="p">.</span><span class="nf">machine_is_on</span><span class="p">():</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="n">linear</span><span class="p">:</span>
+            <span class="n">distance</span> <span class="o">=</span> <span class="n">STATUS</span><span class="p">.</span><span class="nf">get_jog_increment</span><span class="p">()</span>
+            <span class="n">rate</span> <span class="o">=</span> <span class="n">STATUS</span><span class="p">.</span><span class="nf">get_jograte</span><span class="p">()</span><span class="o">/</span><span class="mi">60</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">distance</span> <span class="o">=</span> <span class="n">STATUS</span><span class="p">.</span><span class="nf">get_jog_increment_angular</span><span class="p">()</span>
+            <span class="n">rate</span> <span class="o">=</span> <span class="n">STATUS</span><span class="p">.</span><span class="nf">get_jograte_angular</span><span class="p">()</span><span class="o">/</span><span class="mi">60</span>
+        <span class="k">if</span> <span class="n">state</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">fast</span><span class="p">:</span>
+                <span class="n">rate</span> <span class="o">=</span> <span class="n">rate</span> <span class="o">*</span> <span class="mi">2</span>
+            <span class="n">ACTION</span><span class="p">.</span><span class="nc">JOG</span><span class="p">(</span><span class="n">joint</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span> <span class="n">rate</span><span class="p">,</span> <span class="n">distance</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ACTION</span><span class="p">.</span><span class="nc">JOG</span><span class="p">(</span><span class="n">joint</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1">#####################
+</span>    <span class="c1"># KEY BINDING CALLS #
+</span>    <span class="c1">#####################
+</span>
+    <span class="c1"># Machine control
+</span>    <span class="k">def</span> <span class="nf">on_keycall_ESTOP</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">event</span><span class="p">,</span><span class="n">state</span><span class="p">,</span><span class="n">shift</span><span class="p">,</span><span class="n">cntrl</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">state</span><span class="p">:</span>
+            <span class="n">ACTION</span><span class="p">.</span><span class="nc">SET_ESTOP_STATE</span><span class="p">(</span><span class="n">STATUS</span><span class="p">.</span><span class="nf">estop_is_clear</span><span class="p">())</span>
+    <span class="k">def</span> <span class="nf">on_keycall_POWER</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">event</span><span class="p">,</span><span class="n">state</span><span class="p">,</span><span class="n">shift</span><span class="p">,</span><span class="n">cntrl</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">state</span><span class="p">:</span>
+            <span class="n">ACTION</span><span class="p">.</span><span class="nc">SET_MACHINE_STATE</span><span class="p">(</span><span class="ow">not</span> <span class="n">STATUS</span><span class="p">.</span><span class="nf">machine_is_on</span><span class="p">())</span>
+    <span class="k">def</span> <span class="nf">on_keycall_HOME</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">event</span><span class="p">,</span><span class="n">state</span><span class="p">,</span><span class="n">shift</span><span class="p">,</span><span class="n">cntrl</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">state</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">STATUS</span><span class="p">.</span><span class="nf">is_all_homed</span><span class="p">():</span>
+                <span class="n">ACTION</span><span class="p">.</span><span class="nc">SET_MACHINE_UNHOMED</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ACTION</span><span class="p">.</span><span class="nc">SET_MACHINE_HOMING</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">on_keycall_ABORT</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">event</span><span class="p">,</span><span class="n">state</span><span class="p">,</span><span class="n">shift</span><span class="p">,</span><span class="n">cntrl</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">state</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">STATUS</span><span class="p">.</span><span class="n">stat</span><span class="p">.</span><span class="n">interp_state</span> <span class="o">==</span> <span class="n">linuxcnc</span><span class="p">.</span><span class="n">INTERP_IDLE</span><span class="p">:</span>
+                <span class="n">self</span><span class="p">.</span><span class="n">w</span><span class="p">.</span><span class="nf">close</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">self</span><span class="p">.</span><span class="n">cmnd</span><span class="p">.</span><span class="nf">abort</span><span class="p">()</span>
+
+    <span class="c1"># Linear Jogging
+</span>    <span class="k">def</span> <span class="nf">on_keycall_XPOS</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">event</span><span class="p">,</span><span class="n">state</span><span class="p">,</span><span class="n">shift</span><span class="p">,</span><span class="n">cntrl</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="nf">kb_jog</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">shift</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">on_keycall_XNEG</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">event</span><span class="p">,</span><span class="n">state</span><span class="p">,</span><span class="n">shift</span><span class="p">,</span><span class="n">cntrl</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="nf">kb_jog</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">shift</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">on_keycall_YPOS</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">event</span><span class="p">,</span><span class="n">state</span><span class="p">,</span><span class="n">shift</span><span class="p">,</span><span class="n">cntrl</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="nf">kb_jog</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">shift</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">on_keycall_YNEG</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">event</span><span class="p">,</span><span class="n">state</span><span class="p">,</span><span class="n">shift</span><span class="p">,</span><span class="n">cntrl</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="nf">kb_jog</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">shift</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">on_keycall_ZPOS</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">event</span><span class="p">,</span><span class="n">state</span><span class="p">,</span><span class="n">shift</span><span class="p">,</span><span class="n">cntrl</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="nf">kb_jog</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">shift</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">on_keycall_ZNEG</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">event</span><span class="p">,</span><span class="n">state</span><span class="p">,</span><span class="n">shift</span><span class="p">,</span><span class="n">cntrl</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="nf">kb_jog</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">shift</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">on_keycall_APOS</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">event</span><span class="p">,</span><span class="n">state</span><span class="p">,</span><span class="n">shift</span><span class="p">,</span><span class="n">cntrl</span><span class="p">):</span>
+        <span class="k">pass</span>
+        <span class="c1">#self.kb_jog(state, 3, 1, shift, False)
+</span>
+    <span class="k">def</span> <span class="nf">on_keycall_ANEG</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">event</span><span class="p">,</span><span class="n">state</span><span class="p">,</span><span class="n">shift</span><span class="p">,</span><span class="n">cntrl</span><span class="p">):</span>
+        <span class="k">pass</span>
+        <span class="c1">#self.kb_jog(state, 3, -1, shift, linear=False)
+</span>
+    <span class="c1">###########################
+</span>    <span class="c1"># **** closing event **** #
+</span>    <span class="c1">###########################
+</span>
+    <span class="c1">##############################
+</span>    <span class="c1"># required class boiler code #
+</span>    <span class="c1">##############################
+</span>
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nf">getattr</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nf">setattr</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+<span class="c1">################################
+# required handler boiler code #
+################################
+</span>
+<span class="k">def</span> <span class="nf">get_handlers</span><span class="p">(</span><span class="n">halcomp</span><span class="p">,</span><span class="n">widgets</span><span class="p">,</span><span class="n">paths</span><span class="p">):</span>
+     <span class="k">return</span> <span class="p">[</span><span class="nc">HandlerClass</span><span class="p">(</span><span class="n">halcomp</span><span class="p">,</span><span class="n">widgets</span><span class="p">,</span><span class="n">paths</span><span class="p">)]</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_import_section">5.2. IMPORT Section</h3>
+<div class="paragraph">
+<p>This section is for <strong>importing required library modules</strong> for your screen.</p>
+</div>
+<div class="paragraph">
+<p>It would be typical to import QtVCP&#8217;s <em>keybinding</em>, <em>Status</em> and <em>Action</em> libraries.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_instantiate_libraries_section">5.3. INSTANTIATE LIBRARIES Section</h3>
+<div class="paragraph">
+<p>By instantiating the libraries here we <strong>create global reference</strong>.</p>
+</div>
+<div class="paragraph">
+<p>You can note this by the commands that don&#8217;t have <code>self.</code> in front of them.</p>
+</div>
+<div class="paragraph">
+<p>By convention we <em>capitalize the names of globally referenced libraries</em>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_handler_class_section">5.4. HANDLER CLASS Section</h3>
+<div class="paragraph">
+<p>The <strong>custom code</strong> is placed <em>in a class so QtVCP can utilize it</em>.</p>
+</div>
+<div class="paragraph">
+<p>This is the definitions of the handler class.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_initialize_section">5.5. INITIALIZE Section</h3>
+<div class="paragraph">
+<p>Like all Python libraries the <strong><code>+__init__+</code> function</strong> is called when the library is <em>first instantiated</em>.</p>
+</div>
+<div class="paragraph">
+<p>This is where you would set up <em>defaults</em>, as well as <em>reference variables</em> and <em>global variables</em>.</p>
+</div>
+<div class="paragraph">
+<p>The widget references are not available at this point.</p>
+</div>
+<div class="paragraph">
+<p>The variables <code>halcomp</code>, <code>widgets</code> and <code>paths</code> give access to QtVCP&#8217;s HAL component, widgets, and path info respectively.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_special_functions_section">5.6. SPECIAL FUNCTIONS Section</h3>
+<div class="paragraph">
+<p>There are several <em>special functions</em> that QtVCP looks for in the handler file.
+If QtVCP finds these it will call them, if not it will silently ignore them.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong><code>class_patch__(self):</code></strong></dt>
+<dd>
+<p><em>Class patching</em>, also known as <em>monkey patching</em>, allows to <strong>override function calls in an imported module</strong>.<br>
+Class patching must be done <em>before the module is instantiated</em>, and it <em>modifies all instances</em> made after that.<br>
+An example might be patching button calls from the G-code editor to call functions in the handler file instead.<br>
+Class patching function redefined here, will be called with the HandlerClass instance as <em>self</em> rather than the patched class instance.
+This can make access to the patched class function/variables more difficult.<br>
+When class patching outside of the HandlerClass class, the function call will use the patched class instance as <em>self</em>.</p>
+</dd>
+<dt class="hdlist1"><strong><code>initialized__(self):</code></strong></dt>
+<dd>
+<p>This function is <em>called after the widgets and HAL pins are built</em>.<br>
+You can manipulate the widgets and HAL pins or add more HAL pins here.<br>
+Typically there can be</p>
+<div class="ulist">
+<ul>
+<li>
+<p>preferences checked and set,</p>
+</li>
+<li>
+<p>styles applied to widgets,</p>
+</li>
+<li>
+<p>status of LinuxCNC connected to functions.</p>
+</li>
+<li>
+<p>keybindings would be added.</p>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1"><strong><code>pre_hal_init__(self):</code></strong></dt>
+<dd>
+<p>This function is called before the HAL-ified widgets have their hal_init_ function called.<br>
+Some property changes need to be done before HAL_init is called on the widget.</p>
+</dd>
+<dt class="hdlist1"><strong><code>after_override__(self):</code></strong></dt>
+<dd>
+<p>This function is called after the optional override file is loaded but<br>
+before the optional HAL file is loaded or HAL component is set ready.</p>
+</dd>
+<dt class="hdlist1"><strong><code>processed_key_event__(self,receiver,event,is_pressed,key,code,shift,cntrl):</code></strong></dt>
+<dd>
+<p>This function is called to facilitate <em>keyboard jogging</em>, etc.<br>
+By using the <em>`keybinding` library</em> this can be used to easily add functions bound to keypresses.</p>
+</dd>
+<dt class="hdlist1"><strong><code>keypress_event__(self,receiver, event):</code></strong></dt>
+<dd>
+<p>This function gives <strong>raw key press events</strong>.<br>
+It takes <em>precedence over</em> the <code>processed_key_event</code>.</p>
+</dd>
+<dt class="hdlist1"><strong><code>keyrelease_event__(receiver, event):</code></strong></dt>
+<dd>
+<p>This function gives <strong>raw key release events</strong>.<br>
+It takes <em>precedence over</em> the <code>processed_key_event</code>.</p>
+</dd>
+<dt class="hdlist1"><strong><code>before_loop__(self):</code></strong></dt>
+<dd>
+<p>This function is <em>called just before the Qt event loop is entered</em>.
+At that point, all widgets/libraries/initialization code has completed and the screen is already displayed.</p>
+</dd>
+<dt class="hdlist1"><strong><code>system_shutdown_request__(self):</code></strong></dt>
+<dd>
+<p>If present, this function <strong>overrides the normal function called for total system shutdown</strong>.<br>
+It could be used to do <em>pre-shutdown housekeeping</em>.<br>
++
+The Linux <em>system will not shutdown if using this function</em>, you will have to do that yourself.<br>
+QtVCP/LinuxCNC will terminate without a prompt once this function returns.</p>
+</dd>
+<dt class="hdlist1"><strong><code>closing_cleanup__(self):</code></strong></dt>
+<dd>
+<p>This function is <em>called just before the screen closes</em>.
+It can be used to do cleanup before closing.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_status_callbacks_section">5.7. STATUS CALLBACKS Section</h3>
+<div class="paragraph">
+<p>By convention this is where you would put functions that are <strong>callbacks from STATUS definitions</strong>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_callbacks_from_form_section">5.8. CALLBACKS FROM FORM Section</h3>
+<div class="paragraph">
+<p>By convention this is where you would put functions that are <strong>callbacks from the widgets connected to the MainWindow</strong> in the Qt Designer editor.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_general_functions_section">5.9. GENERAL FUNCTIONS Section</h3>
+<div class="paragraph">
+<p>By convention this is where you put your <strong>general functions</strong>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_key_binding_section">5.10. KEY BINDING Section</h3>
+<div class="paragraph">
+<p>If you are <em>using the <code>keybinding</code> library</em> this is where you place your <strong>custom key call routines</strong>.</p>
+</div>
+<div class="paragraph">
+<p>The function signature is:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="k">def</span> <span class="nf">on_keycall_KEY</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">event</span><span class="p">,</span><span class="n">state</span><span class="p">,</span><span class="n">shift</span><span class="p">,</span><span class="n">cntrl</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">state</span><span class="p">:</span>
+        <span class="n">self</span><span class="p">.</span><span class="nf">do_something_function</span><span class="p">()</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>KEY</code> being the code (from the keybindings library) for the desired key.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_closing_event_section">5.11. CLOSING EVENT Section</h3>
+<div class="paragraph">
+<p>Putting the <strong><code>closeEvent</code> function here will catch closing events</strong>.</p>
+</div>
+<div class="paragraph">
+<p>This <em>replaces any predefined `closeEvent`</em> function from QtVCP.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="k">def</span> <span class="nf">closeEvent</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+    <span class="n">self</span><span class="p">.</span><span class="nf">do_something</span><span class="p">()</span>
+    <span class="n">event</span><span class="p">.</span><span class="nf">accept</span><span class="p">()</span></code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+It is usually better to use the special <code>closing_cleanup__</code> function.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_connecting_widgets_to_python_code">6. Connecting Widgets to Python Code</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>It is possible to connect widgets to Python code using <strong>signals and slots</strong>.</p>
+</div>
+<div class="paragraph">
+<p>In this way you can:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>Give new functions to LinuxCNC widgets</em>, or</p>
+</li>
+<li>
+<p><em>Utilize standard Qt widgets to control LinuxCNC</em>.</p>
+</li>
+</ul>
+</div>
+<div class="sect2">
+<h3 id="_overview_3">6.1. Overview</h3>
+<div class="paragraph">
+<p><strong>In the Qt Designer editor</strong>:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>You <em>create user function slots</em></p>
+</li>
+<li>
+<p>You <em>connect the slots to widgets using signals</em>.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>In the handler file</strong>:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>You <em>create the slot&#8217;s functions</em> defined in Qt Designer.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:qtvcp:designer-slots">6.2. Using Qt Designer to add Slots</h3>
+<div class="paragraph">
+<p>When you have loaded your screen into Qt Designer, add a plain <code>PushButton</code> to the screen.<br>
+You could change the name of the button to something interesting like <em>test_button</em>.</p>
+</div>
+<div class="paragraph">
+<p>There are two ways to edit connections - This is the graphical way.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>There is a button in the top tool bar of Qt Designer for editing signals.
+After pushing it, if you click-and-hold on the button it will show an arrow (looks like a ground signal from electrical schematic).</p>
+</li>
+<li>
+<p>Slide this arrow to a part of the main window that does not have widgets on it.</p>
+</li>
+<li>
+<p>A <em>Configure Connections</em> dialog will pop up.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>The list on the left are the available signals from the widget.</p>
+</li>
+<li>
+<p>The list on the right are the available slots on the main window and you can add to it.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Pick the signal <code>clicked()</code> - this makes the slots side available.</p>
+</li>
+<li>
+<p>Click <em>Edit</em> on the slots list.</p>
+</li>
+<li>
+<p>A <em>Slots/Signals of MainWindow</em> dialog will pop up.</p>
+</li>
+<li>
+<p>On the slots list at the top there is a <em>+</em> icon - click it.</p>
+</li>
+<li>
+<p>You can now edit a new slot name.</p>
+</li>
+<li>
+<p>Erase the default name <code>slot()</code> and change it to <code>test_button()</code>.</p>
+</li>
+<li>
+<p>Press the <em>OK</em> button.</p>
+</li>
+<li>
+<p>You&#8217;ll be back to the <em>Configure Connections</em> dialog.</p>
+</li>
+<li>
+<p>Now you can select your new slot in the slot list.</p>
+</li>
+<li>
+<p>Then press <em>OK</em> and save the file.</p>
+</li>
+</ul>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/designer_slots.png" alt="Qt Designer Signal/Slot Selection">
+</div>
+<div class="title">Figure 14. Qt Designer Signal/Slot Selection</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_python_handler_changes">6.3. Python Handler Changes</h3>
+<div class="paragraph">
+<p>Now you must <strong>add the function to the handler file</strong>.</p>
+</div>
+<div class="paragraph">
+<p>The function signature is <strong><code>def slot_name(self):</code></strong>.</p>
+</div>
+<div class="paragraph">
+<p>For our example, we will add some code to print the widget name:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="k">def</span> <span class="nf">test_button</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">w</span><span class="p">.</span><span class="nf">sender</span><span class="p">().</span><span class="nf">text</span><span class="p">()</span>
+    <span class="nf">print</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Add this code under the section named:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="c1">#######################
+# callbacks from form #
+#######################</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In fact it doesn&#8217;t matter where in the handler class you put the commands but by convention this is where to put it.</p>
+</div>
+<div class="paragraph">
+<p>Save the handler file.</p>
+</div>
+<div class="paragraph">
+<p>Now when you load your screen and press the button it should print the name of the button in the terminal.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_more_information">7. More Information</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="qtvcp-vcp-panels.html#cha:qtvcp:panels">QtVCP Builtin Virtual Control Panels</a></p>
+</div>
+<div class="paragraph">
+<p><a href="qtvcp-widgets.html#cha:qtvcp:widgets">QtVCP Widgets</a></p>
+</div>
+<div class="paragraph">
+<p><a href="qtvcp-libraries.html#cha:qtvcp:libraries">QtVCP Libraries</a></p>
+</div>
+<div class="paragraph">
+<p><a href="qtvcp-vismach.html#cha:qtvcp:vismach">Qt Vismach</a></p>
+</div>
+<div class="paragraph">
+<p><a href="qtvcp-code-snippets.html#cha:qtvcp:code">QtVCP Handler File Code Snippets</a></p>
+</div>
+<div class="paragraph">
+<p><a href="qtvcp-development.html#cha:qtvcp:devel">QtVCP Development</a></p>
+</div>
+<div class="paragraph">
+<p><a href="qtvcp-custom-widgets.html#cha:qtvcp:custom-widgets">QtVCP Custom Qt Designer Widgets</a></p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

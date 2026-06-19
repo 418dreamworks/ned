@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>matrix_kb(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="matrix_kb.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/matrix_kb.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/matrix_kb.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/matrix_kb.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/matrix_kb.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/matrix_kb.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/matrix_kb.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/matrix_kb.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>matrix_kb(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>matrix_kb - Convert integers to HAL pins. Optionally scan a matrix of I/O ports to create those integers.</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt matrix_kb config=</strong><em>RxCs</em>,<em>RxCs</em>&#8230;&#8203; <strong>names=</strong><em>name1</em>,<em>name2</em>&#8230;&#8203;</p>
+</div>
+<div class="paragraph">
+<p>Creates a component configured for R rows and N columns of matrix keyboard.</p>
+</div>
+<div class="paragraph">
+<p>If the <strong>s</strong> option is specified then a set of output rows will be
+cyclically toggled, and a set of input columns will be scanned.</p>
+</div>
+<div class="paragraph">
+<p>The <strong>names</strong> parameter is optional, but if used then the HAL pins and
+functions will use the specified names rather than the default ones.
+This can be useful for readability and 2-pass HAL parsing.</p>
+</div>
+<div class="paragraph">
+<p>There must be no spaces in the parameter lists.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This component was written to convert matrix keyboard scancodes into HAL pins.
+However, it might also find uses in converting integers from 0 to <em>N</em> into <em>N</em> HAL pins.</p>
+</div>
+<div class="paragraph">
+<p>The component can work in two ways, and the HAL pins created vary according to mode.</p>
+</div>
+<div class="paragraph">
+<p>In the default mode the component expects to be given a scan code from a
+separate driver but could be any integer from any source. Most typically
+this will be the keypad scancode from a Mesa 7I73. The default codes for
+keyup and keydown are based on the Mesa 7I73 specification with 0x40
+indicating a keydown and 0x80 a keyup event. If using the 7I73 it is
+important to match the keypad size jumpers with the HAL component. Valid
+configs for the 7I73 are 4x8 and 8x8. Note that the component will only
+work properly with the version 12 (0xC) 7I73 firmware. The firmware
+version is visible on the component parameters in HAL.</p>
+</div>
+<div class="paragraph">
+<p>In the optional scan-generation mode the <strong>matrix_kb.</strong><em>N</em><strong>.keycode</strong> pin
+changes to an output pin and a set of output row pins and input column
+pins are created. These need to be connected to physical inputs and
+outputs to scan the matrix and return values to HAL. Note the
+<strong>negative-logic</strong> parameter described below, this will need to be set on
+the most common forms of inputs which float high when unconnected.</p>
+</div>
+<div class="paragraph">
+<p>In both modes a set of HAL output pins are created corresponding to each
+node of the matrix.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>matrix_kb.</strong><em>N</em></dt>
+<dd>
+<p>Perform all requested functions. Should be run in a slow thread for
+effective debouncing.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>matrix_kb.</strong><em>N</em><strong>.col-</strong><em>CC</em><strong>-in</strong> bit in</dt>
+<dd>
+<p>The input pin corresponding to column C.</p>
+</dd>
+<dt class="hdlist1"><strong>matrix_kb.</strong><em>N</em><strong>.key.r</strong><em>R</em><strong>c</strong><em>C</em> bit out</dt>
+<dd>
+<p>The pin corresponding to the key at row R column C of the matrix.</p>
+</dd>
+<dt class="hdlist1"><strong>matrix_kb.</strong><em>N</em><strong>.keycode</strong> unsigned in or out, depending on mode</dt>
+<dd>
+<p>This pin should be connected to the scancode generator if hardware
+such as a 7I73 is being used. In this mode it is an input pin. In the
+internally-generated scanning mode this pin is an output, but will not
+normally be connected.</p>
+</dd>
+<dt class="hdlist1"><strong>matrix_kb.</strong><em>N</em><strong>.row-</strong><em>RR</em><strong>-out</strong> bit out</dt>
+<dd>
+<p>The row scan drive pins. Should be connected to external hardware pins
+connected to the keypad. The row scan drive pins.Should be connected
+to external hardware pins connected to the keypad.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parameters">PARAMETERS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>matrix_kb.</strong><em>N</em><strong>.key_rollover</strong> unsigned r/w (default 2)</dt>
+<dd>
+<p>With most matrix keyboards the scancodes are only unambiguous with 1
+or 2 keys pressed. With more keys pressed phantom keystrokes can
+appear. Some keyboards are optimised to reduce this problem, and some
+have internal diodes so that any number of keys may be pressed
+simultaneously. Increase the value of this parameter if such a
+keyboard is connected, or if phantom keystrokes are more acceptable
+than only two keys being active at one time.</p>
+</dd>
+<dt class="hdlist1"><strong>matrix_kb.</strong><em>N</em><strong>.negative-logic</strong> bit r/w (default 1), only in scan mode</dt>
+<dd>
+<p>When no keys are pressed a typical digital input will float high.
+The input will then be pulled low by the keypad when the corresponding poll line is low.
+Set this parameter to 0 if the I/O in use requires one row at a time to be high,
+and a high input corresponds to a button press.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>MAX31855(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../rouge-github.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="max31855.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/max31855.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/max31855.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/max31855.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/max31855.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/max31855.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/max31855.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/max31855.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>MAX31855(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>max31855 - Support for the MAX31855 Thermocouple-to-Digital converter using bitbanged spi</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt max31855</strong> [<strong>count</strong>=<em>N</em>|<strong>names</strong>=<em>name1</em>[,<em>name2</em>&#8230;&#8203;]] [<strong>personality</strong>=<em>P1</em>[,<em>P2</em>&#8230;&#8203;]]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The component requires at least 3 pins to bitbang spi protocol, for example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadrt</span> <span class="n">max31855</span> <span class="n">personality</span><span class="o">=</span><span class="mi">1</span>
+
+<span class="k">setp</span> <span class="na">hm2_6i25.0.gpio.023.is_output</span> <span class="n">true</span>
+<span class="k">setp</span> <span class="na">hm2_6i25.0.gpio.024.is_output</span> <span class="n">true</span>
+
+<span class="k">net</span> <span class="na">spi.clk.in</span>    <span class="na">hm2_6i25.0.gpio.023.out</span>     <span class="na">max31855.0.clk.out</span>
+<span class="k">net</span> <span class="na">spi.cs.in</span>     <span class="na">hm2_6i25.0.gpio.024.out</span>     <span class="na">max31855.0.cs.out</span>
+<span class="k">net</span> <span class="na">spi.data0.in</span>  <span class="na">hm2_6i25.0.gpio.033.in_not</span>  <span class="na">max31855.0.data.0.in</span>
+
+<span class="k">addf</span> <span class="na">max31855.0.bitbang-spi</span> <span class="n">servo-thread</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The MAX31855 supports a range of -270C to 1800C, however linearization data
+is only available for the -200C to 1350C range, beyond which raw temperature is returned.</p>
+</div>
+<div class="paragraph">
+<p>Temperature pins are provided for readings in Celsius, Fahrenheit and Kelvin,
+temperature values are not updated while a fault condition is present.</p>
+</div>
+<div class="paragraph">
+<p>The personality parameter is used to indicate the number of sensors.
+Multiple sensors share the clk and cs pins, but connect to discrete data input pins.
+A maximum of 15 sensors are supported.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>max31855</strong>.<em>N</em>.<strong>bitbang-spi</strong></dt>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>max31855</strong>.<em>N</em>.<strong>data.<em>M</em>.in</strong> bit in  (M=0..( personality &amp; 0xf )) </dt>
+<dd>
+<p>Pin(s) connected to data out.</p>
+</dd>
+<dt class="hdlist1"><strong>max31855</strong>.<em>N</em>.<strong>cs.out</strong> bit out </dt>
+<dd>
+<p>Pin connected to cs, pulled low to shift data, pulled high for data refresh.</p>
+</dd>
+<dt class="hdlist1"><strong>max31855</strong>.<em>N</em>.<strong>clk.out</strong> bit out </dt>
+<dd>
+<p>Pin connected to clk.</p>
+</dd>
+<dt class="hdlist1"><strong>max31855</strong>.<em>N</em>.<strong>temp-celsius.<em>M</em></strong> float out  (M=0..( personality &amp; 0xf )) </dt>
+<dd>
+<p>Temperature output values in Celsius.</p>
+</dd>
+<dt class="hdlist1"><strong>max31855</strong>.<em>N</em>.<strong>temp-fahrenheit.<em>M</em></strong> float out  (M=0..( personality &amp; 0xf )) </dt>
+<dd>
+<p>Temperature in Fahrenheit.</p>
+</dd>
+<dt class="hdlist1"><strong>max31855</strong>.<em>N</em>.<strong>temp-kelvin.<em>M</em></strong> float out  (M=0..( personality &amp; 0xf )) </dt>
+<dd>
+<p>Temperature in Kelvin.</p>
+</dd>
+<dt class="hdlist1"><strong>max31855</strong>.<em>N</em>.<strong>fault.<em>M</em></strong> bit out  (M=0..( personality &amp; 0xf )) </dt>
+<dd>
+<p>Fault condition detected.</p>
+</dd>
+<dt class="hdlist1"><strong>max31855</strong>.<em>N</em>.<strong>fault-flags.<em>M</em></strong> u32 out  (M=0..( personality &amp; 0xf )) </dt>
+<dd>
+<p>Fault flags: 0x1  = open sensor, 0x2 short to gnd, 0x3 short to vcc.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Joseph Calderon</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:30:13 UTC
+</div>
+</div>
+</body>
+</html>

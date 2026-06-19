@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>ORIENT(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../rouge-github.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="orient.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/orient.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/orient.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/orient.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/orient.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/orient.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/orient.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/orient.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>ORIENT(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>orient - Provide a PID command input for orientation mode based on current spindle position, target angle and orient mode</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt orient</strong> [<strong>count</strong>=<em>N</em>|<strong>names</strong>=<em>name1</em>[,<em>name2</em>&#8230;&#8203;]]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This component is designed to support a spindle orientation PID loop by
+providing a command value, and fit with the motion spindle-orient support pins
+to support the M19 code.</p>
+</div>
+<div class="paragraph">
+<p>The spindle is assumed to have stopped in an arbitrary position. The spindle
+encoder position is linked to the <strong>position</strong> pin.  The current value of the
+position pin is sampled on a positive edge on the <strong>enable</strong> pin, and <strong>command</strong>
+is computed and set as follows:<br>
+floor(number of full spindle revolutions in the <strong>position</strong> sampled on positive
+edge) plus <strong>angle</strong>/360 (the fractional revolution) +1/-1/0 depending on <strong>mode</strong>.</p>
+</div>
+<div class="paragraph">
+<p>The <strong>mode</strong> pin is interpreted as follows:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>0: the spindle rotates in the direction with the lesser angle,
+which may be clockwise or counterclockwise.</p>
+</li>
+<li>
+<p>1: the spindle rotates always rotates clockwise to the new angle.</p>
+</li>
+<li>
+<p>2: the spindle rotates always rotates counterclockwise to the new angle.</p>
+</li>
+</ul>
+</div>
+<div class="sect2">
+<h3 id="_hal_usage">HAL USAGE</h3>
+<div class="paragraph">
+<p>On <strong>spindle.N.orient</strong> disconnect the spindle control and connect to the orient-pid
+loop:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadrt</span> <span class="n">orient</span> <span class="n">names</span><span class="o">=</span><span class="n">orient</span>
+<span class="k">loadrt</span> <span class="n">pid</span> <span class="n">names</span><span class="o">=</span><span class="n">orient-pid</span>
+<span class="k">net</span> <span class="n">orient-angle</span> <span class="na">spindle.N.orient-angle</span> <span class="na">orient.angle</span>
+<span class="k">net</span> <span class="n">orient-mode</span> <span class="na">spindle.N.orient-mode</span> <span class="na">orient.mode</span>
+<span class="k">net</span> <span class="n">orient-enable</span> <span class="na">spindle.N.orient</span> <span class="na">orient.enable</span> <span class="na">orient-pid.enable</span>
+<span class="k">net</span> <span class="n">spindle-in-pos</span> <span class="na">orient.is-oriented</span> <span class="na">spindle.N.is-oriented</span>
+<span class="k">net</span> <span class="n">spindle-pos</span> <span class="na">encoder.position</span> <span class="na">orient.position</span> <span class="na">orient-pid.feedback</span>
+<span class="k">net</span> <span class="n">orient-command</span> <span class="na">orient.command</span> <span class="na">orient-pid.command</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>orient</strong>.<em>N</em></dt>
+<dd>
+<p>Update <strong>command</strong> based on <strong>enable</strong>, <strong>position</strong>, <strong>mode</strong> and <strong>angle</strong>.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>orient</strong>.<em>N</em>.<strong>enable</strong> bit in </dt>
+<dd>
+<p>enable angular output for orientation mode</p>
+</dd>
+<dt class="hdlist1"><strong>orient</strong>.<em>N</em>.<strong>mode</strong> s32 in </dt>
+<dd>
+<p>0: rotate - shortest move; 1: always rotate clockwise; 2: always rotate counterclockwise</p>
+</dd>
+<dt class="hdlist1"><strong>orient</strong>.<em>N</em>.<strong>position</strong> float in </dt>
+<dd>
+<p>spindle position input, unit 1 rev</p>
+</dd>
+<dt class="hdlist1"><strong>orient</strong>.<em>N</em>.<strong>angle</strong> float in </dt>
+<dd>
+<p>orient target position in degrees, 0 ≤ angle &lt; 360</p>
+</dd>
+<dt class="hdlist1"><strong>orient</strong>.<em>N</em>.<strong>command</strong> float out </dt>
+<dd>
+<p>target spindle position, input to PID command</p>
+</dd>
+<dt class="hdlist1"><strong>orient</strong>.<em>N</em>.<strong>poserr</strong> float out </dt>
+<dd>
+<p>in degrees - aid for PID tuning</p>
+</dd>
+<dt class="hdlist1"><strong>orient</strong>.<em>N</em>.<strong>is-oriented</strong> bit out </dt>
+<dd>
+<p>This pin goes high when poserr &lt; tolerance. Use to drive spindle.N.is-oriented</p>
+</dd>
+<dt class="hdlist1"><strong>orient</strong>.<em>N</em>.<strong>tolerance</strong> float in (default: <em>0.5</em>)</dt>
+<dd>
+<p>The tolerance in degrees for considering the align completed</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Michael Haberler</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:30:12 UTC
+</div>
+</div>
+</body>
+</html>

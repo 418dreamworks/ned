@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>HAL Basics</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../rouge-github.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:basic-hal-reference" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="basic-hal.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/hal/basic-hal.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/hal/basic-hal.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/hal/basic-hal.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/hal/basic-hal.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/hal/basic-hal.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/hal/basic-hal.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/hal/basic-hal.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>HAL Basics</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details open><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="../config/stepconf.html">Stepper Configuration Wizard</a><a href="../config/pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="../config/integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><a href="../config/ini-config.html">INI Configuration</a><a href="../config/ini-homing.html">Homing Configuration</a><a href="../config/lathe-config.html">Lathe Configuration</a><a href="../config/stepper-quickstart.html">Stepper Quickstart</a><a href="../config/stepper.html">Stepper Configuration</a><a href="../config/stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details open><summary>HAL (Hardware Abstraction Layer)</summary><a href="intro.html">HAL Introduction</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>HAL Basics</summary><ul class="sectlevel1">
+<li><a href="basic-hal.html#sec:hal-commands">1. HAL Commands</a>
+<ul class="sectlevel2">
+<li><a href="basic-hal.html#sub:hal-loart">1.1. loadrt</a></li>
+<li><a href="basic-hal.html#sub:hal-addf">1.2. addf</a></li>
+<li><a href="basic-hal.html#sub:hal-initf">1.3. initf</a></li>
+<li><a href="basic-hal.html#sub:hal-loadusr">1.4. loadusr</a></li>
+<li><a href="basic-hal.html#sub:hal-net">1.5. net</a></li>
+<li><a href="basic-hal.html#sub:hal-setp">1.6. setp</a></li>
+<li><a href="basic-hal.html#sub:hal-sets">1.7. sets</a></li>
+<li><a href="basic-hal.html#sub:hal-inlinkp">1.8. unlinkp</a></li>
+<li><a href="basic-hal.html#_obsolete_commands">1.9. Obsolete Commands</a></li>
+</ul>
+</li>
+<li><a href="basic-hal.html#sec:hal-data">2. HAL Data</a>
+<ul class="sectlevel2">
+<li><a href="basic-hal.html#sub:hal-bit">2.1. Bit</a></li>
+<li><a href="basic-hal.html#sub:hal-float">2.2. Float</a></li>
+<li><a href="basic-hal.html#sub:hal-s32">2.3. s32</a></li>
+<li><a href="basic-hal.html#sub:hal-u32">2.4. u32</a></li>
+<li><a href="basic-hal.html#sub:hal-s64">2.5. s64</a></li>
+<li><a href="basic-hal.html#sub:hal-u64">2.6. u64</a></li>
+</ul>
+</li>
+<li><a href="basic-hal.html#sec:hal-files">3. HAL Files</a></li>
+<li><a href="basic-hal.html#sec:hal-parameters">4. HAL Parameter</a></li>
+<li><a href="basic-hal.html#sec:hal-logic-components">5. Basic Logic Components</a>
+<ul class="sectlevel2">
+<li><a href="basic-hal.html#sub:hal-and2">5.1. and2</a></li>
+<li><a href="basic-hal.html#sub:hal-not">5.2. not</a></li>
+<li><a href="basic-hal.html#sub:hal-or2">5.3. or2</a></li>
+<li><a href="basic-hal.html#sub:hal-xor2">5.4. xor2</a></li>
+</ul>
+</li>
+<li><a href="basic-hal.html#sec:hal-logic-examples">6. Logic Examples</a></li>
+<li><a href="basic-hal.html#sec:hal-conversion-components">7. Conversion Components</a>
+<ul class="sectlevel2">
+<li><a href="basic-hal.html#sub:hal-weighted-sum">7.1. weighted_sum</a></li>
+</ul>
+</li>
+</ul></details><a href="twopass.html">HAL TWOPASS</a><a href="tools.html">HAL Tools</a><a href="tutorial.html">HAL Tutorial</a><a href="hal-examples.html">HAL Examples</a><a href="../config/core-components.html">Core Components</a><a href="components.html">HAL Component List</a><a href="rtcomps.html">HAL Component Descriptions</a><a href="comp.html">HAL Component Generator</a><a href="haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="halui-examples.html">Halui Examples</a><a href="halmodule.html">Creating Non-realtime Python Components</a><a href="canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="../config/moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="../config/python-interface.html">The LinuxCNC Python module</a><a href="../config/python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+This document provides a reference to the basics of HAL.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:hal-commands">1. HAL Commands</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+More detailed information can be found in the man page for halcmd: run <em>man halcmd</em> in a terminal window.</p>
+</div>
+<div class="paragraph">
+<p>To see the HAL configuration and check the status of pins and parameters use the HAL Configuration window on the Machine menu in AXIS.
+To watch a pin status open the Watch tab and click on each pin you wish to watch and it will be added to the watch window.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/HAL_Configuration.png" alt="The HAL Configuration Window">
+</div>
+<div class="title">Figure 1. HAL Configuration Window</div>
+</div>
+<div class="sect2">
+<h3 id="sub:hal-loart">1.1. loadrt</h3>
+<div class="paragraph">
+<p>
+The command <code>loadrt</code> loads a real time HAL component.
+Real time component functions need to be added to a thread to be updated at the rate of the thread.
+You cannot load a non-realtime component into the realtime space.</p>
+</div>
+<div class="listingblock">
+<div class="title">loadrt Syntax and Example</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadrt</span> &lt;<span class="n">component</span>&gt; &lt;<span class="n">options</span>&gt;
+<span class="k">loadrt</span> <span class="n">mux4</span> <span class="n">count</span><span class="o">=</span><span class="mi">1</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:hal-addf">1.2. addf</h3>
+<div class="paragraph">
+<p>
+The <code>addf</code> command adds a function to a real-time thread.
+If the StepConf wizard was used to create the configuration, two threads have been created (``base-thread`` and ``servo-thread``).</p>
+</div>
+<div class="paragraph">
+<p><code>addf</code> adds function <em>functname</em> to thread <em>threadname</em>.
+Default is to add the function in the order they are in the file.
+If <em>position</em> is specified, adds the function to that spot in the thread.
+A negative <em>position</em> indicates the position with respect to the end of the thread.
+For example <em>1</em> is start of thread, <em>-1</em> is the end of the thread, <em>-3</em> is third from the end.</p>
+</div>
+<div class="paragraph">
+<p>For some functions it is important to load them in a certain order, like the parport read and write functions.
+The function name is usually the component name plus a number.
+In the following example the component <em>or2</em> is loaded and <code>show function</code> shows the name of the or2 function.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ halrun
+halcmd: loadrt or2
+halcmd: show function
+Exported Functions:
+Owner   CodeAddr  Arg       FP   Users  Name
+ 00004  f8bc5000  f8f950c8  NO       0   or2.0</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You have to add a function from a HAL real time component to a thread to get the function to update at the rate of the thread.
+Usually there are two threads as shown in this example.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The <code>FP</code> column and the <code>uses_fp</code> parameter are deprecated.
+All threads now unconditionally save and restore floating point state.
+The <code>fp</code>/<code>nofp</code> distinction will be removed in a future version.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ halrun
+halcmd: loadrt motmod base_period_nsec=55555 servo_period_nsec=1000000 num_joints=3
+halcmd: show thread
+Realtime Threads:
+     Period  FP     Name               (     Time, Max-Time )
+     995976  YES          servo-thread (        0,        0 )
+      55332  YES           base-thread (        0,        0 )</pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>base-thread (the high-speed thread):
+This thread handles items that need a fast response, like making step pulses, and reading and writing the parallel port.</p>
+</li>
+<li>
+<p>servo-thread (the slow-speed thread):
+This thread handles items that can tolerate a slower response, like the motion controller, ClassicLadder, and the motion command handler.</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="title">addf Syntax and Example</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">addf</span> &lt;<span class="n">function</span>&gt; &lt;<span class="n">thread</span>&gt;
+<span class="k">addf</span> <span class="na">mux4.0</span> <span class="n">servo-thread</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:hal-initf">1.3. initf</h3>
+<div class="paragraph">
+<p>
+The <code>initf</code> command registers a function to run once in realtime context, on a dedicated init cycle of the thread before the cyclic function list runs.
+It is the realtime-thread analogue of <code>addf</code>, intended for one-shot setup that must execute in the realtime task (for example EtherCAT master activation via <code>lcec.0.activate</code>).</p>
+</div>
+<div class="paragraph">
+<p><code>initf</code> adds function <em>functname</em> to the init list of thread <em>threadname</em>.
+The init list runs once on the first cycle after <code>start</code>, then is drained.
+The cyclic list begins on the following period.
+Once the init cycle has run, further <code>initf</code> calls on that thread are rejected.
+<code>position</code> has the same meaning as in <code>addf</code>.</p>
+</div>
+<div class="listingblock">
+<div class="title">initf Syntax and Example</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="{hal}">initf &lt;function&gt; &lt;thread&gt;
+initf lcec.0.activate servo-thread</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:hal-loadusr">1.4. loadusr</h3>
+<div class="paragraph">
+<p>
+The command <code>loadusr</code> loads a non-realtime HAL component.
+Non-realtime programs are their own separate processes, which optionally talk to other HAL components via pins and parameters.
+You cannot load realtime components into non-realtime space.</p>
+</div>
+<div class="paragraph">
+<p>Flags may be one or more of the following:</p>
+</div>
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+-W
+</td>
+<td class="hdlist2">
+<p>to wait for the component to become ready. The component is assumed to have the same name as the first argument of the command.</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+-Wn &lt;name&gt;
+</td>
+<td class="hdlist2">
+<p>to wait for the component, which will have the given &lt;name&gt;.  This only applies if the component has a name option.</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+-w
+</td>
+<td class="hdlist2">
+<p>to wait for the program to exit</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+-i
+</td>
+<td class="hdlist2">
+<p>to ignore the program return value (with -w)</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+-n
+</td>
+<td class="hdlist2">
+<p>name a component when it is a valid option for that component.</p>
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="title">Syntax and Examples of <code>loadusr</code></div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadusr</span> &lt;<span class="n">component</span>&gt; &lt;<span class="n">options</span>&gt;
+<span class="k">loadusr</span> <span class="n">halui</span>
+<span class="k">loadusr</span> -<span class="n">Wn</span> <span class="n">spindle</span> <span class="n">gs2_vfd</span> -<span class="n">n</span> <span class="n">spindle</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In English it means <em>loadusr wait for name spindle component gs2_vfd name spindle</em>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:hal-net">1.5. net</h3>
+<div class="paragraph">
+<p>
+The command <code>net</code> creates a <em>connection</em> between a signal and one or more pins.
+If the signal does not exist net creates the new signal.
+This replaces the need to use the command newsig.
+The optional direction arrows <code>&lt;=</code>, <code>=&gt;</code> and <code>&lt;=&gt;</code> make it easier to follow the logic when reading a <code>net</code> command line and are not used by the net command.
+The direction arrows must be separated by a space from the pin names.</p>
+</div>
+<div class="listingblock">
+<div class="title">Syntax and Examples of <code>net</code></div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">net</span> <span class="n">signal-name</span> <span class="n">pin-name</span> &lt;<span class="n">optional</span> <span class="n">arrow</span>&gt; &lt;<span class="n">optional</span> <span class="n">second</span> <span class="n">pin-name</span>&gt;
+<span class="k">net</span> <span class="n">home-x</span> <span class="na">joint.0.home-sw-in</span> <span class="o">&lt;=</span> <span class="na">parport.0.pin-11-in</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In the above example <code>home-x</code> is the signal name, <code>joint.0.home-sw-in</code> is a <em>Direction IN</em> pin, <code>&lt;=</code> is the optional direction arrow, and <code>parport.0.pin-11-in</code> is a <em>Direction OUT</em> pin.
+This may seem confusing but the in and out labels for a parallel port pin indicates the physical way the pin works not how it is handled in HAL.</p>
+</div>
+<div class="paragraph">
+<p>A pin can be connected to a signal if it obeys the following rules:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>An IN pin can always be connected to a signal.</p>
+</li>
+<li>
+<p>An IO pin can be connected unless there&#8217;s an OUT pin on the signal.</p>
+</li>
+<li>
+<p>An OUT pin can be connected only if there are no other OUT or IO pins on the signal.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The same <em>signal-name</em> can be used in multiple net commands to connect additional pins, as long as the rules above are obeyed.</p>
+</div>
+<div id="cap:signal-direction" class="imageblock text-center">
+<div class="content">
+<img src="images/signal-direction.png" alt="Signal Direction">
+</div>
+<div class="title">Figure 2. Signal Direction</div>
+</div>
+<div class="paragraph">
+<p>This example shows the signal xStep with the source being <code>stepgen.0.out</code> and with two readers, <code>parport.0.pin-02-out</code> and <code>parport.0.pin-08-out</code>.
+Basically the value of <code>stepgen.0.out</code> is sent to the signal xStep and that value is then sent to <code>parport.0.pin-02-out</code> and <code>parport.0.pin-08-out</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="c1">#   signal    source            destination          destination</span>
+<span class="k">net</span> <span class="n">xStep</span> <span class="na">stepgen.0.out</span> <span class="o">=&gt;</span> <span class="na">parport.0.pin-02-out</span> <span class="na">parport.0.pin-08-out</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Since the signal xStep contains the value of <code>stepgen.0.out</code> (the source) you can use the same signal again to send the value to another reader.
+To do this just use the signal with the readers on another line.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="c1">#   signal       destination2</span>
+<span class="k">net</span> <span class="n">xStep</span> <span class="o">=&gt;</span> <span class="na">parport.0.pin-06-out</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<div class="title">I/O pins</div>
+<p>An I/O pin like encoder.<em>N</em>.index-enable can be read or set as allowed by the component.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:hal-setp">1.6. setp</h3>
+<div class="paragraph">
+<p>
+The command <code>setp</code> sets the value of a pin or parameter.
+The valid values will depend on the type of the pin or parameter.
+It is an error if the data types do not match.</p>
+</div>
+<div class="paragraph">
+<p>Some components have parameters that need to be set before use.
+Parameters can be set before use or while running as needed.
+You cannot use setp on a pin that is connected to a signal.</p>
+</div>
+<div class="listingblock">
+<div class="title">Syntax and Examples of <code>setp</code></div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">setp</span> &lt;<span class="n">pin</span>/<span class="n">parameter-name</span>&gt; &lt;<span class="n">value</span>&gt;
+<span class="k">setp</span> <span class="na">parport.0.pin-08-out</span> <span class="n">TRUE</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:hal-sets">1.7. sets</h3>
+<div class="paragraph">
+<p>
+The command <code>sets</code> sets the value of a signal.</p>
+</div>
+<div class="listingblock">
+<div class="title">Syntax and Examples of <code>sets</code></div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">sets</span> &lt;<span class="n">signal-name</span>&gt; &lt;<span class="n">value</span>&gt;
+<span class="k">net</span> <span class="n">mysignal</span> <span class="na">and2.0.in0</span> <span class="na">pyvcp.my-led</span>
+<span class="k">sets</span> <span class="n">mysignal</span> <span class="mi">1</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It is an error if:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The signal-name does not exist</p>
+</li>
+<li>
+<p>If the signal already has a writer</p>
+</li>
+<li>
+<p>If value is not the correct type for the signal</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:hal-inlinkp">1.8. unlinkp</h3>
+<div class="paragraph">
+<p>
+The command <code>unlinkp</code> unlinks a pin from the connected signal.
+If no signal was connected to the pin prior running the command, nothing happens.
+The <code>unlinkp</code> command is useful for trouble shooting.</p>
+</div>
+<div class="listingblock">
+<div class="title">Syntax and Examples of <code>unlinkp</code></div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">unlinkp</span> &lt;<span class="n">pin-name</span>&gt;
+<span class="k">unlinkp</span> <span class="na">parport.0.pin-02-out</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_obsolete_commands">1.9. Obsolete Commands</h3>
+<div class="paragraph">
+<p>The following commands are depreciated and may be removed from future versions.
+Any new configuration should use the <a href="basic-hal.html#sub:hal-net"><code>net</code></a> command.
+These commands are included so older configurations will still work.</p>
+</div>
+<div class="sect3">
+<h4 id="_linksp_deprecated">1.9.1. linksp (deprecated)</h4>
+<div class="paragraph">
+<p>The command <code>linksp</code> creates a <em>connection</em> between a signal and one pin.</p>
+</div>
+<div class="listingblock">
+<div class="title">Syntax and Examples of <code>linksp</code></div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">linksp</span> &lt;<span class="n">signal-name</span>&gt; &lt;<span class="n">pin-name</span>&gt;
+<span class="k">linksp</span> <span class="n">X-step</span> <span class="na">parport.0.pin-02-out</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>The <code>linksp</code> command has been superseded by the <code>net</code> command.</strong></p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_linkps_deprecated">1.9.2. linkps (deprecated)</h4>
+<div class="paragraph">
+<p>The command <code>linkps</code> creates a <em>connection</em> between one pin and one signal.
+It is the same as <code>linksp</code> but the arguments are reversed.</p>
+</div>
+<div class="listingblock">
+<div class="title">Syntax and Examples of <code>linkps</code></div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">linkps</span> &lt;<span class="n">pin-name</span>&gt; &lt;<span class="n">signal-name</span>&gt;
+<span class="k">linkps</span> <span class="na">parport.0.pin-02-out</span> <span class="n">X-Step</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>The <code>linkps</code> command has been superseded by the <code>net</code> command.</strong></p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_newsig">1.9.3. newsig</h4>
+<div class="paragraph">
+<p>the command <code>newsig</code> creates a new HAL signal by the name <em>&lt;signame&gt;</em> and the data type of <em>&lt;type&gt;</em>.
+Type must be <em>bit</em>, <em>s32</em>, <em>u32</em>, <em>s64</em>, <em>u64</em> or <em>float</em>. Error if <em>&lt;signame&gt;</em> already exists.</p>
+</div>
+<div class="listingblock">
+<div class="title">Syntax and Examples of <code>newsig</code></div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">newsig</span> &lt;<span class="n">signame</span>&gt; &lt;<span class="n">type</span>&gt;
+<span class="k">newsig</span> <span class="n">Xstep</span> <span class="n">bit</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>More information can be found in the HAL manual or the man pages for <code>halrun</code>.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:hal-data">2. HAL Data</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p></p>
+</div>
+<div class="sect2">
+<h3 id="sub:hal-bit">2.1. Bit</h3>
+<div class="paragraph">
+<p>
+A bit value is an on or off.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>bit values = true or 1 and false or 0 (True, TRUE, true are all valid)</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:hal-float">2.2. Float</h3>
+<div class="paragraph">
+<p>
+A <em>float</em> is a floating point number.
+In other words the decimal point can move as needed.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>float values = a 64 bit floating point value, with approximately 53 bits of resolution and over 2<sup>10</sup> (~ 1000) bits of dynamic range.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For more information on floating point numbers see:</p>
+</div>
+<div class="paragraph">
+<p><a href="https://en.wikipedia.org/wiki/Floating_point">https://en.wikipedia.org/wiki/Floating_point</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:hal-s32">2.3. s32</h3>
+<div class="paragraph">
+<p>
+An <em>s32</em> number is a whole number that can have a negative or positive value.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>s32 values = integer numbers from -2147483648 to 2147483647</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:hal-u32">2.4. u32</h3>
+<div class="paragraph">
+<p>
+A <em>u32</em> number is a whole number that is positive only.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>u32 values = integer numbers from 0 to 4294967295</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:hal-s64">2.5. s64</h3>
+<div class="paragraph">
+<p>
+An <em>s64</em> number is a whole number that can have a negative or positive value.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>s64 values = integer numbers from -9,223,372,036,854,775,808 to
++9,223,372,036,854,775,807</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:hal-u64">2.6. u64</h3>
+<div class="paragraph">
+<p>
+A <em>u64</em> number is a whole number that is positive only.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>u64 values = integer numbers from 0 to 18,446,744,073,709,551,615</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:hal-files">3. HAL Files</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+If you used the Stepper Config Wizard to generate your config you will have up to three HAL files in your config directory.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>my-mill.hal</em> (if your config is named <em>my-mill</em>) This file is loaded first and should not be changed if you used the Stepper Config Wizard.</p>
+</li>
+<li>
+<p><em>custom.hal</em> This file is loaded next and before the GUI loads.
+This is where you put your custom HAL commands that you want loaded before the GUI is loaded.</p>
+</li>
+<li>
+<p><em>custom_postgui.hal</em> This file is loaded after the GUI loads.
+This is where you put your custom HAL commands that you want loaded after the GUI is loaded.
+Any HAL commands that use PyVCP widgets need to be placed here.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:hal-parameters">4. HAL Parameter</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+One pin and two parameters are automatically added to each HAL component when it is created.
+These allow you to scope the execution time of a component.</p>
+</div>
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+<code>.time</code>
+</td>
+<td class="hdlist2">
+<p>Pin time shows in ns how long it took to execute the function.</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+<code>.tmax</code>
+</td>
+<td class="hdlist2">
+<p>Parameter tmax is the maximum time in ns it took to execute the function.</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+<code>.tmax-increased</code>
+</td>
+<td class="hdlist2">
+<p>This parameter is set to true for one cycle if tmax increased.</p>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p><code>tmax</code> is a read/write parameter so the user can set it to 0 to get rid of the first time initialization on the function&#8217;s execution time.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:hal-logic-components">5. Basic Logic Components</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+HAL contains several real time logic components.
+Logic components follow a <em>Truth Table</em> that states what the output is for any given input.
+Typically these are bit manipulators and follow electrical logic gate truth tables.</p>
+</div>
+<div class="paragraph">
+<p>For further components see <a href="intro.html#sec:hal-components">HAL Components List</a> or the man pages.</p>
+</div>
+<div class="sect2">
+<h3 id="sub:hal-and2">5.1. and2</h3>
+<div class="paragraph">
+<p>
+The <code>and2</code> component is a two input and-gate.
+The truth table below shows the output based on each combination of input.</p>
+</div>
+<div class="listingblock">
+<div class="title">Syntax</div>
+<div class="content">
+<pre>and2 [count=N] | [names=name1[,name2...]]</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Functions</div>
+<div class="content">
+<pre>and2.n</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Pins</div>
+<div class="content">
+<pre>and2.N.in0 (bit, in)
+and2.N.in1 (bit, in)
+and2.N.out (bit, out)</pre>
+</div>
+</div>
+<table class="tableblock frame-all grid-all" style="width: 90%;">
+<caption class="title">Table 1. Truth Table of <code>and2</code></caption>
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">in0</th>
+<th class="tableblock halign-left valign-top">in1</th>
+<th class="tableblock halign-left valign-top">out</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">False</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">False</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">False</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">True</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">False</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">False</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">False</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">True</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">False</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">True</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">True</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">True</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="sub:hal-not">5.2. not</h3>
+<div class="paragraph">
+<p>
+The <code>not</code> component is a bit inverter.</p>
+</div>
+<div class="listingblock">
+<div class="title">Syntax</div>
+<div class="content">
+<pre>not [count=n] | [names=name1[,name2...]]</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Functions</div>
+<div class="content">
+<pre>not.all
+not.n</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Pins</div>
+<div class="content">
+<pre>not.n.in (bit, in)
+not.n.out (bit, out)</pre>
+</div>
+</div>
+<table class="tableblock frame-all grid-all" style="width: 90%;">
+<caption class="title">Table 2. Truth Table of <code>not</code></caption>
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">in</th>
+<th class="tableblock halign-left valign-top">out</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">True</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">False</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">False</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">True</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="sub:hal-or2">5.3. or2</h3>
+<div class="paragraph">
+<p>
+The <code>or2</code> component is a two input or-gate.</p>
+</div>
+<div class="listingblock">
+<div class="title">Syntax</div>
+<div class="content">
+<pre>or2[count=n] | [names=name1[,name2...]]</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Functions</div>
+<div class="content">
+<pre>or2.n</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Pins</div>
+<div class="content">
+<pre>or2.n.in0 (bit, in)
+or2.n.in1 (bit, in)
+or2.n.out (bit, out)</pre>
+</div>
+</div>
+<table class="tableblock frame-all grid-all" style="width: 90%;">
+<caption class="title">Table 3. or2 Truth Table</caption>
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">in0</th>
+<th class="tableblock halign-left valign-top">in1</th>
+<th class="tableblock halign-left valign-top">out</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">True</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">False</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">True</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">True</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">True</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">True</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">False</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">True</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">True</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">False</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">False</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">False</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="sub:hal-xor2">5.4. xor2</h3>
+<div class="paragraph">
+<p>
+The <code>xor2</code> component is a two input xor (exclusive or)-gate.</p>
+</div>
+<div class="listingblock">
+<div class="title">Syntax</div>
+<div class="content">
+<pre>xor2[count=n] | [names=name1[,name2...]]</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Functions</div>
+<div class="content">
+<pre>xor2.n</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Pins</div>
+<div class="content">
+<pre>xor2.n.in0 (bit, in)
+xor2.n.in1 (bit, in)
+xor2.n.out (bit, out)</pre>
+</div>
+</div>
+<table class="tableblock frame-all grid-all" style="width: 90%;">
+<caption class="title">Table 4. xor2 Truth Table</caption>
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">in0</th>
+<th class="tableblock halign-left valign-top">in1</th>
+<th class="tableblock halign-left valign-top">out</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">True</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">False</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">True</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">True</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">True</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">False</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">False</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">True</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">True</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">False</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">False</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">False</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:hal-logic-examples">6. Logic Examples</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+.Example using <code>and2</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadrt</span> <span class="n">and2</span> <span class="n">count</span><span class="o">=</span><span class="mi">1</span>
+<span class="k">addf</span> <span class="na">and2.0</span> <span class="n">servo-thread</span>
+<span class="k">net</span> <span class="n">my-sigin1</span> <span class="na">and2.0.in0</span> <span class="o">&lt;=</span> <span class="na">parport.0.pin-11-in</span>
+<span class="k">net</span> <span class="n">my-sigin2</span> <span class="na">and2.0.in1</span> <span class="o">&lt;=</span> <span class="na">parport.0.pin-12-in</span>
+<span class="k">net</span> <span class="n">both-on</span> <span class="na">parport.0.pin-14-out</span> <span class="o">&lt;=</span> <span class="na">and2.0.out</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In the above example one copy of <code>and2</code> is loaded into real time space and added to the servo thread.
+Next <code>pin-11</code> of the parallel port is connected to the <code>in0</code> bit of the and gate.
+Next <code>pin-12</code> is connected to the <code>in1</code> bit of the and gate.
+Last we connect the <code>and2</code> out bit to the parallel port <code>pin-14</code>.
+So following the truth table for <code>and2</code> if pin 11 and pin 12 are on then the output pin 14 will be on.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:hal-conversion-components">7. Conversion Components</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p></p>
+</div>
+<div class="sect2">
+<h3 id="sub:hal-weighted-sum">7.1. weighted_sum</h3>
+<div class="paragraph">
+<p>
+The weighted sum converts a group of bits into an integer.
+The conversion is the sum of the <em>weights</em> of the bits present plus any offset.
+It&#8217;s similar to <em>binary coded decimal</em> but with more options.
+The <em>hold</em> bit interrupts the input processing, so that the <em>sum</em> value no longer changes.</p>
+</div>
+<div class="listingblock">
+<div class="title">Syntax for loading component <code>weighted_sum</code></div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadrt</span> <span class="n">weighted_sum</span> <span class="n">wsum_sizes</span><span class="o">=</span><span class="n">size</span>[,<span class="n">size</span>,...]</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Creates groups of ``weighted_sum``s, each with the given number of input bits (size).</p>
+</div>
+<div class="paragraph">
+<p>To update the <code>weighted_sum</code>, the <code>process_wsums</code> must be attached to a thread.</p>
+</div>
+<div class="listingblock">
+<div class="title">Add <code>process_wsums</code> to servo thread</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">addf</span> <span class="n">process_wsums</span> <span class="n">servo-thread</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Which updates the <code>weighted_sum</code> component.</p>
+</div>
+<div class="paragraph">
+<p>In the following example, a copy of the AXIS HAL configuration window, bits <em>0</em> and <em>2</em> are TRUE, they have no offset.
+The weight (<em>weight</em>) of bit 0 is 1, that of bit 2 is 4, so the sum is 5.</p>
+</div>
+<table class="tableblock frame-all grid-all" style="width: 90%;">
+<caption class="title">Table 5. Component pins of <code>weighted_sum</code></caption>
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Owner</th>
+<th class="tableblock halign-left valign-top">Type</th>
+<th class="tableblock halign-left valign-top">Dir</th>
+<th class="tableblock halign-left valign-top">Value</th>
+<th class="tableblock halign-left valign-top">Name</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">bit</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">In</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TRUE</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>wsum.0.bit.0.in</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">s32</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">I/O</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>wsum.0.bit.0.weight</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">bit</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">In</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FALSE</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>wsum.0.bit.1.in</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">s32</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">I/O</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>wsum.0.bit.1.weight</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">bit</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">In</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TRUE</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>wsum.0.bit.2.in</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">s32</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">I/O</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>wsum.0.bit.2.weight</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">bit</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">In</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FALSE</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>wsum.0.bit.3.in</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">s32</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">I/O</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>wsum.0.bit.3.weight</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">bit</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">In</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FALSE</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>wsum.0.hold</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">s32</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">I/O</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>wsum.0.offset</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">s32</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Out</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>wsum.0.sum</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

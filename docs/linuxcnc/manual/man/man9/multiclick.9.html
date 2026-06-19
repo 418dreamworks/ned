@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>MULTICLICK(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="multiclick.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/multiclick.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/multiclick.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/multiclick.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/multiclick.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/multiclick.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/multiclick.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/multiclick.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>MULTICLICK(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>multiclick - Single-, double-, triple-, and quadruple-click detector</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt multiclick</strong> [<strong>count</strong>=<em>N</em>|<strong>names</strong>=<em>name1</em>[,<em>name2</em>&#8230;&#8203;]]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A click is defined as a rising edge on the <em>in</em> pin,
+followed by the <em>in</em> pin being True for at most <em>max-hold-ns</em> nanoseconds,
+followed by a falling edge.</p>
+</div>
+<div class="paragraph">
+<p>A double-click is defined as two clicks, separated by at
+most <em>max-space-ns</em> nanoseconds with the <em>in</em> pin in the False state.</p>
+</div>
+<div class="paragraph">
+<p>I bet you can guess the definition of triple- and quadruple-click.</p>
+</div>
+<div class="paragraph">
+<p>You probably want to run the input signal through a debounce component
+before feeding it to the multiclick detector, if the input is at all
+noisy.</p>
+</div>
+<div class="paragraph">
+<p>The <em>*-click</em> pins go high as soon as the input detects the correct
+number of clicks.</p>
+</div>
+<div class="paragraph">
+<p>The <em>*-click-only</em> pins go high a short while after the click, after
+the click separator space timeout has expired to show that no further
+click is coming.  This is useful for triggering halui MDI commands.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>multiclick</strong>.<em>N</em></dt>
+<dd>
+<p>Detect single-, double-, triple-, and quadruple-clicks</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>multiclick</strong>.<em>N</em>.<strong>in</strong> bit in </dt>
+<dd>
+<p>The input line, this is where we look for clicks.</p>
+</dd>
+<dt class="hdlist1"><strong>multiclick</strong>.<em>N</em>.<strong>single-click</strong> bit out </dt>
+<dd>
+<p>Goes high briefly when a single-click is detected on the <em>in</em> pin.</p>
+</dd>
+<dt class="hdlist1"><strong>multiclick</strong>.<em>N</em>.<strong>single-click-only</strong> bit out </dt>
+<dd>
+<p>Goes high briefly when a single-click is detected on the <em>in</em> pin
+and no second click followed it.</p>
+</dd>
+<dt class="hdlist1"><strong>multiclick</strong>.<em>N</em>.<strong>double-click</strong> bit out </dt>
+<dd>
+<p>Goes high briefly when a double-click is detected on the <em>in</em> pin.</p>
+</dd>
+<dt class="hdlist1"><strong>multiclick</strong>.<em>N</em>.<strong>double-click-only</strong> bit out </dt>
+<dd>
+<p>Goes high briefly when a double-click is detected on the <em>in</em> pin
+and no third click followed it.</p>
+</dd>
+<dt class="hdlist1"><strong>multiclick</strong>.<em>N</em>.<strong>triple-click</strong> bit out </dt>
+<dd>
+<p>Goes high briefly when a triple-click is detected on the <em>in</em> pin.</p>
+</dd>
+<dt class="hdlist1"><strong>multiclick</strong>.<em>N</em>.<strong>triple-click-only</strong> bit out </dt>
+<dd>
+<p>Goes high briefly when a triple-click is detected on the <em>in</em> pin
+and no fourth click followed it.</p>
+</dd>
+<dt class="hdlist1"><strong>multiclick</strong>.<em>N</em>.<strong>quadruple-click</strong> bit out </dt>
+<dd>
+<p>Goes high briefly when a quadruple-click is detected on the <em>in</em> pin.</p>
+</dd>
+<dt class="hdlist1"><strong>multiclick</strong>.<em>N</em>.<strong>quadruple-click-only</strong> bit out </dt>
+<dd>
+<p>Goes high briefly when a quadruple-click is detected on the <em>in</em>
+pin and no fifth click followed it.</p>
+</dd>
+<dt class="hdlist1"><strong>multiclick</strong>.<em>N</em>.<strong>state</strong> s32 out </dt>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parameters">PARAMETERS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>multiclick</strong>.<em>N</em>.<strong>invert-input</strong> bit rw (default: <em>FALSE</em>)</dt>
+<dd>
+<p>If FALSE (the default), clicks start with rising edges.  If TRUE,
+clicks start with falling edges.</p>
+</dd>
+<dt class="hdlist1"><strong>multiclick</strong>.<em>N</em>.<strong>max-hold-ns</strong> u32 rw (default: <em>250000000</em>)</dt>
+<dd>
+<p>If the input is held down longer than this, it&#8217;s not part of a
+multi-click.  (Default 250,000,000 ns, 250 ms.)</p>
+</dd>
+<dt class="hdlist1"><strong>multiclick</strong>.<em>N</em>.<strong>max-space-ns</strong> u32 rw (default: <em>250000000</em>)</dt>
+<dd>
+<p>If the input is released longer than this, it&#8217;s not part of a
+multi-click.  (Default 250,000,000 ns, 250 ms.)</p>
+</dd>
+<dt class="hdlist1"><strong>multiclick</strong>.<em>N</em>.<strong>output-hold-ns</strong> u32 rw (default: <em>100000000</em>)</dt>
+<dd>
+<p>Positive pulses on the output pins last this long.  (Default
+100,000,000 ns, 100 ms.)</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Sebastian Kuzminsky</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:30:13 UTC
+</div>
+</div>
+</body>
+</html>

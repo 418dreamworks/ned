@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>Coordinate Systems</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../rouge-github.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:coordinate-system" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="coordinates.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/gcode/coordinates.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/gcode/coordinates.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/gcode/coordinates.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/gcode/coordinates.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/gcode/coordinates.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/gcode/coordinates.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/gcode/coordinates.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>Coordinate Systems</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="../config/stepconf.html">Stepper Configuration Wizard</a><a href="../config/pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="../config/integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><a href="../config/ini-config.html">INI Configuration</a><a href="../config/ini-homing.html">Homing Configuration</a><a href="../config/lathe-config.html">Lathe Configuration</a><a href="../config/stepper-quickstart.html">Stepper Quickstart</a><a href="../config/stepper.html">Stepper Configuration</a><a href="../config/stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="../config/core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="../config/moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details open><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details open><summary>G-code Programming</summary><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>Coordinate Systems</summary><ul class="sectlevel1">
+<li><a href="coordinates.html#_introduction">1. Introduction</a></li>
+<li><a href="coordinates.html#sec:machine-coordinate-system">2. Machine Coordinate System</a>
+<ul class="sectlevel2">
+<li><a href="coordinates.html#_machine_coordinates_moves_g53">2.1. Machine coordinates moves: G53</a></li>
+</ul>
+</li>
+<li><a href="coordinates.html#_coordinate_systems">3. Coordinate Systems</a>
+<ul class="sectlevel2">
+<li><a href="coordinates.html#_default_coordinate_system">3.1. Default Coordinate System</a></li>
+<li><a href="coordinates.html#_setting_coordinate_system_offsets">3.2. Setting Coordinate System Offsets</a></li>
+</ul>
+</li>
+<li><a href="coordinates.html#sec:g52-and-g92-offsets">4. Local and Global Offsets</a>
+<ul class="sectlevel2">
+<li><a href="coordinates.html#sec:g52">4.1. The G52 command</a></li>
+</ul>
+</li>
+<li><a href="coordinates.html#sec:g92-axes-offsets">5. G92 Axes Offsets</a>
+<ul class="sectlevel2">
+<li><a href="coordinates.html#sec:g92-commands">5.1. The G92 commands</a></li>
+<li><a href="coordinates.html#_setting_g92_values">5.2. Setting G92 Values</a></li>
+<li><a href="coordinates.html#sec:g92-persistence-cautions">5.3. G92 Persistence Cautions</a></li>
+<li><a href="coordinates.html#sec:g92-g52-interaction-cautions">5.4. G92 and G52 Interaction Cautions</a></li>
+</ul>
+</li>
+<li><a href="coordinates.html#_sample_programs_using_offsets">6. Sample Programs Using Offsets</a>
+<ul class="sectlevel2">
+<li><a href="coordinates.html#_sample_program_using_workpiece_coordinate_offsets">6.1. Sample Program Using Workpiece Coordinate Offsets</a></li>
+<li><a href="coordinates.html#_sample_program_using_g52_offsets">6.2. Sample Program Using G52 Offsets</a></li>
+</ul>
+</li>
+</ul></details><a href="tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="overview.html">Overview of G-Code Programming</a><a href="g-code.html">G-Codes</a><a href="m-code.html">M-Codes</a><a href="o-code.html">O Codes</a><a href="other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="../config/python-interface.html">The LinuxCNC Python module</a><a href="../config/python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_introduction">1. Introduction</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+In this chapter, we will try to demystify coordinate systems.
+It is a very important concept to understand the operation of a CNC
+machine, its configuration and its use.</p>
+</div>
+<div class="paragraph">
+<p>We will also show that it is very interesting to use a reference point
+on the blank or the part and to make the program work from this point,
+without having to take into account where the part is placed on the
+table.</p>
+</div>
+<div class="paragraph">
+<p>This chapter introduces you to offsets as they are used by the LinuxCNC.
+These include:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Machine Coordinates (G53)</p>
+</li>
+<li>
+<p>Nine Coordinate System Offsets (G54-G59.3)</p>
+</li>
+<li>
+<p>Global Offsets (G92) and Local Offsets (G52)</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:machine-coordinate-system">2. Machine Coordinate System</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When LinuxCNC is started the positions of each axis is the machine origin.
+Once an axis is homed, the machine origin for that axis is set to the
+homed position. The machine origin is the machine coordinate system on
+which all other coordinate systems are based. The <a href="g-code.html#gcode:g53">G53</a>
+G-code can be used to move in the machine coordinate system.</p>
+</div>
+<div class="sect2">
+<h3 id="_machine_coordinates_moves_g53">2.1. Machine coordinates moves: G53</h3>
+<div class="paragraph">
+<p>Regardless of any offset that may be active, a G53 in a line of
+code tells the interpreter to move to the actual axes positions
+(absolute positions) specified. For example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ngc"><span class="k">G53</span> <span class="k">G0</span> <span class="na">X</span><span class="mi">0</span> <span class="na">Y</span><span class="mi">0</span> <span class="na">Z</span><span class="mi">0</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>will move from the current position to the position where
+the machine coordinates of the three axes will be at zero. You can
+use this command if you have a fixed position for the tool change or if
+your machine has an automatic tool changer. You can also use this command
+to clear the work area and access the workpiece in the vise.</p>
+</div>
+<div class="paragraph">
+<p>G53 is a non modal command. It must be used in every block where a move
+in machine coordinate system is desired.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_coordinate_systems">3. Coordinate Systems</h2>
+<div class="sectionbody">
+<div id="fig:coordinate-systems-example" class="imageblock text-center">
+<div class="content">
+<img src="images/offsets.png" alt="Coordinate Systems Example">
+</div>
+<div class="title">Figure 1. Coordinate Systems Example</div>
+</div>
+<div class="ulist">
+<div class="title">Coordinate System Offsets</div>
+<ul>
+<li>
+<p>G54 - use coordinate system 1</p>
+</li>
+<li>
+<p>G55 - use coordinate system 2</p>
+</li>
+<li>
+<p>G56 - use coordinate system 3</p>
+</li>
+<li>
+<p>G57 - use coordinate system 4</p>
+</li>
+<li>
+<p>G58 - use coordinate system 5</p>
+</li>
+<li>
+<p>G59 - use coordinate system 6</p>
+</li>
+<li>
+<p>G59.1 - use coordinate system 7</p>
+</li>
+<li>
+<p>G59.2 - use coordinate system 8</p>
+</li>
+<li>
+<p>G59.3 - use coordinate system 9</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Coordinate system offsets are used to shift the coordinate system from
+the machine coordinate system. This allows the G-code to be programmed
+for the part without regard to the part location on the machine. Using
+coordinate system offsets would allow you to machine parts in multiple
+locations with the same G-code.</p>
+</div>
+<div class="paragraph">
+<p>The values for offsets are stored in the VAR file that is requested by
+the INI file during the startup of an LinuxCNC. In the example below,
+which uses G55, the position of each axis for G55 origin is stored in a
+numbered variable.</p>
+</div>
+<div class="paragraph">
+<p>In the VAR file scheme, the first variable number stores the X offset,
+the second the Y offset and so on for all nine axes. There are numbered
+sets like this for each of the coordinate system offsets.</p>
+</div>
+<div class="paragraph">
+<p>Each of the graphical interfaces has a way to set values for these
+offsets.  You can also set these values by editing the VAR file itself
+and then restart LinuxCNC so that the LinuxCNC reads the new values
+however this is not the recommended way. Using G10, G52, G92, G28.1,
+etc are better ways to set the variables. For our example, we will
+directly edit the file so that G55 will take the following values:</p>
+</div>
+<table class="tableblock frame-all grid-all" style="width: 40%;">
+<caption class="title">Table 1. Example of G55 parameters</caption>
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-center valign-top">Axis</th>
+<th class="tableblock halign-center valign-top">Variable</th>
+<th class="tableblock halign-center valign-top">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">X</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">5241</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">2.000000</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">Y</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">5242</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">1.000000</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">Z</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">5243</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">-2.000000</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">A</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">5244</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">0.000000</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">B</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">5245</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">0.000000</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">C</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">5246</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">0.000000</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">U</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">5247</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">0.000000</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">V</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">5248</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">0.000000</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">W</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">5249</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">0.000000</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>You should read this as moving the zero positions of G55 to X = 2
+units, Y= 1 unit, and Z = -2 units away from the absolute zero position.</p>
+</div>
+<div class="paragraph">
+<p>Once there are values assigned, a call to G55 in a program block would
+shift the zero reference by the values stored. The following line would
+then move each axis to the new zero position. Unlike G53, G54 through
+G59.3 are modal commands. They will act on all blocks of code after one
+of them has been set. The program that might be run using
+fixture offsets would require only a single coordinate
+reference for each of the locations and all of the work to be done
+there. The following code is offered as an example of making a square
+using the G55 offsets that we set above.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ngc"><span class="k">G55</span> <span class="c1">; use coordinate system 2</span>
+<span class="k">G0</span> <span class="na">X</span><span class="mi">0</span> <span class="na">Y</span><span class="mi">0</span> <span class="na">Z</span><span class="mi">0</span>
+<span class="k">G1</span> <span class="k">F2</span> <span class="na">Z</span><span class="o">-</span><span class="mf">0.2000</span>
+<span class="na">X</span><span class="mi">1</span>
+<span class="na">Y</span><span class="mi">1</span>
+<span class="na">X</span><span class="mi">0</span>
+<span class="na">Y</span><span class="mi">0</span>
+<span class="k">G0</span> <span class="na">Z</span><span class="mi">0</span>
+<span class="k">G54</span> <span class="c1">; use coordinate system 1</span>
+<span class="k">G0</span> <span class="na">X</span><span class="mi">0</span> <span class="na">Y</span><span class="mi">0</span> <span class="na">Z</span><span class="mi">0</span>
+<span class="k">M2</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In this example the G54 near the end leaves the G54 coordinate system
+with all zero offsets so that there is a modal code for the absolute
+machine based axis positions. This program assumes that we have done
+that and use the ending command as a command to machine zero. It would
+have been possible to use G53 and arrive at the same place but that
+command would not have been modal and any commands issued after it would
+have returned to using the G55 offsets because that coordinate system
+would still be in effect.</p>
+</div>
+<div class="paragraph">
+<p>[source,ngc]</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>G54	uses parameters of coordinate system 1
+G55	uses parameters of coordinate system 2
+G56	uses parameters of coordinate system 3
+G57	uses parameters of coordinate system 4
+G58	uses parameters of coordinate system 5
+G59	uses parameters of coordinate system 6
+G59.1	uses parameters of coordinate system 7
+G59.2	uses parameters of coordinate system 8
+G59.3	uses parameters of coordinate system 9</pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_default_coordinate_system">3.1. Default Coordinate System</h3>
+<div class="paragraph">
+<p>One other variable in the VAR file becomes important when we think
+about offset systems. This variable is named 5220. In the default files
+its value is set to 1.00000. This means that when the LinuxCNC starts up
+it should use the first coordinate system as its default. If you set
+this to 9.00000 it would use the ninth offset system as its default for
+start up and reset. Any value other than an integer (decimal really)
+between 1 and 9, or a missing 5220 variable will cause the LinuxCNC to
+revert to the default value of 1.00000 on start up.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_setting_coordinate_system_offsets">3.2. Setting Coordinate System Offsets</h3>
+<div class="paragraph">
+<p>The G10 L2x command can be used to set coordinate system offsets:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>G10 L2  P(1-9)</em> - Set offset(s) to a value.
+Current position irrelevant (see <a href="g-code.html#gcode:g10-l2">G10 L2</a> for details).</p>
+</li>
+<li>
+<p><em>G10 L20 P(1-9)</em> - Set offset(s) so current position becomes a value
+(see <a href="g-code.html#gcode:g10-l20">G10 L20</a> for details).</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+We only give a brief overview here, refer to the G-code sections
+for a full description.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:g52-and-g92-offsets">4. Local and Global Offsets</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="sec:g52">4.1. The G52 command</h3>
+<div class="paragraph">
+<p><em>G52</em> is used in a part program as a temporary "local coordinate
+system offset" within the workpiece coordinate system.  An example use
+case is when machining several identical features at different
+locations on a part.  For each feature, <em>G52</em> programs a local
+reference point within workpiece coordinates, and a subprogram is
+called to machine the feature relative to that point.</p>
+</div>
+<div class="paragraph">
+<p><em>G52</em> axis offsets are programmed relative to workpiece coordinate
+offsets <em>G54</em> through <em>G59.3</em>.  As a local offset, <em>G52</em> is applied
+after the workpiece offset, including rotation.  Thus, a part feature
+will be machined identically on each part regardless of the part&#8217;s
+orientation on the pallet.</p>
+</div>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Caution</div>
+</td>
+<td class="content">
+As a temporary offset, set and unset within the localized scope of a
+part program, in other G-code interpreters <em>G52</em> does not persist
+after machine reset, <em>M02</em> or <em>M30</em>.  In LinuxCNC, <em>G52</em> shares
+parameters with <em>G92</em>, which, for historical reasons, <strong>does</strong> persist
+these parameters.
+See <a href="coordinates.html#sec:g92-persistence-cautions">G92 Persistence Cautions</a> below.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Caution</div>
+</td>
+<td class="content">
+<em>G52</em> and <em>G92</em> share the same offset registers.  Therefore, setting
+<em>G52</em> will override any earlier <em>G92</em> setting, and <em>G52</em> will persist
+across machine reset when <em>G92</em> persistence is enabled.  These
+interactions may result in unexpected offsets.
+See <a href="coordinates.html#sec:g92-g52-interaction-cautions">G92 and G52 Interaction Cautions</a>
+below.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Programming <em>G52 X1 Y2</em> offsets the current workpiece coordinate
+system X axis by 1 and Y axis by 2.  Accordingly, on the DRO, the
+current tool position&#8217;s X and Y coordinates will be reduced by 1 and
+2, respectively.  Axes unset in the command, such as Z in the previous
+example, will be unaffected: any previous <em>G52</em> Z offset will remain
+in effect, and otherwise the Z offset will be zero.</p>
+</div>
+<div class="paragraph">
+<p>The temporary local offset may be canceled with <em>G52 X0 Y0</em>.  Any axes
+not explicitly zeroed will retain the previous offset.</p>
+</div>
+<div class="paragraph">
+<p><em>G52</em> shares the same offset registers as <em>G92</em>, and thus
+<em>G52</em> is visible on the DRO and preview labeled with <em>G92</em>.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:g92-axes-offsets">5. G92 Axes Offsets</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>G92 is the most misunderstood and cleverest command
+programmable with LinuxCNC. The way it works has changed a bit
+between the first versions and the current one. These changes have
+doubt baffled many users. They should be seen as
+a command producing a temporary offset, which applies to all
+the other offsets.</p>
+</div>
+<div class="sect2">
+<h3 id="sec:g92-commands">5.1. The G92 commands</h3>
+<div class="paragraph">
+<p><em>G92</em> is typically used in two conceptually different ways: as a
+"global coordinate system offset" or as a "local coordinate system
+offset".</p>
+</div>
+<div class="paragraph">
+<p>The <em>G92</em> set of commands includes:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>G92</em> - This command, when used with axis names, sets values to offset
+variables.</p>
+</li>
+<li>
+<p><em>G92.1</em> - This command sets zero values to the G92 variables.</p>
+</li>
+<li>
+<p><em>G92.2</em> - This command suspends but does not zero out the G92
+variables.</p>
+</li>
+<li>
+<p><em>G92.3</em> - This command applies offset values that have been suspended.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>As a global offset, <em>G92</em> is used to shift all workpiece coordinate
+systems <em>G54</em> through <em>G59.3</em>.  An example use case is when machining
+several identical parts in fixtures with known locations on a pallet,
+but the pallet location may change between runs or between machines.
+Each fixture location offset, relative to a reference point on the
+pallet, is preset in one of the workpiece coordinate systems, <em>G54</em>
+through <em>G59.3</em>, and <em>G92</em> is used to "touch off" on the pallet
+reference point.  Then, for each part, the corresponding workpiece
+coordinate system is selected and the part program is executed.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<em>G10 R-</em> workpiece coordinate system rotation is specific to the
+<em>rs274ngc</em> interpreter, and the <em>G92</em> offset is applied <em>after</em>
+rotation.  When using <em>G92</em> as a global offset, workpiece coordinate
+system rotations may have unexpected results.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>As a local coordinate system, <em>G92</em> is used as a temporary offset
+within the workpiece coordinate system.  An example use case is when
+machining a part with several identical features at different
+locations.  For each feature, <em>G92</em> is used to set a local reference
+point, and a subprogram is called to machine the feature starting at
+that point.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The use of <em>G92</em> is discouraged for programming with local coordinate
+systems in a part program.  Instead, see <a href="coordinates.html#sec:g52"><em>G52</em></a>, a local
+coordinate system offset more intuitive when desired offset relative
+to the workpiece is known but current tool location may not be known.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Programming <em>G92 X0 Y0 Z0</em> sets the current tool location to the
+coordinates X0, Y0, and Z0, without motion.  G92 <strong>does not</strong> work from
+absolute machine coordinates.  It works from <strong>current location</strong>.</p>
+</div>
+<div class="paragraph">
+<p><em>G92</em> also works from current location as modified by any other
+offsets that are in effect when the <em>G92</em> command is invoked. While
+testing for differences between work offsets and actual offsets it was
+found that a <em>G54</em> offset could cancel out a <em>G92</em> and thus give the
+appearance that no offsets were in effect. However, the <em>G92</em> was
+still in effect for all coordinates and did produce expected work
+offsets for the other coordinate systems.</p>
+</div>
+<div class="paragraph">
+<p>By default, <em>G92</em> offsets are restored after the machine is started.
+Programmers that wish for Fanuc behavior, where <em>G92</em> offsets are
+cleared at machine start and after a reset or program end, may disable
+<em>G92</em> persistence by setting <em>DISABLE_G92_PERSISTENCE = 1</em> in the
+<em>[RS274NGC]</em> section of the INI file.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+It is good practice to clear the <em>G92</em> offsets at the end of their use
+with <em>G92.1</em> or <em>G92.2</em>. When starting up LinuxCNC with <em>G92</em>
+persistence enabled (the default), any offsets in the <em>G92</em> variables
+will be applied when an axis is homed.  See
+<a href="coordinates.html#sec:g92-persistence-cautions">G92 Persistence Cautions</a> below.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_setting_g92_values">5.2. Setting G92 Values</h3>
+<div class="paragraph">
+<p>There are at least two ways to set G92 values:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>With a right click on the position displays in tklinuxcnc, a window opens
+where it is possible to enter a value.</p>
+</li>
+<li>
+<p>With the G92 command</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Both work from the current position of the axis that should be moved.</p>
+</div>
+<div class="paragraph">
+<p>Programming <em>G92 X Y Z A B C U V W</em> sets the values of the G92 variables
+so that each axis takes the value associated with its name. Those
+values are assigned to the current position of the axes. These results
+satisfy to paragraphs one and two of the NIST document.</p>
+</div>
+<div class="paragraph">
+<p>G92 commands work from current axis location and add and subtract
+correctly to give the current axis position the value assigned by the
+G92 command. The effects work even though previous offsets are in.</p>
+</div>
+<div class="paragraph">
+<p>So if the X axis is currently showing 2.0000 as its position a <em>G92 X0</em>
+will set an offset of -2.0000 so that the current location of X becomes
+zero. A <em>G92 X2</em> will set an offset of 0.0000 and the displayed position
+will not change. A <em>G92 X5.0000</em> will set an offset of 3.0000 so that
+the current displayed position becomes 5.0000.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sec:g92-persistence-cautions">5.3. G92 Persistence Cautions</h3>
+<div class="paragraph">
+<p>By default, the values of a <em>G92</em> offset will be saved in the VAR file
+and be restored after a machine reset or startup.</p>
+</div>
+<div class="paragraph">
+<p>The G92 parameters are:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>5210 - Enable/disable flag (1.0/0.0)</p>
+</li>
+<li>
+<p>5211 - X Axis Offset</p>
+</li>
+<li>
+<p>5212 - Y Axis Offset</p>
+</li>
+<li>
+<p>5213 - Z Axis Offset</p>
+</li>
+<li>
+<p>5214 - A Axis Offset</p>
+</li>
+<li>
+<p>5215 - B Axis Offset</p>
+</li>
+<li>
+<p>5216 - C Axis Offset</p>
+</li>
+<li>
+<p>5217 - U Axis Offset</p>
+</li>
+<li>
+<p>5218 - V Axis Offset</p>
+</li>
+<li>
+<p>5219 - W Axis Offset</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>where 5210 is the <em>G92</em> enable flag (1 for enabled, 0 for disabled)
+and 5211 to 5219 are the axis offsets. If you are seeing unexpected
+positions as the result of a commanded move, as a result of storing an
+offset in a previous program and not clearing them at the end then
+issue a G92.1 in the MDI window to clear the stored offsets.</p>
+</div>
+<div class="paragraph">
+<p>If G92 values exist in the VAR file when LinuxCNC starts up, the G92
+values in the var file will be applied to the values of the current
+location of each axis. If this is home position and home position is
+set as machine zero everything will be correct. Once home has been
+established using real machine switches, or by moving each axis to a
+known home position and issuing an axis home command, any G92 offsets
+will be applied. If you have a G92 X1 in effect when you home the X axis
+the DRO will read <em>X: 1.000</em> instead of the expected <em>X: 0.000</em> because
+the G92 was applied to the machine origin. If you issue a G92.1 and the
+DRO now reads all zeros then you had a G92 offset in effect when you
+last ran LinuxCNC.</p>
+</div>
+<div class="paragraph">
+<p>Unless your intention is to use the same G92 offsets in the next
+program, the best practice is to issue a G92.1 at the end of any G
+code files where you use G92 offsets.</p>
+</div>
+<div class="paragraph">
+<p>When a program is aborted during processing that has <em>G92</em> offsets in
+effect a startup will cause them to become active again.  As a
+safeguard, always have your preamble to set the environment as you
+expect it.  Additionally, <em>G92</em> persistence may be disabled by setting
+<em>DISABLE_G92_PERSISTENCE = 1</em> in the <em>[RS274NGC]</em> section of the
+INI file.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sec:g92-g52-interaction-cautions">5.4. G92 and G52 Interaction Cautions</h3>
+<div class="paragraph">
+<p><em>G52</em> and <em>G92</em> share the same offset registers. Unless <em>G92</em>
+persistence is disabled in the INI file (see
+<a href="coordinates.html#sec:g92-commands">G92 Commands</a>),
+<em>G52</em> offsets will also persist after machine reset,
+<em>M02</em> or <em>M30</em>.  Beware that a <em>G52</em> offset in effect during a program
+abort may result in unintended offsets when the next program is run.
+See <a href="coordinates.html#sec:g92-persistence-cautions">G92 Persistence Cautions</a> above.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_sample_programs_using_offsets">6. Sample Programs Using Offsets</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_sample_program_using_workpiece_coordinate_offsets">6.1. Sample Program Using Workpiece Coordinate Offsets</h3>
+<div class="paragraph">
+<p>This sample engraving project mills a set of four .1 radius circles in
+roughly a star shape around a center circle. We can setup the
+individual circle pattern like this.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ngc"><span class="k">G10</span> <span class="nd">L</span><span class="mi">2</span> <span class="nd">P</span><span class="mi">1</span> <span class="na">X</span><span class="mi">0</span> <span class="na">Y</span><span class="mi">0</span> <span class="na">Z</span><span class="mi">0</span> <span class="cm">(ensure that G54 is set to machine zero)</span>
+<span class="k">G0</span> <span class="na">X</span><span class="o">-</span><span class="mf">0.1</span> <span class="na">Y</span><span class="mi">0</span> <span class="na">Z</span><span class="mi">0</span>
+<span class="k">G1</span> <span class="k">F1</span> <span class="na">Z</span><span class="o">-</span><span class="mf">0.25</span>
+<span class="k">G3</span> <span class="na">X</span><span class="o">-</span><span class="mf">0.1</span> <span class="na">Y</span><span class="mi">0</span> <span class="nd">I</span><span class="mf">0.1</span> <span class="nd">J</span><span class="mi">0</span>
+<span class="k">G0</span> <span class="na">Z</span><span class="mi">0</span>
+<span class="k">M2</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We can issue a set of commands to create offsets for the four other
+circles like this.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ngc"><span class="k">G10</span> <span class="nd">L</span><span class="mi">2</span> <span class="nd">P</span><span class="mi">2</span> <span class="na">X</span><span class="mf">0.5</span> <span class="cm">(offsets G55 X value by 0.5 inch)</span>
+<span class="k">G10</span> <span class="nd">L</span><span class="mi">2</span> <span class="nd">P</span><span class="mi">3</span> <span class="na">X</span><span class="o">-</span><span class="mf">0.5</span> <span class="cm">(offsets G56 X value by -0.5 inch)</span>
+<span class="k">G10</span> <span class="nd">L</span><span class="mi">2</span> <span class="nd">P</span><span class="mi">4</span> <span class="na">Y</span><span class="mf">0.5</span> <span class="cm">(offsets G57 Y value by 0.5 inch)</span>
+<span class="k">G10</span> <span class="nd">L</span><span class="mi">2</span> <span class="nd">P</span><span class="mi">5</span> <span class="na">Y</span><span class="o">-</span><span class="mf">0.5</span> <span class="cm">(offsets G58 Y value by -0.5 inch)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We put these together in the following program:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ngc"><span class="cm">(a program for milling five small circles in a diamond shape)</span>
+
+<span class="k">G10</span> <span class="nd">L</span><span class="mi">2</span> <span class="nd">P</span><span class="mi">1</span> <span class="na">X</span><span class="mi">0</span> <span class="na">Y</span><span class="mi">0</span> <span class="na">Z</span><span class="mi">0</span> <span class="cm">(ensure that G54 is machine zero)</span>
+<span class="k">G10</span> <span class="nd">L</span><span class="mi">2</span> <span class="nd">P</span><span class="mi">2</span> <span class="na">X</span><span class="mf">0.5</span> <span class="cm">(offsets G55 X value by 0.5 inch)</span>
+<span class="k">G10</span> <span class="nd">L</span><span class="mi">2</span> <span class="nd">P</span><span class="mi">3</span> <span class="na">X</span><span class="o">-</span><span class="mf">0.5</span> <span class="cm">(offsets G56 X value by -0.5 inch)</span>
+<span class="k">G10</span> <span class="nd">L</span><span class="mi">2</span> <span class="nd">P</span><span class="mi">4</span> <span class="na">Y</span><span class="mf">0.5</span> <span class="cm">(offsets G57 Y value by 0.5 inch)</span>
+<span class="k">G10</span> <span class="nd">L</span><span class="mi">2</span> <span class="nd">P</span><span class="mi">5</span> <span class="na">Y</span><span class="o">-</span><span class="mf">0.5</span> <span class="cm">(offsets G58 Y value by -0.5 inch)</span>
+
+<span class="k">G54</span> <span class="k">G0</span> <span class="na">X</span><span class="o">-</span><span class="mf">0.1</span> <span class="na">Y</span><span class="mi">0</span> <span class="na">Z</span><span class="mi">0</span> <span class="cm">(center circle)</span>
+<span class="k">G1</span> <span class="k">F1</span> <span class="na">Z</span><span class="o">-</span><span class="mf">0.25</span>
+<span class="k">G3</span> <span class="na">X</span><span class="o">-</span><span class="mf">0.1</span> <span class="na">Y</span><span class="mi">0</span> <span class="nd">I</span><span class="mf">0.1</span> <span class="nd">J</span><span class="mi">0</span>
+<span class="k">G0</span> <span class="na">Z</span><span class="mi">0</span>
+
+<span class="k">G55</span> <span class="k">G0</span> <span class="na">X</span><span class="o">-</span><span class="mf">0.1</span> <span class="na">Y</span><span class="mi">0</span> <span class="na">Z</span><span class="mi">0</span> <span class="cm">(first offset circle)</span>
+<span class="k">G1</span> <span class="k">F1</span> <span class="na">Z</span><span class="o">-</span><span class="mf">0.25</span>
+<span class="k">G3</span> <span class="na">X</span><span class="o">-</span><span class="mf">0.1</span> <span class="na">Y</span><span class="mi">0</span> <span class="nd">I</span><span class="mf">0.1</span> <span class="nd">J</span><span class="mi">0</span>
+<span class="k">G0</span> <span class="na">Z</span><span class="mi">0</span>
+
+<span class="k">G56</span> <span class="k">G0</span> <span class="na">X</span><span class="o">-</span><span class="mf">0.1</span> <span class="na">Y</span><span class="mi">0</span> <span class="na">Z</span><span class="mi">0</span> <span class="cm">(second offset circle)</span>
+<span class="k">G1</span> <span class="k">F1</span> <span class="na">Z</span><span class="o">-</span><span class="mf">0.25</span>
+<span class="k">G3</span> <span class="na">X</span><span class="o">-</span><span class="mf">0.1</span> <span class="na">Y</span><span class="mi">0</span> <span class="nd">I</span><span class="mf">0.1</span> <span class="nd">J</span><span class="mi">0</span>
+<span class="k">G0</span> <span class="na">Z</span><span class="mi">0</span>
+
+<span class="k">G57</span> <span class="k">G0</span> <span class="na">X</span><span class="o">-</span><span class="mf">0.1</span> <span class="na">Y</span><span class="mi">0</span> <span class="na">Z</span><span class="mi">0</span> <span class="cm">(third offset circle)</span>
+<span class="k">G1</span> <span class="k">F1</span> <span class="na">Z</span><span class="o">-</span><span class="mf">0.25</span>
+<span class="k">G3</span> <span class="na">X</span><span class="o">-</span><span class="mf">0.1</span> <span class="na">Y</span><span class="mi">0</span> <span class="nd">I</span><span class="mf">0.1</span> <span class="nd">J</span><span class="mi">0</span>
+<span class="k">G0</span> <span class="na">Z</span><span class="mi">0</span>
+
+<span class="k">G58</span> <span class="k">G0</span> <span class="na">X</span><span class="o">-</span><span class="mf">0.1</span> <span class="na">Y</span><span class="mi">0</span> <span class="na">Z</span><span class="mi">0</span> <span class="cm">(fourth offset circle)</span>
+<span class="k">G1</span> <span class="k">F1</span> <span class="na">Z</span><span class="o">-</span><span class="mf">0.25</span>
+<span class="k">G3</span> <span class="na">X</span><span class="o">-</span><span class="mf">0.1</span> <span class="na">Y</span><span class="mi">0</span> <span class="nd">I</span><span class="mf">0.1</span> <span class="nd">J</span><span class="mi">0</span>
+<span class="k">G54</span> <span class="k">G0</span> <span class="na">X</span><span class="mi">0</span> <span class="na">Y</span><span class="mi">0</span> <span class="na">Z</span><span class="mi">0</span>
+
+<span class="k">M2</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now comes the time when we might apply a set of G92 offsets to this
+program. You&#8217;ll see that it is running in each case at Z0. If the mill
+were at the zero position, a G92 Z1.0000 issued at the head of the
+program would shift everything an inch. You might also shift the
+whole pattern around in the XY plane by adding some X and Y offsets
+with G92. If you do this you should add a G92.1 command just before the
+M2 that ends the program. If you do not, other programs that you might
+run after this one will also use that G92 offset. Furthermore it would
+save the G92 values when you shut down the LinuxCNC and they will be
+recalled when you start up again.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_sample_program_using_g52_offsets">6.2. Sample Program Using G52 Offsets</h3>
+<div class="paragraph">
+<p>(To be written)</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

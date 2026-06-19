@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>GStat Python Module</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../rouge-github.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:gstat" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="gstat.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/gui/gstat.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/gui/gstat.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/gui/gstat.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/gui/gstat.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/gui/gstat.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/gui/gstat.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/gui/gstat.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>GStat Python Module</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="../config/stepconf.html">Stepper Configuration Wizard</a><a href="../config/pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="../config/integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><a href="../config/ini-config.html">INI Configuration</a><a href="../config/ini-homing.html">Homing Configuration</a><a href="../config/lathe-config.html">Lathe Configuration</a><a href="../config/stepper-quickstart.html">Stepper Quickstart</a><a href="../config/stepper.html">Stepper Configuration</a><a href="../config/stepper-diagnostics.html">Stepper Diagnostics</a><a href="filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="../config/core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="../config/moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details open><summary>Usage</summary><details><summary>User Interfaces</summary><a href="axis.html">AXIS GUI</a><a href="gmoccapy.html">GMOCCAPY</a><a href="touchy.html">The Touchy Graphical User Interface</a><a href="gscreen.html">Gscreen</a><a href="qtdragon.html">QtDragon GUI</a><a href="ngcgui.html">NGCGUI</a><a href="tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="pyvcp.html">PyVCP</a><a href="pyvcp-examples.html">PyVCP Examples</a><a href="gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="gladevcp-libraries.html">GladeVCP Library modules</a><a href="gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="qtvcp.html">QtVCP</a><a href="qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="qtvcp-widgets.html">QtVCP Widgets</a><a href="qtvcp-libraries.html">QtVCP Libraries modules</a><a href="qtvcp-vismach.html">QtVismach</a><a href="qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="qtvcp-development.html">QtVCP Development</a></details><details open><summary>User Interface Programming</summary><a href="panelui.html">Panelui</a><a href="../config/python-interface.html">The LinuxCNC Python module</a><a href="../config/python-hal-interface.html">The HAL Python module</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>GStat Python Module</summary><ul class="sectlevel1">
+<li><a href="gstat.html#_intro">1. Intro</a></li>
+<li><a href="gstat.html#_sample_gstat_code">2. Sample GStat Code</a>
+<ul class="sectlevel2">
+<li><a href="gstat.html#_sample_hal_component_code_pattern">2.1. Sample HAL component code pattern</a></li>
+<li><a href="gstat.html#_gladevcp_python_extension_code_pattern">2.2. GladeVCP Python extension code pattern</a></li>
+<li><a href="gstat.html#_qtvcp_python_extension_code_pattern">2.3. QtVCP Python extension code pattern</a></li>
+</ul>
+</li>
+<li><a href="gstat.html#_messages">3. Messages</a></li>
+<li><a href="gstat.html#_functions">4. Functions</a></li>
+<li><a href="gstat.html#_known_issues">5. Known Issues</a></li>
+</ul></details><a href="vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_intro">1. Intro</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GStat is a Python class used to send messages from LinuxCNC to other Python programs.
+It uses GObject to deliver messages, making it easy to listen for specific information.
+This is referred to as event-driven programming, which is more efficient then every program polling LinuxCNC at the same time.
+GladeVCP, Gscreen, Gmoccapy and QtVCP use GStat extensively.
+GStat is in the <code>hal_glib</code> module.</p>
+</div>
+<div class="ulist">
+<div class="title">Overview</div>
+<ul>
+<li>
+<p>First, a program imports the <code>hal_glib</code> module and instantiates GStat.</p>
+</li>
+<li>
+<p>Then it <em>connects</em> to the messages it wishes to monitor.</p>
+</li>
+<li>
+<p>GStat checks LinuxCNC&#8217;s status every 100 ms and if there are differences from
+the last check, it will send a callback message to all the connected programs
+with the current status.</p>
+</li>
+<li>
+<p>When GStat calls the registered function, it sends the GStat object plus any return codes from the message.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Typical code signatures:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="n">GSTAT</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="sh">'</span><span class="s">MESSGAE-TO-LISTEN-FOR</span><span class="sh">'</span><span class="p">,</span> <span class="n">FUNCTION_TO_CALL</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">FUNCTION_TO_CALL</span><span class="p">(</span><span class="n">gstat_object</span><span class="p">,</span> <span class="n">return_codes</span><span class="p">):</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Often LAMBDA is used to strip the GSTAT object and manipulate the return codes:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="n">GSTAT</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="sh">'</span><span class="s">MESSGAE-TO-LISTEN-FOR</span><span class="sh">'</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">o</span><span class="p">,</span> <span class="k">return</span><span class="p">:</span> <span class="nc">FUNCTION_TO_CALL</span><span class="p">(</span><span class="ow">not</span> <span class="k">return</span><span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">FUNCTION_TO_CALL</span><span class="p">(</span><span class="n">return_codes</span><span class="p">):</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_sample_gstat_code">2. Sample GStat Code</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>There are some basic patterns for using GStat,
+depending on what library you are using them in.
+If using GStat with GladeVCP, Gscreen, or QtVCP, the GObject library is not needed as
+those toolkits already set up GObject.</p>
+</div>
+<div class="sect2">
+<h3 id="_sample_hal_component_code_pattern">2.1. Sample HAL component code pattern</h3>
+<div class="paragraph">
+<p>This program creates two HAL pins that output the status of G20/G21.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="c1">#!/usr/bin/env python3
+</span>
+<span class="kn">import</span> <span class="n">gi</span>
+<span class="n">gi</span><span class="p">.</span><span class="nf">require_version</span><span class="p">(</span><span class="sh">'</span><span class="s">Gtk</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">3.0</span><span class="sh">'</span><span class="p">)</span>
+<span class="kn">from</span> <span class="n">gi.repository</span> <span class="kn">import</span> <span class="n">GObject</span>
+<span class="kn">from</span> <span class="n">gi.repository</span> <span class="kn">import</span> <span class="n">GLib</span>
+<span class="kn">import</span> <span class="n">hal</span>
+<span class="kn">from</span> <span class="n">hal_glib</span> <span class="kn">import</span> <span class="n">GStat</span>
+<span class="n">GSTAT</span> <span class="o">=</span> <span class="nc">GStat</span><span class="p">()</span>
+
+<span class="c1"># callback to change HAL pin state
+</span><span class="k">def</span> <span class="nf">mode_changed</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">h</span><span class="p">[</span><span class="sh">'</span><span class="s">g20</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">data</span>
+        <span class="n">h</span><span class="p">[</span><span class="sh">'</span><span class="s">g21</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span>
+
+<span class="c1"># Make a component and pins
+</span><span class="n">h</span> <span class="o">=</span> <span class="n">hal</span><span class="p">.</span><span class="nf">component</span><span class="p">(</span><span class="sh">"</span><span class="s">metric_status</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">h</span><span class="p">.</span><span class="nf">newpin</span><span class="p">(</span><span class="sh">"</span><span class="s">g20</span><span class="sh">"</span><span class="p">,</span> <span class="n">hal</span><span class="p">.</span><span class="n">HAL_BIT</span><span class="p">,</span> <span class="n">hal</span><span class="p">.</span><span class="n">HAL_OUT</span><span class="p">)</span>
+<span class="n">h</span><span class="p">.</span><span class="nf">newpin</span><span class="p">(</span><span class="sh">"</span><span class="s">g21</span><span class="sh">"</span><span class="p">,</span> <span class="n">hal</span><span class="p">.</span><span class="n">HAL_BIT</span><span class="p">,</span> <span class="n">hal</span><span class="p">.</span><span class="n">HAL_OUT</span><span class="p">)</span>
+<span class="n">h</span><span class="p">.</span><span class="nf">ready</span><span class="p">()</span>
+
+<span class="c1"># connect a GSTAT message to a callback function
+</span><span class="n">GSTAT</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="sh">"</span><span class="s">metric-mode-changed</span><span class="sh">"</span><span class="p">,</span><span class="n">mode_changed</span><span class="p">)</span>
+
+<span class="c1"># force GSTAT to initialize states
+</span><span class="n">GSTAT</span><span class="p">.</span><span class="nf">forced_update</span><span class="p">()</span>
+
+<span class="c1"># loop till exit
+</span><span class="k">try</span><span class="p">:</span>
+    <span class="n">GLib</span><span class="p">.</span><span class="nc">MainLoop</span><span class="p">().</span><span class="nf">run</span><span class="p">()</span>
+<span class="k">except</span> <span class="nb">KeyboardInterrupt</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="nb">SystemExit</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This would be loaded with <code>loadusr python PATH-TO-FILE/FILENAME.py</code> or if you need to wait for the pins to be made before continuing:<br>
+<code>loadusr python -Wn metric_status PATH-TO-FILE/FILENAME.py</code><br>
+The pins would be: <code>metric_status.g20</code> and <code>metric_status.g21</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_gladevcp_python_extension_code_pattern">2.2. GladeVCP Python extension code pattern</h3>
+<div class="paragraph">
+<p>This file assumes there are three GTK labels named:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>state_label</em></p>
+</li>
+<li>
+<p><em>e_state_label</em></p>
+</li>
+<li>
+<p><em>interp_state_label</em></p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="c1">#!/usr/bin/env python3
+</span>
+<span class="kn">from</span> <span class="n">hal_glib</span> <span class="kn">import</span> <span class="n">GStat</span>
+<span class="n">GSTAT</span> <span class="o">=</span> <span class="nc">GStat</span><span class="p">()</span>
+
+<span class="k">class</span> <span class="nc">HandlerClass</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">halcomp</span><span class="p">,</span> <span class="n">builder</span><span class="p">,</span> <span class="n">useropts</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">builder</span> <span class="o">=</span> <span class="n">builder</span>
+
+        <span class="n">GSTAT</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="sh">"</span><span class="s">state-estop</span><span class="sh">"</span><span class="p">,</span><span class="k">lambda</span> <span class="n">w</span><span class="p">:</span> <span class="n">self</span><span class="p">.</span><span class="nf">update_estate_label</span><span class="p">(</span><span class="sh">'</span><span class="s">ESTOP</span><span class="sh">'</span><span class="p">))</span>
+        <span class="n">GSTAT</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="sh">"</span><span class="s">state-estop-reset</span><span class="sh">"</span><span class="p">,</span><span class="k">lambda</span> <span class="n">w</span><span class="p">:</span> <span class="n">self</span><span class="p">.</span><span class="nf">update_estate_label</span><span class="p">(</span><span class="sh">'</span><span class="s">RESET</span><span class="sh">'</span><span class="p">))</span>
+
+        <span class="n">GSTAT</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="sh">"</span><span class="s">state-on</span><span class="sh">"</span><span class="p">,</span><span class="k">lambda</span> <span class="n">w</span><span class="p">:</span> <span class="n">self</span><span class="p">.</span><span class="nf">update_state_label</span><span class="p">(</span><span class="sh">'</span><span class="s">MACHINE ON</span><span class="sh">'</span><span class="p">))</span>
+        <span class="n">GSTAT</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="sh">"</span><span class="s">state-off</span><span class="sh">"</span><span class="p">,</span><span class="k">lambda</span> <span class="n">w</span><span class="p">:</span> <span class="n">self</span><span class="p">.</span><span class="nf">update_state_label</span><span class="p">(</span><span class="sh">'</span><span class="s">MACHINE OFF</span><span class="sh">'</span><span class="p">))</span>
+
+        <span class="n">GSTAT</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="sh">"</span><span class="s">interp-paused</span><span class="sh">"</span><span class="p">,</span><span class="k">lambda</span> <span class="n">w</span><span class="p">:</span> <span class="n">self</span><span class="p">.</span><span class="nf">update_interp_label</span><span class="p">(</span><span class="sh">'</span><span class="s">Paused</span><span class="sh">'</span><span class="p">))</span>
+        <span class="n">GSTAT</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="sh">"</span><span class="s">interp-run</span><span class="sh">"</span><span class="p">,</span><span class="k">lambda</span> <span class="n">w</span><span class="p">:</span> <span class="n">self</span><span class="p">.</span><span class="nf">update_interp_label</span><span class="p">(</span><span class="sh">'</span><span class="s">Run</span><span class="sh">'</span><span class="p">))</span>
+        <span class="n">GSTAT</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="sh">"</span><span class="s">interp-idle</span><span class="sh">"</span><span class="p">,</span><span class="k">lambda</span> <span class="n">w</span><span class="p">:</span> <span class="n">self</span><span class="p">.</span><span class="nf">update_interp_label</span><span class="p">(</span><span class="sh">'</span><span class="s">Idle</span><span class="sh">'</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">update_state_label</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">text</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">builder</span><span class="p">.</span><span class="nf">get_object</span><span class="p">(</span><span class="sh">'</span><span class="s">state_label</span><span class="sh">'</span><span class="p">).</span><span class="nf">set_label</span><span class="p">(</span><span class="sh">"</span><span class="s">State: %s</span><span class="sh">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">text</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">update_estate_label</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">text</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">builder</span><span class="p">.</span><span class="nf">get_object</span><span class="p">(</span><span class="sh">'</span><span class="s">e_state_label</span><span class="sh">'</span><span class="p">).</span><span class="nf">set_label</span><span class="p">(</span><span class="sh">"</span><span class="s">E State: %s</span><span class="sh">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">text</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">update_interp_label</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">text</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">builder</span><span class="p">.</span><span class="nf">get_object</span><span class="p">(</span><span class="sh">'</span><span class="s">interp_state_label</span><span class="sh">'</span><span class="p">).</span><span class="nf">set_label</span><span class="p">(</span><span class="sh">"</span><span class="s">Interpreter State: %s</span><span class="sh">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">text</span><span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">get_handlers</span><span class="p">(</span><span class="n">halcomp</span><span class="p">,</span><span class="n">builder</span><span class="p">,</span><span class="n">useropts</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="nc">HandlerClass</span><span class="p">(</span><span class="n">halcomp</span><span class="p">,</span><span class="n">builder</span><span class="p">,</span><span class="n">useropts</span><span class="p">)]</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_qtvcp_python_extension_code_pattern">2.3. QtVCP Python extension code pattern</h3>
+<div class="paragraph">
+<p>QtVCP extends GStat, so must be loaded differently but all the messages are available in QtVCP.<br>
+This handler file assumes there are three QLabels named:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>state_label</em></p>
+</li>
+<li>
+<p><em>e_state_label</em></p>
+</li>
+<li>
+<p><em>interp_state_label</em></p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="c1">#!/usr/bin/env python3
+</span>
+<span class="kn">from</span> <span class="n">qtvcp.core</span> <span class="kn">import</span> <span class="n">Status</span>
+<span class="n">GSTAT</span> <span class="o">=</span> <span class="nc">Status</span><span class="p">()</span>
+
+<span class="k">class</span> <span class="nc">HandlerClass</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">halcomp</span><span class="p">,</span><span class="n">widgets</span><span class="p">,</span><span class="n">paths</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">widgets</span>
+
+        <span class="n">GSTAT</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="sh">"</span><span class="s">state-estop</span><span class="sh">"</span><span class="p">,</span><span class="k">lambda</span> <span class="n">w</span><span class="p">:</span> <span class="n">self</span><span class="p">.</span><span class="nf">update_estate_label</span><span class="p">(</span><span class="sh">'</span><span class="s">ESTOP</span><span class="sh">'</span><span class="p">))</span>
+        <span class="n">GSTAT</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="sh">"</span><span class="s">state-estop-reset</span><span class="sh">"</span><span class="p">,</span><span class="k">lambda</span> <span class="n">w</span><span class="p">:</span> <span class="n">self</span><span class="p">.</span><span class="nf">update_estate_label</span><span class="p">(</span><span class="sh">'</span><span class="s">RESET</span><span class="sh">'</span><span class="p">))</span>
+
+        <span class="n">GSTAT</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="sh">"</span><span class="s">state-on</span><span class="sh">"</span><span class="p">,</span><span class="k">lambda</span> <span class="n">w</span><span class="p">:</span> <span class="n">self</span><span class="p">.</span><span class="nf">update_state_label</span><span class="p">(</span><span class="sh">'</span><span class="s">MACHINE ON</span><span class="sh">'</span><span class="p">))</span>
+        <span class="n">GSTAT</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="sh">"</span><span class="s">state-off</span><span class="sh">"</span><span class="p">,</span><span class="k">lambda</span> <span class="n">w</span><span class="p">:</span> <span class="n">self</span><span class="p">.</span><span class="nf">update_state_label</span><span class="p">(</span><span class="sh">'</span><span class="s">MACHINE OFF</span><span class="sh">'</span><span class="p">))</span>
+
+        <span class="n">GSTAT</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="sh">"</span><span class="s">interp-paused</span><span class="sh">"</span><span class="p">,</span><span class="k">lambda</span> <span class="n">w</span><span class="p">:</span> <span class="n">self</span><span class="p">.</span><span class="nf">update_interp_label</span><span class="p">(</span><span class="sh">'</span><span class="s">Paused</span><span class="sh">'</span><span class="p">))</span>
+        <span class="n">GSTAT</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="sh">"</span><span class="s">interp-run</span><span class="sh">"</span><span class="p">,</span><span class="k">lambda</span> <span class="n">w</span><span class="p">:</span> <span class="n">self</span><span class="p">.</span><span class="nf">update_interp_label</span><span class="p">(</span><span class="sh">'</span><span class="s">Run</span><span class="sh">'</span><span class="p">))</span>
+        <span class="n">GSTAT</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="sh">"</span><span class="s">interp-idle</span><span class="sh">"</span><span class="p">,</span><span class="k">lambda</span> <span class="n">w</span><span class="p">:</span> <span class="n">self</span><span class="p">.</span><span class="nf">update_interp_label</span><span class="p">(</span><span class="sh">'</span><span class="s">Idle</span><span class="sh">'</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">update_state_label</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">text</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">w</span><span class="p">.</span><span class="n">state_label</span><span class="p">.</span><span class="nf">setText</span><span class="p">(</span><span class="sh">"</span><span class="s">State: %s</span><span class="sh">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">text</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">update_estate_label</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">text</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">w</span><span class="p">.</span><span class="n">e_state_label</span><span class="p">.</span><span class="nf">setText</span><span class="p">(</span><span class="sh">"</span><span class="s">E State: %s</span><span class="sh">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">text</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">update_interp_label</span><span class="p">(</span><span class="n">self</span><span class="p">,</span><span class="n">text</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">winterp_state_label</span><span class="p">.</span><span class="nf">setText</span><span class="p">(</span><span class="sh">"</span><span class="s">Interpreter State: %s</span><span class="sh">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">text</span><span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">get_handlers</span><span class="p">(</span><span class="n">halcomp</span><span class="p">,</span><span class="n">builder</span><span class="p">,</span><span class="n">useropts</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="nc">HandlerClass</span><span class="p">(</span><span class="n">halcomp</span><span class="p">,</span><span class="n">widgets</span><span class="p">,</span><span class="n">paths</span><span class="p">)]</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_messages">3. Messages</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>periodic</strong> </dt>
+<dd>
+<p><em>(returns nothing)</em> -
+sent every 100 ms.</p>
+</dd>
+<dt class="hdlist1"><strong>state-estop</strong> </dt>
+<dd>
+<p><em>(returns nothing)</em> -
+Sent when LinuxCNC is goes into estop.</p>
+</dd>
+<dt class="hdlist1"><strong>state-estop-reset</strong></dt>
+<dd>
+<p><em>(returns nothing)</em> -
+Sent when LinuxCNC comes out of estop.</p>
+</dd>
+<dt class="hdlist1"><strong>state-on</strong> </dt>
+<dd>
+<p><em>(returns nothing)</em> -
+Sent when LinuxCNC is in machine on state.</p>
+</dd>
+<dt class="hdlist1"><strong>state-off</strong></dt>
+<dd>
+<p><em>(returns nothing)</em> -
+Sent when LinuxCNC is in machine off state.</p>
+</dd>
+<dt class="hdlist1"><strong>homed</strong> </dt>
+<dd>
+<p><em>(returns string)</em> -
+Sent as each joint is homed.</p>
+</dd>
+<dt class="hdlist1"><strong>all-homed</strong> </dt>
+<dd>
+<p><em>(returns nothing)</em> -
+Sent when all defined joints are homed.</p>
+</dd>
+<dt class="hdlist1"><strong>not-all-homed</strong> </dt>
+<dd>
+<p><em>(returns string)</em> -
+Sends a list of joints not currently homed.</p>
+</dd>
+<dt class="hdlist1"><strong>override_limits_changed</strong> </dt>
+<dd>
+<p><em>(returns string)</em> -
+Sent if LinuxCNC has been directed to override its limits.</p>
+</dd>
+<dt class="hdlist1"><strong>hard-limits-tripped</strong> </dt>
+<dd>
+<p><em>(returns bool, Python List)</em> -
+Sent when any hard limit is tripped.
+bool indicates if any limit is tripped, the list shows all available joint&#8217;s current limit values.</p>
+</dd>
+<dt class="hdlist1"><strong>mode-manual</strong> </dt>
+<dd>
+<p><em>(returns nothing)</em> -
+Sent when LinuxCNC switches to manual mode.</p>
+</dd>
+<dt class="hdlist1"><strong>mode-mdi</strong> </dt>
+<dd>
+<p><em>(returns nothing)</em> -
+Sent when LinuxCNC switches to MDI mode.</p>
+</dd>
+<dt class="hdlist1"><strong>mode-auto</strong> </dt>
+<dd>
+<p><em>(returns nothing)</em> -
+Sent when LinuxCNC switches to auto mode.</p>
+</dd>
+<dt class="hdlist1"><strong>command-running</strong> </dt>
+<dd>
+<p><em>(returns nothing)</em> -
+Sent when running a program or MDI</p>
+</dd>
+<dt class="hdlist1"><strong>command-stopped</strong> </dt>
+<dd>
+<p><em>(returns nothing)</em> -
+Sent when a program or MDI stopped</p>
+</dd>
+<dt class="hdlist1"><strong>command-error</strong> </dt>
+<dd>
+<p><em>(returns nothing)</em> -
+Sent when there is a command error</p>
+</dd>
+<dt class="hdlist1"><strong>interp-run</strong> </dt>
+<dd>
+<p><em>(returns nothing)</em> -
+Sent when LinuxCNC&#8217;s interpreter is running an MDI or program.</p>
+</dd>
+<dt class="hdlist1"><strong>interp-idle</strong> </dt>
+<dd>
+<p><em>(returns nothing)</em> -
+Sent when LinuxCNC&#8217;s interpreter is idle.</p>
+</dd>
+<dt class="hdlist1"><strong>interp-paused</strong> </dt>
+<dd>
+<p><em>(returns nothing)</em> -
+Sent when LinuxCNC&#8217;s interpreter is paused.</p>
+</dd>
+<dt class="hdlist1"><strong>interp-reading</strong> </dt>
+<dd>
+<p><em>(returns nothing)</em> -
+Sent when LinuxCNC&#8217;s interpreter is reading.</p>
+</dd>
+<dt class="hdlist1"><strong>interp-waiting</strong> </dt>
+<dd>
+<p><em>(returns nothing)</em> -
+Sent when LinuxCNC&#8217;s interpreter is waiting.</p>
+</dd>
+<dt class="hdlist1"><strong>jograte-changed</strong> </dt>
+<dd>
+<p><em>(returns float)</em> -
+Sent when jog rate has changed.<br>
+LinuxCNC does not have an internal jog rate.<br>
+This is GStat&#8217;s internal jog rate.<br>
+It is expected to be in the machine&#8217;s native units regardless of the current unit mode .</p>
+</dd>
+<dt class="hdlist1"><strong>jograte-angular-changed</strong> </dt>
+<dd>
+<p><em>(returns float)</em> -
+Sent when the angular jog rate has changed.<br>
+LinuxCNC does not have an internal angular jog rate.<br>
+This is GStat&#8217;s internal jog rate.<br>
+It is expected to be in the machine&#8217;s native units regardless of the current unit mode .</p>
+</dd>
+<dt class="hdlist1"><strong>jogincrement-changed</strong> </dt>
+<dd>
+<p><em>(returns float, text)</em> -
+Sent when jog increment has changed.<br>
+LinuxCNC does not have an internal jog increment.<br>
+This is GStat&#8217;s internal jog increment.<br>
+It is expected to be in the machine&#8217;s native units regardless of the current unit mode .</p>
+</dd>
+<dt class="hdlist1"><strong>jogincrement-angular-changed</strong> </dt>
+<dd>
+<p><em>(returns float, text)</em> -
+Sent when angular jog increment has changed.<br>
+LinuxCNC does not have an internal angular jog increment.<br>
+This is GStat&#8217;s internal angular jog increment.<br>
+It is expected to be in the machine&#8217;s native units regardless of the current unit mode .</p>
+</dd>
+<dt class="hdlist1"><strong>program-pause-changed</strong> </dt>
+<dd>
+<p><em>(returns bool)</em> -
+Sent when program is paused/unpaused.</p>
+</dd>
+<dt class="hdlist1"><strong>optional-stop-changed</strong> </dt>
+<dd>
+<p><em>(returns bool)</em> -
+Sent when optional stop is set/unset</p>
+</dd>
+<dt class="hdlist1"><strong>block-delete-changed</strong> </dt>
+<dd>
+<p><em>(returns bool)</em> -
+sent when block delete is set/unset.</p>
+</dd>
+<dt class="hdlist1"><strong>file-loaded</strong> </dt>
+<dd>
+<p><em>(returns string)</em> -
+Sent when LinuxCNC has loaded a file</p>
+</dd>
+<dt class="hdlist1"><strong>reload-display</strong> </dt>
+<dd>
+<p><em>(returns nothing)</em> -
+Sent when there is a request to reload the display</p>
+</dd>
+<dt class="hdlist1"><strong>line-changed</strong> </dt>
+<dd>
+<p><em>(returns integer)</em> -
+Sent when LinuxCNC has read a new line.<br>
+LinuxCNC does not update this for every type of line.</p>
+</dd>
+<dt class="hdlist1"><strong>tool-in-spindle-changed</strong> </dt>
+<dd>
+<p><em>(returns integer)</em> -
+Sent when the tool has changed.</p>
+</dd>
+<dt class="hdlist1"><strong>tool-info-changed</strong> </dt>
+<dd>
+<p><em>(returns Python object)</em> -
+Sent when current tool info changes.</p>
+</dd>
+<dt class="hdlist1"><strong>current-tool-offset</strong> </dt>
+<dd>
+<p><em>(returns Python object)</em> -
+Sent when the current tool offsets change.</p>
+</dd>
+<dt class="hdlist1"><strong>motion-mode-changed</strong> </dt>
+<dd>
+<p><em>(returns integer)</em> -
+Sent when motion&#8217;s mode has changed</p>
+</dd>
+<dt class="hdlist1"><strong>spindle-control-changed</strong> </dt>
+<dd>
+<p><em>(returns integer, bool, integer, bool)</em> -
+(spindle num, spindle on state, requested spindle direction &amp; rate, at-speed state)<br>
+Sent when spindle direction or running status changes or at-speed changes.</p>
+</dd>
+<dt class="hdlist1"><strong>current-feed-rate</strong> </dt>
+<dd>
+<p><em>(returns float)</em> -
+Sent when the current feed rate changes.</p>
+</dd>
+<dt class="hdlist1"><strong>current-x-rel-position</strong> </dt>
+<dd>
+<p><em>(returns float)</em> -
+Sent every 100 ms.</p>
+</dd>
+<dt class="hdlist1"><strong>current-position</strong> </dt>
+<dd>
+<p><em>(returns pyobject, pyobject, pyobject, pyobject)</em> -
+Sent every 100 ms.<br>
+Returns tuples of position, relative position, distance-to-go and the joint actual position.
+Before homing, on multi-joint axes, only joint position is valid.</p>
+</dd>
+<dt class="hdlist1"><strong>current-z-rotation</strong> </dt>
+<dd>
+<p><em>(returns float)</em> -
+Sent as the current rotatated angle around the Z axis changes</p>
+</dd>
+<dt class="hdlist1"><strong>requested-spindle-speed-changed</strong> </dt>
+<dd>
+<p><em>(returns float)</em> -
+Sent when the current requested RPM changes</p>
+</dd>
+<dt class="hdlist1"><strong>actual-spindle-speed-changed</strong> </dt>
+<dd>
+<p><em>(returns float)</em> -
+Sent when the actual RPM changes based on the HAL pin <code>spindle.0.speed-in</code>.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle-override-changed</strong> </dt>
+<dd>
+<p><em>(returns float)</em> -
+Sent when the spindle override value changes<br>
+in percent</p>
+</dd>
+<dt class="hdlist1"><strong>feed-override-changed</strong> </dt>
+<dd>
+<p><em>(returns float)</em> -
+Sent when the feed override value changes<br>
+in percent</p>
+</dd>
+<dt class="hdlist1"><strong>rapid-override-changed</strong> </dt>
+<dd>
+<p><em>(returns float)</em> -
+Sent when the rapid override value changes<br>
+in percent (0-100)</p>
+</dd>
+<dt class="hdlist1"><strong>max-velocity-override-changed</strong> </dt>
+<dd>
+<p><em>(returns float)</em> -
+Sent when the maximum velocity override value changes<br>
+in units per minute</p>
+</dd>
+<dt class="hdlist1"><strong>feed-hold-enabled-changed</strong> </dt>
+<dd>
+<p><em>(returns bool)</em> -
+Sent when feed hold status changes</p>
+</dd>
+<dt class="hdlist1"><strong>itime-mode</strong> </dt>
+<dd>
+<p><em>(returns bool)</em> -
+Sent when G93 status changes<br>
+(inverse time mode)</p>
+</dd>
+<dt class="hdlist1"><strong>fpm-mode</strong> </dt>
+<dd>
+<p><em>(returns bool)</em> -
+Sent when G94 status changes<br>
+(feed per minute mode)</p>
+</dd>
+<dt class="hdlist1"><strong>fpr-mode</strong> </dt>
+<dd>
+<p><em>(returns bool)</em> -
+Sent when G95 status changes<br>
+(feed per revolution mode)</p>
+</dd>
+<dt class="hdlist1"><strong>css-mode</strong> </dt>
+<dd>
+<p><em>(returns bool)</em> -
+Sent when G96 status changes<br>
+(constant surface feed mode)</p>
+</dd>
+<dt class="hdlist1"><strong>rpm-mode</strong> </dt>
+<dd>
+<p><em>(returns bool)</em> -
+Sent when G97 status changes<br>
+(constant RPM mode)</p>
+</dd>
+<dt class="hdlist1"><strong>radius-mode</strong> </dt>
+<dd>
+<p><em>(returns bool)</em> -
+Sent when G8 status changes<br>
+display X in radius mode</p>
+</dd>
+<dt class="hdlist1"><strong>diameter-mode</strong> </dt>
+<dd>
+<p><em>(returns bool)</em> -
+Sent when G7 status changes<br>
+display X in Diameter mode</p>
+</dd>
+<dt class="hdlist1"><strong>flood-changed</strong> </dt>
+<dd>
+<p><em>(returns bool)</em> -
+Sent when flood coolant state changes.</p>
+</dd>
+<dt class="hdlist1"><strong>mist-changed</strong> </dt>
+<dd>
+<p><em>(returns bool )</em> -
+Sent when mist coolant state changes.</p>
+</dd>
+<dt class="hdlist1"><strong>m-code-changed</strong> </dt>
+<dd>
+<p><em>(returns string)</em> -
+Sent when active M-codes change</p>
+</dd>
+<dt class="hdlist1"><strong>g-code-changed</strong> </dt>
+<dd>
+<p><em>(returns string)</em> -
+Sent when active G-code change</p>
+</dd>
+<dt class="hdlist1"><strong>metric-mode-changed</strong> </dt>
+<dd>
+<p><em>(returns bool)</em> -
+Sent when G21 status changes</p>
+</dd>
+<dt class="hdlist1"><strong>user-system-changed</strong> </dt>
+<dd>
+<p><em>(returns string)</em> -
+Sent when the reference coordinate system (G5x) changes</p>
+</dd>
+<dt class="hdlist1"><strong>mdi-line-selected</strong> </dt>
+<dd>
+<p><em>(returns string, string)</em> -
+intended to be sent when an MDI line is selected by user.<br>
+This depends on the widget/libraries used.</p>
+</dd>
+<dt class="hdlist1"><strong>gcode-line-selected</strong> </dt>
+<dd>
+<p><em>(returns integer)</em> -
+intended to be sent when a G-code line is selected by user.<br>
+This depends on the widget/libraries used.</p>
+</dd>
+<dt class="hdlist1"><strong>graphics-line-selected</strong> </dt>
+<dd>
+<p><em>(returns integer)</em> -
+intended to be sent when graphics line is selected by user.<br>
+This depends on the widget/libraries used.</p>
+</dd>
+<dt class="hdlist1"><strong>graphics-loading-progress</strong> </dt>
+<dd>
+<p><em>(returns integer)</em> -
+intended to return percentage done of loading a program or running a program.<br>
+This depends on the widget/libraries used.</p>
+</dd>
+<dt class="hdlist1"><strong>graphics-gcode-error</strong> </dt>
+<dd>
+<p><em>(returns string)</em> -
+intended to be sent when a G-code error is found when loading.<br>
+This depends on the widget/libraries used.</p>
+</dd>
+<dt class="hdlist1"><strong>graphics-gcode-properties</strong> </dt>
+<dd>
+<p><em>(returns Python dict)</em> -
+Sent when G-code is loaded.<br>
+The dict contains the following keys:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>name</code> (<em>string</em>): Name of the loaded file</p>
+</li>
+<li>
+<p><code>size</code> (<em>string</em>): Size in bytes and lines</p>
+</li>
+<li>
+<p><code>g0</code> (<em>string</em>): Total rapid distance</p>
+</li>
+<li>
+<p><code>g1</code> (<em>string</em>): Total feed distance</p>
+</li>
+<li>
+<p><code>run</code> (<em>string</em>): Estimated program run time</p>
+</li>
+<li>
+<p><code>toollist</code> (<em>list</em>): List of used tools</p>
+</li>
+<li>
+<p><code>x</code> (<em>string</em>): X extents (bounds) <sup>1</sup></p>
+</li>
+<li>
+<p><code>x_zero_rxy</code> (<em>string</em>): X extents without rotation around z (bounds) <sup>1</sup></p>
+</li>
+<li>
+<p><code>y</code> (<em>string</em>): Y extents (bounds) <sup>1</sup></p>
+</li>
+<li>
+<p><code>y_zero_rxy</code> (<em>string</em>): Y extents without rotation around z (bounds) <sup>1</sup></p>
+</li>
+<li>
+<p><code>z</code> (<em>string</em>): Z extents (bounds) <sup>1</sup></p>
+</li>
+<li>
+<p><code>z_zero_rxy</code> (<em>string</em>): Z extents without rotation around z (bounds) <sup>1</sup></p>
+</li>
+<li>
+<p><code>machine_unit_sys</code> (<em>string</em>): Machine units (<em>Metric</em> or <em>Imperial</em>)</p>
+</li>
+<li>
+<p><code>gcode_units</code> (<em>string</em>): Units in G-code file (<em>mm</em> or <em>in</em>)</p>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>See the images <span class="image"><a class="image" href="images/gremlin_extents_non-rotated.png"><img src="images/gremlin_extents_non-rotated_link.png" alt="extends non-rotated"></a></span> and <span class="image"><a class="image" href="images/gremlin_extents_rotated_30.png"><img src="images/gremlin_extents_rotated_30_link.png" alt="extends rotated 30"></a></span> for a better understanding.</p>
+</li>
+</ol>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1"><strong>graphics-view-changed</strong> </dt>
+<dd>
+<p><em>(returns string, Python dict or None)</em> -
+intended to be sent when graphics view is changed.<br>
+This depends on the widget/libraries used.</p>
+</dd>
+<dt class="hdlist1"><strong>mdi-history-changed</strong> </dt>
+<dd>
+<p><em>(returns None)</em> -
+intended to be sent when an MDI history needs to be reloaded.<br>
+This depends on the widget/libraries used.</p>
+</dd>
+<dt class="hdlist1"><strong>machine-log-changed</strong> </dt>
+<dd>
+<p><em>(returns None)</em> -
+intended to be sent when machine log has changed.<br>
+This depends on the widget/libraries used.</p>
+</dd>
+<dt class="hdlist1"><strong>update-machine-log</strong> </dt>
+<dd>
+<p><em>(returns string, string)</em> -
+intended to be sent when updating the machine.<br>
+This depends on the widget/libraries used.</p>
+</dd>
+<dt class="hdlist1"><strong>move-text-lineup</strong> </dt>
+<dd>
+<p><em>(returns None)</em> -
+intended to be sent when moving the cursor one line up in G-code display.<br>
+This depends on the widget/libraries used.</p>
+</dd>
+<dt class="hdlist1"><strong>move-text-linedown</strong> </dt>
+<dd>
+<p><em>(returns None)</em> -
+intended to be sent when moving the cursor one line down in G-code display.<br>
+This depends on the widget/libraries used.</p>
+</dd>
+<dt class="hdlist1"><strong>dialog-request</strong> </dt>
+<dd>
+<p><em>(returns Python dict)</em> -
+intended to be sent when requesting a GUI dialog.<br>
+It uses a Python dict for communication.
+The dict must include the following keyname pair:<br></p>
+<div class="ulist">
+<ul>
+<li>
+<p>NAME: <em>requested dialog name</em><br>
+The dict usually has several keyname pairs - it depends on the dialog.<br>
+dialogs return information using a general message<br>
+This depends on the widget/libraries used.</p>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1"><strong>focus-overlay-changed</strong> </dt>
+<dd>
+<p><em>(returns bool, string, Python object)</em> -
+intended to be sent when requesting an overlay to be put over the display.<br>
+This depends on the widget/libraries used.</p>
+</dd>
+<dt class="hdlist1"><strong>play-sound</strong> </dt>
+<dd>
+<p><em>(returns string)</em> -
+intended to be sent when requesting a specific sound file to be played.<br>
+This depends on the widget/libraries used.</p>
+</dd>
+<dt class="hdlist1"><strong>virtual-keyboard</strong> </dt>
+<dd>
+<p><em>(returns string)</em> -
+intended to be sent when requesting a on screen keyboard.<br>
+This depends on the widget/libraries used.</p>
+</dd>
+<dt class="hdlist1"><strong>dro-reference-change-request</strong> </dt>
+<dd>
+<p><em>(returns integer)</em> -
+intended to be sent when requesting a DRO widget to change its reference.<br>
+0 = machine, 1 = relative, 3 = distance-to-go<br>
+This depends on the widget/libraries used.</p>
+</dd>
+<dt class="hdlist1"><strong>show-preferences</strong> </dt>
+<dd>
+<p><em>(returns None)</em> -
+intended to be sent when requesting the screen preferences to be displayed.<br>
+This depends on the widget/libraries used.</p>
+</dd>
+<dt class="hdlist1"><strong>shutdown</strong> </dt>
+<dd>
+<p><em>(returns None)</em> -
+intended to be sent when requesting LinuxCNC to shutdown.<br>
+This depends on the widget/libraries used.</p>
+</dd>
+<dt class="hdlist1"><strong>status-message</strong> </dt>
+<dd>
+<p><em>returns python dict (message), python dict (options)</em>
+Intended for a screen/panel to get status/log messages from widgets, but can be used generally.<br>
+The listening object is expected to look for and handle at least these entries:<br></p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>The message dict would include:<br></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>TITLE: (string)</p>
+</li>
+<li>
+<p>SHORTTEXT: (string)</p>
+</li>
+<li>
+<p>DETAILS: (string)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The options dict would include:<br></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>LEVEL: (integer)</p>
+</li>
+<li>
+<p>LOG: (bool)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The listening object could use this to display information on a text line or message dialog.<br>
+The LEVEL would indicate urgency 0 = DEFAULT 1 = WARNING 2 = CRITICAL<br>
+LOG indicates whether the message should be logged to a file/page if available.<br>
+LOG messages would be assumed to use the DETAILS entry.<br></p>
+</div>
+<div class="paragraph">
+<p>An example of how to send a message:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="n">mess</span> <span class="o">=</span> <span class="p">{</span><span class="sh">'</span><span class="s">SHORTTEXT</span><span class="sh">'</span><span class="p">:</span><span class="sh">'</span><span class="s">File Copy Failed</span><span class="sh">'</span><span class="p">,</span>
+        <span class="sh">'</span><span class="s">TITLE</span><span class="sh">'</span><span class="p">:</span><span class="sh">'</span><span class="s">FileManager</span><span class="sh">'</span><span class="p">,</span>
+        <span class="sh">'</span><span class="s">DETAILS</span><span class="sh">'</span><span class="p">:</span><span class="sh">'</span><span class="s">There is not enough room on disk to copy the file</span><span class="sh">'</span><span class="p">}</span>
+<span class="n">opt</span> <span class="o">=</span> <span class="p">{</span><span class="sh">'</span><span class="s">LOG</span><span class="sh">'</span><span class="p">:</span><span class="bp">True</span><span class="p">,</span><span class="sh">'</span><span class="s">LEVEL</span><span class="sh">'</span><span class="p">:</span><span class="mi">2</span><span class="p">}</span>
+<span class="n">STATUS</span><span class="p">.</span><span class="nf">emit</span><span class="p">(</span><span class="sh">'</span><span class="s">status-message</span><span class="sh">'</span><span class="p">,</span><span class="n">mess</span><span class="p">,</span><span class="n">opt</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>An example of the listening object:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="c1"># tell STATUS we want to respond to any sent 'status-message' messages.
+</span><span class="n">STATUS</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="sh">'</span><span class="s">status-message</span><span class="sh">'</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">w</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">o</span><span class="p">:</span> <span class="n">self</span><span class="p">.</span><span class="nf">add_external_status</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="n">o</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">add_external_status</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">option</span><span class="p">):</span>
+
+        <span class="c1"># extract and trap errors for expected entries
+</span>        <span class="n">level</span> <span class="o">=</span> <span class="n">option</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="sh">'</span><span class="s">LEVEL</span><span class="sh">'</span><span class="p">,</span> <span class="n">STATUS</span><span class="p">.</span><span class="n">DEFAULT</span><span class="p">)</span>
+        <span class="n">log</span> <span class="o">=</span> <span class="n">option</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="sh">"</span><span class="s">LOG</span><span class="sh">"</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="n">message</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="sh">'</span><span class="s">TITLE</span><span class="sh">'</span><span class="p">,</span> <span class="sh">''</span><span class="p">)</span>
+        <span class="n">mess</span> <span class="o">=</span> <span class="n">message</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="sh">'</span><span class="s">SHORTTEXT</span><span class="sh">'</span><span class="p">,</span> <span class="sh">''</span><span class="p">)</span>
+        <span class="n">logtext</span> <span class="o">=</span> <span class="n">message</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="sh">'</span><span class="s">DETAILS</span><span class="sh">'</span><span class="p">,</span> <span class="sh">''</span><span class="p">)</span>
+
+        <span class="c1"># call a function to print the message on a statusbar:
+</span>        <span class="n">self</span><span class="p">.</span><span class="nf">add_status</span><span class="p">(</span><span class="n">mess</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="n">noLog</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+        <span class="c1"># request a log file update
+</span>        <span class="k">if</span> <span class="n">log</span><span class="p">:</span>
+            <span class="n">STATUS</span><span class="p">.</span><span class="nf">emit</span><span class="p">(</span><span class="sh">'</span><span class="s">update-machine-log</span><span class="sh">'</span><span class="p">,</span> <span class="sh">"</span><span class="s">{}</span><span class="se">\n</span><span class="s">{}</span><span class="sh">"</span><span class="p">.</span><span class="nf">format</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">logtext</span><span class="p">),</span> <span class="sh">'</span><span class="s">TIME</span><span class="sh">'</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>error</strong> </dt>
+<dd>
+<p><em>(returns integer, string)</em> -
+intended to be sent when an error has been reported .<br>
+integer represents the kind of error. ERROR, TEXT or DISPLAY<br>
+string is the actual error message.<br>
+This depends on the widget/libraries used.</p>
+</dd>
+<dt class="hdlist1"><strong>general</strong> </dt>
+<dd>
+<p><em>(returns Python dict)</em> -
+intended to be sent when message must be sent that is not covered by a more specific message.<br>
+General message should be used a sparsely as reasonable because all object connected to it will have to parse it.<br>
+It uses a Python dict for communication.<br>
+The dict should include and be checked for a unique id  keyname pair:<br></p>
+<div class="ulist">
+<ul>
+<li>
+<p>ID: <em>UNIQUE_ID_CODE</em><br>
+The dict usually has more keyname pair - it depends on implementation.</p>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1"><strong>forced-update</strong> </dt>
+<dd>
+<p><em>(returns None)</em> -
+intended to be sent when one wishes to initialize or arbitrarily update an object.<br>
+This depends on the widget/libraries used.</p>
+</dd>
+<dt class="hdlist1"><strong>progress</strong> </dt>
+<dd>
+<p><em>(returns integer, Python object)</em> -
+intended to be sent to indicate the progress of a filter program.<br>
+This depends on the widget/libraries used.</p>
+</dd>
+<dt class="hdlist1"><strong>following-error</strong> </dt>
+<dd>
+<p><em>(returns Python list)</em> -
+returns a list of all joints current following error.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">4. Functions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>These are convenience functions that are commonly used in programming.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>set_jograte</strong> </dt>
+<dd>
+<p><em>(float)</em> -
+LinuxCNC has no internal concept of jog rate -each GUI has its own.
+This is not always convenient.<br>
+This function allows one to set a jog rate for all objects connected to the signal <code>jograte-changed</code>.<br>
+It defaults to 15.<br>
+GSTAT.set_jog_rate(10) would set the jog rate to 10 machine-units-per-minute and emit the <code>jograte-changed</code> signal.</p>
+</dd>
+<dt class="hdlist1"><strong>get_jograte()</strong> </dt>
+<dd>
+<p><em>(Nothing)</em> -
+x = GSTAT.get_jograte() would return GSTAT&#8217;s current internal jograte (float).</p>
+</dd>
+<dt class="hdlist1"><strong>set_jograte_angular</strong> </dt>
+<dd>
+<p><em>(float)</em> -</p>
+</dd>
+<dt class="hdlist1"><strong>get_jograte_angular</strong> </dt>
+<dd>
+<p><em>(None)</em> -</p>
+</dd>
+<dt class="hdlist1"><strong>set_jog_increment_angular</strong> </dt>
+<dd>
+<p><em>(float, string)</em> -</p>
+</dd>
+<dt class="hdlist1"><strong>get_jog_increment_angular</strong> </dt>
+<dd>
+<p><em>(None)</em> -</p>
+</dd>
+<dt class="hdlist1"><strong>set_jog_increments</strong> </dt>
+<dd>
+<p><em>(float, string)</em> -</p>
+</dd>
+<dt class="hdlist1"><strong>get_jog_increments</strong> </dt>
+<dd>
+<p><em>(None)</em> -</p>
+</dd>
+<dt class="hdlist1"><strong>is_all_homed</strong> </dt>
+<dd>
+<p><em>(nothing)</em> -
+This will return the current state of all_homed (BOOL).</p>
+</dd>
+<dt class="hdlist1"><strong>machine_is_on</strong> </dt>
+<dd>
+<p><em>(nothing)</em> -
+This will return the current state of machine (BOOL).</p>
+</dd>
+<dt class="hdlist1"><strong>estop_is_clear</strong> </dt>
+<dd>
+<p><em>(nothing)</em> -
+This will return the state of Estop (BOOL)</p>
+</dd>
+<dt class="hdlist1"><strong>set_tool_touchoff</strong> </dt>
+<dd>
+<p><em>(tool,axis,value)</em> -
+This command will</p>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>record the current mode,</p>
+</li>
+<li>
+<p>switch to MDI mode,</p>
+</li>
+<li>
+<p>invoke the MDI command: G10 L10 P[TOOL] [AXIS] [VALUE],</p>
+</li>
+<li>
+<p>wait for it to complete,</p>
+</li>
+<li>
+<p>invoke G43,</p>
+</li>
+<li>
+<p>wait for it to complete,</p>
+</li>
+<li>
+<p>switch back to the original mode.</p>
+</li>
+</ol>
+</div>
+</dd>
+<dt class="hdlist1"><strong>set_axis_origin</strong> </dt>
+<dd>
+<p><em>(axis,value)</em> -
+This command will</p>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>record the current mode,</p>
+</li>
+<li>
+<p>switch to MDI mode,</p>
+</li>
+<li>
+<p>invoke the MDI command: G10 L20 P0 [AXIS] [VALUE],</p>
+</li>
+<li>
+<p>wait for it to complete,</p>
+</li>
+<li>
+<p>switch back to the original mode,</p>
+</li>
+<li>
+<p>emit a <em>reload-display</em> signal.</p>
+</li>
+</ol>
+</div>
+</dd>
+<dt class="hdlist1"><strong>do_jog</strong> </dt>
+<dd>
+<p><em>(axis_number,direction, distance)</em> -
+This will jog an axis continuously or at a set distance.<br>
+You must be in the proper mode to jog.</p>
+</dd>
+<dt class="hdlist1"><strong>check_for_modes</strong> </dt>
+<dd>
+<p><em>(mode)</em> -
+This function checks for required LinuxCNC mode.<br>
+It returns a Python tuple (state, mode)<br>
+mode will be set the mode the system is in<br>
+state will set to:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>false if mode is 0</p>
+</li>
+<li>
+<p>false if machine is busy</p>
+</li>
+<li>
+<p>true if LinuxCNC is in the requested mode</p>
+</li>
+<li>
+<p>None if possible to change, but not in requested mode</p>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1"><strong>get_current_mode</strong> </dt>
+<dd>
+<p><em>(nothing)</em> -
+returns integer: the current LinuxCNC mode.<br></p>
+</dd>
+<dt class="hdlist1"><strong>set_selected_joint</strong> </dt>
+<dd>
+<p><em>(integer)</em> -
+records the selected joint number internally.<br>
+requests the joint to be selected by emitting the<br>
+<em>joint-selection-changed</em> message.</p>
+</dd>
+<dt class="hdlist1"><strong>get_selected_joint</strong> </dt>
+<dd>
+<p><em>(None)</em> -
+returns integer representing the internal selected joint number.</p>
+</dd>
+<dt class="hdlist1"><strong>set_selected_axis</strong> </dt>
+<dd>
+<p><em>(string)</em> -
+records the selected axis letter internally.<br>
+Requests the axis to be selected by emitting the <code>axis-selection-changed</code> message.</p>
+</dd>
+<dt class="hdlist1"><strong>get_selected_axis</strong> </dt>
+<dd>
+<p><em>(None)</em> -
+returns string representing the internal selected axis letter.</p>
+</dd>
+<dt class="hdlist1"><strong>is_man_mode</strong> </dt>
+<dd>
+<p><em>(None)</em> -</p>
+</dd>
+<dt class="hdlist1"><strong>is_mdi_mode</strong> </dt>
+<dd>
+<p><em>(None)</em> -</p>
+</dd>
+<dt class="hdlist1"><strong>is_auto_mode</strong> </dt>
+<dd>
+<p><em>(None)</em> -</p>
+</dd>
+<dt class="hdlist1"><strong>is_on_and_idle</strong> </dt>
+<dd>
+<p><em>(None)</em> -</p>
+</dd>
+<dt class="hdlist1"><strong>is_auto_running</strong> </dt>
+<dd>
+<p><em>(None)</em> -</p>
+</dd>
+<dt class="hdlist1"><strong>is_auto_paused</strong> </dt>
+<dd>
+<p><em>(None)</em> -</p>
+</dd>
+<dt class="hdlist1"><strong>is_file_loaded</strong> </dt>
+<dd>
+<p><em>(None)</em> -</p>
+</dd>
+<dt class="hdlist1"><strong>is_metric_mode</strong> </dt>
+<dd>
+<p><em>(None)</em> -</p>
+</dd>
+<dt class="hdlist1"><strong>is_spindle_on</strong> </dt>
+<dd>
+<p><em>(None)</em> -</p>
+</dd>
+<dt class="hdlist1"><strong>shutdown</strong> </dt>
+<dd>
+<p><em>(None)</em> -</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_known_issues">5. Known Issues</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Some status points are reported wrongly during a running program because the interpreter runs ahead of the current position of a running program.
+This will hopefully be resolved with the merge of state-tags branch.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

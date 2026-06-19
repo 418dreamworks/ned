@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>5-Axis Kinematics</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../rouge-github.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:5-axis-kinematics" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="5-axis-kinematics.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/motion/5-axis-kinematics.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/motion/5-axis-kinematics.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/motion/5-axis-kinematics.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/motion/5-axis-kinematics.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/motion/5-axis-kinematics.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/motion/5-axis-kinematics.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/motion/5-axis-kinematics.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>5-Axis Kinematics</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details open><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="../config/stepconf.html">Stepper Configuration Wizard</a><a href="../config/pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="../config/integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="tweaking-steppers.html">Stepper Tuning</a><a href="../config/ini-config.html">INI Configuration</a><a href="../config/ini-homing.html">Homing Configuration</a><a href="../config/lathe-config.html">Lathe Configuration</a><a href="../config/stepper-quickstart.html">Stepper Quickstart</a><a href="../config/stepper.html">Stepper Configuration</a><a href="../config/stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="../config/core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details open><summary>Advanced Topics</summary><a href="kinematics.html">Kinematics</a><a href="dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>5-Axis Kinematics</summary><ul class="sectlevel1">
+<li><a href="5-axis-kinematics.html#_introduction">1. Introduction</a></li>
+<li><a href="5-axis-kinematics.html#_5_axis_machine_tool_configurations">2. 5-Axis Machine Tool Configurations</a></li>
+<li><a href="5-axis-kinematics.html#_tool_orientation_and_location">3. Tool Orientation and Location</a></li>
+<li><a href="5-axis-kinematics.html#_translation_and_rotation_matrices">4. Translation and Rotation Matrices</a></li>
+<li><a href="5-axis-kinematics.html#_table_rotarytilting_5_axis_configurations">5. Table Rotary/Tilting 5-Axis Configurations</a>
+<ul class="sectlevel2">
+<li><a href="5-axis-kinematics.html#_transformations_for_a_xyzac_trt_machine_tool_with_work_offsets">5.1. Transformations for a xyzac-trt machine tool with work offsets</a></li>
+<li><a href="5-axis-kinematics.html#_transformations_for_a_xyzac_trt_machine_with_rotary_axis_offsets">5.2. Transformations for a xyzac-trt machine  with rotary axis offsets</a></li>
+<li><a href="5-axis-kinematics.html#_transformations_for_a_xyzbc_trt_machine_with_rotary_axis_offsets">5.3. Transformations for a xyzbc-trt machine  with rotary axis offsets</a></li>
+</ul>
+</li>
+<li><a href="5-axis-kinematics.html#_table_rotarytilting_examples">6. Table Rotary/Tilting Examples</a>
+<ul class="sectlevel2">
+<li><a href="5-axis-kinematics.html#_vismach_simulation_models">6.1. Vismach Simulation Models</a></li>
+<li><a href="5-axis-kinematics.html#_tool_length_compensation">6.2. Tool-Length Compensation</a></li>
+</ul>
+</li>
+<li><a href="5-axis-kinematics.html#_custom_kinematics_components">7. Custom Kinematics Components</a></li>
+<li><a href="5-axis-kinematics.html#_figures">8. Figures</a></li>
+<li><a href="5-axis-kinematics.html#_references">9. REFERENCES</a></li>
+</ul></details><a href="switchkins.html">Switchable Kinematics (switchkins)</a><a href="pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="../config/moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="../config/python-interface.html">The LinuxCNC Python module</a><a href="../config/python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_introduction">1. Introduction</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+Coordinated multi-axis CNC machine tools controlled with LinuxCNC, require a special kinematics component for each type of machine. This chapter describes some of the most popular 5-axis machine configurations and then develops the forward (from work to joint coordinates) and inverse (from joint to work) transformations in a general mathematical process for two types of machine.</p>
+</div>
+<div class="paragraph">
+<p>The kinematics components are given as well as vismach simulation models to demonstrate their behaviour on a computer screen. Examples of HAL file data are also given.</p>
+</div>
+<div class="paragraph">
+<p>Note that with these kinematics, the rotational axes move in the opposite direction of what the convention is. See section ["rotational axes"](<a href="https://linuxcnc.org/docs/html/gcode/machining-center.html#_rotational_axes" class="bare">https://linuxcnc.org/docs/html/gcode/machining-center.html#_rotational_axes</a>) for details.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_5_axis_machine_tool_configurations">2. 5-Axis Machine Tool Configurations</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In this section we deal with the typical 5-axis milling or router machines with five joints or degrees-of-freedom which are controlled in coordinated moves.</p>
+</div>
+<div class="paragraph">
+<p>3-axis machine tools cannot change the tool orientation, so  5-axis machine tools use two extra axes to set the cutting tool in an appropriate orientation for efficient machining of freeform surfaces.</p>
+</div>
+<div class="paragraph">
+<p>Typical 5-axis machine tool configurations are shown in Figs. 3, 5, 7 and 9-11 [1,2] in section Figures.</p>
+</div>
+<div class="paragraph">
+<p>The kinematics of 5-axes machine tools are much simpler than that of 6-axis serial arm robots, since 3 of the axes are normally linear axes and only two are rotational axes.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_tool_orientation_and_location">3. Tool Orientation and Location</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>CAD/CAM systems are typically used to generate the 3D CAD models of the workpiece as well as the CAM data for input to the CNC 5-axis machine. The tool or cutter location (CL) data, is composed of the cutter tip position and the cutter orientation relative to the workpiece coordinate system. Two vectors, as generated by most CAM systems and shown in Fig. 1, contain this information:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__1.png" alt="equation  1">
+</div>
+</div>
+<div class="paragraph">
+<p>The K vector is equivalent to the 3rd vector from the pose matrix E<sub>6</sub> that was used in the 6-axis robot kinematics [3] and the Q vector is equivalent to the 4th vector of E<sub>6</sub>. In MASTERCAM for example this information is contained in the intermediate output ".nci" file.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/Figure-1.png" alt="Figure 1" height="400">
+</div>
+<div class="title">Figure 1. Cutter location data</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_translation_and_rotation_matrices">4. Translation and Rotation Matrices</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Homogeneous transformations provide a simple way to describe the mathematics of
+multi-axis machine kinematics. A transformation of the space H is a 4x4 matrix and can represent translation and rotation transformations. Given a point x,y,x described by a vector u = {x,y,z,1}<sup>T</sup>, then its transformation v is represented by the matrix product</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__2.png" alt="equation  2">
+</div>
+</div>
+<div class="paragraph">
+<p>There are four fundamental transformation matrices on which 5-axis kinematics can be based:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__3.png" alt="equation  3">
+</div>
+</div>
+<div class="paragraph">
+<p>The matrix T(a,b,c) implies a translation in the X, Y, Z coordinate directions by the amounts a, b, c respectively. The R matrices imply rotations of the angle theta about the X, Y and Z coordinate axes respectively. The <em>C</em> and <em>S</em> symbols refer to cosine and sine functions respectively.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_table_rotarytilting_5_axis_configurations">5. Table Rotary/Tilting 5-Axis Configurations</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In these machine tools the two rotational axes mount on the work table of the machine. Two forms are typically used:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A rotary table which rotates about the vertical Z-axes (C-rotation, secondary) mounted on a tilting table which rotates about the X- or Y-axis (A- or B-rotation, primary). The workpiece is mounted on the rotary table.</p>
+</li>
+<li>
+<p>A tilting table which rotates about the X- or Y-axis (A- or B-rotation, secondary) is mounted on a rotary table which rotates about the Z-axis (C-rotation, primary), with the workpiece on the tilting table.</p>
+</li>
+</ul>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/Figure-2.png" alt="Figure 2">
+</div>
+<div class="title">Figure 2. General configuration and coordinate systems</div>
+</div>
+<div class="paragraph">
+<p>A multi-axis machine can be considered to consist of a series of links connected by joints. By embedding a coordinate frame in each link of the machine and using homogeneous transformations, we can describe the relative position and orientation between these coordinate frames</p>
+</div>
+<div class="paragraph">
+<p>We need to describe a relationship between the workpiece coordinate system and the tool coordinate system. This can be defined by a transformation matrix <em><sup>w</sup>A<sub>t</sub></em>, which can be found by subsequent transformations between the different structural elements or links of the machine, each with its own defined coordinate system. In general such a transformation may look as follows:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__4.png" alt="equation  4">
+</div>
+</div>
+<div class="paragraph">
+<p>where each matrix <em><sup>i-1</sup>A<sub>j</sub></em> is a translation matrix <em>T</em> or a rotation matrix <em>R</em> of the form (2,3).</p>
+</div>
+<div class="paragraph">
+<p>Matrix multiplication is a simple process in which the elements of each row of the lefthand matrix A is multiplied by the elements of each column of the righthand matrix B and summed to obtain an element in the result matrix C, ie.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__5.png" alt="equation  5">
+</div>
+</div>
+<div class="paragraph">
+<p>In Fig. 2 a generic configuration with coordinate systems is shown [4]. It includes table rotary/tilting axes as well as spindle rotary/tilting axes. Only two of the rotary axes are actually used in a machine tool.</p>
+</div>
+<div class="paragraph">
+<p>First we will develop the transformations for the first type of configuration mentioned above, ie. a table tilting/rotary (trt) type with no rotating axis offsets. We may give it the name xyzac-trt configuration.</p>
+</div>
+<div class="paragraph">
+<p>We also develop the transformations for the same type (xyzac-trt), but with rotating axis offsets.</p>
+</div>
+<div class="paragraph">
+<p>Then we develop the transformations for a xyzbc-trt configuration with rotating axis offsets.</p>
+</div>
+<div class="sect2">
+<h3 id="_transformations_for_a_xyzac_trt_machine_tool_with_work_offsets">5.1. Transformations for a xyzac-trt machine tool with work offsets</h3>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/Figure-3.png" alt="Figure 3">
+</div>
+<div class="title">Figure 3. vismach model of xyzac-trt with coincident rotation axes</div>
+</div>
+<div class="paragraph">
+<p>We deal here with a simplified configuration in which the tilting axis and rotary axis intersects at a point called the pivot point as shown in Fig. 4. therefore the two coordinate systems <em>O<sub>ws</sub></em> and <em>O<sub>wp</sub></em> of Fig. 2 are coincident.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/Figure-4.png" alt="Figure 4" height="400">
+</div>
+<div class="title">Figure 4. Table tilting/rotary configuration</div>
+</div>
+<div class="sect3">
+<h4 id="_forward_transformation">5.1.1. Forward transformation</h4>
+<div class="paragraph">
+<p>The transformation can be defined by the sequential multiplication of the matrices:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__6.png" alt="equation  6">
+</div>
+</div>
+<div class="paragraph">
+<p>with the matrices built up as follows:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__7.png" alt="equation  7">
+</div>
+</div>
+<div class="paragraph">
+<p>In these equations L<sub>x</sub>, L<sub>y</sub>, L<sub>z</sub> defines the offsets of the pivot point of the two rotary axes A and C relative to the workpiece coordinate system origin. Furthermore, P<sub>x</sub>, P<sub>y</sub>, P<sub>z</sub> are the relative  distances of the pivot point to the cutter tip position, which can also be called the "joint coordinates" of the pivot point. The pivot point is at the intersection of the two rotary axes. The signs of the S<sub>A</sub> and S<sub>C</sub> terms are different to those in [2,3] since there the table rotations are negative relative to the workpiece coordinate axes (note that sin(-theta) = -sin(theta), cos(-theta) = cos(theta)).</p>
+</div>
+<div class="paragraph">
+<p>When multiplied in accordance with (5), we obtain:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__8.png" alt="equation  8">
+</div>
+</div>
+<div class="paragraph">
+<p>We can now equate the third column of this matrix with our given tool orientation vector K, ie.:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__9.png" alt="equation  9">
+</div>
+</div>
+<div class="paragraph">
+<p>From these equations we can solve for the rotation angles theta<sub>A</sub>, theta<sub>C</sub>. From the third row we find:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__10.png" alt="equation  10">
+</div>
+</div>
+<div class="paragraph">
+<p>and by dividing the first row by the second row we find:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__11.png" alt="equation  11">
+</div>
+</div>
+<div class="paragraph">
+<p>These relationships are typically used in the CAM post-processor to convert the tool orientation vectors to rotation angles.</p>
+</div>
+<div class="paragraph">
+<p>Equating the last column of (8) with the tool position vector Q, we can write:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__12.png" alt="equation  12">
+</div>
+</div>
+<div class="paragraph">
+<p>The vector on the right hand side can also be written as the product of a matrix and a vector resulting in:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__13.png" alt="equation  13">
+</div>
+</div>
+<div class="paragraph">
+<p>This can be expanded to give</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__14.png" alt="equation  14">
+</div>
+</div>
+<div class="paragraph">
+<p>which is the <em>forward transformation</em> of the kinematics.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_inverse_transformation">5.1.2. Inverse Transformation</h4>
+<div class="paragraph">
+<p>We can solve for P from  equation (13) as <em>P = (<sup>Q</sup>A<sub>P</sub>)<sup>-1</sup> * Q</em>. Noting that the square matrix is a homogeneous 4x4 matrix containing a rotation matrix R and translation vector q, for which the inverse can be written as:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__15.png" alt="equation  15">
+</div>
+</div>
+<div class="paragraph">
+<p>where R^T is the transpose of R (rows and columns swappped). We therefore obtain:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__16.png" alt="equation  16">
+</div>
+</div>
+<div class="paragraph">
+<p>The desired equations for the <em>inverse transformation</em> of the kinematics thus can be written as:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__17.png" alt="equation  17">
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_transformations_for_a_xyzac_trt_machine_with_rotary_axis_offsets">5.2. Transformations for a xyzac-trt machine  with rotary axis offsets</h3>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/Figure-5.png" alt="Figure 5">
+</div>
+<div class="title">Figure 5. vismach model of xyzac-trt with rotational axis offsets (positive)</div>
+</div>
+<div class="paragraph">
+<p>We deal here with a extended configuration in which the tilting axis and rotary axis do not intersect at a point but have an offset D<sub>y</sub>.
+Furthermore, there is also an z-offset between the two coordinate systems <em>O<sub>ws</sub></em> and <em>O<sub>wp</sub></em> of Fig. 2, called D<sub>z</sub>.
+A vismach model is shown in Fig. 5 and the offsets are shown in Fig. 6 (positive offsets in this example).
+To simplify the configuration, the offsets L<sub>x</sub>, L<sub>y</sub>, L<sub>z</sub> of the previous case are not included.
+They are probably not necessary if one uses the G54 offsets in LinuxCNC by means of the "touch of" facility.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/Figure-6.png" alt="Figure 6" height="350">
+</div>
+<div class="title">Figure 6. Table tilting/rotary xyzac-trt configuration, with axis offsets</div>
+</div>
+<div class="sect3">
+<h4 id="_forward_transformation_2">5.2.1. Forward Transformation</h4>
+<div class="paragraph">
+<p>The transformation can be defined by the sequential multiplication of the matrices:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__18.png" alt="equation  18">
+</div>
+</div>
+<div class="paragraph">
+<p>with the matrices built up as follows:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__19.png" alt="equation  19">
+</div>
+</div>
+<div class="paragraph">
+<p>In these equations D<sub>y</sub>, D<sub>z</sub> defines the offsets of the pivot point of the rotary axes A  relative to the workpiece coordinate system origin. Furthermore, P<sub>x</sub>, P<sub>y</sub>, P<sub>z</sub> are the relative  distances of the pivot point to the cutter tip position, which can also be called the "joint coordinates" of the pivot point. The pivot point is on the A rotary axis.</p>
+</div>
+<div class="paragraph">
+<p>When multiplied in accordance with (18), we obtain:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__20.png" alt="equation  20">
+</div>
+</div>
+<div class="paragraph">
+<p>We can now equate the third column of this matrix with our given tool orientation vector K, ie.:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__21.png" alt="equation  21">
+</div>
+</div>
+<div class="paragraph">
+<p>From these equations we can solve for the rotation angles theta<sub>A</sub>, theta<sub>C</sub>. From the third row we find:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__22.png" alt="equation  22">
+</div>
+</div>
+<div class="paragraph">
+<p>and by dividing the second row by the first row we find:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__23.png" alt="equation  23">
+</div>
+</div>
+<div class="paragraph">
+<p>These relationships are typically used in the CAM post-processor to convert the tool orientation vectors to rotation angles.</p>
+</div>
+<div class="paragraph">
+<p>Equating the last column of (21) with the tool position vector Q, we can write:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__24.png" alt="equation  24">
+</div>
+</div>
+<div class="paragraph">
+<p>The vector on the right hand side can also be written as the product of a matrix and a vector resulting in:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__25.png" alt="equation  25">
+</div>
+</div>
+<div class="paragraph">
+<p>which is the <em>forward transformation</em> of the kinematics.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_inverse_transformation_2">5.2.2. Inverse Transformation</h4>
+<div class="paragraph">
+<p>We can solve for P from  equation (25) as <em>P = (<sup>Q</sup>A<sub>P</sub>)<sup>-1</sup> * Q</em> using (15) as before.
+We thereby obtain:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__26.png" alt="equation  26">
+</div>
+</div>
+<div class="paragraph">
+<p>The desired equations for the <em>inverse transformation</em> of the kinematics thus can be written as:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__27.png" alt="equation  27">
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_transformations_for_a_xyzbc_trt_machine_with_rotary_axis_offsets">5.3. Transformations for a xyzbc-trt machine  with rotary axis offsets</h3>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/Figure-7.png" alt="Figure 7">
+</div>
+<div class="title">Figure 7. vismach model of xyzbc-trt with rotational axis offsets (negative)</div>
+</div>
+<div class="paragraph">
+<p>We deal here again with a extended configuration in which the tilting axis (about the y-axis) and rotary axis do not intersect at a point but have an offset D<sub>x</sub>.
+Furthermore, there is also an z-offset between the two coordinate systems <em>O<sub>ws</sub></em> and <em>O<sub>wp</sub></em> of Fig. 2, called D<sub>z</sub>.
+A vismach model is shown in Fig. 7 (negative offsets in this example) and the positive offsets are shown in Fig. 8.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/Figure-8.png" alt="Figure 8" height="350">
+</div>
+<div class="title">Figure 8. Table tilting/rotary xyzbc-trt configuration, with axis offsets</div>
+</div>
+<div class="sect3">
+<h4 id="_forward_transformation_3">5.3.1. Forward Transformation</h4>
+<div class="paragraph">
+<p>The transformation can be defined by the sequential multiplication of the matrices:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__28.png" alt="equation  28">
+</div>
+</div>
+<div class="paragraph">
+<p>with the matrices built up as follows:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__29.png" alt="equation  29">
+</div>
+</div>
+<div class="paragraph">
+<p>In these equations D<sub>x</sub>, D<sub>z</sub> defines the offsets of the pivot point of the rotary axes B relative to the workpiece coordinate system origin.
+Furthermore, P<sub>x</sub>, P<sub>y</sub>, P<sub>z</sub> are the relative  distances of the pivot point to the cutter tip position, which can also be called the "joint coordinates" of the pivot point.
+The pivot point is on the B rotary axis.</p>
+</div>
+<div class="paragraph">
+<p>When multiplied in accordance with (29), we obtain:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__30.png" alt="equation  30">
+</div>
+</div>
+<div class="paragraph">
+<p>We can now equate the third column of this matrix with our given tool orientation vector K, i.e.:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__31.png" alt="equation  31">
+</div>
+</div>
+<div class="paragraph">
+<p>From these equations we can solve for the rotation angles theta<sub>B</sub>, theta<sub>C</sub>. From the third row we find:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__32.png" alt="equation  32">
+</div>
+</div>
+<div class="paragraph">
+<p>and by dividing the second row by the first row we find:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__33.png" alt="equation  33">
+</div>
+</div>
+<div class="paragraph">
+<p>These relationships are typically used in the CAM post-processor to convert the tool orientation vectors to rotation angles.</p>
+</div>
+<div class="paragraph">
+<p>Equating the last column of (32) with the tool position vector Q, we can write:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__34.png" alt="equation  34">
+</div>
+</div>
+<div class="paragraph">
+<p>The vector on the right hand side can also be written as the product of a matrix and a vector resulting in:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__35.png" alt="equation  35">
+</div>
+</div>
+<div class="paragraph">
+<p>which is the <em>forward transformation</em> of the kinematics.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_inverse_transformation_3">5.3.2. Inverse Transformation</h4>
+<div class="paragraph">
+<p>We can solve for P from  equation (37) as <em>P = (<sup>Q</sup>A<sub>P</sub>)<sup>-1</sup> * Q</em>.</p>
+</div>
+<div class="paragraph">
+<p>With the same approach as before, we obtain:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__36.png" alt="equation  36">
+</div>
+</div>
+<div class="paragraph">
+<p>The desired equations for the <em>inverse transformation</em> of the kinematics thus can be written as:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__37.png" alt="equation  37">
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_table_rotarytilting_examples">6. Table Rotary/Tilting Examples</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>LinuxCNC includes kinematics modules for the <em>xyzac-trt</em> and <em>xyzbc-trt</em> topologies
+described in the mathematics detailed above.  For interested users, the source code
+is available in the git tree in the <em>src/emc/kinematics/</em> directory.</p>
+</div>
+<div class="paragraph">
+<p>Example xyzac-trt and xyzbc-trt simulation configurations are located
+in the Sample Configurations (<em>configs/sim/axis/vismach/5axis/table-rotary-tilting/</em>)
+directory.</p>
+</div>
+<div class="paragraph">
+<p>The example configurations include the required INI files and an examples subdirectory
+with G-code (NGC) files. These sim configurations invoke a realistic 3-dimensional model
+using the LinuxCNC vismach facility.</p>
+</div>
+<div class="sect2">
+<h3 id="_vismach_simulation_models">6.1. Vismach Simulation Models</h3>
+<div class="paragraph">
+<p>Vismach is a library of python routines to display a dynamic simulation of a CNC machine on the PC screen. The python script for a particular machine is loaded in HAL and data passed by HAL pin connections.  The non-realtime vismach model is loaded by a HAL command like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadusr</span> -<span class="n">W</span> <span class="n">xyzac-trt-gui</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and connections are made using HAL commands like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>net  :table-x   joint.0.pos-fb xyzac-trt-gui.table-x
+net  :saddle-y  joint.1.pos-fb xyzac-trt-gui.saddle-y
+...</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>See the simulation INI files for details of the HAL connections used for the vismach model.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_tool_length_compensation">6.2. Tool-Length Compensation</h3>
+<div class="paragraph">
+<p>In order to use tools from a tool table sequentially with tool-length compensation applied automatically, a further Z-offset is required. For a tool that is longer than the "master" tool, which typically has a tool length of zero, LinuxCNC has a variable called "motion.tooloffset.z". If this variable is passed on to the kinematic component (and vismach python script), then the necessary additional Z-offset for a new tool can be accounted for by adding the component statement, for example:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/equation__38.png" alt="equation  38">
+</div>
+</div>
+<div class="paragraph">
+<p>The required HAL connection (for xyzac-trt) is:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">net</span> :<span class="n">tool-offset</span> <span class="na">motion.tooloffset.z</span> <span class="na">xyzac-trt-kins.tool-offset</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>:tool-offset ---------------- signal name
+motion.tooloffset.z --------- output HAL pin from LinuxCNC motion module
+xyzac-trt-kins.tool-offset -- input  HAL pin to xyzac-trt-kins</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_custom_kinematics_components">7. Custom Kinematics Components</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>LinuxCNC implements kinematics using a HAL component that is loaded
+at startup of LinuxCNC.  The most common kinematics module, <em>trivkins</em>,
+implements identity (trivial) kinematics where there is a one-to-one
+correspondence between an axis coordinate letter and a motor joint.
+Additional kinematics modules for more complex systems (including <em>xyzac-trt</em>
+and <em>xyzbc-trt</em> described above) are available.</p>
+</div>
+<div class="paragraph">
+<p>See the kins manpage (<strong>\$ man kins</strong>) for brief descriptions of the available
+kinematics modules.</p>
+</div>
+<div class="paragraph">
+<p>The kinematics modules provided by LinuxCNC are typically written in the
+C-language.  Since a standard structure is used, creation of a custom
+kinematics module is facilitated by copying an existing source file to a user
+file with a new name, modifying it, and then installing.</p>
+</div>
+<div class="paragraph">
+<p>Installation is done using halcompile:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>sudo halcompile --install kinsname.c</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where "kinsname" is the name you give to your component. The sudo prefix is
+required to install it and you will be asked for your root password.  See the
+halcompile man page for more information (<strong>\$ man halcompile</strong>)</p>
+</div>
+<div class="paragraph">
+<p>Once it is compiled and installed you can reference it in your config setup of
+your machine. This is done in the INI file of your config directory. For
+example, the common INI specificaion:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="p">[</span><span class="nn">KINS</span><span class="p">]</span>
+<span class="py">KINEMATICS</span> <span class="p">=</span> <span class="s">trivkins</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>is replaced by</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="p">[</span><span class="nn">KINS</span><span class="p">]</span>
+<span class="py">KINEMATICS</span> <span class="p">=</span> <span class="s">kinsname</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where "kinsname" is the name of your kins program.
+Additional HAL pins may be created by the module for variable configuration items
+such as the D<sub>x</sub>, D<sub>y</sub>, D<sub>z</sub>, tool-offset used in the xyzac-trt kinematics module.
+These pins can be connected to a signal for dynamic control or set once with HAL connections like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="c1"># set offset parameters</span>
+<span class="k">net</span> :<span class="n">tool-offset</span> <span class="na">motion.tooloffset.z</span> <span class="na">xyzac-trt-kins.tool-offset</span>
+<span class="k">setp</span> <span class="na">xyzac-trt-kins.y-offset</span> <span class="mi">0</span>
+<span class="k">setp</span> <span class="na">xyzac-trt-kins.z-offset</span> <span class="mi">20</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_figures">8. Figures</h2>
+<div class="sectionbody">
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/Figure-9.png" alt="Table tilting/rotating configuration" height="300">
+</div>
+<div class="title">Figure 9. Table tilting/rotating configuration</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/Figure-10.png" alt="Spindle/table tilting configuration" height="300">
+</div>
+<div class="title">Figure 10. Spindle/table tilting configuration</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="5-axis-figures/Figure-11.png" alt="Spindle tilting/rotary configuration" height="300">
+</div>
+<div class="title">Figure 11. Spindle tilting/rotary configuration</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_references">9. REFERENCES</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>AXIS MACHINE TOOLS: Kinematics and Vismach Implementation in LinuxCNC, RJ du Preez, SA-CNC-CLUB, April 7, 2016.</p>
+</li>
+<li>
+<p>A Postprocessor Based on the Kinematics Model for General Five-Axis machine
+Tools: C-H She, R-S Lee, J Manufacturing Processes, V2 N2, 2000.</p>
+</li>
+<li>
+<p>NC Post-processor for 5-axis milling of table-rotating/tilting type: YH Jung,
+DW Lee, JS Kim, HS Mok, J Materials Processing Technology,130-131 (2002)
+641-646.</p>
+</li>
+<li>
+<p>3D 6-DOF Serial Arm Robot Kinematics, RJ du Preez, SA-CNC-CLUB, Dec. 5, 2013.</p>
+</li>
+<li>
+<p>Design of a generic five-axis postprocessor based on generalized kinematics
+model of machine tool: C-H She, C-C Chang, Int. J Machine Tools &amp; Manufacture,
+47 (2007) 537-545.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

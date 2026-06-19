@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>hm2_bspi_write_chan(3)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../rouge-github.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="hm2_bspi_write_chan.3.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man3/hm2_bspi_write_chan.3.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man3/hm2_bspi_write_chan.3.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man3/hm2_bspi_write_chan.3.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man3/hm2_bspi_write_chan.3.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man3/hm2_bspi_write_chan.3.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man3/hm2_bspi_write_chan.3.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man3/hm2_bspi_write_chan.3.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>hm2_bspi_write_chan(3) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>hm2_bspi_write_chan - write data to a Hostmot2 Buffered SPI channel</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_syntax">SYNTAX</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c"><span class="cp">#include</span> <span class="cpf">&lt;hostmot2-serial.h&gt;</span><span class="cp">
+</span><span class="n">hm2_bspi_write_chan</span><span class="p">(</span><span class="kt">char</span><span class="o">*</span> <span class="n">name</span><span class="p">,</span> <span class="kt">int</span> <span class="n">chan</span><span class="p">,</span> <span class="n">u32</span> <span class="n">val</span><span class="p">)</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>hm2_bspi_write_chan</strong> write one-time data to the bspi channel "chan" on
+the bspi instance "name". "name" is a unique string given to each bspi
+channel during hostmot2 setup. The names of the available channels are
+printed to standard output during the driver loading process and take
+the form: hm2<em>_&lt;board name&gt;</em>.<em>&lt;board index&gt;</em>.bspi.<em>&lt;index&gt;</em>.
+For example: <code>hm2_5i23.0.bspi.0</code>.</p>
+</div>
+<div class="paragraph">
+<p>This function performs a one-time write of data to the specified channel.
+It is typically used for setup and chip enabling purposes.
+It should not be used in the main loop for regular data transfers
+(but is appropriate to use for on-the-fly setup changes).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_realtime_considerations">REALTIME CONSIDERATIONS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>May be called from init/cleanup code and from within realtime tasks.
+Not available in non-realtime components.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_return_value">RETURN VALUE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Returns 0 on success and -1 on failure.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>hm2_allocate_bspi_tram(3), hm2_bspi_set_read_function(3),
+hm2_bspi_setup_chan(3), hm2_bspi_set_write_function(3),
+hm2_tram_add_bspi_frame(3)</p>
+</div>
+<div class="paragraph">
+<p>See src/hal/drivers mesa_7i65.comp for an example usage.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

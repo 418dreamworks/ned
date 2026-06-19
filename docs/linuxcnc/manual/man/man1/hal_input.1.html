@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>hal_input(1)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="hal_input.1.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man1/hal_input.1.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man1/hal_input.1.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man1/hal_input.1.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man1/hal_input.1.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man1/hal_input.1.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man1/hal_input.1.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man1/hal_input.1.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>hal_input(1) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>hal_input - control HAL pins with any Linux input device, including USB HID devices</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>loadusr <strong>hal_input</strong> [<strong>-KRAL</strong>] <em>inputspec</em> &#8230;&#8203;</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>hal_input</strong> is an interface between HAL and any Linux input device,
+including USB HID devices. For each device named, <strong>hal_input</strong> creates
+pins corresponding to its keys, absolute axes, and LEDs. At a fixed rate
+of approximately 10 ms, it synchronizes the device and the HAL pins.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_input_specification">INPUT SPECIFICATION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <em>inputspec</em> may be in one of several forms:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">A string <em>S</em></dt>
+<dd>
+<p>A substring or shell-style pattern match will be tested against the
+"name" of the device, the "phys" (which gives information about how it
+is connected), and the "id", which is a string of the form "Bus=&#8230;&#8203;
+Vendor=&#8230;&#8203; Product=&#8230;&#8203; Version=&#8230;&#8203;". You can view the name, phys, and
+id of attached devices by executing  'less /proc/bus/input/devices'.
+Examples:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>SpaceBall</p>
+</li>
+<li>
+<p>"Vendor=001f Product=0001"</p>
+</li>
+<li>
+<p>serio*/input0</p>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1">A number <em>N</em></dt>
+<dd>
+<p>This opens <strong>/dev/input/event</strong><em>N</em>.
+Except for devices that are always attached to the system,
+this number may change over reboots or when the device is removed.
+For this reason, using an integer is not recommended.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>When several devices are identified by the same string, add "<strong>:</strong><em>N</em>"
+where <em>N</em> is the index of the desired device. For example, if <strong>Mouse</strong>
+matches <strong>input3</strong> and <strong>input10</strong>, then <strong>Mouse</strong> and <strong>Mouse:0</strong> select <strong>input3</strong>.
+Specifying <strong>mouse:1</strong> selects input10.</p>
+</div>
+<div class="paragraph">
+<p>For devices that appear as multiple entries in /dev/input, these indices
+are likely to stay the same every time. For multiple identical devices,
+these indices are likely to depend on the insertion order, but stay the
+same across reboots as long as the devices are not moved to different
+ports or unplugged while the machine is booted.</p>
+</div>
+<div class="paragraph">
+<p>If the first character of the <em>inputspec</em> is a "+", then <strong>hal_input</strong>
+requests exclusive access to the device. The first device matching an
+<em>inputspec</em> is used. Any number of <em>inputspec</em>s may be used.</p>
+</div>
+<div class="paragraph">
+<p>A <em>subset option may precede each inputspec</em>. The subset option begins
+with a dash. Each letter in the subset option specifies a device feature
+to <strong>include</strong>. Features that are not specified are excluded. For
+instance, to export keyboard LEDs to HAL without exporting keys, use</p>
+</div>
+<div class="paragraph">
+<p><code>hal_input -L keyboard ...</code></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_device_features_supported">DEVICE FEATURES SUPPORTED</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>EV_KEY (buttons and keys). Subset -K</p>
+</li>
+<li>
+<p>EV_ABS (absolute analog inputs). Subset -A</p>
+</li>
+<li>
+<p>EV_REL (relative analog inputs). Subset -R</p>
+</li>
+<li>
+<p>EV_LED (LED outputs). Subset -L</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_hal_pins_and_parameters">HAL PINS AND PARAMETERS</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_for_buttons">For buttons</h3>
+<div class="paragraph">
+<p><strong>input.</strong><em>N</em><strong>.btn-</strong><em>name</em> bit out</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>input.</strong><em>N</em><strong>.btn-</strong><em>name</em><strong>-not</strong> bit out</dt>
+<dd>
+<p>Created for each button on the device.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_for_keys">For keys</h3>
+<div class="paragraph">
+<p><strong>input.</strong><em>N</em><strong>.key-</strong><em>name</em></p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>input</strong><em>N</em><strong>.key-</strong><em>name</em><strong>-not</strong></dt>
+<dd>
+<p>Created for each key on the device.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_for_absolute_axes">For absolute axes</h3>
+<div class="paragraph">
+<p><strong>input.</strong><em>N</em><strong>.abs-</strong><em>name</em><strong>-counts</strong> s32 out</p>
+</div>
+<div class="paragraph">
+<p><strong>input.</strong><em>N</em><strong>.abs-</strong><em>name</em><strong>-position</strong> float out</p>
+</div>
+<div class="paragraph">
+<p><strong>input.</strong><em>N</em><strong>.abs-</strong><em>name</em><strong>-scale</strong> parameter float rw</p>
+</div>
+<div class="paragraph">
+<p><strong>input.</strong><em>N</em><strong>.abs-</strong><em>name</em><strong>-offset</strong> parameter float rw</p>
+</div>
+<div class="paragraph">
+<p><strong>input.</strong><em>N</em><strong>.abs-</strong><em>name</em><strong>-fuzz</strong> parameter s32 rw</p>
+</div>
+<div class="paragraph">
+<p><strong>input.</strong><em>N</em><strong>.abs-</strong><em>name</em><strong>-flat</strong> parameter s32 rw</p>
+</div>
+<div class="paragraph">
+<p><strong>input.</strong><em>N</em><strong>.abs-</strong><em>name</em><strong>-min</strong> parameter s32 r</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>input.</strong><em>N</em><strong>.abs-</strong><em>name</em><strong>-max</strong> parameter s32 r</dt>
+<dd>
+<p>Created for each absolute axis on the device.
+Device positions closer than <strong>flat</strong> to <strong>offset</strong> are reported as <strong>offset</strong> in <strong>counts</strong>,
+and <strong>counts</strong> does not change until the device position changes by at least <strong>fuzz</strong>.
+The position is computed as <strong>position</strong> = (<strong>counts</strong> - <strong>offset</strong>) / <strong>scale</strong>.
+The default value of <strong>scale</strong> and <strong>offset</strong> map the range of the axis reported by the operating system to [-1,1].
+The default values of <strong>fuzz</strong> and <strong>flat</strong> are those reported by the operating system.
+The values of <strong>min</strong> and <strong>max</strong> are those reported by the operating system.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_for_relative_axes">For relative axes</h3>
+<div class="paragraph">
+<p><strong>input.</strong><em>N</em><strong>.rel-</strong><em>name</em><strong>-counts</strong> s32 out</p>
+</div>
+<div class="paragraph">
+<p><strong>input.</strong><em>N</em><strong>.rel-</strong><em>name</em><strong>-position</strong> float out</p>
+</div>
+<div class="paragraph">
+<p><strong>input.</strong><em>N</em><strong>.rel-</strong><em>name</em><strong>-reset</strong> bit in</p>
+</div>
+<div class="paragraph">
+<p><strong>input.</strong><em>N</em><strong>.rel-</strong><em>name</em><strong>-scale</strong> parameter float rw</p>
+</div>
+<div class="paragraph">
+<p><strong>input.</strong><em>N</em><strong>.rel-</strong><em>name</em><strong>-absolute</strong> parameter s32 rw</p>
+</div>
+<div class="paragraph">
+<p><strong>input.</strong><em>N</em><strong>.rel-</strong><em>name</em><strong>-precision</strong> parameter s32 rw</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>input.</strong><em>N</em><strong>.rel-</strong><em>name</em><strong>-last</strong> parameter s32 rw</dt>
+<dd>
+<p>Created for each relative axis on the device.
+As long as <strong>reset</strong> is true, <strong>counts</strong> is reset to zero regardless of any past or current axis movement.
+Otherwise, <strong>counts</strong> increases or decreases according to the motion of the axis.  <strong>counts</strong> is divided by position-scale to give <strong>position</strong>.
+The default value of <strong>position</strong> is 1.
+There are some devices, notably scroll wheels, which return signed values with less resolution than 32 bits.
+The default value of <strong>precision</strong> is 32.  <strong>precision</strong> can be set to 8 for a device that returns signed 8 bit values,
+or any other value from 1 to 32. <strong>absolute</strong>, when set true, ignores duplicate events with the same value.
+This allows for devices that repeat events without any user action to work correctly. <strong>last</strong> shows the most recent count value returned by the device, and is used
+in the implementation of <strong>absolute</strong>.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_for_leds">For LEDs</h3>
+<div class="paragraph">
+<p><strong>input.</strong><em>N</em><strong>.led-</strong><em>name</em> bit out</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>input.</strong><em>N</em><strong>.led-</strong><em>name</em><strong>-invert</strong> parameter bit rw</dt>
+<dd>
+<p>Created for each LED on the device.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_permissions_and_udev">PERMISSIONS AND UDEV</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>By default, the input devices may not be accessible to regular users&#8201;&#8212;&#8201;<strong>hal_input</strong> requires read-write access, even if the device has no outputs.</p>
+</div>
+<div class="paragraph">
+<p>Different versions of udev have slightly different, incompatible syntaxes.
+For this reason, it is not possible for this manual page to give an accurate example.
+The <strong>udev(7)</strong> manual page documents the syntax used on your Linux distribution.
+To view it in a terminal, the command is <code>man 7 udev</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_bugs">BUGS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The initial state of keys, buttons, and absolute axes are erroneously reported as FALSE or 0
+until an event is received for that key, button, or axis.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>udev(8), udev(7)</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>Running LinuxCNC</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:running-emc" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="running-linuxcnc.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/getting-started/running-linuxcnc.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/getting-started/running-linuxcnc.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/getting-started/running-linuxcnc.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/getting-started/running-linuxcnc.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/getting-started/running-linuxcnc.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/getting-started/running-linuxcnc.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/getting-started/running-linuxcnc.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>Running LinuxCNC</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details open><summary>Getting Started &amp; Configuration</summary><details open><summary>Getting Started with LinuxCNC</summary><a href="about-linuxcnc.html">About LinuxCNC</a><a href="system-requirements.html">System Requirements</a><a href="hardware-interface.html">Hardware Interface</a><a href="getting-linuxcnc.html">Getting LinuxCNC</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>Running LinuxCNC</summary><ul class="sectlevel1">
+<li><a href="running-linuxcnc.html#_invoking_linuxcnc">1. Invoking LinuxCNC</a></li>
+<li><a href="running-linuxcnc.html#sec:config-launcher">2. Configuration Launcher</a></li>
+<li><a href="running-linuxcnc.html#_next_steps_in_configuration">3. Next steps in configuration</a></li>
+<li><a href="running-linuxcnc.html#_simulator_configurations">4. Simulator Configurations</a></li>
+<li><a href="running-linuxcnc.html#_configuration_resources">5. Configuration Resources</a>
+<ul class="sectlevel2">
+<li><a href="running-linuxcnc.html#_when_the_copy_happens">5.1. When the copy happens</a></li>
+<li><a href="running-linuxcnc.html#_forcing_a_copy_from_a_rip_build">5.2. Forcing a copy from a RIP build</a></li>
+</ul>
+</li>
+</ul></details><a href="updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="../config/stepconf.html">Stepper Configuration Wizard</a><a href="../config/pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="../config/integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><a href="../config/ini-config.html">INI Configuration</a><a href="../config/ini-homing.html">Homing Configuration</a><a href="../config/lathe-config.html">Lathe Configuration</a><a href="../config/stepper-quickstart.html">Stepper Quickstart</a><a href="../config/stepper.html">Stepper Configuration</a><a href="../config/stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="../config/core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="../config/moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="../config/python-interface.html">The LinuxCNC Python module</a><a href="../config/python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_invoking_linuxcnc">1. Invoking LinuxCNC</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+After installation, LinuxCNC starts just like any other Linux program:
+run it from the <a href="../common/linux-faq.html#faq:terminal">terminal</a> by issuing the command <em>linuxcnc</em>,
+or select it in the <em>Applications &#8594; CNC</em> menu.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:config-launcher">2. Configuration Launcher</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+When starting LinuxCNC (from the CNC menu or from the command line without
+specifying an INI file) the Configuration Selector dialog starts.</p>
+</div>
+<div class="paragraph">
+<p>The Configuration Selector dialog allows the user to pick one of their
+existing configurations (My Configurations) or select a new one (from the Sample
+Configurations) to be copied to their home directory. Copied configurations
+will appear under My Configurations on the next invocation of the Configuration
+Selector.</p>
+</div>
+<div class="paragraph">
+<p>The Configuration Selector offers a selection of configurations organized:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>My Configurations</em> - User configurations located in linuxcnc/configs in your home directory.</p>
+</li>
+<li>
+<p><em>Sample Configurations</em> - Sample configurations, when selected, are copied to linuxcnc/configs.
+Once a sample configuration was copied to your local directory, the launcher will offer it as <em>My Configurations</em>.
+The names under which these local configurations are presented correspond to the names of the directories within the configs/ directory:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><em>sim</em> - Configurations that include simulated hardware.
+These can be used for testing or learning how LinuxCNC works.</p>
+</li>
+<li>
+<p><em>by_interface</em> - Configurations organized by GUI.</p>
+</li>
+<li>
+<p><em>by_machine</em> - Configurations organized by machine.</p>
+</li>
+<li>
+<p><em>apps</em> - Applications that do not require starting linuxcnc but may be useful for testing or
+trying applications like <a href="../gui/pyvcp.html#cha:pyvcp">PyVCP</a> or <a href="../gui/gladevcp.html#cha:glade-vcp">GladeVCP</a>.</p>
+</li>
+<li>
+<p><em>attic</em> - Obsolete or historical configurations.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The sim configurations are often the most useful starting point for
+new users and are organized around supported GUIs:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>axis</em> - Keyboard and Mouse GUI</p>
+</li>
+<li>
+<p><em>craftsman</em> - Touch Screen GUI (no longer maintained ???)</p>
+</li>
+<li>
+<p><em>gmoccapy</em> - Touch Screen GUI</p>
+</li>
+<li>
+<p><em>gscreen</em> - Touch Screen GUI</p>
+</li>
+<li>
+<p><em>pyvcp_demo</em> - Python Virtual Control Panel</p>
+</li>
+<li>
+<p><em>qtaxis</em> - Touch Screen GUI, axis lookalike</p>
+</li>
+<li>
+<p><em>qtdragon</em> - Touch Screen GUI</p>
+</li>
+<li>
+<p><em>qtdragon_hd</em> - Touch Screen GUI, high definition</p>
+</li>
+<li>
+<p><em>qtplasmac</em> - Touch Screen GUI, for plasma tables</p>
+</li>
+<li>
+<p><em>qttouchy</em> - Touch Screen GUI</p>
+</li>
+<li>
+<p><em>tklinuxcnc</em> - Keyboard and Mouse GUI (no longer maintained)</p>
+</li>
+<li>
+<p><em>touchy</em> - Touch Screen GUI</p>
+</li>
+<li>
+<p><em>woodpecker</em> - Touch Screen GUI</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>A GUI configuration directory may contain subdirectories with
+configurations that illustrate special situations or the embedding
+of other applications.</p>
+</div>
+<div class="paragraph">
+<p>The <em>by_interface</em> configurations are organized around common, supported
+interfaces like:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>general mechatronics</p>
+</li>
+<li>
+<p>mesa</p>
+</li>
+<li>
+<p>parport</p>
+</li>
+<li>
+<p>pico</p>
+</li>
+<li>
+<p>pluto</p>
+</li>
+<li>
+<p>servotogo</p>
+</li>
+<li>
+<p>vigilant</p>
+</li>
+<li>
+<p>vitalsystems</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Related hardware may be required to use these configurations as
+starting points for a system.</p>
+</div>
+<div class="paragraph">
+<p>The <em>by_machine</em> configurations are organized around complete, known
+systems like:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>boss</p>
+</li>
+<li>
+<p>cooltool</p>
+</li>
+<li>
+<p>scortbot erIII</p>
+</li>
+<li>
+<p>sherline</p>
+</li>
+<li>
+<p>smithy</p>
+</li>
+<li>
+<p>tormach</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>A complete system may be required to use these configurations.</p>
+</div>
+<div class="paragraph">
+<p>The <em>apps items</em> are typically either:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>utilities that don&#8217;t require starting linuxcnc</p>
+</li>
+<li>
+<p>demonstrations of applications that can be used with linuxcnc</p>
+<div class="ulist">
+<ul>
+<li>
+<p>info - creates a file with system information that may be useful for problem diagnosis.</p>
+</li>
+<li>
+<p>gladevcp - Example GladeVCP applications.</p>
+</li>
+<li>
+<p>halrun  - Starts halrun in an <a href="../common/linux-faq.html#faq:terminal">terminal</a>.</p>
+</li>
+<li>
+<p>latency - Applications to investigate latency</p>
+<div class="ulist">
+<ul>
+<li>
+<p>latency-histogram-1 - histogram for single servo thread</p>
+</li>
+<li>
+<p>latency-histogram - histogram</p>
+</li>
+<li>
+<p>latency-test - standard test</p>
+</li>
+<li>
+<p>latency-plot - stripchart</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>parport - Applications to test parport.</p>
+</li>
+<li>
+<p>pyvcp - Example pyvcp applications.</p>
+</li>
+<li>
+<p>xhc-hb04 - Applications to test an xhc-hb04 USB wireless MPG</p>
+</li>
+</ul>
+</div>
+</li>
+</ol>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Under the Apps directory, only applications that are usefully modified
+by the user are offered for copying to the user&#8217;s directory.
+</td>
+</tr>
+</table>
+</div>
+<div id="cap:LinuxCNC-Configuration-Selector" class="imageblock">
+<div class="content">
+<img src="images/configuration-selector.png" alt="LinuxCNC Configuration Selector">
+</div>
+<div class="title">Figure 1. LinuxCNC Configuration Selector</div>
+</div>
+<div class="paragraph">
+<p>Click any of the listed configurations to display specific information about it.
+Double-click a configuration or click OK to start the configuration.</p>
+</div>
+<div class="paragraph">
+<p>Select <em>Create Desktop Shortcut</em> and then click <em>OK</em> to add an icon on the Ubuntu desktop
+to directly launch this configuration without showing the Configuration Selector screen.</p>
+</div>
+<div class="paragraph">
+<p>When you select a configuration from the Sample Configurations section,
+it will automatically place a copy of that config in the
+~/linuxcnc/configs directory.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_next_steps_in_configuration">3. Next steps in configuration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>After finding the sample configuration that uses
+the same interface hardware as your machine (or a simulator
+configuration), and saving a copy to your home directory,
+you can customize it according to the details of your machine.
+Refer to the Integrator Manual for topics on configuration.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_simulator_configurations">4. Simulator Configurations</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>All configurations listed under Sample Configurations/sim
+are intended to run on any computer.  No specific hardware is
+required and real-time support is not needed.</p>
+</div>
+<div class="paragraph">
+<p>These configurations are useful for studying individual
+capabilities or options.  The sim configurations are organized
+according to the graphical user interface used in the
+demonstration.  The directory for axis contains the most
+choices and subdirectories because it is the most tested GUI.
+The capabilities demonstrated with any specific GUI may be
+available in other GUIs as well.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_configuration_resources">5. Configuration Resources</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Configuration Selector copies all files needed
+for a configuration to a new subdirectory of ~/linuxcnc/configs
+(equivalently: /home/username/linuxcnc/configs).  Each
+created directory will include at least one INI file (iniflename.ini)
+that is used to describe a specific configuration.</p>
+</div>
+<div class="sect2">
+<h3 id="_when_the_copy_happens">5.1. When the copy happens</h3>
+<div class="paragraph">
+<p>For the following cases the Configuration Selector copies the chosen sample
+configuration to ~/linuxcnc/configs:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Package install (deb, rpm, distro packages)</strong>: sample configurations
+live under a system path and are not writabe.</p>
+</li>
+<li>
+<p><strong>The file is not in the directory tree of <code>CONFIG_DIR</code></strong> (environmental variable)</p>
+</li>
+<li>
+<p><strong>The file is in a directory included in <code>LINUXCNC_AUX_EXAMPLES</code></strong> (environmental variable)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For <strong>Run-In-Place (RIP) builds</strong> the source tree is normally writable by
+the user who built it, so the selector runs the configuration
+directly from the source tree without copying. Edits made through
+the configuration apply to the files in the RIP tree.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_forcing_a_copy_from_a_rip_build">5.2. Forcing a copy from a RIP build</h3>
+<div class="paragraph">
+<p>To test the copy-and-run path from a RIP build (or to keep a
+personal copy of a sample configuration outside the source tree),
+set the <code>debug_pickconfig</code> environment variable before launching
+LinuxCNC:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>debug_pickconfig=1 linuxcnc</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>With this set, the selector copies the chosen sample configuration
+to ~/linuxcnc/configs even though the RIP source tree is writable.</p>
+</div>
+<div class="paragraph">
+<p>File resources within the copied directory will typically
+include one or more INI file (filename.ini) for related
+configurations and a tool table file (toolfilename.tbl).
+Additionally, resources may include HAL files (filename.hal,
+filename.tcl), a README file for describing the directory, and
+configuration specific information in a text file named after
+a specific configuration (inifilename.txt).  That latter two
+files are displayed when using the Configuration Selector.</p>
+</div>
+<div class="paragraph">
+<p>The supplied sample configurations may specify the parameter HALFILE
+(filename.hal) in the configuration INI file that are not present in the
+copied directory because they are found in the system
+HAL file library.  These files can be copied to the user
+configuration directory and altered as required by the
+user for modification or test.  Since the user configuration
+directory is searched first when finding HAL files, local
+modifications will then prevail.</p>
+</div>
+<div class="paragraph">
+<p>The Configuration selector makes a symbolic link in the
+user configuration directory (named hallib) that points to
+the system HAL file library.  This link simplifies copying
+a library file.  For example, to copy the library core_sim.hal
+file in order to make local modifications:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>cd ~/linuxcnc/configs/name_of_configuration
+cp hallib/core_sim.hal core_sim.hal</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

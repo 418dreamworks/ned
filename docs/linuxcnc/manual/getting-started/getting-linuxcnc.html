@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>Getting LinuxCNC</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:getting-linuxcnc" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="getting-linuxcnc.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/getting-started/getting-linuxcnc.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/getting-started/getting-linuxcnc.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/getting-started/getting-linuxcnc.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/getting-started/getting-linuxcnc.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/getting-started/getting-linuxcnc.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/getting-started/getting-linuxcnc.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/getting-started/getting-linuxcnc.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>Getting LinuxCNC</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details open><summary>Getting Started &amp; Configuration</summary><details open><summary>Getting Started with LinuxCNC</summary><a href="about-linuxcnc.html">About LinuxCNC</a><a href="system-requirements.html">System Requirements</a><a href="hardware-interface.html">Hardware Interface</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>Getting LinuxCNC</summary><ul class="sectlevel1">
+<li><a href="getting-linuxcnc.html#_download_the_image">1. Download the image</a>
+<ul class="sectlevel2">
+<li><a href="getting-linuxcnc.html#_normal_download">1.1. Normal Download</a></li>
+<li><a href="getting-linuxcnc.html#_download_using_zsync">1.2. Download using zsync</a></li>
+<li><a href="getting-linuxcnc.html#_verify_the_image">1.3. Verify the image</a></li>
+</ul>
+</li>
+<li><a href="getting-linuxcnc.html#_write_the_image_to_a_bootable_device">2. Write the image to a bootable device</a>
+<ul class="sectlevel2">
+<li><a href="getting-linuxcnc.html#_raspberry_pi_image">2.1. Raspberry Pi Image</a></li>
+<li><a href="getting-linuxcnc.html#_amd_64_x86_64_pc_image_using_gui_tools">2.2. AMD-64 (x86-64, PC) Image using GUI tools</a></li>
+<li><a href="getting-linuxcnc.html#_command_line_linux">2.3. Command line - Linux</a></li>
+<li><a href="getting-linuxcnc.html#_command_line_macos">2.4. Command line - MacOS</a></li>
+</ul>
+</li>
+<li><a href="getting-linuxcnc.html#_testing_linuxcnc">3. Testing LinuxCNC</a></li>
+<li><a href="getting-linuxcnc.html#_installing_linuxcnc">4. Installing LinuxCNC</a></li>
+<li><a href="getting-linuxcnc.html#_updates_to_linuxcnc">5. Updates to LinuxCNC</a></li>
+<li><a href="getting-linuxcnc.html#_install_problems">6. Install Problems</a></li>
+<li><a href="getting-linuxcnc.html#_alternate_install_methods">7. Alternate Install Methods</a>
+<ul class="sectlevel2">
+<li><a href="getting-linuxcnc.html#_installing_on_debian_trixie_with_preempt_rt_kernel">7.1. Installing on Debian Trixie (with Preempt-RT kernel)</a></li>
+<li><a href="getting-linuxcnc.html#cha:Installing-RTAI">7.2. Installing on Debian Trixie (with experimental RTAI kernel)</a></li>
+<li><a href="getting-linuxcnc.html#_installing_on_raspbian_12">7.3. Installing on Raspbian 12</a></li>
+</ul>
+</li>
+</ul></details><a href="running-linuxcnc.html">Running LinuxCNC</a><a href="updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="../config/stepconf.html">Stepper Configuration Wizard</a><a href="../config/pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="../config/integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><a href="../config/ini-config.html">INI Configuration</a><a href="../config/ini-homing.html">Homing Configuration</a><a href="../config/lathe-config.html">Lathe Configuration</a><a href="../config/stepper-quickstart.html">Stepper Quickstart</a><a href="../config/stepper.html">Stepper Configuration</a><a href="../config/stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="../config/core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="../config/moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="../config/python-interface.html">The LinuxCNC Python module</a><a href="../config/python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This section describes the recommended way to download and make a fresh install of LinuxCNC.
+There are also <a href="getting-linuxcnc.html#_alternate_install_methods">Alternate Install Methods</a> for the adventurous.
+If you have an existing install that you want to upgrade,
+go to the <a href="updating-linuxcnc.html#cha:updating-linuxcnc">Updating LinuxCNC</a> section instead.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+To operate machinery LinuxCNC requires a special kernel with real-time extensions. There
+are three possibilities here: preempt-rt, RTAI or Xenomai. In addition there are two versions
+of LinuxCNC which work with these kernels. See the table below for details. However for code
+testing and simulation it is possible to run the <code>linuxcnc-uspace</code> application on a stock kernel
+of the distribution.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Fresh installs of LinuxCNC are most easily created using the Live/Install
+Image. This is a hybrid ISO filesystem image that can be written to a
+USB storage device or a DVD and used to boot a computer. At boot time you
+will be given a choice of booting the "Live" system (to run LinuxCNC
+without making any permanent changes to your computer) or booting the
+Installer (to install LinuxCNC and its operating system onto your
+computer&#8217;s hard drive).</p>
+</div>
+<div class="paragraph">
+<p>The outline of the process looks like this:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Download the Live/Install Image.</p>
+</li>
+<li>
+<p>Write the image to a USB storage device or DVD.</p>
+</li>
+<li>
+<p>Boot the Live system to test out LinuxCNC.</p>
+</li>
+<li>
+<p>Boot the Installer to install LinuxCNC.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_download_the_image">1. Download the image</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This section describes some methods for downloading the Live/Install image.</p>
+</div>
+<div class="sect2">
+<h3 id="_normal_download">1.1. Normal Download</h3>
+<div class="paragraph">
+<p>Software for LinuxCNC to download is presented on the project&#8217;s
+<a href="https://linuxcnc.org/downloads/">Downloads page</a>.
+Most users will aim for the disk image for Intel/AMD PCs, the URL
+will resemble <a href="https://www.linuxcnc.org/iso/linuxcnc_2.9.8-amd64.hybrid.iso" class="bare">https://www.linuxcnc.org/iso/linuxcnc_2.9.8-amd64.hybrid.iso</a>.</p>
+</div>
+<div class="paragraph">
+<p>For the Raspberry Pi, multiple images are provided to address
+differences between the RPi4 and RPi5.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Do not use the regular Raspbian distribution for LinuxCNC that may have shipped with
+your RPi starter kit - that will not have the real-time kernel and you cannot
+migrate from Raspbian to Debian&#8217;s kernel image.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_download_using_zsync">1.2. Download using zsync</h3>
+<div class="paragraph">
+<p>zsync is a download application that efficiently resumes interrupted
+downloads and efficiently transfers large files with small modifications
+(if you have an older local copy). Please note, it needs to use the http
+protocol, not https. Use zsync if your
+download of the image using the <a href="getting-linuxcnc.html#_normal_download">Normal Download</a>
+method is frequently interrupted.</p>
+</div>
+<div class="olist arabic">
+<div class="title">zsync in Linux</div>
+<ol class="arabic">
+<li>
+<p>Install zsync using Synaptic or, by running the following in a <a href="../common/linux-faq.html#faq:terminal">terminal</a></p>
+<div class="listingblock">
+<div class="content">
+<pre>sudo apt-get install zsync</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Then run this command to download the iso to your computer</p>
+<div class="listingblock">
+<div class="content">
+<pre>zsync https://www.linuxcnc.org/iso/linuxcnc_2.9.8-amd64.hybrid.iso</pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Please remember to confirm the checksum of the downloaded iso
+as described below, since the authenticity of the server is not
+guaranteed with the http protocol.</p>
+</div>
+<div class="paragraph">
+<div class="title">zsync in Windows</div>
+<p>There is a Windows port of zsync.
+It works as a console application and can be downloaded from
+<a href="https://www.assembla.com/spaces/zsync-windows/documents" class="bare">https://www.assembla.com/spaces/zsync-windows/documents</a> .</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_verify_the_image">1.3. Verify the image</h3>
+<div class="paragraph">
+<p>(This step is unnecessary if you used zsync)</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>After downloading, verify the checksum of the image to ensure integrity.</p>
+</li>
+</ol>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>md5sum linuxcnc-2.9.8-amd64.iso</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>or</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>sha256sum linuxcnc-2.9.8-amd64.iso</pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Then compare to these checksums</p>
+</li>
+</ol>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>amd64 (PC)
+md5sum: cf77d61fcba9641d7205ac33751e5f38
+sha256sum: 72eab92d7c34c238b0429054dc52d240df8dc5f083e769a39194cfac3e4984e8
+arm64 (Pi)
+md5sum: 4547e8a72433efb033f0a5cf166a5cd2
+sha256sum: ff3ba9b8dfb93baf1e2232746655f8521a606bc0fab91bffc04ba74cc3be6bf0</pre>
+</div>
+</div>
+<div class="paragraph">
+<div class="title">Verify md5sum on Windows or Mac</div>
+<p>Windows does not come with an md5sum program, but there are
+alternatives.  More information can be found at:
+<a href="https://help.ubuntu.com/community/HowToMD5SUM">How To MD5SUM</a></p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_write_the_image_to_a_bootable_device">2. Write the image to a bootable device</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The LinuxCNC Live/Install ISO Image is a hybrid ISO image which can
+be written directly to a USB storage device (flash drive) or a DVD and
+used to boot a computer.  The image is too large to fit on a CD.</p>
+</div>
+<div class="sect2">
+<h3 id="_raspberry_pi_image">2.1. Raspberry Pi Image</h3>
+<div class="paragraph">
+<p>The Raspbery Pi image is a complete SD card image and should be
+written to an SD card with the [Raspberry Pi Imager App](<a href="https://www.raspberrypi.com/software/" class="bare">https://www.raspberrypi.com/software/</a>).
+Note that the imager app can open the .zip file directly, no need to expand.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_amd_64_x86_64_pc_image_using_gui_tools">2.2. AMD-64 (x86-64, PC) Image using GUI tools</h3>
+<div class="paragraph">
+<p>Download and install Balena Etcher from <a href="https://etcher.balena.io/#download-etcher" class="bare">https://etcher.balena.io/#download-etcher</a>
+(Linux, Windows, Mac) and write the downloaded image to a USB drive.</p>
+</div>
+<div class="paragraph">
+<p>If your image fails to boot then please also try <a href="https://rufus.ie/">Rufus</a>.
+It looks more complicated but seems to be more compatible with various BIOSes.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_command_line_linux">2.3. Command line - Linux</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Connect a USB storage device (for example a flash drive or thumb
+drive type device).</p>
+</li>
+<li>
+<p>Determine the device file corresponding to the USB flash drive.
+This information can be found in the output of <code>sudo dmesg</code> after
+connecting the device.  <code>cat /proc/partitions</code> may also be helpful.</p>
+</li>
+<li>
+<p>Use the <code>dd</code> command to write the image to your USB storage device.
+For example, if your storage device showed up as <code>/dev/sde</code>,
+then use this command:</p>
+<div class="listingblock">
+<div class="content">
+<pre>dd if=linuxcnc_2.9.8-amd64.hybrid.iso of=/dev/sde bs=4k status=progress</pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_command_line_macos">2.4. Command line - MacOS</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Open a terminal and type</p>
+<div class="listingblock">
+<div class="content">
+<pre>diskutil list</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Insert the USB and note the name of the new disk that appears, e.g. /dev/disk5.</p>
+</li>
+<li>
+<p>Unmount the USB. The number found above should be substituted in place of the N.</p>
+<div class="listingblock">
+<div class="content">
+<pre>diskutil unmountDisk /dev/diskN</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Transfer the data with dd, as for Linux above.
+Note that the disk name has an added "r" at the beginning.</p>
+<div class="listingblock">
+<div class="content">
+<pre>sudo dd if=linuxcnc_2.9.8-amd64.hybrid.iso of=/dev/rdiskN bs=1m status=progress</pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+<div class="olist arabic">
+<div class="title">Writing the image to a DVD in Linux</div>
+<ol class="arabic">
+<li>
+<p>Insert a blank DVD into your burner. A <em>CD/DVD Creator</em> or <em>Choose Disc Type</em>
+window will pop up. Close this, as we will not be using it.</p>
+</li>
+<li>
+<p>Browse to the downloaded image in the file browser.</p>
+</li>
+<li>
+<p>Right click on the ISO image file and choose Write to Disc.</p>
+</li>
+<li>
+<p>Select the write speed. It is recommended that you write at the lowest
+possible speed.</p>
+</li>
+<li>
+<p>Start the burning process.</p>
+</li>
+<li>
+<p>If a <em>choose a file name for the disc image</em> window pops up, just pick OK.</p>
+</li>
+</ol>
+</div>
+<div class="olist arabic">
+<div class="title">Writing the image to a DVD in Windows</div>
+<ol class="arabic">
+<li>
+<p>Download and install Infra Recorder, a free and open source image
+burning program: <a href="https://infrarecorder.org/" class="bare">https://infrarecorder.org/</a> .</p>
+</li>
+<li>
+<p>Insert a blank CD in the drive and select Do nothing or Cancel if an
+auto-run dialog pops up.</p>
+</li>
+<li>
+<p>Open Infra Recorder, and select the <em>Actions</em> menu, then <em>Burn image</em>.</p>
+</li>
+</ol>
+</div>
+<div class="olist arabic">
+<div class="title">Writing the image to a DVD in Mac OSX</div>
+<ol class="arabic">
+<li>
+<p>Download the .iso file</p>
+</li>
+<li>
+<p>Right-click on the file in the Finder window and select "Burn to disc".
+(The option to burn to disc will only appear if the machine has an
+optical drive fitted or connected.)</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_testing_linuxcnc">3. Testing LinuxCNC</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>With the USB storage device plugged in or the DVD in the DVD drive,
+shut down the computer then turn the computer back on. This will boot
+the computer from the Live/Install Image and choose the Live boot option.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+If the system does not boot from the DVD or USB stick,
+it may be necessary to change the boot order in the PC BIOS.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Once the computer has booted up you can try out LinuxCNC without installing
+it. You can not create custom configurations or modify most system
+settings in a Live session, but you can (and should) run the latency test.</p>
+</div>
+<div class="paragraph">
+<p>To try out LinuxCNC: from the Applications/CNC menu pick LinuxCNC. A
+dialog box will open from which you can choose one of many sample
+configurations. At this point it only really makes sense to pick a "sim"
+configuration. Some of the sample configurations include onscreen
+3D simulated machines, look for "Vismach" to see these.</p>
+</div>
+<div class="paragraph">
+<p>To see if your computer is suitable for software step pulse generation
+run the Latency Test as shown <a href="../install/latency-test.html#sec:latency-test">here</a>.</p>
+</div>
+<div class="paragraph">
+<p>At the time of writing the Live Image is only available with the
+preempt-rt kernel and a matching LinuxCNC. On some hardware this might
+not offer good enough latency. There is an experimental version available
+using the RTAI realtime kernel which will often give better latency.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_installing_linuxcnc">4. Installing LinuxCNC</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To install LinuxCNC from the Live CD select <em>Install (Graphical)</em> at bootup.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_updates_to_linuxcnc">5. Updates to LinuxCNC</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+With the normal install the Update Manager will notify you of updates
+to LinuxCNC when you go on line and allow you to easily upgrade with no
+Linux knowledge needed.
+It is OK to upgrade everything except the operating system when asked to.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">
+Do not upgrade the operating system to a new version if prompted to do so. You
+should accept OS <em>updates</em> however, especially security updates.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_install_problems">6. Install Problems</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In rare cases you might have to reset the BIOS to default settings if
+during the Live CD install it cannot recognize the hard drive
+during the boot up.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_alternate_install_methods">7. Alternate Install Methods</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The easiest, preferred way to install LinuxCNC is to use the Live/Install Image as described above.
+That method is as simple and reliable as we can make it, and is suitable for novice users and experienced users alike.
+However, this will typically replace any existing operating system.
+If you have files on the target PC that you want to keep, then use one of the methods described in this section.</p>
+</div>
+<div class="paragraph">
+<p>In addition, for experienced users who are familiar with Debian system administration
+(finding install images, manipulating apt sources, changing kernel flavors, etc), new installs are supported on following platforms:
+("amd64" means "64-bit", and is not specific to AMD processors, it will run on any 64-bit x86 system)</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Debian Trixie</th>
+<th class="tableblock halign-left valign-top">amd64 &amp; arm64</th>
+<th class="tableblock halign-left valign-top">preempt-rt</th>
+<th class="tableblock halign-left valign-top">linuxcnc-uspace</th>
+<th class="tableblock halign-left valign-top">machine control &amp; simulation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Debian Trixie</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">amd64</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">RTAI</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">linuxcnc</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">machine control</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Distribution</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Architecture</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Kernel</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Package name</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Typical use</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Debian Bookworm</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">amd64 &amp; arm64</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">preempt-rt</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">linuxcnc-uspace</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">machine control &amp; simulation</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Debian Bookworm</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">amd64</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">RTAI</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">linuxcnc</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">machine control</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Debian Bullseye</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">amd64</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">preempt-rt</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">linuxcnc-uspace</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">machine control &amp; simulation</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Any</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Any</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stock</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">linuxcnc-uspace</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">simulation ONLY</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+LinuxCNC v2.9 is not supported on Debian 9 or older.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<div class="title">Preempt-RT kernels</div>
+<p>The Preempt-rt kernels are available for Debian from the regular debian.org archive.
+The package is called <code>linux-image-rt-*</code>.
+Simply install the package in the same way as any other package from the
+Synaptic Package manager or with apt-get at the command-line.</p>
+</div>
+<div class="paragraph">
+<div class="title">RTAI Kernels</div>
+<p>The RTAI kernels are available for download from the linuxcnc.org debian archive.
+The apt source is:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Debian Trixie: <code>deb http://linuxcnc.org trixie base</code></p>
+</li>
+<li>
+<p>Debian Bookworm: <code>deb http://linuxcnc.org bookworm base</code></p>
+</li>
+<li>
+<p>Debian Bullseye: <code>deb http://linuxcnc.org bullseye base</code></p>
+</li>
+<li>
+<p>Debian Buster: <code>deb http://linuxcnc.org buster base</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>LinuxCNC and the RTAI kernel are now only available for 64-bit OSes but
+there are very few surviving systems that can not run a 64-bit OS.</p>
+</div>
+<div class="sect2">
+<h3 id="_installing_on_debian_trixie_with_preempt_rt_kernel">7.1. Installing on Debian Trixie (with Preempt-RT kernel)</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Install Debian Trixie (Debian 13), amd64 version.
+You can download the installer here:
+<a href="https://www.debian.org/distrib/" class="bare">https://www.debian.org/distrib/</a></p>
+</li>
+<li>
+<p>After burning the iso and booting up if you don&#8217;t want Gnome desktop select
+<em>Advanced Options</em> &gt; <em>Alternative desktop environments</em> and pick the one you
+like. Then select <em>Install</em> or <em>Graphical Install</em>.</p>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">
+Do not enter a root password, if you do sudo is disabled and you won&#8217;t
+be able to complete the following steps.
+</td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+<p>Run the following in a <a href="../common/linux-faq.html#faq:terminal">terminal</a> to bring the machine up to
+date with the latest packages.</p>
+<div class="listingblock">
+<div class="content">
+<pre>sudo apt-get update
+sudo apt-get dist-upgrade</pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+It is possible to download a version of LinuxCNC directly from Debian
+(currently version 2.9.4) but a more up-to-date version (2.9.8) can
+be installed from the LinuxCNC repository.
+</td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+<p>Install the Preempt-RT kernel and modules</p>
+<div class="listingblock">
+<div class="content">
+<pre>sudo apt-get install linux-image-rt-amd64</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Re-boot, and select the Linux 6.1.0-10-rt-amd64 kernel. The exact
+kernel version might be different, look for the "-rt" suffix. This
+might be hidden in the "Advanced options for Debian Bookworm"
+sub-menu in Grub.  When you log in, verify that `PREEMPT RT`is
+reported by the following command.</p>
+<div class="listingblock">
+<div class="content">
+<pre>uname -v</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Open Applications Menu &gt; System &gt; Synaptic Package Manager search for
+<em>linux-image</em> and right click on the original non-rt and select
+<em>Mark for Complete Removal</em>. Reboot.
+This is to force the system to boot from the RT kernel. If you prefer
+to retain both kernels then the other kernels need not be deleted, but
+grub boot configuration changes will be needed beyond the scope of this
+document.</p>
+</li>
+<li>
+<p>Add the LinuxCNC Archive Signing Key to your apt keyring by downloading
+[the LinuxCNC installer script](<a href="https://www.linuxcnc.org/linuxcnc-install.sh" class="bare">https://www.linuxcnc.org/linuxcnc-install.sh</a>).
+You will need to make the script executable to run it:</p>
+<div class="listingblock">
+<div class="content">
+<pre>chmod +x linuxcnc-install.sh</pre>
+</div>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>Then you can run the installer:</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>sudo ./linuxcnc-install.sh</pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="cha:Installing-RTAI">7.2. Installing on Debian Trixie (with experimental RTAI kernel)</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>This kernel and LinuxCNC version can be installed on top of the Live DVD
+install, or alternatively on a fresh Install of Debian Trixie 64-bit
+as described above.</p>
+</li>
+<li>
+<p>You can add the LinuxCNC archive signing key and repository information
+by downloading and running the installer script as described above.
+If an RTAI kernel is detected it will stop before installing any packages.</p>
+</li>
+<li>
+<p>Update the package list from linuxcnc.org</p>
+<div class="listingblock">
+<div class="content">
+<pre>sudo apt-get update</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Remove the existing uspace version of LinuxCNC and install the new realtime kernel, RTAI and the RTAI-version of LinuxCNC.</p>
+<div class="listingblock">
+<div class="content">
+<pre>sudo apt-get purge linuxcnc-uspace
+sudo apt-get purge linuxcnc-doc*
+sudo apt-get install linuxcnc</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Reboot the machine, ensuring that the system boots from the new 5.4.258-rtai kernel.</p>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_installing_on_raspbian_12">7.3. Installing on Raspbian 12</h3>
+<div class="paragraph">
+<p>Don&#8217;t do that.
+The latencies are too bad with the default kernel and the PREEMPT_RT (the RT is important) kernel of Debian does not boot on the Pi (as of 1/2024).
+Please refer to the .iso images provided online on the regular <a href="https://linuxcnc.org/downloads/">LinuCNC download page</a>.
+You can create them yourself following the scripts provided <a href="https://github.com/rodw-au/rpi-img-builder-lcnc">online</a>.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

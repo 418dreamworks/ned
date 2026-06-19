@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>halsampler(1)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="halsampler.1.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man1/halsampler.1.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man1/halsampler.1.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man1/halsampler.1.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man1/halsampler.1.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man1/halsampler.1.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man1/halsampler.1.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man1/halsampler.1.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>halsampler(1) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>halsampler - sample data from HAL in realtime</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>halsampler</strong> [<em>options</em>]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>sampler</strong>(9) and <strong>halsampler</strong> are used together to sample HAL data in
+real time and store it in a file. <strong>sampler</strong> is a realtime HAL component
+that exports HAL pins and creates a FIFO in shared memory. It then
+begins sampling data from the HAL and storing it to the FIFO.
+<strong>halsampler</strong> is a non-realtime program that copies data from the FIFO to
+stdout, where it can be redirected to a file or piped to some other program.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_options">OPTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>-c</strong> <em>CHAN</em></dt>
+<dd>
+<p>instructs <strong>halsampler</strong> to read from FIFO <em>CHAN</em>. FIFOs are numbered
+from zero, and the default value is zero, so this option is not needed
+unless multiple FIFOs have been created.</p>
+</dd>
+<dt class="hdlist1"><strong>-n</strong> <em>COUNT</em></dt>
+<dd>
+<p>instructs <strong>halsampler</strong> to read <em>COUNT</em> samples from the FIFO, then
+exit. If <strong>-n</strong> is not specified, <strong>halsampler</strong> will read continuously
+until it is killed.</p>
+</dd>
+<dt class="hdlist1"><strong>-t</strong></dt>
+<dd>
+<p>instructs <strong>halsampler</strong> to tag each line by printing the sample number
+in the first column.</p>
+</dd>
+<dt class="hdlist1"><em>FILENAME</em></dt>
+<dd>
+<p>instructs <strong>halsampler</strong> to write to <em>FILENAME</em> instead of to stdout.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_usage">USAGE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A FIFO must first be created by loading <strong>sampler</strong>(9) with <strong>halcmd loadrt</strong> or a <strong>loadrt</strong> command in a HAL file.
+Then <strong>halsampler</strong> can be invoked to begin printing data from the FIFO to stdout.</p>
+</div>
+<div class="paragraph">
+<p>Data is printed one line per sample. If <strong>-t</strong> was specified, the sample
+number is printed first. The data follows, in the order that the pins
+were defined in the config string. For example, if the <strong>sampler</strong> config
+string was "ffbs" then a typical line of output (without <strong>-t</strong>) would
+look like:</p>
+</div>
+<div class="paragraph">
+<p>123.55 33.4 0 -12</p>
+</div>
+<div class="paragraph">
+<p><strong>halsampler</strong> prints data as fast as possible until the FIFO is empty,
+then it retries at regular intervals, until it is either killed or has
+printed <em>COUNT</em> samples as requested by <strong>-n</strong>. Usually, but not always,
+data printed by <strong>halsampler</strong> will be redirected to a file or piped to
+some other program.</p>
+</div>
+<div class="paragraph">
+<p>The FIFO size should be chosen to absorb samples captured during any
+momentary disruptions in the flow of data, such as disk seeks, terminal
+scrolling, or the processing limitations of subsequent program in a
+pipeline. If the FIFO gets full and <strong>sampler</strong> is forced to overwrite old
+data, <strong>halsampler</strong> will print <em>overrun</em> on a line by itself to mark each
+gap in the sampled data. If <strong>-t</strong> was specified, gaps in the sequential
+sample numbers in the first column can be used to determine exactly how
+many samples were lost.</p>
+</div>
+<div class="paragraph">
+<p>The data format for <strong>halsampler</strong> output is the same as for <strong>halstreamer</strong>(1)
+input, so <em>waveforms</em> captured with <strong>halsampler</strong> can be replayed using <strong>halstreamer</strong>.
+The <strong>-t</strong> option should not be used in this case.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_exit_status">EXIT STATUS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If a problem is encountered during initialization, <strong>halsampler</strong> prints a
+message to stderr and returns failure.</p>
+</div>
+<div class="paragraph">
+<p>Upon printing <em>COUNT</em> samples (if <strong>-n</strong> was specified) it will shut down
+and return success. If it is terminated before printing the specified
+number of samples, it returns failure. This means that when <strong>-n</strong> is not
+specified, it will always return failure when terminated.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>sampler(9), streamer(9), halstreamer(1)</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Original version by John Kasunich, as part of the LinuxCNC project.
+Improvements by several other members of the LinuxCNC development team.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reporting_bugs">REPORTING BUGS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Report bugs at <a href="https://github.com/LinuxCNC/linuxcnc/issues" class="bare">https://github.com/LinuxCNC/linuxcnc/issues</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_copyright">COPYRIGHT</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Copyright © 2006 John Kasunich.</p>
+</div>
+<div class="paragraph">
+<p>This is free software; see the source for copying conditions. There is
+NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

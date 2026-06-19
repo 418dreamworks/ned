@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>LATENCYBINS(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="latencybins.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/latencybins.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/latencybins.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/latencybins.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/latencybins.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/latencybins.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/latencybins.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/latencybins.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>LATENCYBINS(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>latencybins - comp utility for scripts/latency-histogram</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt latencybins</strong> [<strong>count</strong>=<em>N</em>|<strong>names</strong>=<em>name1</em>[,<em>name2</em>&#8230;&#8203;]]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Read <strong>availablebins</strong> pin for the number of bins available. Set the
+<strong>maxbinnumber</strong> pin for the number of ±;bins.
+Ensure <strong>maxbinnumber</strong> ≤ <strong>availablebins</strong>.</p>
+</div>
+<div class="paragraph">
+<p>For <strong>maxbinnumber</strong> = N, the bins are numbered:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>-N &#8230;&#8203; 0 &#8230;&#8203; +N bins<br>
+(the -0 bin is not populated)<br>
+(total effective bins = 2 * maxbinnumber + 1)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Set <strong>nsbinsize</strong> pin for the binsize (ns).</p>
+</div>
+<div class="paragraph">
+<p>Iterate:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Set <strong>index</strong> pin to a bin number: 0 ≤ <strong>index</strong> ≤ maxbinnumber.</p>
+</li>
+<li>
+<p>Read check pin and verify that check pin == <strong>index</strong> pin.</p>
+</li>
+<li>
+<p>Read output pins:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>pbinvalue</strong> is count for bin = +<strong>index</strong></p>
+</li>
+<li>
+<p><strong>nbinvalue</strong> is count for bin = -<strong>index</strong></p>
+</li>
+<li>
+<p><strong>pextra</strong>    is count for all bins &gt; <strong>maxbinnumber</strong></p>
+</li>
+<li>
+<p><strong>nextra</strong>    is count for all bins &lt; <strong>maxbinnumber</strong></p>
+</li>
+<li>
+<p><strong>latency-min</strong> is max negative latency</p>
+</li>
+<li>
+<p><strong>latency-max</strong> is max positive latency</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>If <strong>index</strong> is out of range (<strong>index</strong> &lt; 0 or <strong>index</strong> &gt; <strong>maxbinnumber</strong>)
+then <strong>pbinvalue</strong> = <strong>nbinvalue</strong> = -1. The reset pin may be used to restart.</p>
+</div>
+<div class="paragraph">
+<p>The latency pin outputs the instantaneous latency.</p>
+</div>
+<div class="paragraph">
+<p>Maintainers note: hardcoded for MAXBINNUMBER==1000</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>latencybins</strong>.<em>N</em></dt>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>latencybins</strong>.<em>N</em>.<strong>maxbinnumber</strong> s32 in (default: <em>1000</em>)</dt>
+<dt class="hdlist1"><strong>latencybins</strong>.<em>N</em>.<strong>index</strong> s32 in </dt>
+<dt class="hdlist1"><strong>latencybins</strong>.<em>N</em>.<strong>reset</strong> bit in </dt>
+<dt class="hdlist1"><strong>latencybins</strong>.<em>N</em>.<strong>nsbinsize</strong> s32 in </dt>
+<dt class="hdlist1"><strong>latencybins</strong>.<em>N</em>.<strong>check</strong> s32 out </dt>
+<dt class="hdlist1"><strong>latencybins</strong>.<em>N</em>.<strong>latency</strong> s32 out </dt>
+<dt class="hdlist1"><strong>latencybins</strong>.<em>N</em>.<strong>latency-max</strong> s32 out </dt>
+<dt class="hdlist1"><strong>latencybins</strong>.<em>N</em>.<strong>latency-min</strong> s32 out </dt>
+<dt class="hdlist1"><strong>latencybins</strong>.<em>N</em>.<strong>pbinvalue</strong> s32 out </dt>
+<dt class="hdlist1"><strong>latencybins</strong>.<em>N</em>.<strong>nbinvalue</strong> s32 out </dt>
+<dt class="hdlist1"><strong>latencybins</strong>.<em>N</em>.<strong>pextra</strong> s32 out </dt>
+<dt class="hdlist1"><strong>latencybins</strong>.<em>N</em>.<strong>nextra</strong> s32 out </dt>
+<dt class="hdlist1"><strong>latencybins</strong>.<em>N</em>.<strong>variance</strong> s32 out </dt>
+<dt class="hdlist1"><strong>latencybins</strong>.<em>N</em>.<strong>availablebins</strong> s32 out (default: <em>1000</em>)</dt>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Dewey Garrett</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:30:09 UTC
+</div>
+</div>
+</body>
+</html>

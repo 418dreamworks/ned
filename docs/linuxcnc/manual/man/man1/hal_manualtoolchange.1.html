@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>hal_manualtoolchange(1)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="hal_manualtoolchange.1.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man1/hal_manualtoolchange.1.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man1/hal_manualtoolchange.1.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man1/hal_manualtoolchange.1.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man1/hal_manualtoolchange.1.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man1/hal_manualtoolchange.1.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man1/hal_manualtoolchange.1.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man1/hal_manualtoolchange.1.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>hal_manualtoolchange(1) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>hal_manualtoolchange - HAL non-realtime component to enable manual tool changes.</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>loadusr hal_manualtoolchange</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>hal_manualtoolchange is a LinuxCNC non-realtime component that allows
+users with machines lacking automatic tool changers to make manual tool
+changes. In use when a M6 tool change is encountered, the motion
+component will stop the spindle and pause the program. The
+hal_manualtoolchange component will then receive a signal from the
+motion component causing it to display a tool change window prompting
+the user which tool number to load based on the last T- number
+programmed. The dialog will stay active until the "continue" button is
+pressed. When the "continue" button is pressed, hal_manualtoolchange
+will then signal the motion component that the tool change is complete
+thus allowing motion to turn the spindle back on and resume program
+execution.</p>
+</div>
+<div class="paragraph">
+<p>Additionally, the hal_manualtoolchange component includes a hal pin for
+a button that can be connected to a physical button to complete the tool
+change and remove the window prompt
+(hal_manualtoolchange.change_button).</p>
+</div>
+<div class="paragraph">
+<p>hal_manualtoolchange can be used even when AXIS is not used as the GUI.
+This component is most useful if you have presettable tools and you use
+the tool table.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>hal_manualtoolchange.number</strong> s32 in</dt>
+<dd>
+<p>Receives last programmed T- number.</p>
+</dd>
+<dt class="hdlist1"><strong>hal_manualtoolchange.change</strong> bit in</dt>
+<dd>
+<p>Receives signal to do tool change.</p>
+</dd>
+<dt class="hdlist1"><strong>hal_manualtoolchange.changed</strong> bit out</dt>
+<dd>
+<p>Signifies that the tool change is complete.</p>
+</dd>
+<dt class="hdlist1"><strong>hal_manualtoolchange.change_button</strong> bit in</dt>
+<dd>
+<p>Pin to allow an external switch to signify that the tool change is complete.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_usage">USAGE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Normal usage is to load the component in your HAL file and net the
+appropriate pins from the<em> motion</em> and<em> io</em> components.
+The following lines are typical in a HAL file when using the
+hal_manualtoolchange non-realtime component.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>loadusr -W hal_manualtoolchange</strong></dt>
+<dd>
+<p>This will load the hal_manualtoolchange non-realtime component waiting
+for the component to be ready before continuing.</p>
+</dd>
+<dt class="hdlist1"><strong><code>net tool-change iocontrol.0.tool-change =&gt; hal_manualtoolchange.change</code></strong></dt>
+<dd>
+<p>When an M6 code is run, motion sets <em>iocontrol.0.tool-change</em> to
+high indicating a tool change. This pin should be netted to
+<em>hal_manualtoolchange.change</em>. This causes the Tool change dialog to be
+displayed on screen and wait for the user to either click the continue
+button on the dialog or press an externally connected button.</p>
+</dd>
+<dt class="hdlist1"><strong><code>net tool-changed iocontrol.0.tool-changed &lt;= hal_manualtoolchange.changed</code></strong></dt>
+<dd>
+<p>When the Tool change dialog&#8217;s continue button is pressed, it will set
+the <em>hal_manualtoolchange.changed</em> pin to high, this should be netted
+to the <em>iocontrol.0.tool-changed</em> pin, indicating to the motion
+controller that the tool change has been completed and can continue
+with the execution of the G-code program.</p>
+</dd>
+<dt class="hdlist1"><strong><code>net tool-number iocontrol.0.tool-prep-number =&gt; hal_manualtoolchange.number</code></strong></dt>
+<dd>
+<p>When a <em>T-</em> command is executed in a G-code program, the tool number
+will held in the <em>iocontrol.0.tool-prep-number</em>. This pin should be
+netted to <em>hal_manualtoolchange.number</em>. The value of this pin, the
+tool number is displayed in the tool change dialog to let the user
+know which tool should be loaded.</p>
+</dd>
+<dt class="hdlist1"><strong><code>net tool-prepare-loopback iocontrol.0.tool-prepare =&gt; iocontrol.0.tool-prepared</code></strong></dt>
+<dd>
+<p>The <em>iocontrol.0.tool-prepare</em> pin will go true when a T<em>n</em> tool
+prepare is requested. Since there is not automated tool changer this
+pin should be netted to <em>iocontrol.0.tool-prepared</em> to indocate that
+the tool has been prepared.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>If you wish to use an external button to signal the hal_manualtoolchange
+component that the tool change is complete simply bring the button into
+HAL (via a parport input pin or a hostmot2 gpio input or similar), and
+wire it directly to the <em>hal_manualtoolchange.change_button</em> pin. For
+Example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>net tool-changed-btn hal_manualtoolchange.change_button &lt;= parport.0.pin-15-in</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>motion(1), iocontrol(1), halcmd(1).</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

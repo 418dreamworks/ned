@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>enum(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="enum.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/enum.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/enum.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/enum.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/enum.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/enum.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/enum.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/enum.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>enum(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>enum - enumerate integer values into bits</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt enum enums=</strong>E;enum1pin1;enum1pin2;;;enum1pin3,D;;;enum2pin1;enum2pin2 [<strong>names=</strong><em>name1</em>,<em>name2</em>]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>enum</strong> converts integer values into bits and vice versa.</p>
+</div>
+<div class="paragraph">
+<p>The component is especially suitable for encoding and decoding register
+values for modbus devices, where control commands and status are frequently
+encoded as enumerations rather than bits.
+For example, 0 = stop, 1 = forwards, 2 = backwards, 3 = jog-forwards etc.</p>
+</div>
+<div class="paragraph">
+<p>The pins created and the behaviour of the component are controlled by
+the load-time modparams "enums=" and "names="</p>
+</div>
+<div class="paragraph">
+<p>The <strong>enums=</strong> parameter should be a comma-separated list of semicolon-separated pin labels.
+The enumerated values will increase in sequence starting at zero.
+To skip a value use a zero-length label, i.e. two consecutive semicolons, as shown in the examples.</p>
+</div>
+<div class="paragraph">
+<p>There should be no spaces in the "enums=" list.</p>
+</div>
+<div class="paragraph">
+<p>"names=" is an optional list of component instance names. If "names=" is
+omitted the functions and pins will be named "enum-decode&#8230;&#8203;." or "enum-encode&#8230;&#8203;."</p>
+</div>
+<div class="paragraph">
+<p>Taking the example configuration above, if <strong>enum-decode.01.enum2pin1-in</strong>
+is set to <strong>TRUE</strong> then the output pin <strong>enum-decode.01.output</strong> will be set
+to the value 2. If <strong>enum-decode.01.enum2pin2-in</strong> is set to true then the
+output would be 3.</p>
+</div>
+<div class="paragraph">
+<p>Conversely, if <strong>enum-encode.00.input</strong> is set to 4 then the pin
+<strong>enum-encode.00.enum1pin3-out</strong> will be set to <strong>TRUE</strong>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_options">OPTIONS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Preceding the list of labels should be the control-codes "D" for decode
+or "E" for encode. A D-type enum will set the value of HAL bit pins in
+response to changes to the enum-decode.NN.input value, whereas an E-type
+enum will set the value of the enum-encode.NN.output integer depending
+on which enum-encode.NN.label-bit value is set.</p>
+</div>
+<div class="paragraph">
+<p>If more than one label-bit input pin is set the output value will
+correspond to the pin label later in the list.</p>
+</div>
+<div class="paragraph">
+<p>E and D-type enumerations may be freely mixed in separate instances.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>enum-decode.</strong><em>NN</em></dt>
+<dd>
+<p>if instance type = "D"</p>
+</dd>
+<dt class="hdlist1"><strong>enum-encode.</strong><em>NN</em></dt>
+<dd>
+<p>if instance type = "E"</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>enum-decode.</strong><em>NN</em>.input</dt>
+<dd>
+<p>The integer value to be decoded</p>
+</dd>
+<dt class="hdlist1"><strong>enum-decode.</strong><em>NN</em>.label-out</dt>
+<dd>
+<p>Output bits of a decode instance</p>
+</dd>
+<dt class="hdlist1"><strong>enum-decode.</strong><em>NN</em>.label-val</dt>
+<dd>
+<p>The enumeration value corresponding to
+each specific bit output. These are
+populated in sequence during loading
+but may be over-ridden in HAL if
+convenient.</p>
+</dd>
+<dt class="hdlist1"><strong>enum-encode.</strong><em>NN</em><strong>.label-in</strong></dt>
+<dd>
+<p>input bits of a decode instance</p>
+</dd>
+<dt class="hdlist1"><strong>enum-encode.</strong><em>NN</em><strong>.label-val</strong></dt>
+<dd>
+<p>The enumeration value corresponding to
+each specified bit input. These are
+populated in sequence during loading
+but may be over-ridden in HAL if
+convenient.</p>
+</dd>
+<dt class="hdlist1"><strong>enum-decode.</strong><em>NN</em><strong>.output</strong></dt>
+<dd>
+<p>The integer value corresponding to the set bit input.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_bugs">BUGS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If no bits are set the output value will be zero even if zero is a
+defined enumeration.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Andy Pugh</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reporting_bugs">REPORTING BUGS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Report bugs at <a href="https://github.com/LinuxCNC/linuxcnc/issues" class="bare">https://github.com/LinuxCNC/linuxcnc/issues</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_copyright">COPYRIGHT</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Copyright © 2023 Andy Pugh.</p>
+</div>
+<div class="paragraph">
+<p>This is free software; see the source for copying conditions.  There
+is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

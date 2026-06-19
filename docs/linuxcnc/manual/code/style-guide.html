@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>Coding Style</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../rouge-github.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="style-guide.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/code/style-guide.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/code/style-guide.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/code/style-guide.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/code/style-guide.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/code/style-guide.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/code/style-guide.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/code/style-guide.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>Coding Style</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="../config/stepconf.html">Stepper Configuration Wizard</a><a href="../config/pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="../config/integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><a href="../config/ini-config.html">INI Configuration</a><a href="../config/ini-homing.html">Homing Configuration</a><a href="../config/lathe-config.html">Lathe Configuration</a><a href="../config/stepper-quickstart.html">Stepper Quickstart</a><a href="../config/stepper.html">Stepper Configuration</a><a href="../config/stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="../config/core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="../config/moveoff.html">Moveoff Component</a><a href="rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="../config/python-interface.html">The LinuxCNC Python module</a><a href="../config/python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details open><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="code-notes.html">Code Notes</a><a href="nml-messages.html">NML Messages</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>Coding Style</summary><ul class="sectlevel1">
+<li><a href="style-guide.html#_do_no_harm">1. Do no harm</a></li>
+<li><a href="style-guide.html#_tab_stops">2. Tab Stops</a></li>
+<li><a href="style-guide.html#_indentation">3. Indentation</a></li>
+<li><a href="style-guide.html#_placing_braces">4. Placing Braces</a></li>
+<li><a href="style-guide.html#_naming">5. Naming</a></li>
+<li><a href="style-guide.html#_functions">6. Functions</a></li>
+<li><a href="style-guide.html#_commenting">7. Commenting</a></li>
+<li><a href="style-guide.html#_shell_scripts_makefiles">8. Shell Scripts &amp; Makefiles</a></li>
+<li><a href="style-guide.html#_c_conventions">9. C++ Conventions</a>
+<ul class="sectlevel2">
+<li><a href="style-guide.html#_specific_method_naming_conventions">9.1. Specific method naming conventions</a></li>
+</ul>
+</li>
+<li><a href="style-guide.html#_python_coding_standards">10. Python coding standards</a></li>
+<li><a href="style-guide.html#_comp_coding_standards">11. Comp coding standards</a></li>
+</ul></details><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="building-linuxcnc.html">Building LinuxCNC</a><a href="adding-configs.html">Adding Configuration Selection Items</a><a href="contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This chapter describes the source code style preferred by the LinuxCNC team.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_do_no_harm">1. Do no harm</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When making small edits to code in a style different than the one
+described below, observe the local coding style. Rapid changes from one
+coding style to another decrease code readability.</p>
+</div>
+<div class="paragraph">
+<p>Never check in code after running "indent" on it. The whitespace
+changes introduced by indent make it more difficult to follow the
+revision history of the file.</p>
+</div>
+<div class="paragraph">
+<p>Do not use an editor that makes unneeded changes to whitespace (e.g.,
+which replaces 8 spaces with a tabstop on a line not otherwise
+modified, or word-wraps lines not otherwise modified).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_tab_stops">2. Tab Stops</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A tab stop always corresponds to 8 spaces. Do not write code that
+displays correctly only with a differing tab stop setting.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_indentation">3. Indentation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Use 4 spaces per level of indentation. Combining 8 spaces into one tab
+is acceptable but not required.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_placing_braces">4. Placing Braces</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Put the opening brace last on the line, and put the closing brace first:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c"><span class="k">if</span> <span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// do something appropriate</span>
+<span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The closing brace is on a line of its own, except in the cases where
+it is followed by a continuation of the same statement, i.e. a <em>while</em>
+in a do-statement or an <em>else</em> in an if-statement, like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c"><span class="k">do</span> <span class="p">{</span>
+    <span class="c1">// something important</span>
+<span class="p">}</span> <span class="k">while</span> <span class="p">(</span><span class="n">x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">);</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c"><span class="k">if</span> <span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="n">y</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// do one thing</span>
+<span class="p">}</span> <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">x</span> <span class="o">&lt;</span> <span class="n">y</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// do another thing</span>
+<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="c1">// do a third thing</span>
+<span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This brace-placement also minimizes the number of empty (or almost
+empty) lines, which allows a greater amount of code or comments to be
+visible at once in a terminal of a fixed size.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_naming">5. Naming</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>C is a Spartan language, and so should your naming be. Unlike Modula-2
+and Pascal programmers, C programmers do not use cute names like
+ThisVariableIsATemporaryCounter. A C programmer would call that
+variable <em>tmp</em>, which is much easier to write, and not the least more
+difficult to understand.</p>
+</div>
+<div class="paragraph">
+<p>However, descriptive names for global variables are a must. To call a
+global function <em>foo</em> is a shooting offense.</p>
+</div>
+<div class="paragraph">
+<p>GLOBAL variables (to be used only if you <strong>really</strong>  need them) need to
+have descriptive names, as do global functions. If
+you have a function that counts the number of active users, you should
+ call that <em>count_active_users()</em> or similar, you should <strong>not</strong> call it
+<em>cntusr()</em>.</p>
+</div>
+<div class="paragraph">
+<p>Encoding the type of a function into the name (so-called Hungarian
+notation) is brain damaged - the compiler knows the types anyway and
+can check those, and it only confuses the programmer. No wonder
+Microsoft makes buggy programs.</p>
+</div>
+<div class="paragraph">
+<p>LOCAL variable names should be short, and to the point. If you have
+some random integer loop counter, it should probably be called <em>i</em>.
+Calling it <em>loop_counter</em> is non-productive, if there is no chance of
+it being misunderstood. Similarly, <em>tmp</em> can be just about any type of
+variable that is used to hold a temporary value.</p>
+</div>
+<div class="paragraph">
+<p>If you are afraid to mix up your local variable names, you have
+another problem, which is called the function-growth-hormone-imbalance
+syndrome. See next chapter.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">6. Functions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Functions should be short and sweet, and do just one thing. They
+should fit on one or two screenfuls of text (the ISO/ANSI screen size
+is 80x24, as we all know), and do one thing and do that well.</p>
+</div>
+<div class="paragraph">
+<p>The maximum length of a function is inversely proportional to the
+complexity and indentation level of that function. So, if you have a
+conceptually simple function that is just one long (but simple)
+case-statement, where you have to do lots of small things for a lot of
+different cases, it&#8217;s OK to have a longer function.</p>
+</div>
+<div class="paragraph">
+<p>However, if you have a complex function, and you suspect that a
+less-than-gifted first-year high-school student might not even
+understand what the function is all about, you should adhere to the
+maximum limits all the more closely. Use helper functions with
+descriptive names (you can ask the compiler to in-line them if you
+think it&#8217;s performance-critical, and it will probably do a better job
+of it that you would have done).</p>
+</div>
+<div class="paragraph">
+<p>Another measure of the function is the number of local variables. They
+shouldn&#8217;t exceed 5-10, or you&#8217;re doing something wrong. Re-think the
+function, and split it into smaller pieces. A human brain can generally
+easily keep track of about 7 different things, anything more and it
+gets confused. You know you&#8217;re brilliant, but maybe you&#8217;d like to
+understand what you did 2 weeks from now.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_commenting">7. Commenting</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Comments are good, but there is also a danger of over-commenting.
+NEVER try to explain HOW your code works in a comment: it&#8217;s much better
+to write the code so that the <strong>working</strong> is obvious, and it&#8217;s a waste of
+time to explain badly written code.</p>
+</div>
+<div class="paragraph">
+<p>Generally, you want your comments to tell WHAT your code does, not
+HOW. A boxed comment describing the function, return value, and who
+calls it placed above the body is good. Also, try to avoid putting
+comments inside a function body: if the function is so complex that you
+need to separately comment parts of it, you should probably re-read the
+Functions section again. You can make small comments to note or warn
+about something particularly clever (or ugly), but try to avoid excess.
+Instead, put the comments at the head of the function, telling people
+what it does, and possibly WHY it does it.</p>
+</div>
+<div class="paragraph">
+<p>If comments along the lines of /* Fix me */ are used, please, please,
+say why something needs fixing. When a change has been made to the
+affected portion of code, either remove the comment, or amend it to
+indicate a change has been made and needs testing.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_shell_scripts_makefiles">8. Shell Scripts &amp; Makefiles</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Not everyone has the same tools and packages installed. Some people
+use vi, others emacs - A few even avoid having either package
+installed, preferring a lightweight text editor such as nano or the one
+built in to Midnight Commander.</p>
+</div>
+<div class="paragraph">
+<p>gawk versus mawk - Again, not everyone will have gawk installed, mawk
+is nearly a tenth of the size and yet conforms to the POSIX AWK
+standard. If some obscure gawk specific command is needed that mawk
+does not provide, than the script will break for some users. The same
+would apply to mawk. In short, use the generic awk invocation in
+preference to gawk or mawk.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_c_conventions">9. C++ Conventions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>C++ coding styles are always likely to end up in heated debates (a bit
+like the emacs versus vi arguments). One thing is certain however, a
+common style used by everyone working on a project leads to uniform and
+readable code.</p>
+</div>
+<div class="paragraph">
+<p>Naming conventions: Constants either from #defines or enumerations
+should be in upper case through out. Rationale: Makes it easier to spot
+compile time constants in the source code, e.g., EMC_MESSAGE_TYPE.</p>
+</div>
+<div class="paragraph">
+<p>Classes and Namespaces should capitalize the first letter of each word
+and avoid underscores. Rationale: Identifies classes, constructors and
+destructors, e.g., GtkWidget.</p>
+</div>
+<div class="paragraph">
+<p>Methods (or function names) should follow the C recommendations above
+and should not include the class name. Rationale: Maintains a common
+style across C and C++ sources, e.g., get_foo_bar().</p>
+</div>
+<div class="paragraph">
+<p>However, boolean methods are easier to read if they avoid underscores
+and use an <em>is</em> prefix (not to be confused with methods that manipulate
+a boolean). Rationale: Identifies the return value as TRUE or FALSE and
+nothing else, e.g., isOpen, isHomed.</p>
+</div>
+<div class="paragraph">
+<p>Do NOT use <em>Not</em> in a boolean name, it leads only leads to confusion
+when doing logical tests, e.g., isNotOnLimit or is_not_on_limit are BAD.</p>
+</div>
+<div class="paragraph">
+<p>Variable names should avoid the use of upper case and underscores
+except for local or private names. The use of global variables should
+be avoided as much as possible. Rationale: Clarifies which are
+variables and which are methods. Public: e.g., axislimit Private: e.g.,
+maxvelocity_ .</p>
+</div>
+<div class="sect2">
+<h3 id="_specific_method_naming_conventions">9.1. Specific method naming conventions</h3>
+<div class="paragraph">
+<p>The terms get and set should be used where an attribute is accessed
+directly. Rationale: Indicates the purpose of the function or method,
+e.g., get_foo set_bar.</p>
+</div>
+<div class="paragraph">
+<p>For methods involving boolean attributes, set &amp; reset is preferred.
+Rationale: As above. e.g. set_amp_enable reset_amp_fault</p>
+</div>
+<div class="paragraph">
+<p>Math intensive methods should use compute as a prefix. Rationale:
+Shows that it is computationally intensive and will hog the CPU. e.g.
+compute_PID</p>
+</div>
+<div class="paragraph">
+<p>Abbreviations in names should be avoided where possible - The
+exception is for local variable names. Rationale: Clarity of code. e.g.
+pointer is preferred over ptr compute is preferred over cmp compare is
+again preferred over cmp.</p>
+</div>
+<div class="paragraph">
+<p>Enumerates and other constants can be prefixed by a common type name,
+e.g., <code>enum COLOR { COLOR_RED, COLOR_BLUE };</code> .</p>
+</div>
+<div class="paragraph">
+<p>Excessive use of macros and defines should be avoided - Using simple
+methods or functions is preferred. Rationale: Improves the debugging
+process.</p>
+</div>
+<div class="paragraph">
+<p>Include Statements Header files must be included at the top of a
+source file and not scattered throughout the body. They should be
+sorted and grouped by their hierarchical position within the system
+with the low level files included first. Include file paths should
+NEVER be absolute - Use the compiler -I flag instead to extend the search
+path. Rationale: Headers may not be in the same place on all systems.</p>
+</div>
+<div class="paragraph">
+<p>Pointers and references should have their reference symbol next to the
+variable name rather than the type name. Rationale: Reduces confusion,
+e.g., <code>float *x</code> or <code>int &amp;i</code>.</p>
+</div>
+<div class="paragraph">
+<p>Implicit tests for zero should not be used except for boolean
+variables, e.g., <code>if (spindle_speed != 0)</code> NOT <code>if (spindle_speed)</code>.</p>
+</div>
+<div class="paragraph">
+<p>Only loop control statements must be included in a for() construct,
+e.g., <code>sum = 0; for (i=0; i&lt;10; i++) { sum += value[i]; }</code><br>
+NOT: <code>for (i=0, sum=0; i&lt;10; i++) sum += value[i];</code>.</p>
+</div>
+<div class="paragraph">
+<p>Likewise, executable statements in conditionals must be avoided,
+e.g., <code>if (fd = open(file_name))</code> is bad.</p>
+</div>
+<div class="paragraph">
+<p>Complex conditional statements should be avoided - Introduce temporary
+boolean variables instead.</p>
+</div>
+<div class="paragraph">
+<p>Parentheses should be used in plenty in mathematical expressions - Do
+not rely on operator precedence when an extra parentheses would clarify
+things.</p>
+</div>
+<div class="paragraph">
+<p>File names: C++ sources and headers use .cc and .hh extension. The use
+of .c and .h are reserved for plain C. Headers are for class, method,
+and structure declarations, not code (unless the functions are declared
+inline).</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_python_coding_standards">10. Python coding standards</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Use the <a href="https://www.python.org/dev/peps/pep-0008/">PEP 8</a> style for
+Python code.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_comp_coding_standards">11. Comp coding standards</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In the declaration portion of a .comp file, begin each declaration at
+the first column. Insert extra blank lines when they help group related
+items.</p>
+</div>
+<div class="paragraph">
+<p>In the code portion of a .comp file, follow normal C coding style.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

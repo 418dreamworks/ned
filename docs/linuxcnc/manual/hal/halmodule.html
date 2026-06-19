@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>Creating Non-realtime Python Components</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../rouge-github.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:halmodule" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="halmodule.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/hal/halmodule.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/hal/halmodule.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/hal/halmodule.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/hal/halmodule.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/hal/halmodule.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/hal/halmodule.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/hal/halmodule.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>Creating Non-realtime Python Components</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details open><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="../config/stepconf.html">Stepper Configuration Wizard</a><a href="../config/pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="../config/integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><a href="../config/ini-config.html">INI Configuration</a><a href="../config/ini-homing.html">Homing Configuration</a><a href="../config/lathe-config.html">Lathe Configuration</a><a href="../config/stepper-quickstart.html">Stepper Quickstart</a><a href="../config/stepper.html">Stepper Configuration</a><a href="../config/stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details open><summary>HAL (Hardware Abstraction Layer)</summary><a href="intro.html">HAL Introduction</a><a href="basic-hal.html">HAL Basics</a><a href="twopass.html">HAL TWOPASS</a><a href="tools.html">HAL Tools</a><a href="tutorial.html">HAL Tutorial</a><a href="hal-examples.html">HAL Examples</a><a href="../config/core-components.html">Core Components</a><a href="components.html">HAL Component List</a><a href="rtcomps.html">HAL Component Descriptions</a><a href="comp.html">HAL Component Generator</a><a href="haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="halui-examples.html">Halui Examples</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>Creating Non-realtime Python Components</summary><ul class="sectlevel1">
+<li><a href="halmodule.html#_basic_usage_example">1. Basic usage example</a></li>
+<li><a href="halmodule.html#_non_realtime_components_and_delays">2. Non-realtime components and delays</a></li>
+<li><a href="halmodule.html#_create_pins_and_parameters">3. Create pins and parameters</a>
+<ul class="sectlevel2">
+<li><a href="halmodule.html#_changing_the_prefix">3.1. Changing the prefix</a></li>
+</ul>
+</li>
+<li><a href="halmodule.html#_reading_and_writing_pins_and_parameters">4. Reading and writing pins and parameters</a>
+<ul class="sectlevel2">
+<li><a href="halmodule.html#_driving_output_hal_out_pins">4.1. Driving output (HAL_OUT) pins</a></li>
+<li><a href="halmodule.html#_driving_bidirectional_hal_io_pins">4.2. Driving bidirectional (HAL_IO) pins</a></li>
+</ul>
+</li>
+<li><a href="halmodule.html#_exiting">5. Exiting</a></li>
+<li><a href="halmodule.html#_hal_python_module_reference">6. HAL Python module reference</a></li>
+<li><a href="halmodule.html#_constants">7. Constants</a></li>
+<li><a href="halmodule.html#_system_information">8. System Information</a></li>
+</ul></details><a href="canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="../config/moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="../config/python-interface.html">The LinuxCNC Python module</a><a href="../config/python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+This section explains principles behind the implementation of HAL components with the Python programming language.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_basic_usage_example">1. Basic usage example</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A non-realtime component begins by creating its pins and parameters, then enters a loop which will periodically drive all the outputs from the inputs.
+The following component copies the value seen on its input pin (<em>passthrough.in</em>) to its output pin (<em>passthrough.out</em>) approximately once per second.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="c1">#!/usr/bin/env python3
+</span><span class="kn">import</span> <span class="n">hal</span>
+<span class="kn">import</span> <span class="n">time</span>
+<span class="n">h</span> <span class="o">=</span> <span class="n">hal</span><span class="p">.</span><span class="nf">component</span><span class="p">(</span><span class="sh">"</span><span class="s">passthrough</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">h</span><span class="p">.</span><span class="nf">newpin</span><span class="p">(</span><span class="sh">"</span><span class="s">in</span><span class="sh">"</span><span class="p">,</span> <span class="n">hal</span><span class="p">.</span><span class="n">HAL_FLOAT</span><span class="p">,</span> <span class="n">hal</span><span class="p">.</span><span class="n">HAL_IN</span><span class="p">)</span>
+<span class="n">h</span><span class="p">.</span><span class="nf">newpin</span><span class="p">(</span><span class="sh">"</span><span class="s">out</span><span class="sh">"</span><span class="p">,</span> <span class="n">hal</span><span class="p">.</span><span class="n">HAL_FLOAT</span><span class="p">,</span> <span class="n">hal</span><span class="p">.</span><span class="n">HAL_OUT</span><span class="p">)</span>
+<span class="n">h</span><span class="p">.</span><span class="nf">ready</span><span class="p">()</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">h</span><span class="p">[</span><span class="sh">'</span><span class="s">out</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">h</span><span class="p">[</span><span class="sh">'</span><span class="s">in</span><span class="sh">'</span><span class="p">]</span>
+        <span class="n">time</span><span class="p">.</span><span class="nf">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">except</span> <span class="nb">KeyboardInterrupt</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="nb">SystemExit</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Copy the above listing into a file named "passthrough", make it executable (<em>chmod +x</em>).
+Then try it out (assuming the cpmponent "passthrough" is located in the current directory):</p>
+</div>
+<div class="listingblock">
+<div class="title">Screen copy with details on the execution of the newly created passthrough HAL module.</div>
+<div class="content">
+<pre>$ halrun
+
+halcmd: loadusr ./passthrough
+
+halcmd: show pin
+
+Component Pins:
+Owner   Type  Dir     Value  Name
+     4  float IN          0  passthrough.in
+     4  float OUT         0  passthrough.out
+
+halcmd: setp passthrough.in 3.14
+
+halcmd: show pin
+
+Component Pins:
+Owner   Type  Dir     Value  Name
+     4  float IN       3.14  passthrough.in
+     4  float OUT      3.14  passthrough.out</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_non_realtime_components_and_delays">2. Non-realtime components and delays</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If you typed "show pin" quickly, you may see that <em>passthrough.out</em> still had its old value of 0.
+This is because of the call to <em>time.sleep(1)</em>, which makes the assignment to the output pin occur at most once per second.
+Because this is a non-realtime component, the actual delay between assignments can be much longer if the memory used by the passthrough component is swapped to disk,
+as the assignment could be delayed until that memory is swapped back in.</p>
+</div>
+<div class="paragraph">
+<p>Thus, non-realtime components are suitable for user-interactive elements such as control panels (delays in the range of milliseconds are not noticed, and longer delays are acceptable),
+but not for sending step pulses to a stepper driver board (delays must always be in the range of microseconds, no matter what).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_create_pins_and_parameters">3. Create pins and parameters</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="title">Create a HAL component</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="n">mycomp</span> <span class="o">=</span> <span class="n">hal</span><span class="p">.</span><span class="nf">component</span><span class="p">(</span><span class="sh">"</span><span class="s">passthrough</span><span class="sh">"</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The component itself is created by a call to the constructor <em>hal.component</em>.
+The arguments are the HAL component name and (optionally) the prefix used for pin and parameter names.
+If the prefix is not specified, the component name is used.</p>
+</div>
+<div class="listingblock">
+<div class="title">Create a HAL pin or parameter</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="n">mycomp</span><span class="p">.</span><span class="nf">newpin</span><span class="p">(</span><span class="sh">"</span><span class="s">in</span><span class="sh">"</span><span class="p">,</span> <span class="n">hal</span><span class="p">.</span><span class="n">HAL_FLOAT</span><span class="p">,</span> <span class="n">hal</span><span class="p">.</span><span class="n">HAL_IN</span><span class="p">)</span>
+<span class="n">mycomp</span><span class="p">.</span><span class="nf">newparam</span><span class="p">(</span><span class="sh">"</span><span class="s">has-feature-rotate</span><span class="sh">"</span><span class="p">,</span> <span class="n">hal</span><span class="p">.</span><span class="n">HAL_BIT</span><span class="p">,</span> <span class="n">hal</span><span class="p">.</span><span class="n">HAL_RO</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then pins are created by calls to methods on the component object.
+The arguments are: pin name suffix, pin type, and pin direction.
+For parameters, the arguments are: parameter name suffix, parameter type, and parameter direction.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 1. HAL Option Names</caption>
+<colgroup>
+<col style="width: 30%;">
+<col style="width: 10%;">
+<col style="width: 10%;">
+<col style="width: 10%;">
+<col style="width: 10%;">
+<col style="width: 10%;">
+<col style="width: 10%;">
+<col style="width: 10%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Pin and Parameter Types:</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>HAL_BIT</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>HAL_FLOAT</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>HAL_S32</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>HAL_U32</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>HAL_S64</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>HAL_U64</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>HAL_PORT</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Pin Directions:</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>HAL_IN</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>HAL_OUT</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>HAL_IO</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Parameter Directions:</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>HAL_RO</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>HAL_RW</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Only pins and signals can use the <code>HAL_PORT</code> type.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The full pin or parameter name is formed by joining the prefix and the
+suffix with a ".", so in the example the pin created is called <em>passthrough.in</em>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="n">mycomp</span><span class="p">.</span><span class="nf">ready</span><span class="p">()</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Once all the pins and parameters have been created, call the <em>.ready()</em> method.</p>
+</div>
+<div class="sect2">
+<h3 id="_changing_the_prefix">3.1. Changing the prefix</h3>
+<div class="paragraph">
+<p>The prefix can be changed by calling the <em>.setprefix()</em> method. The
+current prefix can be retrieved by calling the <em>.getprefix()</em> method.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reading_and_writing_pins_and_parameters">4. Reading and writing pins and parameters</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>For pins and parameters which are also proper Python identifiers, the
+value may be accessed or set using the attribute syntax:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="n">mycomp</span><span class="p">.</span><span class="n">out</span> <span class="o">=</span> <span class="n">mycomp</span><span class="p">.</span><span class="ow">in</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For all pins, whether or not they are also proper Python identifiers,
+the value may be accessed or set using the subscript syntax:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="n">mycomp</span><span class="p">[</span><span class="sh">'</span><span class="s">out</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">mycomp</span><span class="p">[</span><span class="sh">'</span><span class="s">in</span><span class="sh">'</span><span class="p">]</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To see all pins with their values, getpins returns all values in a dictionary
+of that component.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="n">mycomp</span><span class="p">.</span><span class="nf">getpins</span><span class="p">()</span>
+<span class="o">&gt;&gt;&gt;</span><span class="p">{</span><span class="sh">'</span><span class="s">in</span><span class="sh">'</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="sh">'</span><span class="s">out</span><span class="sh">'</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_driving_output_hal_out_pins">4.1. Driving output (HAL_OUT) pins</h3>
+<div class="paragraph">
+<p>Periodically, usually in response to a timer, all <code>HAL_OUT</code> pins should be "driven" by assigning them a new value.
+This should be done whether or not the value is different than the last one assigned.
+When a pin is connected to a signal, its old output value is not copied into the signal.
+The proper value will only appear on the signal once the component assigns a new value.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_driving_bidirectional_hal_io_pins">4.2. Driving bidirectional (HAL_IO) pins</h3>
+<div class="paragraph">
+<p>The above rule does not apply to bidirectional pins.
+Instead, a bidirectional pin should only be driven by the component when the component wishes to change the value.
+For instance, in the canonical encoder interface, the encoder component only sets the <em>index-enable</em>
+pin to <code>False</code> (when an index pulse is seen and the old value is <code>True</code>), but never sets it to <code>True</code>.
+Repeatedly driving the pin <code>False</code> might cause the other connected component to act as though another index pulse had been seen.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_exiting">5. Exiting</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A <em>halcmd unload</em> request for the component is delivered as a <em>KeyboardInterrupt</em> exception.
+When an unload request arrives, the process should either
+exit in a short time, or call the <em>.exit()</em> method on the component
+if substantial work (such as reading or
+writing files) must be done to complete the shutdown process.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_hal_python_module_reference">6. HAL Python module reference</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>See <a href="../config/python-hal-interface.html#cha:python-hal-interface">Python HAL Interface</a> for an overview and description of available classes and methods.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_constants">7. Constants</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Use these to specify details rather then the value they hold.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Pin, parameter and signal types:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>HAL_BIT</code></p>
+</li>
+<li>
+<p><code>HAL_FLOAT</code></p>
+</li>
+<li>
+<p><code>HAL_S32</code></p>
+</li>
+<li>
+<p><code>HAL_U32</code></p>
+</li>
+<li>
+<p><code>HAL_S64</code></p>
+</li>
+<li>
+<p><code>HAL_U64</code></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Pin direction:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>HAL_IN</code></p>
+</li>
+<li>
+<p><code>HAL_OUT</code></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Parameter access:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>HAL_RO</code></p>
+</li>
+<li>
+<p><code>HAL_RW</code></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Message severity:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>MSG_NONE</code></p>
+</li>
+<li>
+<p><code>MSG_ALL</code></p>
+</li>
+<li>
+<p><code>MSG_DBG</code></p>
+</li>
+<li>
+<p><code>MSG_ERR</code></p>
+</li>
+<li>
+<p><code>MSG_INFO</code></p>
+</li>
+<li>
+<p><code>MSG_WARN</code></p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_system_information">8. System Information</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Read these to acquire information about the realtime system.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>is_kernelspace</code></p>
+</li>
+<li>
+<p><code>is_rt</code></p>
+</li>
+<li>
+<p><code>is_sim</code></p>
+</li>
+<li>
+<p><code>is_userspace</code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

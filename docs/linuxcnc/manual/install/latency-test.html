@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>Latency Testing</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:latency-testing" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="latency-test.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/install/latency-test.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/install/latency-test.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/install/latency-test.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/install/latency-test.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/install/latency-test.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/install/latency-test.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/install/latency-test.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>Latency Testing</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details open><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="../config/stepconf.html">Stepper Configuration Wizard</a><a href="../config/pncconf.html">Mesa Configuration Wizard</a></details><details open><summary>Configuration</summary><a href="../config/integrator-concepts.html">Integrator Concepts</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>Latency Testing</summary><ul class="sectlevel1">
+<li><a href="latency-test.html#sec:what-is-latency">1. What is latency?</a></li>
+<li><a href="latency-test.html#sec:latency-tests">2. Latency Tests</a>
+<ul class="sectlevel2">
+<li><a href="latency-test.html#sec:latency-test">2.1. Latency Test</a></li>
+<li><a href="latency-test.html#_latency_plot">2.2. Latency Plot</a></li>
+<li><a href="latency-test.html#_latency_histogram">2.3. Latency Histogram</a></li>
+</ul>
+</li>
+<li><a href="latency-test.html#_latency_tuning">3. Latency tuning</a>
+<ul class="sectlevel2">
+<li><a href="latency-test.html#_tuning_the_bios_for_latency">3.1. Tuning the BIOS for latency</a></li>
+<li><a href="latency-test.html#_tuning_preempt_rt_for_latency">3.2. Tuning Preempt-RT for latency</a></li>
+</ul>
+</li>
+</ul></details><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><a href="../config/ini-config.html">INI Configuration</a><a href="../config/ini-homing.html">Homing Configuration</a><a href="../config/lathe-config.html">Lathe Configuration</a><a href="../config/stepper-quickstart.html">Stepper Quickstart</a><a href="../config/stepper.html">Stepper Configuration</a><a href="../config/stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="../config/core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="../config/moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="../config/python-interface.html">The LinuxCNC Python module</a><a href="../config/python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:what-is-latency">1. What is latency?</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Latency is how long it takes the PC to stop what it is doing and respond
+to an external request, such as running one of LinuxCNC&#8217;s periodic realtime threads.
+The lower the latency, the faster you can run the realtime threads,
+and the smoother motion will be (and potentially faster, in the case of software stepping).</p>
+</div>
+<div class="paragraph">
+<p>Latency is far more important than CPU speed.
+A lowly Pentium II that responds to interrupts within 10 microseconds
+each and every time can give better results
+than the latest and fastest P4 Hyperthreading beast.</p>
+</div>
+<div class="paragraph">
+<p>The CPU isn&#8217;t the only factor in determining latency.
+Motherboards, video cards, USB ports, and a number of other things can hurt the latency.
+The best way to find out what you are dealing with is to run the latency test.</p>
+</div>
+<div class="paragraph">
+<p>Generating step pulses in software has one very big advantage - it&#8217;s free.
+Just about every PC that has a parallel port is
+capable of outputting step pulses that are generated by the software.</p>
+</div>
+<div class="paragraph">
+<p>However, software step pulses also have some disadvantages:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>limited maximum step rate</p>
+</li>
+<li>
+<p>jitter in the generated pulses</p>
+</li>
+<li>
+<p>loads the CPU</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:latency-tests">2. Latency Tests</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p></p>
+</div>
+<div class="paragraph">
+<p>LinuxCNC includes several latency tests.  They all produce equivalent information.
+Running these tests will help determine if a computers is suitable for driving a CNC machine.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Do not run LinuxCNC or StepConf while the latency test is running.
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="sec:latency-test">2.1. Latency Test</h3>
+<div class="paragraph">
+<p></p>
+</div>
+<div class="paragraph">
+<p>The latency test can be run a few different ways.</p>
+</div>
+<div class="paragraph">
+<p>If you are using PnCconf to configure your machine, you can launch the Latency Test by clicking the "Test Base Period Jitter button' during the 2nd step of the process.</p>
+</div>
+<div class="paragraph">
+<p>If you are using StepConf to configure your machine, you can launch the Latency Test by clicking the "Test Base Period Jitter button' during the 2nd step of the process.</p>
+</div>
+<div class="paragraph">
+<p>If you want to run the test from the command line, open a terminal window
+(in Ubuntu, from Applications → Accessories → Terminal)
+and run the following command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>latency-test</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This will start the latency test with a base-thread period of 25 µs and a
+servo-thread period of 1 ms. The period times may be specified on the command
+line:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>latency-test 50000 1000000</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This will start the latency test with a base-thread period of 50 µs and a
+servo-thread period of 1 ms.</p>
+</div>
+<div class="paragraph">
+<p>For available options, on the command line enter:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>latency-test -h</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>After starting a latency test you should see something like this:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="../config/images/latency-test_en.png" alt="HAL Latency Test">
+</div>
+<div class="title">Figure 1. HAL Latency Test</div>
+</div>
+<div class="paragraph">
+<p>While the test is running, you should <em>abuse</em> the computer.
+Move windows around on the screen. Surf the web. Copy some large files
+around on the disk. Play some music.
+Run an OpenGL program such as glxgears.
+The idea is to put the PC through its paces while
+the latency test checks to see what the worst case numbers are.</p>
+</div>
+<div class="paragraph">
+<p>The important number for software stepping is the <em>max jitter</em> of the base thread.
+In the example above, that is 6693 nanoseconds (ns), or 6.693 microseconds (µs).
+Record this number, and enter it in StepConf when it is requested.</p>
+</div>
+<div class="paragraph">
+<p>In the example above, latency-test only ran for a few seconds.
+You should run the test for at least several minutes; sometimes
+the worst case latency doesn&#8217;t happen very often, or only happens
+when you do some particular action. For instance, one Intel
+motherboard worked pretty well most of the time, but every 64
+seconds it had a very bad 300 µs latency. Fortunately that was fixable, see <a href="latency-test.html#_latency_tuning">Latency tuning</a>.</p>
+</div>
+<div class="paragraph">
+<p>So, what do the results mean?</p>
+</div>
+<div class="paragraph">
+<p>If your Max Jitter number is less
+than about 20,000 nanoseconds, the
+computer should give very nice results with software stepping or a dedicated hardware card such as a Mesa <em>Anything I/O</em> card.</p>
+</div>
+<div class="paragraph">
+<p>If the Max Jitter number is between 20,000 and 50,000 nanoseconds, you can still
+get good results with software stepping, but your maximum step rate might be a little
+disappointing, especially if you use microstepping or have very fine pitch leadscrews. You can, however, achieve excellent results using a hardware card.</p>
+</div>
+<div class="paragraph">
+<p>If the Max Jitter number is between 50,000 and 500,000 nanoseconds, you cannot use software stepping. You can, however, achieve acceptable results using a hardware card.</p>
+</div>
+<div class="paragraph">
+<p>If the Max Jitter number is above 500,000 nanoseconds, you cannot use software stepping or a hardware card with LinuxCNC and achieve acceptable results.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+If you get high numbers, there may be ways to improve them.
+Another PC had very bad latency (several million nanoseconds) when
+using the onboard video. But a $5 used video card solved the problem.
+LinuxCNC does not require bleeding-edge hardware.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>For more information on stepper tuning see the
+<a href="../motion/tweaking-steppers.html#cha:stepper-tuning">Stepper Tuning</a> Chapter.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Tip</div>
+</td>
+<td class="content">
+Additional command line tools are available for examining latency
+when LinuxCNC is not running.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_latency_plot">2.2. Latency Plot</h3>
+<div class="paragraph">
+<p>latency-plot makes a strip chart recording for a base and a servo thread.
+It may be useful to see spikes in latency when other
+applications are started or used. Usage:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>latency-plot --help
+
+Usage:
+      latency-plot --help | -?
+      latency-plot --hal [Options]
+
+Options:
+      --base ns  (base  thread interval in nanoseconds, default:   25000)
+      --servo ns (servo thread interval in nanoseconds, default: 1000000)
+      --time ms  (report interval in milliseconds, default: 1000)
+      --relative (relative clock time (default))
+      --actual   (actual clock time)</pre>
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../config/images/latency-plot.png" alt="latency-plot Window">
+</div>
+<div class="title">Figure 2. <code>latency-plot</code> Window</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_latency_histogram">2.3. Latency Histogram</h3>
+<div class="paragraph">
+<p>The application latency-histogram displays a histogram of latency (jitter) for
+a base and servo thread.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Usage:
+   latency-histogram --help | -?
+   latency-histogram [Options]
+
+Options:
+  --base      ns   (base  thread interval in nanoseconds, default:   25000, min:  5000)
+  --servo     ns   (servo thread interval in nanoseconds, default: 1000000, min: 25000)
+  --bbinsize  ns   (base  bin size in nanoseconds, default: 100
+  --sbinsize  ns   (servo bin size in nanoseconds, default: 100
+  --bbins     n    (base  bins, default: 200
+  --sbins     n    (servo bins, default: 200
+  --logscale  0|1  (y axis log scale, default: 1)
+  --text      note (additional note, default: "" )
+  --show           (show count of undisplayed bins)
+  --nobase         (servo thread only)
+  --verbose        (progress and debug)
+  --nox            (no gui, display elapsed,min,max,sdev for each thread)</pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+When determining the latency, LinuxCNC and HAL should not be running, stop with <code>halrun -U</code>.
+Large number of bins and/or small binsizes will slow updates.
+For single thread, specify <code>--nobase</code> (and options for servo thread).
+Measured latencies outside the +/- bin range are reported with special end bars.
+Use <code>--show</code> to show count for the off-chart [pos|neg] bin.
+</td>
+</tr>
+</table>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../config/images/latency-histogram.png" alt="latency-histogram Window">
+</div>
+<div class="title">Figure 3. <code>latency-histogram</code> Window</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_latency_tuning">3. Latency tuning</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>LinuxCNC can run on many different hardware platforms and with many
+different realtime kernels, and they all may benefit from tuning for
+optimal latency.</p>
+</div>
+<div class="paragraph">
+<p>A primary goal in tuning the system for LinuxCNC is to reserve a CPU for the exclusive use of LinuxCNC&#8217;s realtime tasks, so that other tasks (both user programs and kernel threads) do not interfere with LinuxCNC&#8217;s access to that CPU.</p>
+</div>
+<div class="paragraph">
+<p>When specific tuning options are believed to be universally helpful
+LinuxCNC does this tuning automatically at startup, but many tuning
+options are machine-specific and cannot be done automatically.  The person
+installing LinuxCNC will need to experimentally determine the optimal
+tuning for their system.</p>
+</div>
+<div class="sect2">
+<h3 id="_tuning_the_bios_for_latency">3.1. Tuning the BIOS for latency</h3>
+<div class="paragraph">
+<p>PC BIOSes vary wildly in their latency behavior.</p>
+</div>
+<div class="paragraph">
+<p>Tuning the BIOS is tedious because you have to reboot the computer,
+make one small tweak in the BIOS, boot Linux, and run the latency test
+(potentially for a long time) to see what effects your BIOS change had.
+Then repeat for all the other BIOS settings you want to try.</p>
+</div>
+<div class="paragraph">
+<p>Because BIOSes are all different and non-standard, providing a detailed
+BIOS tuning guide is not practical.  In general, some things to try
+tuning in the BIOS are:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Disable ACPI, APM, and any other power-saving features.  This includes
+anything related to power saving, suspending, CPU sleep states, CPU
+frequency scaling, etc.</p>
+</li>
+<li>
+<p>Disable CPU "turbo" mode.</p>
+</li>
+<li>
+<p>Disable CPU hyperthreading.</p>
+</li>
+<li>
+<p>Disable (or otherwise control) System Management Interrupt (SMI).</p>
+</li>
+<li>
+<p>Disable any hardware you do not intend to use.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_tuning_preempt_rt_for_latency">3.2. Tuning Preempt-RT for latency</h3>
+<div class="paragraph">
+<p>The Preempt-RT kernel may benefit from tuning in order to provide the
+best latency for LinuxCNC.  Tuning may be done via the kernel command
+line, sysctl, and via files in <code>/proc</code> and <code>/sys</code>.</p>
+</div>
+<div class="paragraph">
+<p>Some tuning parameters to look into:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Kernel command line</dt>
+<dd>
+<p>Details here: <a href="https://www.kernel.org/doc/Documentation/admin-guide/kernel-parameters.txt" class="bare">https://www.kernel.org/doc/Documentation/admin-guide/kernel-parameters.txt</a></p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>isolcpus</code>: Prevent most non-LinuxCNC processes from using these
+CPUs, leaving more CPU time available for LinuxCNC.</p>
+</li>
+<li>
+<p><code>irqaffinity</code>: Select which CPUs service interrupts, so that the
+CPUs reserved for LinuxCNC realtime don&#8217;t have to perform this task.</p>
+</li>
+<li>
+<p><code>rcu_nocbs</code>: Prevent RCU callbacks from running on these CPUs.</p>
+</li>
+<li>
+<p><code>rcu_nocb_poll</code>: Poll for RCU callbacks instead of using sleep/wake.</p>
+</li>
+<li>
+<p><code>nohz_full</code>: Disable clock tick on these CPUs.</p>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1">Sysctl</dt>
+<dd>
+<p>Details here: <a href="https://www.kernel.org/doc/html/latest/scheduler/sched-rt-group.html" class="bare">https://www.kernel.org/doc/html/latest/scheduler/sched-rt-group.html</a></p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>sysctl.kernel.sched_rt_runtime_us</code>: Set to -1 to remove the limit
+on how much time realtime tasks may use.</p>
+</li>
+</ul>
+</div>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

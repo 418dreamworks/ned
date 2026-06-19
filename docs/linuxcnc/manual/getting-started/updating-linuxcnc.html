@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>Updating LinuxCNC</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:updating-linuxcnc" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="updating-linuxcnc.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/getting-started/updating-linuxcnc.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/getting-started/updating-linuxcnc.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/getting-started/updating-linuxcnc.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/getting-started/updating-linuxcnc.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/getting-started/updating-linuxcnc.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/getting-started/updating-linuxcnc.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/getting-started/updating-linuxcnc.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>Updating LinuxCNC</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details open><summary>Getting Started &amp; Configuration</summary><details open><summary>Getting Started with LinuxCNC</summary><a href="about-linuxcnc.html">About LinuxCNC</a><a href="system-requirements.html">System Requirements</a><a href="hardware-interface.html">Hardware Interface</a><a href="getting-linuxcnc.html">Getting LinuxCNC</a><a href="running-linuxcnc.html">Running LinuxCNC</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>Updating LinuxCNC</summary><ul class="sectlevel1">
+<li><a href="updating-linuxcnc.html#_upgrade_to_the_new_version">1. Upgrade to the new version</a>
+<ul class="sectlevel2">
+<li><a href="updating-linuxcnc.html#_setting_apt_sources">1.1. Apt Sources Configuration</a></li>
+<li><a href="updating-linuxcnc.html#_upgrading_to_the_new_version">1.2. Upgrading to the new version</a></li>
+<li><a href="updating-linuxcnc.html#_ubuntu">1.3. Ubuntu</a></li>
+</ul>
+</li>
+<li><a href="updating-linuxcnc.html#getting-started:update-no-network">2. Updating without Network</a></li>
+<li><a href="updating-linuxcnc.html#_updating_configuration_files_for_2_9">3. Updating Configuration Files for 2.9</a>
+<ul class="sectlevel2">
+<li><a href="updating-linuxcnc.html#_stricter_handling_of_pluggable_interpreters">3.1. Stricter handling of pluggable interpreters</a></li>
+<li><a href="updating-linuxcnc.html#_canterp">3.2. Canterp</a></li>
+<li><a href="updating-linuxcnc.html#_spindle_limits_in_the_ini">3.3. Spindle limits in the INI</a></li>
+</ul>
+</li>
+<li><a href="updating-linuxcnc.html#_updating_configuration_files_for_2_10_y">4. Updating Configuration Files for 2.10.y</a></li>
+<li><a href="updating-linuxcnc.html#_new_hal_components">5. New HAL components</a>
+<ul class="sectlevel2">
+<li><a href="updating-linuxcnc.html#_non_realtime">5.1. Non-Realtime</a></li>
+<li><a href="updating-linuxcnc.html#_realtime">5.2. Realtime</a></li>
+</ul>
+</li>
+<li><a href="updating-linuxcnc.html#_new_drivers">6. New Drivers</a></li>
+</ul></details><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="../config/stepconf.html">Stepper Configuration Wizard</a><a href="../config/pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="../config/integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><a href="../config/ini-config.html">INI Configuration</a><a href="../config/ini-homing.html">Homing Configuration</a><a href="../config/lathe-config.html">Lathe Configuration</a><a href="../config/stepper-quickstart.html">Stepper Quickstart</a><a href="../config/stepper.html">Stepper Configuration</a><a href="../config/stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="../config/core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="../config/moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="../config/python-interface.html">The LinuxCNC Python module</a><a href="../config/python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Updating LinuxCNC to a new minor release (ie to a new version in
+the same stable series, for example from 2.9.7 to 2.9.8) is an
+automatic process if your PC is connected to the internet. You will
+see an update prompt after a minor release along with other software
+updates. If you don&#8217;t have an internet connection to your PC see
+<a href="updating-linuxcnc.html#getting-started:update-no-network">Updating without Network</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_upgrade_to_the_new_version">1. Upgrade to the new version</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This section describes how to upgrade LinuxCNC from version 2.8.x to a 2.9.y version.
+It assumes that you have an existing 2.8 install that you want to update.</p>
+</div>
+<div class="paragraph">
+<p>To upgrade LinuxCNC from a version older than 2.8, you have to first
+<a href="https://linuxcnc.org/docs/2.8/html/getting-started/updating-linuxcnc.html">upgrade your old install to 2.8</a>,
+then follow these instructions to upgrade to the new version.</p>
+</div>
+<div class="paragraph">
+<p>If you do not have an old version of LinuxCNC to upgrade, then you&#8217;re
+best off making a fresh install of the new version as described in the
+section <a href="getting-linuxcnc.html#cha:getting-linuxcnc">Getting LinuxCNC</a>.</p>
+</div>
+<div class="paragraph">
+<p>Furthermore, if you are running Ubuntu Precise, Debian Wheezy or Debian Buster it is
+well worth considering making a backup of the "linuxcnc" directory on
+removable media and performing a
+<a href="getting-linuxcnc.html#cha:getting-linuxcnc">clean install of a newer OS and LinuxCNC version</a>
+as these releases were EOL in 2017, 2018 and 2022 respectively.
+If you are running on Ubuntu Lucid then you will have to do this, as
+Lucid is no longer supported by LinuxCNC (it was EOL in 2013).</p>
+</div>
+<div class="paragraph">
+<p>To upgrade major versions like 2.8 to 2.9 when you have a network connection at
+the machine you need to disable the old linuxcnc.org apt sources in the file /etc/apt/sources.list
+and add a new linuxcnc.org apt source for 2.9, then upgrade LinuxCNC.</p>
+</div>
+<div class="paragraph">
+<p>The details will depend on which platform you&#8217;re running on.
+Open a <a href="../common/linux-faq.html#faq:terminal">terminal</a> then type <code>lsb_release -ic</code> to find this information out:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>lsb_release -ic
+Distributor ID: Debian
+Codename:       Trixie</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You should be running on Debian Bullseye, Bookworm or Trixie or Ubuntu 20.04 "Focal Fossa" or newer.
+LinuxCNC 2.9.y will not run on older distributions than these.</p>
+</div>
+<div class="paragraph">
+<p>You will also need to check which realtime kernel is being used:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>uname -r
+6.1.0-10-rt-amd64</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you see (as above) <code>-rt-</code> in the kernel name then you are running the
+preempt-rt kernel and should install the "uspace" version of LinuxCNC.
+You should also install uspace for "sim" configs on non-realtime kernels.</p>
+</div>
+<div class="paragraph">
+<p>If you see <code>-rtai-</code> in the kernel name then you are running RTAI realtime.
+See below for the LinuxCNC version to install.
+RTAI packages are available for Bookworm and Buster but not currently for Bullseye.</p>
+</div>
+<div class="sect2">
+<h3 id="_setting_apt_sources">1.1. Apt Sources Configuration</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Open the <code>Software Sources</code> window.
+The process for doing this differs slightly on the three supported platforms:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Debian:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Click on <code>Applications Menu</code>, then <code>System</code>, then <code>Synaptic Package Manager</code>.</p>
+</li>
+<li>
+<p>In Synaptic, click on the <code>Settings</code> menu, then click <code>Repositories</code> to open the <code>Software Sources</code> window.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Ubuntu Precise:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Click on the <code>Dash Home</code> icon in the top left.</p>
+</li>
+<li>
+<p>In the <code>Search</code> field, type "software", then click on the <code>Ubuntu Software Center</code> icon.</p>
+</li>
+<li>
+<p>In the Ubuntu Software Center window, click on the <code>Edit</code> menu,
+then click on <code>Software Sources...</code> to open the <code>Software Sources</code> window.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Ubuntu Lucid:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Click the <code>System</code> menu, then <code>Administration</code>, then <code>Synaptic Package Manager</code>.</p>
+</li>
+<li>
+<p>In Synaptic, click on the <code>Settings</code> menu, then click on <code>Repositories</code> to open the <code>Software Sources</code> window.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>In the <code>Software Sources</code> window, select the <code>Other Software</code> tab.</p>
+</li>
+<li>
+<p>Delete or un-check all the old linuxcnc.org entries (leave all non-linuxcnc.org lines as they are).</p>
+</li>
+<li>
+<p>Click the <code>Add</code> button and add a new apt line. The line will be slightly different on the different platforms:</p>
+</li>
+</ul>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 1. Tabular overview on variants of the Operating System and the corresponding configuration of the repository. The configuration can be performed in the GUI of the package manager or in the file /etc/apt/sources.list.</caption>
+<colgroup>
+<col style="width: 37.5%;">
+<col style="width: 62.5%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">OS / Realtime Version</th>
+<th class="tableblock halign-left valign-top">Repository</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Debian Bullseye - preempt</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>deb <a href="https://linuxcnc.org" class="bare">https://linuxcnc.org</a> bullseye base 2.9-uspace</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Debian Bookworm - preempt</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>deb <a href="https://linuxcnc.org" class="bare">https://linuxcnc.org</a> bookworm base 2.9-uspace</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Debian Bookworm - RTAI</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>deb <a href="https://linuxcnc.org" class="bare">https://linuxcnc.org</a> bookworm base 2.9-rt</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Debian Trixie - preempt</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>deb <a href="https://linuxcnc.org" class="bare">https://linuxcnc.org</a> trixie base 2.9-uspace</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Debian Trixie - RTAI</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>deb <a href="https://linuxcnc.org" class="bare">https://linuxcnc.org</a> trixie base 2.9-rt</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/upgrading-to-2.9.png" alt="Setting apt sources" width="600">
+</div>
+<div class="title">Figure 1. Figure with a screenshot of the repository configuration of the synaptic package manager.</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Click <code>Add Source</code>, then <code>Close</code> in the Software Sources window.
+If it pops up a window informing you that the information about
+available software is out-of-date, click the <code>Reload</code> button.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_upgrading_to_the_new_version">1.2. Upgrading to the new version</h3>
+<div class="paragraph">
+<p>Now your computer knows where to get the new version of the software,
+next we need to install it.</p>
+</div>
+<div class="paragraph">
+<p>The process again differs depending on your platform.</p>
+</div>
+<div class="sect3">
+<h4 id="_debian_bullseye_bookworm_and_trixie">1.2.1. Debian Bullseye, Bookworm and Trixie</h4>
+<div class="paragraph">
+<p>Debian uses the Synaptic Package Manager.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Open Synaptic using the instructions in <a href="updating-linuxcnc.html#_setting_apt_sources">Setting apt sources</a> above.</p>
+</li>
+<li>
+<p>Click the <code>Reload</code> button.</p>
+</li>
+<li>
+<p>Use the Search function to search for <code>linuxcnc</code>.</p>
+</li>
+<li>
+<p>The package is called "linuxcnc" for RTAI kernels and "linuxcnc-uspace" for preempt-rt.</p>
+</li>
+<li>
+<p>Click the check box to mark the new linuxcnc and linuxcnc-doc-* packages for upgrade.
+The package manager may select a number of additional packages to be installed,
+to satisfy dependencies that the new linuxcnc package has.</p>
+</li>
+<li>
+<p>Click the <code>Apply</code> button, and let your computer install the new package.
+The old linuxcnc package will be automatically upgraded to the new one.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_ubuntu">1.3. Ubuntu</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Click on the <code>Dash Home</code> icon in the top left.</p>
+</li>
+<li>
+<p>In the <code>Search</code> field, type "update", then click on the <code>Update Manager</code> icon.</p>
+</li>
+<li>
+<p>Click the <code>Check</code> button to fetch the list of packages available.</p>
+</li>
+<li>
+<p>Click the <code>Install Updates</code> button to install the new versions of all packages.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="getting-started:update-no-network">2. Updating without Network</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To update without a network connection you need to download the .deb then install it with dpkg.
+The .debs can be found in <a href="https://linuxcnc.org/dists/" class="bare">https://linuxcnc.org/dists/</a> .</p>
+</div>
+<div class="paragraph">
+<p>You have to drill down from the above link to find the correct deb for your installation.
+Open a <a href="../common/linux-faq.html#faq:terminal">terminal</a> and type in <em>lsb_release -ic</em> to find the release name of your OS.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>&gt; lsb_release -ic
+Distributor ID: Debian
+Codename:       trixie</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Pick the OS from the list then pick the major version you want like
+2.9-rt for RTAI or 2.9-uspace for preempt-rt.</p>
+</div>
+<div class="paragraph">
+<p>Next pick the type of computer you have: binary-amd64 for 64-bit PC or
+binary-arm64 (64bit) for Raspberry Pi.</p>
+</div>
+<div class="paragraph">
+<p>Next pick the version you want from the bottom of the list like
+<em>linuxcnc-uspace_2.9.8_amd64.deb</em> (choose the latest by date).
+Download the deb and copy it to your home directory. You can rename the
+file to something a bit shorter with the file manager like
+<em>linuxcnc_2.9.8.deb</em> then open a terminal and install it with the
+package manager with this command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>sudo dpkg -i linuxcnc_2.9.8.deb</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_updating_configuration_files_for_2_9">3. Updating Configuration Files for 2.9</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_stricter_handling_of_pluggable_interpreters">3.1. Stricter handling of pluggable interpreters</h3>
+<div class="paragraph">
+<p>If you just run regular G-code and you don&#8217;t know what a pluggable
+interpreter is, then this section does not affect you.</p>
+</div>
+<div class="paragraph">
+<p>A seldom-used feature of LinuxCNC is support for pluggable interpreters,
+controlled by the undocumented <code>[TASK]INTERPRETER</code> INI setting.</p>
+</div>
+<div class="paragraph">
+<p>Versions of LinuxCNC before 2.9.0 used to handle an incorrect
+<code>[TASK]INTERPRETER</code> setting by automatically falling back to using the
+default G-code interpreter.</p>
+</div>
+<div class="paragraph">
+<p>Since 2.9.0, an incorrect <code>[TASK]INTERPRETER</code> value will cause
+LinuxCNC to refuse to start up.  Fix this condition by deleting the
+<code>[TASK]INTERPRETER</code> setting from your INI file, so that LinuxCNC will
+use the default G-code interpreter.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_canterp">3.2. Canterp</h3>
+<div class="paragraph">
+<p>If you just run regular G-code and you don&#8217;t use the <code>canterp</code> pluggable
+interpreter, then this section does not affect you.</p>
+</div>
+<div class="paragraph">
+<p>In the extremely unlikely event that you are using <code>canterp</code>,
+know that the module has moved from <code>/usr/lib/libcanterp.so</code> to
+<code>/usr/lib/linuxcnc/canterp.so</code>, and the <code>[TASK]INTERPRETER</code> setting
+correspondingly needs to change from <code>libcanterp.so</code> to <code>canterp.so</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_spindle_limits_in_the_ini">3.3. Spindle limits in the INI</h3>
+<div class="paragraph">
+<p>It is now possible to add settings to the [SPINDLE] section of the INI file</p>
+</div>
+<div class="paragraph">
+<p>MAX_FORWARD_VELOCITY = 20000 The maximum spindle speed (in rpm)</p>
+</div>
+<div class="paragraph">
+<p>MIN_FORWARD_VELOCITY = 3000 The minimum spindle speed (in rpm)</p>
+</div>
+<div class="paragraph">
+<p>MAX_REVERSE_VELOCITY = 20000 This setting will default to
+MAX_FORWARD_VELOCITY if omitted.</p>
+</div>
+<div class="paragraph">
+<p>MIN_REVERSE_VELOCITY = 3000` This setting is equivalent to
+MIN_FORWARD_VELOCITY but for reverse spindle rotation. It will default
+to the MIN_FORWARD_VELOCITY if omitted.</p>
+</div>
+<div class="paragraph">
+<p>INCREMENT = 200 Sets the step size for spindle speed increment /
+decrement commands. This can have a different value for each spindle.
+This setting is effective with AXIS and Touchy but note that some
+control screens may handle things differently.</p>
+</div>
+<div class="paragraph">
+<p>HOME_SEARCH_VELOCITY = 100 - Accepted but currently does nothing</p>
+</div>
+<div class="paragraph">
+<p>HOME_SEQUENCE = 0 - Accepted but currently does nothing</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_updating_configuration_files_for_2_10_y">4. Updating Configuration Files for 2.10.y</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Touchy: the Touchy MACRO entries should now be placed in a [MACROS]
+section of the INI rather than in the [TOUCHY] section. This is part of
+a process of commonising the INI setting between GUIs.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_new_hal_components">5. New HAL components</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_non_realtime">5.1. Non-Realtime</h3>
+<div class="paragraph">
+<p>mdro
+mqtt-publisher
+pi500_vfd
+pmx485-test
+qtplasmac-cfg2prefs
+qtplasmac-materials
+qtplasmac-plasmac2qt
+qtplasmac-setup
+sim-torch
+svd-ps_vfd</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_realtime">5.2. Realtime</h3>
+<div class="paragraph">
+<p>anglejog
+div2
+enum
+filter_kalman
+flipflop
+homecomp
+limit_axis
+mesa_uart
+millturn
+scaled_s32_sums
+tof
+ton</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_new_drivers">6. New Drivers</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A framework for controlling ModBus devices using the serial ports on
+many Mesa cards has been introduced.
+<a href="http://linuxcnc.org/docs/2.9/html/drivers/mesa_modbus.html" class="bare">http://linuxcnc.org/docs/2.9/html/drivers/mesa_modbus.html</a></p>
+</div>
+<div class="paragraph">
+<p>A new GPIO driver for any GPIO which is supported by the gpiod library
+is now included:
+<a href="http://linuxcnc.org/docs/2.9/html/drivers/hal_gpio.html" class="bare">http://linuxcnc.org/docs/2.9/html/drivers/hal_gpio.html</a></p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>encoder_ratio(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="encoder_ratio.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/encoder_ratio.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/encoder_ratio.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/encoder_ratio.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/encoder_ratio.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/encoder_ratio.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/encoder_ratio.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/encoder_ratio.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>encoder_ratio(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>encoder_ratio - an electronic gear to synchronize two axes</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt encoder_ratio</strong> [ <strong>num_chan=</strong><em>num</em> | <strong>names=</strong><em>name1</em>[,<em>name2</em>&#8230;&#8203;] ]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>encoder_ratio</strong> can be used to synchronize two axes (like an "electronic gear").
+It counts encoder pulses from both axes in software, and
+produces an error value that can be used with a PID loop to make the
+slave encoder track the master encoder with a specific ratio.</p>
+</div>
+<div class="paragraph">
+<p>This module supports up to eight axis pairs. The number of pairs is set
+by the module parameter <strong>num_chan</strong>. Alternatively, specify <strong>names=</strong> and
+unique names separated by commas.</p>
+</div>
+<div class="paragraph">
+<p>The <strong>num_chan=</strong> and <strong>names=</strong> specifiers are mutually exclusive.
+If neither <strong>num_chan=</strong> nor <strong>names=</strong> are specified, the default value is one.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>encoder-ratio.sample</strong></dt>
+<dd>
+<p>Read all input pins. Must be called at twice the maximum desired count rate.</p>
+</dd>
+<dt class="hdlist1"><strong>encoder-ratio.update (uses floating-point)</strong></dt>
+<dd>
+<p>Updates all output pins. May be called from a slower thread.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_naming">NAMING</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The names for pins and parameters are prefixed as: <strong>encoder-ratio.N.</strong>
+for <em>N</em>=0,1,&#8230;&#8203;,<em>num</em>-1 when using <strong>num_chan=</strong><em>num</em> <strong>nameN.</strong> for
+<strong>nameN=</strong><em>name1</em>,<em>name2</em>,&#8230;&#8203; when using <strong>*names=</strong><em>name1</em>,<em>name2</em>,&#8230;&#8203; .</p>
+</div>
+<div class="paragraph">
+<p>The <strong>encoder-ratio.N.</strong> format is shown in the following descriptions.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>encoder-ratio.</strong><em>N</em><strong>.master-A</strong> bit in</dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>encoder-ratio.</strong><em>N</em><strong>.master-B</strong> bit in</dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>encoder-ratio.</strong><em>N</em><strong>.slave-A</strong> bit in</dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>encoder-ratio.</strong><em>N</em><strong>.slave-B</strong> bit in</dt>
+<dd>
+<p>The encoder channels of the master and slave axes.</p>
+</dd>
+<dt class="hdlist1"><strong>encoder-ratio.</strong><em>N</em><strong>.enable</strong> bit in</dt>
+<dd>
+<p>When the enable pin is FALSE, the error pin simply reports the slave
+axis position, in revolutions. As such, it would normally be connected
+to the feedback pin of a PID block for closed loop control of the
+slave axis. Normally the command input of the PID block is left
+unconnected (zero), so the slave axis simply sits still. However when
+the enable input goes TRUE, the error pin becomes the slave position
+minus the scaled master position. The scale factor is the ratio of
+master teeth to slave teeth. As the master moves, error becomes
+non-zero, and the PID loop will drive the slave axis to track the master.</p>
+</dd>
+<dt class="hdlist1"><strong>encoder-ratio.</strong><em>N</em><strong>.error</strong> float out</dt>
+<dd>
+<p>The error in the position of the slave (in revolutions).</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parameters">PARAMETERS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>encoder-ratio.</strong><em>N</em><strong>.master-ppr</strong> unsigned rw</dt>
+<dt class="hdlist1"><strong>encoder-ratio.</strong><em>N</em><strong>.slave-ppr</strong> unsigned rw</dt>
+<dd>
+<p>The number of pulses per revolution of the master and slave axes.</p>
+</dd>
+<dt class="hdlist1"><strong>encoder-ratio.</strong><em>N</em><strong>.master-teeth</strong> unsigned rw</dt>
+<dt class="hdlist1"><strong>encoder-ratio.</strong><em>N</em><strong>.slave-teeth</strong> unsigned rw</dt>
+<dd>
+<p>The number of "teeth" on the master and slave gears.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>encoder(9)</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

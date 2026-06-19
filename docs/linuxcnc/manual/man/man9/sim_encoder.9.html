@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>sim_encoder(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="sim_encoder.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/sim_encoder.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/sim_encoder.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/sim_encoder.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/sim_encoder.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/sim_encoder.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/sim_encoder.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/sim_encoder.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>sim_encoder(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>sim_encoder - simulated quadrature encoder</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt sim_encoder [num_chan=</strong><em>num</em> | <strong>names=</strong><em>name1</em>[,<em>name2</em>&#8230;&#8203;]]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>sim_encoder</strong> can generate quadrature signals as if from an encoder. It
+also generates an index pulse once per revolution. It is mostly used for
+testing and simulation, to replace hardware that may not be available.
+It has a limited maximum frequency, as do all software based pulse
+generators.</p>
+</div>
+<div class="paragraph">
+<p><strong>sim_encoder</strong> supports a maximum of eight channels. The number of
+channels actually loaded is set by the <strong>num_chan=</strong> argument when the
+module is loaded. Alternatively, specify <strong>names=</strong> and unique names
+separated by commas.</p>
+</div>
+<div class="paragraph">
+<p>The <strong>num_chan=</strong> and <strong>names=</strong> specifiers are mutually exclusive. If
+neither <strong>num_chan=</strong> nor <strong>names=</strong> are specified, the default value is
+one.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>sim-encoder.make-pulses</strong> (no floating-point)</dt>
+<dd>
+<p>Generates the actual quadrature and index pulses. Must be called as
+frequently as possible, to maximize the count rate and minimize
+jitter. Operates on all channels at once.</p>
+</dd>
+<dt class="hdlist1"><strong>sim-encoder.update-speed</strong> (uses floating-point)</dt>
+<dd>
+<p>Reads the <strong>speed</strong> command and other parameters and converts the data
+into a form that can be used by <strong>make-pulses</strong>. Changes take effect
+only when <strong>update-speed</strong> runs. Can (and should) be called less
+frequently than <strong>make-pulses</strong>. Operates on all channels at once.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_naming">NAMING</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The names for pins and parameters are prefixed as: <strong>sim-encoder.N.</strong> for
+N=0,1,&#8230;&#8203;,num-1 when using <strong>num_chan=num</strong> <strong>nameN.</strong> for
+nameN=name1,name2,&#8230;&#8203; when using <strong>names=name1,name2,&#8230;&#8203;</strong></p>
+</div>
+<div class="paragraph">
+<p>The <strong>sim-encoder.N.</strong> format is shown in the following descriptions.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>sim-encoder.</strong><em>N</em><strong>.phase-A</strong> bit out</dt>
+<dd>
+<p>One of the quadrature outputs.</p>
+</dd>
+<dt class="hdlist1"><strong>sim-encoder.</strong><em>N</em><strong>.phase-B</strong> bit out</dt>
+<dd>
+<p>The other quadrature output.</p>
+</dd>
+<dt class="hdlist1"><strong>sim-encoder.</strong><em>N</em><strong>.phase-Z</strong> bit out</dt>
+<dd>
+<p>The index pulse.</p>
+</dd>
+<dt class="hdlist1"><strong>sim-encoder.</strong><em>N</em><strong>.speed</strong> float in</dt>
+<dd>
+<p>The desired speed of the encoder, in user units per per second. This
+is divided by <strong>scale</strong>, and the result is used as the encoder speed in
+revolutions per second.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parameters">PARAMETERS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>sim-encoder.</strong><em>N</em><strong>.ppr</strong> u32 rw</dt>
+<dd>
+<p>The pulses per revolution of the simulated encoder. Note that this is
+pulses, not counts, per revolution (ppr). Each pulse or cycle from the
+encoder results in four counts, because every edge is counted. Default
+value is 100 ppr, or 400 counts per revolution.</p>
+</dd>
+<dt class="hdlist1"><strong>sim-encoder.</strong><em>N</em><strong>.scale</strong> float rw</dt>
+<dd>
+<p>Scale factor for the <strong>speed</strong> input. The <strong>speed</strong> value is divided by
+<strong>scale</strong> to get the actual encoder speed in revolutions per second. For
+example, if <strong>scale</strong> is set to 60, then <strong>speed</strong> is in revolutions per
+minute (RPM) instead of revolutions per second. The default value is
+1.00.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

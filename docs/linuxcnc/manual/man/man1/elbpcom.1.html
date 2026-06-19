@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>elbpcom(1)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="elbpcom.1.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man1/elbpcom.1.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man1/elbpcom.1.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man1/elbpcom.1.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man1/elbpcom.1.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man1/elbpcom.1.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man1/elbpcom.1.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man1/elbpcom.1.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>elbpcom(1) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>elbpcom - Communicate with Mesa ethernet cards</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Common options</dt>
+<dd>
+<p><strong>elbpcom</strong> [<strong>--ip=</strong><em>IP</em>] [<strong>--port=</strong><em>PORT</em>] [<strong>--timeout=</strong><em>TIMEOUT</em>] [<strong>--space=</strong><em>MEMSPACE</em>] [<strong>--size=</strong><em>TRANSFER_SIZE</em>]</p>
+</dd>
+<dt class="hdlist1">Reading data</dt>
+<dd>
+<p><strong>elbpcom</strong> [<em>common options</em>] [<strong>--info</strong>] <strong>--address=</strong><em>ADDRESS</em> <strong>--read=</strong><em>LENGTH</em></p>
+</dd>
+<dt class="hdlist1">Writing data</dt>
+<dd>
+<p><strong>elbpcom</strong> [<em>common options</em>] <strong>--address=</strong><em>ADDRESS</em> <strong>--write=</strong><em>HEXDATA</em></p>
+</dd>
+<dt class="hdlist1">Read and decode memory space info area</dt>
+<dd>
+<p><strong>elbpcom</strong> [<strong>--space=</strong><em>MEMSPACE</em>] <strong>--read-info</strong></p>
+</dd>
+<dt class="hdlist1">Sending arbitrary packets</dt>
+<dd>
+<p><strong>elbpcom</strong> [<em>common options</em>] <em>HEXDATA</em></p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Read or write data from a Mesa ethernet card that uses the LBP16 protocol,
+such as the 7I80. This can be useful for performing certain low-level tasks.</p>
+</div>
+<div class="paragraph">
+<p>For more information about the meaning of each address space, see the card documentation.
+Incorrect use of this utility can have negative effects
+such as changing the board&#8217;s IP address or even corrupting the FPGA bitfile in the EEPROM.
+For some tasks, such as updating FPGA bitfiles and setting IP addresses, <strong>mesaflash</strong>(1) is a more appropriate tool.</p>
+</div>
+<div class="paragraph">
+<p>If not specified, the default values are</p>
+</div>
+<div class="paragraph">
+<p><strong>--ip=</strong><em>192.168.1.121</em> <strong>--port=</strong><em>27181</em> <strong>--timeout=</strong><em>.2</em> <strong>--space=</strong><em>0</em> <strong>--size=</strong><em>0</em></p>
+</div>
+<div class="paragraph">
+<p>If the <strong>--size</strong> argument <em>TRANSFER_SIZE</em> is 0, elbpcom will look up the
+preferred transfer size of the space in the space&#8217;s info area.</p>
+</div>
+<div class="paragraph">
+<p>This example demonstrates reading the HOSTMOT2 identifying string from the IDROM in space 0:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ elbpcom --address 0x104 --read 8
+&gt; 82420401
+&lt; 484f53544d4f5432
+      HOSTMOT2</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>First the request is shown in hex. Then the response (if any) is shown in hex.
+Finally, the response is shown in ASCII, with "." replacing any non-ASCII characters.
+This is similar to the following invocations of mesaflash:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ ./mesaflash  --device 7i80 --rpo 0x104
+54534F48
+$ ./mesaflash  --device 7i80 --rpo 0x108
+32544F4D</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Notice its different treatment of byte order.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>mesaflash(1), hostmot2(9), hm2_eth(9),
+<a href="https://www.mesanet.com">Mesa&#8217;s documentation for the Anything I/O boards</a>.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

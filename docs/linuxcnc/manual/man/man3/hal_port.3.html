@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>hal_port(3)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="hal_port.3.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man3/hal_port.3.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man3/hal_port.3.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man3/hal_port.3.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man3/hal_port.3.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man3/hal_port.3.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man3/hal_port.3.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man3/hal_port.3.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>hal_port(3) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>hal_port - a HAL pin type that acts as an asynchronous one way byte stream</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="literalblock">
+<div class="content">
+<pre>#include &lt;hal.h&gt;
+bool hal_port_read(hal_port_t port, char* dest, unsigned count);
+bool hal_port_peek(hal_port_t port, char* dest, unsigned count);
+bool hal_port_peek_commit(hal_port_t port, unsigned count);
+unsigned hal_port_readable(hal_port_t port);
+void hal_port_clear(hal_port_t port);
+
+bool hal_port_write(hal_port_t port, const char* src, unsigned count);
+unsigned hal_port_writable(hal_port_t port);
+
+unsigned hal_port_buffer_size(hal_port_t port);
+
+#ifdef ULAPI
+void hal_port_wait_readable(hal_port_t** port, unsigned count, sig_atomic_t* stop);
+void hal_port_wait_writable(hal_port_t** port, unsigned count, sig_atomic_t* stop);
+#endif</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A HAL port pin is a HAL pin that acts as a one way byte oriented data
+stream in real-time. An output port on any component may be connected to
+an input port on any other component via a signal. Data written on the
+output pin becomes accessible to the input pin. A HAL port signal may
+link only a single writer and a single reader.</p>
+</div>
+<div class="paragraph">
+<p>A port also buffers data. Users should determine the proper buffer size
+based upon their intended application.</p>
+</div>
+<div class="sect2">
+<h3 id="_hal_port_read"><strong>hal_port_read</strong></h3>
+<div class="paragraph">
+<p>Reads count bytes from the port into destination buffer dest.
+hal_port_read will read <em>count</em> bytes if and only if <em>count</em> bytes are
+available for reading and otherwise it will leave the port unaffected.
+Returns true if count bytes were read and false otherwise. This function
+should only be called by the component that owns the IN PORT pin.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_hal_port_peek"><strong>hal_port_peek</strong></h3>
+<div class="paragraph">
+<p>Behaves the same as hal_port_read, however it does not consume bytes
+from the HAL port. Repeated calls to hal_port_peek will return the same
+data. Returns true if count bytes were read and false otherwise. This
+function should only be called by the component that owns the IN PORT
+pin.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_hal_port_peek_commit"><strong>hal_port_peek_commit</strong></h3>
+<div class="paragraph">
+<p>Advances the read position in the port buffer by count bytes.
+A hal_port_peek followed by a hal_port_peek_commit would function
+equivalently to hal_port_read given the same count value. Returns true
+if count readable bytes were skipped and are no longer accessible and
+false if no bytes wer skipped. This function should only be called by
+the component that owns the IN PORT pin.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_hal_port_readable"><strong>hal_port_readable</strong></h3>
+<div class="paragraph">
+<p>Returns the number of bytes available for reading from port. It is safe
+to call this function from any component.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_hal_port_clear"><strong>hal_port_clear</strong></h3>
+<div class="paragraph">
+<p>Emptys a given port of all data. hal_port_clear should only be called by
+the component that owns the IN PORT pin.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_hal_port_write"><strong>hal_port_write</strong></h3>
+<div class="paragraph">
+<p>Writes count bytes from src into the port. Returns true if count bytes
+were written and false otherwise. This function should only be called by
+the component that owns the OUT PORT pin.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_hal_port_writable"><strong>hal_port_writable</strong></h3>
+<div class="paragraph">
+<p>Returns the number of bytes that can be written into the port. It is
+safe to call this function from any component.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_hal_port_buffer_size"><strong>hal_port_buffer_size</strong></h3>
+<div class="paragraph">
+<p>Returns the maximum number of bytes that a port can buffer. It is safe
+to call this function from any component.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_hal_port_wait_readable"><strong>hal_port_wait_readable</strong></h3>
+<div class="paragraph">
+<p>Waits until the port has count bytes or more available for reading or
+the stop flag is set.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_hal_port_wait_writable"><strong>hal_port_wait_writable</strong></h3>
+<div class="paragraph">
+<p>Waits until the port has count bytes or more available for writing or
+the stop flag is set.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_arguments">ARGUMENTS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1">hal_port_t</dt>
+<dd>
+<p>A handle to a port object. Created by hal_pin_new.</p>
+</dd>
+<dt class="hdlist1">dest</dt>
+<dd>
+<p>An array of bytes that hal_port_read and hal_port_peek will copy data into.
+This must be allocated by the caller and be at least count bytes long.</p>
+</dd>
+<dt class="hdlist1">count</dt>
+<dd>
+<p>The number of bytes that hal_port_read, hal_port_peek, and
+hal_port_write will copy in to dest or out from src.</p>
+</dd>
+<dt class="hdlist1">src</dt>
+<dd>
+<p>An array of bytes that hal_port_write will copy data from into the
+port buffer. This must be of size count bytes or larger.</p>
+</dd>
+<dt class="hdlist1">stop</dt>
+<dd>
+<p>A pointer to a value which is monitored while waiting.
+If it is nonzero, the wait operation returns early.
+This allows a wait call to be safely terminated in the case of a signal.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_sample_code">SAMPLE CODE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In the source tree under src/hal/components/raster.comp is a realtime
+component intended for laser control. src/tests/raster is a test program
+that also programs the raster component from Python.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_realtime_considerations">REALTIME CONSIDERATIONS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>hal_port_read</strong>, <strong>hal_port_peek</strong>, <strong>hal_port_peek_commit</strong>,
+<strong>hal_port_readable</strong>, <strong>hal_port_clear</strong>, <strong>hal_port_write</strong>,
+<strong>hal_port_writable</strong>, <strong>hal_port_buffer_size</strong> may be called from realtime code.</p>
+</div>
+<div class="paragraph">
+<p><strong>hal_port_wait_writable</strong>, <strong>hal_port_wait_readable</strong> may be called from ULAPI code.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>raster(9)</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

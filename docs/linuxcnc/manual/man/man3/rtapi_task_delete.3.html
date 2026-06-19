@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>rtapi_task_new(3)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../rouge-github.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="rtapi_task_new.3.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man3/rtapi_task_new.3.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man3/rtapi_task_new.3.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man3/rtapi_task_new.3.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man3/rtapi_task_new.3.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man3/rtapi_task_new.3.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man3/rtapi_task_new.3.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man3/rtapi_task_new.3.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>rtapi_task_new(3) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>rtapi_task_new, rtapi_task_delete - create a realtime task</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_syntax">SYNTAX</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c"><span class="kt">int</span> <span class="nf">rtapi_task_new</span><span class="p">(</span><span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">_taskcode_</span><span class="p">)(</span><span class="kt">void</span><span class="o">*</span><span class="p">),</span> <span class="kt">void</span> <span class="o">*</span><span class="n">_arg_</span><span class="p">,</span> <span class="kt">int</span> <span class="n">_prio_</span><span class="p">,</span>
+                   <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">_stacksize_</span><span class="p">,</span> <span class="kt">int</span> <span class="n">_uses_fp_</span><span class="p">);</span>
+<span class="kt">int</span> <span class="nf">rtapi_task_delete</span><span class="p">(</span><span class="kt">int</span> <span class="n">_task_id_</span><span class="p">);</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_arguments">ARGUMENTS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1">taskcode</dt>
+<dd>
+<p>A pointer to the function to be called when the task is started</p>
+</dd>
+<dt class="hdlist1">arg</dt>
+<dd>
+<p>An argument to be passed to the <em>taskcode</em> function when the task is started</p>
+</dd>
+<dt class="hdlist1">prio</dt>
+<dd>
+<p>A task priority value returned by <strong>rtapi_prio_xxxx</strong></p>
+</dd>
+<dt class="hdlist1">uses_fp</dt>
+<dd>
+<p>Deprecated and ignored. All tasks now unconditionally save and restore
+floating point state. This parameter will be removed in a future version.</p>
+</dd>
+<dt class="hdlist1">task_id</dt>
+<dd>
+<p>A task ID returned by a previous call to <strong>rtapi_task_new</strong></p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>rtapi_task_new</strong> creates but does not start a realtime task.
+The task is created in the "paused" state.
+To start it, call either <strong>rtapi_task_start</strong> for periodic tasks,
+or <strong>rtapi_task_resume</strong> for free-running tasks.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_realtime_considerations">REALTIME CONSIDERATIONS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Call only from within init/cleanup code, not from realtime tasks.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_return_value">RETURN VALUE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>On success, returns a positive integer task ID.
+This ID is used for all subsequent calls that need to act on the task.
+On failure, returns an RTAPI status code.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>rtapi_prio(3), rtapi_task_start(3), rtapi_task_wait(3),
+rtapi_task_resume(3)</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

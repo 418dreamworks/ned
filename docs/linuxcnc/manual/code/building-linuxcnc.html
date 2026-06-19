@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>Building LinuxCNC</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="building-linuxcnc.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/code/building-linuxcnc.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/code/building-linuxcnc.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/code/building-linuxcnc.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/code/building-linuxcnc.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/code/building-linuxcnc.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/code/building-linuxcnc.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/code/building-linuxcnc.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>Building LinuxCNC</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="../config/stepconf.html">Stepper Configuration Wizard</a><a href="../config/pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="../config/integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><a href="../config/ini-config.html">INI Configuration</a><a href="../config/ini-homing.html">Homing Configuration</a><a href="../config/lathe-config.html">Lathe Configuration</a><a href="../config/stepper-quickstart.html">Stepper Quickstart</a><a href="../config/stepper.html">Stepper Configuration</a><a href="../config/stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="../config/core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="../config/moveoff.html">Moveoff Component</a><a href="rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="../config/python-interface.html">The LinuxCNC Python module</a><a href="../config/python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details open><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="code-notes.html">Code Notes</a><a href="nml-messages.html">NML Messages</a><a href="style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>Building LinuxCNC</summary><ul class="sectlevel1">
+<li><a href="building-linuxcnc.html#_introduction">1. Introduction</a></li>
+<li><a href="building-linuxcnc.html#_downloading_source_tree">2. Downloading source tree</a>
+<ul class="sectlevel2">
+<li><a href="building-linuxcnc.html#Quick-Start">2.1. Quick Start</a></li>
+</ul>
+</li>
+<li><a href="building-linuxcnc.html#_supported_platforms">3. Supported Platforms</a>
+<ul class="sectlevel2">
+<li><a href="building-linuxcnc.html#sub:realtime">3.1. Realtime</a></li>
+</ul>
+</li>
+<li><a href="building-linuxcnc.html#_build_modes">4. Build modes</a>
+<ul class="sectlevel2">
+<li><a href="building-linuxcnc.html#_building_for_run_in_place">4.1. Building for Run In Place</a></li>
+<li><a href="building-linuxcnc.html#_building_debian_packages">4.2. Building Debian Packages</a></li>
+</ul>
+</li>
+<li><a href="building-linuxcnc.html#Setting-up-the-environment">5. Setting up the environment</a>
+<ul class="sectlevel2">
+<li><a href="building-linuxcnc.html#_increase_the_locked_memory_limit">5.1. Increase the locked memory limit</a></li>
+</ul>
+</li>
+<li><a href="building-linuxcnc.html#_building_on_gentoo">6. Building on Gentoo</a></li>
+<li><a href="building-linuxcnc.html#_options_for_checking_out_the_git_repo">7. Options for checking out the git repo</a>
+<ul class="sectlevel2">
+<li><a href="building-linuxcnc.html#_fork_us_on_github">7.1. Fork us on GitHub</a></li>
+</ul>
+</li>
+</ul></details><a href="adding-configs.html">Adding Configuration Selection Items</a><a href="contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_introduction">1. Introduction</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This document describes how to build the LinuxCNC software from source.
+This is primarily useful if you are a developer who is modifying LinuxCNC.
+It can also be useful if you&#8217;re a user who is testing developer branches,
+though then you also have the option of just installing Debian packages from the buildbot
+(<a href="http://buildbot.linuxcnc.org" class="bare">http://buildbot.linuxcnc.org</a>) or as a regular package from your Linux
+distribution (<a href="https://tracker.debian.org/pkg/linuxcnc" class="bare">https://tracker.debian.org/pkg/linuxcnc</a>).
+Admittedly, this section also exists since LinuxCNC is a community effort.
+and you are encouraged to contribute to the development of LinuxCNC.
+Generally, you want to compile LinuxCNC yourself for immediate functional access</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>to a new development of LinuxCNC or</p>
+</li>
+<li>
+<p>a new development you perhaps want to contribute to LinuxCNC or help other completing it.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>You may for instance be porting LinuxCNC to some new Linux distribution
+or, and this common, a developer reacts to you reporting a problem whose fix you want to test.
+Any such change will see no buildbot to help, or that help is delayed,
+pending someone else&#8217;s review that you do not want to wait for or you are
+the only other individual with a particular hardware to test the code.</p>
+</div>
+<div class="paragraph">
+<p>Besides the programs that control your machine that are built from the source tree,
+you can also build the same PDFs and/or HTML files that you are likely to have encountered
+online on <a href="https://linuxcnc.org/documents/" class="bare">https://linuxcnc.org/documents/</a>.</p>
+</div>
+<div class="paragraph">
+<p>If you want to contribute to LinuxCNC but are uncertain about where to start,
+please seriously consider to contribute to the documentation.
+Everyone always finds something to improve - and if you only leave
+a "FIXME: with a comment" in the text as a reference for yourself
+and others to revisit a section later. Also, translations to languages
+other than English are very likely to benefit from your scrutiny at
+<a href="https://hosted.weblate.org/projects/linuxcnc/" class="bare">https://hosted.weblate.org/projects/linuxcnc/</a> .</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_downloading_source_tree">2. Downloading source tree</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The LinuxCNC project git repository is at <a href="https://github.com/LinuxCNC/linuxcnc" class="bare">https://github.com/LinuxCNC/linuxcnc</a>.
+GitHub is a popular git hosting service and code sharing website.</p>
+</div>
+<div class="paragraph">
+<p>To retrieve the source tree you have two options:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Download tarball</dt>
+<dd>
+<p>On the LinuxCNC project page in GitHub find a reference to the "releases" or "tags", click that hyperlink to the archive page and download the latest .tar file.
+You will find that file compressed as a .tar.xz or .tar.gz file.
+This file, commonly referred to as a "tarball" is an archive very analogous to a .zip.
+Your Linux desktop will know how to treat that file when double-clicking on it.</p>
+</dd>
+<dt class="hdlist1">Prepare a local copy of the LinuxCNC repository</dt>
+<dd>
+<p>  You would first install the tool "git" on your machine if it is not available already (<code>sudo apt install git</code>).
+  Then prepare a local instance of the source tree as follows:
+.</p>
+</dd>
+</dl>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ git clone https://github.com/LinuxCNC/linuxcnc.git linuxcnc-source-dir</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>.
+  The first argument to the git command gives it away:
+  This is called a "clone" of the LinuxCNC repository.
+  The advantage is that this local clone supports the communication about changes you may decide to perform on the source tree.</p>
+</div>
+<div class="paragraph">
+<p>GitHub is an infrastructure on its own and explained in depth elsewhere.
+Just to get you motivated if you do not know it already.offers to perform a clone for you and have that instance made publicly available.
+GitHub refers to such an additional instance of another repository as a "fork".
+You can easily (and at no cost) create a fork of the LinuxCNC git repository at GitHub, and use that to track and publish your changes.
+After creating your own GitHub fork of LinuxCNC, clone it to your development machine and proceed with your hacking as usual.</p>
+</div>
+<div class="paragraph">
+<p>We of the LinuxCNC project hope that you will share your changes with us, so that the community can benefit from your work.
+GitHub makes this sharing very easy: After you polish your changes and push them to your github fork, send us a Pull Request.</p>
+</div>
+<div class="sect2">
+<h3 id="Quick-Start">2.1. Quick Start</h3>
+<div class="paragraph">
+<p>For the impatient, try this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ git clone https://github.com/LinuxCNC/linuxcnc.git linuxcnc-source-dir
+$ cd linuxcnc-source-dir/src
+$ ./autogen.sh
+$ ./configure --with-realtime=uspace
+$ make</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>That will probably fail!  That doesn&#8217;t make you a bad person,
+it just means you should read this whole document to find out how to fix your problems.
+Especially the section on <a href="building-linuxcnc.html#Satisfying-Build-Dependencies">Satisfying Build Dependencies</a>.</p>
+</div>
+<div class="paragraph">
+<p>If you are running on a realtime-capable system (such as an install from the LinuxCNC Live/Install Image,
+see the <a href="building-linuxcnc.html#sub:realtime">Realtime</a> section below), one extra build step is needed at this time:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ sudo make setuid</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>After you have successfully built LinuxCNC it is time to run the tests:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ source ../scripts/rip-environment
+$ runtests</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This might fail, too!
+Read this whole document, especially the section on <a href="building-linuxcnc.html#Setting-up-the-environment">Setting up the test environment</a>.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_supported_platforms">3. Supported Platforms</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The LinuxCNC project targets modern Debian-based distributions, including Debian, Ubuntu, and Mint.
+We continuously test on the platforms listed at <a href="http://buildbot.linuxcnc.org" class="bare">http://buildbot.linuxcnc.org</a>.</p>
+</div>
+<div class="paragraph">
+<p>LinuxCNC builds on most other Linux distributions, though dependency management will be more manual and less automatic.
+Patches to improve portability to new platforms are always welcome.</p>
+</div>
+<div class="sect2">
+<h3 id="sub:realtime">3.1. Realtime</h3>
+<div class="paragraph">
+<p>LinuxCNC is a machine tool controller, and it requires a realtime platform to do this job.
+This version of LinuxCNC supports the following platforms.
+The first three listed are realtime operating systems:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">RTAI</dt>
+<dd>
+<p>From <a href="https://www.rtai.org" class="bare">https://www.rtai.org</a>.
+A Linux kernel with the RTAI patch is available from the Debian archive at <a href="https://linuxcnc.org" class="bare">https://linuxcnc.org</a>.
+See <a href="../getting-started/getting-linuxcnc.html#cha:getting-linuxcnc">Getting LinuxCNC</a> for installation instructions.</p>
+</dd>
+<dt class="hdlist1">Xenomai</dt>
+<dd>
+<p>From <a href="https://xenomai.org" class="bare">https://xenomai.org</a>. You will have to compile or obtain a Xenomai kernel yourself.</p>
+</dd>
+<dt class="hdlist1">Preempt-RT</dt>
+<dd>
+<p>From <a href="https://rt.wiki.kernel.org" class="bare">https://rt.wiki.kernel.org</a>.
+A Linux kernel with the Preempt-RT patch is occasionally available from the Debian archive at <a href="https://www.debian.org" class="bare">https://www.debian.org</a>, and from the wayback machine at <a href="https://snapshot.debian.org" class="bare">https://snapshot.debian.org</a>.</p>
+</dd>
+<dt class="hdlist1">Non-realtime</dt>
+<dd>
+<p>LinuxCNC can also be built and run on non-realtime platforms,
+such as a regular install of Debian or Ubuntu without any special realtime kernel.<br>
+In this mode LinuxCNC is not useful for controlling machine tools,
+but it is useful for simulating the execution of G-code and for testing the non-realtime parts of the system
+(such as the user interfaces, and some kinds of components and device drivers).<br>
+To make use of the realtime capabilities of LinuxCNC, certain parts of LinuxCNC need to run with root privileges.
+To enable root for these parts, run this extra command after the <code>make</code> that builds LinuxCNC:</p>
+</dd>
+</dl>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ sudo make setuid</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_build_modes">4. Build modes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>There are two ways to build LinuxCNC: The developer-friendly "run in place" mode and the user-friendly Debian packaging mode.</p>
+</div>
+<div class="sect2">
+<h3 id="_building_for_run_in_place">4.1. Building for Run In Place</h3>
+<div class="paragraph">
+<p>In a Run-In-Place build, the LinuxCNC programs are compiled from source and then run directly from within the build directory.
+Nothing is installed outside the build directory.
+This is quick and easy, and suitable for rapid iteration of changes.
+The LinuxCNC test suite runs only in a Run-In-Place build.
+Most LinuxCNC developers primarily build using this mode.</p>
+</div>
+<div class="paragraph">
+<p>Building for Run-In-Place follows the steps in the <a href="building-linuxcnc.html#Quick-Start">Quick Start</a> section at the top of this document,
+possibly with different arguments to <code>src/configure</code> and <code>make</code>.</p>
+</div>
+<div class="sect3">
+<h4 id="src-configure-arguments">4.1.1. <code>src/configure</code> arguments</h4>
+<div class="paragraph">
+<p>The <code>src/configure</code> script configures how the source code will be compiled.
+It takes many optional arguments.
+List all arguments to <code>src/configure</code> by running this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ cd linuxcnc-source-dir/src
+$ ./configure --help</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The most commonly used arguments are:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>--with-realtime=uspace</code></dt>
+<dd>
+<p>Build for any realtime platform, or for non-realtime.
+The resulting LinuxCNC executables will run on both a Linux kernel with Preempt-RT patches (providing realtime machine control) and
+on a vanilla (un-patched) Linux kernel (providing G-code simulation but no realtime machine control).</p>
+<div class="literalblock">
+<div class="content">
+<pre>If development files are installed for Xenomai (typically from package libxenomai-dev) or RTAI (typically from a package with a name starting "rtai-modules"),
+support for these real-time kernels will also be enabled.</pre>
+</div>
+</div>
+</dd>
+<dt class="hdlist1"><code>--with-realtime=/usr/realtime-$VERSION</code></dt>
+<dd>
+<p>Build for the RTAI realtime platform using the older "kernel realtime" model.
+This requires that you have an RTAI kernel and the RTAI modules installed in <code>/usr/realtime-$VERSION</code>.
+The resulting LinuxCNC executables will only run on the specified RTAI kernel.
+As of LinuxCNC 2.7, this produces the best realtime performance.</p>
+</dd>
+<dt class="hdlist1"><code>--enable-build-documentation</code></dt>
+<dd>
+<p>Build the documentation, in addition to the executables.
+This option adds significantly to the time required for compilation, as building the docs is quite time consuming.
+If you are not actively working on the documentation you may want to omit this argument.</p>
+</dd>
+<dt class="hdlist1"><code>--disable-build-documentation-translation</code></dt>
+<dd>
+<p>Disable building the translated documentation for all available languages.
+The building of the translated documentation takes a huge amount of time, so it is recommend to skip that if not really needed.</p>
+</dd>
+<dt class="hdlist1">Translation completeness threshold</dt>
+<dd>
+<p><code>make POKEEP=N docs</code>. Per-master threshold (percent) below which a
+language-switcher entry is greyed out on the corresponding page.
+Translated HTML is always emitted; this knob only affects whether
+the entry stays clickable. Default 80. Translators can lower the
+threshold (<code>POKEEP=30</code>, <code>POKEEP=0</code>) to make their work-in-progress
+show up as live links. See the contributing guide for details.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect3">
+<h4 id="make-arguments">4.1.2. <code>make</code> arguments</h4>
+<div class="paragraph">
+<p>The <code>make</code> command takes two useful optional arguments.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Parallel compilation</dt>
+<dd>
+<p><code>make</code> takes an optional argument <code>-j</code> <em>N</em> (where <em>N</em> is a number).
+This enables parallel compilation with <em>N</em> simultaneous processes, which can significantly speed up your build.</p>
+<div class="paragraph">
+<p>A useful value for <em>N</em> is the number of CPUs in your build system.</p>
+</div>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>You can discover the number of CPUs by running <code>nproc</code>.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Building just a specific target</dt>
+<dd>
+<p>If you want to build just a specific part of LinuxCNC, you can name the thing you want to build on the <code>make</code> command line.
+For example, if you are working on a component named <code>froboz</code>, you can build its executable by running:</p>
+<div class="listingblock">
+<div class="content">
+<pre>$ cd linuxcnc-source-dir/src
+$ make ../bin/froboz</pre>
+</div>
+</div>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_building_debian_packages">4.2. Building Debian Packages</h3>
+<div class="paragraph">
+<p>When building Debian packages, the LinuxCNC programs are compiled from source
+and then stored in a Debian package, complete with dependency information.
+This process by default also includes the building of the documentation,
+which takes its time because of all the I/O for many languages, but that
+can be skipped. LinuxCNC is then installed as part of those packages on the
+same machines or on whatever machine of the same architecture that  the .deb
+files are copied to. LinuxCNC cannot be run until the Debian packages
+are installed on a target machine and then the executables are available
+in /usr/bin and /usr/lib just like other regular software of the system.</p>
+</div>
+<div class="paragraph">
+<p>This build mode is primarily useful when packaging the software for
+delivery to end users, and when building the software for a machine
+that does not have the build environment installed, or that does not have
+internet access.</p>
+</div>
+<div class="paragraph">
+<p>For the impatient, try this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ sudo apt-get install build-essential
+$ git clone https://github.com/LinuxCNC/linuxcnc.git linuxcnc-source-dir
+$ cd linuxcnc-source-dir/src
+$ ./debian/configure
+$ sudo apt-get build-dep .
+$ DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -uc -B</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Building Debian packages is performed with the <code>dpkg-buildpackage</code> tool that is
+provided by the <code>dpkg-dev</code> package. Its execution comes with a series of prerequisites
+that are detailed below:
+ * general build infrastructure shall be installed, i.e. compilers, etc.
+ * build-time dependencies are to be installed, i.e. header files for external code libraries used,
+   as described in the section <a href="building-linuxcnc.html#Satisfying-Build-Dependencies">Satisfying Build Dependencies</a>.
+ * file in debian folder need to be complete that describe the package</p>
+</div>
+<div class="paragraph">
+<p>Build tools have been gathered as a virtual package named <code>build-essential</code>. To install it, run:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ sudo apt-get install build-essential</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Once those prerequisites are met, building the Debian packages consists of two steps.</p>
+</div>
+<div class="paragraph">
+<p>The first step is generating the Debian package scripts and meta-data from the git repo by running this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ cd linuxcnc-dev
+$ ./debian/configure</pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The <code>debian/configure</code> script is different from the <code>src/configure</code> script!</p>
+</div>
+<div class="paragraph">
+<p>The <code>debian/configure</code> accepts arguments depending on the platform you are building on/for,
+see the <a href="building-linuxcnc.html#debian-configure-arguments"><code>debian/configure</code> arguments</a> section.
+It defaults to LinuxCNC running in user space ("uspace"), expecting the preempt_rt kernel
+to minimize latencies.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Once the Debian package scripts and meta-data are configured, build the package by running <code>dpkg-buildpackage</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ dpkg-buildpackage -b -uc</pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p><code>dpkg-buildpackage</code> needs to run from the root of the source tree, which you mave have named <code>linuxcnc-source-dir</code>, <strong>not</strong> from within <code>linuxcnc-source-dir/debian</code>.<br>
+<code>dpkg-buildpackage</code> takes an optional argument ``-j``<em>N</em> (where <em>N</em> is a number). This enables to run multiple jobs simultaneously.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="sect3">
+<h4 id="debian-configure-arguments">4.2.1. LinuxCNC&#8217;s <code>debian/configure</code> arguments</h4>
+<div class="paragraph">
+<p>The LinuxCNC source tree has a debian directory with all the info about how the Debian package shall be built,
+but some key files within are only distributed as templates. The <code>debian/configure</code> script readies those build instructions
+for the regular Debian packaging utilities and must thus be run prior to <code>dpkg-checkbuilddeps</code> or <code>dpkg-buildpackage</code>.</p>
+</div>
+<div class="paragraph">
+<p>The <code>debian/configure</code> script takes a single argument which specifies the underlying realtime or non-realtime platform to build for.
+The regular values for this argument are:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>no-docs</code></dt>
+<dd>
+<p>Skip building documentation.</p>
+</dd>
+<dt class="hdlist1"><code>uspace</code></dt>
+<dd>
+<p>Configure the Debian package for Preempt-RT realtime or for non-realtime (these two are compatible).</p>
+</dd>
+<dt class="hdlist1"><code>noauto</code></dt>
+<dt class="hdlist1"><code>rtai</code></dt>
+<dt class="hdlist1"><code>xenomai</code></dt>
+<dd>
+<p>Normally, the lists of RTOSes for uspace realtime to support is detected automatically.
+However, if you wish, you may specify one or more of these after <code>uspace</code> to enable support for these RTOSes.
+Or, to disable autodetection, specify <code>noauto</code>.</p>
+<div class="paragraph">
+<p>If you want just the traditional RTAI "kernel module" realtime, use <code>-r</code> or <code>$KERNEL_VERSION</code> instead.</p>
+</div>
+</dd>
+<dt class="hdlist1"><code>rtai=&lt;package name&gt;</code></dt>
+<dd>
+<p>If the development package for RTAI, lxrt, does not start with "rtai-modules",
+or if the first such package listed by apt-cache search is not the desired one,
+then explicitly specify the package name.</p>
+</dd>
+<dt class="hdlist1"><code>-r</code></dt>
+<dd>
+<p>Configure the Debian package for the currently running RTAI kernel.
+You must be running an RTAI kernel on your build machine for this to work!</p>
+</dd>
+<dt class="hdlist1"><code>$KERNEL_VERSION</code></dt>
+<dd>
+<p>Configure the Debian package for the specified RTAI kernel version (for example "3.4.9-rtai-686-pae").
+The matching kernel headers Debian package must be installed on your build machine, e.g. "linux-headers-3.4.9-rtai-686-pae".
+Note that you can <em>build</em> LinuxCNC in this configuration,
+but if you are not running the matching RTAI kernel you will not be able to <em>run</em> LinuxCNC, including the test suite.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect3">
+<h4 id="Satisfying-Build-Dependencies">4.2.2. Satisfying Build Dependencies</h4>
+<div class="paragraph">
+<p>On Debian-based platforms we provide packaging meta-data that knows
+what external software packages need to be installed in order to build LinuxCNC.
+These are referred to as the <em>build dependencies</em> of LinuxCNC, i.e. those
+packages that need to be available such that</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>the build succeeds and</p>
+</li>
+<li>
+<p>the build can be built reproducibly.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>You can use this meta-data to easily list the required packages missing from your build system.
+First, go to the source tree of LinuxCNC and initiate its default self-configuration,
+if not already performed:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ cd linuxcnc-dev
+$ ./debian/configure</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This will prepare the file debian/control that contains lists of Debian packages
+to create with the runtime dependencies for those packages and for our cause also
+the build-dependencies for those to-be-created packages.</p>
+</div>
+<div class="paragraph">
+<p>The most straightforward way to get all build-dependencies installed is to just
+execute (from the same directory):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>sudo apt-get build-dep .</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>which will install all the dependencies required, not yet installed, but available.
+The <em>.</em> is part of the command line, i.e. an instruction to retrieve the dependencies
+for the source tree at hand, not for dependencies of another package.
+This completes the installation of build-dependencies.</p>
+</div>
+<div class="paragraph">
+<p>The remainder of this section describes a semi-manual approach.
+The list of dependencies in debian/control is long and it is tedious
+to compare the current state of packages already installed with it.
+Debian systems provide a program called <code>dpkg-checkbuilddeps</code> that
+parses the package meta-data and compares the packages listed as build
+dependencies against the list of installed packages, and tells you
+what&#8217;s missing.</p>
+</div>
+<div class="paragraph">
+<p>First, install the <code>dpkg-checkbuilddeps</code> program by running:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ sudo apt-get install dpkg-dev</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This generates the file <code>debian/control</code> in a user-readable yaml-format
+which lists the build-dependencies close to the top.
+You can use this meta-data to easily list the required packages missing from your build system.
+You may decide to manually inspecting those files if you have a good understanding what is already installed.</p>
+</div>
+<div class="paragraph">
+<p>Alternatively, Debian systems provide a program called <code>dpkg-checkbuilddeps</code> that
+parses the package meta-data and compares the packages listed as build
+dependencies against the list of installed packages, and tells you what&#8217;s missing.
+Also, <code>dpkg-buildpackage</code> would inform you about what is missing, and it should be fine.
+However, it reports missing build-deps only after patches in the directory <code>debian/patches</code> have been automatically applied (if any).
+If you are new to Linux and git version management, a clean start may be preferable to avoid complications.</p>
+</div>
+<div class="paragraph">
+<p>The <code>dpkg-checkbuilddeps</code> (also from the dpkg-dev package that is installed as part of the build-essential dependencies) program
+can be asked to do its job (note that it needs to run from the <code>linuxcnc-source-dir</code> directory, <strong>not</strong> from <code>linuxcnc-source-dir/debian</code>):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ dpkg-checkbuilddeps</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It will emit a list of packages that are required to build LinuxCNC on your system but are not installed, yet.
+You can now install missing build-dependencies</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">manually</dt>
+<dd>
+<p>Install them all with <code>sudo apt-get install</code>, followed by the package names.
+You can rerun <code>dpkg-checkbuilddeps</code> any time you want, to list any missing packages, which has no effect on the source tree.</p>
+</dd>
+<dt class="hdlist1">automated</dt>
+<dd>
+<p>Run <code>sudo apt build-dep .</code> .</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>If in doubt about what a particular package of a build-dep may be providing, check out the package&#8217;s description with ``apt-cache show`` <em>packagename</em>.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_options_for_dpkg_buildpackage">4.2.3. Options for <code>dpkg-buildpackage</code></h4>
+<div class="paragraph">
+<p>For a typical Debian package to build, you would run dpkg-buildpackage without any arguments.
+As introduced above, the command has two extra options passed to it.
+Like for all good Linux tools, the man page has all the details with <code>man dpkg-buildpackage</code>.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>-uc</code></dt>
+<dd>
+<p>Do not digitally sign the resulting binaries. You would want to sign your packages with a GPG key of yours only if you would wanted to distribute them to others. Having that option not set and then failing to sign the package would not affect the .deb file.</p>
+</dd>
+<dt class="hdlist1"><code>-b</code></dt>
+<dd>
+<p>Only compiles the architecture-dependent packages (like the <code>linuxcnc</code> binaries and GUIs).
+This is very helpful to avoid compiling what is hardware-independent. For LinuxCNC this is the documentation, which is available online anyway.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>If you happen to run into difficulties while compiling, check the LinuxCNC forum online.</p>
+</div>
+<div class="paragraph">
+<p>Currently emerging is the support for the DEB_BUILD_OPTIONS environment variable.
+Set it to</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>nodocs</code></dt>
+<dd>
+<p>to skip building the documentation, preferably instead use the <code>-B</code> flag to dpkg-buildpackage.</p>
+</dd>
+<dt class="hdlist1"><code>nocheck</code></dt>
+<dd>
+<p>to skip self-tests of the LinuxCNC build process.
+This saves some time and reduces the demand for a few software packages that may not be available for your system, i.e. the xvfb in particular.
+You should not set this option to gain some extra confidence in your build to perform as expected unless you are running into mere technical difficulties with the test-specific software dependencies.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>An environment variable can be set together with the execution of the command, e.g.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -uc -B</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>would combine all the options introduced in this section.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_installing_self_built_debian_packages">4.2.4. Installing self-built Debian packages</h4>
+<div class="paragraph">
+<p>A Debian package can be recognised by its .deb extension.
+The tool installing it, <code>dpkg</code> is part of every Debian installation.
+The .deb files created by <code>dpkg-buildpackage</code> are found in the directory above the linuxcnc-source-dir, i.e. in <code>..</code>.
+To see what files are provided in a package, run</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>dpkg -c ../linuxcnc-uspace*.deb</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The version of LinuxCNC will be part of the file name, which is meant to be matched by the asterisk.
+There may be too many files listed to fit on your screen.
+If you cannot scroll up in your terminal then add <code>| more</code> to that command to have its output passed through a so-called "pager".
+Quit with "q".</p>
+</div>
+<div class="paragraph">
+<p>To install the packages, run</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>sudo dpkg -i ../linuxcnc*.deb</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="Setting-up-the-environment">5. Setting up the environment</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This section describes the special steps needed to set up a machine to run the LinuxCNC programs, including the tests.</p>
+</div>
+<div class="sect2">
+<h3 id="_increase_the_locked_memory_limit">5.1. Increase the locked memory limit</h3>
+<div class="paragraph">
+<p>LinuxCNC tries to improve its realtime latency by locking the memory it uses into RAM.
+It does this in order to prevent the operating system from swapping LinuxCNC out to disk, which would have bad effects on latency.
+Normally, locking memory into RAM is frowned upon, and the operating system places a strict limit on how much memory a user is allowed to have locked.</p>
+</div>
+<div class="paragraph">
+<p>When using the Preempt-RT realtime platform LinuxCNC runs with enough privilege to raise its memory lock limit itself.
+When using the RTAI realtime platform it does not have enough privilege, and the user must raise the memory lock limit.</p>
+</div>
+<div class="paragraph">
+<p>If LinuxCNC displays the following message on startup, the problem is your system&#8217;s configured limit on locked memory:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>RTAPI: ERROR: failed to map shmem
+RTAPI: Locked memory limit is 32KiB, recommended at least 20480KiB.</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To fix this problem, add a file named
+<code>/etc/security/limits.d/linuxcnc.conf</code> (as root) with your favorite
+text editor (e.g., <code>sudo gedit /etc/security/limits.d/linuxcnc.conf</code>).
+The file should contain the following line:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>* - memlock 20480</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Log out and log back in to make the changes take effect.
+Verify that the memory lock limit is raised using the following command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ ulimit -l</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_building_on_gentoo">6. Building on Gentoo</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Building on Gentoo is possible, but not supported.  Be sure you are
+running a desktop profile.  This project uses the Tk Widget Set, asciidoc,
+and has some other dependencies.  They should be installed as root:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>~ # euse -E tk imagequant
+~ # emerge -uDNa world
+~ # emerge -a dev-libs/libmodbus dev-lang/tk dev-tcltk/bwidget dev-tcltk/tclx
+~ # emerge -a dev-python/pygobject dev-python/pyopengl dev-python/numpy
+~ # emerge -a app-text/asciidoc app-shells/bash-completion</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can switch back to being a normal user for most of the rest of the
+install.  As that user, create a virtual environment for pip, then install
+the pip packages:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>~/src $ python -m venv   --system-site-packages ~/src/venv
+~/src $ . ~/src/venv/bin/activate
+(venv) ~/src $ pip install yapps2
+(venv) ~/src $</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then you can contrinue as normally:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>(venv) ~/src $ git clone https://github.com/LinuxCNC/linuxcnc.git
+(venv) ~/src $ cd linuxcnc
+(venv) ~/src $ cd src
+(venv) ~/src $ ./autogen.sh
+(venv) ~/src $ ./configure --enable-non-distributable=yes
+(venv) ~/src $ make</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>There is no need to run "make suid", just make sure your user is in
+the "dialout" group.  To start linuxcnc, you must be in the Python
+Virtual Environment, and set up the linuxcnc environment:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>~ $ . ~/src/venv/bin/activate
+(venv) ~ $ . ~/src/linuxcnc/scripts/rip-environment
+(venv) ~ $ ~/src/linuxcnc $ scripts/linuxcnc</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_options_for_checking_out_the_git_repo">7. Options for checking out the git repo</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <a href="building-linuxcnc.html#Quick-Start">Quick Start</a> instructions at the top of this
+document clone our git repo at
+<a href="https://github.com/LinuxCNC/linuxcnc.git" class="bare">https://github.com/LinuxCNC/linuxcnc.git</a>.  This is the quickest, easiest
+way to get started.  However, there are other options to consider.</p>
+</div>
+<div class="sect2">
+<h3 id="_fork_us_on_github">7.1. Fork us on GitHub</h3>
+<div class="paragraph">
+<p>The LinuxCNC project git repo is at <a href="https://github.com/LinuxCNC/linuxcnc" class="bare">https://github.com/LinuxCNC/linuxcnc</a>.
+GitHub is a popular git hosting service and code sharing website.
+You can easily (and at no costs) create a fork (a second instance holding a copy that you control) of the LinuxCNC git repository at GitHub.
+You can then use that fork of yours to track and publish your changes, receive comments to your changes and accept patches from the community.
+.</p>
+</div>
+<div class="paragraph">
+<p>After creating your own GitHub fork of LinuxCNC, clone it to your
+development machine and proceed with your hacking as usual.</p>
+</div>
+<div class="paragraph">
+<p>We of the LinuxCNC project hope that you will share your changes with us, so that the community can benefit from your work.
+GitHub makes this sharing very easy: after you polish your changes and push them to your GitHub fork, send us a Pull Request.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

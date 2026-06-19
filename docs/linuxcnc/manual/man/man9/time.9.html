@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>TIME(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../rouge-github.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="time.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/time.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/time.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/time.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/time.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/time.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/time.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/time.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>TIME(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>time - Time on in Hours, Minutes, Seconds</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt time</strong> [<strong>count</strong>=<em>N</em>|<strong>names</strong>=<em>name1</em>[,<em>name2</em>&#8230;&#8203;]]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Time</p>
+</div>
+<div class="paragraph">
+<p>When either the <strong>time</strong>.<em>N</em>.<strong>start</strong> or <strong>time</strong>.<em>N</em>.<strong>pause</strong> bits goes true the
+cycle timer resets and starts to time until <strong>time</strong>.<em>N</em>.<strong>start</strong> AND <strong>time</strong>.<em>N</em>.<strong>pause</strong>
+go false. When the <strong>time</strong>.<em>N</em>.<strong>pause</strong> bit goes true timing is paused
+until <strong>time</strong>.<em>N</em>.<strong>pause</strong> goes false. If you connect <strong>time</strong>.<em>N</em>.<strong>start</strong>
+to <strong>halui</strong>.<strong>program</strong>.<strong>is-running</strong> and leave <strong>time</strong>.<em>N</em>.<strong>pause</strong> unconnected the
+timer will reset during a pause. See the example connections below for more
+information.</p>
+</div>
+<div class="paragraph">
+<p>Time returns the hours, minutes, and seconds that <strong>time</strong>.<em>N</em>.<strong>start</strong> is true.</p>
+</div>
+<div class="paragraph">
+<p>Sample PyVCP code to display the hours:minutes:seconds.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;pyvcp&gt;</span>
+  <span class="nt">&lt;hbox&gt;</span>
+  <span class="nt">&lt;label&gt;</span>
+    <span class="nt">&lt;text&gt;</span>"Cycle Time"<span class="nt">&lt;/text&gt;</span>
+    <span class="nt">&lt;font&gt;</span>("Helvetica",14)<span class="nt">&lt;/font&gt;</span>
+  <span class="nt">&lt;/label&gt;</span>
+  <span class="nt">&lt;u32&gt;</span>
+      <span class="nt">&lt;halpin&gt;</span>"time-hours"<span class="nt">&lt;/halpin&gt;</span>
+      <span class="nt">&lt;font&gt;</span>("Helvetica",14)<span class="nt">&lt;/font&gt;</span>
+      <span class="nt">&lt;format&gt;</span>"2d"<span class="nt">&lt;/format&gt;</span>
+  <span class="nt">&lt;/u32&gt;</span>
+  <span class="nt">&lt;label&gt;</span>
+    <span class="nt">&lt;text&gt;</span>":"<span class="nt">&lt;/text&gt;</span>
+    <span class="nt">&lt;font&gt;</span>("Helvetica",14)<span class="nt">&lt;/font&gt;</span>
+  <span class="nt">&lt;/label&gt;</span>
+  <span class="nt">&lt;u32&gt;</span>
+      <span class="nt">&lt;halpin&gt;</span>"time-minutes"<span class="nt">&lt;/halpin&gt;</span>
+      <span class="nt">&lt;font&gt;</span>("Helvetica",14)<span class="nt">&lt;/font&gt;</span>
+      <span class="nt">&lt;format&gt;</span>"2d"<span class="nt">&lt;/format&gt;</span>
+  <span class="nt">&lt;/u32&gt;</span>
+  <span class="nt">&lt;label&gt;</span>
+    <span class="nt">&lt;text&gt;</span>":"<span class="nt">&lt;/text&gt;</span>
+    <span class="nt">&lt;font&gt;</span>("Helvetica",14)<span class="nt">&lt;/font&gt;</span>
+  <span class="nt">&lt;/label&gt;</span>
+  <span class="nt">&lt;u32&gt;</span>
+      <span class="nt">&lt;halpin&gt;</span>"time-seconds"<span class="nt">&lt;/halpin&gt;</span>
+      <span class="nt">&lt;font&gt;</span>("Helvetica",14)<span class="nt">&lt;/font&gt;</span>
+      <span class="nt">&lt;format&gt;</span>"2d"<span class="nt">&lt;/format&gt;</span>
+  <span class="nt">&lt;/u32&gt;</span>
+  <span class="nt">&lt;/hbox&gt;</span>
+<span class="nt">&lt;/pyvcp&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In your <code>post-gui.hal</code> file you might use one of the following to connect
+this timer:</p>
+</div>
+<div class="paragraph">
+<p>For a new config:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"> <span class="k">loadrt</span> <span class="n">time</span>
+ <span class="k">addf</span> <span class="na">time.0</span> <span class="n">servo-thread</span>
+ <span class="k">net</span> <span class="n">cycle-timer</span>        <span class="na">time.0.start</span> <span class="o">&lt;=</span> <span class="na">halui.program.is-running</span>
+ <span class="k">net</span> <span class="n">cycle-timer-pause</span>  <span class="na">time.0.pause</span> <span class="o">&lt;=</span> <span class="na">halui.program.is-paused</span>
+ <span class="k">net</span> <span class="n">cycle-seconds</span> <span class="na">pyvcp.time-seconds</span> <span class="o">&lt;=</span> <span class="na">time.0.seconds</span>
+ <span class="k">net</span> <span class="n">cycle-minutes</span> <span class="na">pyvcp.time-minutes</span> <span class="o">&lt;=</span> <span class="na">time.0.minutes</span>
+ <span class="k">net</span> <span class="n">cycle-hours</span> <span class="na">pyvcp.time-hours</span> <span class="o">&lt;=</span> <span class="na">time.0.hours</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Previous to this version if you wanted the timer to continue running
+during a pause instead of resetting, you had to use a HAL NOT component
+to invert the <strong>halui</strong>.<strong>program</strong>.<strong>is-idle</strong> pin and connect
+to <strong>time</strong>.<em>N</em>.<strong>start</strong> as shown below:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"> <span class="k">loadrt</span> <span class="n">time</span>
+ <span class="k">loadrt</span> <span class="n">not</span>
+ <span class="k">addf</span> <span class="na">time.0</span> <span class="n">servo-thread</span>
+ <span class="k">addf</span> <span class="na">not.0</span> <span class="n">servo-thread</span>
+ <span class="k">net</span> <span class="n">prog-running</span> <span class="na">not.0.in</span> <span class="o">&lt;=</span> <span class="na">halui.program.is-idle</span>
+ <span class="k">net</span> <span class="n">cycle-timer</span> <span class="na">time.0.start</span> <span class="o">&lt;=</span> <span class="na">not.0.out</span>
+ <span class="k">net</span> <span class="n">cycle-seconds</span> <span class="na">pyvcp.time-seconds</span> <span class="o">&lt;=</span> <span class="na">time.0.seconds</span>
+ <span class="k">net</span> <span class="n">cycle-minutes</span> <span class="na">pyvcp.time-minutes</span> <span class="o">&lt;=</span> <span class="na">time.0.minutes</span>
+ <span class="k">net</span> <span class="n">cycle-hours</span> <span class="na">pyvcp.time-hours</span> <span class="o">&lt;=</span> <span class="na">time.0.hours</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For those who have this setup already, you can simply add a net
+connecting <strong>time</strong>.<em>N</em>.<strong>pause</strong> to <strong>halui</strong>.<strong>program</strong>.<strong>is-paused</strong>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"> <span class="k">net</span> <span class="n">cycle-timer-pause</span> <span class="na">time.0.pause</span> <span class="o">&lt;=</span> <span class="na">halui.program.is-paused</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>time</strong>.<em>N</em></dt>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>time</strong>.<em>N</em>.<strong>start</strong> bit in </dt>
+<dd>
+<p>Timer On</p>
+</dd>
+<dt class="hdlist1"><strong>time</strong>.<em>N</em>.<strong>pause</strong> bit in (default: <em>0</em>)</dt>
+<dd>
+<p>Pause</p>
+</dd>
+<dt class="hdlist1"><strong>time</strong>.<em>N</em>.<strong>seconds</strong> u32 out </dt>
+<dd>
+<p>Seconds</p>
+</dd>
+<dt class="hdlist1"><strong>time</strong>.<em>N</em>.<strong>minutes</strong> u32 out </dt>
+<dd>
+<p>Minutes</p>
+</dd>
+<dt class="hdlist1"><strong>time</strong>.<em>N</em>.<strong>hours</strong> u32 out </dt>
+<dd>
+<p>Hours</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>John Thornton, itaib, Moses McKnight</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:30:12 UTC
+</div>
+</div>
+</body>
+</html>

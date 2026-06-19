@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>THCUD(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../rouge-github.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="thcud.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/thcud.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/thcud.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/thcud.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/thcud.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/thcud.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/thcud.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/thcud.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>THCUD(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>thcud - Torch Height Control Up/Down Input</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt thcud</strong></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Torch Height Control
+This THC takes either an up or a down input from a THC</p>
+</div>
+<div class="paragraph">
+<p>If enabled and torch is on and X + Y velocity is within tolerance of set speed
+allow the THC to offset the Z axis as needed to maintain voltage.</p>
+</div>
+<div class="paragraph">
+<p>If enabled and torch is off and the Z axis is moving up remove any correction
+at a rate not to exceed the rate of movement of the Z axis.</p>
+</div>
+<div class="paragraph">
+<p>If enabled and torch is off and there is no correction
+pass the Z position and feed back untouched.</p>
+</div>
+<div class="paragraph">
+<p>If not enabled pass the Z position and feed back untouched.</p>
+</div>
+<div class="paragraph">
+<p>Typical Physical Connections using a Parallel Port</p>
+</div>
+<div class="paragraph">
+<p>Parallel Pin 12 &#8656; THC controller Plasma Up</p>
+</div>
+<div class="paragraph">
+<p>Parallel Pin 13 &#8656; THC controller Plasma Down</p>
+</div>
+<div class="paragraph">
+<p>Parallel Pin 15  &#8656; Plasma Torch Arc Ok Signal</p>
+</div>
+<div class="paragraph">
+<p>Parallel Pin 16 &#8658; Plasma Torch Start Arc Contacts</p>
+</div>
+<div class="paragraph">
+<p>HAL Plasma Connections</p>
+</div>
+<div class="paragraph">
+<p>net torch-up thcud.torch-up &#8656; parport.0.pin-12-in</p>
+</div>
+<div class="paragraph">
+<p>net torch-down thcud.torch-down &#8656; parport.0.pin-13-in</p>
+</div>
+<div class="paragraph">
+<p>net torch-on spindle.0.on &#8658; parport.0.pin-16-out (start the arc)</p>
+</div>
+<div class="paragraph">
+<p>net arc-ok thcud.arc-ok &#8656; motion.digital-in-00 &#8656; parport.0.pin-15-in (arc ok signal)</p>
+</div>
+<div class="paragraph">
+<p>HAL Motion Connections</p>
+</div>
+<div class="paragraph">
+<p>net requested-vel thcud.requested-vel &#8656; motion.requested-vel</p>
+</div>
+<div class="paragraph">
+<p>net current-vel thcud.current-vel &#8656; motion.current-vel</p>
+</div>
+<div class="paragraph">
+<p>PyVCP Connections
+In the XML file you need something like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="xml"><span class="nt">&lt;pyvcp&gt;</span>
+<span class="nt">&lt;checkbutton&gt;</span>
+  <span class="nt">&lt;text&gt;</span>"THC Enable"<span class="nt">&lt;/text&gt;</span>
+  <span class="nt">&lt;halpin&gt;</span>"thc-enable"<span class="nt">&lt;/halpin&gt;</span>
+<span class="nt">&lt;/checkbutton&gt;</span>
+<span class="nt">&lt;/pyvcp&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Connect the PyVCP pins in the postgui.hal file like this:</p>
+</div>
+<div class="paragraph">
+<p>net thc-enable thcud.enable &#8656; pyvcp.thc-enable</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>thcud</strong>.<strong>-</strong></dt>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>thcud</strong>.<strong>torch-up</strong> bit in </dt>
+<dd>
+<p>Connect to an input pin</p>
+</dd>
+<dt class="hdlist1"><strong>thcud</strong>.<strong>torch-down</strong> bit in </dt>
+<dd>
+<p>Connect to input pin</p>
+</dd>
+<dt class="hdlist1"><strong>thcud</strong>.<strong>current-vel</strong> float in </dt>
+<dd>
+<p>Connect to motion.current-vel</p>
+</dd>
+<dt class="hdlist1"><strong>thcud</strong>.<strong>requested-vel</strong> float in </dt>
+<dd>
+<p>Connect to motion.requested-vel</p>
+</dd>
+<dt class="hdlist1"><strong>thcud</strong>.<strong>torch-on</strong> bit in </dt>
+<dd>
+<p>Connect to spindle.N.on</p>
+</dd>
+<dt class="hdlist1"><strong>thcud</strong>.<strong>arc-ok</strong> bit in </dt>
+<dd>
+<p>Arc Ok from Plasma Torch</p>
+</dd>
+<dt class="hdlist1"><strong>thcud</strong>.<strong>enable</strong> bit in </dt>
+<dd>
+<p>Enable the THC, if not enabled Z position is passed through</p>
+</dd>
+<dt class="hdlist1"><strong>thcud</strong>.<strong>z-pos-in</strong> float in </dt>
+<dd>
+<p>Z Motor Position Command in from axis.n.motor-pos-cmd</p>
+</dd>
+<dt class="hdlist1"><strong>thcud</strong>.<strong>z-pos-out</strong> float out </dt>
+<dd>
+<p>Z Motor Position Command Out</p>
+</dd>
+<dt class="hdlist1"><strong>thcud</strong>.<strong>z-fb-out</strong> float out </dt>
+<dd>
+<p>Z Position Feedback to Axis</p>
+</dd>
+<dt class="hdlist1"><strong>thcud</strong>.<strong>cur-offset</strong> float out </dt>
+<dd>
+<p>The Current Offset</p>
+</dd>
+<dt class="hdlist1"><strong>thcud</strong>.<strong>vel-status</strong> bit out </dt>
+<dd>
+<p>When the THC thinks we are at requested speed</p>
+</dd>
+<dt class="hdlist1"><strong>thcud</strong>.<strong>removing-offset</strong> bit out </dt>
+<dd>
+<p>Pin for testing</p>
+</dd>
+<dt class="hdlist1"><strong>thcud</strong>.<strong>correction-vel</strong> float in </dt>
+<dd>
+<p>The Velocity to move Z to correct</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parameters">PARAMETERS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>thcud</strong>.<strong>velocity-tol</strong> float rw </dt>
+<dd>
+<p>The deviation percent from planned velocity</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>John Thornton</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPLv2 or greater</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:30:12 UTC
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>halui(1)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="halui.1.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man1/halui.1.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man1/halui.1.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man1/halui.1.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man1/halui.1.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man1/halui.1.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man1/halui.1.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man1/halui.1.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>halui(1) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>halui - observe HAL pins and command LinuxCNC through NML</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>halui</strong> [<strong>-ini</strong> <em>&lt;path-to-INI&gt;</em>]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The program <strong>halui</strong> is used to build a User Interface using hardware knobs and switches.
+It exports a big number of pins, and acts accordingly when these change.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_options">OPTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>-ini</strong> <em>filename</em></dt>
+<dd>
+<p>Use the <em>filename</em> as the configuration file. Note: halui must find
+the nml file specified in the INI, usually that file is in the same
+folder as the INI, so it makes sense to run halui from that folder.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_usage">USAGE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When run, <strong>halui</strong> will export a large number of pins. A user can connect
+those to his physical knobs &amp; switches &amp; leds, and when a change is
+noticed halui triggers an appropriate event.</p>
+</div>
+<div class="paragraph">
+<p>Caveat, <strong>halui</strong> expects the signals to be debounced, so if needed (bad knob
+contact) connect the physical button to a HAL debounce filter first.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_abort">Abort</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>halui.abort</strong> bit in</dt>
+<dd>
+<p>pin for clearing most errors</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_tool">Tool</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>halui.tool.length-offset.a</strong>  float out</dt>
+<dd>
+<p>current applied tool length offset for the A axis</p>
+</dd>
+<dt class="hdlist1"><strong>halui.tool.length-offset.b</strong>  float out</dt>
+<dd>
+<p>current applied tool length offset for the B axis</p>
+</dd>
+<dt class="hdlist1"><strong>halui.tool.length-offset.c</strong>  float out</dt>
+<dd>
+<p>current applied tool length offset for the C axis</p>
+</dd>
+<dt class="hdlist1"><strong>halui.tool.length-offset.u</strong>  float out</dt>
+<dd>
+<p>current applied tool length offset for the U axis</p>
+</dd>
+<dt class="hdlist1"><strong>halui.tool.length-offset.v</strong>  float out</dt>
+<dd>
+<p>current applied tool length offset for the V axis</p>
+</dd>
+<dt class="hdlist1"><strong>halui.tool.length-offset.w</strong>  float out</dt>
+<dd>
+<p>current applied tool length offset for the W axis</p>
+</dd>
+<dt class="hdlist1"><strong>halui.tool.length-offset.x</strong>  float out</dt>
+<dd>
+<p>current applied tool length offset for the X axis</p>
+</dd>
+<dt class="hdlist1"><strong>halui.tool.length-offset.y</strong>  float out</dt>
+<dd>
+<p>current applied tool length offset for the Y axis</p>
+</dd>
+<dt class="hdlist1"><strong>halui.tool.length-offset.z</strong>  float out</dt>
+<dd>
+<p>current applied tool length offset for the Z axis</p>
+</dd>
+<dt class="hdlist1"><strong>halui.tool.diameter</strong>  float out</dt>
+<dd>
+<p>Current tool diameter, or 0 if no tool is loaded.</p>
+</dd>
+<dt class="hdlist1"><strong>halui.tool.number</strong>  u32 out</dt>
+<dd>
+<p>current selected tool</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_spindle">Spindle</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>halui.spindle.</strong><em>N</em><strong>.brake-is-on</strong> bit out</dt>
+<dd>
+<p>status pin that tells us if brake is on</p>
+</dd>
+<dt class="hdlist1"><strong>halui.spindle.</strong><em>N</em><strong>.brake-off</strong> bit in</dt>
+<dd>
+<p>pin for deactivating the spindle brake</p>
+</dd>
+<dt class="hdlist1"><strong>halui.spindle.</strong><em>N</em><strong>.brake-on</strong> bit in</dt>
+<dd>
+<p>pin for activating the spindle brake</p>
+</dd>
+<dt class="hdlist1"><strong>halui.spindle.</strong><em>N</em><strong>.decrease</strong> bit in</dt>
+<dd>
+<p>a rising edge on this pin decreases the current spindle speed by 100</p>
+</dd>
+<dt class="hdlist1"><strong>halui.spindle.</strong><em>N</em><strong>.forward</strong> bit in</dt>
+<dd>
+<p>a rising edge on this pin makes the spindle go forward</p>
+</dd>
+<dt class="hdlist1"><strong>halui.spindle.</strong><em>N</em><strong>.increase</strong> bit in</dt>
+<dd>
+<p>a rising edge on this pin increases the current spindle speed by 100</p>
+</dd>
+<dt class="hdlist1"><strong>halui.spindle.</strong><em>N</em><strong>.is-on</strong> bit out</dt>
+<dd>
+<p>status pin telling if the spindle is on</p>
+</dd>
+<dt class="hdlist1"><strong>halui.spindle.</strong><em>N</em><strong>.reverse</strong> bit in</dt>
+<dd>
+<p>a rising edge on this pin makes the spindle go reverse</p>
+</dd>
+<dt class="hdlist1"><strong>halui.spindle.</strong><em>N</em><strong>.runs-backward</strong> bit out</dt>
+<dd>
+<p>status pin telling if the spindle is running backward</p>
+</dd>
+<dt class="hdlist1"><strong>halui.spindle.</strong><em>N</em><strong>.runs-forward</strong> bit out</dt>
+<dd>
+<p>status pin telling if the spindle is running forward</p>
+</dd>
+<dt class="hdlist1"><strong>halui.spindle.</strong><em>N</em><strong>.start</strong> bit in</dt>
+<dd>
+<p>a rising edge on this pin starts the spindle</p>
+</dd>
+<dt class="hdlist1"><strong>halui.spindle.</strong><em>N</em><strong>.stop</strong> bit in</dt>
+<dd>
+<p>a rising edge on this pin stops the spindle</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_spindle_override">Spindle Override</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">(SO = spindle override. FO = feed override)</dt>
+<dt class="hdlist1"><strong>halui.spindle.</strong><em>N</em><strong>.override.count-enable</strong> bit in (default: <strong>TRUE</strong>)</dt>
+<dd>
+<p>When TRUE, modify spindle override when counts changes.</p>
+</dd>
+<dt class="hdlist1"><strong>halui.spindle.</strong><em>N</em><strong>.override.counts</strong> s32 in</dt>
+<dd>
+<p>counts X scale = spindle override percentage</p>
+</dd>
+<dt class="hdlist1"><strong>halui.spindle.</strong><em>N</em><strong>.override.decrease</strong> bit in</dt>
+<dd>
+<p>pin for decreasing the SO (-=scale)</p>
+</dd>
+<dt class="hdlist1"><strong>halui.spindle.</strong><em>N</em><strong>.override.direct-value</strong> bit in</dt>
+<dd>
+<p>pin to enable direct spindle override value input</p>
+</dd>
+<dt class="hdlist1"><strong>halui.spindle.</strong><em>N</em><strong>.override.increase</strong> bit in</dt>
+<dd>
+<p>pin for increasing the SO (+=scale)</p>
+</dd>
+<dt class="hdlist1"><strong>halui.spindle.</strong><em>N</em><strong>.override.reset</strong> bit in</dt>
+<dd>
+<p>pin for resetting the scale SO value (scale=1.0)</p>
+</dd>
+<dt class="hdlist1"><strong>halui.spindle.</strong><em>N</em><strong>.override.scale</strong> float in</dt>
+<dd>
+<p>pin for setting the scale of counts for SO</p>
+</dd>
+<dt class="hdlist1"><strong>halui.spindle.</strong><em>N</em><strong>.override.value</strong> float out</dt>
+<dd>
+<p>current FO value</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_program">Program</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>halui.program.block-delete.is-on</strong> bit out</dt>
+<dd>
+<p>status pin telling that block delete is on</p>
+</dd>
+<dt class="hdlist1"><strong>halui.program.block-delete.off</strong> bit in</dt>
+<dd>
+<p>pin for requesting that block delete is off</p>
+</dd>
+<dt class="hdlist1"><strong>halui.program.block-delete.on</strong> bit in</dt>
+<dd>
+<p>pin for requesting that block delete is on</p>
+</dd>
+<dt class="hdlist1"><strong>halui.program.is-idle</strong> bit out</dt>
+<dd>
+<p>status pin telling that no program is running</p>
+</dd>
+<dt class="hdlist1"><strong>halui.program.is-paused</strong> bit out</dt>
+<dd>
+<p>status pin telling that a program is paused</p>
+</dd>
+<dt class="hdlist1"><strong>halui.program.is-running</strong> bit out</dt>
+<dd>
+<p>status pin telling that a program is running</p>
+</dd>
+<dt class="hdlist1"><strong>halui.program.optional-stop.is-on</strong> bit out</dt>
+<dd>
+<p>status pin telling that the optional stop is on</p>
+</dd>
+<dt class="hdlist1"><strong>halui.program.optional-stop.off</strong> bit in</dt>
+<dd>
+<p>pin requesting that the optional stop is off</p>
+</dd>
+<dt class="hdlist1"><strong>halui.program.optional-stop.on</strong> bit in</dt>
+<dd>
+<p>pin requesting that the optional stop is on</p>
+</dd>
+<dt class="hdlist1"><strong>halui.program.pause</strong> bit in</dt>
+<dd>
+<p>pin for pausing a program</p>
+</dd>
+<dt class="hdlist1"><strong>halui.program.resume</strong> bit in</dt>
+<dd>
+<p>pin for resuming a program</p>
+</dd>
+<dt class="hdlist1"><strong>halui.program.run</strong> bit in</dt>
+<dd>
+<p>pin for running a program</p>
+</dd>
+<dt class="hdlist1"><strong>halui.program.step</strong> bit in</dt>
+<dd>
+<p>pin for stepping in a program</p>
+</dd>
+<dt class="hdlist1"><strong>halui.program.stop</strong> bit in</dt>
+<dd>
+<p>pin for stopping a program (note: this pin does the same thing as
+halui.abort)</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_mode">Mode</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>halui.mode.auto</strong> bit in</dt>
+<dd>
+<p>pin for requesting auto mode</p>
+</dd>
+<dt class="hdlist1"><strong>halui.mode.is-auto</strong> bit out</dt>
+<dd>
+<p>pin for auto mode is on</p>
+</dd>
+<dt class="hdlist1"><strong>halui.mode.is-joint</strong> bit out</dt>
+<dd>
+<p>pin showing joint by joint jog mode is on</p>
+</dd>
+<dt class="hdlist1"><strong>halui.mode.is-manual</strong> bit out</dt>
+<dd>
+<p>pin for manual mode is on</p>
+</dd>
+<dt class="hdlist1"><strong>halui.mode.is-mdi</strong> bit out</dt>
+<dd>
+<p>pin for MDI mode is on</p>
+</dd>
+<dt class="hdlist1"><strong>halui.mode.is-teleop</strong> bit out</dt>
+<dd>
+<p>pin showing coordinated jog mode is on</p>
+</dd>
+<dt class="hdlist1"><strong>halui.mode.joint</strong> bit in</dt>
+<dd>
+<p>pin for requesting joint by joint jog mode</p>
+</dd>
+<dt class="hdlist1"><strong>halui.mode.manual</strong> bit in</dt>
+<dd>
+<p>pin for requesting manual mode</p>
+</dd>
+<dt class="hdlist1"><strong>halui.mode.mdi</strong> bit in</dt>
+<dd>
+<p>pin for requesting MDI mode</p>
+</dd>
+<dt class="hdlist1"><strong>halui.mode.teleop</strong> bit in</dt>
+<dd>
+<p>pin for requesting coordinated jog mode</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_mdi_optional">MDI (optional)</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>halui.mdi-command-</strong><em>XX</em> bit in</dt>
+<dd>
+<p><strong>halui</strong> looks for INI variables named [HALUI]MDI_COMMAND, and exports
+a pin for each command it finds. When the pin is driven TRUE, <strong>halui</strong>
+runs the specified MDI command. <em>XX</em> is a two digit number starting
+at 00. If no [HALUI]MDI_COMMAND variables are set in the INI file, no
+halui.mdi-command-XX pins will be exported by halui.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_mist_coolant">Mist coolant</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>halui.mist.is-on</strong> bit out</dt>
+<dd>
+<p>pin for mist is on</p>
+</dd>
+<dt class="hdlist1"><strong>halui.mist.off</strong> bit in</dt>
+<dd>
+<p>pin for stopping mist</p>
+</dd>
+<dt class="hdlist1"><strong>halui.mist.on</strong> bit in</dt>
+<dd>
+<p>pin for starting mist</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_max_velocity">Max-velocity</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>halui.max-velocity.count-enable</strong> bit in (default: <strong>TRUE</strong>)</dt>
+<dd>
+<p>When True, modify max velocity when halui.max-velocity.counts changes.</p>
+</dd>
+<dt class="hdlist1"><strong>halui.max-velocity.counts</strong> s32 in</dt>
+<dd>
+<p>When .count-enable is True, halui changes the max velocity in response
+to changes to this pin. It&#8217;s usually connected to an MPG encoder on an
+operator&#8217;s panel or jog pendant. When .count-enable is False, halui
+ignores this pin.</p>
+</dd>
+<dt class="hdlist1"><strong>halui.max-velocity.direct-value</strong> bit in</dt>
+<dd>
+<p>When this pin is True, halui commands the max velocity directly to
+(.counts * .scale). When this pin is False, halui commands the max
+velocity in a relative way: change max velocity by an amount equal to
+(change in .counts * .scale).</p>
+</dd>
+<dt class="hdlist1"><strong>halui.max-velocity.increase</strong> bit in</dt>
+<dd>
+<p>A positive edge (a False to True transition) on this pin increases the
+max velocity by the value of the .scale pin. (Note that halui always
+responds to this pin, independent of the .count-enable pin.)</p>
+</dd>
+<dt class="hdlist1"><strong>halui.max-velocity.decrease</strong> bit in</dt>
+<dd>
+<p>A positive edge (a False to True transition) on this pin decreases the
+max velocity by the value of the .scale pin. (Note that halui always
+responds to this pin, independent of the .count-enable pin.)</p>
+</dd>
+<dt class="hdlist1"><strong>halui.max-velocity.scale</strong> float in</dt>
+<dd>
+<p>This pin controls the scale of changes to the max velocity. Each unit
+change in .counts, and each positive edge on .increase and .decrease,
+changes the max velocity by .scale. The units of the .scale pin are
+machine-units per second.</p>
+</dd>
+<dt class="hdlist1"><strong>halui.max-velocity.value</strong> float out</dt>
+<dd>
+<p>Current value for maximum velocity, in machine-units per second.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_machine">Machine</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>halui.machine.units-per-mm</strong> float out</dt>
+<dd>
+<p>pin for machine units-per-mm (inch:1/25.4, mm:1) according to INI file setting: [TRAJ] LINEAR_UNITS</p>
+</dd>
+<dt class="hdlist1"><strong>halui.machine.is-on</strong> bit out</dt>
+<dd>
+<p>pin for machine is On/Off</p>
+</dd>
+<dt class="hdlist1"><strong>halui.machine.off</strong> bit in</dt>
+<dd>
+<p>pin for setting machine Off</p>
+</dd>
+<dt class="hdlist1"><strong>halui.machine.on</strong> bit in</dt>
+<dd>
+<p>pin for setting machine On</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_joint">Joint</h3>
+<div class="paragraph">
+<p><em>N</em> = joint number (0 &#8230;&#8203; num_joints-1)</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>halui.joint.</strong><em>N</em><strong>.select</strong> bit in</dt>
+<dd>
+<p>pin for selecting joint <em>N</em></p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.</strong><em>N</em><strong>.is-selected</strong> bit out</dt>
+<dd>
+<p>status pin that joint <em>N</em> is selected</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.</strong><em>N</em><strong>.has-fault</strong> bit out</dt>
+<dd>
+<p>status pin telling that joint <em>N</em> has a fault</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.</strong><em>N</em><strong>.home</strong> bit in</dt>
+<dd>
+<p>pin for homing joint <em>N</em></p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.</strong><em>N</em><strong>.is-homed</strong> bit out</dt>
+<dd>
+<p>status pin telling that joint <em>N</em> is homed</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.</strong><em>N</em><strong>.on-hard-max-limit</strong> bit out</dt>
+<dd>
+<p>status pin telling that joint <em>N</em> is on the positive hardware limit</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.</strong><em>N</em><strong>.on-hard-min-limit</strong> bit out</dt>
+<dd>
+<p>status pin telling that joint <em>N</em> is on the negative hardware limit</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.</strong><em>N</em><strong>.on-soft-max-limit</strong> bit out</dt>
+<dd>
+<p>status pin telling that joint <em>N</em> is on the positive software limit</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.</strong><em>N</em><strong>.on-soft-min-limit</strong> bit out</dt>
+<dd>
+<p>status pin telling that joint <em>N</em> is on the negative software limit</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.</strong><em>N</em><strong>.override-limits</strong> bit out</dt>
+<dd>
+<p>status pin telling that joint <em>N</em>'s limits are temporarily overridden</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.</strong><em>N</em><strong>.unhome</strong> bit in</dt>
+<dd>
+<p>pin for unhoming joint <em>N</em></p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.selected</strong> u32 out</dt>
+<dd>
+<p>selected joint number (0 &#8230;&#8203; num_joints-1)</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.selected.has-fault</strong> bit out</dt>
+<dd>
+<p>status pin selected joint is faulted</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.selected.home</strong> bit in</dt>
+<dd>
+<p>pin for homing the selected joint</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.selected.is-homed</strong> bit out</dt>
+<dd>
+<p>status pin telling that the selected joint is homed</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.selected.on-hard-max-limit</strong> bit out</dt>
+<dd>
+<p>status pin telling that the selected joint is on the positive hardware limit</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.selected.on-hard-min-limit</strong> bit out</dt>
+<dd>
+<p>status pin telling that the selected joint is on the negative hardware limit</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.selected.on-soft-max-limit</strong> bit out</dt>
+<dd>
+<p>status pin telling that the selected joint is on the positive software limit</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.selected.on-soft-min-limit</strong> bit out</dt>
+<dd>
+<p>status pin telling that the selected joint is on the negative software limit</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.selected.override-limits</strong> bit out</dt>
+<dd>
+<p>status pin telling that the selected joint&#8217;s limits are temporarily overridden</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.selected.unhome</strong> bit in</dt>
+<dd>
+<p>pin for unhoming the selected joint</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_joint_jogging_n_joint_number_0_num_joints_1">Joint jogging (<strong>N</strong> = joint number (0 &#8230;&#8203; num_joints-1))</h3>
+<div class="paragraph">
+<p>Joint jogging is possible in unhomed state except for joints having a negative HOME_SEQUENCE value. See Section "Homing Configuration" of the documentation.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>halui.joint.jog-deadband</strong> float in</dt>
+<dd>
+<p>pin for setting jog analog deadband (jog analog inputs smaller/slower than this (in absolute value) are ignored).</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.jog-speed</strong> float in</dt>
+<dd>
+<p>pin for setting jog speed for plus/minus jogging.</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.</strong><em>N</em><strong>.analog</strong> float in</dt>
+<dd>
+<p>pin for jogging the joint <em>N</em> using an float value (e.g. joystick).
+The value, typically set between 0.0 and ±1.0, is used as a jog-speed multiplier.</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.</strong><em>N</em><strong>.increment</strong> float in</dt>
+<dd>
+<p>pin for setting the jog increment for joint <em>N</em> when using increment-plus/minus</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.</strong><em>N</em><strong>.increment-minus</strong> bit in</dt>
+<dd>
+<p>a rising edge will will make joint <em>N</em> jog in the negative direction
+by the increment amount</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.</strong><em>N</em><strong>.increment-plus</strong> bit in</dt>
+<dd>
+<p>a rising edge will will make joint <em>N</em> jog in the positive direction
+by the increment amount</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.</strong><em>N</em><strong>.minus</strong> bit in</dt>
+<dd>
+<p>pin for jogging joint <em>N</em> in negative direction at the
+halui.joint.jog-speed velocity</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.</strong><em>N</em><strong>.plus</strong> bit in</dt>
+<dd>
+<p>pin for jogging joint <em>N</em> in positive direction at the
+halui.joint.jog-speed velocity</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.selected.increment</strong> float in</dt>
+<dd>
+<p>pin for setting the jog increment for the selected joint when using
+increment-plus/minus</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.selected.increment-minus</strong> bit in</dt>
+<dd>
+<p>a rising edge will will make the selected joint jog in the negative
+direction by the increment amount</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.selected.increment-plus</strong> bit in</dt>
+<dd>
+<p>a rising edge will will make the selected joint jog in the positive
+direction by the increment amount</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.selected.minus</strong> bit in</dt>
+<dd>
+<p>pin for jogging the selected joint in negative direction at the
+halui.joint.jog-speed velocity</p>
+</dd>
+<dt class="hdlist1"><strong>halui.joint.selected.plus</strong> bit in</dt>
+<dd>
+<p>pin for jogging the selected joint bit in in positive direction at the
+halui.joint.jog-speed velocity</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_axis">Axis</h3>
+<div class="paragraph">
+<p><em>L</em> = axis letter (xyzabcuvw)</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>halui.axis.</strong><em>L</em><strong>.select</strong> bit in</dt>
+<dd>
+<p>pin for selecting axis by letter</p>
+</dd>
+<dt class="hdlist1"><strong>halui.axis.</strong><em>L</em><strong>.is-selected</strong> bit out</dt>
+<dd>
+<p>status pin that axis <em>L</em> is selected</p>
+</dd>
+<dt class="hdlist1"><strong>halui.axis.</strong><em>L</em><strong>.pos-commanded</strong> float out</dt>
+<dd>
+<p>Commanded axis position in machine coordinates</p>
+</dd>
+<dt class="hdlist1"><strong>halui.axis.</strong><em>L</em><strong>.pos-feedback</strong> float out</dt>
+<dd>
+<p>Feedback axis position in machine coordinates</p>
+</dd>
+<dt class="hdlist1"><strong>halui.axis.</strong><em>L</em><strong>.pos-relative</strong> float out</dt>
+<dd>
+<p>Commanded axis position in relative coordinates</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_axis_jogging">Axis Jogging</h3>
+<div class="paragraph">
+<p>This is only possible in homed state.</p>
+</div>
+<div class="paragraph">
+<p><em>L</em> = axis letter (xyzabcuvw)</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>halui.axis.jog-deadband</strong> float in</dt>
+<dd>
+<p>pin for setting jog analog deadband (jog analog inputs smaller/slower
+than this (in absolute value) are ignored)</p>
+</dd>
+<dt class="hdlist1"><strong>halui.axis.jog-speed</strong> float in</dt>
+<dd>
+<p>pin for setting jog speed for plus/minus jogging.</p>
+</dd>
+<dt class="hdlist1"><strong>halui.axis.</strong>L<strong>.analog</strong> float in</dt>
+<dd>
+<p>pin for jogging the axis L using an float value (e.g. joystick). The
+value, typically set between 0.0 and ±1.0, is used as a jog-speed
+multiplier.</p>
+</dd>
+<dt class="hdlist1"><strong>halui.axis.</strong><em>L</em><strong>.increment</strong> float in</dt>
+<dd>
+<p>pin for setting the jog increment for axis L when using
+increment-plus/minus</p>
+</dd>
+<dt class="hdlist1"><strong>halui.axis.</strong><em>L</em><strong>.increment-minus</strong> bit in</dt>
+<dd>
+<p>a rising edge will will make axis <em>L</em> jog in the negative direction by
+the increment amount</p>
+</dd>
+<dt class="hdlist1"><strong>halui.axis.</strong><em>L</em><strong>.increment-plus</strong> bit in</dt>
+<dd>
+<p>a rising edge will will make axis <em>L</em> jog in the positive direction by
+the increment amount</p>
+</dd>
+<dt class="hdlist1"><strong>halui.axis.</strong><em>L</em><strong>.minus</strong> bit in</dt>
+<dd>
+<p>pin for jogging axis <em>L</em> in negative direction at the
+halui.axis.jog-speed velocity</p>
+</dd>
+<dt class="hdlist1"><strong>halui.axis.</strong><em>L</em><strong>.plus</strong> bit in</dt>
+<dd>
+<p>pin for jogging axis <em>L</em> in positive direction at the
+halui.axis.jog-speed velocity</p>
+</dd>
+<dt class="hdlist1"><strong>halui.axis.selected</strong> u32 out</dt>
+<dd>
+<p>selected axis (by index: 0:x 1:y 2:z 3:a 4:b 5:cr 6:u 7:v 8:w)</p>
+</dd>
+<dt class="hdlist1"><strong>halui.axis.selected.increment</strong> float in</dt>
+<dd>
+<p>pin for setting the jog increment for the selected axis when using increment-plus/minus</p>
+</dd>
+<dt class="hdlist1"><strong>halui.axis.selected.increment-minus</strong> bit in</dt>
+<dd>
+<p>a rising edge will will make the selected axis jog in the negative
+direction by the increment amount</p>
+</dd>
+<dt class="hdlist1"><strong>halui.axis.selected.increment-plus</strong> bit in</dt>
+<dd>
+<p>a rising edge will will make the selected axis jog in the positive
+direction by the increment amount</p>
+</dd>
+<dt class="hdlist1"><strong>halui.axis.selected.minus</strong> bit in</dt>
+<dd>
+<p>pin for jogging the selected axis in negative direction at the halui.axis.jog-speed velocity</p>
+</dd>
+<dt class="hdlist1"><strong>halui.axis.selected.plus</strong> bit in</dt>
+<dd>
+<p>pin for jogging the selected axis bit in in positive direction at the halui.axis.jog-speed velocity</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_flood_coolant">Flood coolant</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>halui.flood.is-on</strong> bit out</dt>
+<dd>
+<p>pin for flood is on</p>
+</dd>
+<dt class="hdlist1"><strong>halui.flood.off</strong> bit in</dt>
+<dd>
+<p>pin for stopping flood</p>
+</dd>
+<dt class="hdlist1"><strong>halui.flood.on</strong> bit in</dt>
+<dd>
+<p>pin for starting flood</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_feed_override">Feed Override</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>halui.feed-override.count-enable</strong> bit in (default: <strong>TRUE</strong>)</dt>
+<dd>
+<p>When TRUE, modify feed override when counts changes.</p>
+</dd>
+<dt class="hdlist1"><strong>halui.feed-override.counts</strong> s32 in</dt>
+<dd>
+<p>counts X scale = feed override percentage</p>
+</dd>
+<dt class="hdlist1"><strong>halui.feed-override.decrease</strong> bit in</dt>
+<dd>
+<p>pin for decreasing the FO (-=scale)</p>
+</dd>
+<dt class="hdlist1"><strong>halui.feed-override.direct-value</strong> bit in</dt>
+<dd>
+<p>pin to enable direct value feed override input</p>
+</dd>
+<dt class="hdlist1"><strong>halui.feed-override.increase</strong> bit in</dt>
+<dd>
+<p>pin for increasing the FO (+=scale)</p>
+</dd>
+<dt class="hdlist1"><strong>halui.feed-override.reset</strong> bit in</dt>
+<dd>
+<p>pin for resetting the FO (scale=1.0)</p>
+</dd>
+<dt class="hdlist1"><strong>halui.feed-override.scale</strong> float in</dt>
+<dd>
+<p>pin for setting the scale on changing the FO</p>
+</dd>
+<dt class="hdlist1"><strong>halui.feed-override.value</strong> float out</dt>
+<dd>
+<p>current feed override value</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_rapid_override">Rapid Override</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>halui.rapid-override.count-enable</strong> bit in (default: <strong>TRUE</strong>)</dt>
+<dd>
+<p>When TRUE, modify rapid override when counts changes.</p>
+</dd>
+<dt class="hdlist1"><strong>halui.rapid-override.counts</strong> s32 in</dt>
+<dd>
+<p>counts X scale = rapid override percentage</p>
+</dd>
+<dt class="hdlist1"><strong>halui.rapid-override.decrease</strong> bit in</dt>
+<dd>
+<p>pin for decreasing the rapid override (-=scale)</p>
+</dd>
+<dt class="hdlist1"><strong>halui.rapid-override.direct-value</strong> bit in</dt>
+<dd>
+<p>pin to enable direct value rapid override input</p>
+</dd>
+<dt class="hdlist1"><strong>halui.rapid-override.increase</strong> bit in</dt>
+<dd>
+<p>pin for increasing the rapid override (+=scale)</p>
+</dd>
+<dt class="hdlist1"><strong>halui.rapid-override.reset</strong> bit in</dt>
+<dd>
+<p>pin for resetting the rapid override (scale=1.0)</p>
+</dd>
+<dt class="hdlist1"><strong>halui.rapid-override.scale</strong> float in</dt>
+<dd>
+<p>pin for setting the scale on changing the rapid override</p>
+</dd>
+<dt class="hdlist1"><strong>halui.rapid-override.value</strong> float out</dt>
+<dd>
+<p>current rapid override value</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_e_stop">E-stop</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>halui.estop.activate</strong> bit in</dt>
+<dd>
+<p>pin for setting E-stop (LinuxCNC internal) On</p>
+</dd>
+<dt class="hdlist1"><strong>halui.estop.is-activated</strong> bit out</dt>
+<dd>
+<p>pin for displaying E-stop state (LinuxCNC internal) On/Off</p>
+</dd>
+<dt class="hdlist1"><strong>halui.estop.reset</strong> bit in</dt>
+<dd>
+<p>pin for resetting E-stop (LinuxCNC internal) Off</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_homing">Homing</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>halui.home-all</strong> bit in</dt>
+<dd>
+<p>pin for requesting home-all (only available when a valid homing
+sequence is specified)</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>axis(1), iocontrol(1)</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_bugs">BUGS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>None known at this time.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Written by Alex Joni, as part of the LinuxCNC project. Updated by John
+Thornton</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reporting_bugs">REPORTING BUGS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Report bugs at <a href="https://github.com/LinuxCNC/linuxcnc/issues" class="bare">https://github.com/LinuxCNC/linuxcnc/issues</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_copyright">COPYRIGHT</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Copyright © 2006 Alex Joni.</p>
+</div>
+<div class="paragraph">
+<p>This is free software; see the source for copying conditions. There is
+NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

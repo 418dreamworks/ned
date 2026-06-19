@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>MESA_7I65(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../rouge-github.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="mesa_7i65.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/mesa_7i65.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/mesa_7i65.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/mesa_7i65.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/mesa_7i65.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/mesa_7i65.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/mesa_7i65.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/mesa_7i65.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>MESA_7I65(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>mesa_7i65 - Support for the Mesa 7i65 Octuple Servo Card</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt mesa_7i65</strong></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The component takes parameters in the form of a comma-separated
+list of bspi (buffered SPI) instance names, for example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadrt</span> <span class="n">mesa_7i65</span> <span class="n">bspi_chans</span><span class="o">=</span><span class="na">hm2_5i23.0.bspi.0</span>, <span class="na">hm2_5i23.0.bspi.1</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The BSPI instances are printed to the dmesg buffer during the Hostmot2 setup
+sequence, one for each bspi instance included in the bitfile loaded to each
+installed card during the Hostmot2 setup sequence. Type "dmesg" at the terminal
+prompt to view the output.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>mesa-7i65</strong>.<em>N</em>.<strong>analogue.<em>M</em>.out</strong> float in  (M=0..7) </dt>
+<dd>
+<p>Analogue output values. The value will be
+limited to a  -1.0 to +1.0 range</p>
+</dd>
+<dt class="hdlist1"><strong>mesa-7i65</strong>.<em>N</em>.<strong>analogue.<em>M</em>.in</strong> float out  (M=0..7) </dt>
+<dd>
+<p>Analogue outputs read by the 7i65 (in Volts)</p>
+</dd>
+<dt class="hdlist1"><strong>mesa-7i65</strong>.<em>N</em>.<strong>digital.<em>M</em>.in</strong> bit out  (M=0..3) </dt>
+<dd>
+<p>Miscellaneous Digital Inputs</p>
+</dd>
+<dt class="hdlist1"><strong>mesa-7i65</strong>.<em>N</em>.<strong>enable.<em>M</em>.out</strong> bit in  (M=0..7) </dt>
+<dd>
+<p>Amplifier-enable control pins</p>
+</dd>
+<dt class="hdlist1"><strong>mesa-7i65</strong>.<em>N</em>.<strong>watchdog.has-bit</strong> bit out </dt>
+<dd>
+<p>Indicates the status of the 7i65 Watchdog (which
+is separate from the FPGA card watchdog</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parameters">PARAMETERS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>mesa-7i65</strong>.<em>N</em>.<strong>scale-<em>M</em></strong> float rw  (M=0..7) (default: <em>10</em>)</dt>
+<dd>
+<p>Analogue output scale factor. For example if
+the scale is 7 then an input of 1.0 will give 7V on the output terminals</p>
+</dd>
+<dt class="hdlist1"><strong>mesa-7i65</strong>.<em>N</em>.<strong>is-bipolar-<em>M</em></strong> bit rw  (M=0..7) (default: <em>1</em>)</dt>
+<dd>
+<p>Set this value to TRUE for a plus/minus
+"scale" output. Set to 0 for a 0-"scale" output</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Andy Pugh / Cliff Blackburn</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:30:13 UTC
+</div>
+</div>
+</body>
+</html>

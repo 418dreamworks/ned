@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>ANGLEJOG(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="anglejog.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/anglejog.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/anglejog.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/anglejog.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/anglejog.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/anglejog.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/anglejog.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/anglejog.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>ANGLEJOG(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>anglejog - Jog two axes (or joints) at an angle</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt anglejog</strong> [<strong>count</strong>=<em>N</em>|<strong>names</strong>=<em>name1</em>[,<em>name2</em>&#8230;&#8203;]]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The anglejog component accepts a dynamic counts-in input (typically from a
+manual pulse generator (MPG)) and static angle and scale factor
+settings.  It computes the counts and scale values required to jog two
+(M,N) axes (or joints) at an angle.  The corresponding output pins
+must be connected to the candidate <strong>axis.[MN].jog</strong> (or <strong>joint.[MN].jog</strong>)
+pins to create motion at the current angle.  HAL pins are provided to
+set the vector velocity and acceleration and to enable the
+computations.</p>
+</div>
+<div class="paragraph">
+<p>Notes:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>The max-vel, max-accel settings should be <strong>less than or
+equal</strong> to the smallest settings for both of the target axes.</p>
+</li>
+<li>
+<p>The scale-in pin is sampled only when the enable-in pin
+is false.  The value in use is output on the current-scale pin.</p>
+</li>
+<li>
+<p>The angle-degrees-in pin is sampled only when the enable-in
+pin is false.  The value in use is output on the current-angle-degrees
+pin.</p>
+</li>
+<li>
+<p>The value of the iscale-factor pin multiplies counts-in internally
+to support integer (s32) calculations for counting.  The current-scale-out
+is divided by the same amount.  The pin is sampled only when the
+enable-in pin is false.  The default value should work in most
+applications.</p>
+</li>
+<li>
+<p>For identity kins machines that support both world jogging (axis letter)
+and joint jogging (joint number), connections are needed for both the
+axis pins: <strong>axis.[MN].jog-enable</strong>, <strong>jog-scale</strong>, <strong>jog-counts</strong> and the corresponding
+joint pins: <strong>joint</strong>.<code>[mn]</code>.<strong>jog-enable</strong>, <strong>jog-scale</strong>, <strong>jog-counts</strong> where <code>[mn]</code> are
+the joint numbers corresponding to the [MN] axis letters.</p>
+</li>
+<li>
+<p>The current-scale pin is for information, the required output scaling
+pin is current-scale-out as it depends on the iscale-factor setting.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Simulation Config: <code>configs/sim/axis/anglejog/anglejog.in</code></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>anglejog</strong>.<em>N</em></dt>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>anglejog</strong>.<em>N</em>.<strong>enable-in</strong> bit in </dt>
+<dd>
+<p>enables motion (disables alteration of angle and scale)</p>
+</dd>
+<dt class="hdlist1"><strong>anglejog</strong>.<em>N</em>.<strong>counts-in</strong> s32 in </dt>
+<dd>
+<p>MPG (wheel) counts</p>
+</dd>
+<dt class="hdlist1"><strong>anglejog</strong>.<em>N</em>.<strong>angle-degrees-in</strong> float in </dt>
+<dd>
+<p>vector angle</p>
+</dd>
+<dt class="hdlist1"><strong>anglejog</strong>.<em>N</em>.<strong>iscale-factor</strong> s32 in (default: <em>10000</em>)</dt>
+<dd>
+<p>integer scaling factor (&gt;1)</p>
+</dd>
+<dt class="hdlist1"><strong>anglejog</strong>.<em>N</em>.<strong>scale-in</strong> float in </dt>
+<dd>
+<p>magnitude units/count (mag = counts * scale)</p>
+</dd>
+<dt class="hdlist1"><strong>anglejog</strong>.<em>N</em>.<strong>max-vel</strong> float in </dt>
+<dd>
+<p>vector max velocity magnitude</p>
+</dd>
+<dt class="hdlist1"><strong>anglejog</strong>.<em>N</em>.<strong>max-accel</strong> float in </dt>
+<dd>
+<p>vector max acceleration magnitude</p>
+</dd>
+<dt class="hdlist1"><strong>anglejog</strong>.<em>N</em>.<strong>accel-fraction-in</strong> float in (default: <em>1</em>)</dt>
+<dd>
+<p>acceleration fraction input</p>
+</dd>
+<dt class="hdlist1"><strong>anglejog</strong>.<em>N</em>.<strong>enable-out</strong> bit out </dt>
+<dd>
+<p>to: axis.M.jog-enable AND axis.N.jog-enable</p>
+</dd>
+<dt class="hdlist1"><strong>anglejog</strong>.<em>N</em>.<strong>current-scale</strong> float out </dt>
+<dd>
+<p>effective scale (informational)</p>
+</dd>
+<dt class="hdlist1"><strong>anglejog</strong>.<em>N</em>.<strong>current-scale-out</strong> float out </dt>
+<dd>
+<p>to: axis.M.jog-scale AND axis.N.jog-scale</p>
+</dd>
+<dt class="hdlist1"><strong>anglejog</strong>.<em>N</em>.<strong>coscounts</strong> s32 out </dt>
+<dd>
+<p>to: axis.M.jog-counts (cosine counts)</p>
+</dd>
+<dt class="hdlist1"><strong>anglejog</strong>.<em>N</em>.<strong>sincounts</strong> s32 out </dt>
+<dd>
+<p>to: axis.N.jog-counts (sine   counts)</p>
+</dd>
+<dt class="hdlist1"><strong>anglejog</strong>.<em>N</em>.<strong>cos-accel-fraction</strong> float out </dt>
+<dd>
+<p>to: axis.M.jog-accel-fraction</p>
+</dd>
+<dt class="hdlist1"><strong>anglejog</strong>.<em>N</em>.<strong>sin-accel-fraction</strong> float out </dt>
+<dd>
+<p>to: axis.N.jog-accel-fraction</p>
+</dd>
+<dt class="hdlist1"><strong>anglejog</strong>.<em>N</em>.<strong>active</strong> bit out </dt>
+<dd>
+<p>angle jog move in progress</p>
+</dd>
+<dt class="hdlist1"><strong>anglejog</strong>.<em>N</em>.<strong>current-angle-degrees</strong> float out </dt>
+<dd>
+<p>current angle</p>
+</dd>
+<dt class="hdlist1"><strong>anglejog</strong>.<em>N</em>.<strong>current-mag</strong> float out </dt>
+<dd>
+<p>current vector magnitude</p>
+</dd>
+<dt class="hdlist1"><strong>anglejog</strong>.<em>N</em>.<strong>current-vel</strong> float out </dt>
+<dd>
+<p>current vector speed</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Dewey Garrett</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:30:10 UTC
+</div>
+</div>
+</body>
+</html>

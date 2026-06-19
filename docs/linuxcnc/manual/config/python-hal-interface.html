@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>The HAL Python module</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../rouge-github.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:python-hal-interface" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="python-hal-interface.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/config/python-hal-interface.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/config/python-hal-interface.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/config/python-hal-interface.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/config/python-hal-interface.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/config/python-hal-interface.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/config/python-hal-interface.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/config/python-hal-interface.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>The HAL Python module</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="stepconf.html">Stepper Configuration Wizard</a><a href="pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><a href="ini-config.html">INI Configuration</a><a href="ini-homing.html">Homing Configuration</a><a href="lathe-config.html">Lathe Configuration</a><a href="stepper-quickstart.html">Stepper Quickstart</a><a href="stepper.html">Stepper Configuration</a><a href="stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details open><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details open><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="python-interface.html">The LinuxCNC Python module</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>The HAL Python module</summary><ul class="sectlevel1">
+<li><a href="python-hal-interface.html#_basic_usage">1. Basic usage</a></li>
+<li><a href="python-hal-interface.html#_class_hal">2. Class <code>hal</code></a>
+<ul class="sectlevel2">
+<li><a href="python-hal-interface.html#_hal_constants">2.1. hal constants</a></li>
+<li><a href="python-hal-interface.html#_hal_methods">2.2. hal methods</a></li>
+</ul>
+</li>
+<li><a href="python-hal-interface.html#_class_hal_component">3. Class <code>hal.component</code></a>
+<ul class="sectlevel2">
+<li><a href="python-hal-interface.html#_component_constants">3.1. component constants</a></li>
+<li><a href="python-hal-interface.html#_component_methods">3.2. component methods</a></li>
+</ul>
+</li>
+<li><a href="python-hal-interface.html#_class_hal_stream">4. Class <code>hal.stream</code></a>
+<ul class="sectlevel2">
+<li><a href="python-hal-interface.html#_stream_constants">4.1. stream constants</a></li>
+<li><a href="python-hal-interface.html#_stream_methods">4.2. stream methods</a></li>
+<li><a href="python-hal-interface.html#_stream_members">4.3. stream members</a></li>
+</ul>
+</li>
+<li><a href="python-hal-interface.html#_class_hal_shm">5. Class <code>hal.shm</code></a>
+<ul class="sectlevel2">
+<li><a href="python-hal-interface.html#_shm_methods">5.1. shm methods</a></li>
+</ul>
+</li>
+<li><a href="python-hal-interface.html#_hal_port_pipes">6. HAL Port pipes</a>
+<ul class="sectlevel2">
+<li><a href="python-hal-interface.html#_port_pin_methods">6.1. Port pin methods</a></li>
+</ul>
+</li>
+</ul></details><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This documentation describes the <code>hal</code> Python module, which provides
+a Python API for creating and accessing HAL pins and signals.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The classes inside the Python module <code>hal</code> are layered on top of the module implementation called <code>_hal</code>.
+You should only access the <code>hal</code> API as described in this document.
+The inherited methods, members and properties from <code>_hal</code> may change without notice.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_basic_usage">1. Basic usage</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="title">Simple example creating component and pins</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="c1">#!/usr/bin/env python3
+</span><span class="kn">import</span> <span class="n">hal</span>
+<span class="kn">import</span> <span class="n">time</span>
+<span class="n">h</span> <span class="o">=</span> <span class="n">hal</span><span class="p">.</span><span class="nf">component</span><span class="p">(</span><span class="sh">"</span><span class="s">multiply</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">h</span><span class="p">.</span><span class="nf">newpin</span><span class="p">(</span><span class="sh">"</span><span class="s">in-a</span><span class="sh">"</span><span class="p">,</span> <span class="n">hal</span><span class="p">.</span><span class="n">HAL_FLOAT</span><span class="p">,</span> <span class="n">hal</span><span class="p">.</span><span class="n">HAL_IN</span><span class="p">)</span>
+<span class="n">h</span><span class="p">.</span><span class="nf">newpin</span><span class="p">(</span><span class="sh">"</span><span class="s">in-b</span><span class="sh">"</span><span class="p">,</span> <span class="n">hal</span><span class="p">.</span><span class="n">HAL_FLOAT</span><span class="p">,</span> <span class="n">hal</span><span class="p">.</span><span class="n">HAL_IN</span><span class="p">)</span>
+<span class="n">h</span><span class="p">.</span><span class="nf">newpin</span><span class="p">(</span><span class="sh">"</span><span class="s">out</span><span class="sh">"</span><span class="p">,</span> <span class="n">hal</span><span class="p">.</span><span class="n">HAL_FLOAT</span><span class="p">,</span> <span class="n">hal</span><span class="p">.</span><span class="n">HAL_OUT</span><span class="p">)</span>
+<span class="n">h</span><span class="p">.</span><span class="nf">ready</span><span class="p">()</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">h</span><span class="p">[</span><span class="sh">'</span><span class="s">out</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">h</span><span class="p">[</span><span class="sh">'</span><span class="s">in-a</span><span class="sh">'</span><span class="p">]</span> <span class="o">*</span> <span class="n">h</span><span class="p">[</span><span class="sh">'</span><span class="s">in-b</span><span class="sh">'</span><span class="p">]</span>
+        <span class="n">time</span><span class="p">.</span><span class="nf">sleep</span><span class="p">(</span><span class="mf">0.001</span><span class="p">)</span>
+<span class="k">except</span> <span class="nb">KeyboardInterrupt</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="nb">SystemExit</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_class_hal">2. Class <code>hal</code></h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_hal_constants">2.1. hal constants</h3>
+<div class="paragraph">
+<p>Message level constants:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>hal.MSG_NONE</code> - No messages at all</p>
+</li>
+<li>
+<p><code>hal.MSG_ERR</code> - Only errors</p>
+</li>
+<li>
+<p><code>hal.MSG_WARN</code> - Both warnings and errors</p>
+</li>
+<li>
+<p><code>hal.MSG_INFO</code> - Both informational, warning and error messages</p>
+</li>
+<li>
+<p><code>hal.MSG_DBG</code> - Additionally include debugging information</p>
+</li>
+<li>
+<p><code>hal.MSG_ALL</code> - Print all messages encountered, disregarding level</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>System information:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>hal.is_kernelspace</code> - One (1) if RTAPI runs in the kernel, otherwise zero (0)</p>
+</li>
+<li>
+<p><code>hal.is_userspace</code> - Inverted <code>hal.is_kernelspace</code></p>
+</li>
+<li>
+<p><code>hal.kernel_version</code> - A string specifying the real-time kernel version if <code>hal.is_kernelspace</code> is one.
+Otherwise it specifies <code>"Not Available"</code>.</p>
+</li>
+<li>
+<p><code>hal.is_rt</code> - One (1) if the system runs in real-time, otherwise zero (0)</p>
+</li>
+<li>
+<p><code>hal.is_sim</code> - Inverted <code>hal.is_rt</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_hal_methods">2.2. hal methods</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">hal.component_exists(<em>name</em>:string)</dt>
+<dd>
+<p>Returns a boolean to indicate whether or not the specified component exist at this time.</p>
+</dd>
+<dt class="hdlist1">hal.component_is_ready(<em>name</em>:string)</dt>
+<dd>
+<p>Returns a boolean to indicate whether or not the specified component is in the ready state.
+Also returns False if the component does not exist.</p>
+</dd>
+</dl>
+</div>
+<div class="listingblock">
+<div class="title">Example:</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="k">if</span> <span class="ow">not</span> <span class="n">hal</span><span class="p">.</span><span class="nf">component_is_ready</span><span class="p">(</span><span class="sh">"</span><span class="s">testpanel</span><span class="sh">"</span><span class="p">):</span>
+    <span class="n">compmsg</span> <span class="o">=</span> <span class="sh">"</span><span class="s">ready</span><span class="sh">"</span> <span class="k">if</span> <span class="n">hal</span><span class="p">.</span><span class="nf">component_exists</span><span class="p">(</span><span class="sh">"</span><span class="s">testpanel</span><span class="sh">"</span><span class="p">)</span> <span class="k">else</span> <span class="sh">"</span><span class="s">loaded</span><span class="sh">"</span>
+    <span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">Expected component </span><span class="sh">'</span><span class="s">testpanel</span><span class="sh">'</span><span class="s"> to be {}</span><span class="sh">"</span><span class="p">.</span><span class="nf">format</span><span class="p">(</span><span class="n">compmsg</span><span class="p">))</span>
+    <span class="n">os</span><span class="p">.</span><span class="nf">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">hal.set_msg_level(<em>lvl</em>:int)</dt>
+<dd>
+<p>Set the message level that controls the amount of information being printed and forwarded from real-time components.
+The <em>lvl</em> argument must be one of the <a href="python-hal-interface.html#_hal_constants">message constants</a>.</p>
+</dd>
+<dt class="hdlist1">hal.get_msg_level()</dt>
+<dd>
+<p>Return the current message level.
+See <em>hal.set_msg_level()</em> and <a href="python-hal-interface.html#_hal_constants">message constants</a> for list of possible returned values.</p>
+</dd>
+<dt class="hdlist1">hal.new_sig(<em>name</em>:string, <em>type</em>:enum)</dt>
+<dd>
+<p>Create a new signal (net) called <em>name</em>.
+The signal can carry information of <em>type</em> content.
+Returns <code>True</code> on success.</p>
+</dd>
+</dl>
+</div>
+<div class="listingblock">
+<div class="title">Example:</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="k">if</span> <span class="ow">not</span> <span class="n">hal</span><span class="p">.</span><span class="nf">new_sig</span><span class="p">(</span><span class="sh">"</span><span class="s">signalname</span><span class="sh">"</span><span class="p">,</span> <span class="n">hal</span><span class="p">.</span><span class="n">HAL_BIT</span><span class="p">):</span>
+    <span class="p">...</span><span class="n">handle</span> <span class="n">error</span><span class="bp">...</span></code></pre>
+</div>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">hal.connect(<em>pinname</em>:string, <em>signame</em>:string)</dt>
+<dd>
+<p>Connect the pin <em>pinname</em> to signal <em>signame</em>.
+Both signal and pin must exist and both pin and signal must be of the same type.
+Returns <code>True</code> on success.</p>
+</dd>
+</dl>
+</div>
+<div class="listingblock">
+<div class="title">Example:</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="k">if</span> <span class="ow">not</span> <span class="n">hal</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="sh">"</span><span class="s">mycomp.pinname</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">signalname</span><span class="sh">"</span><span class="p">):</span>
+    <span class="p">...</span><span class="n">handle</span> <span class="n">error</span><span class="bp">...</span></code></pre>
+</div>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">hal.disconnect(<em>pinname</em>:string, <em>signame</em>:string)</dt>
+<dd>
+<p>Disconnect the pin <em>pinname</em> from signal <em>signame</em>.
+Both signal and pin must exist.
+Returns <code>True</code> on success.</p>
+</dd>
+</dl>
+</div>
+<div class="listingblock">
+<div class="title">Example:</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="k">if</span> <span class="ow">not</span> <span class="n">hal</span><span class="p">.</span><span class="nf">disconnect</span><span class="p">(</span><span class="sh">"</span><span class="s">mycomp.pinname</span><span class="sh">"</span><span class="p">):</span>
+    <span class="p">...</span><span class="n">handle</span> <span class="n">error</span><span class="bp">...</span></code></pre>
+</div>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">hal.pin_has_writer(<em>pinname</em>:string)</dt>
+<dd>
+<p>Returns <code>True</code> if pin with name <em>pinname</em> is attached to a signal and there is at least one writer.
+Otherwise, <code>False</code> is returned.</p>
+</dd>
+</dl>
+</div>
+<div class="listingblock">
+<div class="title">Example:</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="k">if</span> <span class="n">hal</span><span class="p">.</span><span class="nf">pin_has_writer</span><span class="p">(</span><span class="sh">"</span><span class="s">mycomp.0.pin.02</span><span class="sh">"</span><span class="p">):</span>
+    <span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">Pin has writer(s)</span><span class="sh">"</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">Pin has no writer or no signal attached</span><span class="sh">"</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">hal.set_p(<em>name</em>:string, <em>value</em>:mixed)</dt>
+<dd>
+<p>Sets the pin or param called <em>name</em> to <em>value</em>.
+The <em>name</em> is the full name of the pin or param.
+The search order is pin names first, then parameter names.
+Throws a <code>RuntimeError</code> exception if the <em>name</em> is not found.<br>
+The type of <em>value</em> depends on the type of the pin or param.
+Integer scalar types may use integers or a textual representation of an integer to set the value.
+Floating point type may use both integer, floating point and textual representation thereof to set the value.
+Booleans accept <code>True</code>, <code>False</code> and map the integer value zero (0) to false.
+The exact floating point value of zero (0.0) also maps for false.
+Booleans may also be of text "0", "1", "on", "off", "true", "false", "yes" or "no".
+Textual representations are case insensitive.</p>
+</dd>
+</dl>
+</div>
+<div class="listingblock">
+<div class="title">Example:</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="n">hal</span><span class="p">.</span><span class="nf">set_p</span><span class="p">(</span><span class="sh">"</span><span class="s">mycomp.0.bit</span><span class="sh">"</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+<span class="n">hal</span><span class="p">.</span><span class="nf">set_p</span><span class="p">(</span><span class="sh">"</span><span class="s">mycomp.0.float</span><span class="sh">"</span><span class="p">,</span> <span class="mf">99.99</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">hal.set_s(<em>name</em>:string, <em>value</em>:mixed)</dt>
+<dd>
+<p>Sets the signal (net) called <em>name</em> to <em>value</em>.
+The same rules for <em>value</em> apply to <em>set_s()</em> as to <em>set_p()</em>.<br>
+<br>
+The <em>set_s()</em> method has one special case when the signal is of type <code>hal.HAL_PORT</code> and it is fully connected.
+In that case, the call uses the <em>value</em> to set the port&#8217;s queue size and it must be a positive integer.
+See below <a href="python-hal-interface.html#_hal_port_pipes">on configuring a port</a>.</p>
+</dd>
+<dt class="hdlist1">hal.get_value(<em>name</em>:string)</dt>
+<dd>
+<p>Returns the value of the pin, param or signal with <em>name</em>, searched in that order.
+Boolean types return <code>True</code> or <code>False</code>.
+Integer scalar types return an integer.
+Floating point types return a float.
+A <code>RuntimeError</code> exception is thrown if no pin, param or signal is found by that name.</p>
+</dd>
+</dl>
+</div>
+<div class="listingblock">
+<div class="title">Example:</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="n">value</span> <span class="o">=</span> <span class="n">hal</span><span class="p">.</span><span class="nf">get_value</span><span class="p">(</span><span class="sh">"</span><span class="s">iocontrol.0.emc-enable-in</span><span class="sh">"</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">hal.get_info_pins()</dt>
+<dd>
+<p>Returns a list of dictionary tuples as in <code>{"NAME":"pinname", "VALUE":&lt;bool|int|float&gt;, "TYPE":&lt;int&gt;, "DIRECTION":&lt;int&gt;}</code>.</p>
+</dd>
+<dt class="hdlist1">hal.get_info_params()</dt>
+<dd>
+<p>Returns a list of dictionary tuples as in <code>{"NAME":"paramname", "VALUE":&lt;bool|int|float&gt;, "TYPE":&lt;int&gt;, "DIRECTION":&lt;int&gt;}</code>.</p>
+</dd>
+<dt class="hdlist1">hal.get_info_signals()</dt>
+<dd>
+<p>Returns a list of dictionary tuples as in <code>{"NAME":"signame", "VALUE":&lt;bool|int|float&gt;, "TYPE":&lt;int&gt;, "DRIVER":"name"|None}</code>.</p>
+</dd>
+</dl>
+</div>
+<div class="listingblock">
+<div class="title">Example:</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="k">for</span> <span class="n">pin</span> <span class="ow">in</span> <span class="n">hal</span><span class="p">.</span><span class="nf">get_info_pins</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">pin</span><span class="p">.</span><span class="nf">items</span><span class="p">():</span>
+        <span class="nf">print</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_class_hal_component">3. Class <code>hal.component</code></h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_component_constants">3.1. component constants</h3>
+<div class="paragraph">
+<p>Type constants:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>hal.HAL_BIT</code> - A boolean using <code>True</code> and <code>False</code></p>
+</li>
+<li>
+<p><code>hal.HAL_S32</code> - A signed quantity with range -2<sup>31</sup>&#8230;&#8203;+2<sup>31</sup>-1</p>
+</li>
+<li>
+<p><code>hal.HAL_U32</code> - An unsigned quantity with range 0&#8230;&#8203;+2<sup>32</sup>-1</p>
+</li>
+<li>
+<p><code>hal.HAL_S64</code> - A signed quantity with range -2<sup>63</sup>&#8230;&#8203;+2<sup>63</sup>-1</p>
+</li>
+<li>
+<p><code>hal.HAL_U64</code> - An unsigned quantity with range 0&#8230;&#8203;+2<sup>64</sup>-1</p>
+</li>
+<li>
+<p><code>hal.HAL_FLOAT</code> - A floating point quantity of range &#177;1.80×10<sup>308</sup></p>
+</li>
+<li>
+<p><code>hal.HAL_PORT</code> - An opaque quantity representing a communication channel (pins only)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Pin direction constants:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>hal.HAL_IN</code> - An input pin</p>
+</li>
+<li>
+<p><code>hal.HAL_OUT</code> - An output pin</p>
+</li>
+<li>
+<p><code>hal.HAL_IO</code> - A bidirections pin</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Parameter access constants:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>hal.HAL_RO</code> - A read-only param (cannot be set by other components)</p>
+</li>
+<li>
+<p><code>hal.HAL_RW</code> - A read-write param</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_component_methods">3.2. component methods</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">comp = hal.component(<em>name</em>:string [, <em>prefix</em>:string])</dt>
+<dd>
+<p>The component itself is created by a call to the constructor <code>hal.component</code>.
+The arguments are the HAL component <em>name</em> and (optionally) the <em>prefix</em> used for pin and param names.
+If the prefix is not specified, the component name is used.</p>
+</dd>
+</dl>
+</div>
+<div class="listingblock">
+<div class="title">Example:</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="n">comp</span> <span class="o">=</span> <span class="n">hal</span><span class="p">.</span><span class="nf">component</span><span class="p">(</span><span class="sh">"</span><span class="s">passthrough</span><span class="sh">"</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">pin = comp.newpin(<em>name</em>:string, <em>type</em>:enum, <em>io</em>:enum)</dt>
+<dd>
+<p>Create new pin with actual name <code>prefix.__name__</code>.
+The pin <em>type</em> must be one of the types described above.
+The <em>io</em> specifies the direction of the pin.
+Throws a <code>ValueError</code> exception if <em>name</em> already exists.</p>
+</dd>
+</dl>
+</div>
+<div class="listingblock">
+<div class="title">Example:</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="n">p_in</span> <span class="o">=</span> <span class="n">comp</span><span class="p">.</span><span class="nf">newpin</span><span class="p">(</span><span class="sh">"</span><span class="s">in</span><span class="sh">"</span><span class="p">,</span> <span class="n">hal</span><span class="p">.</span><span class="n">HAL_FLOAT</span><span class="p">,</span> <span class="n">hal</span><span class="p">.</span><span class="n">HAL_IN</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">param = comp.newparam(<em>name</em>:string, <em>type</em>:enum, <em>access</em>:enum)</dt>
+<dd>
+<p>Create new parameter with actual name <code>prefix.__name__</code>.
+The pin <em>type</em> argument must be one of the types described above.
+Parameters cannot be of type <code>hal.HAL_PORT</code>.
+The <em>access</em> argument specifies the allowed param access.
+Throws a <code>ValueError</code> exception if <em>name</em> already exists.</p>
+</dd>
+</dl>
+</div>
+<div class="listingblock">
+<div class="title">Example:</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="n">p_bloop</span> <span class="o">=</span> <span class="n">comp</span><span class="p">.</span><span class="nf">newparam</span><span class="p">(</span><span class="sh">"</span><span class="s">bloop</span><span class="sh">"</span><span class="p">,</span> <span class="n">hal</span><span class="p">.</span><span class="n">HAL_FLOAT</span><span class="p">,</span> <span class="n">hal</span><span class="p">.</span><span class="n">HAL_RO</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">comp.getitem(<em>name</em>:string)</dt>
+<dd>
+<p>Return the pin or param item object <em>name</em> previously created with <em>comp.newpin()</em> or <em>comp.newparam()</em>.
+Throws an <code>AttributeError</code> exception if no pin or param named <em>name</em> is found.
+Use <em>comp.getpin()</em> or <em>comp.getparam()</em> to find the specific type.</p>
+</dd>
+<dt class="hdlist1">comp.getpin(<em>pinname</em>:string)</dt>
+<dd>
+<p>Return the pin item object <em>pinname</em> previously created with <em>comp.newpin()</em>.
+Throws an <code>AttributeError</code> exception if no pin names <em>pinname</em> is found.
+A param called <em>pinname</em> will not be found and throws an exception.
+Use <em>comp.getitem()</em> to find either.</p>
+</dd>
+<dt class="hdlist1">comp.getparam(<em>paramname</em>:string)</dt>
+<dd>
+<p>Return the param item object <em>paramname</em> previously created with <em>copm.newparam()</em>.
+Throws an <code>AttributeError</code> exception if no pin names <em>paramname</em> is found.
+A pin called <em>paramname</em> will not be found and throws an exception.
+Use <em>comp.getitem()</em> to find either.</p>
+</dd>
+<dt class="hdlist1">comp.getpins()</dt>
+<dd>
+<p>Returns a dictionary all pin and param names and their values.
+The pin or param name is the dictionary key.</p>
+</dd>
+<dt class="hdlist1">comp.ready()</dt>
+<dd>
+<p>Tells the HAL system the component is initialized. Locks out adding pins.</p>
+</dd>
+<dt class="hdlist1">comp.unready()</dt>
+<dd>
+<p>Allows a component to add pins after <em>ready()</em> has been called.
+One should call <em>ready()</em> on the component when done.</p>
+</dd>
+<dt class="hdlist1">comp.getprefix()</dt>
+<dd>
+<p>Returns the current component&#8217;s prefix used when creating pins and params.
+It defaults to the component name when not set in the constructor or by <em>setprefix</em>.</p>
+</dd>
+<dt class="hdlist1">comp.setprefix(<em>prefix</em>:string)</dt>
+<dd>
+<p>Set the prefix used when creating pins and params.
+The <em>prefix</em> is used to create pins and params called <code>__prefix__.name</code> and defaults to the components name.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_class_hal_stream">4. Class <code>hal.stream</code></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The streamer class enables sending typed value blocks, samples of data, between real-time and non-real-time.
+The values carried in a stream have the same types as pins and params.
+A stream can source data from pins or sink data into pins using ready made components.
+The stream carries values through a FIFO queue up to a specified depth.
+The stream allocates and uses a shared memory segment that is not part of HAL memory and thus does not burden HAL memory usage.
+Each data sample may contain up to twenty (20) values.
+The type of the values in a sample must be configured and specified in a type string.
+<a id="type-string"></a>The type string consists of the following characters (case insensitive):</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>b</code> - Boolean</p>
+</li>
+<li>
+<p><code>s</code> - Signed 32-bit</p>
+</li>
+<li>
+<p><code>u</code> - Unsigned 32-bit</p>
+</li>
+<li>
+<p><code>l</code> - Signed 64-bit</p>
+</li>
+<li>
+<p><code>k</code> - Unsigned 64-bit</p>
+</li>
+<li>
+<p><code>f</code> - Floating point (real)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Two components are available, <em>streamer</em> and <em>sampler</em>.
+The <em>streamer</em> component writes a set of pins from non-real-time data pushed into a stream.
+The <em>sampler</em> component samples a set of pins in real-time and makes them available in a stream.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>If you use this Python <code>hal</code> module interface for both read and write on the same stream,
+then you must create the stream with <em>depth</em> and <em>type string</em> before you can attach to it.
+Instantiating with depth and type string <em>creates</em> the stream.
+Instantiating without depth <em>attaches</em> to the stream.</p>
+</div>
+<div class="paragraph">
+<p>Both the <em>sampler</em> and <em>streamer</em> components create the stream.
+You only need to attach to it from the Python <code>hal</code> module.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>A stream can only have one (1) reader and one (1) writer.
+The stream queue is not designed to support operation with multiple readers or writers.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="title">Example sampler - Python sample reader:</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="kn">import</span> <span class="n">hal</span>
+<span class="kn">import</span> <span class="n">time</span>
+
+<span class="n">comp</span> <span class="o">=</span> <span class="n">hal</span><span class="p">.</span><span class="nf">component</span><span class="p">(</span><span class="sh">"</span><span class="s">samplereader</span><span class="sh">"</span><span class="p">)</span>
+<span class="c1"># Attach to the sampler stream
+</span><span class="n">samplereader</span> <span class="o">=</span> <span class="n">hal</span><span class="p">.</span><span class="nf">stream</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">hal</span><span class="p">.</span><span class="n">sampler_base</span><span class="p">,</span> <span class="sh">"</span><span class="s">bffs</span><span class="sh">"</span><span class="p">)</span>
+<span class="c1"># ...
+</span><span class="n">comp</span><span class="p">.</span><span class="nf">ready</span><span class="p">()</span>
+<span class="c1"># ...
+</span>
+<span class="n">hal</span><span class="p">.</span><span class="nf">set_value</span><span class="p">(</span><span class="sh">"</span><span class="s">sampler.0.enable</span><span class="sh">"</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span> <span class="c1"># Start streaming samples
+</span>
+<span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+    <span class="k">while</span> <span class="n">samplereader</span><span class="p">.</span><span class="n">readable</span><span class="p">:</span>
+        <span class="nf">print</span><span class="p">(</span><span class="n">samplereader</span><span class="p">.</span><span class="nf">read</span><span class="p">())</span>
+    <span class="n">time</span><span class="p">.</span><span class="nf">sleep</span><span class="p">(</span><span class="mf">0.001</span><span class="p">)</span> <span class="c1"># Don't busy-loop</span></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example sampler - hal-file sampler:</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadrt</span> <span class="n">sampler</span> <span class="n">depth</span><span class="o">=</span><span class="mi">100</span> <span class="n">cfg</span><span class="o">=</span><span class="n">bffs</span>
+
+<span class="c1"># Disable sampler before adding function to the thread or it would start</span>
+<span class="c1"># sampling immediately and could fill the queue before we start reading.</span>
+<span class="k">setp</span> <span class="na">sampler.0.enable</span> <span class="mi">0</span>
+
+<span class="k">addf</span> <span class="na">sampler.0</span> <span class="n">servo-thread</span>
+
+<span class="k">net</span> <span class="n">sample-jogger</span>  <span class="na">motion.jog-is-active</span> <span class="na">sampler.0.pin.0</span>
+<span class="k">net</span> <span class="n">sample-joint-0</span> <span class="na">joint.0.pos-fb</span>       <span class="na">sampler.0.pin.1</span>
+<span class="k">net</span> <span class="n">sample-joint-1</span> <span class="na">joint.1.pos-fb</span>       <span class="na">sampler.0.pin.2</span>
+<span class="k">net</span> <span class="n">sample-line</span>    <span class="na">motion.program-line</span>  <span class="na">sampler.0.pin.3</span></code></pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_stream_constants">4.1. stream constants</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">hal.sampler_base</dt>
+<dd>
+<p>The <em>sampler</em> component&#8217;s (sampler.c) shared memory ID for stream communication.</p>
+</dd>
+<dt class="hdlist1">hal.stream_base</dt>
+<dd>
+<p>The <em>streamer</em> component&#8217;s (streamer.c) shared memory ID for stream communication.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_stream_methods">4.2. stream methods</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">stream = hal.stream(<em>comp</em>:object, <em>key</em>:int, <em>depth</em>:int, <em>typestr</em>:string)</dt>
+<dd>
+<p>Create a stream for the component <em>comp</em> using the shared memory identifier <em>key</em>.
+The stream&#8217;s queue size is allocated for <em>depth</em> samples of <em>typestr</em> format.
+See the <a href="python-hal-interface.html#type-string">type string</a> list for type meaning.</p>
+</dd>
+<dt class="hdlist1">stream = hal.stream(<em>comp</em>:object, <em>key</em>:int [, <em>typestr</em>:string])</dt>
+<dd>
+<p>Attach to a stream for the component <em>comp</em> where the shared memory location is identified by <em>key</em>.
+If the optional <em>typestr</em> is provided, then it will be checked against the existing stream&#8217;s configuration.
+See the <a href="python-hal-interface.html#type-string">type string</a> list for type meaning.</p>
+</dd>
+<dt class="hdlist1">stream.read()</dt>
+<dd>
+<p>Returns a tuple of sample data from the queue. <code>None</code> is returned if no samples were available.</p>
+</dd>
+<dt class="hdlist1">stream.write(<em>sample</em>:tuple)</dt>
+<dd>
+<p>Writes the <em>sample</em> argument to the stream queue.
+The <em>sample</em> must contain the correct number of elements and match the types (or be convertible) of the stream&#8217;s configuration.
+An <code>IOError</code> exception is thrown if the sample could not be written to the queue.</p>
+</dd>
+<dt class="hdlist1">stream.readable()</dt>
+<dd>
+<p>Returns <code>True</code> if there are samples available for reading in the stream queue or <code>False</code> if not.</p>
+</dd>
+<dt class="hdlist1">stream.writable()</dt>
+<dd>
+<p>Returns <code>True</code> if there is space available in the stream queue to hold more samples or <code>False</code> if not.</p>
+</dd>
+<dt class="hdlist1">stream.depth()</dt>
+<dd>
+<p>Returns the number of currently available samples for read in the queue.</p>
+</dd>
+<dt class="hdlist1">stream.maxdepth()</dt>
+<dd>
+<p>Returns the queue size as set when the stream was created (and cannot be changed).</p>
+</dd>
+<dt class="hdlist1">stream.element_types()</dt>
+<dd>
+<p>Return a bytes object with the format type string that was used to create the stream.
+See <a href="python-hal-interface.html#type-string">type string</a> list for individual elements and type meaning.</p>
+</dd>
+<dt class="hdlist1">stream.num_underruns()</dt>
+<dd>
+<p>Returns the number of times <em>stream.read()</em> was called when no samples were available from the queue.</p>
+</dd>
+<dt class="hdlist1">stream.num_overruns()</dt>
+<dd>
+<p>Returns the number of times <em>stream.write()</em> was called when no samples could be stored in the queue.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_stream_members">4.3. stream members</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">stream.sampleno</dt>
+<dd>
+<p>The last successfully read sample ID number as counted by the stream functions.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_class_hal_shm">5. Class <code>hal.shm</code></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>shm</code> class is an interface to create and manage shared memory segments.</p>
+</div>
+<div class="paragraph">
+<p>The <code>shm</code> class <strong>should be considered <em>experimental</em></strong> and may or may not work as intended.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Do not rely on this class.
+It may be removed in future releases.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_shm_methods">5.1. shm methods</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">shm = hal.shm(<em>comp</em>:object, <em>key</em>:int, <em>size</em>:int)</dt>
+<dd>
+<p>Allocate a <em>size</em> sized shared memory segment with ID <em>key</em>.</p>
+</dd>
+<dt class="hdlist1">shm.getbuffer()</dt>
+<dd>
+<p>Returns a Python <code>memoryview</code> object of the shared memory segment.</p>
+</dd>
+<dt class="hdlist1">shm.setsize()</dt>
+<dd>
+<p>This is non-functional.
+<strong>Do not use.</strong>
+You cannot increase or decrease the shared memory segment&#8217;s size once it is created.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_hal_port_pipes">6. HAL Port pipes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A HAL port is a byte-oriented pipe that streams bytes from the writer to the reader.
+It may be used to transport data between real-time and non-real-time in either direction.
+The HAL port pipe facility is distinct from the HAL stream facility in that it has no concept of typed data.
+The reader and writer of a port must handle a binary byte oriented data-stream.
+A HAL port uses HAL pins of type <code>hal.HAL_PORT</code> to communicate.</p>
+</div>
+<div class="listingblock">
+<div class="title">Example - HAL port data writer:</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="kn">import</span> <span class="n">hal</span>
+<span class="kn">import</span> <span class="n">time</span>
+<span class="kn">import</span> <span class="n">struct</span>
+
+<span class="n">comp</span> <span class="o">=</span> <span class="n">hal</span><span class="p">.</span><span class="nf">component</span><span class="p">(</span><span class="sh">"</span><span class="s">portwriter</span><span class="sh">"</span><span class="p">)</span>
+
+<span class="c1"># Create the write-end
+</span><span class="n">portw</span> <span class="o">=</span> <span class="n">comp</span><span class="p">.</span><span class="nf">newpin</span><span class="p">(</span><span class="sh">"</span><span class="s">portpin</span><span class="sh">"</span><span class="p">,</span> <span class="n">hal</span><span class="p">.</span><span class="n">HAL_PORT</span><span class="p">,</span> <span class="n">hal</span><span class="p">.</span><span class="n">HAL_OUT</span><span class="p">)</span>
+
+<span class="c1"># Create a signal to link reader and writer
+</span><span class="n">portsig</span> <span class="o">=</span> <span class="n">hal</span><span class="p">.</span><span class="nf">new_sig</span><span class="p">(</span><span class="sh">"</span><span class="s">portsig</span><span class="sh">"</span><span class="p">,</span> <span class="n">hal</span><span class="p">.</span><span class="n">HAL_PORT</span><span class="p">)</span>
+<span class="n">portw</span><span class="p">.</span><span class="nf">ready</span><span class="p">()</span>
+
+<span class="c1"># Connect the pins to the signal net
+</span><span class="n">hal</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="sh">"</span><span class="s">portwriter.portpin</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">portsig</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">hal</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="sh">"</span><span class="s">portreader.portpin</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">portsig</span><span class="sh">"</span><span class="p">)</span>
+
+<span class="c1"># Allocate and set the port's queue size
+</span><span class="n">hal</span><span class="p">.</span><span class="nf">set_s</span><span class="p">(</span><span class="sh">"</span><span class="s">portsig</span><span class="sh">"</span><span class="p">,</span> <span class="mi">256</span><span class="p">)</span>
+
+<span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">portw</span><span class="p">.</span><span class="nf">writable</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">time</span><span class="p">.</span><span class="nf">sleep</span><span class="p">(</span><span class="mf">0.001</span><span class="p">)</span> <span class="c1"># Don't busy-loop
+</span>        <span class="k">continue</span>
+    <span class="n">cmd</span><span class="p">,</span> <span class="n">arg</span> <span class="o">=</span> <span class="nf">read_command</span><span class="p">()</span>
+    <span class="n">binvals</span> <span class="o">=</span> <span class="n">struct</span><span class="p">.</span><span class="nf">pack</span><span class="p">(</span><span class="sh">"</span><span class="s">bb</span><span class="sh">"</span><span class="p">,</span> <span class="n">cmd</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span>
+    <span class="n">portw</span><span class="p">.</span><span class="nf">write</span><span class="p">(</span><span class="n">binvals</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example - HAL port data reader component:</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c"><span class="n">component</span> <span class="n">portreader</span> <span class="s">"Reads data from a HAL port"</span><span class="p">;</span>
+<span class="n">pin</span> <span class="n">in</span> <span class="n">port</span> <span class="n">portpin</span>  <span class="s">"Port's read end"</span><span class="p">;</span>
+
+<span class="n">description</span> <span class="s">"Port reader example component"</span><span class="p">;</span>
+
+<span class="n">option</span> <span class="n">singleton</span><span class="p">;</span>
+<span class="n">option</span> <span class="n">period</span> <span class="n">no</span><span class="p">;</span>
+<span class="n">license</span> <span class="s">"GPL"</span><span class="p">;</span>
+<span class="n">function</span> <span class="n">_</span><span class="p">;</span>
+
+<span class="p">;;</span>
+<span class="kt">void</span> <span class="nf">do_abort</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span> <span class="cm">/* you write code here */</span> <span class="p">}</span>
+<span class="kt">void</span> <span class="nf">kill_switch</span><span class="p">(</span><span class="kt">char</span> <span class="n">x</span><span class="p">)</span> <span class="p">{</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="n">x</span><span class="p">;</span> <span class="cm">/* you write some more code here */</span> <span class="p">}</span>
+
+<span class="n">FUNCTION</span><span class="p">(</span><span class="n">_</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="kt">unsigned</span> <span class="n">avail</span> <span class="o">=</span> <span class="n">hal_port_readable</span><span class="p">(</span><span class="n">portpin_ptr</span><span class="p">);</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">avail</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">rtapi_u8</span> <span class="n">buf</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+        <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">hal_port_read</span><span class="p">(</span><span class="n">portpin_ptr</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">buf</span><span class="p">)))</span> <span class="p">{</span>
+            <span class="n">rtapi_print_msg</span><span class="p">(</span><span class="n">RTAPI_MSG_ERR</span><span class="p">,</span> <span class="s">"Port read failed</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+            <span class="n">hal_port_clear</span><span class="p">(</span><span class="n">portpin_ptr</span><span class="p">);</span>  <span class="c1">// Try to recover</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+            <span class="k">switch</span><span class="p">(</span><span class="n">buf</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="p">{</span>
+            <span class="k">case</span> <span class="sc">'a'</span><span class="p">:</span> <span class="n">do_abort</span><span class="p">();</span> <span class="k">break</span><span class="p">;</span>
+            <span class="k">case</span> <span class="sc">'k'</span><span class="p">:</span> <span class="n">kill_switch</span><span class="p">(</span><span class="n">buf</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span> <span class="k">break</span><span class="p">;</span>
+            <span class="c1">// ...</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example - HAL port hal file to load the reader:</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadrt</span> <span class="n">portreader</span>
+
+<span class="k">addf</span> <span class="n">portreader</span> <span class="na">servo.thread</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A more comprehensive implementation can be found in the <em>raster.comp</em> component together with the raster programmer.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>A HAL port pipes can only have one (1) reader and one (1) writer.
+The port queue is not designed to support operation with multiple readers or writers.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>A HAL port queue cannot be allocated larger than 64 kiB (65536 bytes).
+The minimum size is one (1) byte, but that is not recommended.
+You should analyze your usage and find the appropriate size to set.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_port_pin_methods">6.1. Port pin methods</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">port = comp.newpin(<em>name</em>:string, hal.HAL_PORT, <em>io</em>:enum)</dt>
+<dd>
+<p>A port is a special pin type.
+It is created as a normal pin with type <code>hal.HAL_PORT</code>.
+You need two pins for a port, one input and one output.
+Both ends of a port are connected with a signal (net).
+Setting the signal will allocate the port&#8217;s queue.</p>
+</dd>
+<dt class="hdlist1">port.readable()</dt>
+<dd>
+<p>Returns the number of bytes available for reading from the port queue.</p>
+</dd>
+<dt class="hdlist1">port.writable()</dt>
+<dd>
+<p>Returns the number of bytes possible to write to the port queue.</p>
+</dd>
+<dt class="hdlist1">port.write(<em>data</em>:bytes)</dt>
+<dd>
+<p>Write a buffer onto the port queue.
+The argument <em>data</em> can be either a bytes buffer or a string.
+If it is a string, then it will be converted to a UTF-8 bytes buffer.
+Returns <code>True</code> if the <em>data</em> was successfully written to the port queue and <code>False</code> if not.
+The <em>write()</em> call fails if the port queue has not enough free capacity for the entire <em>data</em> argument.</p>
+</dd>
+</dl>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>You should be careful when writing a string.
+Strings are Unicode encoded and may expand to multiple bytes when converted to UTF-8.
+Therefore, the length of the string may not match the length of the UTF-8 bytes buffer and not fit into the queue.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">port.read(<em>size</em>:int)</dt>
+<dd>
+<p>Reads <em>size</em> bytes from the port and removes the bytes from the port queue.
+The port is tested whether <em>size</em> bytes are available before attempting to read.
+Returns a bytes buffer upon success or <code>False</code> on failure.</p>
+</dd>
+<dt class="hdlist1">port.peek(<em>size</em>:int)</dt>
+<dd>
+<p>Reads <em>size</em> bytes from the port without removing the bytes from the port queue.
+The port is tested whether <em>size</em> bytes are available before attempting to peek.
+Returns a bytes buffer upon success or <code>False</code> on failure.</p>
+</dd>
+<dt class="hdlist1">port.peek_commit(<em>size</em>:int)</dt>
+<dd>
+<p>Removes <em>size</em> bytes from the port queue.
+Returns <code>True</code> on success or <code>False</code> if not.</p>
+</dd>
+</dl>
+</div>
+<div class="listingblock">
+<div class="title">Example:</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="k">def</span> <span class="nf">wait_for</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="k">while</span> <span class="n">port</span><span class="p">.</span><span class="nf">readable</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">:</span>
+        <span class="n">time</span><span class="p">.</span><span class="nf">sleep</span><span class="p">(</span><span class="mf">0.01</span><span class="p">)</span>
+        <span class="k">continue</span>
+
+<span class="nf">wait_for</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="c1"># Peek at the first 2 bytes of the data pipe
+</span><span class="n">data</span> <span class="o">=</span> <span class="n">port</span><span class="p">.</span><span class="nf">peek</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="c1"># Check the data for a pattern
+</span><span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">123</span> <span class="ow">and</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">42</span><span class="p">:</span>
+    <span class="n">port</span><span class="p">.</span><span class="nf">peek_commit</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># Discard data from the pipe
+</span><span class="k">else</span><span class="p">:</span>
+    <span class="c1"># Not the discardable pattern, need 4 bytes then
+</span>    <span class="nf">wait_for</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">port</span><span class="p">.</span><span class="nf">read</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+    <span class="nf">handle_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">port.clear()</dt>
+<dd>
+<p>Clears the content of the port queue.</p>
+</dd>
+<dt class="hdlist1">port.size()</dt>
+<dd>
+<p>Return the allocated port queue size.
+The return value is zero (0) if no queue was allocated for the port.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

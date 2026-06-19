@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>Moveoff Component</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../rouge-github.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:moveoff" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="moveoff.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/config/moveoff.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/config/moveoff.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/config/moveoff.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/config/moveoff.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/config/moveoff.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/config/moveoff.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/config/moveoff.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>Moveoff Component</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details open><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="stepconf.html">Stepper Configuration Wizard</a><a href="pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><a href="ini-config.html">INI Configuration</a><a href="ini-homing.html">Homing Configuration</a><a href="lathe-config.html">Lathe Configuration</a><a href="stepper-quickstart.html">Stepper Quickstart</a><a href="stepper.html">Stepper Configuration</a><a href="stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details open><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>Moveoff Component</summary><ul class="sectlevel1">
+<li><a href="moveoff.html#_modifying_an_existing_configuration">1. Modifying an existing configuration</a></li>
+</ul></details><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="python-interface.html">The LinuxCNC Python module</a><a href="python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The moveoff HAL component is a HAL-only method for implementing offsets.
+See the manpage (<em>$ man moveoff</em>) for the IMPORTANT limitations and warnings.</p>
+</div>
+<div class="paragraph">
+<p>The moveoff component is used to offset joint positions using custom HAL connections.
+Implementing an offset-while-program-is-paused functionality is supported
+with appropriate connections for the input pins.  Nine joints are supported.</p>
+</div>
+<div class="paragraph">
+<p>The axis offset pin values (offset-in-M) are continuously applied (respecting
+limits on value, velocity, and acceleration) to the output pins
+(offset-current-M, pos-plusoffset-M, fb-minusoffset-M) when both enabling input
+pins (apply-offsets and move-enable) are TRUE.  The two enabling inputs are
+anded internally. A <em>warning pin</em> is set and a message issued if the
+apply-offsets pin is deasserted while offsets are applied.  The warning pin
+remains TRUE until the offsets are removed or the apply-offsets pin is set.</p>
+</div>
+<div class="paragraph">
+<p>Typically, the move-enable pin is connected to external controls and the
+apply-offsets pin is connected to halui.program.is-paused (for offsets only
+while paused) or set to TRUE (for continuously applied offsets).</p>
+</div>
+<div class="paragraph">
+<p>Applied offsets are <em>automatically returned</em> to zero (respecting limits)
+when either of the enabling inputs is deactivated.  The zero value
+tolerance is specified by the epsilon input pin value.</p>
+</div>
+<div class="paragraph">
+<p>Waypoints are recorded when the moveoff component is enabled.  Waypoints are
+managed with the waypoint-sample-secs and waypoint-threshold pins.  When the
+backtrack-enable pin is TRUE, the auto-return path follows the recorded
+waypoints.  When the memory available for waypoints is exhausted, offsets are
+frozen and the waypoint-limit pin is asserted.  This restriction applies
+regardless of the state of the backtrack-enable pin.  An enabling pin must be
+deasserted to allow a return to the original (non-offset position).</p>
+</div>
+<div class="paragraph">
+<p>Backtracking through waypoints results in <em>slower</em> movement rates as the
+moves are point-to-point respecting velocity and acceleration settings.
+The velocity and acceleration limit pins can be managed dynamically to
+control offsets at all times.</p>
+</div>
+<div class="paragraph">
+<p>When backtrack-enable is FALSE, the auto-return move is <strong>NOT</strong> coordinated,
+each axis returns to zero at its own rate.  If a controlled path
+is wanted in this condition, each axis should be manually returned to zero
+before deasserting an enabling pin.</p>
+</div>
+<div class="paragraph">
+<p>The waypoint-sample-secs, waypoint-threshold, and epsilon pins are evaluated
+only when the component is idle.</p>
+</div>
+<div class="paragraph">
+<p>The offsets-applied output pin is provided to indicate the current state to a
+GUI so that program resumption can be managed.  If the offset(s) are non-zero
+when the apply-offsets pin is deasserted (for example when resuming a program
+when offsetting during a pause), offsets are returned to zero (respecting
+limits) and an <em>Error</em> message is issued.</p>
+</div>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Caution</div>
+</td>
+<td class="content">
+If offsets are enabled and applied and the machine is turned off for any reason,
+any <em>external</em> HAL logic that manages the enabling pins and the offset-in-M inputs
+is responsible for their state when the machine is subsequently turned on again.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>This HAL-only means of offsetting is typically not known to LinuxCNC
+nor available in GUI preview displays. <strong>No protection is provided</strong> for
+offset moves that exceed soft limits managed by LinuxCNC. Since soft limits
+are not honored, an offset move may encounter hard limits (or <strong>CRASH</strong> if
+there are no limit switches). Use of the offset-min-M and offset-max-M inputs
+to limit travel is recommended. Triggering a hard limit will turn off
+the machine&#8201;&#8212;&#8201;see <strong>Caution</strong> above.</p>
+</div>
+<div class="paragraph">
+<p>The offset-in-M values may be set with INI file settings, controlled by a GUI,
+or managed by other HAL components and connections.  Fixed values may be
+appropriate in simple cases where the direction and amount of offset is
+well-defined but a control method is required to deactivate an enabling
+pin in order to return offsets to zero.  GUIs may provide means for users to
+set, increment, decrement, and accumulate offset values for each axis and may
+set offset-in-M values to zero before deasserting an enabling pin.</p>
+</div>
+<div class="paragraph">
+<p>The default values for accel, vel, min, max, epsilon, waypoint-sample-secs, and
+waypoint-threshold may not be suitable for any particular application.  This
+HAL component is unaware of limits enforced elsewhere by LinuxCNC.
+Users should test usage in a simulator application and understand all
+hazards before use on hardware.</p>
+</div>
+<div class="paragraph">
+<p>Sim configurations that demonstrate the component and a
+GUI (moveoff_gui) are located in:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>configs/sim/axis/moveoff  (axis-ui)</p>
+</li>
+<li>
+<p>configs/sim/touchy/ngcgui (touchy-ui)</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_modifying_an_existing_configuration">1. Modifying an existing configuration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A system-provided HAL file (LIB:hookup_moveoff.tcl) can be used to adapt an
+existing configuration to use the moveoff component.  Additional INI file
+settings support the use of a simple GUI (moveoff_gui) for controlling offsets.</p>
+</div>
+<div class="paragraph">
+<p>When the system HAL file (LIB:hookup_moveoff.tcl) is properly specified in
+a configuration INI file, it will:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Disconnect the original joint.N.motor-pos-cmd and joint.N.motor-pos-fb pin
+connections</p>
+</li>
+<li>
+<p>Load (loadrt) the moveoff component (using the name mv) with a personality
+set to accommodate all axes identified in the INI file</p>
+</li>
+<li>
+<p>Add (addf) the moveoff component functions in the required sequence</p>
+</li>
+<li>
+<p>Reconnect the joint.N.motor-pos-cmd and joint.N.motor-pos-fb pins to use
+the moveoff component</p>
+</li>
+<li>
+<p>Set the moveoff component operating parameters and limits for each axis
+in accordance with additional INI file settings</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Note: The moveoff_gui application supports configurations that use known
+kinematics modules with KINEMATICS_TYPE=KINEMATICS_IDENTITY.  Supported
+modules include: trivkins.  With identity kins, moveoff_gui
+assigns each axis name specified with the command line parameter <em>-axes axisnames</em>
+to the corresponding joint.</p>
+</div>
+<div class="paragraph">
+<p>Modify an existing configuration as follows:</p>
+</div>
+<div class="paragraph">
+<p>Make sure there is an INI file entry for <code>[HAL]HALUI</code> and create a new
+<code>[HAL]HALFILE</code> entry for LIB:hookup_moveoff.tcl.
+The entry for LIB:hookup_moveoff.tcl should follow all <code>HALFILE=</code> entries
+for HAL files that connect the pins for <code>joint.N.motor-pos-cmd</code>,
+<code>joint.N.motor-pos-fb</code>, and any components connected to these pins
+(pid and encoder components in a servo system for instance).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="p">[</span><span class="nn">HAL</span><span class="p">]</span>
+<span class="py">HALUI</span>   <span class="p">=</span> <span class="s">halui</span>
+<span class="py">HALFILE</span> <span class="p">=</span> <span class="s">existing_configuration_halfile_1</span>
+<span class="c"># ...
+</span><span class="py">HALFILE</span> <span class="p">=</span> <span class="s">existing_configuration_halfile_n</span>
+<span class="py">HALFILE</span> <span class="p">=</span> <span class="s">LIB:hookup_moveoff.tcl</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Add INI file entries for the per-axis settings for each axis in use (if an
+entry is not defined, the corresponding entry from the [AXIS_n] section will be
+used, if no entry is found, then the moveoff component default will be used).</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Using component defaults or [AXIS_n] section values for per-axis offset
+settings is NOT recommended.
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="p">[</span><span class="nn">MOVEOFF_n</span><span class="p">]</span>
+<span class="py">MAX_LIMIT</span> <span class="p">=</span>
+<span class="py">MIN_LIMIT</span> <span class="p">=</span>
+<span class="py">MAX_VELOCITY</span> <span class="p">=</span>
+<span class="py">MAX_ACCELERATION</span> <span class="p">=</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Add INI file entries for moveoff component settings (omit to use moveoff defaults):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="p">[</span><span class="nn">MOVEOFF</span><span class="p">]</span>
+<span class="py">EPSILON</span> <span class="p">=</span>
+<span class="py">WAYPOINT_SAMPLE_SECS</span> <span class="p">=</span>
+<span class="py">WAYPOINT_THRESHOLD</span> <span class="p">=</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The moveoff_gui is used to make additional required connections and provide
+a popup GUI to:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Provide a control togglebutton to Enable/Disable offsets</p>
+</li>
+<li>
+<p>Provide a control togglebutton to Enable/Disable backtracking</p>
+</li>
+<li>
+<p>Provide control pushbuttons to Increment/Decrement/Zero each axis offset</p>
+</li>
+<li>
+<p>Display each axis offset current value</p>
+</li>
+<li>
+<p>Display current offset status (disabled, active, removing, etc)</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>The provided control buttons are optional depending upon the state of
+the moveoff component move-enable pin.  Both a display and controls
+for enabling offsetting are provided if the pin mv.move-enable
+is NOT connected when the moveoff_gui is started.  For this case,
+the moveoff_gui manages the moveoff component move-enable pin
+(named mv.move-enable) as well as the offsets (mv.move-offset-in-M)
+and the backtracking enable (mv.backtrack-enable)</p>
+</div>
+<div class="paragraph">
+<p>If the mv.move-enable pin IS connected when the moveoff_gui
+is started, the moveoff_gui will provide a display but NO controls.
+This mode supports configurations that use a jog wheel or other methods
+of controlling the offset inputs and the enable pins (mv.offset-in-M,
+mv.move-enable, mv.backtrack-enable).</p>
+</div>
+<div class="paragraph">
+<p>The moveoff_gui makes the required connections for the moveoff component pins:
+mv.power_on and mv.apply-offsets.  The mv.power_on pin is connected to the
+motion.motion-enabled pin (a new signal is automatically created if necessary).
+The mv.apply-offsets is connected to halui.program.is-paused or set to 1
+depending upon the command line option -mode [ onpause | always ].  A new signal
+is automatically created if necessary.</p>
+</div>
+<div class="paragraph">
+<p>To use the moveoff_gui, add an entry in the INI file [APPLICATIONS]
+section as follows:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="p">[</span><span class="nn">APPLICATIONS</span><span class="p">]</span>
+<span class="c"># Note: a delay (specified in seconds) may be required if connections</span>
+<span class="c"># are made using postgui HAL files ([HAL]POSTGUI_HALFILE=)
+</span><span class="py">DELAY</span> <span class="p">=</span> <span class="s">0</span>
+<span class="py">APP</span> <span class="p">=</span> <span class="s">moveoff_gui option1 option2 ...</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When the HAL file LIB:hookup_moveoff.tcl is used to load and connect the
+moveoff component, the mv.move-enable pin will not be connected and
+local controls provided by the moveoff_gui will be used.  This is the
+simplest method to test or demonstrate the moveoff component when
+modifying an existing INI configuration.</p>
+</div>
+<div class="paragraph">
+<p>To enable external controls while using the moveoff_gui display
+for offset values and status, HAL files that follow LIB:hookup_moveoff.tcl
+must make additional connections.  For example, the supplied demonstration
+configs (configs/sim/axis/moveoff/*.ini) use a simple system HAL file
+(named LIB:moveoff_external.hal) to connect the mv.move-enable, mv.offset-in-M,
+and mv.bactrack-enable pins to signals:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="p">[</span><span class="nn">HAL</span><span class="p">]</span>
+<span class="py">HALUI</span> <span class="p">=</span> <span class="s">halui</span>
+<span class="c"># ...
+</span><span class="py">HALFILE</span> <span class="p">=</span> <span class="s">LIB:hookup_moveoff.tcl</span>
+<span class="py">HALFILE</span> <span class="p">=</span> <span class="s">LIB:moveoff_external.hal</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The connections made by LIB:moveoff_external.hal (for a three axis
+configuration) are:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">net</span> <span class="n">external_enable</span> <span class="na">mv.move-enable</span>
+
+<span class="k">net</span> <span class="n">external_offset_0</span> <span class="na">mv.offset-in-0</span>
+<span class="k">net</span> <span class="n">external_offset_1</span> <span class="na">mv.offset-in-1</span>
+<span class="k">net</span> <span class="n">external_offset_2</span> <span class="na">mv.offset-in-2</span>
+
+<span class="k">net</span> <span class="n">external_backtrack_en</span> <span class="na">mv.backtrack-enable</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>These signals (external_enable, external_offset_M, external_backtrack_en) may
+be managed by subsequent HALFILES (including POSTGUI_HALFILEs) to provide
+customized control of the component while using the moveoff_gui display
+for current offset values and offset status.</p>
+</div>
+<div class="paragraph">
+<p>The moveoff_gui is configured with command line options.
+For details on the operation of moveoff_gui, see the man page:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ man moveoff_gui</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For a brief listing of command line options for moveoff_gui, use the command line help option:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ moveoff_gui --help
+
+Usage:
+moveoff_gui [Options]
+
+Options:
+    [--help | -? | -- -h ]  (This text)
+
+    [-mode [onpause | always]]  (default: onpause)
+                                  (onpause: show gui when program paused)
+                                  (always:  show gui always)
+
+    [-axes axisnames]       (default: xyz (no spaces))
+                              (letters from set of: x y z a b c u v w)
+                              (example: -axes z)
+                              (example: -axes xz)
+                              (example: -axes xyz)
+    [-inc incrementvalue]   (default: 0.001 0.01 0.10 1.0 )
+                              (specify one per -inc (up to 4) )
+                              (example: -inc 0.001 -inc 0.01 -inc 0.1 )
+    [-size integer]         (default: 14)
+                              (Overall gui popup size is based on font size)
+    [-loc center|+x+y]      (default: center)
+                              (example: -loc +10+200)
+    [-autoresume]           (default: notused)
+                              (resume program when move-enable deasserted)
+    [-delay delay_secs]     (default: 5 (resume delay))
+
+Options for special cases:
+    [-noentry]              (default: notused)
+                             (don't create entry widgets)
+    [-no_resume_inhibit]    (default: notused)
+                             (do not use a resume-inhibit-pin)
+    [-no_pause_requirement] (default: notused)
+                             (no check for halui.program.is-paused)
+    [-no_cancel_autoresume] (default: notused)
+                             (useful for retraact offsets with simple)
+                             (external control)
+    [-no_display]           (default: notused)
+                             (Use when both external controls and displays)
+                             (are in use (see Note))
+
+Note: If the moveoff move-enable pin (mv.move-enable) is connected when
+      moveoff_gui is started, external controls are required and only
+      displays are provided.</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

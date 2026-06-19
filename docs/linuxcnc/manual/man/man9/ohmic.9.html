@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>OHMIC(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../rouge-github.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="ohmic.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/ohmic.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/ohmic.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/ohmic.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/ohmic.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/ohmic.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/ohmic.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/ohmic.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>OHMIC(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>ohmic - LinuxCNC HAL component that uses a Mesa THCAD for ohmic sensing</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt ohmic</strong> [<strong>count</strong>=<em>N</em>|<strong>names</strong>=<em>name1</em>[,<em>name2</em>&#8230;&#8203;]]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Mesa THCAD Card component to scale input and outputs from the Mesa THCAD2, THCAD5, THCAD10, and THCAD300 cards.</p>
+</div>
+<div class="paragraph">
+<p>Allows user configurable voltage thresholds for ohmic sensing.</p>
+</div>
+<div class="paragraph">
+<p>Output pins are provided for:</p>
+</div>
+<div class="paragraph">
+<p>ohmic-volts -the voltage sensed on ohmic sensing.</p>
+</div>
+<div class="paragraph">
+<p>thcad-volts -the actual voltage measured by the THCAD.</p>
+</div>
+<div class="paragraph">
+<p>ohmic-on    -true if ohmic-volts ≥ ohmic-threshold, false if ohmic-volts ≤ ohmic-low.</p>
+</div>
+<div class="paragraph">
+<p>A THCAD-5 would often be used for ohmic sensing in conjunction with a 24 Volt isolated power supply and a 390 kΩ series resistor resulting in a voltage divider of 4.9.</p>
+</div>
+<div class="paragraph">
+<p>This would result in a full scale reading of 24.5 Volts which is above the power supply output voltage.</p>
+</div>
+<div class="paragraph">
+<p>The circuit will remain protected by the THCAD&#8217;s ability to tolerate a 500 Volt over-voltage indefinitely.</p>
+</div>
+<div class="paragraph">
+<p>It is optional that power to the ohmic sensing circuit be disconnected unless probing is in progress.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>ohmic</strong>.<em>N</em></dt>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>ohmic</strong>.<em>N</em>.<strong>is-probing</strong> bit in </dt>
+<dd>
+<p>True if probing</p>
+</dd>
+<dt class="hdlist1"><strong>ohmic</strong>.<em>N</em>.<strong>ohmic-low</strong> float in (default: <em>21</em>)</dt>
+<dd>
+<p>The threshold volts below which ohmic sensing is set to be false</p>
+</dd>
+<dt class="hdlist1"><strong>ohmic</strong>.<em>N</em>.<strong>ohmic-threshold</strong> float in (default: <em>22</em>)</dt>
+<dd>
+<p>The threshold volts above which ohmic sensing is set to be true</p>
+</dd>
+<dt class="hdlist1"><strong>ohmic</strong>.<em>N</em>.<strong>thcad-0-volt-freq</strong> float in </dt>
+<dd>
+<p>0 volt calibration data for THCAD card in Hz</p>
+</dd>
+<dt class="hdlist1"><strong>ohmic</strong>.<em>N</em>.<strong>thcad-divide</strong> float in (default: <em>32</em>)</dt>
+<dd>
+<p>THCAD divider set by links on THCAD board (1, 32, 64, or 128)</p>
+</dd>
+<dt class="hdlist1"><strong>ohmic</strong>.<em>N</em>.<strong>thcad-fullscale</strong> float in (default: <em>5</em>)</dt>
+<dd>
+<p>THCAD full scale in Volt (5, 10, or 300 Volt)</p>
+</dd>
+<dt class="hdlist1"><strong>ohmic</strong>.<em>N</em>.<strong>thcad-max-volt-freq</strong> float in </dt>
+<dd>
+<p>Full scale calibration data for THCAD Card in Hz</p>
+</dd>
+<dt class="hdlist1"><strong>ohmic</strong>.<em>N</em>.<strong>velocity-in</strong> float in </dt>
+<dd>
+<p>The velocity returned from the THCAD and read by the Mesa encoder input</p>
+</dd>
+<dt class="hdlist1"><strong>ohmic</strong>.<em>N</em>.<strong>volt-divider</strong> float in (default: <em>4.9</em>)</dt>
+<dd>
+<p>The divide ratio</p>
+</dd>
+<dt class="hdlist1"><strong>ohmic</strong>.<em>N</em>.<strong>ohmic-on</strong> bit out </dt>
+<dd>
+<p>True if ohmic circuit is closed (material is sensed)</p>
+</dd>
+<dt class="hdlist1"><strong>ohmic</strong>.<em>N</em>.<strong>ohmic-volts</strong> float out </dt>
+<dd>
+<p>Calculated ohmic voltage</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_examples">EXAMPLES</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The below HAL example assumes a THCAD5 card using a 1/32 frequency setting and a voltage divider internal to the plasma cutter with range extended to 24.5 volts by a series 390K external resistor as per the manual.
+Additional information and wiring diagram is contained in the Plasma Primer in the LinuxCNC documentation.</p>
+</div>
+<div class="paragraph">
+<p>Example Calibration Data: 0V = 122.9 kHz, 10V = 925.7 kHz should be entered as 122900 and 925700.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadrt</span> <span class="n">ohmic</span> <span class="n">names</span><span class="o">=</span><span class="n">ohmicsense</span>
+<span class="k">addf</span> <span class="n">ohmicsense</span> <span class="n">servo-thread</span>
+<span class="k">setp</span> <span class="na">ohmicsense.thcad-0-volt-freq</span>    <span class="mi">122900</span>
+<span class="k">setp</span> <span class="na">ohmicsense.thcad-max-volt-freq</span>  <span class="mi">925700</span>
+<span class="k">setp</span> <span class="na">ohmicsense.thcad-divide</span>         <span class="mi">32</span>
+<span class="k">setp</span> <span class="na">ohmicsense.thcad-fullscale</span>      <span class="mi">5</span>
+<span class="k">setp</span> <span class="na">ohmicsense.volt-divider</span>         <span class="mf">4.9</span>
+<span class="k">setp</span> <span class="na">ohmicsense.threshold</span>            <span class="mi">22</span>
+<span class="k">setp</span> <span class="na">ohmicsense.ohmic-low</span>            <span class="mi">21</span>
+<span class="k">net</span> <span class="n">ohmic-vel</span>    <span class="na">ohmicsense.velocity-in</span> <span class="o">&lt;=</span> <span class="na">hm2_7i76e.0.encoder.00.velocity</span>
+<span class="k">net</span> <span class="n">ohmic-enable</span> <span class="na">ohmicsense.is_probing</span>  <span class="o">&lt;=</span> <span class="na">plasmac.ohmic-enable</span>
+<span class="k">net</span> <span class="n">ohmic-true</span>   <span class="na">ohmicsense.ohmic-on</span>    <span class="o">=&gt;</span> <span class="na">plasmac.ohmic-probe</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Rod Webster</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:30:12 UTC
+</div>
+</div>
+</body>
+</html>

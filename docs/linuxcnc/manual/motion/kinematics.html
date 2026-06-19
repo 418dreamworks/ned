@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>Kinematics</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:kinematics" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="kinematics.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/motion/kinematics.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/motion/kinematics.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/motion/kinematics.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/motion/kinematics.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/motion/kinematics.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/motion/kinematics.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/motion/kinematics.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>Kinematics</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details open><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="../config/stepconf.html">Stepper Configuration Wizard</a><a href="../config/pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="../config/integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="tweaking-steppers.html">Stepper Tuning</a><a href="../config/ini-config.html">INI Configuration</a><a href="../config/ini-homing.html">Homing Configuration</a><a href="../config/lathe-config.html">Lathe Configuration</a><a href="../config/stepper-quickstart.html">Stepper Quickstart</a><a href="../config/stepper.html">Stepper Configuration</a><a href="../config/stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="../config/core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details open><summary>Advanced Topics</summary><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>Kinematics</summary><ul class="sectlevel1">
+<li><a href="kinematics.html#_introduction">1. Introduction</a>
+<ul class="sectlevel2">
+<li><a href="kinematics.html#_joints_vs_axes">1.1. Joints vs Axes</a></li>
+</ul>
+</li>
+<li><a href="kinematics.html#_trivial_kinematics">2. Trivial Kinematics</a></li>
+<li><a href="kinematics.html#_non_trivial_kinematics">3. Non-trivial kinematics</a>
+<ul class="sectlevel2">
+<li><a href="kinematics.html#sec:Forward-transformation">3.1. Forward transformation</a></li>
+<li><a href="kinematics.html#_inverse_transformation">3.2. Inverse transformation</a></li>
+</ul>
+</li>
+<li><a href="kinematics.html#_implementation_details">4. Implementation details</a>
+<ul class="sectlevel2">
+<li><a href="kinematics.html#_kinematics_module_using_the_userkins_comp_template">4.1. Kinematics module using the userkins.comp template</a></li>
+</ul>
+</li>
+</ul></details><a href="dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="5-axis-kinematics.html">5-Axis Kinematics</a><a href="switchkins.html">Switchable Kinematics (switchkins)</a><a href="pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="../config/moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="../config/python-interface.html">The LinuxCNC Python module</a><a href="../config/python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_introduction">1. Introduction</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When we talk about CNC machines, we usually think about machines that
+are commanded to move to certain locations and perform various tasks.
+In order to have an unified view of the machine space, and to make it
+fit the human point of view over 3D space, most of the machines (if not
+all) use a common coordinate system called the Cartesian Coordinate
+System.</p>
+</div>
+<div class="paragraph">
+<p>The Cartesian Coordinate system is composed of three axes (X, Y, Z) each
+perpendicular to the other two <sup class="footnote">[<a id="_footnoteref_1" class="footnote" href="kinematics.html#_footnotedef_1" title="View footnote.">1</a>]</sup>.</p>
+</div>
+<div class="paragraph">
+<p>When we talk about a G-code program (RS274/NGC) we talk about a number
+of commands (G0, G1, etc.) which have positions as parameters (X- Y-
+Z-). These positions refer exactly to Cartesian positions. Part of the
+LinuxCNC motion controller is responsible for translating those positions
+into positions which correspond to the machine
+kinematics <sup class="footnote">[<a id="_footnoteref_2" class="footnote" href="kinematics.html#_footnotedef_2" title="View footnote.">2</a>]</sup>.</p>
+</div>
+<div class="sect2">
+<h3 id="_joints_vs_axes">1.1. Joints vs Axes</h3>
+<div class="paragraph">
+<p>A joint of a CNC machine is a one of the physical degrees of freedom
+of the machine. This might be linear (leadscrews) or rotary (rotary
+tables, robot arm joints). There can be any number of joints on a
+given machine. For example, one popular robot has 6 joints, and a
+typical simple milling machine has only 3.</p>
+</div>
+<div class="paragraph">
+<p>There are certain machines where the joints are laid out to match
+kinematics axes (joint 0 along axis X, joint 1 along axis Y, joint 2
+along axis Z), and these machines are called 
+Cartesian machines (or machines with Trivial Kinematics).
+These are the most common machines used in milling,
+but are not very common in other domains of machine control (e.g. welding: puma-typed robots).</p>
+</div>
+<div class="paragraph">
+<p>LinuxCNC supports axes with names: X Y Z A B C U V W.  The X Y Z axes
+typically refer to the usual Cartesian coordinates. The A B C axes refer to
+rotational coordinates about the X Y Z axes respectively.  The U V W axes refer to
+additional coordinates that are commonly made colinear to the X Y Z axes respectively.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_trivial_kinematics">2. Trivial Kinematics</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The simplest machines are those in which which each joint is placed
+along one of the Cartesian axes. On these machines the mapping from
+Cartesian space (the G-code program) to the joint space (the actual
+actuators of the machine) is trivial. It is a simple 1:1 mapping:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>pos-&gt;tran.x = joints[0];
+pos-&gt;tran.y = joints[1];
+pos-&gt;tran.z = joints[2];</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In the above code snippet one can see how the mapping is done: the X
+position is identical with the joint 0, the Y position with
+joint 1, etc. The above refers to the direct kinematics (one
+direction of the transformation).
+The next code snippet refers to the inverse kinematics (or the
+inverse direction of the transformation):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>joints[0] = pos-&gt;tran.x;
+joints[1] = pos-&gt;tran.y;
+joints[2] = pos-&gt;tran.z;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In LinuxCNC, the identity kinematics are implemented with the
+<em>trivkins</em> kinematics module and extended to 9 axes.  The default
+relationships between axis coordinates and joint numbers are:
+<sup class="footnote">[<a id="_footnoteref_3" class="footnote" href="kinematics.html#_footnotedef_3" title="View footnote.">3</a>]</sup>
+<sup class="footnote">[<a id="_footnoteref_4" class="footnote" href="kinematics.html#_footnotedef_4" title="View footnote.">4</a>]</sup></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>pos-&gt;tran.x = joints[0];
+pos-&gt;tran.y = joints[1];
+pos-&gt;tran.z = joints[2];
+pos-&gt;a      = joints[3];
+pos-&gt;b      = joints[4];
+pos-&gt;c      = joints[5];
+pos-&gt;u      = joints[6];
+pos-&gt;v      = joints[7];
+pos-&gt;w      = joints[8];</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Similarly, the default relationships for inverse kinematics for trivkins are:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>joints[0] = pos-&gt;tran.x;
+joints[1] = pos-&gt;tran.y;
+joints[2] = pos-&gt;tran.z;
+joints[3] = pos-&gt;a;
+joints[4] = pos-&gt;b;
+joints[5] = pos-&gt;c;
+joints[6] = pos-&gt;u;
+joints[7] = pos-&gt;v;
+joints[8] = pos-&gt;w;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It is straightforward to do the transformation for a trivial "kins" (<em>trivkins</em>
+kinematics) or Cartesian machine provided that there are no omissions in the
+axis letters used.</p>
+</div>
+<div class="paragraph">
+<p>It gets a bit more complicated if the machine is missing one or more of the
+axis letters.  The problems of omitted axis letters is addressed by using the
+<em>coordinates=</em> module parameter with the trivkins module. Joint numbers are
+assigned consecutively to each coordinate specified.  A lathe can be described
+with <em>coordinates=xz</em> The joint assignments will then be:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>joints[0] = pos-&gt;tran.x
+joints[1] = pos-&gt;tran.z</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Use of the <em>coordinates=</em> parameter is recommended for configurations that omit
+axis letters. <sup class="footnote">[<a id="_footnoteref_5" class="footnote" href="kinematics.html#_footnotedef_5" title="View footnote.">5</a>]</sup></p>
+</div>
+<div class="paragraph">
+<p>The <em>trivkins</em> kinematics module also allows the same coordinate to be specified
+for more than one joint.  This feature can be useful on machines like a gantry
+having two independent motors for the y coordinate.  Such a machine could use
+<em>coordinates=xyyz</em> resulting in joint assignments:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>joints[0] = pos-&gt;tran.x
+joints[1] = pos-&gt;tran.y
+joints[2] = pos-&gt;tran.y
+joints[3] = pos-&gt;tran.z</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>See the trivkins man pages for more information.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_non_trivial_kinematics">3. Non-trivial kinematics</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>There can be quite a few types of machine setups (robots: puma, scara;
+hexapods etc.). Each of them is set up using linear and rotary joints.
+These joints don&#8217;t usually match with the Cartesian coordinates,
+therefore we need a kinematics function which does the
+conversion (actually 2 functions: forward and inverse kinematics
+function).</p>
+</div>
+<div class="paragraph">
+<p>To illustrate the above, we will analyze a simple kinematics called
+bipod (a simplified version of the tripod, which is a simplified
+version of the hexapod).</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/bipod.png" alt="Bipod setup">
+</div>
+<div class="title">Figure 1. Bipod setup</div>
+</div>
+<div class="paragraph">
+<p>The Bipod we are talking about is a device that consists of 2 motors
+placed on a wall, from which a device is hung using some wire. The
+joints in this case are the distances from the motors to the device
+(named AD and BD in the figure).</p>
+</div>
+<div class="paragraph">
+<p>The position of the motors is fixed by convention. Motor A is in
+(0,0), which means that its X coordinate is 0, and its Y coordinate is
+also 0. Motor B is placed in (Bx, 0), which means that its X coordinate
+is Bx.</p>
+</div>
+<div class="paragraph">
+<p>Our tooltip will be in point D which gets defined by the distances AD
+and BD, and by the Cartesian coordinates Dx, Dy.</p>
+</div>
+<div class="paragraph">
+<p>The job of the kinematics is to transform from joint lengths (AD, BD)
+to Cartesian coordinates (Dx, Dy) and vice-versa.</p>
+</div>
+<div class="sect2">
+<h3 id="sec:Forward-transformation">3.1. Forward transformation</h3>
+<div class="paragraph">
+<p>To transform from joint space into Cartesian space we will use some
+trigonometry rules (the right triangles determined by the points (0,0),
+(Dx,0), (Dx,Dy) and the triangle (Dx,0), (Bx,0) and (Dx,Dy)).</p>
+</div>
+<div class="paragraph">
+<p>We can easily see that:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/kinematics-math-01.png" alt="kinematics math 01">
+</div>
+</div>
+<div class="paragraph">
+<p>likewise:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/kinematics-math-02.png" alt="kinematics math 02">
+</div>
+</div>
+<div class="paragraph">
+<p>If we subtract one from the other we will get:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/kinematics-math-03.png" alt="kinematics math 03">
+</div>
+</div>
+<div class="paragraph">
+<p>and therefore:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/kinematics-math-04.png" alt="kinematics math 04">
+</div>
+</div>
+<div class="paragraph">
+<p>From there we calculate:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/kinematics-math-05.png" alt="kinematics math 05">
+</div>
+</div>
+<div class="paragraph">
+<p>Note that the calculation for y involves the square root of a
+difference, which may not result in a real number. If there is no
+single Cartesian coordinate for this joint position, then the position
+is said to be a singularity. In this case, the forward kinematics
+return -1.</p>
+</div>
+<div class="paragraph">
+<p>Translated to actual code:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>double AD2 = joints[0] * joints[0];
+double BD2 = joints[1] * joints[1];
+double x = (AD2 - BD2 + Bx * Bx) / (2 * Bx);
+double y2 = AD2 - x * x;
+if(y2 &lt; 0) return -1;
+pos-&gt;tran.x = x;
+pos-&gt;tran.y = sqrt(y2);
+return 0;</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_inverse_transformation">3.2. Inverse transformation</h3>
+<div class="paragraph">
+<p>The inverse kinematics is much easier in our example, as we can write
+it directly:</p>
+</div>
+<div class="imageblock text-left">
+<div class="content">
+<img src="images/kinematics-math-06.png" alt="kinematics math 06">
+</div>
+</div>
+<div class="imageblock text-left">
+<div class="content">
+<img src="images/kinematics-math-07.png" alt="kinematics math 07">
+</div>
+</div>
+<div class="paragraph">
+<p>or translated to actual code:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>double x2 = pos-&gt;tran.x * pos-&gt;tran.x;
+double y2 = pos-&gt;tran.y * pos-&gt;tran.y;
+joints[0] = sqrt(x2 + y2);
+joints[1] = sqrt((Bx - pos-&gt;tran.x)*(Bx - pos-&gt;tran.x) + y2);
+return 0;</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation_details">4. Implementation details</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A kinematics module is implemented as a HAL component, and is
+permitted to export pins and parameters. It consists of several "C"
+functions (as opposed to HAL functions):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>int kinematicsForward(const double *joint, EmcPose *world,
+const KINEMATICS_FORWARD_FLAGS *fflags,
+KINEMATICS_INVERSE_FLAGS *iflags)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Implements the <a href="kinematics.html#sec:Forward-transformation">forward kinematics function</a>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>int kinematicsInverse(const EmcPose * world, double *joints,
+const KINEMATICS_INVERSE_FLAGS *iflags,
+KINEMATICS_FORWARD_FLAGS *fflags)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Implements the inverse kinematics function.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>KINEMATICS_TYPE kinematicsType(void)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Returns the kinematics type identifier, típicamente <em>KINEMATICS_BOTH</em>:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>KINEMATICS_IDENTITY  (each joint number corresponds to an axis letter)</p>
+</li>
+<li>
+<p>KINEMATICS_BOTH      (forward and inverse kinematics functions are provided)</p>
+</li>
+<li>
+<p>KINEMATICS_FORWARD_ONLY</p>
+</li>
+<li>
+<p>KINEMATICS_INVERSE_ONLY</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+GUIs may interpret KINEMATICS_IDENTITY to hide the distinctions
+between joint numbers and axis letters when in joint mode
+(typically prior to homing).
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>int kinematicsSwitchable(void)
+int kinematicsSwitch(int switchkins_type)
+KINS_NOT_SWITCHABLE</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The function kinematicsSwitchable() returns 1 if multiple
+kinematics types are supported.  The function kinematicsSwitch()
+selects the kinematics type.
+See <a href="switchkins.html#cha:switchable-kinematics">Switchable Kinematitcs</a>.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The majority of provided kinematics modules support a single
+kinematics type and use the directive "<strong>KINS_NOT_SWITCHABLE</strong>" to
+supply defaults for the required kinematicsSwitchable() and
+kinematicsSwitch() functions.
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>int kinematicsHome(EmcPose *world, double *joint,
+KINEMATICS_FORWARD_FLAGS *fflags,
+KINEMATICS_INVERSE_FLAGS *iflags)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The home kinematics function sets all its arguments to their proper
+values at the known home position. When called, these should be set,
+when known, to initial values, e.g., from an INI file. If the home
+kinematics can accept arbitrary starting points, these initial values
+should be used.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>int rtapi_app_main(void)
+void rtapi_app_exit(void)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>These are the standard setup and tear-down functions of RTAPI modules.</p>
+</div>
+<div class="paragraph">
+<p>When they are contained in a single source file, kinematics modules
+may be compiled and installed by <em>halcompile</em>. See the <em>halcompile(1)</em> manpage or
+the HAL manual for more information.</p>
+</div>
+<div class="sect2">
+<h3 id="_kinematics_module_using_the_userkins_comp_template">4.1. Kinematics module using the userkins.comp template</h3>
+<div class="paragraph">
+<p>Another way to create a custom kinematics module is to adapt the
+HAL component <em>userkins</em>. This template component can be modified
+locally by a user and can be built using halcompile.</p>
+</div>
+<div class="paragraph">
+<p>See the userkins man pages for more information.</p>
+</div>
+<div class="paragraph">
+<p>Note that to create switchable kinematic modules the required
+modifications are somewhat more complicated.</p>
+</div>
+<div class="paragraph">
+<p>See <em>millturn.comp</em> as an example of a switchable kinematic
+module that was created using the <em>userkins.comp</em> template.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footnotes">
+<hr>
+<div class="footnote" id="_footnotedef_1">
+<a href="kinematics.html#_footnoteref_1">1</a>. The word "axes" is also commonly (and wrongly) used when talking about CNC machines, and referring to the moving directions of the machine.
+</div>
+<div class="footnote" id="_footnotedef_2">
+<a href="kinematics.html#_footnoteref_2">2</a>. Kinematics: a two way function to transform from Cartesian space to joint space.
+</div>
+<div class="footnote" id="_footnotedef_3">
+<a href="kinematics.html#_footnoteref_3">3</a>. If the machine (for example a lathe) is mounted with only the X, Z and A axes and the INI file of LinuxCNC contains only the definition of these 3 joints, then the previous assertion is false. Because we currently have (joint0=X, joint1=Z, joint2=A) which assumes that joint1=Y. To make this work in LinuxCNC just define all the axes (XYZA), LinuxCNC will then use a simple loop in HAL for unused Y axis.
+</div>
+<div class="footnote" id="_footnotedef_4">
+<a href="kinematics.html#_footnoteref_4">4</a>. Another way to make it work is to change the corresponding code and recompile the software.
+</div>
+<div class="footnote" id="_footnotedef_5">
+<a href="kinematics.html#_footnoteref_5">5</a>. Historically, the trivkins module did not support the <em>coordinates=</em> parameter so lathe configs were often configured as XYZ machines.  The unused Y axis was configured to 1) home immediately, 2) use a simple loopback to connect its position command HAL pin to its position feedback HAL pin, and 3) hidden in gui displays. Numerous sim configs use these methods in order to share common HAL files.
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

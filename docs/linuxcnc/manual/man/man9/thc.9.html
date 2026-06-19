@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>THC(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="thc.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/thc.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/thc.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/thc.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/thc.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/thc.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/thc.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/thc.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>THC(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>thc - Torch Height Control</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt thc</strong></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_torch_height_control">Torch Height Control</h3>
+<div class="paragraph">
+<p>Mesa THC &gt; Encoder &gt; LinuxCNC THC component</p>
+</div>
+<div class="paragraph">
+<p>The Mesa THC sends a frequency based on the voltage detected to the encoder.
+The velocity from the encoder is converted to volts with the velocity scale
+parameter inside the THC component.</p>
+</div>
+<div class="paragraph">
+<p>The THCAD card sends a frequency at 0 volts so the scale offset parameter is
+used to zero the calculated voltage.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_component_functions">Component Functions</h3>
+<div class="paragraph">
+<p>If enabled and torch is on and X + Y velocity is within tolerance of set speed
+allow the THC to offset the Z axis as needed to maintain voltage.</p>
+</div>
+<div class="paragraph">
+<p>If enabled and torch is off and the Z axis is moving up remove any correction
+at a rate not to exceed the rate of movement of the Z axis.</p>
+</div>
+<div class="paragraph">
+<p>If enabled and torch is off and there is no correction
+pass the Z position and feed back untouched.</p>
+</div>
+<div class="paragraph">
+<p>If not enabled pass the Z position and feed back untouched.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_physical_connections">Physical Connections</h3>
+<div class="paragraph">
+<p>Plasma Torch Arc Voltage Signal &#8658; 6 x 487k 1% resistors &#8658; THC Arc Voltage In</p>
+</div>
+<div class="paragraph">
+<p>THC Frequency Signal &#8658; Encoder #0, pin A (Input)</p>
+</div>
+<div class="paragraph">
+<p>Plasma Torch Arc OK Signal &#8658; input pin</p>
+</div>
+<div class="paragraph">
+<p>output pin &#8658; Plasma Torch Start Arc Contacts</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_hal_plasma_connections">HAL Plasma Connections</h3>
+<div class="paragraph">
+<p>encoder.nn.velocity &#8658; thc.encoder-vel (tip voltage)</p>
+</div>
+<div class="paragraph">
+<p>spindle.0.on &#8658; output pin (start the arc)</p>
+</div>
+<div class="paragraph">
+<p>thc.arc-ok &#8656; motion.digital-in-00 &#8656; input pin (arc ok signal)</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_hal_motion_connections">HAL Motion Connections</h3>
+<div class="paragraph">
+<p>thc.requested-vel &#8656; motion.requested-vel</p>
+</div>
+<div class="paragraph">
+<p>thc.current-vel &#8656; motion.current-vel</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>thc</strong>.<strong>-</strong></dt>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>thc</strong>.<strong>encoder-vel</strong> float in </dt>
+<dd>
+<p>Connect to hm2_5i20.0.encoder.00.velocity</p>
+</dd>
+<dt class="hdlist1"><strong>thc</strong>.<strong>current-vel</strong> float in </dt>
+<dd>
+<p>Connect to motion.current-vel</p>
+</dd>
+<dt class="hdlist1"><strong>thc</strong>.<strong>requested-vel</strong> float in </dt>
+<dd>
+<p>Connect to motion.requested-vel</p>
+</dd>
+<dt class="hdlist1"><strong>thc</strong>.<strong>volts-requested</strong> float in </dt>
+<dd>
+<p>Tip Volts current_vel &gt;= min_velocity requested</p>
+</dd>
+<dt class="hdlist1"><strong>thc</strong>.<strong>vel-tol</strong> float in </dt>
+<dd>
+<p>Velocity Tolerance (Corner Lock)</p>
+</dd>
+<dt class="hdlist1"><strong>thc</strong>.<strong>torch-on</strong> bit in </dt>
+<dd>
+<p>Connect to spindle.N.on</p>
+</dd>
+<dt class="hdlist1"><strong>thc</strong>.<strong>arc-ok</strong> bit in </dt>
+<dd>
+<p>Arc OK from Plasma Torch</p>
+</dd>
+<dt class="hdlist1"><strong>thc</strong>.<strong>enable</strong> bit in </dt>
+<dd>
+<p>Enable the THC, if not enabled Z position is passed through</p>
+</dd>
+<dt class="hdlist1"><strong>thc</strong>.<strong>z-pos-in</strong> float in </dt>
+<dd>
+<p>Z Motor Position Command in from axis.n.motor-pos-cmd</p>
+</dd>
+<dt class="hdlist1"><strong>thc</strong>.<strong>z-pos-out</strong> float out </dt>
+<dd>
+<p>Z Motor Position Command Out</p>
+</dd>
+<dt class="hdlist1"><strong>thc</strong>.<strong>z-fb-out</strong> float out </dt>
+<dd>
+<p>Z Position Feedback to Axis</p>
+</dd>
+<dt class="hdlist1"><strong>thc</strong>.<strong>volts</strong> float out </dt>
+<dd>
+<p>The Calculated Volts</p>
+</dd>
+<dt class="hdlist1"><strong>thc</strong>.<strong>vel-status</strong> bit out </dt>
+<dd>
+<p>When the THC thinks we are at requested speed</p>
+</dd>
+<dt class="hdlist1"><strong>thc</strong>.<strong>offset-value</strong> float out </dt>
+<dd>
+<p>The Current Offset</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parameters">PARAMETERS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>thc</strong>.<strong>vel-scale</strong> float rw </dt>
+<dd>
+<p>The scale to convert the Velocity signal to Volts</p>
+</dd>
+<dt class="hdlist1"><strong>thc</strong>.<strong>scale-offset</strong> float rw </dt>
+<dd>
+<p>The offset of the velocity input at 0 volts</p>
+</dd>
+<dt class="hdlist1"><strong>thc</strong>.<strong>velocity-tol</strong> float rw </dt>
+<dd>
+<p>The deviation percent from planned velocity</p>
+</dd>
+<dt class="hdlist1"><strong>thc</strong>.<strong>voltage-tol</strong> float rw </dt>
+<dd>
+<p>The deviation of Tip Voltage before correction takes place</p>
+</dd>
+<dt class="hdlist1"><strong>thc</strong>.<strong>correction-vel</strong> float rw </dt>
+<dd>
+<p>The amount of change in user units per period to move Z to correct</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>John Thornton</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPLv2 or greater</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:30:12 UTC
+</div>
+</div>
+</body>
+</html>

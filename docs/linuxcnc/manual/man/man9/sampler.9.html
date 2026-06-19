@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>sampler(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="sampler.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/sampler.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/sampler.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/sampler.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/sampler.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/sampler.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/sampler.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/sampler.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>sampler(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>sampler - sample data from HAL in real time</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt sampler</strong> <strong>depth=</strong><em>depth1</em>[,<em>depth2</em>&#8230;&#8203;] <strong>cfg=</strong><em>string1</em>[,<em>string2</em>&#8230;&#8203;]</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The HAL component <strong>sampler</strong> and the program <strong>halsampler</strong>(1) are used together
+to sample HAL data in real time and store it in a file.
+Of these, <strong>sampler</strong> performs in realtime, exporting HAL pins and creates a FIFO (first-in, first out queue) in shared memory.
+It then samples data from the HAL and sends these to the FIFO.
+The application <strong>halsampler</strong> copies data from the FIFO to stdout,
+where it can be redirected to a file or piped to some other program.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_options">OPTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>depth=</strong><em>depth1</em>[,<em>depth2</em>&#8230;&#8203;]</dt>
+<dd>
+<p>sets the depth of the realtime`&#8594;`non-realtime FIFO that <strong>sampler</strong>
+creates to buffer the realtime data. Multiple values of <em>depth</em>
+(separated by commas) can be specified if you need more than one FIFO
+(for example if you want to sample data from two different realtime
+threads).</p>
+</dd>
+<dt class="hdlist1"><strong>cfg=</strong><em>string1</em>[,<em>string2</em>&#8230;&#8203;]</dt>
+<dd>
+<p>defines the set of HAL pins that <strong>sampler</strong> exports and later samples
+data from. One <em>string</em> must be supplied for each FIFO, separated by
+commas. <strong>sampler</strong> exports one pin for each character in <em>string.</em>
+Legal characters are:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>F, f</strong> (float pin)</p>
+</li>
+<li>
+<p><strong>B, b</strong> (bit pin)</p>
+</li>
+<li>
+<p><strong>S, s</strong> (s32 pin)</p>
+</li>
+<li>
+<p><strong>U, u</strong> (u32 pin)</p>
+</li>
+</ul>
+</div>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>sampler.</strong><em>N</em></dt>
+<dd>
+<p>One function is created per FIFO, numbered from zero.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>sampler.</strong><em>N</em><strong>.pin.</strong><em>M</em> input</dt>
+<dd>
+<p>Pin for the data that will wind up in column <em>M</em> of FIFO <em>N</em> (and in
+column <em>M</em> of the output file). The pin type depends on the config
+string.</p>
+</dd>
+<dt class="hdlist1"><strong>sampler.</strong><em>N</em><strong>.curr-depth</strong> s32 output</dt>
+<dd>
+<p>Current number of samples in the FIFO. When this reaches <em>depth</em> new
+data will begin overwriting old data, and some samples will be lost.</p>
+</dd>
+<dt class="hdlist1"><strong>sampler.</strong><em>N</em><strong>.full</strong> bit output</dt>
+<dd>
+<p>TRUE when the FIFO <em>N</em> is full, FALSE when there is room for another
+sample.</p>
+</dd>
+<dt class="hdlist1"><strong>sampler.</strong><em>N</em><strong>.enable</strong> bit input</dt>
+<dd>
+<p>When TRUE, samples are captured and placed in FIFO <em>N</em>, when FALSE, no
+samples are acquired. Defaults to TRUE.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parameters">PARAMETERS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>sampler.</strong><em>N</em><strong>.overruns</strong> s32 read/write</dt>
+<dd>
+<p>The number of times that <strong>sampler</strong> has tried to write data to the HAL
+pins but found no room in the FIFO. It increments whenever <strong>full</strong> is
+true, and can be reset by the <strong>setp</strong> command.</p>
+</dd>
+<dt class="hdlist1"><strong>sampler.</strong><em>N</em><strong>.sample-num</strong> s32 read/write</dt>
+<dd>
+<p>A number that identifies the sample. It is automatically incremented
+for each sample, and can be reset using the <strong>setp</strong> command. The sample
+number can optionally be printed in the first column of the output
+from <strong>halsampler</strong>, using the <em>-t</em> option (see <strong>man 1 halsampler</strong> ).</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>halsampler(1), streamer(9), halstreamer(1)</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Original version by John Kasunich, as part of the LinuxCNC project.
+Improvements by several other members of the LinuxCNC development team.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reporting_bugs">REPORTING BUGS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Report bugs at <a href="https://github.com/LinuxCNC/linuxcnc/issues" class="bare">https://github.com/LinuxCNC/linuxcnc/issues</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_copyright">COPYRIGHT</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Copyright © 2006 John Kasunich.</p>
+</div>
+<div class="paragraph">
+<p>This is free software; see the source for copying conditions. There is
+NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

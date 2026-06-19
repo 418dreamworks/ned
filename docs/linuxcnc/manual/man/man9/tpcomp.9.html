@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>TPCOMP(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="tpcomp.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/tpcomp.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/tpcomp.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/tpcomp.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/tpcomp.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/tpcomp.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/tpcomp.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/tpcomp.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>TPCOMP(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>tpcomp - Trajectory Planning (tp) module skeleton</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Custom Trajectory Planning module loaded with <strong>[TRAJ]TPMOD=<em>tpcomp</em></strong></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Example of a trajectory planning (tp) module buildable with
+halcompile.</p>
+</div>
+<div class="paragraph">
+<p>The tpcomp.comp file (src/hal/components/tpcomp.comp)
+illustrates a method to use halcompile to build a
+trajectory planning module based on the files used for the
+default trajectory planner (<strong>tpmod</strong>).</p>
+</div>
+<div class="paragraph">
+<p>The example tpcomp.comp is not usable until modified
+for the user environment.  To create a runnable tpcomp
+module, the tpcomp.comp file must be edited to supply 1) a
+valid <em>#define TOPDIR</em> and 2) references to valid source
+code file names for all files used.</p>
+</div>
+<div class="paragraph">
+<p>To avoid updates that overwrite tpcomp.comp, best practice is
+to rename the file and its component name (example:
+<strong>user_tpcomp.comp</strong> creates module: <strong>user_tpcomp</strong>).</p>
+</div>
+<div class="paragraph">
+<p>The (renamed) component can be built and installed with
+halcompile and then substituted for the default tp module
+(<strong>tpmod</strong>) using:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>  $ linuxcnc *-t user_tpcomp* someconfig.ini</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>or by inifile setting: <strong>[TRAJ]TPMOD=user_tpcomp</strong></p>
+</div>
+<div class="paragraph">
+<p>*Note:*If using a deb install:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>halcompile is provided by the deb package linuxcnc-dev</p>
+</li>
+<li>
+<p>This source file for BRANCHNAME (master,2.9,etc) is downloadable from github:</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p><a href="https://github.com/LinuxCNC/linuxcnc/blob/BRANCHNAME/src/hal/components/tpcomp.comp" class="bare">https://github.com/LinuxCNC/linuxcnc/blob/BRANCHNAME/src/hal/components/tpcomp.comp</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>tpcomp</strong>.<em>N</em>.<strong>is-module</strong> bit out (default: <em>1</em>)</dt>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Dewey Garrett</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:30:12 UTC
+</div>
+</div>
+</body>
+</html>

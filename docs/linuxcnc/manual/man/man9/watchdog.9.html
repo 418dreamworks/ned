@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>watchdog(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="watchdog.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/watchdog.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/watchdog.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/watchdog.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/watchdog.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/watchdog.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/watchdog.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/watchdog.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>watchdog(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>watchdog - monitor multiple inputs for a "heartbeat"</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt watchdog num_inputs=</strong><em>N</em></p>
+</div>
+<div class="paragraph">
+<p>You must specify the number of inputs, from 1 to 32.
+Each input has a separate timeout value.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>process</strong></dt>
+<dd>
+<p>Check all input pins for transitions, clear the <strong>ok-out</strong> pin if any
+input has no transition within its timeout period. This function does
+not use floating point, and should be added to a fast thread.</p>
+</dd>
+<dt class="hdlist1"><strong>set-timeouts</strong></dt>
+<dd>
+<p>Check for timeout changes, and convert the float timeout inputs to int values
+that can be used in <strong>process</strong>. This function also monitors <code>enable-in</code>
+for false to true transitions, and re-enables monitoring when such a transition is detected.
+This function does use floating point, and it is appropriate to add it to the servo thread.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>watchdog.input-</strong><em>N</em> bit in</dt>
+<dd>
+<p>Input number <em>N</em>. The inputs are numbered from 0 to <strong>num_inputs</strong>-1.</p>
+</dd>
+<dt class="hdlist1"><strong>watchdog.enable-in</strong> bit in (default: FALSE)</dt>
+<dd>
+<p>If TRUE, forces out-ok to be false. Additionally, if a timeout occurs
+on any input, this pin must be set FALSE and TRUE again to re-start
+the monitoring of input pins.</p>
+</dd>
+<dt class="hdlist1"><strong>watchdog.ok-out</strong> bit out (default: FALSE)</dt>
+<dd>
+<p>OK output. This pin is true only if enable-in is TRUE and no timeout
+has been detected. This output can be connected to the enable input of
+a <strong>charge_pump</strong> or <strong>stepgen</strong> (in v mode), to provide a heartbeat
+signal to external monitoring hardware.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parameters">PARAMETERS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>watchdog.timeout-</strong><em>N</em> float in</dt>
+<dd>
+<p>Timeout value for input number <em>N</em>.
+The inputs are numbered from 0 to <strong>num_inputs</strong>-1.
+The timeout is in seconds, and may not be below zero.
+Note that a timeout of 0.0 will likely prevent <strong>ok-out</strong> from ever becoming true.
+Also note that excessively long timeouts are relatively useless for monitoring purposes.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

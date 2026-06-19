@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>Spindle Control</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../rouge-github.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:spindle-control" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="spindle.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/examples/spindle.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/examples/spindle.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/examples/spindle.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/examples/spindle.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/examples/spindle.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/examples/spindle.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/examples/spindle.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>Spindle Control</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details open><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="../config/stepconf.html">Stepper Configuration Wizard</a><a href="../config/pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="../config/integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><a href="../config/ini-config.html">INI Configuration</a><a href="../config/ini-homing.html">Homing Configuration</a><a href="../config/lathe-config.html">Lathe Configuration</a><a href="../config/stepper-quickstart.html">Stepper Quickstart</a><a href="../config/stepper.html">Stepper Configuration</a><a href="../config/stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="../config/core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details open><summary>Hardware Examples</summary><a href="pci-parallel-port.html">PCI Parallel Port</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>Spindle Control</summary><ul class="sectlevel1">
+<li><a href="spindle.html#_0_10_volt_spindle_speed">1. 0-10 Volt Spindle Speed</a></li>
+<li><a href="spindle.html#_pwm_spindle_speed">2. PWM Spindle Speed</a></li>
+<li><a href="spindle.html#_spindle_enable">3. Spindle Enable</a></li>
+<li><a href="spindle.html#_spindle_direction">4. Spindle Direction</a></li>
+<li><a href="spindle.html#_spindle_soft_start">5. Spindle Soft Start</a></li>
+<li><a href="spindle.html#_spindle_feedback">6. Spindle Feedback</a>
+<ul class="sectlevel2">
+<li><a href="spindle.html#_spindle_synchronized_motion">6.1. Spindle Synchronized Motion</a></li>
+<li><a href="spindle.html#sec:spindle-at-speed">6.2. Spindle At Speed</a></li>
+</ul>
+</li>
+</ul></details><a href="mpg.html">MPG Pendant</a><a href="gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="../config/moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="../config/python-interface.html">The LinuxCNC Python module</a><a href="../config/python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>LinuxCNC can control up to 8 spindles. The number is set in the INI file.
+The examples below all refer to a single-spindle config with spindle
+control pins with names like <em>spindle.0..</em>.
+In the case of a multiple spindle machine all that changes is that
+additional pins exist with names such as <em>spindle.6..</em>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_0_10_volt_spindle_speed">1. 0-10 Volt Spindle Speed</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+If your spindle speed is controlled by an analog signal,
+(for example, by a VFD with a 0 V to 10 V signal) and
+you&#8217;re using a DAC card like the m5i20 to output the control signal:</p>
+</div>
+<div class="paragraph">
+<p>First you need to figure the scale of spindle speed to control signal, i.e. the voltage.
+For this example the spindle top speed of 5000 RPM is equal to 10 Volts.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/spindle-math.png" alt="spindle math">
+</div>
+</div>
+<div class="paragraph">
+<p>We have to add a scale component to the HAL file to scale the
+<em>spindle.N.speed-out</em> to the 0 to 10 needed by the VFD if your DAC
+card does not do scaling.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadrt</span> <span class="n">scale</span> <span class="n">count</span><span class="o">=</span><span class="mi">1</span>
+<span class="k">addf</span> <span class="na">scale.0</span> <span class="n">servo-thread</span>
+<span class="k">setp</span> <span class="na">scale.0.gain</span> <span class="mf">0.002</span>
+<span class="k">net</span> <span class="n">spindle-speed-scale</span> <span class="na">spindle.0.speed-out</span> <span class="o">=&gt;</span> <span class="na">scale.0.in</span>
+<span class="k">net</span> <span class="n">spindle-speed-DAC</span> <span class="na">scale.0.out</span> <span class="o">=&gt;</span> &lt;<span class="n">your</span> <span class="n">DAC</span> <span class="n">pin</span> <span class="n">name</span>&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pwm_spindle_speed">2. PWM Spindle Speed</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+If your spindle can be controlled by a PWM signal,
+use the <em>pwmgen</em> component to create the signal:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadrt</span> <span class="n">pwmgen</span> <span class="n">output_type</span><span class="o">=</span><span class="mi">0</span>
+<span class="k">addf</span> <span class="na">pwmgen.update</span> <span class="n">servo-thread</span>
+<span class="k">addf</span> <span class="na">pwmgen.make-pulses</span> <span class="n">base-thread</span>
+<span class="k">net</span> <span class="n">spindle-speed-cmd</span> <span class="na">spindle.0.speed-out</span> <span class="o">=&gt;</span> <span class="na">pwmgen.0.value</span>
+<span class="k">net</span> <span class="n">spindle-on</span> <span class="na">spindle.0.on</span> <span class="o">=&gt;</span> <span class="na">pwmgen.0.enable</span>
+<span class="k">net</span> <span class="n">spindle-pwm</span> <span class="na">pwmgen.0.pwm</span> <span class="o">=&gt;</span> <span class="na">parport.0.pin-09-out</span>
+<span class="c1"># Set the spindle's top speed in RPM</span>
+<span class="k">setp</span> <span class="na">pwmgen.0.scale</span> <span class="mi">1800</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This assumes that the spindle controller&#8217;s response to PWM is simple:
+0% PWM gives 0 RPM, 10% PWM gives 180 RPM, etc. If there is a minimum
+PWM required to get the spindle to turn, follow the example in the
+nist-lathe sample configuration to use a scale component.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_spindle_enable">3. Spindle Enable</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+If you need a spindle enable signal,
+link your output pin to <em>spindle.0.on</em>.
+To link these pins to a parallel port pin put something like
+the following in your .hal file, making sure you pick the
+pin that is connected to your control device.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">net</span> <span class="n">spindle-enable</span> <span class="na">spindle.0.on</span> <span class="o">=&gt;</span> <span class="na">parport.0.pin-14-out</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_spindle_direction">4. Spindle Direction</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+If you have direction control of your spindle, then the HAL pins
+<em>spindle.<em>N</em>.forward</em> and <em>spindle.<em>N</em>.reverse</em> are controlled by the G-codes
+M3 and M4. Spindle speed S<em>n</em> must be set to a positive non-zero value for
+M3/M4 to turn on spindle motion.</p>
+</div>
+<div class="paragraph">
+<p>To link these pins to a parallel port pin, put something like the
+following in your .hal file making sure you pick the pin that is
+connected to your control device.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">net</span> <span class="n">spindle-fwd</span> <span class="na">spindle.0.forward</span> <span class="o">=&gt;</span> <span class="na">parport.0.pin-16-out</span>
+<span class="k">net</span> <span class="n">spindle-rev</span> <span class="na">spindle.0.reverse</span> <span class="o">=&gt;</span> <span class="na">parport.0.pin-17-out</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_spindle_soft_start">5. Spindle Soft Start</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>
+If you need to ramp your spindle speed command and your control does
+not have that feature it can be done in HAL. Basically you need to
+hijack the output of <em>spindle.<em>N</em>.speed-out</em> and run it through a
+<em>limit2</em> component with the scale set so it will ramp the rpm from
+<em>spindle.<em>N</em>.speed-out</em> to your device that receives the rpm.
+The second part is to let LinuxCNC know when the spindle is at speed so
+motion can begin.</p>
+</div>
+<div class="paragraph">
+<p>In the 0-10 Volt example the line</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">net</span> <span class="n">spindle-speed-scale</span> <span class="na">spindle.0.speed-out</span> <span class="o">=&gt;</span> <span class="na">scale.0.in</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>is changed as shown in the following example:</p>
+</div>
+<div class="paragraph">
+<div class="title">Intro to HAL components limit2 and near</div>
+<p>In case you have not run across them before, here&#8217;s a quick introduction
+to the two HAL components used in the following example.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A <em>limit2</em> is a HAL component (floating point) that accepts an
+input value and provides an output that has been limited to a
+max/min range, and also limited to not exceed a specified
+rate of change.</p>
+</li>
+<li>
+<p>A <em>near</em> is a HAL component (floating point) with a binary output
+that says whether two inputs are approximately equal.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>More info is available in the documentation for HAL components, or from
+the man pages, just say <em>man limit2</em> or <em>man near</em> in a terminal.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="c1"># load the real time modules limit2 and near with names so it is easier to follow their connections</span>
+<span class="k">loadrt</span> <span class="n">limit2</span> <span class="n">names</span><span class="o">=</span><span class="n">spindle-ramp</span>
+<span class="k">loadrt</span> <span class="n">near</span> <span class="n">names</span><span class="o">=</span><span class="n">spindle-at-speed</span>
+
+<span class="c1"># add the functions to a thread</span>
+<span class="k">addf</span> <span class="n">spindle-ramp</span> <span class="n">servo-thread</span>
+<span class="k">addf</span> <span class="n">spindle-at-speed</span> <span class="n">servo-thread</span>
+
+<span class="c1"># set the parameter for max rate-of-change</span>
+<span class="c1"># (max spindle accel/decel in units per second)</span>
+<span class="k">setp</span> <span class="na">spindle-ramp.maxv</span> <span class="mi">60</span>
+
+<span class="c1"># hijack the spindle speed out and send it to spindle ramp in</span>
+<span class="k">net</span> <span class="n">spindle-cmd</span> <span class="o">&lt;=</span> <span class="na">spindle.0.speed-out</span> <span class="o">=&gt;</span> <span class="na">spindle-ramp.in</span>
+
+<span class="c1"># the output of spindle ramp is sent to the scale in</span>
+<span class="k">net</span> <span class="n">spindle-ramped</span> <span class="o">&lt;=</span> <span class="na">spindle-ramp.out</span> <span class="o">=&gt;</span> <span class="na">scale.0.in</span>
+
+<span class="c1"># to know when to start the motion we send the near component</span>
+<span class="c1"># (named spindle-at-speed) to the spindle commanded speed from</span>
+<span class="c1"># the signal spindle-cmd and the actual spindle speed</span>
+<span class="c1"># provided your spindle can accelerate at the maxv setting.</span>
+<span class="k">net</span> <span class="n">spindle-cmd</span> <span class="o">=&gt;</span> <span class="na">spindle-at-speed.in1</span>
+<span class="k">net</span> <span class="n">spindle-ramped</span> <span class="o">=&gt;</span> <span class="na">spindle-at-speed.in2</span>
+
+<span class="c1"># the output from spindle-at-speed is sent to spindle.0.at-speed</span>
+<span class="c1"># and when this is true motion will start</span>
+<span class="k">net</span> <span class="n">spindle-ready</span> <span class="o">&lt;=</span> <span class="na">spindle-at-speed.out</span> <span class="o">=&gt;</span> <span class="na">spindle.0.at-speed</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_spindle_feedback">6. Spindle Feedback</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_spindle_synchronized_motion">6.1. Spindle Synchronized Motion</h3>
+<div class="paragraph">
+<p>
+Spindle feedback is needed by LinuxCNC to perform any spindle coordinated
+motions like threading and constant surface speed.
+LinuxCNC can perform synchronized motion and CSS with any of up to 8
+spindles. Which spindles are used is controlled from G-code. CSS is
+possible with several spindles simultaneously.</p>
+</div>
+<div class="paragraph">
+<p>The StepConf Wizard can perform the connections for a single-spindle
+configuration for you if you select Encoder Phase A and Encoder Index as
+inputs.</p>
+</div>
+<div class="paragraph">
+<p>Hardware assumptions for this example:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>An encoder is connected to the spindle and puts out 100 pulses per
+revolution on phase A.</p>
+</li>
+<li>
+<p>The encoder A phase is connected to the parallel port pin 10.</p>
+</li>
+<li>
+<p>The encoder index pulse is connected to the parallel port pin 11.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Basic Steps to add the components and configure them:
+<sup class="footnote">[<a id="_footnoteref_1" class="footnote" href="spindle.html#_footnotedef_1" title="View footnote.">1</a>]</sup>
+<sup class="footnote">[<a id="_footnoteref_2" class="footnote" href="spindle.html#_footnotedef_2" title="View footnote.">2</a>]</sup>
+<sup class="footnote">[<a id="_footnoteref_3" class="footnote" href="spindle.html#_footnotedef_3" title="View footnote.">3</a>]</sup></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="c1"># Add the encoder to HAL and attach it to threads.</span>
+<span class="k">loadrt</span> <span class="n">encoder</span> <span class="n">num_chan</span><span class="o">=</span><span class="mi">4</span>
+<span class="k">addf</span> <span class="na">encoder.update-counters</span> <span class="n">base-thread</span>
+<span class="k">addf</span> <span class="na">encoder.capture-position</span> <span class="n">servo-thread</span>
+
+<span class="c1"># Set the HAL encoder to 100 pulses per revolution.</span>
+<span class="k">setp</span> <span class="na">encoder.3.position-scale</span> <span class="mi">100</span>
+
+<span class="c1"># Set the HAL encoder to non-quadrature simple counting using A only.</span>
+<span class="k">setp</span> <span class="na">encoder.3.counter-mode</span> <span class="n">true</span>
+
+<span class="c1"># Connect the HAL encoder outputs to LinuxCNC.</span>
+<span class="k">net</span> <span class="n">spindle-position</span> <span class="na">encoder.3.position</span> <span class="o">=&gt;</span> <span class="na">spindle.0.revs</span>
+<span class="k">net</span> <span class="n">spindle-velocity</span> <span class="na">encoder.3.velocity</span> <span class="o">=&gt;</span> <span class="na">spindle.0.speed-in</span>
+<span class="k">net</span> <span class="n">spindle-index-enable</span> <span class="na">encoder.3.index-enable</span> <span class="o">&lt;=</span>&gt; <span class="na">spindle.0.index-enable</span>
+
+<span class="c1"># Connect the HAL encoder inputs to the real encoder.</span>
+<span class="k">net</span> <span class="n">spindle-phase-a</span> <span class="na">encoder.3.phase-A</span> <span class="o">&lt;=</span> <span class="na">parport.0.pin-10-in</span>
+<span class="k">net</span> <span class="n">spindle-phase-b</span> <span class="na">encoder.3.phase-B</span>
+<span class="k">net</span> <span class="n">spindle-index</span> <span class="na">encoder.3.phase-Z</span> <span class="o">&lt;=</span> <span class="na">parport.0.pin-11-in</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sec:spindle-at-speed">6.2. Spindle At Speed</h3>
+<div class="paragraph">
+<p>
+To enable LinuxCNC to wait for the spindle to be at speed before executing
+a series of moves, the spindle.<em>N</em>.at-speed needs to turn true at the moment
+the spindle is at the commanded speed. To achieve this you need spindle
+feedback from an encoder. Since the feedback and the commanded speed
+are not usually <em>exactly</em> the same you should to use the <em>near</em>
+component to determine that the two numbers are close enough.</p>
+</div>
+<div class="paragraph">
+<p>The connections needed are from the spindle
+velocity command signal to near.n.in1 and from the spindle velocity
+from the encoder to near.n.in2. Then the near.n.out is connected to
+spindle.<em>N</em>.at-speed. The near.n.scale needs to be set to say how
+close the two numbers must be before turning on the output. Depending
+on your setup you may need to adjust the scale to work with your
+hardware.</p>
+</div>
+<div class="paragraph">
+<p>The following is typical of the additions needed to your HAL
+file to enable Spindle At Speed. If you already have near in your HAL
+file then increase the count and adjust code to suit. Check to make
+sure the signal names are the same in your HAL file.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="c1"># load a near component and attach it to a thread</span>
+<span class="k">loadrt</span> <span class="n">near</span>
+<span class="k">addf</span> <span class="na">near.0</span> <span class="n">servo-thread</span>
+
+<span class="c1"># connect one input to the commanded spindle speed</span>
+<span class="k">net</span> <span class="n">spindle-cmd</span> <span class="o">=&gt;</span> <span class="na">near.0.in1</span>
+
+<span class="c1"># connect one input to the encoder-measured spindle speed</span>
+<span class="k">net</span> <span class="n">spindle-velocity</span> <span class="o">=&gt;</span> <span class="na">near.0.in2</span>
+
+<span class="c1"># connect the output to the spindle-at-speed input</span>
+<span class="k">net</span> <span class="n">spindle-at-speed</span> <span class="na">spindle.0.at-speed</span> <span class="o">&lt;=</span> <span class="na">near.0.out</span>
+
+<span class="c1"># set the spindle speed inputs to agree if within 1%</span>
+<span class="k">setp</span> <span class="na">near.0.scale</span> <span class="mf">1.01</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footnotes">
+<hr>
+<div class="footnote" id="_footnotedef_1">
+<a href="spindle.html#_footnoteref_1">1</a>. In this example, we will assume that some encoders have already been issued to axes/joints 0, 1, and 2. So the next encoder available for us to attach to the spindle would be number 3. Your situation may differ.
+</div>
+<div class="footnote" id="_footnotedef_2">
+<a href="spindle.html#_footnoteref_2">2</a>. The HAL encoder index-enable is an exception to the rule in that it behaves as both an input and an output, see the <a href="../hal/rtcomps.html#sec:encoder">Encoder Section</a> for details
+</div>
+<div class="footnote" id="_footnotedef_3">
+<a href="spindle.html#_footnoteref_3">3</a>. It is because we selected <em>non-quadrature simple counting&#8230;&#8203;</em> above that we can get away with <em>quadrature</em> counting without having any B quadrature input.
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

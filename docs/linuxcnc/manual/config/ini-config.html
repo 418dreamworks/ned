@@ -1,0 +1,2576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>INI Configuration</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../rouge-github.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:ini-configuration" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="ini-config.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/config/ini-config.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/config/ini-config.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/config/ini-config.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/config/ini-config.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/config/ini-config.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/config/ini-config.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/config/ini-config.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>INI Configuration</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details open><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="stepconf.html">Stepper Configuration Wizard</a><a href="pncconf.html">Mesa Configuration Wizard</a></details><details open><summary>Configuration</summary><a href="integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>INI Configuration</summary><ul class="sectlevel1">
+<li><a href="ini-config.html#_the_ini_file_components">1. The INI File Components</a>
+<ul class="sectlevel2">
+<li><a href="ini-config.html#_comments">1.1. Comments</a></li>
+<li><a href="ini-config.html#sub:ini:sections">1.2. Sections</a></li>
+<li><a href="ini-config.html#sub:ini:variables">1.3. Variables</a></li>
+<li><a href="ini-config.html#sub:ini:custom">1.4. Custom Sections and Variables</a></li>
+<li><a href="ini-config.html#sub:ini:include">1.5. Include Files</a></li>
+</ul>
+</li>
+<li><a href="ini-config.html#sec:ini:sections">2. INI File Sections</a>
+<ul class="sectlevel2">
+<li><a href="ini-config.html#sub:ini:sec:emc">2.1. [EMC] Section</a></li>
+<li><a href="ini-config.html#sub:ini:sec:display">2.2. [DISPLAY] Section</a></li>
+<li><a href="ini-config.html#sub:ini:sec:filter">2.3. [FILTER] Section</a></li>
+<li><a href="ini-config.html#sub:ini:sec:rs274ngc">2.4. [RS274NGC] Section</a></li>
+<li><a href="ini-config.html#sub:ini:sec:emcmot">2.5. [EMCMOT] Section</a></li>
+<li><a href="ini-config.html#sub:ini:sec:task">2.6. [TASK] Section</a></li>
+<li><a href="ini-config.html#sub:ini:sec:hal">2.7. [HAL] section</a></li>
+<li><a href="ini-config.html#sub:ini:sec:halui">2.8. [HALUI] section</a></li>
+<li><a href="ini-config.html#sub:ini:sec:applications">2.9. [APPLICATIONS] Section</a></li>
+<li><a href="ini-config.html#sub:ini:sec:traj">2.10. [TRAJ] Section</a></li>
+<li><a href="ini-config.html#sub:ini:sec:kins">2.11. [KINS] Section</a></li>
+<li><a href="ini-config.html#sub:ini:sec:axis-letter">2.12. [AXIS_&lt;letter&gt;] Section</a></li>
+<li><a href="ini-config.html#sub:ini:sec:joint-num">2.13. [JOINT_&lt;num&gt;] Sections</a></li>
+<li><a href="ini-config.html#sub:ini:sec:spindle-num">2.14. [SPINDLE_&lt;num&gt;] Section(s)</a></li>
+<li><a href="ini-config.html#sub:ini:sec:emcio">2.15. [EMCIO] Section</a></li>
+</ul>
+</li>
+</ul></details><a href="ini-homing.html">Homing Configuration</a><a href="lathe-config.html">Lathe Configuration</a><a href="stepper-quickstart.html">Stepper Quickstart</a><a href="stepper.html">Stepper Configuration</a><a href="stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="python-interface.html">The LinuxCNC Python module</a><a href="python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_the_ini_file_components">1. The INI File Components</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A typical INI file follows a rather simple layout that includes;</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>comments</p>
+</li>
+<li>
+<p>sections</p>
+</li>
+<li>
+<p>variables</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Each of these elements is separated on single lines.
+Each end of line or newline character creates a new element.</p>
+</div>
+<div class="sect2">
+<h3 id="_comments">1.1. Comments</h3>
+<div class="paragraph">
+<p>A comment line is started with a ; or a # mark.
+When the INI reader sees either of these marks on a line, the rest of the line is ignored by the software.
+Comments can be used to describe what an INI element will do.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="c">; This is my mill configuration file.
+# I set it up on January 12, 2012</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Comments can also be used to <em>turn off</em> a variable.
+This makes it easier to pick between different variables.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="py">DISPLAY</span> <span class="p">=</span> <span class="s">axis</span>
+<span class="c"># DISPLAY = touchy</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In this list, the DISPLAY variable will be set to axis because the other one is commented out.
+If someone carelessly edits a list like this and leaves two of the lines uncommented, the first one encountered will be used.</p>
+</div>
+<div class="paragraph">
+<p>Note that inside a variable&#8217;s value, the "#" and ";" characters are part of the value:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="c"># Below does not result in INCORRECT=value
+# because comments are not interpreted as comments in values
+</span><span class="py">INCORRECT</span> <span class="p">=</span> <span class="s">value # and this is not a comment</span>
+
+<span class="c"># Correct comment
+# hash char # is a comment om this line
+</span><span class="py">CORRECT</span> <span class="p">=</span> <span class="s">value</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:ini:sections">1.2. Sections</h3>
+<div class="paragraph">
+<p>Related parts of an INI file are separated into sections.
+A section name is enclosed in brackets like this: <code>[THIS_SECTION]</code>.
+The order of sections is unimportant.
+Sections begin at the section name and end at the next section name.
+Section identifiers are case senstive and can only contain letters A-Z, a-z, digits 0-9 and underscore (_).
+Additionally, section identifiers cannot start with a digit.</p>
+</div>
+<div class="paragraph">
+<p>The following sections are used by LinuxCNC:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="ini-config.html#sub:ini:sec:emc"><code>[EMC]</code></a> general information</p>
+</li>
+<li>
+<p><a href="ini-config.html#sub:ini:sec:display"><code>[DISPLAY]</code></a> settings related to the graphical user interface</p>
+</li>
+<li>
+<p><a href="ini-config.html#sub:ini:sec:filter"><code>[FILTER]</code></a> settings input filter programs</p>
+</li>
+<li>
+<p><a href="ini-config.html#sub:ini:sec:rs274ngc"><code>[RS274NGC]</code></a> settings used by the G-code interpreter</p>
+</li>
+<li>
+<p><a href="ini-config.html#sub:ini:sec:emcmot"><code>[EMCMOT]</code></a> settings used by the real time motion controller</p>
+</li>
+<li>
+<p><a href="ini-config.html#sub:ini:sec:task"><code>[TASK]</code></a> settings used by the task controller</p>
+</li>
+<li>
+<p><a href="ini-config.html#sub:ini:sec:hal"><code>[HAL]</code></a> specifies .hal files</p>
+</li>
+<li>
+<p><a href="ini-config.html#sub:ini:sec:halui"><code>[HALUI]</code></a> MDI commands used by HALUI</p>
+</li>
+<li>
+<p><a href="ini-config.html#sub:ini:sec:applications"><code>[APPLICATIONS]</code></a> Other applications to be started by LinuxCNC</p>
+</li>
+<li>
+<p><a href="ini-config.html#sub:ini:sec:traj"><code>[TRAJ]</code></a> additional settings used by the real time motion controller</p>
+</li>
+<li>
+<p><a href="ini-config.html#sub:ini:sec:joint-num"><code>[JOINT_n]</code></a> individual joint variables</p>
+</li>
+<li>
+<p><a href="ini-config.html#sub:ini:sec:axis-letter"><code>[AXIS_l]</code></a> individual axis variables</p>
+</li>
+<li>
+<p><a href="ini-config.html#sub:ini:sec:kins"><code>[KINS]</code></a> kinematics variables</p>
+</li>
+<li>
+<p><a href="ini-config.html#sub:ini:sec:emcio"><code>[EMCIO]</code></a> settings used by the I/O Controller</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:ini:variables">1.3. Variables</h3>
+<div class="paragraph">
+<p>A variable line is made up of a variable name, an equals sign (<code>=</code>), and a value.
+A variable identifier is case sensitive and may only consist of letters A-Z, a-z, digits 0-9 and underscore (_).
+Additionally, variable identifiers cannot start with a digit.
+White space at the beginning of the line and after the variable identifier, up to the equals sign, is ignored.</p>
+</div>
+<div class="listingblock">
+<div class="title">Variable Example</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="py">MACHINE</span> <span class="p">=</span> <span class="s">My Machine</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A variable line may be extended to multiple lines with a terminal backslash (\) character.
+There may be white space following the trailing backslash character, but this is strongly discouraged.</p>
+</div>
+<div class="paragraph">
+<p>Section identifiers may not be extended to multiple lines.</p>
+</div>
+<div class="listingblock">
+<div class="title">Variable with Line extends Example</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="py">APP</span> <span class="p">=</span> <span class="s">sim_pin </span><span class="se">\
+</span><span class="s">ini.0.max_acceleration </span><span class="se">\
+</span><span class="s">ini.1.max_acceleration </span><span class="se">\
+</span><span class="s">ini.2.max_acceleration </span><span class="se">\
+</span><span class="s">ini.0.max_velocity </span><span class="se">\
+</span><span class="s">ini.1.max_velocity </span><span class="se">\
+</span><span class="s">ini.2.max_velocity</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A specific variable in a specific sections is often denoted in the documentation as <code>[SECTION]VARIABLE</code>.
+This specification mirrors the same way they are specified in HAL files for expansion.</p>
+</div>
+<div class="paragraph">
+<p>Variable values may embed special characters in literal or escaped forms.
+Single or double quotes are not treated as special and are a literal part of the value.
+Values also support all common escape formats and full Unicode:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>control: <code>\[abfnrtv]</code></p>
+</li>
+<li>
+<p>octal: <code>\[0-2][0-7]{0,2}</code></p>
+</li>
+<li>
+<p>hex: <code>\x[0-9a-fA-F]{2}</code></p>
+</li>
+<li>
+<p>UTF-16: <code>\u[0-9a-fA-F]{4}</code></p>
+</li>
+<li>
+<p>UTF-32: <code>\U[0-9a-fA-F]{8}</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The resulting value is always converted into UTF-8 and checked for validity.
+It is not allowed to embed NUL characters either literally or by using an escape.</p>
+</div>
+<div class="paragraph">
+<p>Leading and trailing white space is normally removed from a value.
+You can add leading and trailing space in a value by using an escaped value for space (<code>\x20</code>) as first or last character.
+Spaces inside a value are automatically part of the value.
+Tabs and newlines can be added using <code>\t</code> and <code>\n</code>.</p>
+</div>
+<div class="listingblock">
+<div class="title">Value Escape Example</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="py">STRING</span> <span class="p">=</span> <span class="s">Hello World!</span>
+
+<span class="c"># The following would become: Hello World!
+</span><span class="py">STRING</span> <span class="p">=</span> <span class="s">Hello</span><span class="se">\
+</span> <span class="se">\
+</span><span class="s">World</span><span class="se">\
+</span><span class="s">!</span>
+
+<span class="py">SMILE</span> <span class="p">=</span> <span class="se">\3</span><span class="s">70</span><span class="se">\2</span><span class="s">37</span><span class="se">\2</span><span class="s">30</span><span class="se">\2</span><span class="s">00 = 😀</span>
+<span class="py">SMILE</span> <span class="p">=</span> <span class="se">\x</span><span class="s">f0</span><span class="se">\x</span><span class="s">9f</span><span class="se">\x</span><span class="s">98</span><span class="se">\x</span><span class="s">80 = 😀</span>
+<span class="py">SMILE</span> <span class="p">=</span> <span class="se">\u</span><span class="s">d83d</span><span class="se">\u</span><span class="s">de00 = 😀</span>
+<span class="py">SMILE</span> <span class="p">=</span> <span class="se">\U</span><span class="s">0001f600 = 😀</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Variables' value can have types associated when they are read by LinuxCNC.
+The types are enforced by the INI file reader when the appropriate function calls are performed.
+All values may always be read as <em>string</em>. Conversion into other types has restrictions.
+Possible types are:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>string</em> - the value is taken as-is</p>
+</li>
+<li>
+<p><em>boolean</em> - only boolean words are accepted</p>
+</li>
+<li>
+<p><em>signed integer</em> - whole numbers in decimal, hexadecimal, octal or binary bases</p>
+</li>
+<li>
+<p><em>unsigned integer</em> - whole numbers in decimal, hexadecimal, octal or binary bases</p>
+</li>
+<li>
+<p><em>real</em> - floating point values (always using decimal point)</p>
+</li>
+<li>
+<p><em>enumeration</em> - a restricted set of keys to represent a value or function</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Signed and unsigned integers are read and converted as 64-bit numbers when marked as <code>s64</code> and <code>u64</code>.
+Plain old 32-bit integers are marked <code>int</code> and are always signed.
+The default number base is decimal. Alternative bases may be specified using a prefix.
+The complete list of valid integer numbers:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>[0-9]+</code> (decimal)</p>
+</li>
+<li>
+<p><code>0x[0-9A-Fa-f]+</code> (hexadecimal)</p>
+</li>
+<li>
+<p><code>0o[0-7]+</code> (octal)</p>
+</li>
+<li>
+<p><code>0b[01]+</code> (binary)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Signed integers may be preceded by a plus (+) or minus (-) sign, regardless number base.
+Unsigned integers will generate a warning if they are preceded by a minus (-) sign upon conversion.</p>
+</div>
+<div class="paragraph">
+<p>Boolean values are case insensitive and allow the following words:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>true/enabled - <code>TRUE</code>, <code>YES</code>, <code>ON</code> or <code>1</code></p>
+</li>
+<li>
+<p>false/disabled - <code>FALSE</code>, <code>NO</code>, <code>OFF</code> or <code>0</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Enumerations are a set of keywords defined by LinuxCNC and interpreted to mean a setting, value or functionality.
+The exact values are declared in the individual variable description and the variables are marked with <code>enum</code>.
+Most enumerations are interpreted without case.
+It is noted in the variable description if case matters.</p>
+</div>
+<div class="paragraph">
+<p>Some LinuxCNC variables are special in that their format is interpreted as a multi-valued entry.
+These variables have an appropriate description below of the format expected.</p>
+</div>
+<div class="paragraph">
+<p>Variables that are used by LinuxCNC must always use the section names and variable names as shown.
+Any custom or private variables and sections are up to the user.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:ini:custom">1.4. Custom Sections and Variables</h3>
+<div class="paragraph">
+<p>Most sample configurations use custom sections and variables to put all of the settings into one location for convenience.</p>
+</div>
+<div class="paragraph">
+<p>To add a custom variable to an existing LinuxCNC section, simply include the variable in that section.</p>
+</div>
+<div class="listingblock">
+<div class="title">Custom Variable Example, assigning the value <em>LINEAR</em> to the variable <em>TYPE</em>, and the value <em>16000</em> to the variable <em>SCALE</em>.</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="p">[</span><span class="nn">JOINT_0</span><span class="p">]</span>
+<span class="py">TYPE</span> <span class="p">=</span> <span class="s">LINEAR</span>
+<span class="c"># ...
+</span><span class="py">SCALE</span> <span class="p">=</span> <span class="s">16000</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To introduce a custom section with its own variables, add the section and variables to the INI file.</p>
+</div>
+<div class="listingblock">
+<div class="title">Custom Section Example</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="p">[</span><span class="nn">PROBE</span><span class="p">]</span>
+<span class="py">Z_FEEDRATE</span> <span class="p">=</span> <span class="s">50</span>
+<span class="py">Z_OFFSET</span> <span class="p">=</span> <span class="s">12</span>
+<span class="py">Z_SAFE_DISTANCE</span> <span class="p">=</span> <span class="s">-10</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To use the custom variables in your HAL file, put the section and variable name in place of the value.</p>
+</div>
+<div class="listingblock">
+<div class="title">HAL Example</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">setp</span> <span class="na">offset.1.offset</span> <span class="p">[</span><span class="nn">PROBE</span><span class="p">]</span><span class="py">Z_OFFSET</span>
+<span class="k">setp</span> <span class="na">stepgen.0.position-scale</span> <span class="p">[</span><span class="nn">JOINT_0</span><span class="p">]</span><span class="py">SCALE</span></code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The value stored in the variable must match the type specified by the component pin.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>To use the custom variables in G-code, use the global variable syntax <code>#&lt;_ini[section]variable&gt;</code>.
+The following example shows a simple Z-axis touch-off routine for a router or mill using a probe plate.</p>
+</div>
+<div class="paragraph">
+<p>Please note that G-code embedded ini variables are converted to upper case before they are searched in the INI file.
+The <code>#&lt;_ini[section]variable&gt;</code> should be called [SECTION]VARIABLE in the INI file.</p>
+</div>
+<div class="listingblock">
+<div class="title">G-code Example</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ngc"><span class="k">G91</span>
+<span class="k">G38.2</span> <span class="na">Z</span><span class="p">#&lt;</span><span class="nb">_ini</span><span class="p">[</span><span class="nn">probe</span><span class="p">]</span><span class="py">z_safe_distance</span><span class="p">&gt;</span> F<span class="p">#&lt;</span><span class="nb">_ini</span><span class="p">[</span><span class="nn">probe</span><span class="p">]</span><span class="py">z_feedrate</span><span class="p">&gt;</span>
+<span class="k">G90</span>
+<span class="k">G1</span> <span class="na">Z</span><span class="nv">#5063</span>
+<span class="k">G10</span> <span class="nd">L</span><span class="mi">20</span> <span class="nd">P</span><span class="mi">0</span> <span class="na">Z</span><span class="p">#&lt;</span><span class="nb">_ini</span><span class="p">[</span><span class="nn">probe</span><span class="p">]</span><span class="py">z_offset</span><span class="p">&gt;</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:ini:include">1.5. Include Files</h3>
+<div class="paragraph">
+<p>An INI file may include the contents of another file by using a <code>#INCLUDE</code> directive.
+The <code>#INCLUDE</code> directive must be in upper case, start in the first column of the line and have at least one space after it.</p>
+</div>
+<div class="listingblock">
+<div class="title">#INCLUDE Format</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="k">#INCLUDE</span> <span class="s">filename</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The filename can be specified as:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>a file in the same directory as the INI file</p>
+</li>
+<li>
+<p>a file located relative to the working directory</p>
+</li>
+<li>
+<p>an absolute file name (starts with a /)</p>
+</li>
+<li>
+<p>a user-home-relative file name (starts with a ~/)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Multiple <code>#INCLUDE</code> directives are supported.</p>
+</div>
+<div class="listingblock">
+<div class="title">#INCLUDE Examples</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="k">#INCLUDE</span> <span class="s">joint_0.inc</span>
+<span class="k">#INCLUDE</span> <span class="s">../parallel/joint_1.inc</span>
+<span class="k">#INCLUDE</span> <span class="s">below/joint_2.inc</span>
+<span class="k">#INCLUDE</span> <span class="s">/home/myusername/myincludes/display.inc</span>
+<span class="k">#INCLUDE</span> <span class="s">~/linuxcnc/myincludes/rs274ngc.inc</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>#INCLUDE</code> directives are supported up to 16 levels&#8201;&#8212;&#8201;an included file may include additional files up to 16 levels deep.
+Recursive inclusion of files is detected and flagged as an error.
+The recommended file extension is <em>.inc</em>.
+Do <em>not</em> use a file extension of <em>.ini</em> for included files.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:ini:sections">2. INI File Sections</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Variables in each section have an associated type as denoted in parentheses after the variable.</p>
+</div>
+<div class="sect2">
+<h3 id="sub:ini:sec:emc">2.1. [EMC] Section</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><code>VERSION = 1.1</code> - (string) The format version of this configuration.
+Any value other than 1.1 will cause the configuration checker to run and try to update the configuration to the new style joint axes type of configuration.</p>
+</li>
+<li>
+<p><code>MACHINE = My Controller</code> - (string) This is the name of the controller, which is printed out at the top of most graphical interfaces.
+You can put whatever you want here as long as you make it a single line long.</p>
+</li>
+<li>
+<p><code>DEBUG = 0</code> - (u64) Debug level 0 means no messages will be printed when LinuxCNC is run from a <a href="../common/linux-faq.html#faq:terminal">terminal</a>.
+Debug flags are usually only useful to developers. See src/emc/nml_intf/debugflags.h for other settings.</p>
+</li>
+<li>
+<p><code>RCS_DEBUG = 1</code> (u64) RCS debug messages to show. Print only errors (1) by default if EMC_DEBUG_RCS and EMC_DEBUG_RCS bits in
+<code>DEBUG</code> are unset, otherwise print all (-1). Use this to select RCS debug messages. See src/libnml/rcs/rcs_print.hh for all MODE flags.</p>
+</li>
+<li>
+<p><code>RCS_DEBUG_DEST = STDOUT</code> - (enum) how to output RCS_DEBUG messages (NULL, STDOUT, STDERR, FILE, LOGGER, MSGBOX).</p>
+</li>
+<li>
+<p><code>RCS_MAX_ERR = -1</code> - (int) Number after which RCS errors are not reported anymore (-1 = infinite).</p>
+</li>
+<li>
+<p><code>NML_FILE = /usr/share/linuxcnc/linuxcnc.nml</code> - (string) Set this if you want to use a non-default NML configuration file.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:ini:sec:display">2.2. [DISPLAY] Section</h3>
+<div class="paragraph">
+<p>Different user interface programs use different options, and not every option is supported by every user interface.
+There are several interfaces, like AXIS, GMOCCAPY, Touchy, QtVCP&#8217;s QtDragon and Gscreen.
+AXIS is an interface for use with normal computer and monitor, Touchy is for use with touch screens.
+GMOCCAPY can be used both ways and offers also many connections for hardware controls.
+Descriptions of the interfaces are in the Interfaces section of the User Manual.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>DISPLAY = axis</code> - (string) The file name of the executable providing the user interface to use.
+Prominent valid options are (all in lower case): <code>axis</code>, <code>touchy</code>, <code>gmoccapy</code>, <code>gscreen</code>, <code>tklinuxcnc</code>, <code>qtvcp</code>, <code>qtvcp qtdragon</code> or <code>qtvcp qtplasmac</code>.</p>
+</li>
+<li>
+<p><code>POSITION_OFFSET = RELATIVE</code> - (enum) The coordinate system (<code>RELATIVE</code> or <code>MACHINE</code>) to show on the DRO when the user interface starts.
+The RELATIVE coordinate system reflects the G92 and G5<em>x</em> coordinate offsets currently in effect.</p>
+</li>
+<li>
+<p><code>POSITION_FEEDBACK = COMMANDED</code> - (enum) The coordinate value (<code>COMMANDED</code> or <code>ACTUAL</code>) to show on the DRO when the user interface starts.
+In AXIS this can be changed from the View menu.
+The COMMANDED position is the position requested by LinuxCNC.
+The ACTUAL position is the feedback position of the motors if they have feedback like most servo systems.
+Typically the COMMANDED value is used.</p>
+</li>
+<li>
+<p><code>DRO_FORMAT_MM = %+08.6f</code> - (string) Override the default DRO formatting in metric mode (normally 3 decimal places, padded with spaces to 6 digits to the left).
+The example above will pad with zeros, display 6 decimal digits and force display of a + sign for positive numbers.
+Formatting follows Python practice: <a href="https://docs.python.org/2/library/string.html#format-specification-mini-language" class="bare">https://docs.python.org/2/library/string.html#format-specification-mini-language</a> .
+An error will be raised if the format can not accept a floating-point value.</p>
+</li>
+<li>
+<p><code>DRO_FORMAT_IN = % 4.1f</code> - (string) Override the default DRO formatting in imperial mode (normally 4 decimal places, padded with spaces to 6 digits to the left).
+The example above will display only one decimal digit.
+Formatting follows Python practice: <a href="https://docs.python.org/2/library/string.html#format-specification-mini-language" class="bare">https://docs.python.org/2/library/string.html#format-specification-mini-language</a> .
+An error will be raised if the format can not accept a floating-point value.</p>
+</li>
+<li>
+<p><code>CONE_BASESIZE = .25</code> - (real) Override the default cone/tool base size of .5 in the graphics display. Valid values are between 0.025 and 2.0.</p>
+</li>
+<li>
+<p><code>DISABLE_CONE_SCALING = TRUE</code> - (bool) Will override the default behavior of scaling the cone/tool size using the extents of the currently loaded G-code program in the graphics display.</p>
+</li>
+<li>
+<p><code>GCODE_VIEW_TOOL_MIN_DIA = 2.0</code> - (real) If the tool diameter is very small, but non-zero then the displayed cylinder may be too small to see.
+This could happen if the tool diameter was being used as a wear offset. This setting will cause the tool cone to be displayed
+rather than a tool cylinder.</p>
+</li>
+<li>
+<p><code>MAX_FEED_OVERRIDE = 1.2</code> - (real) The maximum feed override the user may select.
+1.2 means 120% of the programmed feed rate.</p>
+</li>
+<li>
+<p><code>MIN_SPINDLE_OVERRIDE = 0.5</code> - (real) The minimum spindle override the user may select.
+0.5 means 50% of the programmed spindle speed. (This is used to set the minimum spindle speed.)</p>
+</li>
+<li>
+<p><code>MIN_SPINDLE_0_OVERRIDE = 0.5</code> - (real) The minimum spindle override the user may select.
+0.5 means 50% of the programmed spindle speed.  (This is used to set the minimum spindle speed.)
+On multi spindle machine there will be entries for each spindle number. Only used by the QtVCP based user interfaces.</p>
+</li>
+<li>
+<p><code>MAX_SPINDLE_OVERRIDE = 1.0</code> - (real) The maximum spindle override the user may select. 1.0 means 100% of the programmed spindle speed.</p>
+</li>
+<li>
+<p><code>MAX_SPINDLE_0_OVERRIDE = 1.0</code> - (real) The maximum feed override the user may select.
+1.2 means 120% of the programmed feed rate.
+On multi spindle machine there will be entries for each spindle number. Only used by the QtVCP based user interfaces.</p>
+</li>
+<li>
+<p><code>DEFAULT_SPINDLE_SPEED = 100</code> - The default spindle RPM when the spindle is started in manual mode.
+If this setting is not present, this defaults to 1 RPM for AXIS and 300 RPM for GMOCCAPY.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><em>deprecated</em> - use the [SPINDLE_n] section instead</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><code>DEFAULT_SPINDLE_0_SPEED = 100</code> - The default spindle RPM when the spindle is started in manual mode.
+On multi spindle machine there will be entries for each spindle number. Only used by the QtVCP-based user interfaces.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><em>deprecated</em> - use the [SPINDLE_n] section instead.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><code>SPINDLE_INCREMENT = 200</code> - The increment used when clicking increase/decrease buttons. Only used by the QtVCP based user interfaces.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><em>deprecated</em> - use the [SPINDLE_n] section instead.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><code>MIN_SPINDLE_0_SPEED = 1000</code> - The minimum RPM that can be manually selected.
+On multi spindle machine there will be entries for each spindle number. Only used by the QtVCP-based user interfaces.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><em>deprecated</em> - use the [SPINDLE_n] section instead.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><code>MAX_SPINDLE_0_SPEED = 20000</code> - The maximum RPM that can be manually selected.
+On multi spindle machine there will be entries for each spindle number. Only used by the QtVCP-based user interfaces.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><em>deprecated</em> - use the [SPINDLE_n] section instead.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><code>PROGRAM_PREFIX = ~/linuxcnc/nc_files</code> - The default directory for G-code files, named subroutines, and user-defined M-codes.
+The <code>PROGRAM_PREFIX</code> directory is searched before the directories listed in <code>[RS274]SUBROUTINE_PATH</code> and <code>[RS274]USER_M_PATH</code>.</p>
+</li>
+<li>
+<p><code>INTRO_GRAPHIC = emc2.gif</code> - The image shown on the splash screen.</p>
+</li>
+<li>
+<p><code>INTRO_TIME = 5</code> - The maximum time to show the splash screen, in seconds.</p>
+</li>
+<li>
+<p><code>CYCLE_TIME = 100</code> - Cycle time of the display GUI.
+Depending on the screen, this can be in seconds or ms (ms preferred).
+This is often the update rate rather then sleep time between updates.
+If the update time is not set right the screen can become unresponsive or very jerky.
+A value of 100 ms (0.1 s) is a common setting though a range of 50 - 200 ms (.05 - .2 s) may be useable.
+An under powered CPU may see improvement with a longer setting.
+Usually the default is fine.</p>
+</li>
+<li>
+<p><code>PREVIEW_TIMEOUT = 5</code> - Timeout (in seconds) for loading graphical preview of G-code. Currently AXIS only.</p>
+</li>
+<li>
+<p><code>HOMING_PROMPT = TRUE</code> - (bool) Will enable showing a prompt message with homing request, when the Power On button is pressed in AXIS GUI. Pressing the "Ok" button in prompt message is equivalent to pressing the "Home All" button(or the Ctrl-HOME key).</p>
+</li>
+<li>
+<p><code>FOAM_W = 1.5</code> sets the foam W height.</p>
+</li>
+<li>
+<p><code>FOAM_Z = 0</code> sets the foam Z height.</p>
+</li>
+<li>
+<p><code>GRAPHICAL_MAX_FILE_SIZE = 20</code> largest size (in mega bytes) that will be displayed graphically.
+If the program is bigger than this setting, a bounding box will be displayed.
+By default, this setting is at 20 MB or 1/4 of the system memory, which ever is smaller.
+A negative value is interpreted as unlimited.</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The following [DISPLAY] items are used by GladeVCP and PyVCP,
+see the <a href="../gui/gladevcp.html#gladevcp:embedding-tab">embedding a tab</a> section of the GladeVCP Chapter or the <a href="../gui/pyvcp.html#cha:pyvcp">PyVCP Chapter</a> for more information.
+</td>
+</tr>
+</table>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>EMBED_TAB_NAME = GladeVCP demo</code></p>
+</li>
+<li>
+<p><code>EMBED_TAB_COMMAND = halcmd loadusr -Wn gladevcp gladevcp -c gladevcp -x \{XID\} -u ./gladevcp/hitcounter.py ./gladevcp/manual-example.ui</code></p>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Different user interface programs use different options, and not every option is supported by every user interface.
+See <a href="../gui/axis.html#cha:axis-gui">AXIS GUI</a> document for AXIS details.
+See <a href="../gui/gmoccapy.html#cha:gmoccapy">GMOCCAPY</a> document for GMOCCAPY details.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+<p><code>DEFAULT_LINEAR_VELOCITY = .25</code> - The default velocity for linear jogs, in <a href="ini-config.html#sub:ini:sec:traj">machine units</a> per second.</p>
+</li>
+<li>
+<p><code>MIN_VELOCITY = .01</code> - The approximate lowest value the jog slider.</p>
+</li>
+<li>
+<p><code>MAX_LINEAR_VELOCITY = 1.0</code> - The maximum velocity for linear jogs, in machine units per second.</p>
+</li>
+<li>
+<p><code>MIN_LINEAR_VELOCITY = .01</code> - The approximate lowest value the jog slider.</p>
+</li>
+<li>
+<p><code>DEFAULT_ANGULAR_VELOCITY = .25</code> - The default velocity for angular jogs, in machine units per second.</p>
+</li>
+<li>
+<p><code>MIN_ANGULAR_VELOCITY = .01</code> - The approximate lowest value the angular jog slider.</p>
+</li>
+<li>
+<p><code>MAX_ANGULAR_VELOCITY = 1.0</code> - The maximum velocity for angular jogs, in machine units per second.</p>
+</li>
+<li>
+<p><code>INCREMENTS = 1 mm, .5 in, ...</code> - Defines the increments available for incremental jogs.
+The INCREMENTS can be used to override the default.
+The values can be decimal numbers (e.g., 0.1000) or fractional numbers (e.g., 1/16), optionally followed by a unit (cm, mm, um, inch, in or mil).
+If a unit is not specified the machine unit is assumed.
+Metric and imperial distances may be mixed: INCREMENTS = 1 inch, 1 mil, 1 cm, 1 mm, 1 um is a valid entry.</p>
+</li>
+<li>
+<p><code>GRIDS = 10 mm, 1 in, ...</code> - Defines the preset values for grid lines.
+The value is interpreted the same way as <code>INCREMENTS</code>.</p>
+</li>
+<li>
+<p><code>OPEN_FILE = /full/path/to/file.ngc</code> - The file to show in the preview plot when AXIS starts.
+Use a blank string "" and no file will be loaded at start up.
+GMOCCAPY will not use this setting, as it offers a corresponding entry on its settings page.</p>
+</li>
+<li>
+<p><code>EDITOR = gedit</code> - The editor to use when selecting File &gt; Edit to edit the G-code from the AXIS menu.
+This must be configured for this menu item to work.
+Another valid entry is <code>gnome-terminal -e vim</code>.
+This entry does not apply to GMOCCAPY, as GMOCCAPY has an integrated editor.</p>
+</li>
+<li>
+<p><code>TOOL_EDITOR = tooledit</code> - The editor to use when editing the tool table
+(for example by selecting "File &gt; Edit tool table&#8230;&#8203;" in AXIS).
+Other valid entries are <code>gedit</code>, <code>gnome-terminal -e vim</code>, and <code>gvim</code>.
+This entry does not apply to GMOCCAPY, as GMOCCAPY has an integrated editor.</p>
+</li>
+<li>
+<p><code>PYVCP = /filename.xml</code> - The PyVCP panel description file.
+See the <a href="../gui/pyvcp.html#cha:pyvcp">PyVCP Chapter</a>for more information.</p>
+</li>
+<li>
+<p><code>PYVCP_POSITION = BOTTOM</code> - The placement of the PyVCP panel in the AXIS user interface.
+If this variable is omitted the panel will default to the right side.
+The only valid alternative is <code>BOTTOM</code>. See the <a href="../gui/pyvcp.html#cha:pyvcp">PyVCP Chapter</a> for more information.</p>
+</li>
+<li>
+<p><code>LATHE = 1</code> - (bool) Causes axis to use "lathe mode" with a top view and with Radius and Diameter on the DRO.</p>
+</li>
+<li>
+<p><code>BACK_TOOL_LATHE = 1</code> - (bool) Causes axis to use "back tool lathe mode" with inverted X axis.</p>
+</li>
+<li>
+<p><code>FOAM = 1</code> - (bool) Causes axis to change the display for foam-cutter mode.</p>
+</li>
+<li>
+<p><code>GEOMETRY = XYZABCUVW</code> - Controls the <strong>preview</strong> and <strong>backplot</strong> of motion.
+This item consists of a sequence of axis letters and control characters, optionally preceded with a "-" sign:</p>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>The letters X, Y, Z specify translation along the named coordinate.</p>
+</li>
+<li>
+<p>The letters A, B, C specify rotation about the corresponding axes X, Y, Z.</p>
+</li>
+<li>
+<p>The letters U, V, W specify translation along the related axes X, Y, Z.</p>
+</li>
+<li>
+<p>Each letter specified must occur in <code>[TRAJ]COORDINATES</code> to have an effect.</p>
+</li>
+<li>
+<p>A "<strong>-</strong>" character preceding any letter inverts the direction of the operation.</p>
+</li>
+<li>
+<p>The translation and rotation operations are evaluated <strong>right-to-left</strong>.
+So using <code>GEOMETRY=XYZBC</code> specifies a C rotation followed by a B rotation followed by Z, Y, X translations.
+The ordering of consecutive translation letters is immaterial.</p>
+</li>
+<li>
+<p>The proper GEOMETRY string depends on the machine configuration and the kinematics used to control it.
+The order of the letters is important.
+For example, rotating around C then B is different than rotating around B then C.</p>
+</li>
+<li>
+<p>Rotations are by default applied with respect to the machine origin.
+Example: <code>GEOMETRY=CXYZ</code> first translates the control point to X, Y, Z and then performs a C rotation about the Z axis centered at the machine origin.</p>
+</li>
+<li>
+<p>UVW translation example: <code>GEOMETRY=XYZUVW</code> causes UVW to move in the coordinate system of the tool and XYZ to move in the coordinate system of the material.</p>
+</li>
+<li>
+<p>Foam-cutting machines (<code>FOAM = 1</code>) should specify "XY;UV" or leave the value blank even though this value is presently ignored in foam-cutter mode.
+A future version may define what ";" means, but if it does "XY;UV" will mean the same as the current foam default.</p>
+</li>
+<li>
+<p>Experimental: If the exclamation mark (<code>!</code>) character is included in the GEOMETRY string, display points for A, B, C rotations respect the X, Y, Z offsets set by G5x, G92 codes.
+Example: Using <code>GEOMETRY = !CXZ</code> for a machine with <code>[TRAJ]COORDINATES=XZC</code>.
+This provision applies for liveplots only&#8201;&#8212;&#8201;G-code previews should be done with zero G5x, G92 offsets.
+This can be facilitated by setting offsets in programs only when task is running as indicated by #&lt;_task&gt; == 1.
+If nonzero offsets exist at startup due to persistence, offsets should be zeroed and preview reloaded.</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+If no <code>[DISPLAY]GEOMETRY</code> is included in the INI file, a default is provided by the <code>[DISPLAY]DISPLAY</code> GUI program (typically "XYZABCUVW").
+</td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+<p><code>ARCDIVISION = 64</code> - Set the quality of preview of arcs.
+Arcs are previewed by dividing them into a number of straight lines; a semicircle is divided into <strong>ARCDIVISION</strong> parts.
+Larger values give a more accurate preview, but take longer to load and result in a more sluggish display.
+Smaller values give a less accurate preview, but take less time to load and may result in a faster display.
+The default value of 64 means a circle of up to 3 inches will be displayed to within 1 mil (.03%).</p>
+</li>
+<li>
+<p><code>MDI_HISTORY_FILE =</code> - The name of a local MDI history file.
+If this is not specified, AXIS will save the MDI history in <strong>.axis_mdi_history</strong> in the user`s home directory.
+This is useful if you have multiple configurations on one computer.</p>
+</li>
+<li>
+<p><code>JOG_AXES =</code> - The order in which jog keys are assigned to axis letters.
+The left and right arrows are assigned to the first axis letter, up and down to the second, page up/page down to the third, and left and right bracket to the fourth.
+If unspecified, the default is determined from the <code>[TRAJ]COORDINATES</code>, <code>[DISPLAY]LATHE</code> and <code>[DISPLAY]FOAM</code> values.</p>
+</li>
+<li>
+<p><code>JOG_INVERT =</code> - For each axis letter, the jog direction is inverted.
+The default is "X" for lathes and blank otherwise.</p>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The settings for <code>JOG_AXES</code> and <code>JOG_INVERT</code> apply to world mode jogging by axis coordinate letter and are in effect while in world mode after successful homing.
+When operating in joint mode prior to homing, keyboard jog keys are assigned in a fixed sequence: left/right: joint0, up/down: joint1, page up/page down: joint2, left/right bracket: joint3
+</td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+<p><code>USER_COMMAND_FILE = mycommands.py</code> - The name of an optional, configuration-specific Python file sourced by the AXIS GUI instead of the user-specific file <code>~/.axisrc</code>.</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The following <code>[DISPLAY]</code> item is used by the TKLinuxCNC interface only.
+</td>
+</tr>
+</table>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>HELP_FILE = tklinucnc.txt</code> - Path to help file.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:ini:sec:filter">2.3. [FILTER] Section</h3>
+<div class="paragraph">
+<p>AXIS and GMOCCAPY have the ability to send loaded files through a filter program.
+This filter can do any desired task: Something as simple as making sure the file ends with M2,
+or something as complicated as detecting whether the input is a depth image, and generating G-code to mill the shape it defines.
+The <code>[FILTER]</code> section of the INI file controls how filters work.
+First, for each type of file, write a <code>PROGRAM_EXTENSION</code>-line.
+Then, specify the program to execute for each type of file.
+This program is given the name of the input file as its first argument, and must write RS274NGC code to standard output.
+This output is what will be displayed in the text area, previewed in the display area, and executed by LinuxCNC when Run.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>PROGRAM_EXTENSION = .extension Description</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>If your post processor outputs files in all caps you might want to add the following line:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="py">PROGRAM_EXTENSION</span> <span class="p">=</span> <span class="s">.NGC XYZ Post Processor</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The following lines add support for the image-to-G-code converter included with LinuxCNC.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="py">PROGRAM_EXTENSION</span> <span class="p">=</span> <span class="s">.png,.gif,.jpg # Greyscale Depth Image</span>
+  <span class="py">png</span> <span class="p">=</span> <span class="s">image-to-gcode</span>
+  <span class="py">gif</span> <span class="p">=</span> <span class="s">image-to-gcode</span>
+  <span class="py">jpg</span> <span class="p">=</span> <span class="s">image-to-gcode</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>An example of a custom G-code converter located in the linuxcnc directory.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="py">PROGRAM_EXTENSION</span> <span class="p">=</span> <span class="s">.gcode 3D Printer</span>
+  <span class="py">gcode</span> <span class="p">=</span> <span class="s">/home/mill/linuxcnc/convert.py</span></code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The program file associated with an extension must have either the full path to the program or be located in a directory that is on the system path.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>It is also possible to specify an interpreter:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="py">PROGRAM_EXTENSION</span> <span class="p">=</span> <span class="s">.py Python Script</span>
+  <span class="py">py</span> <span class="p">=</span> <span class="s">python</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In this way, any Python script can be opened, and its output is treated as G-code.
+One such example script is available at nc_files/holecircle.py.
+This script creates G-code for drilling a series of holes along the circumference of a circle.
+Many more G-code generators are on the LinuxCNC Wiki site <a href="https://wiki.linuxcnc.org/">https://wiki.linuxcnc.org/</a>.</p>
+</div>
+<div class="paragraph">
+<p>Python filters should use the print function to output the result to AXIS.</p>
+</div>
+<div class="paragraph">
+<p>This example program filters a file and adds a W axis to match the Z axis.
+It depends on there being a space between each axis word to work.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python"><span class="c1">#!/usr/bin/env python3
+</span>
+<span class="kn">import</span> <span class="n">sys</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">argv</span><span class="p">):</span>
+
+  <span class="n">openfile</span> <span class="o">=</span> <span class="nf">open</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="sh">'</span><span class="s">r</span><span class="sh">'</span><span class="p">)</span>
+  <span class="n">file_in</span> <span class="o">=</span> <span class="n">openfile</span><span class="p">.</span><span class="nf">readlines</span><span class="p">()</span>
+  <span class="n">openfile</span><span class="p">.</span><span class="nf">close</span><span class="p">()</span>
+
+  <span class="n">file_out</span> <span class="o">=</span> <span class="p">[]</span>
+  <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">file_in</span><span class="p">:</span>
+    <span class="c1"># print(line)
+</span>    <span class="k">if</span> <span class="n">line</span><span class="p">.</span><span class="nf">find</span><span class="p">(</span><span class="sh">'</span><span class="s">Z</span><span class="sh">'</span><span class="p">)</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+      <span class="n">words</span> <span class="o">=</span> <span class="n">line</span><span class="p">.</span><span class="nf">rstrip</span><span class="p">(</span><span class="sh">'</span><span class="se">\n</span><span class="sh">'</span><span class="p">)</span>
+      <span class="n">words</span> <span class="o">=</span> <span class="n">words</span><span class="p">.</span><span class="nf">split</span><span class="p">(</span><span class="sh">'</span><span class="s"> </span><span class="sh">'</span><span class="p">)</span>
+      <span class="n">newword</span> <span class="o">=</span> <span class="sh">''</span>
+      <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">words</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="sh">'</span><span class="s">Z</span><span class="sh">'</span><span class="p">:</span>
+          <span class="n">newword</span> <span class="o">=</span> <span class="sh">'</span><span class="s">W</span><span class="sh">'</span><span class="o">+</span> <span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+      <span class="k">if</span> <span class="nf">len</span><span class="p">(</span><span class="n">newword</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">words</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">newword</span><span class="p">)</span>
+        <span class="n">newline</span> <span class="o">=</span> <span class="sh">'</span><span class="s"> </span><span class="sh">'</span><span class="p">.</span><span class="nf">join</span><span class="p">(</span><span class="n">words</span><span class="p">)</span>
+        <span class="n">file_out</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">newline</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="n">file_out</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">file_out</span><span class="p">:</span>
+    <span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">%s</span><span class="sh">"</span> <span class="o">%</span> <span class="n">item</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="sh">"</span><span class="s">__main__</span><span class="sh">"</span><span class="p">:</span>
+  <span class="nf">main</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span></code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>FILTER_PROGRESS=%d</code><br>
+If the environment variable AXIS_PROGRESS_BAR is set, then lines written to stderr of the form above sets the AXIS progress bar to the given percentage.
+This feature should be used by any filter that runs for a long time.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:ini:sec:rs274ngc">2.4. [RS274NGC] Section</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><code>PARAMETER_FILE = myfile.var</code> - 
+The file located in the same directory as the INI file which contains the parameters used by the interpreter (saved between runs).</p>
+</li>
+<li>
+<p><code>ORIENT_OFFSET = 0</code> - 
+A float value added to the R word parameter of an <a href="../gcode/m-code.html#mcode:m19">M19 Orient Spindle</a> operation.
+Used to define an arbitrary zero position regardless of encoder mount orientation.</p>
+</li>
+<li>
+<p><code>RS274NGC_STARTUP_CODE = G17 G20 G40 G49 G64 P0.001 G80 G90 G92.1 G94 G97 G98</code> - 
+A string of NC codes that the interpreter is initialized with.
+This is not a substitute for specifying modal G-codes at the top of each NGC file,
+because the modal codes of machines differ, and may be changed by G-code interpreted earlier in the session.</p>
+</li>
+<li>
+<p><code>SUBROUTINE_PATH = ncsubroutines:/tmp/testsubs:lathesubs:millsubs</code> - 
+Specifies a colon (:) separated list of up to 10 directories to be searched when single-file subroutines are specified in G-code.
+These directories are searched after searching <code>[DISPLAY]PROGRAM_PREFIX</code> (if it is specified) and before searching <code>[WIZARD]WIZARD_ROOT</code> (if specified).
+The paths are searched in the order that they are listed.
+The first matching subroutine file found in the search is used.
+Directories are specified relative to the current directory for the INI file or as absolute paths.
+The list must contain no intervening whitespace.</p>
+</li>
+<li>
+<p><code>G64_DEFAULT_TOLERANCE =</code> <em>n</em> (Default: 0)
+Default P value for G64 if P is not called out.</p>
+</li>
+<li>
+<p><code>G64_DEFAULT_NAIVETOLERANCE =</code> <em>n</em> (Default: 0)
+Default Q value for G64 if Q is not called out.</p>
+</li>
+<li>
+<p><code>CENTER_ARC_RADIUS_TOLERANCE_INCH =</code> <em>n</em> (Default: 0.00005)</p>
+</li>
+<li>
+<p><code>CENTER_ARC_RADIUS_TOLERANCE_MM =</code> <em>n</em> (Default: 0.00127)</p>
+</li>
+<li>
+<p><code>USER_M_PATH = myfuncs:/tmp/mcodes:experimentalmcodes</code> - 
+Specifies a list of colon (:) separated directories for user defined functions.
+Directories are specified relative to the current directory for the INI file or as absolute paths.
+The list must contain no intervening whitespace.</p>
+<div class="paragraph">
+<p>A search is made for each possible user defined function, typically (M100-M199). The search order is:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><code>[DISPLAY]PROGRAM_PREFIX</code> (if specified)</p>
+</li>
+<li>
+<p>If <code>[DISPLAY]PROGRAM_PREFIX</code> is not specified, search the default location: nc_files</p>
+</li>
+<li>
+<p>Then search each directory in the list <code>[RS274NGC]USER_M_PATH</code>.</p>
+<div class="paragraph">
+<p>The first executable M1<em>xx</em> found in the search is used for each M1<em>xx</em>.</p>
+</div>
+</li>
+</ol>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The maximum number of <code>USER_M_PATH</code> directories is defined at compile time (typ: <code>USER_DEFINED_FUNCTION_MAX_DIRS == 5</code>).
+</td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+<p><code>INI_VARS = 1</code> (Default: 1)<br>
+Allows G-code programs to read values from the INI file using the format #&lt;_ini[section]name&gt;.
+See <a href="../gcode/overview.html#sec:overview-parameters">G-code Parameters</a>.</p>
+</li>
+<li>
+<p><code>HAL_PIN_VARS = 1</code> (Default: 1)<br>
+Allows G-code programs to read the values of HAL pins using the format #&lt;_hal[HAL item]&gt;.
+Variable access is read-only.
+See <a href="../gcode/overview.html#sec:overview-parameters">G-code Parameters</a> for more details and an important caveat.</p>
+</li>
+<li>
+<p><code>RETAIN_G43 = 0</code> (Default: 0)<br>
+When set, you can  turn on G43 after loading the first tool, and then not worry about it through the program.
+When you finally unload the last tool, G43 mode is canceled.</p>
+</li>
+<li>
+<p><code>OWORD_NARGS = 0</code> (Default: 0)<br>
+If this feature is enabled then a called subroutine can determine the number of actual positional parameters passed by inspecting the <code>#&lt;n_args&gt;</code> parameter.</p>
+</li>
+<li>
+<p><code>NO_DOWNCASE_OWORD = 0</code> (Default: 0)<br>
+Preserve case in O-word names within comments if set, enables reading of mixed-case HAL items in structured comments like <code>(debug, #&lt;_hal[MixedCaseItem])</code>.</p>
+</li>
+<li>
+<p><code>OWORD_WARNONLY = 0</code> (Default: 0)<br>
+Warn rather than error in case of errors in O-word subroutines.</p>
+</li>
+<li>
+<p><code>DISABLE_G92_PERSISTENCE = 0</code> (bool, Default: 0)
+Allow to clear the G92 offset automatically when config start-up.</p>
+</li>
+<li>
+<p><code>DISABLE_AUTO_G54 = 0</code> (bool, Default: 0)<br>
+When set M2 and M30 will no longer automatically reset the active WCS to <em>G54</em>.</p>
+</li>
+<li>
+<p><code>DISABLE_FANUC_STYLE_SUB = 0</code> (Default: 0)
+If there is reason to disable Fanuc subroutines set it to 1.</p>
+</li>
+<li>
+<p><em>G73_PECK_CLEARANCE = .020</em> (default: Metric machine: 1mm, imperial machine: .050 inches)
+Chip breaking back-off distance in machine units</p>
+</li>
+<li>
+<p><em>G83_PECK_CLEARANCE = .020</em> (default: Metric machine: 1mm, imperial machine: .050 inches)
+Clearance distance from last feed depth when machine rapids back to bottom of hole, in machine units.</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The above six options were controlled by the <code>FEATURES</code> bitmask in versions of LinuxCNC prior to 2.8.
+This INI tag will no longer work.<br>
+For reference:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>FEATURES &amp; 0x1  -&gt; RETAIN_G43
+FEATURES &amp; 0x2  -&gt; OWORD_NARGS
+FEATURES &amp; 0x4  -&gt; INI_VARS
+FEATURES &amp; 0x8  -&gt; HAL_PIN_VARS
+FEATURES &amp; 0x10 -&gt; NO_DOWNCASE_OWORD
+FEATURES &amp; 0x20 -&gt; OWORD_WARNONLY</pre>
+</div>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<code>[WIZARD]WIZARD_ROOT</code> is a valid search path but the Wizard has not been fully implemented and the results of using it are unpredictable.
+</td>
+</tr>
+</table>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>LOG_LEVEL = 0</code>
+Specify the log_level (default: 0)</p>
+</li>
+<li>
+<p><code>LOG_FILE = file-name.log</code><br>
+For specify the file used for log the data.</p>
+</li>
+<li>
+<p><code>REMAP=M400 modalgroup=10 argspec=Pq ngc=myprocedure</code>
+See <a href="../remap/remap.html#cha:remap">Remap Extending G-code</a> chapter for details.</p>
+</li>
+<li>
+<p><code>ON_ABORT_COMMAND=O &lt;on_abort&gt; call</code>
+See <a href="../remap/remap.html#cha:remap">Remap Extending G-code</a> chapter for details.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:ini:sec:emcmot">2.5. [EMCMOT] Section</h3>
+<div class="paragraph">
+<p>This section is a custom section and is not used by LinuxCNC directly.
+Most configurations use values from this section to load the motion controller.
+For more information on the motion controller see the <a href="core-components.html#sec:motion">Motion</a> section.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>EMCMOT = motmod</code> - the motion controller name is typically used here.</p>
+</li>
+<li>
+<p><code>BASE_PERIOD = 50000</code> - the <em>Base</em> task period in nanoseconds.</p>
+</li>
+<li>
+<p><code>SERVO_PERIOD = 1000000</code> - This is the "Servo" task period in nanoseconds.</p>
+</li>
+<li>
+<p><code>TRAJ_PERIOD = 100000</code> - This is the <em>Trajectory Planner</em> task period in nanoseconds.</p>
+</li>
+<li>
+<p><code>COMM_TIMEOUT = 1.0</code> - Number of seconds to wait for Motion (the realtime part of the motion controller) to acknowledge receipt of messages from Task (the non-realtime part of the motion controller).</p>
+</li>
+<li>
+<p><code>HOMEMOD =</code> <em>alternate_homing_module</em> [home_parms=value]
+The HOMEMOD variable is optional.  If specified, use a specified (user-built) module instead of the default (homemod).
+Module parameters (home_parms) may be included if supported by the named module.
+The setting may be overridden from the command line using the -m option ($ linuxcnc -h).</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:ini:sec:task">2.6. [TASK] Section</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><code>TASK = milltask</code> -
+Specifies the name of the <em>task</em> executable.
+The <em>task</em> executable does various things, such as</p>
+<div class="ulist">
+<ul>
+<li>
+<p>communicate with the UIs over NML,</p>
+</li>
+<li>
+<p>communicate with the realtime motion planner over non-HAL shared memory, and</p>
+</li>
+<li>
+<p>interpret G-code.
+Currently there is only one task executable that makes sense for 99.9% of users, milltask.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><code>CYCLE_TIME = 0.010</code> -
+The period, in seconds, at which TASK will run.
+This parameter affects the polling interval when waiting for motion to complete, when executing a pause instruction, and when accepting a command from a user interface.
+There is usually no need to change this number.
+Defaults to 0.100 if omitted.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:ini:sec:hal">2.7. [HAL] section</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><code>HALFILE = example.hal</code> - Execute the file <em>example.hal</em> at start up.</p>
+<div class="openblock">
+<div class="content">
+<div class="paragraph">
+<p>If <code>HALFILE</code> is specified multiple times, the files are interpreted in the order they appear in the INI file.
+HAL files are descriptive, the execution of what is described in HAL files is triggered by the threads in which functions are embedded, not by the reading of the HAL file.
+Almost all configurations will have at least one <code>HALFILE</code>, and stepper systems typically have two such files,
+i.e., one which specifies the generic stepper configuration (<em>core_stepper.hal</em>) and one which specifies the machine pin out (<em>xxx_pinout.hal</em>).</p>
+</div>
+<div class="paragraph">
+<p>HAL files specified in the <code>HALFILES</code> variable are found using a search.
+If the named file is found in the directory containing the INI file, it is used.
+If the named file is not found in this INI file directory, a search is made using a system library of HAL files.</p>
+</div>
+<div class="paragraph">
+<p>If LinuxCNC is started with the <code>linuxcnc</code> script using the "<code>-H</code> <em>dirname</em>" option, the specified dirname is prepended to the search described above so that <em>dirname</em> is searched first.
+The "<code>-H</code> <em>dirname</em>" option may be specified more than once, directories are prepended in order.</p>
+</div>
+<div class="paragraph">
+<p>A HALFILE may also be specified as an absolute path (when the name starts with a <em>/</em> character).
+Absolute paths are not recommended as their use may limit relocation of configurations.</p>
+</div>
+</div>
+</div>
+</li>
+<li>
+<p><code>HALFILE = texample.tcl</code> [<em>arg1</em> [<em>arg2</em>] &#8230;&#8203;] - Execute the tcl file <em>texample.tcl</em> at start up with arg1, arg2, etc. as argv list.
+Files with a .tcl suffix are processed as above but use haltcl for processing.
+See the <a href="../hal/haltcl.html#cha:haltcl">HALTCL Chapter</a> for more information.</p>
+</li>
+<li>
+<p><code>HALFILE = LIB:sys_example.hal</code> - Execute the system library file <em>sys_example.hal</em> at start up.
+Explicit use of the LIB: prefix causes use of the system library HALFILE without searching the INI file directory.</p>
+</li>
+<li>
+<p><code>HALFILE = LIB:sys_texample.tcl</code> [<em>arg1</em> [<em>arg2</em> &#8230;&#8203;]] - Execute the system library file <em>sys_texample.tcl</em> at start up.
+Explicit use of the LIB: prefix causes use of the system library HALFILE without searching the INI file directory.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>HALFILE items specify files that loadrt HAL components and make signal connections between component pins.
+Common mistakes are:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>omission of the addf statement needed to add a component&#8217;s function(s) to a thread,</p>
+</li>
+<li>
+<p>incomplete signal (net) specifiers.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Omission of required addf statements is almost always an error.
+Signals usually include one or more input connections and a single output (but both are not strictly required).
+A system library file is provided to make checks for these conditions and report to stdout and in a pop-up GUI:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="py">HALFILE</span> <span class="p">=</span> <span class="s">LIB:halcheck.tcl [nopopup]</span></code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The LIB:halcheck.tcl line should be the last [HAL]HALFILE.
+Specify the <em>nopopup</em> option to suppress the popup message and allow immediate starting.
+Connections made using a POSTGUI_HALFILE are not checked.
+</td>
+</tr>
+</table>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>TWOPASS = ON</code> - Use twopass processing for loading HAL components.
+With TWOPASS processing, lines of files specified in <code>[HAL]HALFILE</code> are processed in two passes.
+In the first pass (pass0), all HALFILES are read and multiple appearances of loadrt and loadusr commands are accumulated.
+These accumulated load commands are executed at the end of pass0.
+This accumulation allows load lines to be specified more than once for a given component (provided the names= names used are unique on each use).
+In the second pass (pass1), the HALFILES are reread and all commands except the previously executed load commands are executed.</p>
+</li>
+<li>
+<p><code>TWOPASS = nodelete verbose</code> - The <code>TWOPASS</code> feature can be activated with any non-null string including the keywords verbose and nodelete.
+The verbose keyword causes printing of details to stdout.
+The nodelete keyword preserves temporary files in /tmp.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For more information see the <a href="../hal/twopass.html#cha:hal-twopass">HAL TWOPASS</a> chapter.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>HALCMD =</code> <em>command</em> - Execute <em>command</em> as a single HAL command.
+If <code>HALCMD</code> is specified multiple times, the commands are executed in the order they appear in the INI file.
+<code>HALCMD</code>-lines are executed after all <code>HALFILE</code>-lines.</p>
+</li>
+<li>
+<p><code>SHUTDOWN = shutdown.hal</code> - Execute the file <em>shutdown.hal</em> when LinuxCNC is exiting.
+Depending on the hardware drivers used, this may make it possible to set outputs to defined values when LinuxCNC is exited normally.
+However, because there is no guarantee this file will be executed (for instance, in the case of a computer crash),
+it is not a replacement for a proper physical e-stop chain or other protections against software failure.</p>
+</li>
+<li>
+<p><code>POSTGUI_HALFILE = example2.hal</code> - Execute <em>example2.hal</em> after the GUI has created its HAL pins.
+Some GUIs create HAL pins and support the use of a postgui halfile to use them.
+GUIs that support postgui HAL files include Touchy, AXIS, Gscreen, and GMOCCAPY.<br>
+See section <a href="../gui/pyvcp.html#sec:pyvcp-with-axis">PyVCP with AXIS</a> for more information.</p>
+</li>
+<li>
+<p><code>HALUI = halui</code> - adds the HAL user interface pins.<br>
+For more information see the <a href="../gui/halui.html#cha:hal-user-interface">HAL User Interface</a> chapter.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:ini:sec:halui">2.8. [HALUI] section</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><code>MDI_COMMAND = G53 G0 X0 Y0 Z0</code> -
+An MDI command can be executed by using <code>halui.mdi-command-00</code>. Increment the number for each command listed in the [HALUI] section.
+It is also possible to start subroutines. <code>MDI_COMMAND = o&lt;yoursub&gt; CALL [#&lt;yourvariable&gt;]</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:ini:sec:applications">2.9. [APPLICATIONS] Section</h3>
+<div class="paragraph">
+<p>LinuxCNC can start other applications before the specified GUI is started.
+The applications can be started after a specified delay to allow for GUI-dependent actions (like creating GUI-specific HAL pins).</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>DELAY =</code> <em>value</em> - seconds to wait before starting other applications.
+A delay may be needed if an application has dependencies on <code>[HAL]POSTGUI_HALFILE</code> actions or GUI-created HAL pins (default <code>DELAY=0</code>).</p>
+</li>
+<li>
+<p><code>APP =</code> <em>appname</em> [arg1 [arg2 &#8230;&#8203;]]' - Application to be started.
+This specification can be included multiple times.
+The appname can be explicitly named as an absolute or tilde specified filename (first character is / or ~),
+a relative filename (first characters of filename are ./), or as a file in the INI file directory.
+If no executable file is found using these names, then the user search PATH is used to find the application.<br>
+Examples:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Simulate inputs to HAL pins for testing (using sim_pin&#8201;&#8212;&#8201;a simple GUI to set inputs to parameters, unconnected pins, or signals with no writers):</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="py">APP</span> <span class="p">=</span> <span class="s">sim_pin motion.probe-input halui.abort motion.analog-in-00</span></code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Invoke halshow with a previuosly saved watchlist.
+Since LinuxCNC sets the working directory to the directory for the INI file, you can refer to files in that directory (example: my.halshow):</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="py">APP</span> <span class="p">=</span> <span class="s">halshow my.halshow</span></code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Alternatively, a watchlist file identified with a full pathname could be specified:</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="py">APP</span> <span class="p">=</span> <span class="s">halshow ~/saved_shows/spindle.halshow</span></code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Open halscope using a previously saved configuration:</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="py">APP</span> <span class="p">=</span> <span class="s">halscope -i my.halscope</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:ini:sec:traj">2.10. [TRAJ] Section</h3>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The new Trajectory Planner (TP) is on by default.
+If you have no TP settings in your [TRAJ] section - LinuxCNC defaults to:<br>
+ARC_BLEND_ENABLE = 1<br>
+ARC_BLEND_FALLBACK_ENABLE = 0<br>
+ARC_BLEND_OPTIMIZATION_DEPTH = 50<br>
+ARC_BLEND_GAP_CYCLES = 4<br>
+ARC_BLEND_RAMP_FREQ = 100</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The [TRAJ] section contains general parameters for the trajectory planning module in <em>motion</em>.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>ARC_BLEND_ENABLE = 1</code> - (bool) Turn on new TP.
+If set to 0 TP uses parabolic blending (1 segment look ahead) (Default: 1).</p>
+</li>
+<li>
+<p><code>ARC_BLEND_FALLBACK_ENABLE = 0</code> - (bool) Optionally fall back to parabolic blends if the estimated speed is faster.
+However, this estimate is rough, and it seems that just disabling it gives better performance (Default: 0).</p>
+</li>
+<li>
+<p><code>ARC_BLEND_OPTIMIZATION_DEPTH = 50</code> - Look ahead depth in number of segments.</p>
+<div class="paragraph">
+<p>To expand on this a bit, you can choose this value somewhat arbitrarily.
+Here&#8217;s a formula to estimate how much <em>depth</em> you need for a particular config:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre># n = v_max / (2.0 * a_max * t_c)
+# where:
+# n = optimization depth
+# v_max = max axis velocity (UU / sec)
+# a_max = max axis acceleration (UU / sec)
+# t_c = servo period (seconds)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>So, a machine with a maximum axis velocity of 10 IPS, a max acceleration of 100 IPS<sup>2</sup>, and a servo period of 0.001 s would need:</p>
+</div>
+<div class="paragraph">
+<p>10 / (2.0 * 100 * 0.001) = 50 segments to always reach maximum velocity along the fastest axis.</p>
+</div>
+<div class="paragraph">
+<p>In practice, this number isn&#8217;t that important to tune, since the look ahead rarely needs the full depth unless you have lots of very short segments.
+If during testing, you notice strange slowdowns and can&#8217;t figure out where they come from, first try increasing this depth using the formula above.</p>
+</div>
+<div class="paragraph">
+<p>If you still see strange slowdowns, it may be because you have short segments in the program.
+If this is the case, try adding a small tolerance for Naive CAM detection.
+A good rule of thumb is this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre># min_length ~= v_req * t_c
+# where:
+# v_req = desired velocity in UU / sec
+# t_c = servo period (seconds)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you want to travel along a path at 1 IPS = 60 IPM, and your servo period is 0.001 s, then any segments shorter than min_length will slow the path down.
+If you set Naive CAM tolerance to around this min length, overly short segments will be combined together to eliminate this bottleneck.
+Of course, setting the tolerance too high means big path deviations, so you have to play with it a bit to find a good value.
+I&#8217;d start at 1/2 of the min_length, then work up as needed.</p>
+</div>
+</li>
+<li>
+<p><code>ARC_BLEND_GAP_CYCLES = 4</code> How short the previous segment must be before the trajectory planner <em>consumes</em> it.</p>
+<div class="paragraph">
+<p>Often, a circular arc blend will leave short line segments in between the blends.
+Since the geometry has to be circular, we can&#8217;t blend over all of a line if the next one is a little shorter.
+Since the trajectory planner has to touch each segment at least once, it means that very tiny segments will slow things down significantly.
+My fix to this way to "consume" the short segment by making it a part of the blend arc.
+Since the line+blend is one segment, we don&#8217;t have to slow down to hit the very short segment.
+Likely, you won&#8217;t need to touch this setting.</p>
+</div>
+</li>
+<li>
+<p><code>ARC_BLEND_RAMP_FREQ = 20</code> - This is a <em>cutoff</em> frequency for using ramped velocity.</p>
+<div class="paragraph">
+<p><em>Ramped velocity</em> in this case just means constant acceleration over the whole segment.
+This is less optimal than a trapezoidal velocity profile, since the acceleration is not maximized.
+However, if the segment is short enough, there isn&#8217;t enough time to accelerate much before we hit the next segment.
+Recall the short line segments from the previous example.
+Since they&#8217;re lines, there&#8217;s no cornering acceleration, so we&#8217;re free to accelerate up to the requested speed.
+However, if this line is between two arcs, then it will have to quickly decelerate again to be within the maximum speed of the next segment.
+This means that we have a spike of acceleration, then a spike of deceleration, causing a large jerk, for very little performance gain.
+This setting is a way to eliminate this jerk for short segments.</p>
+</div>
+<div class="paragraph">
+<p>Basically, if a segment will complete in less time than 1 / ARC_BLEND_RAMP_FREQ, we don&#8217;t bother with a trapezoidal velocity profile on that segment, and use constant acceleration.
+(Setting <code>ARC_BLEND_RAMP_FREQ = 1000</code> is equivalent to always using trapezoidal acceleration, if the servo loop is 1 kHz).</p>
+</div>
+<div class="paragraph">
+<p>You can characterize the worst-case loss of performance by comparing the velocity that a trapezoidal profile reaches vs. the ramp:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre># v_ripple = a_max / (4.0 * f)
+# where:
+# v_ripple = average velocity "loss" due to ramping
+# a_max = max axis acceleration
+# f = cutoff frequency from INI</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For the aforementioned machine, the ripple for a 20 Hz cutoff frequency is 100 / (4 * 20) = 1.25 IPS.
+This seems high, but keep in mind that it is only a worst-case estimate.
+In reality, the trapezoidal motion profile is limited by other factors, such as normal acceleration or requested velocity, and so the actual performance loss should be much smaller.
+Increasing the cutoff frequency can squeeze out more performance, but make the motion rougher due to acceleration discontinuities.
+A value in the range 20 Hz to 200 Hz should be reasonable to start.</p>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Finally, no amount of tweaking will speed up a tool path with lots of small, tight corners, since you&#8217;re limited by cornering acceleration.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>SPINDLES = 3</code> - The number of spindles to support. It is imperative that this number matches the "num_spindles" parameter passed to the motion module.</p>
+</li>
+<li>
+<p><code>COORDINATES = X Y Z</code> - The names of the axes being controlled.  Only X, Y, Z, A, B, C, U, V, W are valid.
+Only axes named in <code>COORDINATES</code> are accepted in G-code.
+It is permitted to write an axis name more than once (e.g., X Y Y Z for a gantry machine).
+For the common <em>trivkins kinematics</em>, joint numbers are assigned in sequence according to the trivkins parameter <em>coordinates=</em>.
+So, for trivkins <em>coordinates=xz</em>, joint0 corresponds to X and joint1 corresponds to Z.
+See the kinematics man page (<em>$ man kins</em>) for information on trivkins and other kinematics modules.</p>
+</li>
+<li>
+<p><code>LINEAR_UNITS =</code> &lt;units&gt;_ -  Specifies the <em>machine units</em> for linear axes.
+Possible choices are mm or inch.
+This does not affect the linear units in NC code (the G20 and G21 words do this).</p>
+</li>
+<li>
+<p><code>ANGULAR_UNITS =</code> <em>&lt;units&gt;</em> -  Specifies the <em>machine units</em> for rotational axes.
+Possible choices are <em>deg</em>, <em>degree</em> (360 per circle), <em>rad</em>, <em>radian</em> (2*π per circle), <em>grad</em>, or <em>gon</em> (400 per circle).
+This does not affect the angular units of NC code. In RS274NGC, A-, B- and C- words are always expressed in degrees.</p>
+</li>
+<li>
+<p><code>DEFAULT_LINEAR_VELOCITY = 0.0167</code> - The initial rate for jogs of linear axes, in machine units per second.
+The value shown in <em>AXIS</em> equals machine units per minute.</p>
+</li>
+<li>
+<p><code>DEFAULT_LINEAR_ACCELERATION = 2.0</code> - In machines with nontrivial kinematics, the acceleration used for "teleop" (Cartesian space) jogs, in <em>machine units</em> per second per second.</p>
+</li>
+<li>
+<p><code>MAX_LINEAR_VELOCITY = 5.0</code> -  The maximum velocity for any axis or coordinated move, in <em>machine units</em> per second.
+The value shown equals 300 units per minute.</p>
+</li>
+<li>
+<p><code>MAX_LINEAR_ACCELERATION = 20.0</code> -  The maximum acceleration for any axis or coordinated axis move, in <em>machine units</em> per second per second.</p>
+</li>
+<li>
+<p><code>PLANNER_TYPE = 0</code> -  Selects the trajectory planner type: 0 = trapezoidal (default), 1 = S-curve with jerk limiting.
+S-curve planning is only active when <code>PLANNER_TYPE = 1</code> AND <code>MAX_LINEAR_JERK &gt; 0</code>.</p>
+</li>
+<li>
+<p><code>MAX_LINEAR_JERK = 10000.0</code> -  The maximum jerk (rate of change of acceleration) for coordinated moves, in <em>machine units</em> per second cubed.
+Default is 1e9 (1 billion) if not specified, which effectively disables jerk limiting while avoiding numerical instability.
+Values are clamped to a maximum of 1e9 to prevent numerical issues in S-curve calculations.
+When <code>PLANNER_TYPE = 1</code>, this enables S-curve trajectory planning.
+Note: Not specifying MAX_LINEAR_JERK (defaulting to 1e9) produces motion similar to trapezoidal planning (PLANNER_TYPE = 0) but not identical, as extremely high jerk still uses S-curve calculations.</p>
+</li>
+<li>
+<p><code>POSITION_FILE =</code> <em>position.txt</em> - If set to a non-empty value, the joint positions are stored between runs in this file.
+This allows the machine to start with the same coordinates it had on shutdown.
+This assumes there was no movement of the machine while powered off.
+If unset, joint positions are not stored and will begin at 0 each time LinuxCNC is started.
+This can help on smaller machines without home switches.
+If using the Mesa resolver interface this file can be used to emulate absolute encoders and eliminate the need for homing (with no loss of accuracy).
+See the hostmot2 manpage for more details.</p>
+</li>
+<li>
+<p><code>NO_FORCE_HOMING = 1</code> - (bool) The default behavior is for LinuxCNC to force the user to home the machine before any MDI command or a program is run.
+Normally, only jogging is allowed before homing.
+For configurations using identity kinematics, setting <code>NO_FORCE_HOMING = 1</code> allows the user to make MDI moves and run programs without homing the machine first.
+Interfaces using identity kinematics without homing ability will need to have this option set to 1.</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>LinuxCNC will not know your joint travel limits when using <code>NO_FORCE_HOMING = 1</code>.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>HOME = 0 0 0 0 0 0 0 0 0</code> - World home position needed for kinematics modules that compute world coordinates using kinematicsForward() when switching from joint to teleop mode.
+Up to nine coordinate values (X Y Z A B C U V W) may be specified, unused trailing items may be omitted.
+This value is only used for machines with nontrivial kinematics.
+On machines with trivial kinematics (mill, lathe, gantry types) this value is ignored.
+Note: The sim hexapod config requires a non-zero value for the Z coordinate.</p>
+</li>
+<li>
+<p><code>TPMOD =</code> <em>alternate_trajectory_planning module</em> [tp_parms=value]<br>
+The <code>TPMOD</code> variable is optional.  If specified, use a specified (user-built) module instead of the default (tpmod).
+Module parameters (tp_parms) may be included if supported by the named module.
+The setting may be overridden from the command line using the -t option ($ linuxcnc -h).</p>
+</li>
+<li>
+<p><code>NO_PROBE_JOG_ERROR = 0</code> - Allow to bypass probe tripped check when you jog manually.</p>
+</li>
+<li>
+<p><code>NO_PROBE_HOME_ERROR = 0</code> - Allow to bypass probe tripped check when homing is in progress.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:ini:sec:kins">2.11. [KINS] Section</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><code>JOINTS = 3</code> - Specifies the number of joints (motors) in the system.
+For example, a trivkins XYZ machine with a single motor for each axis has 3 joints.
+A gantry machine with one motor on each of two of the axes, and two motors on the third axis, has 4 joints.
+(This config variable may be used by a GUI to set the number of joints (num_joints) specified to the motion module (motmod).)</p>
+</li>
+<li>
+<p><code>KINEMATICS = trivkins</code> - Specify a kinematics module for the motion module.
+GUIs may use this variable to specify the <code>loadrt</code>-line in HAL files for the motmod module.
+For more information on kinematics modules see the manpage: <code>$ man kins</code>.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:ini:sec:axis-letter">2.12. [AXIS_&lt;letter&gt;] Section</h3>
+<div class="paragraph">
+<p>The <em>&lt;letter&gt;</em> specifies one of: X Y Z A B C U V W</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>TYPE = LINEAR</code> - (enum) The type of this axis, either <code>LINEAR</code> or <code>ANGULAR</code>.
+Required if this axis is not a default axis type.
+The default axis types are X,Y,Z,U,V,W = LINEAR and A,B,C = ANGULAR.
+This setting is effective with the AXIS GUI but note that other
+GUI&#8217;s may handle things differently.</p>
+</li>
+<li>
+<p><code>MAX_VELOCITY = 1.2</code> - (real) Maximum velocity for this axis in <a href="ini-config.html#sub:ini:sec:traj">machine units</a> per second.</p>
+</li>
+<li>
+<p><code>MAX_ACCELERATION = 20.0</code> - (real) Maximum acceleration for this axis in machine units per second squared.</p>
+</li>
+<li>
+<p><code>MAX_JERK = 0.0</code> - (real) Maximum jerk for this axis in machine units per second cubed.
+Used when S-curve trajectory planning is enabled.
+When set to 0 (default), no per-axis jerk limiting is applied.</p>
+</li>
+<li>
+<p><code>MIN_LIMIT = -1000</code> - (real)  The minimum limit (soft limit) for axis motion, in machine units.
+When this limit is exceeded, the controller aborts axis motion.
+The axis must be homed before <code>MIN_LIMIT</code> is in force.
+For a rotary axis (A,B,C typ)  with unlimited rotation having no <code>MIN_LIMIT</code> for that axis in the <code>[AXIS_</code>&lt;letter&gt;<code>]</code> section a value of -1e99 is used.</p>
+</li>
+<li>
+<p><code>MAX_LIMIT = 1000</code> - (real)  The maximum limit (soft limit) for axis motion, in machine units.
+When this limit is exceeded, the controller aborts axis motion.
+The axis must be homed before MAX_LIMIT is in force.
+For a rotary axis (A,B,C typ) with unlimited rotation having no <code>MAX_LIMIT</code> for that axis in the <code>[AXIS_</code>&lt;letter&gt;<code>]</code> section a value of 1e99 is used.</p>
+</li>
+<li>
+<p><code>WRAPPED_ROTARY = 1</code> - (bool) When this is set to 1 for an ANGULAR axis the axis will move 0-359.999 degrees.
+Positive Numbers will move the axis in a positive direction and negative numbers will move the axis in the negative direction.</p>
+</li>
+<li>
+<p><code>LOCKING_INDEXER_JOINT = 4</code> - (int) This value selects a joint to use for a locking indexer for the specified axis <em>&lt;letter&gt;</em>.
+In this example, the joint is 4 which would correspond to the B axis for a XYZAB system with trivkins (identity) kinematics.
+When set, a G0 move for this axis will initiate an unlock with the <code>joint.4.unlock pin</code> then wait for the <code>joint.4.is-unlocked</code> pin then move the joint at the rapid rate for that joint.
+After the move the <code>joint.4.unlock</code> will be false and motion will wait for <code>joint.4.is-unlocked</code> to go false.
+Moving with other joints is not allowed when moving a locked rotary joint.
+To create the unlock pins, use the motmod parameter:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="py">unlock_joints_mask</span><span class="p">=</span><span class="s">jointmask</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The jointmask bits are: (LSB)0:joint0, 1:joint1, 2:joint2, &#8230;&#8203;</p>
+</div>
+<div class="paragraph">
+<p>Example: <code>loadrt motmod ... unlock_joints_mask=0x38</code> creates unlock-pins for joints 3,4,5.</p>
+</div>
+</li>
+<li>
+<p><code>OFFSET_AV_RATIO = 0.1</code> - (real) If nonzero, this item enables the use of HAL input pins for external axis offsets:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="n">axis</span>.&lt;<span class="n">letter</span>&gt;.<span class="n">eoffset-enable</span>
+<span class="n">axis</span>.&lt;<span class="n">letter</span>&gt;.<span class="n">eoffset-count</span>
+<span class="n">axis</span>.&lt;<span class="n">letter</span>&gt;.<span class="n">eoffset-scale</span></code></pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>See the chapter: <a href="../motion/external-offsets.html#cha:external-offsets"><em>External Axis Offsets</em></a> for usage information.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:ini:sec:joint-num">2.13. [JOINT_&lt;num&gt;] Sections</h3>
+<div class="paragraph">
+<p>The <em>&lt;num&gt;</em> specifies the joint number 0 &#8230;&#8203; (num_joints-1)
+The value of <em>num_joints</em> is set by <code>[KINS]JOINTS=</code>.</p>
+</div>
+<div class="paragraph">
+<p>The <code>[JOINT_0]</code>, <code>[JOINT_1]</code>, etc. sections contains general parameters for the individual components in the joint control module.
+The joint section names begin numbering at 0, and run through the number of joints specified in the <code>[KINS]JOINTS</code> entry minus 1.</p>
+</div>
+<div class="paragraph">
+<p>Typically (for systems using <em>trivkins kinematics</em>, there is a 1:1 correspondence between a joint and an axis coordinate letter):</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>JOINT_0 = X</p>
+</li>
+<li>
+<p>JOINT_1 = Y</p>
+</li>
+<li>
+<p>JOINT_2 = Z</p>
+</li>
+<li>
+<p>JOINT_3 = A</p>
+</li>
+<li>
+<p>JOINT_4 = B</p>
+</li>
+<li>
+<p>JOINT_5 = C</p>
+</li>
+<li>
+<p>JOINT_6 = U</p>
+</li>
+<li>
+<p>JOINT_7 = V</p>
+</li>
+<li>
+<p>JOINT_8 = W</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Other kinematics modules with identity kinematics are available to support configurations with partial sets of axes.
+For example, using trivkins with <code>coordinates=XZ</code>, the joint-axes relationships are:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>JOINT_0 = X</p>
+</li>
+<li>
+<p>JOINT_1 = Z</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For more information on kinematics modules see the manpage <em>kins</em> (on the UNIX terminal type <code>man kins</code>).</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>TYPE = LINEAR</code> - (enum) The type of joint, either <code>LINEAR</code> or <code>ANGULAR</code>.</p>
+</li>
+<li>
+<p><code>UNITS = INCH</code> - (enum) 
+If specified, this setting overrides the related <code>[TRAJ] UNITS</code> setting,
+e.g., <code>[TRAJ]LINEAR_UNITS</code> if the <code>TYPE</code> of this joint is <code>LINEAR</code>, <code>[TRAJ]ANGULAR_UNITS</code> if the <code>TYPE</code> of this joint is <code>ANGULAR</code>.</p>
+</li>
+<li>
+<p><code>MAX_VELOCITY = 1.2</code> - (real) Maximum velocity for this joint in <a href="ini-config.html#sub:ini:sec:traj">machine units</a> per second.</p>
+</li>
+<li>
+<p><code>MAX_ACCELERATION = 20.0</code> - (real) Maximum acceleration for this joint in machine units per second squared.</p>
+</li>
+<li>
+<p><code>MAX_JERK = 0.0</code> - (real) Maximum jerk for this joint in machine units per second cubed.
+Used when S-curve trajectory planning is enabled.
+When set to 0 (default), no per-joint jerk limiting is applied.</p>
+</li>
+<li>
+<p><code>BACKLASH = 0.0000</code> - (real)  Backlash in machine units.
+Backlash compensation value can be used to make up for small deficiencies in the hardware used to drive an joint.
+If backlash is added to an joint and you are using steppers the <code>STEPGEN_MAXACCEL</code> must be increased to 1.5 to 2 times the <code>MAX_ACCELERATION</code> for the joint.
+Excessive backlash compensation can cause an joint to jerk as it changes direction.
+If a COMP_FILE is specified for a joint BACKLASH is not used.</p>
+</li>
+<li>
+<p><code>COMP_FILE =</code>  <em>file.extension</em> - (string) 
+The compensation file consists of map of position information for the joint.
+Compensation file values are in machine units.
+Each set of values are are on one line separated by a space.
+The first value is the nominal value (the commanded position).
+The second and third values depend on the setting of <code>COMP_FILE_TYPE</code>.
+Points in between nominal values are interpolated between the two nominals.
+Compensation files must start with the smallest nominal and be in ascending order to the largest value of nominals.
+File names are case sensitive and can contain letters and/or numbers.
+Currently the limit inside LinuxCNC is for 256 triplets per joint.</p>
+<div class="paragraph">
+<p>If <code>COMP_FILE</code> is specified for a joint, <code>BACKLASH</code> is not used.</p>
+</div>
+</li>
+<li>
+<p><code>COMP_FILE_TYPE = 0</code> or <code>1</code> - (int) Specifies the type of compensation file.
+The first value is the nominal (commanded) position for both types.<br>
+A <code>COMP_FILE_TYPE</code> must be specified for each <code>COMP_FILE</code>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><em>Type 0:</em> The second value specifies the actual position as the joint is moving in the positive direction (increasing value).
+The third value specifies the actual position as the joint is moving in the negative direction (decreasing value).</p>
+<div class="listingblock">
+<div class="title">Type 0 Example</div>
+<div class="content">
+<pre>-1.000 -1.005 -0.995
+0.000 0.002 -0.003
+1.000 1.003 0.998</pre>
+</div>
+</div>
+</li>
+<li>
+<p><em>Type 1:</em> The second value specifies positive offset from nominal while traveling in the positive direction.
+The third value specifies the negative offset from nominal while traveling in a negative direction.</p>
+<div class="listingblock">
+<div class="title">Type 1 Example</div>
+<div class="content">
+<pre>-1.000 0.005 -0.005
+0.000 0.002 -0.003
+1.000 0.003 -0.004</pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><code>MIN_LIMIT = -1000</code> - (real) 
+The minimum limit for joint motion, in machine units.
+When this limit is reached, the controller aborts joint motion.
+For a rotary joint with unlimited rotation having no <code>MIN_LIMIT</code> for that joint in the <code>[JOINT_N]</code> section a the value -1e99 is used.</p>
+</li>
+<li>
+<p><code>MAX_LIMIT = 1000</code> - (real) 
+The maximum limit for joint motion, in machine units.
+When this limit is reached, the controller aborts joint motion.
+For a rotary joint with unlimited rotation having no <code>MAX_LIMIT</code> for that joint in the <code>[JOINT_N]</code> section a the value 1e99 is used.</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>For <strong>identity</strong> kinematics, the <code>[JOINT_N]MIN_LIMIT</code>/<code>MAX_LIMIT</code> settings must equal or exceed the corresponding (one-to-one identity) <code>[AXIS_L]</code> limits.
+These settings are verified at startup when the trivkins kinematics modules is specified.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The <code>[JOINT_N]MIN_LIMIT</code>/<code>MAX_LIMIT</code> settings are enforced while jogging in joint mode prior to homing.
+After homing, <code>[AXIS_L]MIN_LIMIT</code>/<code>MAX_LIMIT</code> coordinate limits are used as constraints for axis (coordinate letter) jogging
+and by the trajectory planning used for G-code moves (programs and MDI commands).
+The trajectory planner works in Cartesian space (XYZABCUVW) and has no information about the motion of joints implemented by <strong>any</strong> kinematics module.
+It is possible for joint limit violations to occur for G-code that obeys trajectory planning position limits when non identity kinematics are used.
+The motion module always detects joint position limit violations and faults if they occur during the execution of G-code commands.
+See also related <a href="https://github.com/LinuxCNC/linuxcnc/issues/97">GitHub issue #97</a>.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>MIN_FERROR = 0.010</code> - (real) 
+This is the value in machine units by which the joint is permitted to deviate from commanded position at very low speeds.
+If MIN_FERROR is smaller than FERROR, the two produce a ramp of error trip points.
+You could think of this as a graph where one dimension is speed and the other is permitted following error.
+As speed increases the amount of following error also increases toward the <code>FERROR</code> value.</p>
+</li>
+<li>
+<p><code>FERROR = 1.0</code> - (real)  <code>FERROR</code> is the maximum allowable following error, in machine units.
+If the difference between commanded and sensed position exceeds this amount, the controller disables servo calculations,
+sets all the outputs to 0.0, and disables the amplifiers. If <code>MIN_FERROR</code> is present in the INI file, velocity-proportional following errors are used.
+Here, the maximum allowable following error is proportional to the speed,
+with <code>FERROR</code> applying to the rapid rate set by <code>[TRAJ]MAX_VELOCITY</code>, and proportionally smaller following errors for slower speeds.
+The maximum allowable following error will always be greater than <code>MIN_FERROR</code>.
+This prevents small following errors for stationary axes from inadvertently aborting motion.
+Small following errors will always be present due to vibration, etc.</p>
+</li>
+<li>
+<p><code>LOCKING_INDEXER = 1</code> - (bool) Indicates the joint is used as a locking indexer.</p>
+</li>
+</ul>
+</div>
+<div class="sect3">
+<h4 id="_homing">2.13.1. Homing</h4>
+<div class="paragraph">
+<p>These parameters are Homing related, for a better explanation read the <a href="ini-homing.html#cha:homing-configuration">Homing Configuration</a> Chapter.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>HOME = 0.0</code> - (real) The position that the joint will go to upon completion of the homing sequence.</p>
+</li>
+<li>
+<p><code>HOME_OFFSET = 0.0</code> - (real)
+The joint position of the home switch or index pulse, in <a href="ini-config.html#sub:ini:sec:traj">machine units</a>.
+When the home point is found during the homing process, this is the position that is assigned to that point.
+When sharing home and limit switches and using a home sequence that will leave the home/limit switch in the toggled state,
+the home offset can be used define the home switch position to be other than 0 if your HOME position is desired to be 0.</p>
+</li>
+<li>
+<p><code>HOME_SEARCH_VEL = 0.0</code> - (real)  Initial homing velocity in machine units per second.
+Sign denotes direction of travel.
+A value of zero means assume that the current location is the home position for the machine.
+If your machine has no home switches you will want to leave this value at zero.</p>
+</li>
+<li>
+<p><code>HOME_LATCH_VEL = 0.0</code> - (real)
+Homing velocity in machine units per second to the home switch latch position.
+Sign denotes direction of travel.</p>
+</li>
+<li>
+<p><code>HOME_FINAL_VEL = 0.0</code> - (real)
+Velocity in machine units per second from home latch position to home position.
+If left at 0 or not included in the joint rapid velocity is used.
+Must be a positive number.</p>
+</li>
+<li>
+<p><code>HOME_USE_INDEX = NO</code> - (bool)
+If the encoder used for this joint has an index pulse, and the motion card has provision for this signal you may set it to yes.
+When it is yes, it will affect the kind of home pattern used.
+Currently, you can&#8217;t home to index with steppers unless you&#8217;re using StepGen in velocity mode and PID.</p>
+</li>
+<li>
+<p><code>HOME_INDEX_NO_ENCODER_RESET = NO</code> - (bool)
+Use YES if the encoder used for this joint does not reset its counter when an index pulse is detected after assertion of the joint <code>index_enable</code> HAL pin.
+Applicable only for <code>HOME_USE_INDEX = YES</code>.</p>
+</li>
+<li>
+<p><code>HOME_IGNORE_LIMITS = NO</code> - (bool)
+When you use the limit switch as a home switch and the limit switch this should be set to YES.
+When set to YES the limit switch for this joint is ignored when homing.
+You must configure your homing so that at the end of your home move the home/limit switch is not in the toggled state you will get a limit switch error after the home move.</p>
+</li>
+<li>
+<p><code>HOME_IS_SHARED = NO</code>  - (bool)
+If the home input is shared by more than one joint set to true to prevent homing from starting if the one of the shared switches is already closed.
+Set to false (the default) to permit homing if a switch is closed.</p>
+</li>
+<li>
+<p><code>HOME_ABSOLUTE_ENCODER = 0</code> | <code>1</code> | <code>2</code> - (int) Used to indicate the joint uses an absolute encoder.
+At a request for homing, the current joint value is set to the <code>HOME_OFFSET</code> value.
+If the <code>HOME_ABSOLUTE_ENCODER</code> setting is 1, the machine makes the usual final move to the <code>HOME</code> value.
+If the <code>HOME_ABSOLUTE_ENCODER</code> setting is 2, no final move is made.</p>
+</li>
+<li>
+<p><code>HOME_SEQUENCE =</code> <em>&lt;n&gt;</em> - (int) Used to define the "Home All" sequence.
+<em>&lt;n&gt;</em> must start at <code>0</code> or <code>1</code> or <code>-1</code>.
+Additional sequences may be specified with numbers increasing by 1 (in absolute value).
+Skipping of sequence numbers is not allowed.
+If a <code>HOME_SEQUENCE</code> is omitted, the joint will not be homed by the "Home All" function.
+More than one joint can be homed at the same time by specifying the same sequence number for more than one joint.
+A negative sequence number is used to defer the final move for all joints having that (negative or positive) sequence number.
+For additional info, see: <a href="ini-homing.html#sec:homing-section">HOME SEQUENCE</a>.</p>
+</li>
+<li>
+<p><code>VOLATILE_HOME = 0</code> - (bool)
+When enabled (set to <code>1</code>) this joint will be unhomed if the Machine Power is off or if E-Stop is on.
+This is useful if your machine has home switches and does not have position feedback such as a step and direction driven machine.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_servos">2.13.2. Servos</h4>
+<div class="paragraph">
+<p>These parameters are relevant to joints controlled by servos.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">
+The following are custom INI file entries that you may find in a sample INI file or a wizard generated file.
+These are not used by the LinuxCNC software.
+They are only there to put all the settings in one place.
+For more information on custom INI file entries see the <a href="ini-config.html#sub:ini:custom">Custom Sections and Variables</a> subsection.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The following items might be used by a PID component and the assumption is that the output is volts.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>DEADBAND = 0.000015</code> - (real) How close is close enough to consider the motor in position, in <a href="ini-config.html#sub:ini:sec:traj">machine units</a>.</p>
+<div class="openblock">
+<div class="content">
+<div class="paragraph">
+<p>This is often set to a distance equivalent to 1, 1.5, 2, or 3 encoder counts, but there are no strict rules.
+Looser (larger) settings allow less servo <em>hunting</em> at the expense of lower accuracy.
+Tighter (smaller) settings attempt higher accuracy at the expense of more servo <em>hunting</em>.
+Is it really more accurate if it&#8217;s also more uncertain?
+As a general rule, it&#8217;s good to avoid, or at least limit, servo <em>hunting</em> if you can.</p>
+</div>
+<div class="paragraph">
+<p>Be careful about going below 1 encoder count, since you may create a condition where there is no place that your servo is happy.
+This can go beyond <em>hunting</em> (slow) to <em>nervous</em> (rapid), and even to <em>squealing</em> which is easy to confuse with oscillation caused by improper tuning.
+Better to be a count or two loose here at first, until you&#8217;ve been through <em>gross tuning</em> at least.</p>
+</div>
+<div class="paragraph">
+<p>Example of calculating machine units per encoder pulse to use in deciding <code>DEADBAND</code> value:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/encoder-counts-math.png" alt="encoder counts math">
+</div>
+</div>
+</div>
+</div>
+</li>
+<li>
+<p><code>BIAS = 0.000</code> - This is used by hm2-servo and some others.
+Bias is a constant amount that is added to the output.
+In most cases it should be left at zero.
+However, it can sometimes be useful to compensate for offsets in servo
+amplifiers, or to balance the weight of an object that moves vertically.
+Bias is turned off when the PID loop is disabled, just like all other components of the output.</p>
+</li>
+<li>
+<p><code>P = 50</code> - The proportional gain for the joint servo.
+This value multiplies the error between commanded and actual position in machine units, resulting in a contribution to the computed voltage for the motor amplifier.
+The units on the P gain are volts per machine unit, e.g., <span class="image"><img src="images/p-term.png" alt="p term" height="25"></span></p>
+</li>
+<li>
+<p><code>I = 0</code> - The integral gain for the joint servo.
+The value multiplies the cumulative error between commanded and actual position in machine units, resulting in a contribution to the computed voltage for the motor amplifier.
+The units on the I gain are volts per machine unit second, e.g., <span class="image"><img src="images/i-term.png" alt="i term" height="25"></span></p>
+</li>
+<li>
+<p><code>D = 0</code> - The derivative gain for the joint servo.
+The value multiplies the difference between the current and previous errors, resulting in a contribution to the computed voltage for the motor amplifier.
+The units on the D gain are volts per machine unit per second, e.g., <span class="image"><img src="images/i-term.png" alt="i term" height="25"></span></p>
+</li>
+<li>
+<p><code>FF0 = 0</code> - The 0<sup>th</sup> order feed forward gain.
+This number is multiplied by the commanded position, resulting in a contribution to the computed voltage for the motor amplifier.
+The units on the FF0 gain are volts per machine unit, e.g., <span class="image"><img src="images/p-term.png" alt="p term" height="25"></span></p>
+</li>
+<li>
+<p><code>FF1 = 0</code> - The 1<sup>st</sup> order feed forward gain.
+This number is multiplied by the change in commanded position per second, resulting in a contribution to the computed voltage for the motor amplifier.
+The units on the FF1 gain are volts per machine unit per second, e.g., <span class="image"><img src="images/i-term.png" alt="i term" height="25"></span></p>
+</li>
+<li>
+<p><code>FF2 = 0</code> - The 2<sup>nd</sup> order feed forward gain.
+This number is multiplied by the change in commanded position per second per second, resulting in a contribution to the computed voltage for the motor amplifier.
+The units on the FF2 gain are volts per machine unit per second per second, e.g., <span class="image"><img src="images/ff2.png" alt="ff2" height="25"></span></p>
+</li>
+<li>
+<p><code>OUTPUT_SCALE = 1.000</code></p>
+</li>
+<li>
+<p><code>OUTPUT_OFFSET = 0.000</code></p>
+<div class="openblock">
+<div class="content">
+<div class="paragraph">
+<p>These two values are the scale and offset factors for the joint output to the motor amplifiers.</p>
+</div>
+<div class="paragraph">
+<p>The second value (offset) is subtracted from the computed output (in volts), and divided by the first value (scale factor), before being written to the D/A converters.
+The units on the scale value are in true volts per DAC output volts.
+The units on the offset value are in volts.
+These can be used to linearize a DAC.
+Specifically, when writing outputs, the LinuxCNC first converts the desired output in quasi-SI units to raw actuator values, e.g., Volts for an amplifier DAC.
+This scaling looks like: <span class="image"><img src="images/output-offset.png" alt="output offset"></span></p>
+</div>
+<div class="paragraph">
+<p>The value for scale can be obtained analytically by doing a unit analysis, i.e., units are [output SI units]/[actuator units].
+For example, on a machine with a velocity mode amplifier such that 1 V results in 250 mm/s velocity.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/scale-math.png" alt="scale math">
+</div>
+</div>
+<div class="paragraph">
+<p>Note that the units of the offset are in machine units, e.g. mm/s, and they are pre-subtracted from the sensor readings.
+The value for this offset is obtained by finding the value of your output which yields 0.0 for the actuator output.
+If the DAC is linearized, this offset is normally 0.0.</p>
+</div>
+<div class="paragraph">
+<p>The scale and offset can be used to linearize the DAC as well, resulting in values that reflect the combined effects of amplifier gain, DAC non-linearity, DAC units, etc.</p>
+</div>
+<div class="paragraph">
+<p>To do this, follow this procedure.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Build a calibration table for the output, driving the DAC with a desired voltage and measuring the result.</p>
+</li>
+<li>
+<p>Do a least-squares linear fit to get coefficients a, b such that <span class="image"><img src="images/calibration-1.png" alt="calibration 1"></span></p>
+</li>
+<li>
+<p>Note that we want raw output such that our measured result is identical to the commanded output. This means</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p><span class="image"><img src="images/calibration-2.png" alt="calibration 2"></span></p>
+</li>
+<li>
+<p><span class="image"><img src="images/calibration-3.png" alt="calibration 3"></span></p>
+</li>
+</ol>
+</div>
+</li>
+<li>
+<p>As a result, the a and b coefficients from the linear fit can be used as the scale and offset for the controller directly.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>See the following table for an example of voltage measurements.</p>
+</div>
+<table class="tableblock frame-all grid-all" style="width: 50%;">
+<caption class="title">Table 1. Output Voltage Measurements</caption>
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-center valign-top">Raw</th>
+<th class="tableblock halign-center valign-top">Measured</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">-10</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">-9.93</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">-9</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">-8.83</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">-0.03</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">0.96</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">9</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">9.87</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">10</p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">10.87</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</li>
+<li>
+<p><code>MAX_OUTPUT = 10</code> - The maximum value for the output of the PID compensation that is written to the motor amplifier, in volts.
+The computed output value is clamped to this limit.
+The limit is applied before scaling to raw output units.
+The value is applied symmetrically to both the plus and the minus side.</p>
+</li>
+<li>
+<p><code>INPUT_SCALE = 20000</code> - in Sample configs</p>
+</li>
+<li>
+<p><code>ENCODER_SCALE = 20000</code> - in PnCconf built configs</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Specifies the number of pulses that corresponds to a move of one machine unit as set in the <code>[TRAJ]</code> section.
+For a linear joint one machine unit will be equal to the setting of <code>LINEAR_UNITS</code>.
+For an angular joint one unit is equal to the setting in <code>ANGULAR_UNITS</code>.
+A second number, if specified, is ignored.
+For example, on a 2000 counts per rev encoder, and 10 revs/inch gearing, and desired units of inch, we have:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/encoder-scale.png" alt="encoder scale">
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_stepper">2.13.3. Stepper</h4>
+<div class="paragraph">
+<p>These parameters are relevant to joints controlled by steppers.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">
+The following are custom INI file entries that you may find in a sample INI file or a wizard generated file.
+These are not used by the LinuxCNC software and meant only to put all the settings in one place.
+For more information on custom INI file entries see the <a href="ini-config.html#sub:ini:custom">Custom Sections and Variables</a> subsection.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The following items might be used by a StepGen component.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>SCALE = 4000</code> - in Sample configs</p>
+</li>
+<li>
+<p><code>STEP_SCALE = 4000</code> - in PnCconf built configs</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Specifies the number of pulses that corresponds to a move of one machine unit as set in the <code>[TRAJ]</code> section.
+For stepper systems, this is the number of step pulses issued per machine unit.
+For a linear joint one machine unit will be equal to the setting of <code>LINEAR_UNITS</code>.
+For an angular joint one unit is equal to the setting in <code>ANGULAR_UNITS</code>.
+For servo systems, this is the number of feedback pulses per machine unit.
+A second number, if specified, is ignored.</p>
+</div>
+<div class="paragraph">
+<p>For example, on a 1.8 degree stepper motor with half-stepping, and 10 revs/inch gearing, and desired <a href="ini-config.html#sub:ini:sec:traj">machine units</a> of inch, we have:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/stepper-scale.png" alt="stepper scale">
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Old INI and HAL files used <code>INPUT_SCALE</code> for this value.
+</td>
+</tr>
+</table>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>ENCODER_SCALE = 20000</code> (Optionally used in PnCconf built configs) -
+Specifies the number of pulses that corresponds to a move of one machine unit as set in the <code>[TRAJ]</code> section.
+For a linear joint one machine unit will be equal to the setting of <code>LINEAR_UNITS</code>.
+For an angular joint one unit is equal to the setting in <code>ANGULAR_UNITS</code>.
+A second number, if specified, is ignored.
+For example, on a 2000 counts per rev encoder, and 10 revs/inch gearing, and desired units of inch, we have:</p>
+</li>
+</ul>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="images/encoder-scale.png" alt="encoder scale">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>STEPGEN_MAXACCEL = 21.0</code> -  Acceleration limit for the step generator.
+This should be 1% to 10% larger than the joint <code>MAX_ACCELERATION</code>.
+This value improves the tuning of StepGen&#8217;s "position loop".
+If you have added backlash compensation to an joint then this should be 1.5 to 2 times greater than <code>MAX_ACCELERATION</code>.</p>
+</li>
+<li>
+<p><code>STEPGEN_MAXVEL = 1.4</code> - Older configuration files have a velocity limit for the step generator as well.
+If specified, it should also be 1% to 10% larger than the joint <code>MAX_VELOCITY</code>.
+Subsequent testing has shown that use of <code>STEPGEN_MAXVEL</code> does not improve the tuning of StepGen&#8217;s position loop.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:ini:sec:spindle-num">2.14. [SPINDLE_&lt;num&gt;] Section(s)</h3>
+<div class="paragraph">
+<p>The <em>&lt;num&gt;</em> specifies the spindle number 0 &#8230;&#8203; (num_spindles-1)<br>
+The value of <em>num_spindles</em> is set by <code>[TRAJ]SPINDLES=</code> .<br>
+By default maximum velocity of the spindle in forward and reverse is approximately 2147483000 RPM.<br>
+By default minimum velocity of the spindle in forward and reverse is 0 RPM.<br>
+By default the increment is 100 RPM.<br>
+You change these default by setting the following INI variables:</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+These settings are for the motion controller component.
+Control screens can limit these settings further.
+</td>
+</tr>
+</table>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>MAX_FORWARD_VELOCITY = 20000</code> - (real)
+The maximum spindle speed (in rpm) for the specified spindle. Optional.
+This will also set MAX_REVERSE_VELOCITY to the negative value unless overridden.</p>
+</li>
+<li>
+<p><code>MIN_FORWARD_VELOCITY = 3000</code> - (real)
+The minimum spindle speed (in rpm) for the specified spindle. Optional.
+Many spindles have a minimum speed below which they should not be run.
+Any spindle speed command below this limit will be /increased/ to this limit.</p>
+</li>
+<li>
+<p><code>MAX_REVERSE_VELOCITY = 20000</code> - (real)
+This setting will default to <code>MAX_FORWARD_VELOCITY</code> if omitted.
+It can be used in cases where the spindle speed is limited in reverse.
+Set to zero for spindles which must not be run in reverse.
+In this context "max" refers to the absolute magnitude of the spindle speed.</p>
+</li>
+<li>
+<p><code>MIN_REVERSE_VELOCITY = 3000</code> - (real)
+This setting is equivalent to <code>MIN_FORWARD_VELOCITY</code> but for reverse spindle rotation.
+It will default to the MIN_FORWARD_VELOCITY if omitted.</p>
+</li>
+<li>
+<p><code>INCREMENT = 200</code> - (real)
+Sets the step size for spindle speed increment / decrement commands.
+This can have a different value for each spindle.
+This setting is effective with AXIS and Touchy but note that some
+control screens may handle things differently.</p>
+</li>
+<li>
+<p><code>HOME_SEARCH_VELOCITY = 100</code> - (real) FIXME: Spindle homing not yet working.
+Sets the homing speed (rpm) for the spindle.
+The spindle will rotate at this velocity during the homing sequence until the spindle index is located, at which point the spindle position will be set to zero.
+Note that it makes no sense for the spindle home position to be any value other than zero, and so there is no provision to do so.</p>
+</li>
+<li>
+<p><code>HOME_SEQUENCE = 0</code> - (int) FIXME: Spindle homing not yet working
+Controls where in the general homing sequence the spindle homing rotations occur.
+Set the <code>HOME_SEARCH_VELOCITY</code> to zero to avoid spindle rotation during the homing sequence.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sub:ini:sec:emcio">2.15. [EMCIO] Section</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><code>TOOL_TABLE = tool.tbl</code> - (string) The file which contains tool information, described in the User Manual.</p>
+</li>
+<li>
+<p><code>DB_PROGRAM = db_program</code> - (string) Path to an executable program that manages tool data.
+When a DB_PROGRAM is specified, a TOOL_TABLE entry is ignored.</p>
+</li>
+<li>
+<p><code>TOOL_CHANGE_POSITION = 0 0 2</code> -
+Specifies the XYZ location to move to when performing a tool change if three digits are used.
+Specifies the XYZABC location when 6 digits are used.
+Specifies the XYZABCUVW location when 9 digits are used.
+Tool Changes can be combined.
+For example if you combine the quill up with change position you can move the Z first then the X and Y.</p>
+</li>
+<li>
+<p><code>TOOL_CHANGE_WITH_SPINDLE_ON = 1</code> - (bool)
+The spindle will be left on during the tool change when the value is 1.
+Useful for lathes or machines where the material is in the spindle, not the tool.</p>
+</li>
+<li>
+<p><code>TOOL_CHANGE_QUILL_UP = 1</code> - (bool)
+The Z axis will be moved to machine zero prior to the tool change when the value is 1.
+This is the same as issuing a <code>G0 G53 Z0</code>.</p>
+</li>
+<li>
+<p><code>TOOL_CHANGE_AT_G30 = 1</code> - (bool)
+The machine is moved to reference point defined by parameters 5181-5186 for G30 if the value is 1.
+For more information see <a href="../gcode/overview.html#sec:overview-parameters">G-code Parameters</a> and <a href="../gcode/g-code.html#gcode:g30-g30.1">G-code G30-G30.1</a>.</p>
+</li>
+<li>
+<p><code>RANDOM_TOOLCHANGER = 1</code> - (bool)
+This is for machines that cannot place the tool back into the pocket it came from.
+For example, machines that exchange the tool in the active pocket with the tool in the spindle.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

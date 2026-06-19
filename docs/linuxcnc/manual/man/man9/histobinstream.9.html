@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>HISTOBINSTREAM(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="histobinstream.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/histobinstream.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/histobinstream.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/histobinstream.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/histobinstream.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/histobinstream.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/histobinstream.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/histobinstream.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>HISTOBINSTREAM(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>histobinstream - histogram bins utility for scripts/hal-histogram</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt histobinstream</strong> [<strong>count</strong>=<em>N</em>|<strong>names</strong>=<em>name1</em>[,<em>name2</em>&#8230;&#8203;]] [<strong>keys</strong>=<em>value</em>[,<em>value</em>&#8230;&#8203;]]</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>keys</strong></dt>
+<dd>
+<p>Stream shmem unique key for each instance</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Calculates a histogram of an input pin&#8217;s value.
+The histogram data is sent in a HAL stream for maximum transfer speed and to prevent any RT to non-RT data race conditions.
+This is the streaming counterpart to the <strong>histobins</strong> component.</p>
+</div>
+<div class="paragraph">
+<p>Read the <strong>availablebins</strong> pin for the number of bins available.
+Set the <strong>minvalue</strong>, <strong>binsize</strong> and <strong>nbins</strong> pins and ensure <strong>nbins</strong> ≤ <strong>availablebins</strong>.</p>
+</div>
+<div class="paragraph">
+<p>For <strong>nbins</strong> = N, the bins are numbered 0 &#8230;&#8203; N-1.
+The value range covered is [<strong>minvalue</strong> &#8230;&#8203; <strong>minvalue</strong> + N * <strong>binsize</strong>).
+Any input below <strong>minvalue</strong> is counted in the negative overflow (<strong>ntail</strong>).
+Any input at or above the upper edge is counted in the positive overflow (<strong>ptail</strong>).</p>
+</div>
+<div class="paragraph">
+<p>The input used is selected based on pintype:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-center valign-top">pintype</th>
+<th class="tableblock halign-center valign-top">inputpin</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">input</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">input-s32</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">input-u32</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">input-bit</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Stream format and how to obtain the histogram data:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Set the <strong>stream</strong> pin to high.</p>
+</li>
+<li>
+<p>Read the fifo data when it becomes available. The data streamed has the
+following sequence:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><em>ntail bin[0] &#8230;&#8203; bin[N-1] ptail</em></p>
+</li>
+<li>
+<p>This gives <em>nbins + 2</em> values streamed (all unsigned counts).</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Read the statistics pins (<strong>input-min</strong>, <strong>input-max</strong>, <strong>mean</strong>, <strong>variance</strong>,
+<strong>nsamples</strong>) that reflect the values at the time when <strong>stream</strong> was asserted.</p>
+</li>
+<li>
+<p>Set the <strong>stream</strong> pin to low.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The reset pin may be used to restart.
+Note that the reset pin is set to high at startup.
+You must set it to low before data collection begins.</p>
+</div>
+<div class="paragraph">
+<p>The <strong>method</strong> input pin selects an alternate variance calculation (0: Welford
+incremental, 1: sum / sum-of-squares).</p>
+</div>
+<div class="paragraph">
+<p>Maintainers note: hardcoded for MAXBINNUMBER==200</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>histobinstream</strong>.<em>N</em></dt>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>histobinstream</strong>.<em>N</em>.<strong>pintype</strong> u32 in </dt>
+<dd>
+<p>Select the input pin (0:input 1:input-s32 2:input-u32 3:input-bit).</p>
+</dd>
+<dt class="hdlist1"><strong>histobinstream</strong>.<em>N</em>.<strong>input</strong> float in </dt>
+<dd>
+<p>Floating point input value (pintype 0).</p>
+</dd>
+<dt class="hdlist1"><strong>histobinstream</strong>.<em>N</em>.<strong>input-s32</strong> s32 in </dt>
+<dd>
+<p>Signed input value (pintype 1).</p>
+</dd>
+<dt class="hdlist1"><strong>histobinstream</strong>.<em>N</em>.<strong>input-u32</strong> u32 in </dt>
+<dd>
+<p>Unsigned input value (pintype 2).</p>
+</dd>
+<dt class="hdlist1"><strong>histobinstream</strong>.<em>N</em>.<strong>input-bit</strong> bit in </dt>
+<dd>
+<p>Bit input value (pintype 3).</p>
+</dd>
+<dt class="hdlist1"><strong>histobinstream</strong>.<em>N</em>.<strong>nbins</strong> u32 in (default: <em>20</em>)</dt>
+<dd>
+<p>Number of active bins N (0 &#8230;&#8203; N-1).</p>
+</dd>
+<dt class="hdlist1"><strong>histobinstream</strong>.<em>N</em>.<strong>binsize</strong> float in (default: <em>1</em>)</dt>
+<dd>
+<p>Width of one bin in input units.</p>
+</dd>
+<dt class="hdlist1"><strong>histobinstream</strong>.<em>N</em>.<strong>minvalue</strong> float in (default: <em>0</em>)</dt>
+<dd>
+<p>Lower edge of bin 0.</p>
+</dd>
+<dt class="hdlist1"><strong>histobinstream</strong>.<em>N</em>.<strong>reset</strong> bit in (default: <em>1</em>)</dt>
+<dd>
+<p>Reset state and bins.</p>
+</dd>
+<dt class="hdlist1"><strong>histobinstream</strong>.<em>N</em>.<strong>stream</strong> bit in (default: <em>0</em>)</dt>
+<dd>
+<p>Set to high to stream all bins and tails on rising edge.</p>
+</dd>
+<dt class="hdlist1"><strong>histobinstream</strong>.<em>N</em>.<strong>method</strong> bit in (default: <em>0</em>)</dt>
+<dd>
+<p>Variance method (0:Welford incremental, 1:sum of squares).</p>
+</dd>
+<dt class="hdlist1"><strong>histobinstream</strong>.<em>N</em>.<strong>stream-error</strong> bit out </dt>
+<dd>
+<p>Set if the data stream did not fit and was never sent.</p>
+</dd>
+<dt class="hdlist1"><strong>histobinstream</strong>.<em>N</em>.<strong>input-error</strong> bit out </dt>
+<dd>
+<p>Set when input rules are violated; updates are invalid until fixed and a reset.</p>
+</dd>
+<dt class="hdlist1"><strong>histobinstream</strong>.<em>N</em>.<strong>input-min</strong> float out </dt>
+<dd>
+<p>Minimum input value seen (latched on stream rising edge).</p>
+</dd>
+<dt class="hdlist1"><strong>histobinstream</strong>.<em>N</em>.<strong>input-max</strong> float out </dt>
+<dd>
+<p>Maximum input value seen (latched on stream rising edge).</p>
+</dd>
+<dt class="hdlist1"><strong>histobinstream</strong>.<em>N</em>.<strong>nsamples</strong> u32 out </dt>
+<dd>
+<p>Number of samples accumulated (latched on stream rising edge).</p>
+</dd>
+<dt class="hdlist1"><strong>histobinstream</strong>.<em>N</em>.<strong>variance</strong> float out </dt>
+<dd>
+<p>Variance of the input (latched on stream rising edge).</p>
+</dd>
+<dt class="hdlist1"><strong>histobinstream</strong>.<em>N</em>.<strong>mean</strong> float out </dt>
+<dd>
+<p>Mean of the input (latched on stream rising edge).</p>
+</dd>
+<dt class="hdlist1"><strong>histobinstream</strong>.<em>N</em>.<strong>stream-time</strong> s64 out </dt>
+<dd>
+<p>The time it took for the stream data to be pushed out in nanoseconds (ns).</p>
+</dd>
+<dt class="hdlist1"><strong>histobinstream</strong>.<em>N</em>.<strong>availablebins</strong> s32 out (default: <em>200</em>)</dt>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Dewey Garrett, B.Stultiens, LinuxCNC contributors</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:30:09 UTC
+</div>
+</div>
+</body>
+</html>

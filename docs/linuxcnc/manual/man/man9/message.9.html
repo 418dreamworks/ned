@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>MESSAGE(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../rouge-github.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="message.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/message.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/message.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/message.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/message.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/message.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/message.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/message.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>MESSAGE(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>message - Display a message (deprecated, see pushmsg)</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt message</strong> [<strong>count</strong>=<em>N</em>|<strong>names</strong>=<em>name1</em>[,<em>name2</em>&#8230;&#8203;]] [<strong>messages</strong>=<em>value</em>[,<em>value</em>&#8230;&#8203;]]</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>messages</strong></dt>
+<dd>
+<p>The messages to display. These should be listed,
+comma-delimited, inside a single set of quotes. See the "Description" section
+for an example.
+If there are more messages than "count" or "names" then the excess will be
+ignored. If there are fewer messages than "count" or "names" then an error will
+be raised and the component will not load.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>DEPRECATED</strong>: this component only emits at the ERROR level.
+For new configurations, use <strong>pushmsg</strong>(9) which supports all four
+<code>rtapi_print_msg()</code> levels (error, warning, info, debug), HAL value
+substitution into the message text, plus the same trigger/force/edge
+behaviour from a single <code>loadrt</code> line.</p>
+</div>
+<div class="paragraph">
+<p>Allows HAL pins to trigger a message. Example hal commands:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">loadrt</span> <span class="n">message</span> <span class="n">names</span><span class="o">=</span><span class="n">oillow</span>,<span class="n">oilpressure</span>,<span class="n">inverterfail</span> <span class="n">messages</span><span class="o">=</span><span class="s2">"Slideway oil low,No oil pressure,Spindle inverter fault"</span>
+<span class="k">addf</span> <span class="n">oillow</span> <span class="n">servo-thread</span>
+<span class="k">addf</span> <span class="n">oilpressure</span> <span class="n">servo-thread</span>
+<span class="k">addf</span> <span class="n">inverterfail</span> <span class="n">servo-thread</span>
+
+<span class="k">setp</span> <span class="na">oillow.edge</span> <span class="mi">0</span> <span class="c1">#this pin should be active low</span>
+<span class="k">net</span> <span class="n">no-oil</span> <span class="na">classicladder.0.out-21</span> <span class="na">oillow.trigger</span>
+<span class="k">net</span> <span class="n">no-pressure</span> <span class="na">classicladder.0.out-22</span> <span class="na">oilpressure.trigger</span>
+<span class="k">net</span> <span class="n">no-inverter</span> <span class="na">classicladder.0.out-23</span> <span class="na">inverterfail.trigger</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When any pin goes active, the corresponding message will be displayed.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>message</strong>.<em>N</em></dt>
+<dd>
+<p>Display a message</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>message</strong>.<em>N</em>.<strong>trigger</strong> bit in (default: <em>FALSE</em>)</dt>
+<dd>
+<p>signal that triggers the message</p>
+</dd>
+<dt class="hdlist1"><strong>message</strong>.<em>N</em>.<strong>force</strong> bit in (default: <em>FALSE</em>)</dt>
+<dd>
+<p>A FALSE&#8594;TRUE transition forces the message to be
+displayed again if the trigger is active</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parameters">PARAMETERS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>message</strong>.<em>N</em>.<strong>edge</strong> bit rw (default: <em>TRUE</em>)</dt>
+<dd>
+<p>Selects the desired edge: FALSE means falling, TRUE
+means rising</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Les Newell</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">LICENSE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GPL v2</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:30:13 UTC
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>rtapi_atomic(3)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../rouge-github.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="rtapi_atomic.3.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man3/rtapi_atomic.3.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man3/rtapi_atomic.3.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man3/rtapi_atomic.3.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man3/rtapi_atomic.3.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man3/rtapi_atomic.3.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man3/rtapi_atomic.3.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man3/rtapi_atomic.3.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>rtapi_atomic(3) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>rtapi_atomic - subset of C11 stdatomic.h</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_syntax">SYNTAX</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c"><span class="cp">#include</span> <span class="cpf">&lt;rtapi_atomic.h&gt;</span><span class="cp">
+</span><span class="k">enum</span> <span class="n">memory_order</span> <span class="p">{</span> <span class="p">...</span> <span class="p">};</span>
+<span class="cp">#define atomic_store(obj, desired)...
+#define atomic_store_explicit(obj, desired, order)...
+#define atomic_load(obj)...
+#define atomic_load_explicit(obj, order)...</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_arguments">ARGUMENTS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1">volatile A* obj</dt>
+<dd>
+<p>A pointer to a volatile object that is the destination of the store or the source of the load.
+The pointer must have an appropriate type and alignment such that the underlying store or load operation itself is atomic;
+at a minimum, a properly aligned "int" may be assumed to be such a type.
+Improper size or alignment are undiagnosed errors.</p>
+</dd>
+<dt class="hdlist1">C desired</dt>
+<dd>
+<p>The value to be stored in the object. "*obj = desired" must be well-formed.</p>
+</dd>
+<dt class="hdlist1">memory_order order</dt>
+<dd>
+<p>The required memory ordering semantic.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This header provides at least the subset of C11&#8217;s <code>&lt;+stdatomic.h</code>&gt;+ given above.
+When there is an ordering requirement for multiple values read or written
+in RTAPI shared memory areas by other threads of execution,
+including the values of HAL pins and parameters,
+these functions (or function-like macros) are the only way to ensure the ordering requirement is obeyed.
+Otherwise, according to architecture-specific rules,
+loads and stores may be reordered from their normal source code order.</p>
+</div>
+<div class="paragraph">
+<p>For example, to leave a message in a shared memory area from one thread
+and retrieve it from another, the writer must use an atomic store for
+the "message is complete" variable, and the reader must use an atomic
+load when checking that variable:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c"><span class="c1">// producer</span>
+<span class="o">*</span><span class="n">message</span> <span class="o">=</span> <span class="mi">42</span><span class="p">;</span>
+<span class="n">atomic_store_explicit</span><span class="p">(</span><span class="n">message_ready</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">memory_order_release</span><span class="p">);</span>
+
+<span class="c1">// consumer</span>
+<span class="k">while</span><span class="p">(</span><span class="n">atomic_load_explicit</span><span class="p">(</span><span class="n">message_ready</span><span class="p">,</span> <span class="n">memory_order_acquire</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="n">sched_yield</span><span class="p">();</span>
+<span class="n">printf</span><span class="p">(</span><span class="s">"message was %d</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="o">*</span><span class="n">message</span><span class="p">);</span> <span class="c1">// must print 42</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_realtime_considerations">REALTIME CONSIDERATIONS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>May be called from any code.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_return_value">RETURN VALUE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>atomic_load</strong> and <strong>atomic_load_explicit</strong> return the value pointed to by the <em>obj</em> argument.</p>
+</div>
+<div class="paragraph">
+<p><strong>atomic_store</strong> and <strong>atomic_store_explicit</strong> have no return value.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>&lt;stdatomic.h&gt; (C11), &lt;rtapi_bitops.h&gt; (for other atomic memory operations supported by rtapi)</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

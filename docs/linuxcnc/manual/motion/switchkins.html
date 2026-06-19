@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>Switchable Kinematics (switchkins)</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../rouge-github.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:switchable-kinematics" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="switchkins.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/motion/switchkins.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/motion/switchkins.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/motion/switchkins.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/motion/switchkins.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/motion/switchkins.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/motion/switchkins.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/motion/switchkins.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>Switchable Kinematics (switchkins)</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details open><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="../config/stepconf.html">Stepper Configuration Wizard</a><a href="../config/pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="../config/integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="tweaking-steppers.html">Stepper Tuning</a><a href="../config/ini-config.html">INI Configuration</a><a href="../config/ini-homing.html">Homing Configuration</a><a href="../config/lathe-config.html">Lathe Configuration</a><a href="../config/stepper-quickstart.html">Stepper Quickstart</a><a href="../config/stepper.html">Stepper Configuration</a><a href="../config/stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="../config/core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="../drivers/ax5214h.html">AX5214H Driver</a><a href="../drivers/gm.html">General Mechatronics Driver</a><a href="../drivers/gs2.html">GS2 VFD Driver</a><a href="../drivers/hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><a href="../drivers/hal_gpio.html">Generic driver for any GPIO supported by gpiod.</a><a href="../drivers/hostmot2.html">Mesa HostMot2 Driver</a><a href="../drivers/mb2hal.html">MB2HAL</a><a href="../drivers/mesa_modbus.html">Mesa Modbus =</a><a href="../drivers/mitsub-vfd.html">Mitsub VFD Driver</a><a href="../drivers/motenc.html">Motenc Driver</a><a href="../drivers/opto22.html">Opto22 Driver</a><a href="../drivers/pico-ppmc.html">Pico Drivers</a><a href="../drivers/pluto-p.html">Pluto P Driver</a><a href="../drivers/pmx485.html">Powermax Modbus Driver</a><a href="../drivers/servo-to-go.html">Servo To Go Driver</a><a href="../drivers/shuttle.html">Shuttle</a><a href="../drivers/vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details open><summary>Advanced Topics</summary><a href="kinematics.html">Kinematics</a><a href="dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="5-axis-kinematics.html">5-Axis Kinematics</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>Switchable Kinematics (switchkins)</summary><ul class="sectlevel1">
+<li><a href="switchkins.html#_introduction">1. Introduction</a></li>
+<li><a href="switchkins.html#_switchable_kinematic_modules">2. Switchable Kinematic Modules</a>
+<ul class="sectlevel2">
+<li><a href="switchkins.html#_identity_letter_assignments">2.1. Identity letter assignments</a></li>
+<li><a href="switchkins.html#_backwards_compatibility">2.2. Backwards compatibility</a></li>
+</ul>
+</li>
+<li><a href="switchkins.html#_hal_pins">3. HAL Pins</a>
+<ul class="sectlevel2">
+<li><a href="switchkins.html#_hal_pin_summary">3.1. HAL Pin Summary</a></li>
+</ul>
+</li>
+<li><a href="switchkins.html#_usage">4. Usage</a>
+<ul class="sectlevel2">
+<li><a href="switchkins.html#_hal_connections">4.1. HAL Connections</a></li>
+<li><a href="switchkins.html#_g_m_code_commands">4.2. G-/M-code commands</a></li>
+<li><a href="switchkins.html#_ini_file_limit_settings">4.3. INI file limit settings</a></li>
+<li><a href="switchkins.html#_coordinate_system_offset_considerations">4.4. Coordinate system offset considerations</a></li>
+<li><a href="switchkins.html#_external_offset_considerations">4.5. External offset considerations</a></li>
+</ul>
+</li>
+<li><a href="switchkins.html#_simulation_configs">5. Simulation configs</a></li>
+<li><a href="switchkins.html#_user_kinematics_provisions">6. User kinematics provisions</a></li>
+<li><a href="switchkins.html#_warnings">7. Warnings</a></li>
+<li><a href="switchkins.html#_code_notes">8. Code Notes</a></li>
+</ul></details><a href="pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="../config/moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="../config/python-interface.html">The LinuxCNC Python module</a><a href="../config/python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_introduction">1. Introduction</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A number of kinematics modules support the switching of
+kinematics calculations. These modules support a default
+kinematics method (type0), a second built-in method (type1), and
+(optionally) a user-provided kinematics method (type2).
+Identity kinematics are typically used for the type1 method.</p>
+</div>
+<div class="paragraph">
+<p>The switchkins functionality can be used for machines where
+post-homing joint control is needed during setup or to avoid
+movement near singularities from G-code. Such machines use
+specific kinematics calculations for most operations but can be
+switched to identity kinematics for control of individual joints
+after homing.</p>
+</div>
+<div class="paragraph">
+<p>The kinematics type is selected by a motion module HAL pin that
+can be updated from a G-code program or by interactive MDI
+commands. The halui provisions for activating MDI commands can be
+used to allow buttons to select the kinematics type using
+hardware controls or a virtual panel (PyVCP, GladeVCP, etc.).</p>
+</div>
+<div class="paragraph">
+<p>When a kinematics type is changed, the G-code must also issue
+commands to <strong>force synchronization</strong> of the interpreter and motion
+parts of LinuxCNC. Typically, a HAL pin <em>read</em> command (M66 E0 L0) is
+used immediately after altering the controlling HAL pin to force
+synchronization.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_switchable_kinematic_modules">2. Switchable Kinematic Modules</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following kinematics modules support switchable kinematics:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>xyzac-trt-kins</strong> (type0:xyzac-trt-kins type1:identity)</p>
+</li>
+<li>
+<p><strong>xyzbc-trt-kins</strong> (type0:xyzbc-trt-kins type1:identity)</p>
+</li>
+<li>
+<p><strong>genhexkins</strong>     (type0:genhexkins     type1:identity)</p>
+</li>
+<li>
+<p><strong>genserkins</strong>     (type0:genserkins     type1:identity) (puma560 example)</p>
+</li>
+<li>
+<p><strong>pumakins</strong>       (type0:pumakins       type1:identity)</p>
+</li>
+<li>
+<p><strong>scarakins</strong>      (type0:scarakins      type1:identity)</p>
+</li>
+<li>
+<p><strong>5axiskins</strong>      (type0:5axiskins      type1:identity) (bridgemill)</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>The xyz[ab]c-trt-kins modules by default use type0==xyz[ab]c-trt-kins
+for backwards compatibility.  The provided sim configs alter the
+type0/type1 convention by forcing type0==identity kinematics using the
+module string parameter <em>sparm</em> with an INI file setting like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="p">[</span><span class="nn">KINS</span><span class="p">]</span>
+<span class="py">KINEMATICS</span> <span class="p">=</span> <span class="s">xyzac-trt-kins sparm=identityfirst</span>
+<span class="c"># ...</span></code></pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_identity_letter_assignments">2.1. Identity letter assignments</h3>
+<div class="paragraph">
+<p>When using an <strong>identity</strong> kinematics type, the module parameter
+<em>coordinates</em> can be used to assign letters to joints in
+arbitrary order from the set of allowed coordinate letters.
+Examples:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="p">[</span><span class="nn">KINS</span><span class="p">]</span>
+<span class="py">JOINTS</span> <span class="p">=</span> <span class="s">6</span>
+
+<span class="c"># conventional identity ordering: joint0==x, joint1==y, ...
+</span><span class="py">KINEMATICS</span> <span class="p">=</span> <span class="s">genhexkins coordinates=xyzabc</span>
+
+<span class="c"># custom identity ordering: joint0==c, joint1==b, ...
+# KINEMATICS = genhexkins coordinates=cbazyx</span></code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+If the coordinates= parameter is omitted, the default joint-letter
+identity assignments are joint0==x,joint1=y,&#8230;&#8203;
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The joint assignments provided for <strong>identity</strong> kinematics
+when using the coordinates parameter are identical to those
+provided for the trivkins module.  However, duplication of
+axis letters to assign multiple joints for a coordinate
+letter is not generally applicable for serial or parallel
+kinematics (like genserkins, pumakins, genhexkins, etc.)
+where there is no simple relationship between joints and
+coordinates.</p>
+</div>
+<div class="paragraph">
+<p>Duplication of axis coordinate letters is supported in
+the kinematics modules xyzac-trt-kins, xyzbc-trt-kins,
+and 5axiskins (bridgemill).  Typical applications for duplicate
+coordinates are gantry machines where two motors (joints)
+are used for the transverse axis.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_backwards_compatibility">2.2. Backwards compatibility</h3>
+<div class="paragraph">
+<p>Switchable kinematics initialize with motion.switchkins-type==0
+implementing their eponymous kinematics method.  If the the
+motion.switchkins-type pin is not connected&#8201;&#8212;&#8201;as in legacy
+configurations&#8201;&#8212;&#8201;only the default kinematics type is available.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_hal_pins">3. HAL Pins</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Kinematics switching is controlled by the motion module input HAL
+pin <strong>motion.switchkins-type</strong>.  The floating point pin value is
+truncated to integer and used to select one of the provided
+kinematics types.  The zero startup value selects the type0
+default kinematics type.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The motion.switchkins-type input pin is floating point in order
+to facilitate connections to motion module output pins like
+motion.analog-out-0n that are controllable by standard M-codes
+(typically M68EnL0).
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Output HAL pins are provided to inform GUIs of the current
+kinematics type.  These pins can also be connected to digital
+inputs that are read by G-code programs to enable or disable
+program behavior in accordance with the active kinematics type.</p>
+</div>
+<div class="sect2">
+<h3 id="_hal_pin_summary">3.1. HAL Pin Summary</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>motion.switchkins-type</strong>  Input  (float)</p>
+</li>
+<li>
+<p><strong>kinstype.is-0</strong>           Output (bit)</p>
+</li>
+<li>
+<p><strong>kinstype.is-1</strong>           Output (bit)</p>
+</li>
+<li>
+<p><strong>kinstype.is-2</strong>           Output (bit)</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_usage">4. Usage</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_hal_connections">4.1. HAL Connections</h3>
+<div class="paragraph">
+<p>Switchkins functionality is enabled by the pin
+<strong>motion.switchkins-type</strong>.  Typically, this pin is sourced by an
+analog output pin like motion.analog-out-03 so that it can be
+set by M68 commands.  Example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="k">net</span> :<span class="n">kinstype-select</span> <span class="o">&lt;=</span> <span class="na">motion.analog-out-03</span>
+<span class="k">net</span> :<span class="n">kinstype-select</span> <span class="o">=&gt;</span> <span class="na">motion.switchkins-type</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_g_m_code_commands">4.2. G-/M-code commands</h3>
+<div class="paragraph">
+<p>Kinstype selection is managed using G-code sequences like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ngc">...
+<span class="k">M68</span> <span class="nd">E</span><span class="mi">3</span> <span class="nd">Q</span><span class="mi">1</span> <span class="c1">;update analog-out-03 to select kinstype 1</span>
+<span class="k">M66</span> <span class="nd">E</span><span class="mi">0</span> <span class="nd">L</span><span class="mi">0</span> <span class="c1">;sync interp-motion</span>
+...
+...       <span class="c1">;user G-code</span>
+...
+<span class="k">M68</span> <span class="nd">E</span><span class="mi">3</span> <span class="nd">Q</span><span class="mi">0</span> <span class="c1">;update analog-out-03 to select kinstype 0</span>
+<span class="k">M66</span> <span class="nd">E</span><span class="mi">0</span> <span class="nd">L</span><span class="mi">0</span> <span class="c1">;sync interp-motion</span>
+...</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+An M66 <em>wait-on-input</em> command updates the #5399 variable.  If the
+current value of this variable is needed for subsequent purposes, it
+should be copied to an additional variable before invoking M66.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>These G-code command sequences are typically implemented in G-code
+subroutines as remapped M-codes or with conventional M-code scripts.</p>
+</div>
+<div class="paragraph">
+<p>Suggested codes (as used in sim configs) are:</p>
+</div>
+<div class="paragraph">
+<p>Conventional User M-codes:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>M128 Select kinstype 0 (startup default kinematics)</p>
+</li>
+<li>
+<p>M129 Select kinstype 1 (typically identity kinematics)</p>
+</li>
+<li>
+<p>M130 Select kinstype 2 (user-provided kinematics)</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Remapped M-codes:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>M428 Select kinstype 0 (startup default kinematics)</p>
+</li>
+<li>
+<p>M429 Select kinstype 1 (typically identity kinematics)</p>
+</li>
+<li>
+<p>M430 Select kinstype 2 (user-provided kinematics)</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Conventional user M-codes (in the range M100-M199) are in modal
+group 10.  Remapped M-codes (in the range M200 to M999) can
+specify a modalgroup.  See the remap documentation for additional
+information.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_ini_file_limit_settings">4.3. INI file limit settings</h3>
+<div class="paragraph">
+<p>LinuxCNC trajectory planning uses limits for position (min,max),
+velocity, and acceleration for each applicable coordinate letter
+specified in the configuration INI file.  Example for letter L
+(in the set <em>XYZABCUVW</em>):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="ini"><span class="p">[</span><span class="nn">AXIS_L</span><span class="p">]</span>
+<span class="py">MIN_LIMIT</span> <span class="p">=</span>
+<span class="py">MAX_LIMIT</span> <span class="p">=</span>
+<span class="py">MAX_VELOCITY</span> <span class="p">=</span>
+<span class="py">MIN_ACCELERATION</span> <span class="p">=</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The INI file limits specified apply to the type 0 default
+kinematics type that is activated at startup.  These limits may
+<strong>not</strong> be applicable when switching to alternative kinematics.
+However, since an interpreter-motion synchronization is required
+when switching kinematics, INI-HAL pins can be used to setup
+limits for a pending kinematics type.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+INI-HAL pins are typically not recognized during a G-code program
+unless a synchronization (queue-buster) command is issued.
+See the milltask manpage for more information ($ man milltask).
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The relevant INI-HAL pins for a joint number (<em>N</em>) are:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="na">ini.N.min_limit</span>
+<span class="na">ini.N.max_limit</span>
+<span class="na">ini.N.max_acceleration</span>
+<span class="na">ini.N.max_velocity</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The relevant INI-HAL pins for an axis coordinate (<em>L</em>) are:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="hal"><span class="na">ini.L.min_limit</span>
+<span class="na">ini.L.max_limit</span>
+<span class="na">ini.L.max_velocity</span>
+<span class="na">ini.L.max_acceleration</span></code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+In general, there are no fixed mappings between joint numbers and
+axis coordinate letters.  There may be specific mappings for some
+kinematics modules especially those that implement identity
+kinematics (trivkins).
+See the kins man page for more information ($ man kins).
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>A user-provided M-code can alter any or all of the axis coordinate
+limits prior to changing the motion.switchkins-type pin and
+synchronizing the interpreter and motionparts of LinuxCNC.  As an
+example, a bash script invoking halcmd can be <em>hardcoded</em> to set
+any number of HAL pins:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>#!/bin/bash
+halcmd -f &lt;&lt;EOF
+setp ini.x.min_limit -100
+setp ini.x.max_limit  100
+# ... repeat for other limit parameters
+EOF</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Scripts like this can be invoked as a user M-code and used <strong>prior</strong>
+to the kins switching M-code that updates the <code>motion.switchkins-type</code>
+HAL pin and forces an interp-motion sync.
+Typically, separate scripts would be used for each kinstype (0,1,2).</p>
+</div>
+<div class="paragraph">
+<p>When identity kinematics are provided as a means to control
+individual joints, it may be convenient to set or restore limits
+as specified in the system INI file.  For example, a robot starts
+with a complex (non-identity) kinematics (type0) after homing.
+The system is configured so that it can be switched to identity
+kinematics (type1) in order to manipulate individual joints using
+the conventional letters from the set <em>XYZABCUVW</em>.  The INI file
+settings ([AXIS_L]) are <strong>not</strong> applicable when operating with
+identity (type1) kinematics.  To address this use case, the user
+M-code scripts can be designed as follows:</p>
+</div>
+<div class="paragraph">
+<p><strong>M129</strong> (Switch to identity type1)</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>read and parse INI file</p>
+</li>
+<li>
+<p>HAL: setp the INI-HAL limit pins for each axis letter ([AXIS_L])
+according to the <em>identity-referenced</em> joint number INI file
+setting ([JOINT_N])</p>
+</li>
+<li>
+<p>HAL: <code>setp motion.switchkins-type 1</code></p>
+</li>
+<li>
+<p>MDI: execute a syncing G-code (M66E0L0)</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p><strong>M128</strong> (restore robot default kinematics type 0)</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>read and parse INI file</p>
+</li>
+<li>
+<p>HAL: setp the INI-HAL limit pins for each axis letter ([AXIS_L])
+according to the appropriate INI file setting ([AXIS_L])</p>
+</li>
+<li>
+<p>HAL: <code>setp motion.switchkins-type 0</code></p>
+</li>
+<li>
+<p>MDI: execute a syncing G-code (M66E0L0)</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The vismach simulation configurations for a puma robot demonstrate
+M-code scripts (M128,M129,M130) for this example use case.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_coordinate_system_offset_considerations">4.4. Coordinate system offset considerations</h3>
+<div class="paragraph">
+<p>Like INI file limit settings, coordinate system offsets (G92,
+G10L2, G10L20, G43, etc) are generally applicable only for the
+type 0 default startup kinematics type.  When switching
+kinematics types, it may be <strong>important</strong> to either reset all offsets
+prior to switching or update offsets based on system-specific
+requirements.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_external_offset_considerations">4.5. External offset considerations</h3>
+<div class="paragraph">
+<p>External offsets (set to an axis (<em>L</em>) via axis.<em>L</em>.eoffset-request)
+are preserved during kinematics switches. When an offset is active on
+an axis before the switch (visible in axis.<em>L</em>.eoffset), the trajectory
+planner maintains that same offset after the switch, similar to how it
+maintains the commanded position from a G-code. This ensures consistent
+machine behavior regardless of the active kinematics.</p>
+</div>
+<div class="paragraph">
+<p>If maintaining the offset will be an issue due to axis limit changes or other concerns,
+be sure to clear and possibly disable the eoffset before making a kinematics switch.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_simulation_configs">5. Simulation configs</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Simulation configs (requiring no hardware) are provided with
+illustrative vismach displays in subdirectories of
+configs/sim/axis/vismach/ .</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>5axis/table-rotary-tilting/xyzac-trt.ini (xyzac-trt-kins)</p>
+</li>
+<li>
+<p>5axis/table-rotary-tilting/xyzbc-trt.ini (xyzac-trt-kins)</p>
+</li>
+<li>
+<p>5axis/bridgemill/5axis.ini (5axiskins)</p>
+</li>
+<li>
+<p>scara/scara.ini (scarakins)</p>
+</li>
+<li>
+<p>puma/puma560.ini (genserkins)</p>
+</li>
+<li>
+<p>puma/puma.ini (pumakins)</p>
+</li>
+<li>
+<p>hexapod-sim/hexapod.ini (genhexkins)</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_user_kinematics_provisions">6. User kinematics provisions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Custom kinematics can be coded and tested on Run-In-Place (<em>RIP</em>)
+builds.  A template file src/emc/kinematics/userkfuncs.c is provided
+in the distribution.  This file can be copied/renamed to a user
+directory and edited to supply custom kinematics with
+kinstype==2.</p>
+</div>
+<div class="paragraph">
+<p>The user custom kinematics file can be compiled from out-of-tree
+source locations for rt-preempt implementations or by replacing
+the in-tree template file (src/emc/kinematics/userkfuncs.c) for rtai
+systems.</p>
+</div>
+<div class="paragraph">
+<p>Preempt-rt make example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ userkfuncs=/home/myname/kins/mykins.c make &amp;&amp; sudo make setuid</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_warnings">7. Warnings</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Unexpected behavior can result if a G-code program is inadvertently
+started with an incompatible kinematics type.  Unwanted behavior
+can be circumvented in G-code programs by:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Connecting appropriate kinstype.is.N HAL pins to digital input
+pins (like motion.digital-in-0m).</p>
+</li>
+<li>
+<p>Reading the digital input pin (M66 E0 Pm) at the start of the
+G-code program</p>
+</li>
+<li>
+<p>Aborting (M2) the G-code program with a message (DEBUG, problem_message)
+if the kinstype is not suitable.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>When using jogging facilities or MDI commands interactively,
+operator caution is required.  Guis should include indicators to
+display the current kinematics type.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Switching kinematics can cause substantial operational changes
+requiring careful design, testing, and training for deployment.
+The management of coordinate offsets, tool compensation, and
+INI file limits may require complicated and non-standard operating
+protocols.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_code_notes">8. Code Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Kinematic modules providing switchkins functionality are linked to
+the switchkins.o object (switchkins.c) that provides the module
+<em>main</em> program (rtapi_app_main()) and related functions.  This
+<em>main</em> program reads (optional) module command-line parameters
+(coordinates, sparm) and passes them to the module-provided
+function switchkinsSetup().</p>
+</div>
+<div class="paragraph">
+<p>The switchkinsSetup() function identifies kinstype-specific setup
+routines and the functions for forward an inverse calculation for
+each kinstype (0,1,2) and sets a number of configuration
+settings.</p>
+</div>
+<div class="paragraph">
+<p>After calling switchkinsSetup(), rtapi_app_main() checks the
+supplied parameters, creates a HAL component, and then invokes
+the setup routine identified for each kinstype (0,1,2).</p>
+</div>
+<div class="paragraph">
+<p>Each kinstype (0,1,2) setup routine can (optionally) create HAL
+pins and set them to default values.  When all setup routines
+finish, rtapi_app_main() issues hal_ready() for the component
+to complete creation of the module.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

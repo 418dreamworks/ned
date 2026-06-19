@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>io(1)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="io.1.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man1/io.1.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man1/io.1.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man1/io.1.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man1/io.1.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man1/io.1.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man1/io.1.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man1/io.1.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>io(1) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>io, iocontrol - interacts with HAL or G-code in non-realtime</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>[EMCIO]</strong></p>
+</div>
+<div class="paragraph">
+<p><strong>EMCIO = io</strong></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>I/O control handles I/O tasks like coolant, toolchange and E-stop.
+The signals are turned on and off in non-realtime with G-code or in the case
+of E-stop in HAL.</p>
+</div>
+<div class="paragraph">
+<p>The following pins are created by the non-realtime IO controller,
+usually found in <code>$LINUXCNC_HOME/bin/io</code>.</p>
+</div>
+<div class="paragraph">
+<p>iocontrol is a non-realtime process - if you have strict timing
+requirements or simply need more I/O, consider using the realtime
+synchronized I/O provided by <strong>motion</strong>(9) instead.</p>
+</div>
+<div class="paragraph">
+<p>The INI file is searched for in the directory from which halcmd was run,
+unless an absolute path is specified.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>iocontrol.0.coolant-flood</strong> (Bit, Out)</dt>
+<dd>
+<p>TRUE when flood coolant is requested.</p>
+</dd>
+<dt class="hdlist1"><strong>iocontrol.0.coolant-mist</strong> (Bit, Out)</dt>
+<dd>
+<p>TRUE when mist coolant is requested.</p>
+</dd>
+<dt class="hdlist1"><strong>iocontrol.0.emc-enable-in</strong> (Bit, In)</dt>
+<dd>
+<p>Should be driven FALSE when an external E-stop condition exists.</p>
+</dd>
+<dt class="hdlist1"><strong>iocontrol.0.tool-change</strong> (Bit, Out)</dt>
+<dd>
+<p>TRUE when a tool change is requested.</p>
+</dd>
+<dt class="hdlist1"><strong>iocontrol.0.tool-changed</strong> (Bit, In)</dt>
+<dd>
+<p>Should be driven TRUE when a tool change is completed.</p>
+</dd>
+<dt class="hdlist1"><strong>iocontrol.0.tool-number</strong> (s32, Out)</dt>
+<dd>
+<p>Current tool number.</p>
+</dd>
+<dt class="hdlist1"><strong>iocontrol.0.tool-prep-number</strong> (s32, Out)</dt>
+<dd>
+<p>The number of the next tool, from the RS274NGC T-word.</p>
+</dd>
+<dt class="hdlist1"><strong>iocontrol.0.tool-prep-pocket</strong> (s32, Out)</dt>
+<dd>
+<p>This is the pocket number (location in the tool storage
+mechanism) of the tool requested by the most recent T-word.</p>
+</dd>
+<dt class="hdlist1"><strong>iocontrol.0.tool-prepare</strong> (Bit, Out)</dt>
+<dd>
+<p>TRUE when a T<em>n</em> tool prepare is requested.</p>
+</dd>
+<dt class="hdlist1"><strong>iocontrol.0.tool-prepared</strong> (Bit, In)</dt>
+<dd>
+<p>Should be driven TRUE when a tool prepare is completed.</p>
+</dd>
+<dt class="hdlist1"><strong>iocontrol.0.user-enable-out</strong> (Bit, Out)</dt>
+<dd>
+<p>FALSE when an internal E-stop condition exists.</p>
+</dd>
+<dt class="hdlist1"><strong>iocontrol.0.user-request-enable</strong> (Bit, Out)</dt>
+<dd>
+<p>TRUE when the user has requested that E-stop be cleared.</p>
+</dd>
+<dt class="hdlist1"><strong>iocontrol.0.tool-prep-index</strong> (s32, Out)</dt>
+<dd>
+<p>IO&#8217;s internal array index of the prepped tool requested by the most recent T-word.
+0 if no tool is prepped.  On Random toolchanger machines this is the tool&#8217;s pocket number
+(i.e., the same as the tool-prep-pocket pin),
+on Non-random toolchanger machines this is a small integer corresponding to
+the tool&#8217;s location in the internal representation of the tool table.
+This parameter returns to 0 after a successful tool change (M6).</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reporting_bugs">REPORTING BUGS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Report bugs at <a href="https://github.com/LinuxCNC/linuxcnc/issues" class="bare">https://github.com/LinuxCNC/linuxcnc/issues</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">AUTHOR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Derived from a work by Fred Proctor &amp; Will Shackleford.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_copyright">COPYRIGHT</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Copyright © 2004 the LinuxCNC project.</p>
+</div>
+<div class="paragraph">
+<p>This is free software; see the source for copying conditions. There is
+NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

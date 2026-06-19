@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>hal_signal_new(3)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="hal_signal_new.3.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man3/hal_signal_new.3.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man3/hal_signal_new.3.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man3/hal_signal_new.3.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man3/hal_signal_new.3.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man3/hal_signal_new.3.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man3/hal_signal_new.3.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man3/hal_signal_new.3.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>hal_signal_new(3) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>hal_signal_new, hal_signal_delete, hal_link, hal_unlink - Manipulate HAL signals</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_syntax">SYNTAX</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>int hal_signal_new(const char* <em>signal_name</em>, hal_type_t <em>type</em>)</p>
+</div>
+<div class="paragraph">
+<p>int hal_signal_delete(const char* <em>signal_name</em>)</p>
+</div>
+<div class="paragraph">
+<p>int hal_link(const char* <em>pin_name</em>, const char* <em>signal_name</em>)</p>
+</div>
+<div class="paragraph">
+<p>int hal_unlink(const char* <em>pin_name</em>)</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_arguments">ARGUMENTS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1">signal_name</dt>
+<dd>
+<p>The name of the signal.</p>
+</dd>
+<dt class="hdlist1">pin_name</dt>
+<dd>
+<p>The name of the pin.</p>
+</dd>
+<dt class="hdlist1">type</dt>
+<dd>
+<p>The type of the signal, as specified in <strong>hal_type_t(3)</strong>.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>hal_signal_new</strong> creates a new signal object. Once a signal has been
+created, pins can be linked to it with <strong>hal_link</strong>. The signal object
+contains the actual storage for the signal data. Pin objects linked to
+the signal have pointers that point to the data. <em>name</em> is the name of
+the new signal. It may be no longer than HAL_NAME_LEN characters. If
+there is already a signal with the same name the call will fail.</p>
+</div>
+<div class="paragraph">
+<p><strong>hal_link</strong> links a pin to a signal. If the pin is already linked to the
+desired signal, the command succeeds. If the pin is already linked to
+some other signal, it is an error. In either case, the existing
+connection is not modified. (Use <em>hal_unlink</em> to break an existing
+connection.) If the signal already has other pins linked to it, they are
+unaffected - one signal can be linked to many pins, but a pin can be
+linked to only one signal.</p>
+</div>
+<div class="paragraph">
+<p><strong>hal_unlink</strong> unlinks any signal from the specified pin.</p>
+</div>
+<div class="paragraph">
+<p><strong>hal_signal_delete</strong> deletes a signal object. Any pins linked to the
+object are unlinked.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_return_value">RETURN VALUE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Returns a HAL status code.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>hal_type_t(3)</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

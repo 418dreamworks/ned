@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>Generic driver for any GPIO supported by gpiod.</title>
+<link rel="stylesheet" href="../asciidoctor.css">
+<link rel="stylesheet" href="../lcnc-overrides.css">
+</head>
+<body id="cha:hal_gpio-driver" class="book toc2 toc-left">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../index.html">
+    <img src="../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="hal_gpio.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/drivers/hal_gpio.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/drivers/hal_gpio.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/drivers/hal_gpio.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/drivers/hal_gpio.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/drivers/hal_gpio.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/drivers/hal_gpio.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/drivers/hal_gpio.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>Generic driver for any GPIO supported by gpiod.</h1>
+<div id="toc" class="toc2"><nav class="lcnc-sitenav" aria-label="Documentation"><details open><summary>Getting Started &amp; Configuration</summary><details><summary>Getting Started with LinuxCNC</summary><a href="../getting-started/about-linuxcnc.html">About LinuxCNC</a><a href="../getting-started/system-requirements.html">System Requirements</a><a href="../getting-started/hardware-interface.html">Hardware Interface</a><a href="../getting-started/getting-linuxcnc.html">Getting LinuxCNC</a><a href="../getting-started/running-linuxcnc.html">Running LinuxCNC</a><a href="../getting-started/updating-linuxcnc.html">Updating LinuxCNC</a><a href="../common/linux-faq.html">Linux FAQ</a></details><details><summary>General User Information</summary><a href="../user/user-foreword.html">User Foreword</a><a href="../user/user-intro.html">LinuxCNC User Introduction</a><a href="../user/user-concepts.html">Important User Concepts</a><a href="../user/starting-linuxcnc.html">Starting LinuxCNC</a><a href="../gcode/machining-center.html">CNC Machine Overview</a><a href="../lathe/lathe-user.html">Lathe User Information</a><a href="../plasma/plasma-cnc-primer.html">Plasma Cutting Primer for LinuxCNC Users</a></details><details><summary>Configuration Wizards</summary><a href="../config/stepconf.html">Stepper Configuration Wizard</a><a href="../config/pncconf.html">Mesa Configuration Wizard</a></details><details><summary>Configuration</summary><a href="../config/integrator-concepts.html">Integrator Concepts</a><a href="../install/latency-test.html">Latency Testing</a><a href="../motion/tweaking-steppers.html">Stepper Tuning</a><a href="../config/ini-config.html">INI Configuration</a><a href="../config/ini-homing.html">Homing Configuration</a><a href="../config/lathe-config.html">Lathe Configuration</a><a href="../config/stepper-quickstart.html">Stepper Quickstart</a><a href="../config/stepper.html">Stepper Configuration</a><a href="../config/stepper-diagnostics.html">Stepper Diagnostics</a><a href="../gui/filter-programs.html">Filter Programs</a></details><details><summary>HAL (Hardware Abstraction Layer)</summary><a href="../hal/intro.html">HAL Introduction</a><a href="../hal/basic-hal.html">HAL Basics</a><a href="../hal/twopass.html">HAL TWOPASS</a><a href="../hal/tools.html">HAL Tools</a><a href="../hal/tutorial.html">HAL Tutorial</a><a href="../hal/hal-examples.html">HAL Examples</a><a href="../config/core-components.html">Core Components</a><a href="../hal/components.html">HAL Component List</a><a href="../hal/rtcomps.html">HAL Component Descriptions</a><a href="../hal/comp.html">HAL Component Generator</a><a href="../hal/haltcl.html">HALTCL Files</a><a href="../gui/halui.html">HAL User Interface</a><a href="../hal/halui-examples.html">Halui Examples</a><a href="../hal/halmodule.html">Creating Non-realtime Python Components</a><a href="../hal/canonical-devices.html">Canonical Device Interfaces</a></details><details open><summary>Hardware Drivers</summary><a href="../hal/parallel-port.html">Parallel Port Driver</a><a href="ax5214h.html">AX5214H Driver</a><a href="gm.html">General Mechatronics Driver</a><a href="gs2.html">GS2 VFD Driver</a><a href="hal_pi_gpio.html">HAL Driver for Raspberry Pi GPIO pins</a><details class="lcnc-sn-page"><summary class="lcnc-sn-active" autofocus>Generic driver for any GPIO supported by gpiod.</summary><ul class="sectlevel1">
+<li><a href="hal_gpio.html#_purpose">1. Purpose</a></li>
+<li><a href="hal_gpio.html#_usage">2. Usage</a></li>
+<li><a href="hal_gpio.html#_pins">3. Pins</a></li>
+<li><a href="hal_gpio.html#_parameters">4. Parameters</a></li>
+<li><a href="hal_gpio.html#_functions">5. Functions</a></li>
+<li><a href="hal_gpio.html#_pin_identification">6. Pin Identification</a></li>
+<li><a href="hal_gpio.html#_troubleshooting_permissions_problems">7. Troubleshooting permissions problems.</a></li>
+<li><a href="hal_gpio.html#_author">8. Author</a></li>
+<li><a href="hal_gpio.html#_known_bugs">9. Known Bugs</a></li>
+</ul></details><a href="hostmot2.html">Mesa HostMot2 Driver</a><a href="mb2hal.html">MB2HAL</a><a href="mesa_modbus.html">Mesa Modbus =</a><a href="mitsub-vfd.html">Mitsub VFD Driver</a><a href="motenc.html">Motenc Driver</a><a href="opto22.html">Opto22 Driver</a><a href="pico-ppmc.html">Pico Drivers</a><a href="pluto-p.html">Pluto P Driver</a><a href="pmx485.html">Powermax Modbus Driver</a><a href="servo-to-go.html">Servo To Go Driver</a><a href="shuttle.html">Shuttle</a><a href="vfs11.html">VFS11 VFD Driver</a></details><details><summary>Hardware Examples</summary><a href="../examples/pci-parallel-port.html">PCI Parallel Port</a><a href="../examples/spindle.html">Spindle Control</a><a href="../examples/mpg.html">MPG Pendant</a><a href="../examples/gs2-example.html">GS2 Spindle</a></details><details><summary>ClassicLadder</summary><a href="../ladder/ladder-intro.html">ClassicLadder Introduction</a><a href="../ladder/classic-ladder.html">ClassicLadder Programming</a><a href="../ladder/ladder-examples.html">ClassicLadder Examples</a></details><details><summary>Advanced Topics</summary><a href="../motion/kinematics.html">Kinematics</a><a href="../motion/dh-parameters.html">Setting up &quot;modified&quot; Denavit-Hartenberg (DH) parameters for 'genserkins'</a><a href="../motion/5-axis-kinematics.html">5-Axis Kinematics</a><a href="../motion/switchkins.html">Switchable Kinematics (switchkins)</a><a href="../motion/pid-theory.html">PID Tuning</a><a href="../remap/remap.html">Remap Extending G-code</a><a href="../config/moveoff.html">Moveoff Component</a><a href="../code/rs274.html">Stand Alone Interpreter</a><a href="../motion/external-offsets.html">External Axis Offsets</a><a href="../tooldatabase/tooldatabase.html">Tool Database Interface</a></details></details><details><summary>Usage</summary><details><summary>User Interfaces</summary><a href="../gui/axis.html">AXIS GUI</a><a href="../gui/gmoccapy.html">GMOCCAPY</a><a href="../gui/touchy.html">The Touchy Graphical User Interface</a><a href="../gui/gscreen.html">Gscreen</a><a href="../gui/qtdragon.html">QtDragon GUI</a><a href="../gui/ngcgui.html">NGCGUI</a><a href="../gui/tklinuxcnc.html">TkLinuxCNC GUI</a><a href="../plasma/qtplasmac.html">QtPlasmaC</a><a href="../gui/mdro.html">MDRO GUI</a></details><details><summary>G-code Programming</summary><a href="../gcode/coordinates.html">Coordinate Systems</a><a href="../gcode/tool-compensation.html">Tool Compensation</a><a href="../gui/tooledit.html">Tool Edit GUI</a><a href="../gcode/overview.html">Overview of G-Code Programming</a><a href="../gcode/g-code.html">G-Codes</a><a href="../gcode/m-code.html">M-Codes</a><a href="../gcode/o-code.html">O Codes</a><a href="../gcode/other-code.html">Other Codes</a><a href="../examples/gcode.html">G-Code Examples</a><a href="../gui/image-to-gcode.html">Image to G-Code</a><a href="../gcode/rs274ngc.html">RS274/NGC Differences</a></details><details><summary>Virtual Control Panels</summary><a href="../gui/pyvcp.html">PyVCP</a><a href="../gui/pyvcp-examples.html">PyVCP Examples</a><a href="../gui/gladevcp.html">GladeVCP: Glade Virtual Control Panel</a><a href="../gui/gladevcp-libraries.html">GladeVCP Library modules</a><a href="../gui/gladevcp-panels.html">GladeVCP Builtin Panels</a><a href="../gui/qtvcp.html">QtVCP</a><a href="../gui/qtvcp-vcp-panels.html">QtVCP Virtual Control Panels</a><a href="../gui/qtvcp-widgets.html">QtVCP Widgets</a><a href="../gui/qtvcp-libraries.html">QtVCP Libraries modules</a><a href="../gui/qtvcp-vismach.html">QtVismach</a><a href="../gui/qtvcp-custom-widgets.html">QtVCP: Building Custom Widgets</a><a href="../gui/qtvcp-code-snippets.html">QtVCP Handler File Code Snippets</a><a href="../gui/qtvcp-development.html">QtVCP Development</a></details><details><summary>User Interface Programming</summary><a href="../gui/panelui.html">Panelui</a><a href="../config/python-interface.html">The LinuxCNC Python module</a><a href="../config/python-hal-interface.html">The HAL Python module</a><a href="../gui/gstat.html">GStat Python Module</a><a href="../gui/vismach.html">Vismach</a></details></details><details><summary>Glossary, Copyright &amp; History</summary><details><summary>Overleaf</summary><a href="../common/overleaf.html">Overleaf</a><a href="../common/glossary.html">Glossary</a></details><details><summary>Copyright</summary><a href="../common/gpld-copyright.html">Legal Section</a></details><details><summary>LinuxCNC History</summary><a href="../common/emc-history.html">Origin</a></details></details><details><summary>Integrator Information</summary><a href="../integrator/steppers.html">Stepper Information</a><a href="../integrator/stepper-timing.html">Stepper Timing</a><a href="../integrator/wiring.html">Best Wiring Practices</a></details><details><summary>Developer Manual</summary><a href="../common/overleaf.html">Overleaf</a><a href="../hal/general-ref.html">HAL General Reference</a><a href="../code/code-notes.html">Code Notes</a><a href="../code/nml-messages.html">NML Messages</a><a href="../code/style-guide.html">Coding Style</a><a href="../gui/gui-dev-reference.html">GUI Development Reference</a><a href="../code/building-linuxcnc.html">Building LinuxCNC</a><a href="../code/adding-configs.html">Adding Configuration Selection Items</a><a href="../code/contributing-to-linuxcnc.html">Contributing to LinuxCNC</a><a href="../code/writing-tests.html">Writing automated LinuxCNC tests</a><a href="../common/glossary.html">Glossary</a><a href="../common/gpld-copyright.html">Legal Section</a></details></nav></div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This driver has been tested on the Raspberry Pi, and should also work on Banana Pi, BeagleBone, Pine64 (et al.) and other single board computers, and potentially on other platforms.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_purpose">1. Purpose</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This driver allows the use of GPIO pins in a way analogous to the parallel port driver on x86 PCs. It can use the same step generators, encoder counters and similar components.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_usage">2. Usage</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre>loadrt hal_gpio inputs=GPIO5,GPIO6,GPIO12,GPIO13,GPIO16,GPIO17,GPIO18,GPIO19 \
+				outputs=GPIO20,GPIO21,GPIO22,GPIO23,GPIO24,GPIO25,GPIO26,GPIO27 \
+				invert=GPIO20,GPIO27 \
+				reset=GPIO21,GPIO22</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This driver relies on the libgpiod-dev library and the <a href="https://tracker.debian.org/pkg/libgpiod">gpiod</a> package, which contains a number of utilities for configuring and querying GPIO.
+The GPIO pin names in the "loadrt" line of the HAL given above should be the names given by the <code>gpioinfo</code> command.</p>
+</div>
+<div class="paragraph">
+<p>Sample output (truncated):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ gpioinfo
+gpiochip0 - 54 lines:
+	line   0:     "ID_SDA"       unused   input  active-high
+	line   1:     "ID_SCL"       unused   input  active-high
+	line   2:       "SDA1"       unused   input  active-high
+	line   3:       "SCL1"       unused   input  active-high
+	line   4:  "GPIO_GCLK"       unused   input  active-high
+	line   5:      "GPIO5"       unused   input  active-high
+	line   6:      "GPIO6"       unused   input  active-high
+	line   7:  "SPI_CE1_N"       unused   input  active-high
+	line   8:  "SPI_CE0_N"       unused   input  active-high
+	line   9:   "SPI_MISO"       unused   input  active-high
+	line  10:   "SPI_MOSI"       unused   input  active-high
+	line  11:   "SPI_SCLK"       unused   input  active-high
+	line  12:     "GPIO12"       unused   input  active-high
+	line  13:     "GPIO13"       unused   input  active-high
+	line  14:       "TXD1"       unused   input  active-high
+	line  15:       "RXD1"       unused   input  active-high
+	line  16:     "GPIO16"       unused   input  active-high
+	line  17:     "GPIO17"       unused   input  active-high
+	line  18:     "GPIO18"       unused   input  active-high
+	line  19:     "GPIO19"       unused   input  active-high
+	line  20:     "GPIO20"       unused  output  active-high
+...</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A list of input and/or output pins should be specified as shown in the sample above.
+The \ character is used for line continuation in HAL, and is used to improve readability.
+The pin names are case-sensitive and there must be no spaces in the strings, neither between the comma-separated pins lists nor the "=" signs.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Additional modifiers are</dt>
+<dd>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">invert</dt>
+<dd>
+<p>(valid for outputs only). Inverts the sense of the physical pin relative to the value in HAL.</p>
+</dd>
+<dt class="hdlist1">reset</dt>
+<dd>
+<p>(valid for outputs only). If any pins are allocated to the "reset" list then a HAL parameter <strong>hal_gpio.reset_ns</strong> will be created. This will have no effect unless the <strong>hal_gpio.reset</strong> function is added to a realtime thread. This should be placed after the <strong>hal_gpio.write</strong> function and must be in the same thread. The behaviour of this function is equivalent to the same function in the <strong>hal_parport</strong> driver, and it allows a step pulse every thread cycle. If the <strong>hal_gpio.reset_ns</strong> time is set longer than 1/4 of the period of the thread that it is added to, then the value will be reduced to 1/4 the thread period. There is a lower limit to how long the pulse can be. With 8 pins in the output list the pulse width can not reduce lower than 5000&#8239;ns on an RPi4, for example.</p>
+</dd>
+</dl>
+</div>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>The following functions are accepted in all versions, but are only effective if a version of libgpiod_dev &gt;= 1.6 is installed.
+They should be used in the same way as the parameters described above, and will alter the electrical parameters of the GPIO pins <strong>if</strong> this is supported by the hardware.</p>
+</div>
+<div class="paragraph">
+<p><strong>opendrain</strong></p>
+</div>
+<div class="paragraph">
+<p><strong>opensource</strong></p>
+</div>
+<div class="paragraph">
+<p><strong>biasdisable</strong></p>
+</div>
+<div class="paragraph">
+<p><strong>pulldown</strong></p>
+</div>
+<div class="paragraph">
+<p><strong>pullup</strong></p>
+</div>
+<div class="paragraph">
+<p>The version of libgpiod-dev installed can be determined by the command <code>gpioinfo -v</code></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">3. Pins</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>hal_gpio.NAME-in - HAL_OUT The value of an input pin presented in to HAL</p>
+</li>
+<li>
+<p>hal_gpio.NAME-in-not - HAL_OUT An inverted version of the above, for convenience</p>
+</li>
+<li>
+<p>hal_gpio.NAME-out - HAL_IN use this pin to transfer a HAL bit value to a physical output</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parameters">4. Parameters</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>hal_gpio.reset_ns - HAL_RW - "setp" this parameter to control the pulse length of pins added to the "reset" list. The value will be limited between 0 and thread-period / 4.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">5. Functions</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><em>hal_gpio.read</em> - Add this to the base thread to update the HAL pin values to match the physical input values.</p>
+</li>
+<li>
+<p><em>hal_gpio.write</em> - Add this to the base thread to update the physical pins to match the HAL values.</p>
+</li>
+<li>
+<p><em>hal_gpio.reset</em> - Only exported if there are pins defined in the reset list. This should be placed after the "write" function, and should be in the same thread.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Typically, the <em>read</em> function will be early in the call list, before any encoder counters and the <em>write</em> function will be later in the call list, after <code>stepgen.make-pulses</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pin_identification">6. Pin Identification</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Use the pin names returned by the <code>gpioinfo</code> utility. This uses the device-tree data. If the installed OS does not have a device-tree database then the pins will all be called "unnamed" (or similar) and this driver can not be used.</p>
+</div>
+<div class="paragraph">
+<p>A further update to this driver might allow access by index number, but this is not currently supported.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_troubleshooting_permissions_problems">7. Troubleshooting permissions problems.</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If "access denied" messages are returned on loading the driver, try the following recipe:
+(Should not be needed for Raspbian, and will need to be modified to match the actual GPIO chip name on non-Pi platforms)</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Create a new group <code>gpio</code> with the command</p>
+<div class="listingblock">
+<div class="content">
+<pre>sudo groupadd gpio</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Then to setup permissions for the "gpio" group, create a file called
+<code>90-gpio-access</code> in the <code>/etc/udev/rules.d/</code> directory with the
+following contents (this is copied from the Raspbian install)</p>
+<div class="listingblock">
+<div class="content">
+<pre>SUBSYSTEM=="bcm2835-gpiomem", GROUP="gpio", MODE="0660"
+SUBSYSTEM=="gpio", GROUP="gpio", MODE="0660"
+SUBSYSTEM=="gpio*", PROGRAM="/bin/sh -c '\
+	chown -R root:gpio /sys/class/gpio &amp;&amp; chmod -R 770 /sys/class/gpio;\
+	chown -R root:gpio /sys/devices/virtual/gpio &amp;&amp;\
+	chmod -R 770 /sys/devices/virtual/gpio;\
+	chown -R root:gpio /sys$devpath &amp;&amp; chmod -R 770 /sys$devpath\
+'"
+
+SUBSYSTEM=="pwm*", PROGRAM="/bin/sh -c '\
+	chown -R root:gpio /sys/class/pwm &amp;&amp; chmod -R 770 /sys/class/pwm;\
+	chown -R root:gpio /sys/devices/platform/soc/*.pwm/pwm/pwmchip* &amp;&amp;\
+	chmod -R 770 /sys/devices/platform/soc/*.pwm/pwm/pwmchip*\
+'"</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Add the user who runs LinuxCNC to the <code>gpio</code> group with</p>
+<div class="listingblock">
+<div class="content">
+<pre>sudo usermod -aG gpio &lt;username&gt;</pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_author">8. Author</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Andy Pugh</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_known_bugs">9. Known Bugs</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>None at this time.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

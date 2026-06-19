@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>motion(9)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="motion.9.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man9/motion.9.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man9/motion.9.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man9/motion.9.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man9/motion.9.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man9/motion.9.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man9/motion.9.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man9/motion.9.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>motion(9) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>motion, axis - accepts NML motion commands, interacts with HAL in realtime</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt motmod</strong> [<strong>base_period_nsec=</strong><em>period</em>] [<strong>base_thread_fp=</strong><em>0 or 1</em>] [<strong>servo_period_nsec=</strong><em>period</em>] [<strong>traj_period_nsec=</strong><em>period</em>] <em class="<strong>num_joints=</strong>_[1-16">] [<strong>num_dio=</strong></em>[1-64]_ | <strong>names_dout=</strong><em>name</em>[,&#8230;&#8203;] <strong>names_din=</strong><em>name</em>[,&#8230;&#8203;]] [<strong>num_aio=</strong><em>[1-64]</em> | <strong>names_aout=</strong><em>name</em>[,&#8230;&#8203;] <em>_names_ain=</em>*<em>name</em>[,&#8230;&#8203;]] <em class="<strong>num_misc_error=</strong>_[0-64">] [<strong>num_spindles=</strong></em>[1-8]<em>] [<strong>unlock_joints_mask=</strong>_jointmask</em>] [<strong>num_extrajoints=</strong><em>[0-16]</em>]</p>
+</div>
+<div class="paragraph">
+<p>The limits for the following items are compile-time settings:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>num_joints</strong></dt>
+<dd>
+<p>Maximum number of joints is set by <strong>EMCMOT_MAX_JOINTS</strong>.</p>
+</dd>
+<dt class="hdlist1"><strong>num_dio</strong></dt>
+<dd>
+<p>Maximum number of digital IO pins is set by <strong>EMCMOT_MAX_DIO</strong>.
+Minimum is 1, if <strong>num_dio</strong> is not specified, it defaults to <strong>DEFAULT_DIO</strong>.</p>
+</dd>
+<dt class="hdlist1"><strong>names_dout</strong></dt>
+<dd>
+<p>A comma-separated list of names for digital output pins.
+This parameter is mutually exclusive with <strong>num_dio</strong>, but can be combined with <strong>names_din</strong>.
+A maximum of <strong>EMCMOT_MAX_DIO</strong> names can be specified.
+The default digital output pin has names like <strong>motion.digital-out-00</strong> whereas <strong>names_dout=</strong><em>is-homing-x,is-homing-y</em>
+will create the HAL pins <code>motion.dout-is-homing-x</code> and <code>motion.dout-is-homing-y</code>.</p>
+</dd>
+<dt class="hdlist1"><strong>names_din</strong></dt>
+<dd>
+<p>A comma-separated list of names for digital input pins.
+This parameter is mutually exclusive with <strong>num_dio</strong>, but can be
+combined with <strong>names_dout</strong>. A maximum of <strong>EMCMOT_MAX_DIO</strong> names can be
+specified. The default digital input pin has names like
+<strong>motion.digital-in-00</strong> whereas <strong>names_din=</strong><em>homed-x,homed-y</em> will
+create the HAL pins <code>motion.din-homed-x</code> and <code>motion.din-homed-y</code>.</p>
+</dd>
+<dt class="hdlist1"><strong>num_aio</strong></dt>
+<dd>
+<p>Maximum number of analog IO pins is set by <strong>EMCMOT_MAX_AIO</strong>.
+Minimum is 1, if <strong>num_aio</strong> is not specified, it defaults to <strong>DEFAULT_AIO</strong>.</p>
+</dd>
+<dt class="hdlist1"><strong>names_aout</strong></dt>
+<dd>
+<p>A comma-separated list of names for analog output pins.
+This parameter is mutually exclusive with <strong>num_aio</strong>, but can be
+combined with <strong>names_ain</strong>. A maximum of <strong>EMCMOT_MAX_AIO</strong> names can be
+specified. The default analog output pin has names like
+<strong>motion.analog-out-00</strong> whereas <strong>names_aout=</strong><em>feedrate1,feedrate2</em> will
+create the HAL pins <code>motion.aout-feedrate1</code> and <code>motion.aout-feedrate2</code>.</p>
+</dd>
+<dt class="hdlist1"><strong>names_ain</strong></dt>
+<dd>
+<p>A comma-separated list of names for analog input pins.
+This parameter is mutually exclusive with <strong>num_aio</strong>, but can be
+combined with <strong>names_aout</strong>. A maximum of <strong>EMCMOT_MAX_AIO</strong> names can be
+specified. The default analog input pin has names like
+<strong>motion.analog-in-00</strong> whereas <strong>names_ain=</strong><em>proxy1,proxy2</em> will create
+the HAL pins <code>motion.ain-proxy1</code> and <code>motion.ain-proxy2</code>.</p>
+</dd>
+<dt class="hdlist1"><strong>num_misc_error</strong></dt>
+<dd>
+<p>Maximum number of extra error inputs is set by <strong>EMCMOT_MAX_MISC_ERRORS</strong>.</p>
+</dd>
+<dt class="hdlist1"><strong>names_misc_errors</strong></dt>
+<dd>
+<p>A comma-separated list of names for extra error inputs.
+This parameter is mutually exclusive with num_misc_error.
+If using num_misc_error the additional error input pins will have names
+like <strong>motion.misc-error-00</strong> whereas <strong>names_misc_errors=overtemp,undertemp</strong>
+will create hal pins <code>motion.err-overtemp</code> and <code>motion.err-undertemp</code>.</p>
+</dd>
+<dt class="hdlist1"><strong>num_spindles</strong></dt>
+<dd>
+<p>Maximum number of spindles is set by <strong>EMCMOT_MAX_SPINDLES</strong>.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>Pin names starting with "<strong>joint</strong>" or "<strong>axis</strong>" are read and updated by
+the motion-controller function.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The <strong>base_thread_fp</strong> parameter is deprecated and ignored.
+All threads now unconditionally save and restore floating point state.
+This parameter will be removed in a future version.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>These pins and parameters are created by the realtime <strong>motmod</strong> module.
+This module provides a HAL interface for LinuxCNC&#8217;s motion planner.
+Basically <strong>motmod</strong> takes in a list of waypoints and generates a nice
+blended and constraint-limited stream of joint positions to be fed to
+the motor drives.</p>
+</div>
+<div class="paragraph">
+<p>The optional <strong>num_extrajoints</strong> parameter specifies a quantity of joints
+that participate in homing but are not used by kinematics
+transformations. After homing, control of an <em>extra</em> joint is
+transferred to a posthome command HAL pin (joint.N.posthome-cmd) and the
+motor feedback value is ignored. <em>Extra</em> joints must be managed by
+independent motion planners/controllers (typically using limit3 HAL
+components). Extra joints maybe unhomed only when motion is disabled.</p>
+</div>
+<div class="paragraph">
+<p>The maximum <strong>num_extrajoints</strong> value is equal to the <strong>num_joints</strong> value.
+(Note that using the maximum value would allow no operation in world
+coordinates). The <strong>num_joints</strong> value must be equal to the sum of the
+number of joints used for kinematics calculations plus the number of
+<em>extra</em> joints.</p>
+</div>
+<div class="paragraph">
+<p>The <strong>num_joints</strong> parameter is conventionally set using the INI file
+setting <strong>[KINS]JOINTS=</strong>value. The <strong>num_extrajoints</strong> is set by the
+additional motmod parameter <strong>[EMCMOT]motmod num_extrajoints=</strong>value.
+HAL pin numbering for all joints is zero based [<strong>0 &#8230;&#8203; num_joints-1</strong>].
+When specified, <em>extra</em> joints are assigned the last <strong>num_extrajoints</strong>
+in the numbering sequence. For example, specifying [KINS]JOINTS=5 and
+[EMCMOT]motmod num_extrajoints=2 for a 3 joint trivkins configuration
+<strong>[KINS] KINEMATICS=trivkins coordinates=xyz</strong> uses joints 0,1,2 for the
+kinematic joints and joints 3,4 for the <em>extra</em> joints.</p>
+</div>
+<div class="paragraph">
+<p>An equal number of digital or analog IO pins will always be created. For
+example, if <strong>names_din</strong> is specified with two pins, two named input and
+two default named output pins will be created. In cases where
+<strong>names_dout</strong> is specified with two pins and <strong>names_din</strong> with three pins,
+two named output and one default named output pin will be created, along
+with three named input pins. This principle applies independently to
+digital and analog IO pins, allowing for scenarios such as having three
+digital pins and two analog pins.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_motion_pins">MOTION PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>motion-command-handler.time</strong> OUT S32</dt>
+<dd>
+<p>Time (in ns) for the motion module motion-command-handler</p>
+</dd>
+<dt class="hdlist1"><strong>motion-controller.time</strong> OUT S32</dt>
+<dd>
+<p>Time (in ns) for the motion module motion-controller</p>
+</dd>
+<dt class="hdlist1"><strong>motion.adaptive-feed</strong> IN FLOAT</dt>
+<dd>
+<p>When adaptive feed is enabled with M52 P1, the commanded velocity is
+multiplied by this value. This effect is multiplicative with the
+NML-level feed override value and motion.feed-hold. Negative values
+are valid and will run the G-code path in reverse.</p>
+</dd>
+<dt class="hdlist1"><strong>motion.analog-in-</strong><em>NN</em> IN FLOAT</dt>
+<dd>
+<p>These pins are used by M66 Enn wait-for-input mode.</p>
+</dd>
+<dt class="hdlist1"><strong>motion.analog-out-</strong><em>NN</em> OUT FLOAT</dt>
+<dd>
+<p>These pins are used by M67-68.</p>
+</dd>
+<dt class="hdlist1"><strong>motion.coord-error</strong> OUT BIT</dt>
+<dd>
+<p>TRUE when motion has encountered an error, such as exceeding a soft limit</p>
+</dd>
+<dt class="hdlist1"><strong>motion.coord-mode</strong> OUT BIT</dt>
+<dd>
+<p>TRUE when motion is in "coordinated mode", as opposed to "teleop mode"</p>
+</dd>
+<dt class="hdlist1"><strong>motion.current-vel</strong> OUT FLOAT</dt>
+<dd>
+<p>Current cartesian velocity</p>
+</dd>
+<dt class="hdlist1"><strong>motion.digital-in-</strong><em>NN</em> IN BIT</dt>
+<dd>
+<p>These pins are used by M66 Pnn wait-for-input mode.</p>
+</dd>
+<dt class="hdlist1"><strong>motion.digital-out-</strong><em>NN</em> OUT BIT</dt>
+<dd>
+<p>These pins are controlled by the M62 through M65 words.</p>
+</dd>
+<dt class="hdlist1"><strong>motion.distance-to-go</strong> OUT FLOAT</dt>
+<dd>
+<p>Distance remaining in the current move</p>
+</dd>
+<dt class="hdlist1"><strong>motion.enable</strong> IN BIT</dt>
+<dd>
+<p>If this bit is driven FALSE, motion stops, the machine is placed in
+the "machine off" state, and a message is displayed for the operator.
+For normal motion, drive this bit TRUE.</p>
+</dd>
+<dt class="hdlist1"><strong>motion.eoffset-active</strong> OUT BIT</dt>
+<dd>
+<p>Indicates external offsets are active (non-zero)</p>
+</dd>
+<dt class="hdlist1"><strong>motion.eoffset-limited</strong> OUT BIT</dt>
+<dd>
+<p>Indicates motion with external offsets was limited by a soft limit
+constraint ([AXIS_L]MIN_LIMIT,MAX_LIMIT).</p>
+</dd>
+<dt class="hdlist1"><strong>motion.feed-hold</strong> IN BIT</dt>
+<dd>
+<p>When Feed Stop Control is enabled with M53 P1, and this bit is TRUE,
+the feed rate is set to 0.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>Note: feed-hold applies to G-code commands&#8201;&#8212;&#8201;not jogs.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>motion.feed-inhibit</strong> IN BIT</dt>
+<dd>
+<p>When this pin is TRUE, machine motion is inhibited for G-code commands.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>If the machine is performing a spindle synchronized move when this pin
+goes TRUE, the spindle synchronized motion will finish, and any
+following moves will be inhibited (this is to prevent damage to the
+machine, the tool, or the work piece).</p>
+</div>
+<div class="paragraph">
+<p>If the machine is in the middle of a (non-spindle synchronized) move
+when this pin goes TRUE, the machine will decelerate to a stop at the
+maximum allowed acceleration rate.</p>
+</div>
+<div class="paragraph">
+<p>Motion resumes when this pin goes FALSE.</p>
+</div>
+<div class="paragraph">
+<p>Note: feed-inhibit applies to G-code commands&#8201;&#8212;&#8201;not jogs.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>motion.feed-upm</strong> OUT FLOAT</dt>
+<dd>
+<p>Current feed rate in G-code program units per minute for
+motion.motion-type feed(2) and arc(3). Value is the G-code program F
+value multiplied by the current feed override value and the
+motion.adaptive-feed setting (if M52 active). Value is zero if
+motion.feed-hold or motion.feed-inhibit are asserted. If units (G20 or
+G21) are not specified in the G-code file then units will be the last
+units used.</p>
+</dd>
+<dt class="hdlist1"><strong>motion.feed-inches-per-minute</strong> OUT FLOAT</dt>
+<dd>
+<p>Current feed rate in inches per minute for motion.motion-type feed(2)
+and arc(3). Value is the inch equivalent of the G-code program F value
+multiplied by the current feed override value and the
+motion.adaptive-feed setting (if M52 active). Value is zero if
+motion.feed-hold or motion.feed-inhibit are asserted.</p>
+</dd>
+<dt class="hdlist1"><strong>motion.feed-inches-per-second</strong> OUT FLOAT</dt>
+<dd>
+<p>Current feed rate in inches per second for motion.motion-type feed(2)
+and arc(3). Value is the inch equivalent of the G-code program F value
+multiplied by the current feed override value and the
+motion.adaptive-feed setting (if M52 active). Value is zero if
+motion.feed-hold or motion.feed-inhibit are asserted.</p>
+</dd>
+<dt class="hdlist1"><strong>motion.feed-mm-per-minute</strong> OUT FLOAT</dt>
+<dd>
+<p>Current feed rate in mm per minute for motion.motion-type feed(2) and arc(3).
+Value is the mm equivalent of the G-code program F value multiplied by the
+current feed override value and the motion.adaptive-feed setting (if M52 active).
+Value is zero if motion.feed-hold or motion.feed-inhibit are asserted.</p>
+</dd>
+<dt class="hdlist1"><strong>motion.feed-mm-per-second</strong> OUT FLOAT</dt>
+<dd>
+<p>Current feed rate in mm per second for motion.motion-type feed(2) and arc(3).
+Value is the mm equivalent of the G-code program F value multiplied by the current feed override value
+and the motion.adaptive-feed setting (if M52 active).
+Value is zero if motion.feed-hold or motion.feed-inhibit are asserted.</p>
+</dd>
+<dt class="hdlist1"><strong>motion.homing-inhibit</strong> IN BIT</dt>
+<dd>
+<p>If this bit is TRUE, initiation of any joint homing move (including "Home All")
+is disallowed and an error is reported.
+By default, homing is allowed in joint mode whenever motion is enabled.</p>
+</dd>
+<dt class="hdlist1"><strong>motion.is-all-homed</strong> OUT BIT</dt>
+<dd>
+<p>TRUE if all active joints is homed.</p>
+</dd>
+<dt class="hdlist1"><strong>motion.jog-inhibit</strong> IN BIT</dt>
+<dd>
+<p>If this bit is TRUE, jogging of any joint or axis is disallowed and an error is reported.</p>
+</dd>
+<dt class="hdlist1"><strong>motion.jog-stop</strong> IN BIT</dt>
+<dd>
+<p>If any jog is active when the pin state changes to TRUE then that jog
+will be stopped following the associated acceleration values.</p>
+</dd>
+<dt class="hdlist1"><strong>motion.jog-stop-immediate</strong> IN BIT</dt>
+<dd>
+<p>If any jog is active when the pin state changes to TRUE then that jog
+will be stopped immediately.</p>
+</dd>
+<dt class="hdlist1"><strong>motion.jog-is-active</strong> OUT BIT</dt>
+<dd>
+<p>TRUE if any joint or axis is jogging.</p>
+</dd>
+<dt class="hdlist1"><strong>motion.in-position</strong> OUT BIT</dt>
+<dd>
+<p>TRUE if the machine is in position (i.e., not currently moving towards the commanded position).</p>
+</dd>
+<dt class="hdlist1"><strong>motion.misc-error-</strong><em>NN</em> IN BIT</dt>
+<dd>
+<p>Extra error inputs for faults such as over-temperature sensors,
+low coolant warnings, custom HAL component errors.
+If driven TRUE this will disable a machine. Similar to spindle.amp-fault-in.</p>
+</dd>
+<dt class="hdlist1"><strong>motion.motion-enabled</strong> OUT BIT</dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>motion.motion-type</strong> OUT S32</dt>
+<dd>
+<p>These values are from src/emc/nml_intf/motion_types.h:</p>
+<div class="literalblock">
+<div class="content">
+<pre>0: Idle (no motion)</pre>
+</div>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>1: Traverse</pre>
+</div>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>2: Linear feed</pre>
+</div>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>3: Arc feed</pre>
+</div>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>4: Tool change</pre>
+</div>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>5: Probing</pre>
+</div>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>6: Rotary unlock for traverse</pre>
+</div>
+</div>
+</dd>
+<dt class="hdlist1"><strong>motion.on-soft-limit</strong> OUT BIT</dt>
+<dt class="hdlist1"><strong>motion.probe-input</strong> IN BIT</dt>
+<dd>
+<p>G38.n uses the value on this pin to determine when the probe has made contact.
+TRUE for probe contact closed (touching), FALSE for probe contact open.</p>
+</dd>
+<dt class="hdlist1"><strong>motion.program-line</strong> OUT S32</dt>
+<dd>
+<p>The current program line while executing.
+Zero if not running or between lines while single stepping.</p>
+</dd>
+<dt class="hdlist1"><strong>motion.requested-vel</strong> OUT FLOAT</dt>
+<dd>
+<p>The current requested velocity in user units per second.
+This value is the F-word setting from the G-code file,
+possibly reduced to accommodate machine velocity and acceleration limits.
+The value on this pin does not reflect the feed override or any other adjustments.</p>
+</dd>
+<dt class="hdlist1"><strong>motion.servo.last-period</strong> OUT U32</dt>
+<dd>
+<p>Time (in ns) between invocations of the servo thread.
+Typically, this number divided by the CPU speed gives the time in seconds,
+and can be used to determine whether the realtime motion
+controller is meeting its timing constraints</p>
+</dd>
+<dt class="hdlist1"><strong>motion.switchkins-type</strong> IN float</dt>
+<dd>
+<p>Kinematics modules that define the functions kinematicsSwitchable()
+and kinematicsSwitch() receive the <strong>integer</strong> value of this pin to
+select the machine kinematics functions. Extra G-code commands may be
+required to synchronize task and motion before and after changes to
+the pin value.</p>
+</dd>
+<dt class="hdlist1"><strong>motion.teleop-mode</strong> OUT BIT</dt>
+<dd>
+<p>Motion mode is teleop (axis coordinate jogging available).</p>
+</dd>
+<dt class="hdlist1"><strong>motion.tooloffset.L</strong> OUT FLOAT</dt>
+<dd>
+<p>Current tool offset for each axis where (<strong>L</strong> is the axis letter, one of: <strong>x y z a b c u v w</strong>)</p>
+</dd>
+<dt class="hdlist1"><strong>motion.tp-reverse</strong> OUT BIT</dt>
+<dd>
+<p>Trajectory planning is reversed (reverse run)</p>
+</dd>
+</dl>
+</div>
+<div class="sect2">
+<h3 id="_interpreter_metadata_pins">Interpreter Metadata Pins</h3>
+<div class="paragraph">
+<p>These pins provide geometric intent and interpreter state for the segment of motion currently being executed. Unlike standard position feedback, these values are synchronized with the trajectory planner&#8217;s execution point.</p>
+</div>
+<div class="sect3">
+<h4 id="_interpreter_status_pins">Interpreter Status Pins</h4>
+<div class="ulist">
+<ul>
+<li>
+<p><code>motion.interp.line-number</code> (s32, out)<br>
+The current G-code line number being executed.</p>
+</li>
+<li>
+<p><code>motion.interp.motion-type</code> (s32, out)<br>
+The type of motion currently in progress:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>0: None</p>
+</li>
+<li>
+<p>1: Rapid (G0)</p>
+</li>
+<li>
+<p>2: Feed (G1)</p>
+</li>
+<li>
+<p>3: Arc (G2, G3)</p>
+</li>
+<li>
+<p>4: Tool Change/Other</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><code>motion.interp.feedrate</code> (float, out)<br>
+The interpreted feedrate for the current segment in units per minute.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_interpreter_geometric_pins">Interpreter Geometric Pins</h4>
+<div class="ulist">
+<ul>
+<li>
+<p><code>motion.interp.heading</code> (float, out)<br>
+The XY plane heading of the current linear move in degrees. Measured counter-clockwise from the +X axis (0 to 360). This could be used to control a tangential knife.</p>
+</li>
+<li>
+<p><code>motion.interp.arc-radius</code> (float, out)<br>
+The radius of the current circular move. This value is 0.0 during linear moves. This could be used to modify plasma cutting parameters based on the arc radius and when hole cutting.</p>
+</li>
+<li>
+<p><code>motion.interp.arc-center-x</code> (float, out)<br>
+The absolute X-coordinate of the center point for the current arc. 0 if in YZ plane</p>
+</li>
+<li>
+<p><code>motion.interp.arc-center-y</code> (float, out)<br>
+The absolute Y-coordinate of the center point for the current arc. 0 if in XZ plane</p>
+</li>
+<li>
+<p><code>motion.interp.arc-center-z</code> (float, out)<br>
+The absolute Y-coordinate of the center point for the current arc if in XZ or YZ plane.</p>
+</li>
+<li>
+<p><code>motion.interp.normal-heading</code> (float, out)<br>
+the heading from the current point back to the arc centre for the current arc.</p>
+</li>
+<li>
+<p><code>motion.interp.iscircle</code> (bit, out)<br>
+True if the current arc is a full circle and not a helix.</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+These pins represent the <strong>commanded geometric intent</strong> from the interpreter and are updated in real-time as each motion segment is consumed by the trajectory planner.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_axis_pins">AXIS PINS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>(<strong>L</strong> is the axis letter, one of: <strong>x y z a b c u v w</strong>)</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>axis.</strong><em>L</em><strong>.eoffset</strong> OUT FLOAT</dt>
+<dd>
+<p>Current external offset.</p>
+</dd>
+<dt class="hdlist1"><strong>axis.</strong><em>L</em><strong>.eoffset-clear</strong> IN BIT</dt>
+<dd>
+<p>Clear external offset request</p>
+</dd>
+<dt class="hdlist1"><strong>axis.</strong><em>L</em><strong>.eoffset-counts</strong> IN S32</dt>
+<dd>
+<p>Counts input for external offset. The eoffset-counts are transferred
+to an internal register. The applied external offset is the product of
+the register counts and the eoffset-scale value. The register is
+<strong>reset to zero at each machine startup</strong>. If the machine is turned off
+with an external offset active, the eoffset-counts pin should be set
+to zero before restarting.</p>
+</dd>
+<dt class="hdlist1"><strong>axis.</strong><em>L</em><strong>.eoffset-enable</strong> IN BIT</dt>
+<dd>
+<p>Enable for external offset (also requires INI file setting for [AXIS_L]OFFSET_AV_RATIO)</p>
+</dd>
+<dt class="hdlist1"><strong>axis.</strong><em>L</em><strong>.eoffset-request</strong> OUT FLOAT</dt>
+<dd>
+<p>Debug pin for requested external offset.</p>
+</dd>
+<dt class="hdlist1"><strong>axis.</strong><em>L</em><strong>.eoffset-scale</strong> IN FLOAT</dt>
+<dd>
+<p>Scale for external offset.</p>
+</dd>
+<dt class="hdlist1"><strong>axis.</strong><em>L</em><strong>.jog-accel-fraction</strong> IN FLOAT</dt>
+<dd>
+<p>Sets acceleration for wheel jogging to a fraction of the INI max_acceleration for the axis.
+Values greater than 1 or less than zero are ignored.</p>
+</dd>
+<dt class="hdlist1"><strong>axis.</strong><em>L</em><strong>.jog-counts</strong> IN S32</dt>
+<dd>
+<p>Connect to the "counts" pin of an external encoder to use a physical jog wheel.</p>
+</dd>
+<dt class="hdlist1"><strong>axis.</strong><em>L</em><strong>.jog-enable</strong> IN BIT</dt>
+<dd>
+<p>When TRUE (and in manual mode), any change to "jog-counts" will result in motion.
+When false, "jog-counts" is ignored.</p>
+</dd>
+<dt class="hdlist1"><strong>axis.</strong><em>L</em><strong>.jog-scale</strong> IN FLOAT</dt>
+<dd>
+<p>Sets the distance moved for each count on "jog-counts", in machine units.</p>
+</dd>
+<dt class="hdlist1"><strong>axis.</strong><em>L</em><strong>.jog-vel-mode</strong> IN BIT</dt>
+<dd>
+<p>When FALSE (the default), the jogwheel operates in position mode.
+The axis will move exactly jog-scale units for each count, regardless of how long that might take.
+When TRUE, the wheel operates in velocity mode - motion stops when the wheel stops, even if that means the commanded motion is not completed.</p>
+</dd>
+<dt class="hdlist1"><strong>axis.</strong><em>L</em><strong>.kb-jog-active</strong> OUT BIT</dt>
+<dd>
+<p>(free planner axis jogging active (keyboard or halui))</p>
+</dd>
+<dt class="hdlist1"><strong>axis.</strong><em>L</em><strong>.pos-cmd</strong> OUT FLOAT</dt>
+<dd>
+<p>The axis commanded position.
+There may be several offsets between the axis and motor coordinates:
+Backlash compensation, screw error compensation, and home offsets.
+External offsets are reported separately (axis.<em>L</em>.eoffset).</p>
+</dd>
+<dt class="hdlist1"><strong>axis.</strong><em>L</em><strong>.teleop-pos-cmd</strong> OUT FLOAT</dt>
+<dt class="hdlist1"><strong>axis.</strong><em>L</em><strong>.teleop-tp-enable</strong> OUT BIT</dt>
+<dd>
+<p>TRUE when the "teleop planner" is enabled for this axis.</p>
+</dd>
+<dt class="hdlist1"><strong>axis.</strong><em>L</em><strong>.teleop-vel-cmd</strong> OUT FLOAT</dt>
+<dd>
+<p>The axis&#8217;s commanded velocity.</p>
+</dd>
+<dt class="hdlist1"><strong>axis.</strong><em>L</em><strong>.teleop-vel-lim</strong> OUT FLOAT</dt>
+<dd>
+<p>The velocity limit for the teleop planner.</p>
+</dd>
+<dt class="hdlist1"><strong>axis.</strong><em>L</em><strong>.wheel-jog-active</strong> OUT BIT</dt>
+<dd>
+<p>+</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_joint_pins">JOINT PINS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><em>N</em> is the joint number (0 &#8230;&#8203; <em>num_joints</em>-1))</p>
+</div>
+<div class="paragraph">
+<p>Note: Pins marked <strong>(DEBUG)</strong> serve as debugging aids and are subject to change or removal at any time.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.acc-cmd</strong> OUT FLOAT <strong>(DEBUG)</strong></dt>
+<dd>
+<p>The joint&#8217;s commanded acceleration.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.active</strong> OUT BIT <strong>(DEBUG)</strong></dt>
+<dd>
+<p>TRUE when this joint is active.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.amp-enable-out</strong> OUT BIT</dt>
+<dd>
+<p>TRUE if the amplifier for this joint should be enabled.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.amp-fault-in</strong> IN BIT</dt>
+<dd>
+<p>Should be driven TRUE if an external fault is detected with the amplifier for this joint.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.backlash-corr</strong> OUT FLOAT <strong>(DEBUG)</strong></dt>
+<dd>
+<p>Backlash or screw compensation raw value.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.backlash-filt</strong> OUT FLOAT <strong>(DEBUG)</strong></dt>
+<dd>
+<p>Backlash or screw compensation filtered value (respecting motion limits).</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.backlash-vel</strong> OUT FLOAT <strong>(DEBUG)</strong></dt>
+<dd>
+<p>Backlash or screw compensation velocity.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.coarse-pos-cmd</strong> OUT FLOAT <strong>(DEBUG)</strong></dt>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.error</strong> OUT BIT <strong>(DEBUG)</strong></dt>
+<dd>
+<p>TRUE when t*his joint has encountered an error, such as a limit switch closing.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.f-error</strong> OUT FLOAT <strong>(DEBUG)</strong></dt>
+<dd>
+<p>The actual following error.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.f-error-lim</strong> OUT FLOAT <strong>(DEBUG)</strong></dt>
+<dd>
+<p>The following error limit.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.f-errored</strong> OUT BIT <strong>(DEBUG)</strong></dt>
+<dd>
+<p>TRUE when this joint has exceeded the following error limit.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.faulted</strong> OUT BIT <strong>(DEBUG)</strong></dt>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.free-pos-cmd</strong> OUT FLOAT <strong>(DEBUG)</strong></dt>
+<dd>
+<p>The "free planner" commanded position for this joint.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.free-tp-enable</strong> OUT BIT <strong>(DEBUG)</strong></dt>
+<dd>
+<p>TRUE when the "free planner" is enabled for this joint.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.free-vel-lim</strong> OUT FLOAT <strong>(DEBUG)</strong></dt>
+<dd>
+<p>The velocity limit for the free planner.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.home-state</strong> OUT S32 <strong>(DEBUG)</strong></dt>
+<dd>
+<p>homing state machine state</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.home-sw-in</strong> IN BIT</dt>
+<dd>
+<p>Should be driven TRUE if the home switch for this joint is closed.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.homed</strong> OUT BIT <strong>(DEBUG)</strong></dt>
+<dd>
+<p>TRUE if the joint has been homed.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.homing</strong> OUT BIT</dt>
+<dd>
+<p>TRUE if the joint is currently homing.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.in-position</strong> OUT BIT <strong>(DEBUG)</strong></dt>
+<dd>
+<p>TRUE if the joint is using the "free planner" and has come to a stop.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.index-enable</strong> IO BIT</dt>
+<dd>
+<p>Should be attached to the index-enable pin of the joint&#8217;s encoder to enable homing to index pulse.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.is-unlocked</strong> IN BIT</dt>
+<dd>
+<p>Indicates joint is unlocked (see JOINT UNLOCK PINS).</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.jog-accel-fraction</strong> IN FLOAT</dt>
+<dd>
+<p>Sets acceleration for wheel jogging to a fraction of the INI max_acceleration for the joint.
+Values greater than 1 or less than zero are ignored.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.jog-counts</strong> IN S32</dt>
+<dd>
+<p>Connect to the "counts" pin of an external encoder to use a physical jog wheel.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.jog-enable</strong> IN BIT</dt>
+<dd>
+<p>When TRUE (and in manual mode), any change to "jog-counts" will result in motion.
+When false, "jog-counts" is ignored.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.jog-scale</strong> IN FLOAT</dt>
+<dd>
+<p>Sets the distance moved for each count on "jog-counts", in machine units.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.jog-vel-mode</strong> IN BIT</dt>
+<dd>
+<p>When FALSE (the default), the jogwheel operates in position mode.
+The joint will move exactly jog-scale units for each count, regardless of how long that might take.
+When TRUE, the wheel operates in velocity mode - motion stops when the wheel stops, even if that means the commanded motion is not completed.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.kb-jog-active</strong> OUT BIT <strong>(DEBUG)</strong></dt>
+<dd>
+<p>(free planner joint jogging active (keyboard or halui))</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.motor-offset</strong> OUT FLOAT <strong>(DEBUG)</strong></dt>
+<dd>
+<p>joint motor offset established when joint is homed.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.motor-pos-cmd</strong> OUT FLOAT</dt>
+<dd>
+<p>The commanded position for this joint.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.motor-pos-fb</strong> IN FLOAT</dt>
+<dd>
+<p>The actual position for this joint.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.neg-hard-limit</strong> OUT BIT <strong>(DEBUG)</strong></dt>
+<dd>
+<p>The negative hard limit for the joint</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.neg-lim-sw-in</strong> IN BIT</dt>
+<dd>
+<p>Should be driven TRUE if the negative limit switch for this joint is tripped.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.pos-cmd</strong> OUT FLOAT</dt>
+<dd>
+<p>The joint (as opposed to motor) commanded position. There may be
+several offsets between the joint and motor coordinates: backlash
+compensation, screw error compensation, and home offsets.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.pos-fb</strong> OUT FLOAT</dt>
+<dd>
+<p>The joint feedback position. This value is computed from the actual
+motor position minus joint offsets. Useful for machine visualization.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.pos-hard-limit</strong> OUT BIT <strong>(DEBUG)</strong></dt>
+<dd>
+<p>The positive hard limit for the joint.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.pos-lim-sw-in</strong> IN BIT</dt>
+<dd>
+<p>Should be driven TRUE if the positive limit switch for this joint is tripped.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.unlock</strong> OUT BIT</dt>
+<dd>
+<p>TRUE if the axis is a locked joint (typically a rotary) and a move is
+commanded (see JOINT UNLOCK PINS).</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.vel-cmd</strong> OUT FLOAT <strong>(DEBUG)</strong></dt>
+<dd>
+<p>The joint&#8217;s commanded velocity.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.jerk-cmd</strong> OUT FLOAT <strong>(DEBUG)</strong></dt>
+<dd>
+<p>The joint&#8217;s commanded jerk (rate of change of acceleration).
+Only active when S-curve trajectory planning is enabled (INI file [TRAJ]PLANNER_TYPE=1 and [TRAJ]MAX_LINEAR_JERK&gt;0).
+Jerk limits are set via INI file [JOINT_N]MAX_JERK or via the ini.N.max_jerk HAL pin.</p>
+</dd>
+<dt class="hdlist1"><strong>joint.</strong><em>N</em><strong>.wheel-jog-active</strong> OUT BIT <strong>(DEBUG)</strong></dt>
+<dd>
+<p>+</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_joint_posthome_pins">JOINT posthome pins</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Each joint designated as an <em>extra</em> joint is provided with a HAL pin <strong>joint.</strong><em>N</em><strong>.posthome-cmd</strong>.
+The pin value is ignored prior to homing.
+After homing, the pin value is augmented by the motor offset value and routed to the <strong>joint.</strong><em>N</em><strong>.motor-pos-cmd</strong>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_joint_unlock_pins">JOINT unlock pins</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The joint pins used for unlocking a joint (<strong>joint.</strong><em>N</em><strong>.unlock</strong>, <strong>joint.</strong><em>N</em><strong>.is-unlocked</strong>),
+are created according to the <strong>unlock_joints_mask=</strong>jointmask parameter for motmod.
+These pins may be required for locking indexers (typically a rotary joint).</p>
+</div>
+<div class="paragraph">
+<p>The jointmask bits are: (lsb)0:joint0, 1:joint1, 2:joint2, &#8230;&#8203;</p>
+</div>
+<div class="paragraph">
+<p>Example: loadrt motmod &#8230;&#8203; <strong>unlock_joints_mask=</strong>0x38 creates unlock pins for joints 3, 4, 5.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_spindle_pins">SPINDLE PINS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>(<em>M</em> is the spindle number (<strong>0</strong> &#8230;&#8203; <strong>num_spindles-1</strong>))</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>spindle.</strong><em>M</em><strong>.amp-fault-in</strong> IN BIT</dt>
+<dd>
+<p>Should be driven TRUE if an external fault is detected with the amplifier for this spindle.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle.</strong><em>M</em><strong>.at-speed</strong> IN BIT</dt>
+<dd>
+<p>Motion will pause until this pin is TRUE, under the following conditions:
+Before the first feed move after each spindle start or speed change;
+before the start of every chain of spindle-synchronized moves;
+and if in CSS mode, at every rapid&#8594;feed transition.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle.</strong><em>M</em><strong>.brake</strong> OUT BIT</dt>
+<dd>
+<p>TRUE when the spindle brake should be applied.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle.</strong><em>M</em><strong>.forward</strong> OUT BIT</dt>
+<dd>
+<p>TRUE when the spindle should rotate forward.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle.</strong><em>M</em><strong>.index-enable</strong> I/O BIT</dt>
+<dd>
+<p>For correct operation of spindle synchronized moves, this signal must
+be hooked to the index-enable pin of the spindle encoder.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle.</strong><em>M</em><strong>.inhibit</strong> IN BIT</dt>
+<dd>
+<p>When TRUE, the spindle speed is set and held to 0.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle.</strong><em>M</em><strong>.is-oriented</strong> IN BIT</dt>
+<dd>
+<p>Acknowledge pin for spindle-orient. Completes orient cycle.
+If spindle-orient was true when spindle-is-oriented was asserted,
+the spindle-orient pin is cleared and the spindle-locked pin is asserted.
+Also, the spindle-brake pin is asserted.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle.</strong><em>M</em><strong>.locked</strong> OUT BIT</dt>
+<dd>
+<p>Spindle orient complete pin. Cleared by any of M3, M4 or M5.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle.</strong><em>M</em><strong>.on</strong> OUT BIT</dt>
+<dd>
+<p>TRUE when spindle should rotate.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle.</strong><em>M</em><strong>.orient</strong> OUT BIT</dt>
+<dd>
+<p>Indicates start of spindle orient cycle.
+Set by M19. Cleared by any of M3, M4 or M5.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>If spindle-orient-fault is not zero during spindle-orient true,
+the M19 command fails with an error message.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>spindle.</strong><em>M</em><strong>.orient-angle</strong> OUT FLOAT</dt>
+<dd>
+<p>Desired spindle orientation for M19. Value of the M19 R word parameter
+plus the value of the [RS274NGC]ORIENT_OFFSET INI parameter.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle.</strong><em>M</em><strong>.orient-fault</strong> IN S32</dt>
+<dd>
+<p>Fault code input for orient cycle.
+Any value other than zero will cause the orient cycle to abort.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle.</strong><em>M</em><strong>.orient-mode</strong> OUT BIT</dt>
+<dd>
+<p>Desired spindle rotation mode. Reflects M19 P parameter word.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle.</strong><em>M</em><strong>.reverse</strong> OUT BIT</dt>
+<dd>
+<p>TRUE when the spindle should rotate backward.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle.</strong><em>M</em><strong>.revs</strong> IN FLOAT</dt>
+<dd>
+<p>For correct operation of spindle synchronized moves, this signal must
+be hooked to the position pin of the spindle encoder.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle.</strong><em>M</em><strong>.speed-cmd-rps</strong> FLOAT OUT</dt>
+<dd>
+<p>Commanded spindle speed in units of revolutions per second.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle.</strong><em>M</em><strong>.speed-in</strong> IN FLOAT</dt>
+<dd>
+<p>Actual spindle speed feedback in revolutions per second; used for G96
+(constant surface speed) and G95 (feed per revolution) modes.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle.</strong><em>M</em><strong>.speed-out</strong> OUT FLOAT</dt>
+<dd>
+<p>Desired spindle speed in rotations per minute.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle.</strong><em>M</em><strong>.speed-out-abs</strong> OUT FLOAT</dt>
+<dd>
+<p>Desired spindle speed in rotations per minute, always positive regardless of spindle direction.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle.</strong><em>M</em><strong>.speed-out-rps</strong> OUT FLOAT</dt>
+<dd>
+<p>Desired spindle speed in rotations per second.</p>
+</dd>
+<dt class="hdlist1"><strong>spindle.</strong><em>M</em><strong>.speed-out-rps-abs</strong> OUT FLOAT</dt>
+<dd>
+<p>Desired spindle speed in rotations per second, always positive regardless of spindle direction.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_motion_parameters">MOTION PARAMETERS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Many of the parameters serve as debugging aids, and are subject to change or removal at any time.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>motion-command-handler.tmax</strong> RW S32</dt>
+<dd>
+<p>Show information about the execution time of these HAL functions in ns.</p>
+</dd>
+<dt class="hdlist1"><strong>motion-command-handler.tmax-increased</strong> RO S32</dt>
+<dt class="hdlist1"><strong>motion-controller.tmax</strong> RW S32</dt>
+<dd>
+<p>Show information about the execution time of these HAL functions in ns.</p>
+</dd>
+<dt class="hdlist1"><strong>motion-controller.tmax-increased</strong> RO BIT</dt>
+<dd>
+<p>+</p>
+</dd>
+<dt class="hdlist1"><strong>motion.debug-</strong><em>*</em></dt>
+<dd>
+<p>These values are used for debugging purposes.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functions">FUNCTIONS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Generally, these functions are both added to the servo-thread in the order shown.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>motion-command-handler</strong></dt>
+<dd>
+<p>Receive and process incoming motion commands.
+The pin named <strong>motion-command-handler.time</strong> and parameters
+<strong>motion-command-handler.tmax,tmax-increased</strong>are created for this function.</p>
+</dd>
+<dt class="hdlist1"><strong>motion-controller</strong></dt>
+<dd>
+<p>Runs the LinuxCNC motion controller. The pin named <strong>motion-controller.time</strong> and
+parameters <strong>motion-controller.tmax,tmax-increased</strong> are created for this function.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_bugs">BUGS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This manual page is incomplete.</p>
+</div>
+<div class="paragraph">
+<p>Identification of pins categorized with <strong>(DEBUG)</strong> is dubious.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>iocontrol(1), milltask(1), spindle(9)</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>

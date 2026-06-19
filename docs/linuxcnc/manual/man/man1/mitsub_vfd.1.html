@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>mitsub_vfd(1)</title>
+<link rel="stylesheet" href="../../asciidoctor.css">
+<link rel="stylesheet" href="../../lcnc-overrides.css">
+</head>
+<body class="manpage">
+<header id="lcnc-topbar" class="lcnc-topbar">
+  <a class="lcnc-topbar-home" href="../../index.html">
+    <img src="../../lcnc-docs.svg" alt="LinuxCNC Documentation">
+  </a>
+  <nav class="lcnc-topbar-links">
+    <a data-lcnc-link="0" href="https://linuxcnc.org">LinuxCNC Home Page</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="1" href="https://wiki.linuxcnc.org/cgi-bin/wiki.pl">Wiki</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="2" href="https://forum.linuxcnc.org">Forum</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="3" href="https://github.com/LinuxCNC/linuxcnc">Source</a>
+    <span class="lcnc-sep" aria-hidden="true">&bull;</span>
+    <a data-lcnc-link="4" href="../../gcode.html">G-Code Quick Reference</a>
+  </nav>
+  <div class="lcnc-lang-switcher">
+    <input type="checkbox" id="lcnc-lang-toggle" class="lcnc-lang-toggle">
+    <label for="lcnc-lang-toggle" class="lcnc-lang-label">English</label>
+    <ul class="lcnc-lang-list">
+      <li><a href="mitsub_vfd.1.html">English</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/de/man/man1/mitsub_vfd.1.html">Deutsch</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/es/man/man1/mitsub_vfd.1.html">Español</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/fr/man/man1/mitsub_vfd.1.html">Français</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/nb/man/man1/mitsub_vfd.1.html">Norsk</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/ru/man/man1/mitsub_vfd.1.html">Русский</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/uk/man/man1/mitsub_vfd.1.html">Українська</a></li>
+      <li><a href="http://linuxcnc.org/docs/devel/html/zh_CN/man/man1/mitsub_vfd.1.html">中文</a></li>
+    </ul>
+  </div>
+</header>
+<div id="header">
+<h1>mitsub_vfd(1) Manual Page</h1>
+<h2 id="_name">NAME</h2>
+<div class="sectionbody">
+<p>mitsub_vfd - HAL non-realtime component for Mitsubishi A500 F500 E500 A500 D700 E700 F700-series VFDs (others may work) This uses the COMPUTER LINK protocol _not_ MODBUS. The connection is made through the PU connector.</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>loadrt mitsub_vfd</strong> [<strong>--baud</strong> <em>baudrate</em>] [<strong>--port</strong> <em>devicename</em>] <strong>name1=</strong><em>number<sub>1</sub></em>[,<strong>name2=</strong><em>number<sub>2</sub></em>&#8230;&#8203;]</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>name1</strong></dt>
+<dd>
+<p>is user selectable (usually a description of the controlled device).</p>
+</dd>
+<dt class="hdlist1"><em>number1</em></dt>
+<dd>
+<p>is the slave number that was set on the VFD. Must be two digits (Parameter 117).</p>
+</dd>
+<dt class="hdlist1">name<em>N</em>=number<em>N</em></dt>
+<dd>
+<p>can be repeated for multiple VFD&#8217;s connected together.</p>
+</dd>
+<dt class="hdlist1"><strong>--baud</strong> <em>baudrate</em></dt>
+<dd>
+<p>is optional as it defaults to 9600, all networked vfds must be set to the same baudrate.</p>
+</dd>
+<dt class="hdlist1"><strong>--port</strong> <em>devicename</em></dt>
+<dd>
+<p>is optional as it defaults to <code>ttyS0</code>, a common alternative is <code>/dev/ttyUSB0</code>.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The mitsub_vfd component interfaces a Mitsubishi VFD to LinuxCNC.
+The VFD is connected via RS-485 serial to the computer&#8217;s USB or serial port using a RS-232/RS-485 converter.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_hardware_setup">HARDWARE SETUP</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>reference manual <em>communication option reference manual</em> and A500 technical manual for 500 series.
+Fr-A700 F700 E700 D700 technical manual for the 700 series.<br>
+The inverter must be set manually for communication (you may have to set PR 77 to 1 to unlock PR modification).<br>
+You must power cycle the inverter for some of these, e.g. 79.</p>
+</div>
+<div class="paragraph">
+<p><strong>VFD INTERNAL PARAMETERS</strong>:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>PARAMETER 79</strong></dt>
+<dd>
+<p>1 or 0</p>
+</dd>
+<dt class="hdlist1"><strong>PARAMETER 117</strong></dt>
+<dd>
+<p>Station number - 1<br>
+(can be optionally set 0 - 31) if component is also set</p>
+</dd>
+<dt class="hdlist1"><strong>PARAMETER 118</strong></dt>
+<dd>
+<p>Communication speed 96<br>
+(can be optionally set 48, 96, 192 if component is also set)</p>
+</dd>
+<dt class="hdlist1"><strong>PARAMETER 119</strong></dt>
+<dd>
+<p>Stop bit/data length - 1<br>
+(8 bits, two stop - don&#8217;t change)</p>
+</dd>
+<dt class="hdlist1"><strong>PARAMETER 120</strong></dt>
+<dd>
+<p>Parity - 0<br>
+(no parity - don&#8217;t change)</p>
+</dd>
+<dt class="hdlist1"><strong>PARAMETER 121</strong></dt>
+<dd>
+<p>COM tries - 10<br>
+(if maximum 10 COM errors then inverter faults- can change.)</p>
+</dd>
+<dt class="hdlist1"><strong>PARAMETER 122</strong></dt>
+<dd>
+<p>COM check time interval 9999<br>
+(never check - if communication is lost inverter will not know (can change))</p>
+</dd>
+<dt class="hdlist1"><strong>PARAMETER 123</strong></dt>
+<dd>
+<p>Wait time - 9999<br>
+No wait time is added to the serial data frame (don&#8217;t change).</p>
+</dd>
+<dt class="hdlist1"><strong>PARAMETER 124</strong></dt>
+<dd>
+<p>CR selection - 0<br>
+Don&#8217;t change.</p>
+</dd>
+<dt class="hdlist1"><strong>PARAMETER 549</strong></dt>
+<dd>
+<p>Communication protocol - 0<br>
+Computer link protocol - don&#8217;t change - (not all VFDs have this)</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_notes">NOTES</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This driver assumes certain other VFD settings:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>That the motor frequency status is set to show Hertz.</p>
+</li>
+<li>
+<p>That the status bit 3 is up to speed.</p>
+</li>
+<li>
+<p>That the status bit 7 is alarm.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Some models, e.g. the E500, cannot monitor status.<br>
+You must set set the monitor pin to false.<br>
+In this case pins such as up-to-speed, amps, alarm and status bits are not useful.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pins">PINS</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><em>VFD_NAME</em><strong>.fwd</strong> (bit, in)</dt>
+<dd>
+<p>Forward/reverse pin</p>
+</dd>
+<dt class="hdlist1"><em>VFD_NAME</em><strong>.run</strong> (bit, in)</dt>
+<dd>
+<p>Run/stop pin</p>
+</dd>
+<dt class="hdlist1"><em>VFD_NAME</em><strong>.debug</strong> (bit, in)</dt>
+<dd>
+<p>Set debug mode pin.
+This will print many messages to the terminal.</p>
+</dd>
+<dt class="hdlist1"><em>VFD_NAME</em><strong>.monitor</strong> (bit, in)</dt>
+<dd>
+<p>Set monitor mode pin.
+If false, request-status command will not be sent to VFD.
+Status, amps, power, motor-feedback, and alarm would then not be useful.</p>
+</dd>
+<dt class="hdlist1"><em>VFD_NAME</em><strong>.estop</strong> (bit, in)</dt>
+<dd>
+<p>Set E-stop mode pin.
+This will stop the VFD. Restarting requires the run pin to cycle.</p>
+</dd>
+<dt class="hdlist1"><em>VFD_NAME</em><strong>.fwd</strong> (bit, out)</dt>
+<dd>
+<p>Up-to-speed status pin. Motor is at requested speed within VFD&#8217;s settings tolerance.</p>
+</dd>
+<dt class="hdlist1"><em>VFD_NAME</em><strong>.alarm</strong> (bit, out)</dt>
+<dd>
+<p>Alarm status pin</p>
+</dd>
+<dt class="hdlist1"><em>VFD_NAME</em><strong>.motor-cmd</strong> (float, in)</dt>
+<dd>
+<p>The requested motor speed, in Hertz (Hz)</p>
+</dd>
+<dt class="hdlist1"><em>VFD_NAME</em><strong>.motor-fb</strong> (float, out)</dt>
+<dd>
+<p>The motor feedback speed (from VFD) in Hertz (Hz)</p>
+</dd>
+<dt class="hdlist1"><em>VFD_NAME</em><strong>.motor-amps</strong> (float, out)</dt>
+<dd>
+<p>The motor current, in amperes (A)</p>
+</dd>
+<dt class="hdlist1"><em>VFD_NAME</em><strong>.motor-power</strong> (float, out)</dt>
+<dd>
+<p>The motor power</p>
+</dd>
+<dt class="hdlist1"><em>VFD_NAME</em><strong>.scale-cmd</strong> (float, in)</dt>
+<dd>
+<p>Motor command&#8217;s scale setting defaults to 1</p>
+</dd>
+<dt class="hdlist1"><em>VFD_NAME</em><strong>.scale-cmd</strong> (float, in)</dt>
+<dd>
+<p>Motor command&#8217;s scale setting defaults to 1</p>
+</dd>
+<dt class="hdlist1"><em>VFD_NAME</em><strong>.scale-cmd</strong> (float, in)</dt>
+<dd>
+<p>Motor command&#8217;s scale setting defaults to 1</p>
+</dd>
+<dt class="hdlist1"><em>VFD_NAME</em><strong>.stat-bit-0</strong> (bit, out)</dt>
+<dd>
+<p>Raw status bit</p>
+</dd>
+<dt class="hdlist1"><em>VFD_NAME</em><strong>.stat-bit-1</strong> (bit, out)</dt>
+<dd>
+<p>Raw status bit</p>
+</dd>
+<dt class="hdlist1"><em>VFD_NAME</em><strong>.stat-bit-2</strong> (bit, out)</dt>
+<dd>
+<p>Raw status bit</p>
+</dd>
+<dt class="hdlist1"><em>VFD_NAME</em><strong>.stat-bit-3</strong> (bit, out)</dt>
+<dd>
+<p>Raw status bit. Configure the VFD so that the function <em>Up to frequency</em> or <em>motor-at-speed</em> is assigned to status bit 3 (parameter 191 for 700 series).</p>
+</dd>
+<dt class="hdlist1"><em>VFD_NAME</em><strong>.stat-bit-4</strong> (bit, out)</dt>
+<dd>
+<p>Raw status bit</p>
+</dd>
+<dt class="hdlist1"><em>VFD_NAME</em><strong>.stat-bit-5</strong> (bit, out)</dt>
+<dd>
+<p>Raw status bit</p>
+</dd>
+<dt class="hdlist1"><em>VFD_NAME</em><strong>.stat-bit-6</strong> (bit, out)</dt>
+<dd>
+<p>Raw status bit</p>
+</dd>
+<dt class="hdlist1"><em>VFD_NAME</em><strong>.stat-bit-7</strong> (bit, out)</dt>
+<dd>
+<p>Raw status bit. Configure the VFD so that the function <em>alarm</em> is assigned to status bit 7 (parameter 195 for 700 series).</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_sample_hal">SAMPLE HAL</h2>
+<div class="sectionbody">
+<div class="literalblock">
+<div class="content">
+<pre>loadusr -Wn coolant mitsub_vfd --port /dev/ttyUSB0 spindle=02 coolant=01
+# **************** Spindle VFD setup slave 2 ****************
+net spindle-vel-cmd spindle.motor-cmd
+net spindle-cw spindle.fwd
+net spindle-on spindle.run
+net spindle-at-speed spindle.up-to-speed
+net estop-out spindle.estop
+# cmd scaled to RPM (belt/gearbox driven)
+setp spindle.scale-cmd .135
+# feedback is in rpm (recipicale of command)
+setp spindle.scale-fb 7.411
+# turn on monitoring so feedback works
+setp spindle.monitor 1
+net spindle-speed-indicator spindle.motor-fb
+# *************** Coolant VFD setup slave 1 *****************
+net coolant-flood coolant.run
+net coolant-is-on coolant.up-to-speed
+# cmd and feedback scaled to hertz
+setp coolant.scale-cmd 1
+setp coolant.scale-fb 1
+# command full speed
+setp coolant.motor-cmd 60
+# allows us to see status
+setp coolant.monitor 1
+net estop-out coolant.estop</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_issues">ISSUES</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Some models, e.g. E500, cannot monitor status, so set the monitor pin to false.
+In this case, pins such as up-to-speed, amps, alarm and status bits are not useful.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-06-18 13:28:33 UTC
+</div>
+</div>
+</body>
+</html>
