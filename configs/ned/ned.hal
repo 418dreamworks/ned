@@ -166,25 +166,25 @@ net w-output    pid.w.output             => sig-w-vel-volts
 # VFD takes a 0..10V magnitude (speed-out-abs) plus discrete FWD/REV.
 # Interlock: spindle is permitted only while the drawbar is UP (tool clamped).
 
-net spindle-on        motion.spindle.0.on        => spindle.permit.in0
+net spindle-on        spindle.0.on        => spindle.permit.in0
 net drawbar-clamped   sig-drawbar-up             => spindle.permit.in1
 net spindle-permitted spindle.permit.out         => sig-spindle-vel-enable
 
 net spindle-permitted => spindle.cw.in0
-net spindle-fwd       motion.spindle.0.forward   => spindle.cw.in1
+net spindle-fwd       spindle.0.forward   => spindle.cw.in1
 net spin-cw           spindle.cw.out             => sig-spin-cw
 
 net spindle-permitted => spindle.ccw.in0
-net spindle-rev       motion.spindle.0.reverse   => spindle.ccw.in1
+net spindle-rev       spindle.0.reverse   => spindle.ccw.in1
 net spin-ccw          spindle.ccw.out            => sig-spin-ccw
 
-net spindle-speed     motion.spindle.0.speed-out-abs => sig-spindle-vel-volts
+net spindle-speed     spindle.0.speed-out-abs => sig-spindle-vel-volts
 
 # Spindle feedback / faults -- monitored (available to GUI + interlocks).
 # spindle-running comes from the VFD "running" contact via R1.
-net spindle-running   sig-spindle-running        => motion.spindle.0.is_oriented
-# NOTE: is_oriented is only a convenient sink so the signal is live in HAL;
-#       re-point it to a real consumer (GUI LED / at-speed logic) as desired.
+# sig-spindle-running is sourced from the VFD running contact (7I84 input-07,
+# section 7); left unconsumed here -- net it to a GUI LED / at-speed logic later.
+# (Do NOT net it to spindle.0.is-oriented; that's an M19 input, not a status sink.)
 
 
 # ============================================================================
@@ -349,6 +349,14 @@ setp hm2_7i97.0.pwmgen.01.output-type 1
 setp hm2_7i97.0.pwmgen.02.output-type 1
 setp hm2_7i97.0.pwmgen.03.output-type 1
 setp hm2_7i97.0.pwmgen.04.output-type 1
+# BIPOLAR +/-10V for the 4 servo axes: offset-mode makes value 0 -> 0V and
+# +/- value -> +/-10V (without it the axes can only swing 0..+10V = one way).
+# Spindle (04) stays UNIPOLAR (0..10V magnitude + dir relays) -> offset-mode 0.
+setp hm2_7i97.0.pwmgen.00.offset-mode 1
+setp hm2_7i97.0.pwmgen.01.offset-mode 1
+setp hm2_7i97.0.pwmgen.02.offset-mode 1
+setp hm2_7i97.0.pwmgen.03.offset-mode 1
+setp hm2_7i97.0.pwmgen.04.offset-mode 0
 setp hm2_7i97.0.pwmgen.00.scale [JOINT_0]OUTPUT_SCALE
 setp hm2_7i97.0.pwmgen.01.scale [JOINT_1]OUTPUT_SCALE
 setp hm2_7i97.0.pwmgen.02.scale [JOINT_2]OUTPUT_SCALE
