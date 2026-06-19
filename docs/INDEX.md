@@ -100,7 +100,6 @@ Per-chapter + tagged text extracts (install/operating/programming) and the split
 | [7I97T manual](mesa/mesa_7i97t_manual.pdf) | [txt](mesa/text/mesa_7i97t_manual.txt) | Main Ethernet card. P3=5V; jumpers W11/W12 (IP), W21/W22 (DB25), W23 (sserial term) |
 | [7I84U manual](mesa/mesa_7i84u_manual.pdf) | [txt](mesa/text/mesa_7i84u_manual.txt) | sserial 32-in/16-out. TB1 power 8–32 V; W1 (VIN src), W3 (operate/setup) |
 | [7I85S manual](mesa/mesa_7i85s_manual.pdf) | [txt](mesa/text/mesa_7i85s_manual.txt) | step/dir + 4 enc on DB25. 5V via own terminal; W3 (cable/aux 5V) |
-| [shopping_list.md](mesa/shopping_list.md) | — | 7I97T+7I85S+7I84U Ethernet route; build phasing |
 | [01_albersx_mesa_guide.md](mesa/01_albersx_mesa_guide.md) | — | Mesa card-selection guide (general) |
 | [02_linuxcnc_forum_mesa_guide.md](mesa/02_linuxcnc_forum_mesa_guide.md) | — | Forum card-selection guide |
 | [fpga_cards_listing.md](mesa/fpga_cards_listing.md) | — | Mesa FPGA card listing |
