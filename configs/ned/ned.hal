@@ -215,8 +215,14 @@ net sig-limit-z-bottom => joint.2.neg-lim-sw-in
 net sig-limit-z-top    => joint.2.pos-lim-sw-in
 
 # No separate home switches were traced -> home off the limit switches.
-# (ned.ini sets HOME_USE_INDEX / HOME offsets; gantry joints 0 & 3 home
-#  independently so the bridge can square.)
+# X GANTRY: ONE shared X switch (sig-limit-x-back) feeds BOTH joint 0 and 3,
+# so X CANNOT self-square from homing -- both ends latch the same trip. Square
+# is held mechanically (rigid, heavy gantry). True auto-square needs a 2nd X
+# switch (one per end), wired one-per-joint.
+# TODO (later): during X homing, leave the switch-less end's drive UNPOWERED
+#   so only the switched end drives to the switch; the rigid gantry drags the
+#   other end along and stays square.
+# (ned.ini sets HOME_USE_INDEX / HOME offsets.)
 net sig-limit-x-back  => joint.0.home-sw-in   joint.3.home-sw-in
 net sig-limit-y-left  => joint.1.home-sw-in
 net sig-limit-z-top   => joint.2.home-sw-in
