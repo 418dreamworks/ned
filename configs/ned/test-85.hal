@@ -1,0 +1,38 @@
+# ============================================================================
+#  test-85.hal  --  bench test that the 7I85S (on the 7I97 DB25 / P1) is
+#  reachable and passing signals. No motmod, no machine -- just the board.
+#
+#  Run:   cd ~/linuxcnc/configs/ned && halrun -f test-85.hal
+#  Then:  show pin  hm2_7i97.0.stepgen        (do the stepgens enumerate?)
+#         show pin  hm2_7i97.0.encoder        (encoder.04/05 = 85 enc inputs?)
+#  Stop:  exit            (or in another shell: halrun -U)
+#
+#  PASS  = stepgen.00/.01 pins exist and map to P1/DB25 pins, and a scope/meter
+#          on the 85's TB2 STEP0+/STEP0- shows ~constant pulses while running.
+#  FAIL  = "num_stepgens=2 but only N available" / no stepgen pins -> this
+#          bitfile has no stepgen on the DB25; need a bitfile with stepgen
+#          routed to the parallel port, or test the DB25 as plain GPIO instead.
+# ============================================================================
+
+loadrt hostmot2
+# num_stepgens=2 asks hostmot2 to put 2 stepgens on the DB25 (where the 85 buffers
+# them). num_encoders=6 leaves room for the 85's encoder inputs too.
+loadrt hm2_eth board_ip="10.10.10.10" config="num_encoders=6 num_pwmgens=5 num_stepgens=2 sserial_port_0=00xxxxxx"
+
+# self-contained 1 ms thread (no motmod needed)
+loadrt threads name1=test-thread period1=1000000
+addf hm2_7i97.0.read   test-thread
+addf hm2_7i97.0.write  test-thread
+
+# keep the card alive while the thread runs
+setp hm2_7i97.0.watchdog.timeout_ns 10000000
+
+# run stepgen 0 at a steady velocity so STEP toggles on the 85's TB2 output
+setp hm2_7i97.0.stepgen.00.step_type      0
+setp hm2_7i97.0.stepgen.00.position-scale 200
+setp hm2_7i97.0.stepgen.00.maxvel         5
+setp hm2_7i97.0.stepgen.00.maxaccel       50
+setp hm2_7i97.0.stepgen.00.enable         1
+setp hm2_7i97.0.stepgen.00.velocity-cmd   1
+
+start

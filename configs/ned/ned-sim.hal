@@ -1,0 +1,37 @@
+# ============================================================================
+#  ned-sim.hal  --  SIMULATION of ned (no Mesa hardware)
+#
+#  Swaps the hm2_eth driver + servo loops for software loopback so the config
+#  runs on any PC. Validates: AXIS GUI, XYZX gantry kinematics, jogging,
+#  soft limits, homing (incl. gantry), spindle commands, tool-change handshake,
+#  and G-code. Does NOT test the real PID / encoder / pwmgen wiring -- that
+#  needs the actual 7I97T (see ned.hal).
+#
+#  Launch:  linuxcnc ~/linuxcnc/configs/ned/ned-sim.ini
+# ============================================================================
+
+# --- motion + kinematics (same as the real config) ---
+loadrt [KINS]KINEMATICS
+loadrt [EMCMOT]EMCMOT servo_period_nsec=[EMCMOT]SERVO_PERIOD num_joints=[KINS]JOINTS num_spindles=[TRAJ]SPINDLES
+
+addf motion-command-handler servo-thread
+addf motion-controller      servo-thread
+
+# --- Joints: perfect follower (motor-pos-cmd -> motor-pos-fb) ---
+# In sim each joint instantly "is" where it's commanded -> zero following error,
+# no drive/encoder needed. This is what makes it run with no hardware.
+net j0-loop joint.0.motor-pos-cmd => joint.0.motor-pos-fb
+net j1-loop joint.1.motor-pos-cmd => joint.1.motor-pos-fb
+net j2-loop joint.2.motor-pos-cmd => joint.2.motor-pos-fb
+net j3-loop joint.3.motor-pos-cmd => joint.3.motor-pos-fb
+
+# --- E-stop loopback (no hardware chain in sim) ---
+net estop-loop iocontrol.0.user-enable-out => iocontrol.0.emc-enable-in
+
+# --- Tool-change loopback (immediate ack, like the real config's standalone mode) ---
+net tool-prep-loop   iocontrol.0.tool-prepare => iocontrol.0.tool-prepared
+net tool-change-loop iocontrol.0.tool-change  => iocontrol.0.tool-changed
+
+# Spindle (M3/M4/M5) and digital I/O (M62-65 / M66) just drive their motion.*
+# pins with no consumer in sim -- AXIS still shows commanded spindle speed and
+# the tool-change sequence completes via the loopbacks above.
