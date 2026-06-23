@@ -35,7 +35,7 @@ Full spec / commissioning notes: `mollom_facts.md`.
 | **TA** | RY1 SPDT common pole (high side of fault output) | — | White wire (was on VG5/10 supply node) | `*71`-`*76` (+24 V bus) | planned |
 | **TC** | RY1 NO contact (closes when RY1 energizes = fault active per F5-02 = 2) | F5-02 = 2 | Yellow wire (was on VG5/18) | `*38` | planned |
 | **TB** | RY1 NC contact | F5-02 = 2 | unused | — | unused |
-| **Y1** | Open-collector output (sinks to COM when active per F5-03 = 1) | F5-03 = 1 | Blue wire (was on VG5/9) | R1C2 (R1 coil) — **note: R1C1 must be moved to `*71`-`*76` +24 V AND flyback diode flipped 180°** | planned + R1 changes |
+| **Y1** | Open-collector output (sinks to COM when active per F5-03 = 1) | F5-03 = 1 | Short pigtail to **interposing relay IN** (NOT the blue wire directly — see `mollom_facts.md` "Outputs — Split RY1 (fault) + Y1 (running)") | Interposer IN; interposer NO output then feeds the blue wire to R1C2 | planned — R1 untouched |
 | **485+, 485−** | RS-485 Modbus | — | unused | — | unused |
 
 ## Required Parameter Settings (before power-on)
@@ -56,7 +56,7 @@ Full spec / commissioning notes: `mollom_facts.md`.
 
 - **Sink mode** (factory default): the relay contacts in the cabinet close the Mollom DIs to COM to activate. This matches the existing R6/R7/R2 NO/NC scheme — no jumper change needed.
 - **GND vs COM**: GND is the analog 0 V reference, COM is the digital input return. Per manual §3.2.3, these are **internally isolated**. Do not bond them externally; leave the COM "+24V" terminal (internal supply) unused.
-- **Output polarity flip**: Y1 is sinking (opposite of VG5/9's sourcing). R1's coil drive will need rewiring — R1C1 from 0 V to +24 V, and flyback diode flipped 180°.
+- **Output polarity flip — handled by interposing relay** (lives with the Mollom permanently). Y1 sinks IN on a small logic-input relay module (DC+/DC-/IN on input side, NC/NO/COM SPDT on output side, H/L jumper set to **L**). DC+/DC- come from Mollom's own +24 V/COM. Output COM taps Mollom TA (already at cabinet +24 V); NO feeds the blue wire to R1C2. R1 stays untouched. The blue wire is the only piece that moves between the VG5 and Mollom installations. See `mollom_facts.md` "Outputs — Split RY1 (fault) + Y1 (running)" for the full wiring table.
 - **TA → +24 V** is the supply pole for the RY1 fault output — when RY1 energizes (fault), TC connects to TA, sourcing +24 V to the yellow wire to `*38`.
 
 ## Manual Section References

@@ -56,6 +56,23 @@ The cabinet wires that currently feed Fagor X9/X10 inputs get rerouted to Mesa i
 
 **Note on Mesa pin placeholders below**: pins are shown as `7i97t.in.XX` for inputs and `7i97t.out.XX` for outputs as illustrative names. Actual HAL pin names depend on which board the wire physically lands on (7I97T native input/output OR 7I84U via sserial — full HAL names then look like `hm2_7i97t.0.7i84.0.0.input-XX`). The 7I97T card has 16 native inputs + 6 native outputs; 7I84U adds 32 inputs + 16 outputs via sserial. Distribution is a wiring-design decision.
 
+### Reserved Pendant Block — 7I97T TB4 IN0–IN3 (4 native inputs)
+
+Pendant-related digital signals are blocked off together on TB4 for tidy wiring (close to TB2 where the handwheel encoder lands). The handwheel's 0 V (TB2 pin 11) is the natural return for pendant button common.
+
+| 7I97T TB4 pin | Mesa input | Signal | HAL signal | Status |
+|---|---|---|---|---|
+| 1 | IN0 | Pendant axis selector (X6 pin 5, ORN RED) | `pendant-axis-selector` | wired |
+| 2 | IN1 | Reserved — future pendant button | TBD | reserved |
+| 3 | IN COMMON 0,1 | tie to +V (matches IN COMMON 2,3) | — | — |
+| 4 | IN2 | Reserved — future pendant button | TBD | reserved |
+| 5 | IN3 | Reserved — future pendant button | TBD | reserved |
+| 6 | IN COMMON 2,3 | tie to +V (same node as IN COMMON 0,1) | — | — |
+
+Both IN COMMON terminals tied to the same +V so all 4 pendant signals share a common reference and behave consistently. Pendant cable currently has 1 spare conductor (ORN BLK, dead-ended at pendant per `pendant.md:26`) — enough for one more button without re-cabling. Beyond that, a new multi-conductor cable to the pendant is required.
+
+**Consequence**: only 12 native 7I97T input slots remain (IN4–IN15) for the 15 cabinet signals listed below. 3 will need to relocate to 7I84U inputs. The illustrative `in.XX` numbering in the next table is preserved for HAL signal-name continuity, but the user picks which 3 signals physically land on 7I84U.
+
 ### From `fagor_8055_axes.md` X9 — Verified Traces
 
 | Cabinet `*N` | Fagor X9 pin (was) | Mesa input (assign) | Suggested HAL signal | Function |
@@ -140,9 +157,9 @@ Connector → axis mapping (user convention: 1=X, 2=Y, 3=Z, 4=W):
 | X2 | Y (cross) | `7i97t.enc.01` | `y-pos-fb` |
 | X3 | Z | `7i97t.enc.02` | `z-pos-fb` |
 | X4 | W (gantry servo 2) | `7i97t.enc.03` | `w-pos-fb` |
-| X6 | Pendant handwheel + buttons | `7i97t.enc.04` (handwheel) + digital inputs (buttons) | `mpg.encoder`, button signals TBD |
+| X6 | Pendant handwheel + buttons | `7i97t.enc.04` on TB2 middle plug (handwheel) + TB4 IN0–IN3 block (buttons — see "Reserved Pendant Block" above) | `mpg.encoder`, `pendant-axis-selector` (IN0), three more TBD |
 
-**Open item**: X6 pendant pin-level mapping not yet verified (Task #2). Trace planned. The handwheel encoder will land on Mesa encoder input 4; pendant button digital signals will land on Mesa digital inputs and be identified one-by-one (press each button while watching HAL).
+**X6 mapping resolved.** Fagor X6 pinout (`fagor_8055_installation_manual_en.txt:3170-3201`) is the standard 15-pin SUB-D HD encoder pinout: pin 1=A, 2=/A, 3=B, 4=/B, 5=I0 (repurposed as axis-selector C on this pendant), 6=/I0 (unused), 7=+5 V, 8=0 V (also axis-selector NC return), 15=shield. Combined with the X6→cable→MPG-terminal map in `pendant.md:86-99`, the X6 conductor functions are fully determined.
 
 ---
 
@@ -179,7 +196,7 @@ The cabinet's internal safety/interlock electrical logic continues to function b
 ## Open Items (Tasks)
 
 - **Task #1**: Trace X8 pairs 1–4 (axis ±10 V commands) to servo drives — needed to know which Mesa analog output drives which physical drive.
-- **Task #2**: Trace X6 pendant pin-by-pin — needed to map handwheel encoder lines + button signals to specific Mesa inputs.
+- ~~**Task #2**: Trace X6 pendant pin-by-pin~~ — **DONE**. X6 standard pinout from Fagor installation manual + cable-conductor map from `pendant.md` give complete X6→7I97T mapping. Pendant block on TB4 IN0–IN3 reserved.
 
 These should be completed before generating the HAL/INI files.
 

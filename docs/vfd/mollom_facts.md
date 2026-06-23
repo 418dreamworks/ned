@@ -231,14 +231,41 @@ Jumper above AI1/AI2: leave on **Voltage** (factory default).
 |---|---|---|
 | **White wire** (unlabelled, the supply leg from the cabinet +24 V bus at `*71`-`*76`) — NOT the jumper between VG5 terminals 10/20 (that one becomes obsolete) | `*71`-`*76` (+24 V) | **TA** (RY1 common pole) |
 | **Yellow wire** (unlabelled, going to `*38`) | `*38` (the CNC fault-input path) | **TC** (RY1 NO) |
-| **Blue wire** (unlabelled, going to R1C2) | R1C2 (R1's coil terminal) | **Y1** (open collector) |
+| **Blue wire** (was on VG5/9, now on R1C2 at one end) | R1C2 (R1's coil terminal) | **Interposing relay NO contact output** (NOT directly to Y1 — see below) |
 
-**Polarity fix needed on R1** because Y1 sinks to COM (opposite of how the VG5 sourced +24 V):
+**Polarity handled by a small interposing relay module**, so R1 stays untouched (C1 still at 0 V, no flyback diode flip).
 
-- Move R1C1 so it now sits at **+24 V** (tap the `*71`-`*76` bus).
-- Leave R1C2 connected to the blue wire to Mollom Y1.
-- When the VFD runs → Y1 sinks blue wire to 0 V → R1 coil sees 24 V across it (C1=+24, C2=0) → R1 energizes.
-- If R1 has a flyback diode oriented for the old polarity, either replace R1 with an AC-coil model or insert a small interposing relay between Y1 and R1's original wiring.
+> **VFD-swap rule:** the **interposing relay lives with the Mollom permanently** — its input side wires to Mollom's Y1 / +24 V / COM and its output COM taps Mollom's TA. The only wire that physically moves between the VG5 and Mollom installations is the **blue wire**:
+> - **VG5 setup:** blue wire lands directly on **VG5 terminal 9**. The interposing relay is not in circuit.
+> - **Mollom setup:** blue wire lands on the **interposing relay's NO output**. The interposer is what feeds R1C2.
+>
+> In both setups, the blue wire's other end stays on **R1C2**. R1 itself never changes.
+
+The module is a logic-input style relay: **DC+ / DC- / IN** on the input side, **NC / NO / COM** SPDT contact on the output side, with an **H/L jumper** to select active-high vs active-low input.
+
+**Interposer input side (logic):**
+
+| Terminal | Connected to |
+|---|---|
+| **DC+** | Mollom **+24 V** terminal (internal supply) |
+| **DC-** | Mollom **COM** terminal |
+| **IN** | Mollom **Y1** |
+| **H/L jumper** | **L** (active low — module energizes when IN sinks toward DC-) |
+
+DC+ and DC- come from Mollom's own +24 V/COM (not the cabinet `*71`-`*76` bus), so the IN signal references the same node Y1 sinks to.
+
+**Interposer output side (power switch to R1):**
+
+| Terminal | Connected to |
+|---|---|
+| **COM** | Mollom **TA** (which is already at cabinet +24 V via the white wire to `*71`-`*76`). A direct jumper from `*71`-`*76` would be electrically identical. |
+| **NO** | **Blue wire** → R1C2 |
+| **NC** | unused |
+
+**Behavior:**
+
+- Mollom running → Y1 sinks IN to Mollom COM (= DC-) → (jumper L) module energizes → NO closes → cabinet +24 V flows through COM→NO contact → blue wire → R1C2 → R1 energizes (C1 = 0 V, C2 = +24 V). Same end-state as VG5/9 sourcing.
+- Mollom not running → Y1 floats → IN floats high via the module's internal pull-up to DC+ → module de-energizes → NO opens → R1C2 loses +24 V → R1 de-energizes. (If the module has no internal pull-up, add an external 10 kΩ pull-up from IN to DC+.)
 
 Don't connect anything to TB. Leave the spare red + spare black of cable "7" dead-ended.
 
@@ -261,8 +288,9 @@ Defaults that match without change: AI2 scaling (F4-18 = −10 V, F4-19 = −100
 
 ### Sanity-Check Tally
 
-You should have **12 wire ends** to land + **2 to leave dead** + **1 R1 coil terminal to move**:
+You should have **12 wire ends to land on the Mollom** + **2 to leave dead** + **1 blue wire to move to the interposer** + **interposer's own short pigtails to Mollom**. R1 stays untouched.
 
+On the Mollom (direct wire landings):
 - 4 single inputs → S1, S2, S3, S4.
 - 3 wire ends (crimped pair counts as 2 + standalone 1) → COM.
 - 1 active red of cable 7 → AI2.
@@ -271,9 +299,15 @@ You should have **12 wire ends** to land + **2 to leave dead** + **1 R1 coil ter
 - 1 green wire → GND.
 - 1 white supply → TA.
 - 1 yellow → TC.
-- 1 blue → Y1.
 - 2 spare conductors of cable 7 → leave dead.
-- 1 R1C1 relocation → from old 0 V to +24 V (`*71`-`*76` bus).
+
+Interposer wiring (relay stays with Mollom):
+- Interposer DC+ → Mollom **+24 V** terminal.
+- Interposer DC- → Mollom **COM** terminal.
+- Interposer IN → Mollom **Y1**.
+- Interposer output COM → Mollom **TA** (or jumper to `*71`-`*76`).
+- Interposer output NO → **blue wire** (other end on R1C2).
+- Jumper set to **L**.
 
 ---
 

@@ -6,6 +6,25 @@ The AXES module is the Fagor 8055/B's I/O board. It has three connectors used in
 - **X10** — primarily outputs (O1–O24), plus a few inputs (I33–I40)
 - **X8** — analog ±10 V axis and spindle command outputs
 
+## Mesa Replacement — Connector → Card Mapping
+
+Each Fagor AXES connector has been reassigned to a specific Mesa terminal block. Full landing details are in the per-card wiring notes.
+
+| Fagor connector | Function | Mesa destination | Detailed notes |
+|---|---|---|---|
+| X1 | X-axis encoder feedback | **7I97T TB1 bottom plug** (encoder 0, pins 1–8) | `mesa_7i97t_wiring.md` TB1 section |
+| X2 | Y-axis encoder feedback | **7I97T TB1 middle plug** (encoder 1, pins 9–16) | `mesa_7i97t_wiring.md` TB1 section |
+| X3 | Z-axis encoder feedback | **7I97T TB1 top plug** (encoder 2, pins 17–24) | `mesa_7i97t_wiring.md` TB1 section |
+| X4 | W-axis encoder feedback | **7I97T TB2 bottom plug** (encoder 3, pins 1–8) | `mesa_7i97t_wiring.md` TB2 section |
+| X5 | unused | — | — |
+| X6 | Pendant (handwheel + axis-selector) | Handwheel → **7I97T TB2 middle plug** (encoder 4, pins 9–16); axis-selector (X6 pin 5) → **7I97T TB4 IN0** (pin 1) | `mesa_7i97t_wiring.md` TB2 + TB4 pendant block sections |
+| X7 | unused | — | — |
+| X8 | Analog ±10 V outputs (X/Y/Z/W velocity + spindle) | **7I97T TB3** (plugs 1–4 + plug 6; channel 4 unused; spindle on channel 5/plug 6) | `mesa_7i97t_wiring.md` TB3 section |
+| X9 | Digital inputs (e-stop + limits + spindle/safety) | **7I97T TB4 IN4–IN7** + **TB5 IN8–IN14**. TB5 IN15 reserved for future X/W homing limit. | `mesa_7i97t_wiring.md` TB4 + TB5 cabinet block sections |
+| X10 | Digital inputs (tool-changer sensors) + outputs (drive-enable, spindle, solenoids) | **All on 7I84U TB2**: inputs on INPUT28–INPUT31 (pins 13–16), outputs on OUTPUT8–OUTPUT15 (pins 17–24) | `mesa_7i84u_wiring.md` TB2 section |
+
+The X9 cable's 0 V wires (pins 18 and 19) are repurposed as the IN COMMON return for the 7I97T cabinet input block (land on TB5 pins 3 and 6, then daisy-chain to the rest of the cabinet IN COMMONs at cabinet 0 V).
+
 ## Connector Gender (for Mesa replacement)
 
 When swapping the Fagor AXES module for Mesa cards, the existing cables stay in place. To mate with those cable ends, the Mesa-side breakout / connector needs to match the gender the Fagor side currently presents:
@@ -66,6 +85,30 @@ All other X10 pins: not yet physically traced.
 | 36 | `*39` (via black wire; then `*39` connects via red wire of cable "9" to the spindle overheat thermostat; thermostat +24 V is on `*71` via cable "9" white wire) | ✓ |
 
 All other X9 pins: not yet physically traced.
+
+---
+
+## X6 Connector — Verified Traces
+
+X6 is the **pendant connector** on the AXES module (handwheel + axis selector + supply). 26-pin high-density SUB-D female. See `pendant.md` for the field-side details (MPG model, terminal layout, cable inventory, axis selector wiring).
+
+| X6 pin | Cable / conductor (pendant cable) | Pendant-side destination |
+|---|---|---|
+| 1 | RED wire in Brn cable | MPG/B3 |
+| 2 | BLK wire in Brn cable | MPG/A2 |
+| 3 | RED wire in Red cable | MPG/B4 |
+| 4 | BLK wire in Red cable | MPG/A3 |
+| 5 | RED wire in ORN cable | Axis selector C |
+| 6 | — | (unused) |
+| 7 | RED wire in Yel cable | MPG/B1 |
+| 8 | BLK wire in Yel cable | MPG/B2 (also = axis selector NC) |
+| 9–14 | — | (unused) |
+| 15 | Shield | bonded to pendant body via cable shield |
+| 16–26 | — | (unused) |
+
+7 active signal pins + 1 shield pin used. The ORN cable BLK conductor is dead-ended at both ends.
+
+The pendant e-stop runs in a separate grey 2-conductor cable to `*3`/`*4`, NOT through X6.
 
 ---
 
