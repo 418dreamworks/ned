@@ -1,0 +1,127 @@
+%TOOL CHNG & REFEREN,MX,
+;HOMING SUBROUTINE
+(SUB 9000)
+;
+G53
+G74Z
+G74XY
+X0
+(RET )
+;
+;
+;8050 6 Station Rack Variable location
+;
+(SUB 9001)
+;
+;P200=TEMP TOOL #
+;P201=LAST POS X
+;P202=LAST POS Y
+;P203=LAST POS Z
+;P204=X CLEARANCE 2
+(P205=1);SET FLAG
+;(P206=1.4870)      ;X START POS
+;(P207=13.8001);Y START POS
+;(P208=-24.59) ;Z POS
+(P209=-15.0)    ;Z CLEARANCE 1
+;
+M5;Turn off spindles 
+;G4K300
+G44;Clear all tool length offsets
+G90;Absoulute
+G53G0Z-5;Move to Z machine zero 
+M91;CLAMP RETRACT
+(P200=TOOL);Get current tool # and store in P200
+;G7
+;
+(IF (P200 GT 0) GOTO N600);Check for tool # 0 if not jump to N600
+M89; DRAWBAR DOWN
+(P205=0);Clear jump flag
+(GOTO N550);Go to next tool
+N600;
+;
+(GOTO N50);Get current tool # position
+N60(P205=0);Clear jump flag
+;
+N10G53X10YP202F800;Move to current tool # position
+M35
+G53XP204
+G53ZP203F200;Move to Z position
+G53G1XP201F100;Move into rack
+M89;Drawbar down
+M93
+G4K100;Pause
+G90G53ZP209F200;Move to Z clearance
+;
+;
+;
+N550(P200=NXTOOL);Get new tool # and store in P200
+(IF (P200 EQ 0) GOTO N500);If next tool # 0 then end
+N50(GOTO N(P200));Get new tool # positions
+;
+;
+;
+;TOOL #1
+N1(P201=2.0706)
+(P202=13.8641)
+(P203=-24.0473)
+(P204=5.0)
+(IF(P205EQ1)GOTO N60)
+(GOTO N100)
+;
+;TOOL #2
+N2(P201=2.1405)
+(P202=20.9384)
+(P203=-23.9963)
+(P204=5.0)
+(IF(P205EQ1)GOTO N60)
+(GOTO N100)
+;
+;TOOL #3
+N3(P201=2.00)
+(P202=28.2484)
+(P203=-24.0633)
+(P204=5.0)
+(IF(P205EQ1)GOTO N60)
+(GOTO N100)
+;
+;TOOL #4
+N4(P201=2.00)
+(P202=34.9124)
+(P203=-24.1153)
+(P204=5.0)
+(IF(P205EQ1)GOTO N60)
+(GOTO N100)
+;
+;TOOL #5
+N5(P201=2.027)
+(P202=41.9723)
+(P203=-24.0403)
+(P204=5.0)
+(IF(P205EQ1)GOTO N60)
+ (GOTO N100)
+;
+;TOOL #6
+N6(P201=2.065)
+(P202=49.072)
+(P203=-24.1400)
+(P204=5.0)
+(IF(P205EQ1)GOTO N60)
+(GOTO N100)
+;
+;
+N100;
+G53G1XP201YP202F800;Move to new tool # X and Y positions
+;G53Z-14
+;M00
+G53ZP203F200;Move to new tool # Z position
+N500 M90 ;Drawbar hold
+M94    ;    BLOWOFF OFF
+G4K100;Pause
+G53XP204F800;Move to Y clearance 
+M92    ; CLAMP ENGAGE
+G53Z-10;Move to Z machine zero
+G53X10
+;
+N1000(RET )
+;
+;

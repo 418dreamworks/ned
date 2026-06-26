@@ -1,0 +1,176 @@
+%USER PROGRAM,MX,
+;
+M5
+(P250=0) ; IF C AXIS INSTALLED (6 AXIS) - SET P250=1
+(P251=1) ; IF PUSH BUTTON TOOL CHANGE INSTALLED - SET P251=1
+(P252=1) ; IF GANTRY AXIS INSTALLED - SET P252=1
+(PLCR501=192)
+N4(SK 1=" ",SK 2=" ",SK 3=" ",SK 4=" ",SK 5=" ",SK 6=" ",SK 7=" ")
+(MSG"PRESS EXIT TO RETURN TO MENU")
+(IF P250 EQ 0 GOTO N5)
+(SYMBOL 8,460,270)
+(SK 6 ="   C-   ",SK 7 ="   C+   ")
+N5(IF P251 EQ 0 GOTO N7)
+(SK 1 ="  MANUAL  TOOL EJECT")  ; FUNCTION KEY "F1" = MANUAL TOOL CHANGE
+N7(IF P252 EQ 0 GOTO N8)
+(SK 3="  MONITOR   GANTRY")
+N8(SK 2="LOAD ZERO  OFFSETS",SK 4="  EXIT  ")
+(PAGE 2)
+N10(WKEY )
+(IF P251 EQ 0 GOTO N11)
+(IF KEY EQ $FC00 GOTO N100)  ; FUNCTION KEY "F1" MANUAL TOOL CHANGE
+N11(IF KEY EQ $FC01 GOTO N200)  ; FUNCTION KEY "F2" LOAD OFFSETS
+(IF KEY EQ $FC02 GOTO N300)   ; MONITOR GANTRY
+(IF KEY EQ $FC03 GOTO N1000) ; F4 EXIT
+(IF KEY EQ $FC04 GOTO N10)   ; F5 NO OPERATION
+(IF KEY EQ $FC05 GOTO N10)   ; F6 NO OPERATION
+(IF KEY EQ $FC06 GOTO N10)   ; F7 NO OPERATION
+(GOTO N10)
+;-----------------------------------------------------------
+;                             MANUAL TOOL CHANGE
+;-----------------------------------------------------------
+N100 M5
+(PAGE 1)
+(SK 1="  ENABLE  TOOL EJECT",SK 2=" DISABLE  TOOL EJECT",SK 3=" ",SK 6=" ",SK 7=" ")
+(PLCR501=192)
+N110(WKEY)
+(IF KEY EQ $FC00 GOTO N120)   ; F1 ENABLE TOOL EJECT
+(IF KEY EQ $FC01 GOTO N130)   ; F2 DISABLE TOOL EJECT
+(IF KEY EQ $FC02 GOTO N110)   ; F3 NO OPERATION
+(IF KEY EQ $FC03 GOTO N140)   ; F4 EXIT
+(IF KEY EQ $FC04 GOTO N110)   ; F5 NO OPERATION
+(IF KEY EQ $FC05 GOTO N110)   ; F6 NO OPERATION
+(IF KEY EQ $FC06 GOTO N110)   ; F7 NO OPERATION
+N120(SYMBOL 1,0,0)
+M91
+(GOTO N110)
+N130 M92
+(SYMBOL 7,0,0)
+(GOTO N110)
+N140 M92
+(PAGE 2)
+(GOTO N4)
+;
+;----------------------------------------------------------
+;                        LOAD OFFSETS
+;----------------------------------------------------------
+N200(SK 1="   LOAD      G54",SK 2="   LOAD      G55",SK 3="   LOAD      G56",SK 4="   LOAD      G57 " ,SK 5="EXIT")
+N210(WKEY)
+(IF KEY EQ $FC00 GOTO N240) ; G54
+(IF KEY EQ $FC01 GOTO N250) ; G55
+(IF KEY EQ $FC02 GOTO N260) ; G56
+(IF KEY EQ $FC03 GOTO N270) ; G57
+(IF KEY EQ $FC04 GOTO N4)   ; F5 EXIT
+(IF KEY EQ $FC05 GOTO N210) ; F6 C AXIS +
+(IF KEY EQ $FC06 GOTO N210) ; F7 C AXIS -
+;----------------------  G54 --------------------------------       
+N240(SK 1="    X        G54",SK 2="    Y        G54",SK 3="     Z        G54",SK 4=" ",SK 5=" EXIT ")
+N241(WKEY)
+(IF KEY EQ $FC00 GOTO N245) ; X
+(IF KEY EQ $FC01 GOTO N246) ; Y
+(IF KEY EQ $FC02 GOTO N247) ; Z
+(IF KEY EQ $FC03 GOTO N241) ; F4 NO OPERATION
+(IF KEY EQ $FC04 GOTO N200) ; F5 EXIT
+(IF KEY EQ $FC05 GOTO N241) ; F6 C AXIS +
+(IF KEY EQ $FC06 GOTO N241) ; F7 C AXIS -
+N245(ORGX54=TPOSX)
+(SK 1="    X      LOADED ")
+(GOTO N241)
+N246(ORGY54=TPOSY)
+(SK 2="    Y      LOADED ")
+(GOTO N241)
+N247(ORGZ54=TPOSZ)
+(SK 3="    Z      LOADED ")
+(GOTO N241)
+;
+;---------------------- G55 ---------------------------------
+N250(SK 1="    X        G55",SK 2="    Y        G55",SK 3="     Z        G55",SK 4=" ",SK 5=" EXIT ")
+N251(WKEY)
+(IF KEY EQ $FC00 GOTO N255) ; X
+(IF KEY EQ $FC01 GOTO N256) ; Y
+(IF KEY EQ $FC02 GOTO N257) ; Z
+(IF KEY EQ $FC03 GOTO N251) ; F4 NO OPERATION
+(IF KEY EQ $FC04 GOTO N200) ; F5 EXIT
+(IF KEY EQ $FC05 GOTO N251) ; F6 C AXIS +
+(IF KEY EQ $FC06 GOTO N251) ; F7 C AXIS -
+N255(ORGX55=TPOSX)
+(SK 1="    X      LOADED ")
+(GOTO N251)
+N256(ORGY55=TPOSY)
+(SK 2="    Y      LOADED ")
+(GOTO N251)
+N257(ORGZ55=TPOSZ)
+(SK 3="    Z      LOADED ")
+(GOTO N251)
+;
+;---------------------- G56 ---------------------------------
+N260(SK 1="    X        G56",SK 2="    Y        G56",SK 3="     Z        G56",SK 4=" ",SK 5=" EXIT ")
+N261(WKEY)
+(IF KEY EQ $FC00 GOTO N265) ; X
+(IF KEY EQ $FC01 GOTO N266) ; Y
+(IF KEY EQ $FC02 GOTO N267) ; Z
+(IF KEY EQ $FC03 GOTO N261) ; F4 NO OPERATION
+(IF KEY EQ $FC04 GOTO N200) ; F5 EXIT
+(IF KEY EQ $FC05 GOTO N261) ; F6 C AXIS +
+(IF KEY EQ $FC06 GOTO N261) ; F7 C AXIS -
+N265(ORGX56=TPOSX)
+(SK 1="    X      LOADED ")
+(GOTO N261)
+N266(ORGY56=TPOSY)
+(SK 2="    Y      LOADED ")
+(GOTO N261)
+N267(ORGZ56=TPOSZ)
+(SK 3="    Z      LOADED ")
+(GOTO N261)
+;
+;---------------------- G57 ---------------------------------
+N270(SK 1="    X        G57",SK 2="    Y        G57",SK 3="     Z        G57",SK 4=" ",SK 5=" EXIT ")
+N271(WKEY)
+(IF KEY EQ $FC00 GOTO N275) ; X
+(IF KEY EQ $FC01 GOTO N276) ; Y
+(IF KEY EQ $FC02 GOTO N277) ; Z
+(IF KEY EQ $FC03 GOTO N271) ; F4 NO OPERATION
+(IF KEY EQ $FC04 GOTO N200) ; F5 EXIT
+(IF KEY EQ $FC05 GOTO N271) ; F6 C AXIS +
+(IF KEY EQ $FC06 GOTO N271) ; F7 C AXIS -
+N275(ORGX57=TPOSX)
+(SK 1="    X      LOADED ")
+(GOTO N271)
+N276(ORGY57=TPOSY)
+(SK 2="    Y      LOADED ")
+(GOTO N271)
+N277(ORGZ57=TPOSZ)
+(SK 3="    Z      LOADED ")
+(GOTO N271)
+;
+;
+;
+;
+;-----------------------------------------------------------------------
+;                               MONITOR GANTRY
+;-----------------------------------------------------------------------
+;
+N300 (CALL 151)
+(GOTO N10)
+;
+;
+N1000(PLCR501=0)
+(MSG "")
+(SYSTEM)
+;
+;
+;
+(SUB 151)
+(SYMBOL 5,385,255)
+N301(ODW2,17,65)
+(P291=ANAI3*15)
+(DW2=P291)
+(ODW3,18,65)
+(P292=ANAI4*15)
+(DW3=P292)
+;G4K50
+(IF KEY EQ $FC03 GOTO N302)
+(GOTO N301)
+N302(RET)
+;
+;
