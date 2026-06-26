@@ -168,15 +168,17 @@ All three NC contacts must be closed simultaneously (no e-stop pressed) for 24 V
 
 ## *28
 
-- **Left side**: RED wire from cable 33 → Z-axis limit switch, "top" contact (upper end of Z travel). NC, fail-safe.
+- **Left side**: RED wire from cable 33 → Z-axis **bottom** limit (trips at the lower end of Z travel). NC, fail-safe. (Switch body is mounted physically HIGH — see note under *29.)
 - **Right side**: GREEN wire → Fagor X9/pin 25.
-- **Notes**: ✓ verified end-to-end. Z-axis "top" limit.
+- **Notes**: ✓ verified end-to-end. Z-axis **bottom** limit (corrected 2026-06-24 by hardware test `input-09`; was mislabelled "top").
 
 ## *29
 
-- **Left side**: BLK wire from cable 33 → Z-axis limit switch, "bottom" contact (lower end of Z travel). NC, fail-safe.
+- **Left side**: BLK wire from cable 33 → Z-axis **top** limit (trips at the upper end of Z travel). NC, fail-safe. (Switch body is mounted physically LOW.)
 - **Right side**: BLUE wire → Fagor X9/pin 26.
-- **Notes**: ✓ verified end-to-end. Z-axis "bottom" limit.
+- **Notes**: ✓ verified end-to-end. Z-axis **top** limit (corrected 2026-06-24 by hardware test `input-10`; was mislabelled "bottom").
+
+> **Why *28/*29 top/bottom were reversed:** the TOP-of-travel limit switch is mounted physically BELOW the BOTTOM-of-travel switch. The original trace labelled the two switches by physical height, which swapped their actual functions. Hardware test 2026-06-24 settled it: `*28`(input-09)=bottom, `*29`(input-10)=top.
 
 ## *30
 
@@ -540,7 +542,7 @@ Wire labels found on the wires themselves (not the terminals). These are user-ob
 | Cable `4` | Goes from cabinet to Z-axis junction box. Does nothing. Likely pre-wiring for a future Z-axis glass scale. ✓ user-observed. |
 | Cable `13` | 3-wire cable carrying X+W gantry limit switch signals: RED → `*24` (back), BLK → `*25` (front), COM → `*73` (+24 V bus). ✓ user-traced. |
 | Cable `23` | 3-wire cable carrying Y limit switch signals: RED → `*26` (left), BLK → `*27` (right), COM → `*73`. ✓ user-traced. |
-| Cable `33` | 3-wire cable carrying Z limit switch signals: RED → `*28` (top), BLK → `*29` (bottom), COM → `*72`. ✓ user-traced. |
+| Cable `33` | 3-wire cable carrying Z limit switch signals: RED → `*28` (Z **bottom** limit), BLK → `*29` (Z **top** limit), COM → `*72`. ✓ user-traced; top/bottom corrected 2026-06-24 (TOP switch sits physically below BOTTOM switch). |
 | Cable `20` | Carries the LHS machine e-stop wires from the e-stop to `*5`/`*6`. ✓ user-observed. |
 
 Wire labels that need re-verification before assuming function:

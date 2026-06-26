@@ -38,7 +38,7 @@ Detailed trace document: `../trash/VG5_wiring.md`.
 
 - VG5 was wired in **sourcing** mode for its dry-contact outputs: when the running contact (9-10) or fault contact (20-18) closed, +24 V from `*71`-`*76` (via the white wire on VG5/10) was sourced to the partner terminal.
 - VG5/12 (shield) and VG5/17 (signal common) were **internally bonded** inside the VG5 — verified by continuity measurement during tracing.
-- The Mollom replacement is **sinking** on its open-collector outputs (Y1), so the R1 coil drive will have to be flipped — see `relays.md` R1 row for the planned change.
+- The Mollom replacement is **sinking** on its open-collector outputs (Y1). **R1 is not changed** (golden rule: no cabinet wiring changes) — the sink/source polarity is handled by the interposing relay on Y1 (see `mollom_g75_vfd.md`).
 
 ## Migration Plan
 

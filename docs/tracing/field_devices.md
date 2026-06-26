@@ -229,8 +229,8 @@ The Fagor has limit switches on multiple axes. PIM names them XFLS/XRLS (X axis 
 - **Wires**:
   | Color | Cabinet-side terminal | Role |
   |---|---|---|
-  | Red | `*28` | "Top" contact (upper end of Z travel). NC, fail-safe. Right-side trace TBD — PIM hypothesis: X9/pin 26 (`ZFLS I12`). |
-  | Black | `*29` | "Bottom" contact (lower end of Z travel). NC, fail-safe. Right-side trace TBD — PIM hypothesis: X9/pin 25 (`ZRLS I10`). |
+  | Red | `*28` | Z **bottom** limit (trips at lower end of Z travel). NC, fail-safe. Corrected 2026-06-24 (hardware test `input-09`); was labelled "top". Right side → X9/pin 25. |
+  | Black | `*29` | Z **top** limit (trips at upper end of Z travel). NC, fail-safe. Corrected 2026-06-24 (hardware test `input-10`); was labelled "bottom". Right side → X9/pin 26. |
   | COM | `*72` | +24 V supply |
 - **Notes**: cabinet-side landings traced. Field-side switch positions and Fagor-pin destinations not yet verified. Z limits are PLC-only (NOT in e-stop chain — when Z trips, only the Z drive cuts, axis is recoverable). Per `project_machine_limit_switches.md` memory.
 

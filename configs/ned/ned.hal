@@ -5,10 +5,12 @@
 #  Machine:  X is a GANTRY (two servos: X "gantry servo 1" + W "gantry servo 2",
 #            tandem) ; Y cross ; Z vertical ; one VFD spindle.
 #            Full drawbar tool change + toolsetter + sensors.
+#            GANTRY SIDES (confirmed 2026-06-25, hand-turn encoder test):
+#              X = STARBOARD (encoder.00)   W = PORT (encoder.03)
 #  Hardware: Mesa 7I97T (Ethernet, hm2_eth) + 7I85S (DB25) + 7I84U (sserial).
 #  Kinematics (set in ned.ini): trivkins coordinates=XYZX  -> JOINTS=4
-#            joint 0 = X (gantry side 1)   joint 1 = Y
-#            joint 2 = Z                    joint 3 = X (gantry side 2 / "W")
+#            joint 0 = X (gantry side 1, STARBOARD)   joint 1 = Y
+#            joint 2 = Z                              joint 3 = X (gantry side 2 / "W", PORT)
 #
 #  Wiring source of truth: docs/wiring_to_hal_guide.md, docs/fagor_8055_axes.md.
 #  HAL/man reference parked offline in docs/linuxcnc/.
@@ -48,11 +50,13 @@ loadrt hostmot2
 #   0V, per 7I85S need). W23 LEFT (sserial termination on, for the 7I84).
 #   Encoders 0-3 differential.
 # num_encoders=6 -> 4 axis encoders (00-03) + pendant MPG (04) + 1 spare (05).
-loadrt hm2_eth board_ip="10.10.10.10" config="num_encoders=6 num_pwmgens=6 num_stepgens=4 num_inmuxs=0 sserial_port_0=0xxxxxxx"
+loadrt hm2_eth board_ip="10.10.10.10" config="num_encoders=6 num_pwmgens=6 num_stepgens=4 num_inmuxs=1 sserial_port_0=0xxxxxxx"
 # Board flashed to 7i97t_7i85sd firmware (sserial + 4 stepgen on DB25 + 6 pwm + enc).
-# num_inmuxs=0 is REQUIRED: with InMux enabled it grabs the sserial pins and the
-# 7I84 won't enumerate. With it off + GND (TB4-13/14) wired, the 84 comes up as
-# hm2_7i97.0.7i84.0.0 (verified via mesaflash --sserial: "7I84 unit 0x180C014C").
+# num_inmuxs=1: the 7I97T's 16 isolated inputs (TB4/TB5 IN0-15) are read through an
+# InMux (mesaflash --readhmid: Addr0-3 + Data0, all Internal pins). The mux is
+# independent of SSerial (which uses TB4-15..18), so enabling it does NOT disturb
+# the 7I84. With num_inmuxs=1 the cabinet inputs appear as the inmux module's
+# input-00..15 pins (section 7). The 7I84 still comes up as hm2_7i97.0.7i84.0.0.
 # num_stepgens=4 -> 7I85S step/dir on the DB25 (section 8). sserial_port_0=0xxxxxxx
 # = channel 0 (TB4) mode 0 (input_output) = the 84.
 
@@ -207,24 +211,27 @@ net sig-drive-enable    iocontrol.0.user-enable-out
 # Limit switches are NC / fail-safe: contact OPENS at the limit (or on a broken
 # wire), so "at limit" = input LOW. The PHYSICAL block (section 7) feeds these
 # signals from the INVERTED (-not) input pins so an open reads as "at limit".
-net sig-limit-x-back   => joint.0.neg-lim-sw-in  joint.3.neg-lim-sw-in
-net sig-limit-x-front  => joint.0.pos-lim-sw-in  joint.3.pos-lim-sw-in
-net sig-limit-y-left   => joint.1.neg-lim-sw-in
-net sig-limit-y-right  => joint.1.pos-lim-sw-in
+net sig-limit-x-aft   => joint.0.neg-lim-sw-in  joint.3.neg-lim-sw-in
+net sig-limit-x-fore  => joint.0.pos-lim-sw-in  joint.3.pos-lim-sw-in
+net sig-limit-y-sb   => joint.1.neg-lim-sw-in
+net sig-limit-y-port  => joint.1.pos-lim-sw-in
 net sig-limit-z-bottom => joint.2.neg-lim-sw-in
 net sig-limit-z-top    => joint.2.pos-lim-sw-in
 
 # No separate home switches were traced -> home off the limit switches.
-# X GANTRY: ONE shared X switch (sig-limit-x-back) feeds BOTH joint 0 and 3,
-# so X CANNOT self-square from homing -- both ends latch the same trip. Square
-# is held mechanically (rigid, heavy gantry). True auto-square needs a 2nd X
-# switch (one per end), wired one-per-joint.
-# TODO (later): during X homing, leave the switch-less end's drive UNPOWERED
-#   so only the switched end drives to the switch; the rigid gantry drags the
-#   other end along and stays square.
-# (ned.ini sets HOME_USE_INDEX / HOME offsets.)
-net sig-limit-x-back  => joint.0.home-sw-in   joint.3.home-sw-in
-net sig-limit-y-left  => joint.1.home-sw-in
+# X GANTRY squaring: a SECOND aft switch is being installed on the W (PORT) end,
+# named sig-limit-w-aft, so each gantry end homes to its OWN switch and the gantry
+# self-squares. UNTIL it is wired (input pin TBD), joint 3 shares sig-limit-x-aft
+# (below) and X holds square mechanically (rigid, heavy gantry).
+# WHEN sig-limit-w-aft is wired:
+#   (1) add `net sig-limit-w-aft <= hm2_7i97.0.inmux.00.input-NN-not` in section 7;
+#   (2) move joint.3.neg-lim-sw-in and joint.3.home-sw-in off sig-limit-x-aft onto
+#       sig-limit-w-aft (joint 0 = X/starboard keeps sig-limit-x-aft);
+#   (3) give joints 0 and 3 their own HOME_SEQUENCE in ned.ini so each homes to
+#       its own end and the gantry squares.
+# Fore/pos overtravel stays shared on sig-limit-x-fore.
+net sig-limit-x-aft  => joint.0.home-sw-in   joint.3.home-sw-in
+net sig-limit-y-sb  => joint.1.home-sw-in
 net sig-limit-z-top   => joint.2.home-sw-in
 
 # Monitored safety inputs (faithful to the Fagor: these did not drop machine
@@ -306,9 +313,14 @@ setp axis.z.jog-vel-mode 0
 # 7. PHYSICAL I/O BINDINGS  <-- THE ONLY CARD-DEPENDENT SECTION
 # ============================================================================
 # Confirm EVERY name/index here against `halcmd show pin hm2_7i97.0`.
-# Chosen distribution (a wiring-design choice, revise freely):
-#   - Axis encoders + analog (pwmgen) : 7I97T native
-#   - All field digital I/O           : 7I84U via smart serial (.7i84.0.0.*)
+# Physical distribution (verified on hardware 2026-06-24, see docs/commissioning):
+#   - Axis encoders + analog (pwmgen)        : 7I97T native (TB1/TB2/TB3)
+#   - Cabinet digital inputs (X9: estop,
+#     limits, spindle/air/fault/temp)        : 7I97T isolated inputs via InMux
+#                                              hm2_7i97.0.inmux.00.input-NN
+#                                              (REQUIRES num_inmuxs=1)
+#   - Tool-changer I/O (X10)                 : 7I84U TB2
+#                                              input-28..31 / output-08..15
 
 # --- Encoders (machine units via [JOINT_n]INPUT_SCALE) ---------------------
 # Standard encoder setup lines (match pncconf / hm2-servo reference).
@@ -348,7 +360,7 @@ net sig-mpg-counts <= hm2_7i97.0.encoder.04.count
 # Pendant axis-select button (momentary NC). TODO: confirm the input pin AND
 # decide how ONE button selects among X/Y/Z (cycle? or it is really PENX/PENY).
 # Drive sig-mpg-sel-x/y/z from it (or from the GUI) once identified:
-#net sig-mpg-sel-x <= hm2_7i97.0.7i84.0.0.input-15
+#net sig-mpg-sel-x <= hm2_7i97.0.inmux.00.input-00   # TB4-1 IN0 pendant axis-select
 
 # --- Analog velocity commands (pwmgen -> +/-10 V) --------------------------
 # X8 axis mapping PHYSICALLY VERIFIED (docs/fagor_8055_axes.md X8 trace):
@@ -371,11 +383,20 @@ setp hm2_7i97.0.pwmgen.01.offset-mode 1
 setp hm2_7i97.0.pwmgen.02.offset-mode 1
 setp hm2_7i97.0.pwmgen.03.offset-mode 1
 setp hm2_7i97.0.pwmgen.04.offset-mode 0
+# CONFIRMED 2026-06-25: bipolar (offset-mode) AOUT reads 0 V at 40 kHz / no dither.
+# 7I97 manual "SUGGESTED PWM SETUP": current LinuxCNC needs 75 kHz + dither for the
+# offset-PWM bipolar output. With these, the axis AOUTs produce the commanded ±10 V
+# (verified: X AOUT0 = 4.0 V at value 20 / scale 50, drives disabled).
+setp hm2_7i97.0.pwmgen.00.dither 1
+setp hm2_7i97.0.pwmgen.01.dither 1
+setp hm2_7i97.0.pwmgen.02.dither 1
+setp hm2_7i97.0.pwmgen.03.dither 1
+setp hm2_7i97.0.pwmgen.04.dither 1
 setp hm2_7i97.0.pwmgen.00.scale [JOINT_0]OUTPUT_SCALE
 setp hm2_7i97.0.pwmgen.01.scale [JOINT_1]OUTPUT_SCALE
 setp hm2_7i97.0.pwmgen.02.scale [JOINT_2]OUTPUT_SCALE
 setp hm2_7i97.0.pwmgen.03.scale [JOINT_3]OUTPUT_SCALE
-setp hm2_7i97.0.pwmgen.pwm_frequency 40000
+setp hm2_7i97.0.pwmgen.pwm_frequency 75000
 
 net sig-x-vel-volts    => hm2_7i97.0.pwmgen.00.value
 net sig-y-vel-volts    => hm2_7i97.0.pwmgen.01.value
@@ -391,32 +412,41 @@ setp hm2_7i97.0.pwmgen.04.scale [SPINDLE_0]MAX_FORWARD_VELOCITY
 net sig-spindle-vel-volts  => hm2_7i97.0.pwmgen.04.value
 net sig-spindle-vel-enable => hm2_7i97.0.pwmgen.04.enable
 
-# --- Digital INPUTS (7I84U sserial; NC limits & friends use the -not pin) ---
-net sig-estop-released   <= hm2_7i97.0.7i84.0.0.input-00       # *6  e-stop chain OK (HIGH=released)
-net sig-limit-x-back     <= hm2_7i97.0.7i84.0.0.input-01-not   # *24 gantry-X back  (NC)
-net sig-limit-x-front    <= hm2_7i97.0.7i84.0.0.input-02-not   # *25 gantry-X front (NC)
-net sig-limit-y-left     <= hm2_7i97.0.7i84.0.0.input-03-not   # *26 Y left  (NC)
-net sig-limit-y-right    <= hm2_7i97.0.7i84.0.0.input-04-not   # *27 Y right (NC)
-net sig-limit-z-top      <= hm2_7i97.0.7i84.0.0.input-05-not   # *28 Z top    (NC)
-net sig-limit-z-bottom   <= hm2_7i97.0.7i84.0.0.input-06-not   # *29 Z bottom (NC)
-net sig-spindle-running  <= hm2_7i97.0.7i84.0.0.input-07       # *36 VFD running (via R1)
-net sig-air-pressure-ok  <= hm2_7i97.0.7i84.0.0.input-08       # *37 air pressure (HIGH=OK)
-net sig-vfd-fault        <= hm2_7i97.0.7i84.0.0.input-09       # *38 VFD fault
-net sig-spindle-overtemp <= hm2_7i97.0.7i84.0.0.input-10       # *39 spindle thermostat
-net sig-tool-probe       <= hm2_7i97.0.7i84.0.0.input-11       # *54 toolsetter contact (via R10)
-net sig-rack-pos         <= hm2_7i97.0.7i84.0.0.input-12       # *68 rack position
-net sig-drawbar-up       <= hm2_7i97.0.7i84.0.0.input-13       # *69 drawbar UP (clamped)
-net sig-drawbar-down     <= hm2_7i97.0.7i84.0.0.input-14       # *70 drawbar DOWN (released)
+# --- Digital INPUTS ---------------------------------------------------------
+# Cabinet inputs (X9) -> 7I97T isolated inputs via InMux (num_inmuxs=1).
+# input-NN = TB4/TB5 IN-NN. NC limits use the -not pin so the signal is TRUE
+# only when AT the limit (raw input reads TRUE at rest = NC closed = healthy).
+net sig-estop-released   <= hm2_7i97.0.inmux.00.input-04       # TB4-7  IN4  *6  e-stop chain OK (HIGH=released)
+net sig-limit-x-aft     <= hm2_7i97.0.inmux.00.input-05-not   # TB4-8  IN5  *24 gantry-X aft  (NC)
+net sig-limit-x-fore    <= hm2_7i97.0.inmux.00.input-06-not   # TB4-10 IN6  *25 gantry-X fore (NC)
+net sig-limit-y-sb     <= hm2_7i97.0.inmux.00.input-07-not   # TB4-11 IN7  *26 Y left  (NC)
+net sig-limit-y-port    <= hm2_7i97.0.inmux.00.input-08-not   # TB5-1  IN8  *27 Y right (NC)
+# Z top/bottom were CROSSED in the original trace. CONFIRMED 2026-06-24 by hardware
+# test: input-09 held at-limit with Z parked on the bottom, and triggering the
+# physical TOP over-travel switch moved input-10. Root cause: the TOP-limit switch
+# is mounted physically BELOW the BOTTOM-limit switch, so the trace mislabelled them
+# by height. => input-09 = Z BOTTOM, input-10 = Z TOP. (Docs corrected to match.)
+net sig-limit-z-bottom   <= hm2_7i97.0.inmux.00.input-09-not   # TB5-2  IN9  *28 Z bottom (NC)
+net sig-limit-z-top      <= hm2_7i97.0.inmux.00.input-10-not   # TB5-4  IN10 *29 Z top    (NC)
+net sig-spindle-running  <= hm2_7i97.0.inmux.00.input-11       # TB5-5  IN11 *36 VFD running (via R1)
+net sig-air-pressure-ok  <= hm2_7i97.0.inmux.00.input-12       # TB5-7  IN12 *37 air pressure (HIGH=OK)
+net sig-vfd-fault        <= hm2_7i97.0.inmux.00.input-13       # TB5-8  IN13 *38 VFD fault
+net sig-spindle-overtemp <= hm2_7i97.0.inmux.00.input-14       # TB5-10 IN14 *39 spindle thermostat (polarity TBD: reads TRUE cold)
+# Tool-changer inputs (X10) -> 7I84U TB2:
+net sig-tool-probe       <= hm2_7i97.0.7i84.0.0.input-28       # TB2-13 *54 toolsetter contact (via R10)
+net sig-rack-pos         <= hm2_7i97.0.7i84.0.0.input-29       # TB2-14 *68 rack position
+net sig-drawbar-up       <= hm2_7i97.0.7i84.0.0.input-30       # TB2-15 *69 drawbar UP (clamped)
+net sig-drawbar-down     <= hm2_7i97.0.7i84.0.0.input-31       # TB2-16 *70 drawbar DOWN (released)
 
-# --- Digital OUTPUTS (7I84U sserial) ---------------------------------------
-net sig-drive-enable      => hm2_7i97.0.7i84.0.0.output-00     # *8  drive-enable -> R5 coil
-net sig-spin-cw           => hm2_7i97.0.7i84.0.0.output-01     # *40 SPIN-CW  -> R6
-net sig-spin-ccw          => hm2_7i97.0.7i84.0.0.output-02     # *41 SPIN-CCW -> R7
-net sig-chip-blowoff      => hm2_7i97.0.7i84.0.0.output-03     # *55 chip blow-off -> R9
-net sig-toolsetter-deploy => hm2_7i97.0.7i84.0.0.output-04     # *61 toolsetter deploy
-net sig-drawbar-clamp     => hm2_7i97.0.7i84.0.0.output-05     # *63 drawbar clamp (OCLAMP)
-net sig-taper-purge       => hm2_7i97.0.7i84.0.0.output-06     # *64 taper air purge (OBLOWOFF)
-net sig-drawbar-release   => hm2_7i97.0.7i84.0.0.output-07     # *65 drawbar release (ODRAW)
+# --- Digital OUTPUTS (7I84U TB2) -------------------------------------------
+net sig-drive-enable      => hm2_7i97.0.7i84.0.0.output-08     # TB2-17 *8  drive-enable -> R5 coil
+net sig-spin-cw           => hm2_7i97.0.7i84.0.0.output-09     # TB2-18 *40 SPIN-CW  -> R6
+net sig-spin-ccw          => hm2_7i97.0.7i84.0.0.output-10     # TB2-19 *41 SPIN-CCW -> R7
+net sig-chip-blowoff      => hm2_7i97.0.7i84.0.0.output-11     # TB2-20 *55 chip blow-off -> R9
+net sig-toolsetter-deploy => hm2_7i97.0.7i84.0.0.output-12     # TB2-21 *61 toolsetter deploy
+net sig-drawbar-clamp     => hm2_7i97.0.7i84.0.0.output-13     # TB2-22 *63 drawbar clamp (OCLAMP)
+net sig-taper-purge       => hm2_7i97.0.7i84.0.0.output-14     # TB2-23 *64 taper air purge (OBLOWOFF)
+net sig-drawbar-release   => hm2_7i97.0.7i84.0.0.output-15     # TB2-24 *65 drawbar release (ODRAW)
 
 # ============================================================================
 # 8. ROTARY STEP/DIR  (7I85S stepgen.00 on the DB25 -> the 2 mirrored steppers)

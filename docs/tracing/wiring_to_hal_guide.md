@@ -82,8 +82,8 @@ Both IN COMMON terminals tied to the same +V so all 4 pendant signals share a co
 | `*25` | pin 22 | `7i97t.in.02` | `limit-x-front` | Gantry X front limit. |
 | `*26` | pin 23 | `7i97t.in.03` | `limit-y-left` | Y-axis left limit. |
 | `*27` | pin 24 | `7i97t.in.04` | `limit-y-right` | Y-axis right limit. |
-| `*28` | pin 25 | `7i97t.in.05` | `limit-z-top` | Z top limit. |
-| `*29` | pin 26 | `7i97t.in.06` | `limit-z-bottom` | Z bottom limit. |
+| `*28` | pin 25 | `inmux.00.input-09` | `limit-z-bottom` | Z **bottom** limit (corrected 2026-06-24; was "top"). |
+| `*29` | pin 26 | `inmux.00.input-10` | `limit-z-top` | Z **top** limit (corrected 2026-06-24; was "bottom" — TOP switch sits physically below BOTTOM switch). |
 | `*36` | pin 33 (IROTATE) | `7i97t.in.07` | `spindle-running` | VFD running feedback (from R1A3). |
 | `*37` | pin 34 (/AIRFLT) | `7i97t.in.08` | `air-pressure-ok` | Air pressure sensor; HIGH = OK. |
 | `*38` | pin 35 (SPINFLT) | `7i97t.in.09` | `vfd-fault` | VFD fault contact (from VG5/18 or Mollom RY1 TC). |

@@ -77,8 +77,8 @@ All other X10 pins: not yet physically traced.
 | 22 | `*25` (via red wire; then BLK wire of cable 13 → gantry "front" limit switch — physical X axis, gantry-X front) | ✓ |
 | 23 | `*26` (via orange wire; then RED wire of cable 23 → Y "left" limit switch — physical Y-axis left) | ✓ |
 | 24 | `*27` (via yellow wire; then BLK wire of cable 23 → Y "right" limit switch — physical Y-axis right) | ✓ |
-| 25 | `*28` (via green wire; then RED wire of cable 33 → Z "top" limit switch — Z-axis top) | ✓ |
-| 26 | `*29` (via blue wire; then BLK wire of cable 33 → Z "bottom" limit switch — Z-axis bottom) | ✓ |
+| 25 | `*28` (via green wire; then RED wire of cable 33 → Z **bottom** limit switch — Z-axis bottom). Corrected 2026-06-24 by hardware test (`input-09`); previously mislabelled "top". | ✓ |
+| 26 | `*29` (via blue wire; then BLK wire of cable 33 → Z **top** limit switch — Z-axis top). Corrected 2026-06-24 by hardware test (`input-10`, triggered the top over-travel switch); previously mislabelled "bottom". | ✓ |
 | 33 | `*36` (then → R1A3; R1 energizes when the VFD reports spindle is running, so +24 V appears on `*36`); PIM `IROTATE I26` — "spindle is rotating" feedback. The CNC reads this to confirm the spindle is actually spinning, distinct from being commanded to spin. | ✓ |
 | 34 | `*37` (via light blue wire; then via red wire of cable "00" to the air pressure sensor's signal output; sensor's other wire is on `*71` for +24 V power) | ✓ |
 | 35 | `*38` (via white wire; then yellow wire → VG5/18 — VFD's fault contact NO output; `SPINFLT I30` per PIM, matches actual function) | ✓ |

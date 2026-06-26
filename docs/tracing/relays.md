@@ -35,7 +35,7 @@ Closes its contacts when the VFD is running, signaling the CNC that the spindle 
 
 | Terminal | Wire | Other end / function | Status |
 |---|---|---|---|
-| R1C1 | one coil terminal | → GND (0 V). **Planned change**: move to +24 V at `*71`-`*76` for the Mollom Y1 sinking output. | ✓ existing; planned change for Mollom |
+| R1C1 | one coil terminal | → GND (0 V). **Untouched** (golden rule: no cabinet wiring changes). Mollom Y1 polarity is handled by the interposing relay (`mollom_g75_vfd.md`); R1 stays exactly as the VG5 left it. | ✓ |
 | R1C2 | other coil terminal | Blue wire (unlabelled) → VG5/9 (legacy) / Mollom Y1 (planned) | ✓ |
 | R1A1 | NO contact, col 1 | Black wire to grease pump's hot terminal. (The pump's neutral terminal returns to `*77` — neutral side is NOT on R1.) See "Grease pump path" note below. | ✓ user-observed |
 | R1A2 | NO contact, col 2 | → spindle use counter (hour meter — tracks accumulated spindle-on time). When R1 energizes (spindle running), R1A2 closes onto R1D2 (+24 V) → counter receives +24 V and increments. | ✓ |
@@ -51,9 +51,9 @@ Closes its contacts when the VFD is running, signaling the CNC that the spindle 
 
 - **R1's contacts beyond A1/C1/C2**: only R1A1 is traced (black wire to grease pump hot). The other 3 NO contacts (A2, A3, A4), all 4 NC contacts (B1–B4), and 3 COMs (D2, D3, D4) are TBD. One of these is the likely path that signals the CNC "VFD is running" (since R1's original purpose is the running-feedback relay) — needs tracing.
 - **R1D1 source**: presumably AC hot from the right-side selector switch (machine-power side). Not yet traced.
-| External flyback diode | across coil R1C1 ↔ R1C2 | Cathode currently on R1C2 (legacy +24 V side). **Planned change**: flip diode 180° so cathode → R1C1 (new +24 V side for Mollom). | ✓ noted; planned change |
+| External flyback diode | across coil R1C1 ↔ R1C2 | Cathode on R1C2 (legacy +24 V side). **Untouched** — the interposer sources +24 V on the blue wire, so the diode orientation stays as-is. | ✓ |
 
-**Coil drive source**: When VG5 was running, terminal 9 (blue wire to R1C2) sourced +24 V; coil energised between R1C2 (+24 V) and R1C1 (0 V). For Mollom: Y1 (open collector) sinks blue wire to 0 V when running; R1C1 will be tied to +24 V → coil sees 24 V in the opposite direction.
+**Coil drive source**: When VG5 was running, terminal 9 (blue wire to R1C2) sourced +24 V; coil energised between R1C2 (+24 V) and R1C1 (0 V). The Mollom reproduces this **exactly via the interposing relay** (`mollom_g75_vfd.md`): Y1 (open-collector, sinks) drives the interposer, whose NO output sources +24 V onto the same blue wire → R1C2. R1 sees the identical drive it always did — **nothing on R1 changes**.
 
 ---
 

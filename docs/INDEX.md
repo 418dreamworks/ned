@@ -18,6 +18,7 @@ per vendor/topic; your physical wiring traces are grouped under `tracing/`.
 Conventions:
 - PDFs are texified — searchable plain-text extracts live in each folder's `text/` subfolder.
 - The LinuxCNC HAL/INI config itself lives **outside** docs at [`../configs/ned/`](../configs/ned/) (`ned.hal`, `ned.ini`).
+- Mesa **firmware bitfiles** live **outside** docs at [`../firmware/`](../firmware/) — see its `README.md`. (Note: the `7i97/` set there is the non-T `7i97.zip`, WRONG family for our 7I97T; correct one is `7i97t.zip`.)
 - Superseded SPI-route card manuals (7C81/7I76/7I77) are parked in [`../trash/unrelated_cards/`](../trash/unrelated_cards/).
 
 ---

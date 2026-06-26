@@ -265,8 +265,8 @@ Full pinout:
 | TB5 pin | Mesa input | Cabinet `*N` | Fagor X9 pin (was) | HAL signal |
 |---|---|---|---|---|
 | 1 | IN8 | `*27` | 24 | `limit-y-right` |
-| 2 | IN9 | `*28` | 25 | `limit-z-top` |
-| 4 | IN10 | `*29` | 26 | `limit-z-bottom` |
+| 2 | IN9 | `*28` | 25 | `limit-z-bottom` |
+| 4 | IN10 | `*29` | 26 | `limit-z-top` |
 | 5 | IN11 | `*36` | 33 (IROTATE) | `spindle-running` |
 | 7 | IN12 | `*37` | 34 (/AIRFLT) | `air-pressure-ok` |
 | 8 | IN13 | `*38` | 35 (SPINFLT) | `vfd-fault` |
