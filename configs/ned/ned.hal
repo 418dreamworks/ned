@@ -8,9 +8,17 @@
 #            GANTRY SIDES (confirmed 2026-06-25, hand-turn encoder test):
 #              X = STARBOARD (encoder.00)   W = PORT (encoder.03)
 #  Hardware: Mesa 7I97T (Ethernet, hm2_eth) + 7I85S (DB25) + 7I84U (sserial).
-#  Kinematics (set in ned.ini): trivkins coordinates=XYZX  -> JOINTS=4
+#  Component models/ratings (drives, motors, cards, supplies, relays) are NOT
+#  restated in this file -- see docs/components.md (single source of truth).
+#  Kinematics (set in ned.ini): trivkins coordinates=XYZXBAC  -> JOINTS=7
 #            joint 0 = X (gantry side 1, STARBOARD)   joint 1 = Y
 #            joint 2 = Z                              joint 3 = X (gantry side 2 / "W", PORT)
+#            joint 4 = B (workpiece rotary, about Y -- 7I85S stepgen, LIVE)
+#            joint 5 = A (swivel-head TILT about X/W) } SWIVEL HEAD -- INERT (parked 0,
+#            joint 6 = C (swivel-head SPIN about Z)   } loopback feedback) until driven.
+#  5-axis-ready topology now; with the head at 0 trivkins identity == any RTCP kins.
+#  A/C-head RTCP kinematics (custom -- no stock module fits an A/C head) drops in
+#  later: same joints, same HAL, only the transform swaps.
 #
 #  Wiring source of truth: docs/wiring_to_hal_guide.md, docs/fagor_8055_axes.md.
 #  HAL/man reference parked offline in docs/linuxcnc/.
@@ -165,14 +173,22 @@ net w-pos-cmd         joint.3.motor-pos-cmd  => pid.w.command
 net sig-w-enc-pos     => pid.w.feedback  joint.3.motor-pos-fb
 net sig-w-vel-volts   <= pid.w.output
 
-# --- Joint 4 : A (workholding rotary -- 7I85S stepgen 0, open-loop) ---------
+# --- Joint 4 : B (workpiece rotary, about Y -- 7I85S stepgen 0, open-loop) --
 # Step/dir, POSITION mode: motion drives the stepgen position directly (no PID).
 # Feedback = the stepgen's own commanded position (open-loop, no encoder yet).
 # Both mirrored drives share this ONE stepgen (one motor reversed in copper).
 # Hardware setp for stepgen.00 (scale/timing) is in section 8.
-net a-pos-cmd   joint.4.motor-pos-cmd              => hm2_7i97.0.stepgen.00.position-cmd
-net a-pos-fb    hm2_7i97.0.stepgen.00.position-fb  => joint.4.motor-pos-fb
-net a-enable    joint.4.amp-enable-out             => hm2_7i97.0.stepgen.00.enable
+net b-pos-cmd   joint.4.motor-pos-cmd              => hm2_7i97.0.stepgen.00.position-cmd
+net b-pos-fb    hm2_7i97.0.stepgen.00.position-fb  => joint.4.motor-pos-fb
+net b-enable    joint.4.amp-enable-out             => hm2_7i97.0.stepgen.00.enable
+
+# --- Joints 5 : A (head TILT) & 6 : C (head SPIN) -- INERT swivel head ------
+# No hardware yet. Loop each joint's commanded position straight back to its own
+# feedback so it tracks exactly (following error stays 0) and never faults.
+# No amp-enable wired (nothing to drive). Immediate-home at 0 (ned.ini HOME_SEARCH_VEL=0).
+# When the head is driven, replace these loopbacks with real drive + encoder wiring.
+net a-head-fb   joint.5.motor-pos-cmd  => joint.5.motor-pos-fb
+net c-head-fb   joint.6.motor-pos-cmd  => joint.6.motor-pos-fb
 
 
 # ============================================================================
@@ -451,7 +467,7 @@ net sig-drawbar-release   => hm2_7i97.0.7i84.0.0.output-15     # TB2-24 *65 draw
 # ============================================================================
 # 8. ROTARY STEP/DIR  (7I85S stepgen.00 on the DB25 -> the 2 mirrored steppers)
 # ============================================================================
-# Joint 4 = A. POSITION mode (motion drives the stepgen position directly, no
+# Joint 4 = B (workpiece rotary). POSITION mode (motion drives the stepgen position directly, no
 # PID). step_type 0 = step/dir. Both mirrored drives take this ONE step/dir pair
 # (one motor reversed in copper). Physical: stepgen.00 = 7I85S step/dir ch 0
 # (97 DB25 -> 85S TB2 STEP0/DIR0). Timing values are DM860-class -- TUNE.
@@ -460,10 +476,15 @@ setp hm2_7i97.0.stepgen.00.step_type      0                    # 0 = step/dir
 setp hm2_7i97.0.stepgen.00.position-scale [JOINT_4]SCALE
 setp hm2_7i97.0.stepgen.00.maxvel         [JOINT_4]STEPGEN_MAXVEL
 setp hm2_7i97.0.stepgen.00.maxaccel       [JOINT_4]STEPGEN_MAXACCEL
-setp hm2_7i97.0.stepgen.00.steplen        2500                 # ns  NOT APPROVED (DM860)
-setp hm2_7i97.0.stepgen.00.stepspace      2500                 # ns  NOT APPROVED
-setp hm2_7i97.0.stepgen.00.dirsetup       5000                 # ns  NOT APPROVED
-setp hm2_7i97.0.stepgen.00.dirhold        5000                 # ns  NOT APPROVED
+# Timing DERIVED FROM the stepper drive's spec sheet (user-provided in chat
+# 2026-06-27; NO datasheet file on hand): min pulse width 1.2 us; pulse falling-edge
+# valid; pulse/dir/ena inputs 3.3-5 V (7I85S 5 V diff OK, confirmed); DIR setup >= 5 us;
+# AC<=110V / DC<=110V supply; control current 5-20 mA (typ 10).
+# *** ALL VALUES BELOW UNVERIFIED -- confirm against the drive + a live run. ***
+setp hm2_7i97.0.stepgen.00.steplen        2500                 # ns  >= drive min 1.2 us            UNVERIFIED
+setp hm2_7i97.0.stepgen.00.stepspace      2500                 # ns  200 kHz pair (drive ok 300 kHz) UNVERIFIED
+setp hm2_7i97.0.stepgen.00.dirsetup       20000                # ns  drive needs >=5 us; 20 us margin UNVERIFIED
+setp hm2_7i97.0.stepgen.00.dirhold        20000                # ns  conservative                    UNVERIFIED
 # stepgens 01-03 are spare (future axes) -- left unconfigured.
 
 # ============================================================================

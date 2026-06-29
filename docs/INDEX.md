@@ -3,6 +3,10 @@
 Everything documentation-related for the **ned** mill. Organized into one folder
 per vendor/topic; your physical wiring traces are grouped under `tracing/`.
 
+> **Machine components (models / ratings): [`components.md`](components.md) — the
+> single source of truth.** Detail lives there only; everything else references a
+> part by its key, `[cmp:<key>]`, and does not restate specs.
+
 ## Folder map
 
 | Folder | Contents |
@@ -14,6 +18,7 @@ per vendor/topic; your physical wiring traces are grouped under `tracing/`.
 | [`vfd/`](vfd/) | Spindle VFDs — Saftronics VG5 (legacy) + Mollom G75 (replacement) |
 | [`mesa/`](mesa/) | Mesa FPGA cards (7I97T/7I84U/7I85S) + card-selection notes + shopping list |
 | [`linuxcnc/`](linuxcnc/) | Offline mirror of the LinuxCNC HAL manual + driver man pages |
+| [`plans/`](plans/) | Forward-looking bring-up plans (numbered; superseded ones kept) |
 
 Conventions:
 - PDFs are texified — searchable plain-text extracts live in each folder's `text/` subfolder.
@@ -78,29 +83,30 @@ Per-chapter + tagged text extracts (install/operating/programming) and the split
 
 | File | Text | Notes |
 |---|---|---|
-| [Sigma-7 catalog](servo/yaskawa_sigma7_catalog.pdf) | [txt](servo/text/yaskawa_sigma7_catalog.txt) | Yaskawa Σ-7 family |
-| [Sigma-7S SERVOPACK](servo/yaskawa_sigma_7s_servopack_analog_pulse_product_manual.pdf) | [txt](servo/text/yaskawa_sigma_7s_servopack_analog_pulse_product_manual.txt) | SGD7S analog/pulse |
-| [Sigma-X SERVOPACK](servo/yaskawa_sigma_xs_servopack_analog_pulse_product_manual.pdf) | [txt](servo/text/yaskawa_sigma_xs_servopack_analog_pulse_product_manual.txt) | SGDXS analog/pulse |
-| [Sigma-X rotary motor](servo/yaskawa_sigma_x_rotary_servomotor_product_manual.pdf) | [txt](servo/text/yaskawa_sigma_x_rotary_servomotor_product_manual.txt) | SGMXJ/A/P/G motors |
-| [Servo Dynamics SDSM](servo/servo_dynamics_sdsm_manual.pdf) | [txt](servo/text/servo_dynamics_sdsm_manual.txt) | **Legacy** drives (OCR'd) |
+| [Sigma-X SERVOPACK](servo/yaskawa_sigma_xs_servopack_analog_pulse_product_manual.pdf) | [txt](servo/text/yaskawa_sigma_xs_servopack_analog_pulse_product_manual.txt) | SGDXS analog/pulse — **our head drive** [cmp:head-servo] |
+| [Sigma-X rotary motor](servo/yaskawa_sigma_x_rotary_servomotor_product_manual.pdf) | [txt](servo/text/yaskawa_sigma_x_rotary_servomotor_product_manual.txt) | SGMXJ/A/P/G motors — **our head motor** [cmp:head-servo] |
+| [Servo Dynamics SDSM](servo/servo_dynamics_sdsm_manual.pdf) | [txt](servo/text/servo_dynamics_sdsm_manual.txt) | **Main-axis** analog drives [cmp:main-servo] (OCR'd) |
 
-> Yaskawa: keep all for now; prune to the model actually ordered once known.
+> Pruned to the models actually used: head = Yaskawa drive `SGDXS-2R8A00A` + motor
+> `SGMXJ-04AUA6SC2` (see [cmp:head-servo] in [`components.md`](components.md)); main
+> axes = SDSM [cmp:main-servo]. The Sigma-7 catalog and Sigma-7S SERVOPACK manuals
+> were removed (not our hardware).
 
 ## `vfd/` — Spindle VFDs
 
 | File | Text | Notes |
 |---|---|---|
 | [Saftronics VG5](vfd/saftronics_vg5_users_manual.pdf) | [txt](vfd/text/saftronics_vg5_users_manual.txt) | **Legacy** VFD |
-| [Mollom G75](vfd/mollom_G75_AC_drive_manual.pdf) | [txt](vfd/text/mollom_G75_AC_drive_manual.txt) | **Replacement** (G75-2T-7R5-G-B) |
+| [Mollom G75](vfd/mollom_G75_AC_drive_manual.pdf) | [txt](vfd/text/mollom_G75_AC_drive_manual.txt) | Spindle VFD [cmp:vfd] (replaces the VG5) |
 | [mollom_facts.md](vfd/mollom_facts.md) | — | Model decode, single-phase derate, VG5→Mollom migration wiring + params |
 
 ## `mesa/` — Mesa FPGA Cards (the chosen LinuxCNC hardware)
 
 | File | Text | Notes |
 |---|---|---|
-| [7I97T manual](mesa/mesa_7i97t_manual.pdf) | [txt](mesa/text/mesa_7i97t_manual.txt) | Main Ethernet card. P3=5V; jumpers W11/W12 (IP), W21/W22 (DB25), W23 (sserial term) |
-| [7I84U manual](mesa/mesa_7i84u_manual.pdf) | [txt](mesa/text/mesa_7i84u_manual.txt) | sserial 32-in/16-out. TB1 power 8–32 V; W1 (VIN src), W3 (operate/setup) |
-| [7I85S manual](mesa/mesa_7i85s_manual.pdf) | [txt](mesa/text/mesa_7i85s_manual.txt) | step/dir + 4 enc on DB25. 5V via own terminal; W3 (cable/aux 5V) |
+| [7I97T manual](mesa/mesa_7i97t_manual.pdf) | [txt](mesa/text/mesa_7i97t_manual.txt) | [cmp:mesa-7i97t]. Jumpers W11/W12 (IP), W21/W22 (DB25), W23 (sserial term) |
+| [7I84U manual](mesa/mesa_7i84u_manual.pdf) | [txt](mesa/text/mesa_7i84u_manual.txt) | [cmp:mesa-7i84u]. TB1 power 8–32 V; W1 (VIN src), W3 (operate/setup) |
+| [7I85S manual](mesa/mesa_7i85s_manual.pdf) | [txt](mesa/text/mesa_7i85s_manual.txt) | [cmp:mesa-7i85s]. 5V via own terminal; W3 (cable/aux 5V) |
 | [01_albersx_mesa_guide.md](mesa/01_albersx_mesa_guide.md) | — | Mesa card-selection guide (general) |
 | [02_linuxcnc_forum_mesa_guide.md](mesa/02_linuxcnc_forum_mesa_guide.md) | — | Forum card-selection guide |
 | [fpga_cards_listing.md](mesa/fpga_cards_listing.md) | — | Mesa FPGA card listing |

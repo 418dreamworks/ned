@@ -1,6 +1,7 @@
 # Mollom G75 VFD (Replacement — Planned Wiring)
 
-Model: **G75-2T-7R5-G-B** (3-phase 220 V input, 7.5 kW, general application, built-in braking unit).
+Subject: the spindle VFD [cmp:vfd]. Model decode / ratings live in
+[`../components.md`](../components.md) and [`mollom_facts.md`](../vfd/mollom_facts.md).
 
 Source manual: `mollom_G75_AC_drive_manual.pdf` (68 pages).
 Full spec / commissioning notes: `mollom_facts.md`.
