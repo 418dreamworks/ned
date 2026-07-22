@@ -4,6 +4,8 @@ Master list of every relay in the cabinet, with terminal-by-terminal wiring for 
 
 The cabinet has approximately 10 relays total (per earlier user observation). Each section below documents one relay. Untraced relays are listed at the bottom.
 
+**Coil suppression (cabinet-wide):** **every** relay and contactor coil has an **external flyback (freewheeling) diode** across it, **cathode on the +24 V side** (per the R1 example at "External flyback diode" below, and confirmed by field observation across all relays, 2026-07-08). Consequence: **every coil circuit is polarized** — the +24 V feed must land on the diode's cathode terminal, or the diode shorts the supply. Any *new* coil added to this cabinet (e.g. the head/stepper contactor, `components.md` [cmp:head-contactor]) should follow the same pattern: coil low side → 0 V, high side → its +24 V enable node, flyback **cathode on the +24 V side**, diode rated for the coil current (a 1N400x-class rectifier for a contactor coil). *Note: individual entries below do not all restate this — only R1's diode was traced line-by-line; this cabinet-wide note supersedes those gaps.*
+
 ---
 
 ## R0 — Analog Drive Power Contactor (Deltrol)
@@ -26,6 +28,25 @@ The cabinet has approximately 10 relays total (per earlier user observation). Ea
 Fail-safe: any failure that drops `*7` (broken wire, blown fuse on coil supply, contactor coil burnout) cuts power to the drive. To confirm the contact is NO (not NC), test continuity between B1 and B2 with the coil de-energized — should be open. Or read the contactor's model number off the body and check the datasheet.
 
 R0 works in parallel with R3/R4: when `*7` loses voltage, R0 cuts the power AND R3/R4 close the RUN/STOP signal — two independent paths to stop each servo drive.
+
+---
+
+## R11 — Head-servo + 70 V-brick power contactor  (4-pole; installed 2026-07-09)
+
+24 VDC coil, flyback across A1–A2. Coil on `*7` (drive-enable node), same as R0.
+
+> ⚠ **AS-BUILT 2026-07-09 — WRONG PART: R11 is currently a NORMALLY-CLOSED (NC) contactor, bought by mistake.**
+> An NC contactor conducts when the coil is **de-energized**, so **head servos + 70 V brick are powered by DEFAULT** — even with `*7` low (e-stop pressed / no drive-enable). Asserting drive-enable would *remove* power. **This inverts the fail-safe: e-stop does NOT cut head/brick power via R11 right now.** This is why the steppers sit energized/humming at rest.
+> **Intended part = NORMALLY-OPEN (NO):** energize `*7` → poles close → power; drop `*7` (e-stop/fault) → power cut. **To be swapped to NO.** Until then, treat head/stepper power as always-live regardless of e-stop.
+
+| Terminal | Wire | Status |
+|---|---|---|
+| R11A2 (coil +) | → `*7` (drive-enable node = R5D2 = R0's coil node) | ✓ |
+| R11A1 (coil −) | → GND (0 V) | ✓ |
+| Poles 1–3 | L1/L2/L3 supply → head servopack L1/L2/L3 ([cmp:head-servo], A & C) | ✓ |
+| Pole 4 | mains → 70 V brick ([cmp:stepper-brick] L1) | ✓ |
+
+Cross-refs: R0 (same enable node), R5 (drive-enable gate), `components.md` [cmp:head-contactor], [cmp:head-servo], [cmp:stepper-brick].
 
 ---
 
@@ -201,7 +222,7 @@ When voltage appears at this node (from R5's switching action — exactly which 
 
 ## R8 — Unused (OEM leftover)
 
-R8's coil is wired to Fagor X10/pin 5 (PIM `LATCH1 O7`, "unlabeled OEM function") via the `*42` splice, but R8's outputs are not connected to any useful load on this machine: R8A2 lands on `*83`, which dead-ends on the field side. No other R8 contacts are wired. R8 is effectively dead — leftover from the OEM template.
+R8's coil is wired to Fagor X10/pin 5 (PIM `LATCH1 O7`, "unlabeled OEM function") via the `*42` splice, but R8's outputs are not connected to any useful load on this machine: R8A2 lands on `*86`, which dead-ends on the field side. No other R8 contacts are wired. R8 is effectively dead — leftover from the OEM template.
 
 Note: R8D3 is on the **110 V AC line** rather than the +24 V common — unusual for a 4-pole DC interposing relay. Suggests the OEM intended pole 3 to switch some AC-powered load (small motor, lamp, etc.) but never finished the wiring.
 
@@ -209,7 +230,7 @@ Note: R8D3 is on the **110 V AC line** rather than the +24 V common — unusual 
 |---|---|---|---|
 | R8C1 | coil low side | → GND (0 V) | ✓ |
 | R8C2 | coil high side | ORANGE wire → `*42` → YELLOW wire → Fagor X10/pin 5 (`LATCH1 O7`) | ✓ |
-| R8A2 | NO col 2 | → `*83` (dead-ends on field side — no load) | ✓ |
+| R8A2 | NO col 2 | → `*86` (dead-ends on field side — no load) | ✓ |
 | R8D2 | COM col 2 | → +24 V common (bonded `*71`-`*76` bus) | ✓ |
 | R8D3 | COM col 3 | → `*E` (110 V AC line bus) | ✓ |
 | R8A1, R8A3, R8A4, R8B1–B4, R8D1, R8D4 | other contacts | not wired | ✓ (verified as unwired) |
@@ -218,13 +239,13 @@ Note: R8D3 is on the **110 V AC line** rather than the +24 V common — unusual 
 
 ## R9 — Debris blow-off interposing relay (hypothesis)
 
-R9's NO contact (R9A2) lands on `*90`, which then carries a BROWN wire in cable 92 out to an external solenoid valve (function suspected: chip/debris blow-off). Same interposing-relay pattern as R6 (SPIN-CW) and R10 (tool probe): a Fagor PLC output drives the coil, the NO contact closes to a +24 V common, and a clean +24 V signal is sourced out to the external solenoid.
+R9's NO contact (R9A2) lands on `*85`, which then carries a BROWN wire in cable 92 out to an external solenoid valve (function suspected: chip/debris blow-off). Same interposing-relay pattern as R6 (SPIN-CW) and R10 (tool probe): a Fagor PLC output drives the coil, the NO contact closes to a +24 V common, and a clean +24 V signal is sourced out to the external solenoid.
 
 | Terminal | Wire | Other end / function | Status |
 |---|---|---|---|
 | R9C1 | coil low side | → GND (0 V) | ✓ |
 | R9C2 | coil high side | → `*55` (then continues to a Fagor PLC output — **hypothesis**: X10/pin 30 `OBLOWOFF O20`) | ✓ to `*55`; ? Fagor pin |
-| R9A2 | NO col 2 | BROWN wire → `*90` → cable 92 BRN → external solenoid valve (suspected: chip/debris blow-off) | ✓ |
+| R9A2 | NO col 2 | BROWN wire → `*85` → cable 92 BRN → external solenoid valve (suspected: chip/debris blow-off) | ✓ |
 | R9D2 | COM col 2 | → +24 V common (bonded `*71`-`*76` bus) | ✓ |
 | R9A1, R9B1, R9B2 | other contacts | TBD | — |
 | R9D1 | COM col 1 | TBD | — |
@@ -233,11 +254,11 @@ R9's NO contact (R9A2) lands on `*90`, which then carries a BROWN wire in cable 
 
 ## R10 — Tool-probe interposing relay
 
-R10 acts as an interposing relay between the tool probe (at the spindle) and the Fagor TOOLLEN input. Its coil is wired between +24 V (R10C2) and the probe signal node `*84` (R10C1); it energizes only when the tool touches the probe surface and current flows through the coil to chassis ground via the spindle. The NO contact (R10A2 ↔ R10D2) then sources a clean +24 V to the Fagor input.
+R10 acts as an interposing relay between the tool probe (at the spindle) and the Fagor TOOLLEN input. Its coil is wired between +24 V (R10C2) and the probe signal node `*87` (R10C1); it energizes only when the tool touches the probe surface and current flows through the coil to chassis ground via the spindle. The NO contact (R10A2 ↔ R10D2) then sources a clean +24 V to the Fagor input.
 
 | Terminal | Wire | Other end / function | Status |
 |---|---|---|---|
-| R10C1 | coil terminal 1 | → `*84` (then cable 04 BLK → tool probe surface). Idle: +24 V (no current through coil); Touch: ~0 V (current flows through coil to chassis ground via spindle). | ✓ |
+| R10C1 | coil terminal 1 | → `*87` (then cable 04 BLK → tool probe surface). Idle: +24 V (no current through coil); Touch: ~0 V (current flows through coil to chassis ground via spindle). | ✓ |
 | R10C2 | coil terminal 2 | → +24 V common (bonded `*71`-`*76` bus). The high-side reference for the coil. | ✓ |
 | R10A1, R10B1, R10D1 | pole 1 | **EMPTY** — confirmed unwired | ✓ |
 | R10A2 | NO col 2 | WHITE wire → `*54` → Fagor X10/pin 17 (`TOOLLEN I39`). Closes onto R10D2 (+24 V) when R10 is energized → +24 V appears at Fagor input. | ✓ |
@@ -261,14 +282,14 @@ The Fagor PLC output is `BITCOOL O2` at X10/pin 21. PIM calls it "Bit cool" (a g
 | R9C1 | coil low side | → GND (0 V) | ✓ |
 | R9C2 | coil high side | YELLOW wire → `*55` → BROWN wire → Fagor X10/pin 21 (`BITCOOL O2`) | ✓ |
 | R9A1, R9B1, R9D1 | pole 1 | **EMPTY** — confirmed unwired | ✓ |
-| R9A2 | NO col 2 | BROWN wire → `*90` → cable 92 BRN → chip blow-off air-blast solenoid (field-mounted) | ✓ |
+| R9A2 | NO col 2 | BROWN wire → `*85` → cable 92 BRN → chip blow-off air-blast solenoid (field-mounted) | ✓ |
 | R9B2 | NC col 2 | **EMPTY** — confirmed unwired | ✓ |
 | R9D2 | COM col 2 | → +24 V common (bonded `*71`-`*76` bus). Clean +24 V source for the solenoid drive. | ✓ |
 | R9A3, R9B3 | pole 3 contacts | **EMPTY** — confirmed unwired | ✓ |
 | R9D3 | COM col 3 | → `*E` (110 V AC line bus) | ✓ |
 | R9A4, R9B4, R9D4 | pole 4 | **EMPTY** — confirmed unwired | ✓ |
 
-When the Fagor asserts X10/pin 21 (e.g., M95 in OEM PLC) → R9 coil energizes → R9A2-R9D2 closes → +24 V flows out `*90` → solenoid actuates → air blast at the cutting zone.
+When the Fagor asserts X10/pin 21 (e.g., M95 in OEM PLC) → R9 coil energizes → R9A2-R9D2 closes → +24 V flows out `*85` → solenoid actuates → air blast at the cutting zone.
 
 ---
 

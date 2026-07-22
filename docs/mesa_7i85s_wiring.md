@@ -47,6 +47,9 @@ instead.
 stepgen 02/03 → the Yaskawa CN1 pulse-reference pins. The 24 V sequence I/O (/S-ON, ALM±,
 +24VIN) for these drives is on the **7I84** (`mesa_7i84u_wiring.md` → TB3 section).
 
+> Full servo-side wiring (both drives, all connections) → **`yaskawa_servo_wiring.md`** (source
+> of truth). This section is the 7I85 card-centric slice.
+
 **A and C are two separate servopacks**, each with its own 50-pin CN1. The CN1 pin numbers
 are identical on both by design (both have CN1-7 = PULS, etc.) — the "CN1" column below means
 *that axis's own connector* (A → Servopack-A CN1, C → Servopack-C CN1).
@@ -64,5 +67,24 @@ are identical on both by design (both have CN1-7 = PULS, etc.) — the "CN1" col
 
 Sources: 7I85 pins from the 7I85S manual stepgen→terminal map (above); CN1-7/8/11/12 =
 Yaskawa CN1 PULS±/SIGN±. The +/− ↔ PULS//PULS **polarity is assumed** — swap the pair if
-motion comes out reversed (not confirmed in notes). Reserved, wired when the head is
-commissioned.
+motion comes out reversed (not confirmed in notes).
+
+### As-built — pulse cable color map (2-pair shielded, white = −)
+
+Cable: shielded, 2 twisted pairs (orange pair = STEP/PULS, blue pair = DIR/SIGN), pairs not
+individually shielded. Convention: **colored = +, white = −**. Same on both drives (A & C),
+each on its own CN1.
+
+| Wire | Signal | 7I85 TB1 (A / C) | CN1 |
+|---|---|---|---|
+| orange | STEP+ | 4 / 12 | **CN1-7** (PULS) |
+| orange-white | STEP− | 3 / 11 | **CN1-8** (/PULS) |
+| blue | DIR+ | 6 / 14 | **CN1-11** (SIGN) |
+| blue-white | DIR− | 5 / 13 | **CN1-12** (/SIGN) |
+
+**CN1 end = soldered (committed).** Any polarity fix (wrong direction / backward count) is done
+at the **7I85 screw-terminal end**, not CN1.
+
+**Shield: landed at the Yaskawa/CN1 end ONLY** — via the molded-connector grounding band (360°
+bond). **7I85/cabinet end left floating** (single-ended, no ground loop). NB: this differs from
+the generic `to_buy.md` "7I85-end" convention — the head pulse cable is Yaskawa-end.

@@ -54,8 +54,8 @@ Summary: X1–X4 need female connectors on the Mesa side; everything else (X5–
 |---|---|---|
 | 2 | `*8` (then brown wire → R5C2) | ✓ |
 | 3 | `*40` (then brown wire → R6C2; the segment from X10/pin 3 to `*40` is a red wire labelled "05") | ✓ |
-| 17 | `*54` (then white wire → R10A2; R10's coil is driven by the probe contact via `*84` and cable "04" BLK → tool probe surface) — TOOLLEN signal, interposed by R10 | ✓ |
-| 21 | `*55` (via brown wire; then yellow wire → R9C2; R9 is the interposing relay for the chip blow-off air-blast solenoid at cable 92 BRN → `*90` → R9A2) — BITCOOL output, used here for chip blow-off (not liquid coolant) | ✓ |
+| 17 | `*54` (then white wire → R10A2; R10's coil is driven by the probe contact via `*87` and cable "04" BLK → tool probe surface) — TOOLLEN signal, interposed by R10 | ✓ |
+| 21 | `*55` (via brown wire; then yellow wire → R9C2; R9 is the interposing relay for the chip blow-off air-blast solenoid at cable 92 BRN → `*85` → R9A2) — BITCOOL output, used here for chip blow-off (not liquid coolant) | ✓ |
 | 27 | `*61` (then brown wire of cable "00-2" → toolsetter solenoid valve NVZ3120 / Bimba probe deploy) | ✓ |
 | 29 | `*63` (via brown wire; then orange wire of cable 92 → field-side clamp solenoid; PIM-named `OCLAMP O18`; drawbar IN / clamp tool) | ✓ |
 | 30 | `*64` (via red wire; then yellow wire of cable 92 → field-side air purge solenoid; PIM-named `OBLOWOFF O20`; spindle taper air purge during tool change) | ✓ |

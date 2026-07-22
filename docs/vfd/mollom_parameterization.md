@@ -7,17 +7,16 @@ the PDF/text before keying anything in.
 
 ## Context (read before trusting any value)
 - **Drive:** Mollom **G75-2T-7R5-G-B** = 7.5 kW, **220 V class ("2T")**, Type G
-  (constant-torque) — `mollom_facts.md`. **Fed SINGLE-PHASE → derate to ~3 kW**
-  (single-phase stresses input rectifier/bus). Budget current as a 3 kW drive:
-  ~**10 A** output at full voltage (3000 ÷ √3 ÷ 220 ÷ 0.8). `F9-12 = 10` mandatory.
-- **Motor:** Colombo, **~16 HP (~12 kW), 480 V** — bigger and higher-voltage than
-  the drive. **Intentional**, run **unloaded (no torque)**, current-limited.
-  - 480 V motor on a ~220 V drive → drive can only reach ~220 V out, so the motor
-    makes full V/Hz flux up to ~half its rated frequency, then **field-weakens**
-    (reduced torque up high). Fine for no-load spin.
-- **Goal right now:** very slow ramp, **output current capped ~5 A** to see if it
-  can break the spindle away, input ≤ 35 A (#10 AWG → **35 A breaker upstream**,
-  hardware, not a VFD parameter).
+  (constant-torque) — `mollom_facts.md`.
+- **Input feed:** **240 V split-phase = SINGLE-PHASE to the drive** (split-phase is one
+  center-tapped phase, not 3-phase), on **8 AWG → 40 A breaker** (~9.6 kVA available).
+  Single-phase derates the drive to ~half rated — **ceiling ≈ 3.5–4 kW / ~16 A output**,
+  regardless of the fat feed (the drive, not the wire, is the bottleneck). We cap below that
+  at **~3 kW / ~10 A** via `F8-36`. Full power would need 3-phase. **`F9-12 = 10` mandatory.**
+- **Motor:** GDL65 head spindle [cmp:head-spindle] — **9 kW / 220 V / 30 A / 450 Hz, 4-pole
+  async** (cos φ 0.86, η 0.82). **Voltage matches the drive** → full flux to base 450 Hz,
+  field-weaken 450→600 Hz. GDL65 is the **only** motor: **Motor 1 = `F1` group, `F0-24 = 0`**;
+  the `A2` (Motor 2) group is unused.
 
 ## ⚠️ Our manual is ABRIDGED
 `mollom_G75_AC_drive_manual.txt` is the **quick-setup manual** (states so at line 53).
@@ -26,12 +25,11 @@ it does not document** (e.g. F0-28+). **Policy: any parameter not found in this 
 is left at factory default** (we can't verify a value we can't read). If we ever need
 one of those, get the full manual first.
 
-## ⚠️ Corrections to earlier docs
+## ⚠️ Correction to earlier docs
 `mollom_facts.md` / `mollom_g75_vfd.md` referenced **`B1-01` / `B1-02`** for
 speed/run source. **There is no B group in this manual** (groups are F0–FP,
-A0–A6, U0). The real parameters are:
-- run source = **`F0-02`**, speed source = **`F0-03`** (see table). Those B-codes
-  were wrong; do not use them.
+A0–A6, U0). The real parameters are **run source = `F0-02`, speed source = `F0-03`**
+(see table). Those B-codes were wrong; do not use them.
 
 ---
 
@@ -44,36 +42,41 @@ Legend: ✅ value decided · ⬜ needs machine data · ⚠️ conditional/cautio
 | Param | Name | Manual range / default | Set to | Why | |
 |---|---|---|---|---|---|
 | F0-00 | Type G/P | 1=G(const-torque), 2=P(fan/pump); def **1** | **1** | spindle = constant torque | ✅ |
-| F0-01 | Motor 1 control mode | 0=SVC,1=FVC,2=V/F; def **2** | **2 (V/F)** | mismatched motor, no encoder → V/F | ✅ |
+| F0-01 | Motor 1 control mode | 0=SVC,1=FVC,2=V/F; def **2** | **2 (V/F)** | no encoder → V/F | ✅ |
 | F0-02 | Command source | 0=panel,1=Terminal,2=comm; def 0 | **0 (panel) for BENCH; 1 (Terminal) for production** | bench: keypad RUN/STOP. Production: CNC run via S1/S2 (R6/R7). | ✅ |
 | F0-03 | Main freq source | 0/1=digital,2=AI1,**3=AI2**,4=AI3 pot,5=pulse…; def 4 | **3 (AI2)** | speed = ±10 V on AI2 (from pwmgen.04) | ✅ |
-| F0-10 | Max frequency | 0–500 Hz (F0-22=2); def 50 Hz | **300.00 Hz** | = motor rated freq (anchors V/F curve + lets F1-04=300); NOT the speed cap | ✅ |
-| F0-12 | Freq upper limit | lower-lim..max; def 50 Hz | **150.00 Hz** | the REAL cap: ~190 V, ≈9000 RPM. Knob full-scale=300 but clamped here | ✅ |
+| F0-10 | Max frequency | 500–3000 Hz (with F0-22=1); def 50 Hz | **600.00 Hz** | = motor max; anchors the V/F top | ✅ |
+| F0-12 | Freq upper limit | lower-lim..max; def 50 Hz | **600.00 Hz** | real speed cap = 18000 rpm; lower this to cap speed | ✅ |
 | F0-17 | Accel time 1 | 0.0–6500.0 s (F0-19=1) | **60.0 s** | slow ramp; tune from here | ✅ |
 | F0-18 | Decel time 1 | 0.0–6500.0 s | **60.0 s** | slow ramp | ✅ |
 | F0-19 | Acc/Dec time unit | 0=1s,1=0.1s,2=0.01s; def **1** | **1** | keep default (0.1 s) | ✅ |
+| F0-22 | Max-freq range | 2=≤500 Hz (def), 1=500–3000 Hz | **1** | **REQUIRED** to exceed 500 Hz (manual 1420–1472) | ✅ |
+| F0-24 | Motor select | 0=M1(F1), 1=M2(A2); def 0 | **0** | GDL65 = Motor 1 | ✅ |
 
-### Motor nameplate (Group F1) — ⬜ NEED COLOMBO NAMEPLATE
+> F0-22 / F0-10 are stop-to-change (□) globals → changing them = stop, reconfigure, not live.
+
+### Motor-1 nameplate (Group F1, GDL65) — verified vs manual lines 1513–1554
 Protections (F8-36, F9-00/01) are all **% of F1-03**, so these must be right.
-| Param | Name | Range | Set to |
+| Param | Name | Set to | |
 |---|---|---|---|
-| F1-00 | Motor type | 0=std async,1=VF async,2=PMSM | **0** |
-| F1-01 | Rated power (kW) | 0.1–1000 | **11.8** ✅ (16 HP) |
-| F1-02 | Rated voltage (V) | 1–2000 | **380** ✅ nameplate |
-| F1-03 | Rated current (A) | 0.01–655.35 | **28.0** ✅ nameplate (≈ drive rated A — current-matched!) |
-| F1-04 | Rated freq (Hz) | 0.01–maxfreq | **300** ✅ nameplate (high-speed spindle) |
-| F1-05 | Rated speed (RPM) | 1–65535 | **18000** ✅ nameplate (2-pole) |
-| F1-37 | Auto-tuning | 0=none,1=static,2=rotate… | **0 (none) for now** ⚠️ don't rotate-tune a mismatched motor |
+| F1-00 | Motor type | **0** (std async) | ✅ |
+| F1-01 | Rated power | **9.0 kW** | ✅ nameplate |
+| F1-02 | Rated voltage | **220 V** | ✅ nameplate |
+| F1-03 | Rated current | **30.0 A** | ✅ nameplate |
+| F1-04 | Rated frequency | **450.0 Hz** (V/F base) | ✅ nameplate |
+| F1-05 | Rated speed | **13500 RPM** | ✅ nameplate (4-pole: 450 Hz → 13500 sync) |
+| F1-06..10 | stator/rotor R, L, no-load I | **static auto-tune** | ⚠️ matched motor — static tune OK, do NOT rotate-tune in the head |
+| F1-37 | Auto-tuning | **0 (none) for now** | ⚠️ static only; never rotate-tune in the head |
 
-> Colombo nameplate: **380 V, 300 Hz, 18000 RPM, 2-pole.** V/Hz = 1.27. Drive holds
-> full V/Hz up to ~173 Hz (220 V ÷ 1.27); only field-weakens above that. 25 Hz test
-> = full flux, no weakening. Still need nameplate **kW** and **A**.
+> cos φ 0.86 / η 0.82 = informational (no F1/A2 param for them). Async derives poles
+> from freq/speed. (Same nameplate was verified in the A2/Motor-2 group at manual
+> 2902–2917 when the GDL65 was briefly planned as Motor 2; it now lives in F1 as Motor 1.)
 
 ### V/F curve (Group F3)
 | Param | Name | Range / default | Set to | |
 |---|---|---|---|---|
 | F3-00 | V/F curve | 0=linear,2=square…; def 0 | **0 (linear)** — constant-torque spindle | ✅ |
-| F3-01 | Torque boost | 0.1–30%, 0.0=auto; def model | **0.0 (auto)** — keep low while current-limited | ✅ |
+| F3-01 | Torque boost | 0.1–30%, 0.0=auto; def model | **0.0 (auto)** | ✅ |
 
 ### Start / stop (Group F6)
 | Param | Name | Range / default | Set to | |
@@ -83,17 +86,18 @@ Protections (F8-36, F9-00/01) are all **% of F1-03**, so these must be right.
 | F6-10 | Stop mode | 0=decel,1=coast; def 0 | **0 (decel)** w/ long F0-18 | ✅ |
 
 ### Current guards / protection (Groups F8, F9, A5)
+All % values reference **F1-03 = 30 A**.
 | Param | Name | Manual range / default | Set to | Why | |
 |---|---|---|---|---|---|
-| F8-36 | Output overcurrent threshold | **0.1–300.0 % of F1-03**, 0=off; def 200 % | **18.0 %** (5 A ÷ 28 A) for BRING-UP; later ~**36 %** (~10 A) for 3 kW single-phase normal | 5 A cap = a TRIP (no hold-limit exists) | ✅ |
+| F8-36 | Output overcurrent threshold | **0.1–300.0 % of F1-03**, 0=off; def 200 % | **33 %** (≈10 A ≈ 3 kW) | caps output to the single-phase-derated ~3 kW capability: 9 kW↔30 A → 3 kW↔~10 A, 10/30 = 33 %. Manual line 2329. | ✅ |
 | F8-37 | …detection delay | 0.00–600.00 s; def 0.00 | **0.1 s** | small filter vs inrush nuisance | ✅ |
 | F9-00 | Motor overload protect | 0/1; def 1 | **1 (enable)** | thermal, refs F1-03 | ✅ |
 | F9-01 | …gain | 0.20–10.00; def 1.00 | **1.00** | | ✅ |
 | F9-05 | Overcurrent protect | 0/1; def 1 | **1 (enable)** | | ✅ |
-| F9-06 | …level | **50–200 % of DRIVE rated**; def 150 % | **150 %** (cannot reach 5 A — floor ≈ 15 A) | secondary guard only | ✅ |
+| F9-06 | …level | **50–200 % of DRIVE rated**; def 150 % | **150 % (default)** | secondary guard only | ✅ |
 | F9-13 | Output phase loss | 0/1; def 1 | **1**, ⚠️ may nuisance-trip at very low current — disable (0) if it does | conditional | ⚠️ |
 | F9-12 | Input phase loss / power loss | units=in-phase-loss, tens=power-loss; def **11** | **10** (REQUIRED) | single-phase input → input-phase-loss MUST be off or it trips | ✅ |
-| A5-04 | Fast overcurrent-limiting | 0/1; def 1 | **1 (enable)** | hardware backstop (not adjustable to 5 A) | ✅ |
+| A5-04 | Fast overcurrent-limiting | 0/1; def 1 | **1 (enable)** | hardware backstop (not adjustable to a low value) | ✅ |
 
 ### Input terminals (Group F4) — match the cabinet relay wiring
 | Param | Name | Value(meaning) | Set to | |
@@ -106,6 +110,17 @@ Protections (F8-36, F9-00/01) are all **% of F1-03**, so these must be right.
 | F4-33 | AI curve select | def 0x321 → AI2 uses Curve 2 | **default** | ✅ |
 | F4-18..21 | AI Curve 2 (AI2) | def −10 V=−100 %, +10 V=+100 % | **default (bipolar ±10 V)** | ✅ |
 
+> **TODO — direct spindle over-temp interlock (deferred 2026-07-08).** Make the VFD stop on GDL65
+> over-temp **without the CNC in the loop.** *Now:* the NC thermal switch only feeds the 7I97
+> `spindle-overtemp` input → CNC reacts (`components.md:182`, `wiring_to_hal_guide.md:90`).
+> *Wanted:* wire the GDL65 **NC thermal switch** (opens ≥100 °C = fault) to a **spare DI — S5
+> (`F4-04`)** and set **`F4-04 = 33`** (external fault, **fault-on-OPEN**). Polarity per the
+> **empirically-verified** note on F4-02: **33 faults on OPEN, 11 on CLOSED** — NC over-temp opens
+> on fault → needs **33** (opposite of S3/R2 which is 11 because R2 is fault-on-closed).
+> Result: over-temp opens → **ERR15 External Fault** → drive stops, latched, no CNC.
+> **Verify on bench:** open contact → ERR15; closed → runs. (S1–S4 taken: FWD/REV/ext-fault-R2/
+> fault-reset; S5 free since speed = AI2, not pulse.)
+
 ### Output terminals (Group F5) — feed back to the 7I97 inputs
 | Param | Name | Value(meaning) | Set to | drives | |
 |---|---|---|---|---|---|
@@ -114,26 +129,22 @@ Protections (F8-36, F9-00/01) are all **% of F1-03**, so these must be right.
 
 ---
 
-## Open data still needed
-1. **Colombo nameplate:** power (kW/HP), voltage, **rated current (A)**, freq (Hz),
-   speed (RPM) → fills F1-01..05 and lets us compute the F8-36 % for a 5 A trip.
-2. **Mollom input phasing:** single-phase or three-phase fed? → F9-12 (10 vs 11).
-3. **Spindle max speed** (RPM / Hz) → F0-10, F0-12.
+## Constraints
+1. **Power mismatch (bounds real spindle power).** GDL65 **9 kW / 30 A** vs Mollom **7.5 kW**.
+   - **Single-phase input (current): ~3 kW / ~10 A = spin-only.** `F9-12 = 10`, `F8-36 = 33 %`.
+   - **3-phase 220 V input (future): ~7.5 kW / ~28 A** = usable cutting, current-matches the 30 A
+     motor. Would set `F9-12 = 11` and raise `F8-36` toward the drive's real capability.
+   Wiring decision, not a param.
+2. **Voltage is a clean match:** 220 V motor on 220 V drive → full flux to base speed **450 Hz**,
+   then field-weakens 450→600 Hz = the motor's own **constant-power** region. V/F curve aligns
+   with the nameplate torque curve (6.36 Nm flat to 13500 rpm → 4.77 Nm @ 18000 rpm, ≈ 9 kW).
+3. **Protection is % of F1-03 (30 A).** On single-phase, `F8-36 = 33 %` holds output ≈ 10 A ≈ 3 kW
+   (matches the derated capability). Keep `F9-00 = 1`, `F9-01 = 1.00`, `F9-06` default.
 
-## Dual motor (Colombo now, HQD later)
-The Mollom holds two motor sets: **Motor 1 = `F1`/`F2` (Colombo, in use)**, **Motor 2
-= `A2` group (reserved for the HQD GDL65)**. Switch by `F0-24` (0/1) or a motor-select
-DI (F4 value 41). HQD is a ~24 000 RPM water-cooled ATC electric spindle; manual only
-requires "drive via VFD, match nameplate V + rated/cutoff Hz" — Mollom's 500–3000 Hz
-range (`F0-22=1`) covers it. When it arrives, key its nameplate into A2; Colombo
-stays in Motor 1. `F0-24 = 0` for now.
-
-## Notes / decisions
-- The drive has **no user-settable "hold current at 5 A" limit.** `A5-04` clamps at
-  the drive's own high overcurrent point; the only low-settable current control is
-  the **`F8-36` output-overcurrent TRIP** (% of motor current). So "max out at 5 A"
-  = "fault if output > ~5 A" — a conservative bring-up guard.
-- Input-current protection for the #10 AWG (35 A) is the **upstream breaker**, not a
-  VFD parameter. With output capped ~5 A, input sits a couple amps.
-- Manual sections still to read for completeness: wiring/terminal chapter,
-  fault-code list (Ch 8.2), U0 monitoring group (what to watch live).
+## Notes
+- The drive has **no user-settable hold-current limit.** `A5-04` clamps only at the drive's own
+  high overcurrent point; the only low-settable current control is the **`F8-36` output-overcurrent
+  TRIP** (% of motor current) — a trip, not a hold.
+- Input-current protection for the 8 AWG feed is the **upstream 40 A breaker**, not a VFD parameter.
+- Manual sections still to read for completeness: wiring/terminal chapter, fault-code list
+  (Ch 8.2), U0 monitoring group (what to watch live).

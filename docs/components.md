@@ -34,7 +34,12 @@ Drives the swivel head — **A (tilt, j5)** and **C (spin, j6)**. Currently INER
 - **Motor:** Yaskawa **SGMXJ-04AUA6SC2** ×2 — 400 W, 200 V, Σ-X medium-inertia.
 - **Drive:** Yaskawa **SGDXS-2R8A00A** ×2 — Σ-XS SERVOPACK, analog/pulse, 200 V, 2.8 A.
 - **Power:** single- or three-phase 200–240 VAC (single-phase = L1,L2 only, no N; set Pn00B=n.□1□□). Mandatory magnetic contactor [cmp:head-contactor].
+- **Terminals (servopack manual §4.3):** main `L1/L2/L3` (3-phase) or `L1/L2` (1-phase) · control `L1C/L2C` (single-phase 200–240 VAC, both phase modes) · regen `B1/B2/B3` (2R8A: external resistor B1–B2 *only if* internal capacity insufficient; no internal resistor) · motor out `U/V/W` + PE.
+- **Fusing (per servopack, 3-phase plan):** **3 main fuses (L1/L2/L3) + 2 control fuses (L1C/L2C)** = 5/drive → **10 fuses for both**. Manual *requires* a branch-circuit protective device at **each** servopack input (manual line 6071). Use **time-delay/slow-blow** (rectifier inrush).
+  - **Loads (manual 2R8A ratings, 3-ph 200 V):** main output 2.8 Arms / input ≈3 A (1.0 kVA); **control input 0.2 Arms**. So planned **10 A main + 3 A control on 16 AWG** all clear the load with margin (electrically adequate).
+  - ⚠ These are *load-adequate*, **NOT factory-cited** — the product manual gives currents only and defers exact fuse/wire to the **Σ-X Peripheral Device Selection Manual (SIEP C710812 12)**, which is **NOT on hand** (manual line 6072).
 - **Manuals:** `docs/servo/yaskawa_sigma_xs_servopack_analog_pulse_product_manual.pdf` (drive); `docs/servo/yaskawa_sigma_x_rotary_servomotor_product_manual.pdf` (motor).
+- **Wiring (all connections, both A & C):** `yaskawa_servo_wiring.md` — the servo wiring source of truth.
 - **Source:** nameplate (user 2026-06-27) + servopack manual combination table (line 2686: SGMXJ-04A↔2R8A, 400 W). **Status:** models VERIFIED; `UA6SC2` suffix decode UNVERIFIED.
 
 ### Workpiece-rotary steppers (B)  ·  Key: `rotary-stepper`
@@ -77,12 +82,25 @@ Isolated SMPS feeding [cmp:rotary-stepper]. **70 VDC, 5.7 A, ~400 W.** Input L/N
 Main power contactor for [cmp:main-servo] (SDSM transformer feed). Coil on `*7`, pulled via [cmp:r5-relay] + e-stop chain.
 - **Source:** `docs/tracing/relays.md`. **Status:** wiring VERIFIED; P/N TBD.
 
-### Head/stepper contactor  ·  Key: `head-contactor`
-4-pole contactor pulled by [cmp:r5-relay]. Poles 1–3 → [cmp:head-servo] L1/L2/L3 (single-phase uses L1/L2, 1 idle); pole 4 → [cmp:stepper-brick] L1.
-- **Model:** TBD (planned). **Status:** TBD.
+### Head/stepper contactor  ·  Key: `head-contactor`  ·  relay **R11**
+4-pole, 24 VDC coil. Coil **A2 → `*7`** (drive-enable node, with R0), A1 → GND (`relays.md` R11). Poles 1–3 → [cmp:head-servo] L1/L2/L3 (single-phase uses L1/L2, 1 idle); pole 4 → [cmp:stepper-brick] L1.
+- **Status:** installed & wired 2026-07-09.
 
 ### Cabinet supplies & relays
-24 VDC supply (V−→GND), 5 VDC supply (V−→GND), relays R0–R10. Detail: `docs/tracing/relays.md`, `docs/tracing/screw_terminals.md`. **Status:** see tracing docs.
+24 VDC supply (V−→GND), 5 VDC supply ([5 V power brick](#5-v-power-brick)), relays R0–R10. Detail: `docs/tracing/relays.md`, `docs/tracing/screw_terminals.md`. **Status:** see tracing docs.
+
+### 5 V power brick
+5 VDC logic supply. Feeds the **`*88`–`*90` 5 V bus** (`docs/tracing/screw_terminals.md`). **V− bonded to cabinet GND** (single point).
+- **Ratings:** 5 VDC · **max power / output current / input voltage — TBD (need nameplate).**
+- **Note:** described here for reference; **not `[cmp:]` double-accounted** (obvious function, no cross-refs needed).
+
+### Main transformer  ·  GE **9T51B0135**
+GE Type **QB** dry-type general-purpose transformer. **3 kVA · SINGLE-PHASE · 480 V primary · 120/240 V secondary.**
+- **Not 3-phase.** Secondary **120/240 = center-tapped** → gives **120 V** (leg-to-center) and **240 V** (leg-to-leg), i.e. split-phase output — this is where a 120 V leg comes from.
+- **Input:** 480 V 1-φ. Running it on ~240 works **only if** it has a **240×480 dual primary** (QB series often does) wired for 240 — **confirm on the nameplate**; a 480-only primary on 220 gives ~half output.
+- **Size note:** 3 kVA / 1-φ is **control-transformer class**, not main-drive scale — verify whether this actually feeds the SDSM bus or is the control/utility transformer.
+- **Datasheet/manual:** GE QB-series `GEP-1090` (electricalpartmanuals.com); ABB/GE control catalog §15.
+- **Source:** web (cncpd.com listing, 2026-07). **Status:** model VERIFIED; **primary taps + role TBD from nameplate.**
 
 ---
 
@@ -92,20 +110,34 @@ Main power contactor for [cmp:main-servo] (SDSM transformer feed). Coil on `*7`,
 **G75-2T-7R5-G-B** — 7.5 kW, 3-phase 220 V class (run single-phase derated to ~3 kW). Drives the spindle, commanded by 7I97T pwmgen.04 (±10 V on AI2).
 - **Manual:** `docs/vfd/mollom_G75_AC_drive_manual.pdf` · **Decode/params:** `docs/vfd/mollom_facts.md`, `docs/vfd/mollom_parameterization.md` · **Status:** VERIFIED.
 
-### Spindle motor (current)  ·  Key: `spindle-motor`
-Colombo — nameplate **380 V / 300 Hz / 18000 RPM, 11.8 kW (16 HP), 28 A**. Oversized for the single-phase-derated VFD (runs underpowered, not faulted).
-- **Source:** nameplate (2026-06-25). **Status:** VERIFIED, in use.
+### Spindle motor (Colombo — off the machine)  ·  Key: `spindle-motor`
+Colombo — nameplate **380 V / 300 Hz / 18000 RPM, 11.8 kW (16 HP), 28 A**. Oversized for the single-phase-derated VFD.
+- **Source:** nameplate (2026-06-25). **Status:** **REMOVED from ned (2026-07)** for the GDL65 install; retained as an alternate config (VFD Motor 1).
 
-> **Two spindle configurations — NOT a replacement.** The Colombo (current config) and the
-> GDL65 head ([cmp:swivel-head], future config) are **alternate setups the user switches
-> between** — the Colombo is **kept**. The VFD already carries both as separate motor parameter
-> sets (Colombo = Motor 1 `F1/F2`, HQD = Motor 2; `vfd/mollom_parameterization.md:123`). One VFD
-> output drives one spindle at a time; the changeover mechanism is TBD.
+> **Two spindle configurations — NOT a replacement.** The Colombo and the GDL65 head
+> ([cmp:swivel-head] / [cmp:head-spindle]) are **alternate setups**, not a swap-out. **Currently
+> the GDL65 is installed & active** (VFD Motor 2, `F0-24=1`); the **Colombo is off the machine**
+> but kept. The VFD carries both as separate motor sets (Colombo = Motor 1 `F1`, GDL65 = Motor 2
+> `A2`; `vfd/mollom_parameterization.md`). One VFD output drives one spindle at a time.
 
 ### Swivel head  ·  Key: `swivel-head`
 HQD **GDL65** 5-axis electric **water-cooled, auto-tool-change** swivel head — carries the
-A/C [cmp:head-servo] axes *and* the spindle. HSK-F63 or ISO-30 taper.
-- **Manual:** `docs/hqd/` · **Status:** TBD (not yet commissioned).
+A/C [cmp:head-servo] axes *and* the spindle ([cmp:head-spindle]). ISO-30 taper (this unit).
+- **Manual:** `docs/hqd/` · **Status:** mounted on ned (2026-07); not yet commissioned.
+
+### GDL65 spindle motor  ·  Key: `head-spindle`
+The spindle **inside** [cmp:swivel-head] (distinct from the Colombo [cmp:spindle-motor]).
+**Asynchronous 3-phase induction, 4-pole, liquid-cooled.**
+- **Ratings:** 9 kW · 220 V · 30 A · 450 Hz · cos φ 0.86 · η 0.82.
+- **Speed:** rated **13500 rpm @ 450 Hz**; **max 18000 rpm @ 600 Hz**. (4-pole → sync rpm = 30 × Hz, so both line up exactly.)
+- **Torque curve:** constant torque **6.36 Nm** up to base speed 13500 rpm (450 Hz); then
+  **constant power 9 kW** 13500→18000 rpm, torque dropping linearly **6.36 → 4.77 Nm** at
+  18000 rpm (600 Hz). (Check: 6.36 Nm @ 13500 ≈ 4.77 Nm @ 18000 ≈ 9 kW.)
+- **Tool retention:** retention knob / pull stud **DIN 69871** (ISO-30; HQD pull stud
+  0804H0009 per GDL65 manual §8.4.1).
+- **VFD:** this is the **Motor-2 nameplate for the Mollom** [cmp:vfd] — key into the A2 /
+  Motor-2 parameter set (`vfd/mollom_parameterization.md`). Colombo = Motor 1.
+- **Source:** user-supplied nameplate, 2026-07-05. **Status:** VERIFIED; not yet commissioned.
 
 **Wires to the head** (manual §4 "Electrical Connections"; power+signal exit the central
 through-hole, §2.4.1). Air/water lines are separate (§3), not wires.

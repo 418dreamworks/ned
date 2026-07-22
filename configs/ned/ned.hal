@@ -173,14 +173,20 @@ net w-pos-cmd         joint.3.motor-pos-cmd  => pid.w.command
 net sig-w-enc-pos     => pid.w.feedback  joint.3.motor-pos-fb
 net sig-w-vel-volts   <= pid.w.output
 
-# --- Joint 4 : B (workpiece rotary, about Y -- 7I85S stepgen 0, open-loop) --
-# Step/dir, POSITION mode: motion drives the stepgen position directly (no PID).
-# Feedback = the stepgen's own commanded position (open-loop, no encoder yet).
-# Both mirrored drives share this ONE stepgen (one motor reversed in copper).
-# Hardware setp for stepgen.00 (scale/timing) is in section 8.
+# --- Joints 4 & 7 : B  (B-axis pair -- two SEPARATE steppers on the 7I85S) --
+# Axis B is driven by TWO independent steppers, gantry-style (duplicate B in
+# [KINS]coordinates). Each is its own joint + stepgen, open-loop step/dir POSITION
+# mode (no PID); feedback = each stepgen's own commanded position.
+#   joint 4 = side 1 -> stepgen.00  (TB2 11-14)
+#   joint 7 = side 2 -> stepgen.01  (TB2 19-22), COUNTER-ROTATES ([JOINT_7]SCALE < 0)
+# World/axis-mode B moves both together (opposite); JOINT mode jogs each alone.
+# Hardware setp for both stepgens (scale/timing) is in section 8.
 net b-pos-cmd   joint.4.motor-pos-cmd              => hm2_7i97.0.stepgen.00.position-cmd
 net b-pos-fb    hm2_7i97.0.stepgen.00.position-fb  => joint.4.motor-pos-fb
 net b-enable    joint.4.amp-enable-out             => hm2_7i97.0.stepgen.00.enable
+net b2-pos-cmd  joint.7.motor-pos-cmd              => hm2_7i97.0.stepgen.01.position-cmd
+net b2-pos-fb   hm2_7i97.0.stepgen.01.position-fb  => joint.7.motor-pos-fb
+net b2-enable   joint.7.amp-enable-out             => hm2_7i97.0.stepgen.01.enable
 
 # --- Joints 5 : A (head TILT) & 6 : C (head SPIN) -- INERT swivel head ------
 # No hardware yet. Loop each joint's commanded position straight back to its own
@@ -465,17 +471,24 @@ net sig-taper-purge       => hm2_7i97.0.7i84.0.0.output-14     # TB2-23 *64 tape
 net sig-drawbar-release   => hm2_7i97.0.7i84.0.0.output-15     # TB2-24 *65 drawbar release (ODRAW)
 
 # ============================================================================
-# 8. ROTARY STEP/DIR  (7I85S stepgen.00 on the DB25 -> the 2 mirrored steppers)
+# 8. ROTARY STEP/DIR  (7I85S stepgen.00 + stepgen.01 -> the two B steppers)
 # ============================================================================
-# Joint 4 = B (workpiece rotary). POSITION mode (motion drives the stepgen position directly, no
-# PID). step_type 0 = step/dir. Both mirrored drives take this ONE step/dir pair
-# (one motor reversed in copper). Physical: stepgen.00 = 7I85S step/dir ch 0
-# (97 DB25 -> 85S TB2 STEP0/DIR0). Timing values are DM860-class -- TUNE.
+# Axis B = TWO separate steppers (joints 4 & 7), each its own stepgen, POSITION mode
+# (motion drives the stepgen position directly, no PID). step_type 0 = step/dir.
+#   stepgen.00 = 7I85S ch0 (97 DB25 -> 85S TB2 STEP0/DIR0, pins 11-14) = joint 4
+#   stepgen.01 = 7I85S ch1 (97 DB25 -> 85S TB2 STEP1/DIR1, pins 19-22) = joint 7
+# Joint 7 COUNTER-ROTATES: [JOINT_7]SCALE is negative, so the same B command turns the
+# two motors opposite. Timing values are DM860-class -- TUNE.
 setp hm2_7i97.0.stepgen.00.control-type   0                    # 0 = position mode
 setp hm2_7i97.0.stepgen.00.step_type      0                    # 0 = step/dir
 setp hm2_7i97.0.stepgen.00.position-scale [JOINT_4]SCALE
 setp hm2_7i97.0.stepgen.00.maxvel         [JOINT_4]STEPGEN_MAXVEL
 setp hm2_7i97.0.stepgen.00.maxaccel       [JOINT_4]STEPGEN_MAXACCEL
+setp hm2_7i97.0.stepgen.01.control-type   0                    # 0 = position mode
+setp hm2_7i97.0.stepgen.01.step_type      0                    # 0 = step/dir
+setp hm2_7i97.0.stepgen.01.position-scale [JOINT_7]SCALE       # NEGATIVE -> counter-rotates
+setp hm2_7i97.0.stepgen.01.maxvel         [JOINT_7]STEPGEN_MAXVEL
+setp hm2_7i97.0.stepgen.01.maxaccel       [JOINT_7]STEPGEN_MAXACCEL
 # Timing DERIVED FROM the stepper drive's spec sheet (user-provided in chat
 # 2026-06-27; NO datasheet file on hand): min pulse width 1.2 us; pulse falling-edge
 # valid; pulse/dir/ena inputs 3.3-5 V (7I85S 5 V diff OK, confirmed); DIR setup >= 5 us;
@@ -485,7 +498,11 @@ setp hm2_7i97.0.stepgen.00.steplen        2500                 # ns  >= drive mi
 setp hm2_7i97.0.stepgen.00.stepspace      2500                 # ns  200 kHz pair (drive ok 300 kHz) UNVERIFIED
 setp hm2_7i97.0.stepgen.00.dirsetup       20000                # ns  drive needs >=5 us; 20 us margin UNVERIFIED
 setp hm2_7i97.0.stepgen.00.dirhold        20000                # ns  conservative                    UNVERIFIED
-# stepgens 01-03 are spare (future axes) -- left unconfigured.
+setp hm2_7i97.0.stepgen.01.steplen        2500                 # ns  (same drive class as ch0)        UNVERIFIED
+setp hm2_7i97.0.stepgen.01.stepspace      2500                 # ns                                   UNVERIFIED
+setp hm2_7i97.0.stepgen.01.dirsetup       20000                # ns                                   UNVERIFIED
+setp hm2_7i97.0.stepgen.01.dirhold        20000                # ns                                   UNVERIFIED
+# stepgens 02-03 are spare (future axes) -- left unconfigured.
 
 # ============================================================================
 #  END ned.hal
@@ -495,6 +512,6 @@ setp hm2_7i97.0.stepgen.00.dirhold        20000                # ns  conservativ
 #    [KINS]KINEMATICS [KINS]JOINTS    [EMCMOT]EMCMOT [EMCMOT]SERVO_PERIOD
 #    [TRAJ]SPINDLES
 #    [JOINT_0..3] P I D BIAS FF0 FF1 FF2 DEADBAND MAX_OUTPUT INPUT_SCALE OUTPUT_SCALE
-#    [JOINT_4] SCALE STEPGEN_MAXVEL STEPGEN_MAXACCEL
+#    [JOINT_4] [JOINT_7] SCALE STEPGEN_MAXVEL STEPGEN_MAXACCEL
 #    [SPINDLE_0]MAX_FORWARD_VELOCITY
 # ============================================================================

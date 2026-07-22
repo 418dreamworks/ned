@@ -16,7 +16,7 @@ When a new cabinet-side trace lands on a field device, add (or update) the devic
 ## Spindle Overheat Thermostat
 
 - **Location**: on the spindle motor (field-mounted).
-- **Function**: normally-open thermostat — closes when spindle overheats, passing +24 V through to the CNC overheat input.
+- **Function**: **NC thermostat — CLOSED when cool, opens on overheat** (fail-safe; per user, the Colombo had to be *closed* to run). Continuity present = OK; open (hot **or** broken wire) = over-temp → **loss-of-signal = fault.** *(Corrected 2026-07-09 — earlier note wrongly said NO/closes-on-overheat.)* Sourcing-vs-sinking at the CNC input = separate, not verified.
 - **Cable**: cable "9".
 - **Wires**:
   | Color | Cabinet-side terminal | Role |
@@ -63,35 +63,39 @@ When a new cabinet-side trace lands on a field device, add (or update) the devic
 - **Wires**:
   | Color | Cabinet-side terminal | Role |
   |---|---|---|
-  | Black | `*84` (then → R10C1; R10 is an interposing relay; R10A2 → `*54` → Fagor X10/pin 17, `TOOLLEN I39`) | Probe surface electrical lead. Sits at +24 V idle (sourced via R10's coil from the +24 V bus on R10C2). On touch, the spindle's chassis ground completes the circuit; current flows through R10's coil; R10 energizes; R10A2 (NO) closes onto R10D2 (+24 V) → +24 V on white wire → `*54` → Fagor X10/pin 17 reads "touched." |
-- **Notes**: ✓ verified end-to-end. The probe wiring is intentionally minimal (just one BLK wire from probe to `*84`) — the chassis ground is provided locally by the tool/spindle/chassis bond at the machine, NOT through cable 04. R10 acts as both signal regenerator and galvanic isolator: the Fagor input never sees the probe's actual voltage, only a clean +24 V from R10's NO contact. See `relays.md` R10 entry for full circuit. Fail-safe: a broken cable 04 → no current path → R10 idle → Fagor reads "not touched" (no false trigger).
+  | Black | `*87` (then → R10C1; R10 is an interposing relay; R10A2 → `*54` → Fagor X10/pin 17, `TOOLLEN I39`) | Probe surface electrical lead. Sits at +24 V idle (sourced via R10's coil from the +24 V bus on R10C2). On touch, the spindle's chassis ground completes the circuit; current flows through R10's coil; R10 energizes; R10A2 (NO) closes onto R10D2 (+24 V) → +24 V on white wire → `*54` → Fagor X10/pin 17 reads "touched." |
+- **Notes**: ✓ verified end-to-end. The probe wiring is intentionally minimal (just one BLK wire from probe to `*87`) — the chassis ground is provided locally by the tool/spindle/chassis bond at the machine, NOT through cable 04. R10 acts as both signal regenerator and galvanic isolator: the Fagor input never sees the probe's actual voltage, only a clean +24 V from R10's NO contact. See `relays.md` R10 entry for full circuit. Fail-safe: a broken cable 04 → no current path → R10 idle → Fagor reads "not touched" (no false trigger).
 
 ---
 
-## Drawbar UP Sensor
+## Drawbar UP Sensor  →  now **HQD Tool-Locked (S1)** (as-built HQD 2026-07-09)
 
 - **Location**: spindle nose drawbar area (field-mounted inductive proximity sensor).
-- **Function**: detects when drawbar is in the UP (clamped) position.
+- **Function**: **OLD (Fagor):** detects when drawbar is in the UP (clamped) position. **NEW (HQD):** HQD swivel-head **tool-locked** sensor S1 (PNP-NO).
 - **Cable**: cable "30-2" for signal; shares +24 V from cable "30" with drawbar DOWN sensor.
 - **Wires**:
   | Color | Cabinet-side terminal | Role |
   |---|---|---|
   | Red (cable 30-2) | `*69` (then WHT → Fagor X10/pin 35, IDRAWUP I38) | Signal back to CNC |
   | Red (cable 30) | `*76` | +24 V supply (shared with drawbar DOWN sensor) |
-- **Notes**: ✓ verified end-to-end. Common +24 V supply for both drawbar sensors is on cable 30 red wire → `*76`.
+- **Field-side (splice box)**: cable 30-2 **RED continues into BIGGREEN as RED** (same color) → sensor (per user 2026-07-09). So at the splice box this signal is **BIGGREEN red**.
+- **⚙ AS-BUILT = HQD (2026-07-09):** BIGGREEN **red** now carries the HQD **tool-locked** sensor S1; new sensor lead **red** → BIGGREEN red. Old Fagor drawbar-UP (IDRAWUP) retired.
+- **Notes**: ✓ verified end-to-end. Old Fagor +24 V supply for the drawbar sensors was on cable 30 red wire → `*76`.
 
 ---
 
-## Drawbar DOWN Sensor
+## Drawbar DOWN Sensor  →  now **HQD Tool-Released (S2)** (as-built HQD 2026-07-09)
 
 - **Location**: spindle nose drawbar area (field-mounted inductive proximity sensor).
-- **Function**: detects when drawbar is in the DOWN (released) position.
+- **Function**: **OLD (Fagor):** detects when drawbar is in the DOWN (released) position. **NEW (HQD):** HQD swivel-head **tool-released** sensor S2 (PNP-NO).
 - **Cable**: cable "30-2" (shares with drawbar UP).
 - **Wires**:
   | Color | Cabinet-side terminal | Role |
   |---|---|---|
   | Brown (cable 30-2) | `*70` (then BLK → Fagor X10/pin 36, IDRAWDN I40) | Signal back to CNC |
   | (shared +24 V on cable 30 red → `*76`) | `*76` | +24 V supply |
+- **Field-side (splice box)**: cable 30-2 **BROWN continues into BIGGREEN as BROWN** (same color) → sensor (per user 2026-07-09). So at the splice box this signal is **BIGGREEN brown**.
+- **⚙ AS-BUILT = HQD (2026-07-09):** BIGGREEN **brown** now carries the HQD **tool-released** sensor S2; new sensor lead **yellow** → BIGGREEN brown. Old Fagor drawbar-DOWN (IDRAWDN) retired.
 - **Notes**: ✓ verified end-to-end. Cable 30 + 30-2 is a shielded bundle for both drawbar sensors.
 
 ---
@@ -107,12 +111,33 @@ Cable 92 is a multi-conductor cable that carries the **full pneumatic-actuator c
 
 | Field-side color | Cabinet-side terminal | Cabinet → Fagor path | Fagor pin | PIM symbol | Function |
 |---|---|---|---|---|---|
-| Brown | `*90` | `*90` → R9A2 (NO) → R9 coil driven by `*55` (yellow) → `*55` (brown) → X10/pin 21 | X10/pin 21 | `BITCOOL O2` | **Chip blow-off (cutting)** — used continuously or M-coded during cutting. For wood: air-only, NOT coolant. |
+| Brown | `*85` | `*85` → R9A2 (NO) → R9 coil driven by `*55` (yellow) → `*55` (brown) → X10/pin 21 | X10/pin 21 | `BITCOOL O2` | **Chip blow-off (cutting)** — used continuously or M-coded during cutting. For wood: air-only, NOT coolant. |
 | Orange | `*63` | `*63` (brown) → X10/pin 29 (direct) | X10/pin 29 | `OCLAMP O18` | **Drawbar IN (clamp tool)** — energize to clamp the tool in the spindle taper. |
 | Yellow | `*64` | `*64` (red) → X10/pin 30 (direct) | X10/pin 30 | `OBLOWOFF O20` | **Spindle taper air purge** — blows out the spindle taper during tool change to clear chips/dust before clamping the next tool. |
 | Green | `*65` | `*65` (orange) → X10/pin 31 (direct) | X10/pin 31 | `ODRAW O22` | **Drawbar OUT (release tool)** — energize to release the tool from the spindle taper. |
 | White | `*71` (+24 V bus) | bonded to bus | — | — | +24 V common (sensor/solenoid common supply for the field-side devices). |
 | Thick green | shield (cabinet side) | grounded at cabinet end | — | — | Cable shield — single-point grounded at cabinet (not a signal). |
+
+### Additional conductors — Yaskawa encoder batteries (landed 2026-07-09)
+
+Four further cable-92 conductors were repurposed to carry the Yaskawa encoder **backup batteries**
+from the cabinet to the head servopacks (the A.810 fix). Conductor colors recorded 2026-07-20 (user):
+
+| Cable 92 conductor | Cabinet terminal | Function | CN2 pin |
+|---|---|---|---|
+| **White** | `*56` | Yaskawa **C** encoder BAT− | 4 |
+| **Black** | `*57` | Yaskawa **C** encoder BAT+ | 3 |
+| **Red** | `*58` | Yaskawa **AB** encoder BAT− | 4 |
+| **Blue** | `*59` | Yaskawa **AB** encoder BAT+ | 3 |
+
+⚠ **BAT+ = CN2 pin 3 — polarity is destructive if reversed. One battery per encoder only.**
+The white/blue/yellow/blue colors in `screw_terminals.md` `*56`–`*59` are the **servopack-side
+pigtail** (terminal → CN2), a different segment — not these cable-92 conductors.
+
+⚠ **UNRESOLVED — WHITE appears twice in cable 92:** the pneumatic table above records
+White → `*71` (+24 V common), and the battery table records White → `*56` (C BAT−). One white
+conductor cannot do both. Either cable 92 has two whites (one striped/marked), or one of the two
+records is wrong. **Verify before trusting either white.**
 
 ### Field-side continuation — BIGGREEN cable in top junction box
 
@@ -124,7 +149,8 @@ Cable 92 terminates in the **top junction box** at the field end. There, the sig
 | Orange (`*63`) | Pink | Drawbar clamp solenoid | `OCLAMP O18` |
 | Yellow (`*64`) | Yellow | Spindle taper air-purge solenoid | `OBLOWOFF O20` |
 
-(BIGGREEN's mapping for the BRN BITCOOL wire and the WHT +24 V common not yet traced through the top junction box.)
+- **BIGGREEN white = chip blow-off (BITCOOL)** (per user 2026-07-09) — the BITCOOL line continues into BIGGREEN as white.
+- **BIGGREEN grey-red striped = +24 V** (per user 2026-07-09) — a second +24 V conductor on BIGGREEN (in addition to purple, which feeds the rack sensor).
 
 ### Notes
 
@@ -136,19 +162,22 @@ Cable 92 terminates in the **top junction box** at the field end. There, the sig
 
 ---
 
-## Rack Position Sensor (cable 92-2)
+## Rack Position Sensor (cable 92-2)  →  now **HQD Shaft-Stopped (S3)** (as-built HQD 2026-07-09)
 
 - **Location**: field-mounted at the tool rack/turret, near the spindle/tool-change area.
-- **Function**: detects rack position (per user identification). PIM symbol on the Fagor side is `ITOOLIN I36` ("Tool present in spindle") but the OEM repurposed it for rack position on this machine.
+- **Function**: **OLD (Fagor):** rack position (per user). PIM symbol on the Fagor side is `ITOOLIN I36` ("Tool present in spindle") but the OEM repurposed it for rack position. **NEW (HQD):** HQD swivel-head **shaft-stopped** sensor S3 (PNP-NO).
 - **Cable**: cable "92-2" — 4-wire shielded.
 - **Wires**:
   | Color (cable 92-2) | Cabinet-side terminal | Top-junction-box splice (BIGGREEN) | Role |
   |---|---|---|---|
   | Red | `*68` (then light blue → Fagor X10/pin 34) | BIGGREEN grey | Signal output from sensor (sees +24 V when sensor active) |
-  | White | `*74` (+24 V bus) | BIGGREEN purple | +24 V supply to sensor |
-  | Black | (cabinet end TBD — likely chassis ground) | BIGGREEN green | Sensor ground/return |
+  | White | `*74` (+24 V bus) | BIGGREEN purple | **OLD (Fagor):** +24 V supply to rack sensor. **NEW (HQD): purple NOT connected — spare.** |
+  | Black | (cabinet end TBD — likely chassis ground) | BIGGREEN green | **OLD (Fagor):** rack-sensor ground/return. **NEW (HQD): green NOT connected — spare.** |
   | Green (drain) | (cabinet end TBD — shield/ground at cabinet) | — | Cable shield |
-- **Notes**: ✓ verified from cabinet to top junction box; sensor itself not yet inspected. The BLK ground wire's cabinet-end termination not explicitly recorded yet (probably tied to chassis ground bus at the cabinet entry). The cable layout (+24 V supply, signal output, ground, shield) matches a sourcing-PNP proximity-style sensor.
+- **⚙ AS-BUILT = HQD (2026-07-09):** BIGGREEN **grey** now carries the HQD **shaft-stopped** sensor S3 (signal); new sensor lead **blue** → BIGGREEN grey. Old Fagor rack-position (ITOOLIN) retired.
+- **✓ VERIFIED end-to-end 2026-07-09:** hand-rotating the spindle toggles `hm2_7i97.0.7i84.0.0.input-29` TRUE↔FALSE (TRUE when the shaft target is under the sensor). Signal leg (black → BIGGREEN grey → `*68` → 7I84 input-29) intact; shared +24 V/0 V commons proven good. `input-30` (tool-lock) and `input-31` (tool-release) not yet exercised (no tool / no air).
+- **⚙ SPARE (HQD, per user 2026-07-09):** BIGGREEN **purple, green, and blue are NOT connected** — reserved for a future PNP sensor (purple = +24 V, one for signal, one for 0 V). Purple/green were the old Fagor rack-sensor supply/ground.
+- **Notes**: ✓ verified from cabinet to top junction box; sensor itself not yet inspected. The cable layout (+24 V supply, signal output, ground, shield) matches a sourcing-PNP proximity-style sensor.
 
 ---
 
@@ -208,7 +237,7 @@ The Fagor has limit switches on multiple axes. PIM names them XFLS/XRLS (X axis 
   | Red | `*24` | "Back" contact (back end of gantry travel). NC, fail-safe. Right-side trace TBD — PIM hypothesis: continues to Fagor X9/pin 23 (`XRLS I4`), possibly also a W-axis reverse-limit pin. |
   | Black | `*25` | "Front" contact (front end of gantry travel). NC, fail-safe. Right-side trace TBD — PIM hypothesis: continues to Fagor X9/pin 24 (`XFLS I2`) and X9/pin 31 (`WFLS I22`). |
   | COM | `*73` | +24 V supply (shared with cable 23 COM on the same `*73` terminal) |
-- **Notes**: cabinet-side landings traced. Field-side switch positions and Fagor-pin destinations not yet verified. X− limit is wired into the e-stop chain (per `project_machine_limit_switches.md` memory).
+- **Notes**: cabinet-side landings traced. Field-side switch positions and Fagor-pin destinations not yet verified. **NOT in the e-stop chain (user-confirmed 2026-07-09, as-built LinuxCNC):** the limits are read as their own Mesa inputs (`ned.hal` `sig-limit-*`), not in series with the `*6` e-stop chain. (The Fagor-era note that X− was in the e-stop chain is superseded by the retrofit.)
 
 ### Y+ / Y− Limit Switches (cable "23")
 
@@ -220,7 +249,7 @@ The Fagor has limit switches on multiple axes. PIM names them XFLS/XRLS (X axis 
   | Red | `*26` | "Left" contact. NC, fail-safe. Right-side trace TBD — PIM hypothesis: either X9/pin 21 (`YFLS I6`) or X9/pin 22 (`YRLS I8`). |
   | Black | `*27` | "Right" contact. NC, fail-safe. Right-side trace TBD — PIM hypothesis: the other of YFLS/YRLS not used at `*26`. |
   | COM | `*73` | +24 V supply (shared with cable 13 COM on `*73`) |
-- **Notes**: cabinet-side landings traced. Field-side switch positions and Fagor-pin destinations not yet verified. Y limits likely in e-stop chain by symmetry with X (not yet verified).
+- **Notes**: cabinet-side landings traced. Field-side switch positions and Fagor-pin destinations not yet verified. **NOT in the e-stop chain (user-confirmed 2026-07-09)** — read as separate Mesa inputs (`ned.hal` `sig-limit-*`), same as X.
 
 ### Z+ / Z− Limit Switches (cable "33")
 
@@ -257,7 +286,7 @@ The Fagor has limit switches on multiple axes. PIM names them XFLS/XRLS (X axis 
   | Cabinet-side connection | Role |
   |---|---|
   | 110 V AC line bus (`*A`-`*F`, specific terminal TBD) | Hot |
-  | AC neutral bus (`*77`-`*79`, specific terminal TBD) | Neutral |
+  | AC neutral bus (`*77`-`*83`, specific terminal TBD) | Neutral |
 - **Notes**: ✓ verified as directly wired to mains (110 V hot + neutral buses, no contactor/relay). Distinct from the case fan (same wiring scheme — also directly on the buses). Specific bus terminal landings on each end not yet identified.
 
 ---

@@ -1,4 +1,4 @@
-# Wiring buy list — TEMPORARY (trash after purchasing)
+# To buy — trash each item once bought
 
 Working shopping list for the remaining ned wiring. Specs pulled from this session's
 decisions; component refs use [cmp:key] → see `components.md`. **Delete (→ trash/)
@@ -55,12 +55,15 @@ connector kits**, so both cables are **buildable from bulk** — terminate the m
 ends with the kits; no pre-made Yaskawa cables needed. **Two cables per axis:**
 - **(1) Servomotor main-circuit (power) cable** — U/V/W + ground. **18 AWG, 4-conductor
   shielded.** Motors have **NO holding brake** → **no brake leads** (4 conductors, not 6).
-- **(2) Encoder cable** — CN2 ↔ motor 26-bit serial encoder. **2 twisted pairs + shield**:
-  PS± (serial data) + PG5V/PG0V (power). Encoder is **26-bit batteryless absolute → no battery
-  wires.**
+- **(2) Encoder cable** — CN2 ↔ motor 26-bit serial encoder. **6-conductor + shield (3 pairs):**
+  **PS± (serial data) · PG5V/PG0V (power) · BAT± (battery — CN2 pin 3 = BAT+, pin 4 = BAT−).**
+  The encoder is a **battery-REQUIRED 26-bit absolute** (verified 2026-07 — **NOT** batteryless) →
+  the BAT± pair is mandatory, else permanent **A.810** every power-up.
+  - **Also buy: backup battery ×2** (one per axis), installed at the cabinet/host end. Spec/part
+    per servopack manual **§13.1.3 "Replacing the Battery"** (verify) — one battery per encoder
+    (host **or** cable, never both).
   - ⚠ Encoder **5 V power pair gauge vs length**: 24 AWG is fine on a short run (~25 ft, ~0.3 V
-    drop); toward 50 m it under-volts the encoder (~1.7 V drop) — use a heavier power pair for a
-    long run.
+    drop); toward 50 m it under-volts the encoder — use a heavier power pair for a long run.
 
 Spec the bulk cable by:
 - **Length** ≤50 m. **>20 m reduces intermittent-duty torque** (voltage drop), §8.1.1.

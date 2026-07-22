@@ -13,7 +13,8 @@ Convention: `*<n>` means cabinet screw terminal n. See `INDEX.md` for full conve
 | Range | Function |
 |---|---|
 | `*71` – `*76` | **+24 VDC bus** ("signal common" in local naming, despite being +24 V from the 24 V transformer) |
-| `*77` – `*79` | **AC neutral / power common** |
+| `*77` – `*83` | **AC neutral / power common** (110 V neutral bus; expanded from *77–*79, 2026-07-06) |
+| `*88` – `*90` | **5 V bus** (fed from the 5 V power brick) |
 | `*A` – `*F` | **110 V AC line** bus |
 
 ---
@@ -226,7 +227,7 @@ All three NC contacts must be closed simultaneously (no e-stop pressed) for 24 V
 
 - **Left side**: RED wire from cable "9" → spindle overheat thermostat (signal output). Partner wire in cable "9" is white → `*71` (+24 V), supplying the thermostat.
 - **Right side**: BLACK wire → Fagor X9/pin 36 (PIM-named `OVERTEMP I32`, spindle overheat input)
-- **Notes**: ✓ verified end-to-end. When the spindle thermostat closes on overtemp, +24 V from `*71` is passed through cable "9" red → `*39` → black → X9/pin 36 → CNC reads "spindle overheat." PIM color comment for OVERTEMP is "BLK 2/9 (RED +24)": cable label "9" matches; signal-side BLK matches the Fagor-side wire color (not the field-cable side). This is the opposite of the `*69`/`*70` PIM-color pattern — confirming PIM colors are unreliable in either direction.
+- **Notes**: ✓ verified end-to-end. Thermostat is **NC** (closed cool, opens on overheat — per user; had to be closed to run). **Cool → closed → +24 V from `*71` passes** red → `*39` → black → X9/pin 36 = "OK". **Hot or broken wire → opens → +24 V drops → over-temp (loss-of-signal = fault, fail-safe).** *(Corrected 2026-07-09: earlier note wrongly said NO/closes-on-overheat.)* Sourcing-vs-sinking at X9/pin 36 = separate, not verified. PIM color "BLK 2/9 (RED +24)": cable label "9" matches; PIM colors unreliable.
 
 ## *40
 
@@ -244,7 +245,7 @@ All three NC contacts must be closed simultaneously (no e-stop pressed) for 24 V
 
 - **Left side**: YELLOW wire → Fagor X10/pin 5 (PIM `LATCH1 O7`, "unlabeled OEM function")
 - **Right side**: ORANGE wire → R8C2 (R8's coil high side)
-- **Notes**: ✓ verified end-to-end. Wire-color change at the splice (yellow Fagor-side, orange R8-side). R8 is unused on this machine (R8A2 → `*83` dead-ends in the field; no other R8 contacts wired to useful loads), so this Fagor output isn't driving anything in practice — leftover from the OEM template.
+- **Notes**: ✓ verified end-to-end. Wire-color change at the splice (yellow Fagor-side, orange R8-side). R8 is unused on this machine (R8A2 → `*86` dead-ends in the field; no other R8 contacts wired to useful loads), so this Fagor output isn't driving anything in practice — leftover from the OEM template.
 
 ## *43
 
@@ -298,25 +299,27 @@ All three NC contacts must be closed simultaneously (no e-stop pressed) for 24 V
 
 ## *55
 
-- **Left side**: YELLOW wire → R9C2 (R9's coil high side). When asserted, drives R9's coil → R9A2 closes → +24 V is sourced out to `*90` → cable 92 BRN → external solenoid.
+- **Left side**: YELLOW wire → R9C2 (R9's coil high side). When asserted, drives R9's coil → R9A2 closes → +24 V is sourced out to `*85` → cable 92 BRN → external solenoid.
 - **Right side**: BROWN wire → Fagor X10/pin 21 (PIM-named `BITCOOL O2`, "Bit cool output (M95/M96)"). PIM color BRN 20/2 matches the actual brown wire.
 - **Notes**: ✓ verified end-to-end. Function: chip/debris **air blow-off** solenoid. The PIM name `BITCOOL` and OEM M-codes M95/M96 are consistent with this — "bit cool" generically covers air-based cooling (which both cools the bit and clears chips). M95/M96 are OEM-defined codes that toggle this output. Wire-color change at `*55` (yellow to R9C2 inside cabinet, brown to Fagor X10/pin 21).
 
 ## *56
 
-(not yet examined)
+- **Left (cable 92, field run): WHITE.** **Right (servopack pigtail): WHITE.** = **Yaskawa C encoder BAT−** → C motor CN2 **pin 4**. Landed 2026-07-09; cable-92 conductor colors recorded 2026-07-20 (user).
 
 ## *57
 
-(not yet examined)
+- **Left (cable 92, field run): BLACK.** **Right (servopack pigtail): BLUE.** = **Yaskawa C encoder BAT+** → C motor CN2 **pin 3**. Landed 2026-07-09; cable-92 conductor colors recorded 2026-07-20 (user).
 
 ## *58
 
-(not yet examined)
+- **Left (cable 92, field run): RED.** **Right (servopack pigtail): YELLOW.** = **Yaskawa AB encoder BAT−** → AB motor CN2 **pin 4**. Landed 2026-07-09; cable-92 conductor colors recorded 2026-07-20 (user).
 
 ## *59
 
-(not yet examined)
+- **Left (cable 92, field run): BLUE.** **Right (servopack pigtail): BLUE.** = **Yaskawa AB encoder BAT+** → AB motor CN2 **pin 3**. Landed 2026-07-09; cable-92 conductor colors recorded 2026-07-20 (user).
+
+> **Encoder backup batteries** (the A.810 fix). C battery: `*56` (−) / `*57` (+). AB battery: `*58` (−) / `*59` (+). ⚠ polarity critical (BAT+ = CN2 pin 3). One battery per encoder only.
 
 ## *60
 
@@ -340,7 +343,7 @@ All three NC contacts must be closed simultaneously (no e-stop pressed) for 24 V
 
 ## *64
 
-- **Left side**: YELLOW wire from cable 92 → field-side pneumatic solenoid (function: air purge per PIM name OBLOWOFF — second air-blast output, separate from the BITCOOL chip blow-off at `*90`)
+- **Left side**: YELLOW wire from cable 92 → field-side pneumatic solenoid (function: air purge per PIM name OBLOWOFF — second air-blast output, separate from the BITCOOL chip blow-off at `*85`)
 - **Right side**: RED wire → Fagor X10/pin 30 (PIM-named `OBLOWOFF O20`, "Air purge / chip blow-off")
 - **Notes**: ✓ verified end-to-end. PIM color for OBLOWOFF is YEL, matching the cable 92 yellow wire on the field side. Wire-color change at `*64` (yellow field-side, red Fagor-side). **Direct connection — no interposing relay**, unlike `*55` (BITCOOL through R9) and `*54` (TOOLLEN through R10). Fagor X10/pin 30 sources +24 V (max 100 mA per Fagor output spec) → `*64` → cable 92 yellow → solenoid coil → field-side ground. ⚠️ Solenoid coil current draw should be checked against the 100 mA limit if not already verified by the OEM.
 
@@ -363,6 +366,7 @@ All three NC contacts must be closed simultaneously (no e-stop pressed) for 24 V
 ## *68
 
 - **Left side**: RED wire from cable "92-2" → field-side **rack position** sensor (per user). Cable 92-2 RED is spliced in the top junction box to BIGGREEN grey, which continues to the sensor.
+- **⚙ AS-BUILT = HQD (2026-07-09):** BIGGREEN grey now carries the HQD **shaft-stopped** sensor S3 (new lead blue). Old Fagor rack-position (ITOOLIN) retired. BIGGREEN purple (old +24 V) and green (old ground) now **spare** — reserved for a future PNP sensor.
 - **Right side**: LIGHT BLUE wire → Fagor X10/pin 34 (PIM-named `ITOOLIN I36`, "Tool present in spindle"). **Function mismatch**: PIM symbol is ITOOLIN but the actual sensor on this machine is a rack position sensor — OEM repurposed this PIM I/O.
 - **Notes**: ✓ verified end-to-end. Cable 92-2 is a 4-wire shielded cable carrying a single sensor circuit: +24 V supply (`*74` ↔ WHT), signal (`*68` ↔ RED), ground/return (BLK), shield (GRN). Field-side splices to BIGGREEN: BLK→green, RED→grey, WHT→purple. PIM color for ITOOLIN is BRN 8/10 — neither cable 92-2 RED nor the Fagor-side LIGHT BLUE matches. PIM color is unreliable here.
 
@@ -371,12 +375,16 @@ All three NC contacts must be closed simultaneously (no e-stop pressed) for 24 V
 - **Left side**: RED wire from cable 30-2 → drawbar UP position sensor (signal output)
 - **Right side**: WHITE wire → Fagor X10/pin 35 (PIM-named `IDRAWUP I38`, drawbar UP sensor input)
 - **Notes**: ✓ verified end-to-end. Sensor's +24 V supply is on cable 30 RED wire → `*76`. When drawbar is in the UP (clamped) position, the inductive sensor outputs +24 V → through cable 30-2 red wire → `*69` → white wire → X10/pin 35 → CNC reads "drawbar up." Wire-color change at `*69` (red sensor-side, white Fagor-side). The PIM documents IDRAWUP as RED, which **matches the sensor-side (cable 30-2) wire color, not the Fagor-side**. Working hypothesis: PIM color comments refer to the field-cable wire, not the OEM's internal harness on the Fagor side.
+- **Field-side splice (per user 2026-07-09):** cable 30-2 **RED continues into BIGGREEN as RED** (same color) → drawbar-UP sensor. At the splice box this signal is **BIGGREEN red**.
+- **⚙ AS-BUILT = HQD (2026-07-09):** BIGGREEN red now carries the HQD **tool-locked** sensor S1 (new lead red). Old Fagor drawbar-UP retired.
 
 ## *70
 
 - **Left side**: BROWN wire from cable 30-2 → drawbar DOWN position sensor (signal output)
 - **Right side**: BLACK wire → Fagor X10/pin 36 (PIM-named `IDRAWDN I40`, drawbar DOWN sensor input)
 - **Notes**: ✓ verified end-to-end. Wire-color change at `*70` (brown sensor-side, black Fagor-side). Yet another PIM color mismatch: PIM documents IDRAWDN as ORN but the actual Fagor-side wire is black. Cable 30-2 carries both drawbar sensors: `*69` for drawbar UP (cable red → Fagor white), `*70` for drawbar DOWN (cable brown → Fagor black). Sensor +24 V supply for both is on `*76` via cable 30 RED wire.
+- **Field-side splice (per user 2026-07-09):** cable 30-2 **BROWN continues into BIGGREEN as BROWN** (same color) → drawbar-DOWN sensor. At the splice box this signal is **BIGGREEN brown**.
+- **⚙ AS-BUILT = HQD (2026-07-09):** BIGGREEN brown now carries the HQD **tool-released** sensor S2 (new lead yellow). Old Fagor drawbar-DOWN retired.
 
 ## +24 VDC Bus — `*71` through `*76`
 
@@ -416,9 +424,9 @@ All three NC contacts must be closed simultaneously (no e-stop pressed) for 24 V
 
 ---
 
-## AC Neutral Bus — `*77` through `*79`
+## AC Neutral Bus — `*77` through `*83`
 
-`*77`–`*79` are all bonded together into one electrical node — the AC neutral bus, terminating at mains neutral. Each terminal below lists only the **external wires landing on it** (the neutral-bus side is implicit).
+`*77`–`*83` are all bonded together into one electrical node — the AC (110 V) neutral bus, terminating at mains neutral. **Expanded from `*77`–`*79` to `*77`–`*83` on 2026-07-06.** Each terminal below lists only the **external wires landing on it** (the neutral-bus side is implicit). `*80`–`*83` are the newly-added bus terminals (their own sections below are marked as bus members).
 
 ### *77
 
@@ -471,53 +479,54 @@ All three NC contacts must be closed simultaneously (no e-stop pressed) for 24 V
 
 ## *80
 
-(not yet examined)
+- Part of the **AC neutral bus** (`*77`–`*83`), bonded to mains neutral. (Added to the bus 2026-07-06. Formerly held the R9A2 chip-blowoff wire, which was relocated to `*85`.)
 
 ## *81
 
-(not yet examined)
+- Part of the **AC neutral bus** (`*77`–`*83`), bonded to mains neutral. (Added 2026-07-06.)
 
 ## *82
 
-(not yet examined)
+- Part of the **AC neutral bus** (`*77`–`*83`), bonded to mains neutral. (Added 2026-07-06.)
 
 ## *83
 
-- **Left side**: → R8A2 (R8's NO contact, col 2)
-- **Right side**: dead-ends in the field (no load wired on the field side)
-- **Notes**: ✓ verified. R8 is unused on this machine; `*83` is the only output landing from R8, and it goes nowhere on the field side. Leftover from OEM template.
+- Part of the **AC neutral bus** (`*77`–`*83`), bonded to mains neutral. (Added 2026-07-06. Formerly held the R8A2 dead-end wire, which was relocated to `*86`.)
 
 ## *84
 
-- **Left side**: BLACK wire from cable "04" → tool probe (probe surface terminal). Probe is mounted at the spindle; cable 04 runs from probe up to the cabinet.
-- **Right side**: → R10C1 (R10's coil terminal 1)
-- **Notes**: ✓ verified. `*84` is the **probe-surface +24 V supply AND signal node**, sourced through R10's coil from the +24 V bus on R10C2. Circuit: +24 V bus → R10C2 → R10 coil → R10C1 → `*84` → cable 04 BLK → probe surface. The spindle (chassis 0 V) is the other side of the probe contact. Idle: no current flows (open circuit at probe), so `*84` sits at +24 V and R10 is de-energized. Touch (tool contacts probe surface): probe-to-spindle path closes, current flows through R10's coil to chassis ground, coil sees ~24 V → R10 energizes → R10A2 closes to R10D2 (+24 V) → signal exits via white wire to `*54`. R10 is acting as an interposing relay that uses its own coil as a current-limiter for the probe +24 V supply.
+(empty — the tool-probe signal wire was relocated to *87, 2026-07-06)
 
 ## *85
 
-(not yet examined)
+- **Left side**: BROWN wire from cable "92" → external **chip blow-off** air-blast solenoid (field-mounted).
+- **Right side**: BROWN wire → R9A2 (R9's NO contact col 2). R9 interposes between the Fagor output and the solenoid.
+- **Notes**: ✓ chip blow-off solenoid drive. R9 energizes (Fagor X10/pin 21 `BITCOOL O2`, `*55`) → R9A2–R9D2 closes → +24 V out `*85` → cable 92 BRN → solenoid → air blast. **Was `*90`** (then briefly `*80`); relocated to `*85` 2026-07-06. See `relays.md` R9.
 
 ## *86
 
-(not yet examined)
+- **Left side**: → R8A2 (R8's NO contact, col 2)
+- **Right side**: dead-ends in the field (no load wired on the field side)
+- **Notes**: ✓ verified. R8 is unused on this machine; `*86` is the only output landing from R8, and it goes nowhere on the field side. Leftover from OEM template. (Was `*83`; wire relocated 2026-07-06.)
 
 ## *87
 
-(not yet examined)
+- **Left side**: BLACK wire from cable "04" → tool probe (probe surface terminal). Probe is mounted at the spindle; cable 04 runs from probe up to the cabinet.
+- **Right side**: → R10C1 (R10's coil terminal 1)
+- **Notes**: ✓ verified. `*87` is the **probe-surface +24 V supply AND signal node**, sourced through R10's coil from the +24 V bus on R10C2. Circuit: +24 V bus → R10C2 → R10 coil → R10C1 → `*87` → cable 04 BLK → probe surface. The spindle (chassis 0 V) is the other side of the probe contact. Idle: no current flows (open circuit at probe), so `*87` sits at +24 V and R10 is de-energized. Touch (tool contacts probe surface): probe-to-spindle path closes, current flows through R10's coil to chassis ground, coil sees ~24 V → R10 energizes → R10A2 closes to R10D2 (+24 V) → signal exits via white wire to `*54`. R10 is acting as an interposing relay that uses its own coil as a current-limiter for the probe +24 V supply. (Was `*84`; wire relocated 2026-07-06.)
 
 ## *88
 
-(not yet examined)
+- Part of the **5 V bus** (`*88`–`*90`), fed from the 5 V power brick. (2026-07-06.)
 
 ## *89
 
-(not yet examined)
+- Part of the **5 V bus** (`*88`–`*90`), fed from the 5 V power brick. (2026-07-06.)
 
 ## *90
 
-- **Left side**: BROWN wire from cable "92" → external solenoid valve (suspected: chip/debris blow-off — air-actuated)
-- **Right side**: BROWN wire → R9A2 (R9's NO contact col 2). R9 is acting as an interposing relay between the Fagor output and the solenoid.
-- **Notes**: ✓ both sides traced. Full chain (hypothesised): Fagor X10/pin 30 (`OBLOWOFF O20`, PIM-named) → R9 coil drives via R9C2 (TBD) → R9 energizes → R9A2 (NO) closes to R9D2 (TBD, presumed +24 V) → +24 V flows out via `*90` → cable 92 BRN → solenoid coil → solenoid actuates → air blast clears chips. Same interposing-relay pattern as R6 (SPIN-CW) and R10 (tool probe).
+- Part of the **5 V bus** (`*88`–`*90`), fed from the 5 V power brick.
+- **Notes**: `*88`, `*89`, `*90` are bonded as one 5 V node. **Formerly the R9A2 chip blow-off wire** — that wire was relocated to `*85`, and `*90` was repurposed into the 5 V bus (2026-07-06).
 
 ## *91
 

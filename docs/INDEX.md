@@ -7,6 +7,17 @@ per vendor/topic; your physical wiring traces are grouped under `tracing/`.
 > single source of truth.** Detail lives there only; everything else references a
 > part by its key, `[cmp:<key>]`, and does not restate specs.
 
+**Root-level wiring docs** (the working build docs; card-centric + device-centric views):
+
+| File | What it covers |
+|---|---|
+| [components.md](components.md) | Component models/ratings — source of truth (`[cmp:key]`) |
+| [mesa_7i97t_wiring.md](mesa_7i97t_wiring.md) | 7I97T terminal wiring (AOUT, encoders, TB4/TB5 I/O) |
+| [mesa_7i85s_wiring.md](mesa_7i85s_wiring.md) | 7I85S step/dir wiring (steppers + head pulse) |
+| [mesa_7i84u_wiring.md](mesa_7i84u_wiring.md) | 7I84U digital I/O wiring (X10 + head sequence I/O) |
+| [yaskawa_servo_wiring.md](yaskawa_servo_wiring.md) | **Head Yaskawa servos A & C — all connections, source of truth** |
+| [to_buy.md](to_buy.md) | Temporary cable/fuse shopping list (trash after ordering) |
+
 ## Folder map
 
 | Folder | Contents |
@@ -16,7 +27,7 @@ per vendor/topic; your physical wiring traces are grouped under `tracing/`.
 | [`hqd/`](hqd/) | HQD electric spindle + swivel-head spec sheets |
 | [`servo/`](servo/) | Servo drives — Yaskawa (LinuxCNC target) + legacy Servo Dynamics SDSM |
 | [`vfd/`](vfd/) | Spindle VFDs — Saftronics VG5 (legacy) + Mollom G75 (replacement) |
-| [`mesa/`](mesa/) | Mesa FPGA cards (7I97T/7I84U/7I85S) + card-selection notes + shopping list |
+| [`mesa/`](mesa/) | Mesa FPGA cards (7I97T/7I84U/7I85S) + card-selection notes |
 | [`linuxcnc/`](linuxcnc/) | Offline mirror of the LinuxCNC HAL manual + driver man pages |
 | [`plans/`](plans/) | Forward-looking bring-up plans (numbered; superseded ones kept) |
 

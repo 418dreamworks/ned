@@ -70,6 +70,9 @@ If using TB3: VFIELDA on TB1 must be powered (+24 V from cabinet, same as VFIELD
 The pulse reference (PULS±/SIGN±) comes from the **7I85** (`mesa_7i85s_wiring.md`); the
 24 V sequence I/O below comes from the **7I84**. **Set OUTPUT6 and OUTPUT7 to sourcing.**
 
+> Full servo-side wiring (both drives, all connections) → **`yaskawa_servo_wiring.md`** (source
+> of truth). This section is the 7I84 card-centric slice.
+
 **A and C are two separate servopacks**, each with its own CN1 — the CN1 pin numbers are
 identical on both (CN1-40 = /S-ON on each); the "Yaskawa CN1" column means *that axis's own
 connector*. The 7I84 pins (TB3-23/15 for A, TB3-24/16 for C) are what differ per axis.
