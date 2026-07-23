@@ -1,16 +1,17 @@
 #!/bin/bash
 # drive_move.sh <drive> -volts Y [-time X] [-counts Z]
-#   drive    : x | y | z | w | gantry
+#   drive    : x | y | z | c | a   (c = swivel-head C spin, a = swivel-head AB tilt)
 #   -volts Y : -10.0 .. +10.0   (analog velocity command; SIGN = direction)   REQUIRED
 #   -time  X : stop after X seconds            (0 < X <= 60)
 #   -counts Z: stop after |encoder delta| >= Z (Z > 0; gantry: EITHER encoder)
 #   Give -time, -counts, or BOTH. With both, stops on WHICHEVER IS HIT FIRST.
 #   (If only -counts is given, a hard 60 s cap still applies as a dead-encoder backstop.)
 #
-#   gantry = X (pwmgen.00) + W (pwmgen.03) commanded from ONE shared signal on the
-#            SAME servo cycle, so timing skew can NOT rack the frame. Streams both
-#            encoders + skew. If X.delta and W.delta come out OPPOSITE sign, a motor
-#            is mounted mirror -> stop; that channel needs inversion. (+volts = aft.)
+#   x = the X GANTRY: both rails (pwmgen.00 + pwmgen.03) commanded from ONE shared
+#       signal on the SAME servo cycle, so timing skew can NOT rack the frame. Streams
+#       both encoders + skew; OPPOSITE-sign deltas = a mirror-mounted motor -> stop.
+#   c / a = swivel head (Yaskawa step/dir) -- NOT driven by this analog pwmgen tool;
+#       command the head via LinuxCNC / software. Listed here for the axis vocabulary.
 #
 # OPEN-LOOP move. Forces the pwmgen(s) directly, bypassing LinuxCNC motion.
 #  -> RUN WITH THE LINUXCNC MACHINE OFF (else its PID fights this / following-error trips).
@@ -19,7 +20,7 @@
 
 P=hm2_7i97.0
 OUT08=$P.7i84.0.0.output-08
-usage(){ echo "usage: drive_move.sh <x|y|z|w|gantry> -volts <-10..10> [-time <0..60>] [-counts <n>]"; exit 1; }
+usage(){ echo "usage: drive_move.sh <x|y|z|c|a> -volts <-10..10> [-time <0..60>] [-counts <n>]   (c/a = swivel head, not yet driven here)"; exit 1; }
 
 drive="$1"; shift
 secs=""; volts=""; counts=""
@@ -34,10 +35,11 @@ done
 
 gantry=0; scale=50.0
 case "$drive" in
-  x) gantry=1 ;;   # X IS THE GANTRY: pwmgen.00 (X) + pwmgen.03 (W) driven together, anti-rack
+  x) gantry=1 ;;   # X IS THE GANTRY: pwmgen.00 + pwmgen.03 driven together, anti-rack
   y) idx=01; scale=50.0; vsig=sig-y-vel-volts; esig=sig-y-amp-enable ;;
   z) idx=02; scale=40.0; vsig=sig-z-vel-volts; esig=sig-z-amp-enable ;;
-  *) usage ;;   # NO single X or W: they are one gantry, driving either alone RACKS the frame
+  c|a) echo "$drive = swivel head (Yaskawa step/dir) -- not driven by this analog pwmgen tool; command it via LinuxCNC/software"; exit 1 ;;
+  *) usage ;;   # the two gantry rails are not separately selectable (driving one alone RACKS the frame)
 esac
 
 # ---- common validation ----

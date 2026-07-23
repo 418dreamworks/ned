@@ -188,13 +188,19 @@ net b2-pos-cmd  joint.7.motor-pos-cmd              => hm2_7i97.0.stepgen.01.posi
 net b2-pos-fb   hm2_7i97.0.stepgen.01.position-fb  => joint.7.motor-pos-fb
 net b2-enable   joint.7.amp-enable-out             => hm2_7i97.0.stepgen.01.enable
 
-# --- Joints 5 : A (head TILT) & 6 : C (head SPIN) -- INERT swivel head ------
-# No hardware yet. Loop each joint's commanded position straight back to its own
-# feedback so it tracks exactly (following error stays 0) and never faults.
-# No amp-enable wired (nothing to drive). Immediate-home at 0 (ned.ini HOME_SEARCH_VEL=0).
-# When the head is driven, replace these loopbacks with real drive + encoder wiring.
-net a-head-fb   joint.5.motor-pos-cmd  => joint.5.motor-pos-fb
-net c-head-fb   joint.6.motor-pos-cmd  => joint.6.motor-pos-fb
+# --- Joints 5 : A (head TILT) & 6 : C (head SPIN) -- Yaskawa step/dir -------
+# Swivel head: two SGDXS servopacks in position (step/dir) mode, driven like the
+# B steppers -- open-loop stepgen POSITION mode, feedback = commanded position.
+# Mapping (docs/yaskawa_servo_wiring.md "Per-axis differences"):
+#   joint 5 = A (tilt) -> stepgen.02 (7I85 TB1 3/4/5/6)
+#   joint 6 = C (spin) -> stepgen.03 (7I85 TB1 11/12/13/14)
+# sig-a/c-servo-on also drives the drive's /S-ON input via 7I84 OUTPUT6/7 (section 7).
+net a-pos-cmd       joint.5.motor-pos-cmd              => hm2_7i97.0.stepgen.02.position-cmd
+net a-pos-fb        hm2_7i97.0.stepgen.02.position-fb  => joint.5.motor-pos-fb
+net sig-a-servo-on  joint.5.amp-enable-out             => hm2_7i97.0.stepgen.02.enable
+net c-pos-cmd       joint.6.motor-pos-cmd              => hm2_7i97.0.stepgen.03.position-cmd
+net c-pos-fb        hm2_7i97.0.stepgen.03.position-fb  => joint.6.motor-pos-fb
+net sig-c-servo-on  joint.6.amp-enable-out             => hm2_7i97.0.stepgen.03.enable
 
 
 # ============================================================================
@@ -459,6 +465,11 @@ net sig-tool-probe       <= hm2_7i97.0.7i84.0.0.input-28       # TB2-13 *54 tool
 net sig-rack-pos         <= hm2_7i97.0.7i84.0.0.input-29       # TB2-14 *68 rack position
 net sig-drawbar-up       <= hm2_7i97.0.7i84.0.0.input-30       # TB2-15 *69 drawbar UP (clamped)
 net sig-drawbar-down     <= hm2_7i97.0.7i84.0.0.input-31       # TB2-16 *70 drawbar DOWN (released)
+# Head servo alarms (7I84U TB3). ALM is fail-safe / normally-conducting (ON when
+# healthy) -> use the -not pin so the signal is TRUE on fault OR power loss.
+# Monitored only for now (like sig-spindle-running) -- consume in estop logic later.
+net sig-a-alarm          <= hm2_7i97.0.7i84.0.0.input-14-not   # TB3-15 ALM- A (CN1-32)
+net sig-c-alarm          <= hm2_7i97.0.7i84.0.0.input-15-not   # TB3-16 ALM- C (CN1-32)
 
 # --- Digital OUTPUTS (7I84U TB2) -------------------------------------------
 net sig-drive-enable      => hm2_7i97.0.7i84.0.0.output-08     # TB2-17 *8  drive-enable -> R5 coil
@@ -469,6 +480,9 @@ net sig-toolsetter-deploy => hm2_7i97.0.7i84.0.0.output-12     # TB2-21 *61 tool
 net sig-drawbar-clamp     => hm2_7i97.0.7i84.0.0.output-13     # TB2-22 *63 drawbar clamp (OCLAMP)
 net sig-taper-purge       => hm2_7i97.0.7i84.0.0.output-14     # TB2-23 *64 taper air purge (OBLOWOFF)
 net sig-drawbar-release   => hm2_7i97.0.7i84.0.0.output-15     # TB2-24 *65 drawbar release (ODRAW)
+# Head servo /S-ON (7I84U TB3, OUTPUT6/7 set to SOURCING -- push +24 V into CN1-40):
+net sig-a-servo-on        => hm2_7i97.0.7i84.0.0.output-06     # TB3-23 /S-ON A (CN1-40)
+net sig-c-servo-on        => hm2_7i97.0.7i84.0.0.output-07     # TB3-24 /S-ON C (CN1-40)
 
 # ============================================================================
 # 8. ROTARY STEP/DIR  (7I85S stepgen.00 + stepgen.01 -> the two B steppers)
@@ -502,7 +516,28 @@ setp hm2_7i97.0.stepgen.01.steplen        2500                 # ns  (same drive
 setp hm2_7i97.0.stepgen.01.stepspace      2500                 # ns                                   UNVERIFIED
 setp hm2_7i97.0.stepgen.01.dirsetup       20000                # ns                                   UNVERIFIED
 setp hm2_7i97.0.stepgen.01.dirhold        20000                # ns                                   UNVERIFIED
-# stepgens 02-03 are spare (future axes) -- left unconfigured.
+# --- stepgens 02/03 = swivel head A/C (Yaskawa SGDXS CN1 PULS/SIGN) ---------
+# Same open-loop position-mode pattern as 00/01. Timing kept at the conservative
+# B-stepper values pending the Sigma-X manual's CN1 pulse-input spec.
+# *** ALL TIMING VALUES UNVERIFIED -- confirm against the manual + a live run. ***
+setp hm2_7i97.0.stepgen.02.control-type   0                    # 0 = position mode
+setp hm2_7i97.0.stepgen.02.step_type      0                    # 0 = step/dir
+setp hm2_7i97.0.stepgen.02.position-scale [JOINT_5]SCALE
+setp hm2_7i97.0.stepgen.02.maxvel         [JOINT_5]STEPGEN_MAXVEL
+setp hm2_7i97.0.stepgen.02.maxaccel       [JOINT_5]STEPGEN_MAXACCEL
+setp hm2_7i97.0.stepgen.03.control-type   0                    # 0 = position mode
+setp hm2_7i97.0.stepgen.03.step_type      0                    # 0 = step/dir
+setp hm2_7i97.0.stepgen.03.position-scale [JOINT_6]SCALE
+setp hm2_7i97.0.stepgen.03.maxvel         [JOINT_6]STEPGEN_MAXVEL
+setp hm2_7i97.0.stepgen.03.maxaccel       [JOINT_6]STEPGEN_MAXACCEL
+setp hm2_7i97.0.stepgen.02.steplen        2500                 # ns                                   UNVERIFIED
+setp hm2_7i97.0.stepgen.02.stepspace      2500                 # ns                                   UNVERIFIED
+setp hm2_7i97.0.stepgen.02.dirsetup       20000                # ns                                   UNVERIFIED
+setp hm2_7i97.0.stepgen.02.dirhold        20000                # ns                                   UNVERIFIED
+setp hm2_7i97.0.stepgen.03.steplen        2500                 # ns                                   UNVERIFIED
+setp hm2_7i97.0.stepgen.03.stepspace      2500                 # ns                                   UNVERIFIED
+setp hm2_7i97.0.stepgen.03.dirsetup       20000                # ns                                   UNVERIFIED
+setp hm2_7i97.0.stepgen.03.dirhold        20000                # ns                                   UNVERIFIED
 
 # ============================================================================
 #  END ned.hal
@@ -512,6 +547,6 @@ setp hm2_7i97.0.stepgen.01.dirhold        20000                # ns             
 #    [KINS]KINEMATICS [KINS]JOINTS    [EMCMOT]EMCMOT [EMCMOT]SERVO_PERIOD
 #    [TRAJ]SPINDLES
 #    [JOINT_0..3] P I D BIAS FF0 FF1 FF2 DEADBAND MAX_OUTPUT INPUT_SCALE OUTPUT_SCALE
-#    [JOINT_4] [JOINT_7] SCALE STEPGEN_MAXVEL STEPGEN_MAXACCEL
+#    [JOINT_4] [JOINT_5] [JOINT_6] [JOINT_7] SCALE STEPGEN_MAXVEL STEPGEN_MAXACCEL
 #    [SPINDLE_0]MAX_FORWARD_VELOCITY
 # ============================================================================

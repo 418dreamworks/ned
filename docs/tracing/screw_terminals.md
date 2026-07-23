@@ -456,6 +456,7 @@ All three NC contacts must be closed simultaneously (no e-stop pressed) for 24 V
 
 - **External wires landing here**:
   - 110 V AC supply to the **24 VDC transformer** (transformer primary, hot side)
+  - 110 V AC supply to the **5 VDC brick** — `*B` feeds BOTH the 5 V and 24 V supply bricks (user-confirmed 2026-07-22)
 
 ### *C
 

@@ -15,8 +15,11 @@ both.
   control (analog)*. Step/dir pulse input requires **position control, `Pn000 = n.□□1□` = `0010`**
   (manual §Pn000 Control Method Selection). Until changed, neither drive will respond to 7I85S
   pulses. ("After restart".) Drive can be hand-jogged from its panel and is **ready to take pulse commands.**
-  **Only remaining: LinuxCNC HAL** — bring up head axes A/C (stepgen **02**/**03**): step/dir out to
-  7I85, /S-ON enable via the 7I84 output, ALM in. *(Encoder running **incremental** `Pn002=n.□1□□`
+  ~~Only remaining: LinuxCNC HAL~~ **HAL DONE (2026-07-22):** joints 5/6 → stepgen **02**/**03**,
+  /S-ON via 7I84 output-06/07, ALM monitored on input-14/15(-not) (`ned.hal` §3/§7/§8;
+  `ned.ini` [JOINT_5]/[JOINT_6]). **Remaining before motion:** `Pn000=0010`, clear the
+  not-pot overtravel (Pn50A/Pn50B or wire P-OT/N-OT), and set the electronic gear
+  (Pn20E/Pn210) to match `[JOINT_5]/[JOINT_6] SCALE` (placeholder 555.556 = 1000 pulses/rev). *(Encoder running **incremental** `Pn002=n.□1□□`
   pending backup batteries on BAT± (CN2 pin 3/4) → then revert to absolute `n.□0□□`.)*
   ~~Old note (2026-06): "CN1 pulse connectors soldered; rest not yet landed" — superseded.~~
 

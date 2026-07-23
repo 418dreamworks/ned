@@ -1,0 +1,40 @@
+# maxspeed.hal -- loaded by maxspeed.sh (don't run this directly).
+# Both B steppers, opposite directions. maxspeed.sh sets the actual speed.
+loadrt hostmot2
+loadrt hm2_eth board_ip="10.10.10.10" config="num_encoders=6 num_pwmgens=6 num_stepgens=4 num_inmuxs=1 sserial_port_0=0xxxxxxx"
+loadrt threads name1=servo period1=1000000
+addf hm2_7i97.0.read  servo
+addf hm2_7i97.0.write servo
+setp hm2_7i97.0.watchdog.timeout_ns 1000000000
+
+# Velocity mode; scale 400 = the drive's current pulses/rev, so speed is in motor rev/s.
+# stepgen.00 forward, stepgen.01 reverse -> counter-rotate. Starts at 0; the script
+# commands the requested speed and the stepgen ramps to it at maxaccel.
+setp hm2_7i97.0.stepgen.00.step_type       0
+setp hm2_7i97.0.stepgen.00.control-type    1
+setp hm2_7i97.0.stepgen.00.position-scale  400
+setp hm2_7i97.0.stepgen.00.steplen         2500
+setp hm2_7i97.0.stepgen.00.stepspace       2500
+setp hm2_7i97.0.stepgen.00.dirsetup        20000
+setp hm2_7i97.0.stepgen.00.dirhold         20000
+setp hm2_7i97.0.stepgen.00.maxvel          200
+setp hm2_7i97.0.stepgen.00.maxaccel        3
+
+setp hm2_7i97.0.stepgen.01.step_type       0
+setp hm2_7i97.0.stepgen.01.control-type    1
+setp hm2_7i97.0.stepgen.01.position-scale  400
+setp hm2_7i97.0.stepgen.01.steplen         2500
+setp hm2_7i97.0.stepgen.01.stepspace       2500
+setp hm2_7i97.0.stepgen.01.dirsetup        20000
+setp hm2_7i97.0.stepgen.01.dirhold         20000
+setp hm2_7i97.0.stepgen.01.maxvel          200
+setp hm2_7i97.0.stepgen.01.maxaccel        3
+
+start
+setp hm2_7i97.0.stepgen.00.enable          1
+setp hm2_7i97.0.stepgen.01.enable          1
+setp hm2_7i97.0.stepgen.00.velocity-cmd    0
+setp hm2_7i97.0.stepgen.01.velocity-cmd    0
+
+# hold the session open until maxspeed.sh tears it down
+loadusr -w sleep 100000

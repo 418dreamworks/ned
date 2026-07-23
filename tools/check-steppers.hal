@@ -1,0 +1,47 @@
+# check-steppers.hal — configure BOTH B-axis stepgens so you can test either.
+#   stepgen.00 = drive 1 (TB2 11-14) ;  stepgen.01 = drive 2 (TB2 19-22)
+# NC R11 keeps the 70 V bricks powered with drive-enable LOW, so no enable needed.
+# Stop LinuxCNC and any other halrun first.  Run:  halrun -I -f ~/check-steppers.hal
+#
+# At the halcmd: prompt that follows (NO 'halcmd' prefix there):
+#   getp hm2_7i97.0.stepgen.01.steplen          -> must be 2500, not 0
+#   getp hm2_7i97.0.stepgen.01.enable           -> must be TRUE
+#   setp hm2_7i97.0.stepgen.01.position-cmd 90  -> command drive 2 to 90 deg
+#   getp hm2_7i97.0.stepgen.01.position-fb      -> should climb to 90 if it emits
+#   setp hm2_7i97.0.stepgen.00.position-cmd 90  -> same for drive 1 (known good)
+#   exit
+
+loadrt hostmot2
+loadrt hm2_eth board_ip="10.10.10.10" config="num_encoders=6 num_pwmgens=6 num_stepgens=4 num_inmuxs=1 sserial_port_0=0xxxxxxx"
+loadrt threads name1=servo period1=1000000
+addf hm2_7i97.0.read  servo
+addf hm2_7i97.0.write servo
+setp hm2_7i97.0.watchdog.timeout_ns 1000000000
+
+# --- drive 1 : stepgen.00 (TB2 11-14) ---
+setp hm2_7i97.0.stepgen.00.step_type      0
+setp hm2_7i97.0.stepgen.00.control-type   0
+setp hm2_7i97.0.stepgen.00.position-scale 177.778
+setp hm2_7i97.0.stepgen.00.steplen        2500
+setp hm2_7i97.0.stepgen.00.stepspace      2500
+setp hm2_7i97.0.stepgen.00.dirsetup       20000
+setp hm2_7i97.0.stepgen.00.dirhold        20000
+setp hm2_7i97.0.stepgen.00.maxvel         20
+setp hm2_7i97.0.stepgen.00.maxaccel       40
+
+# --- drive 2 : stepgen.01 (TB2 19-22) ---
+setp hm2_7i97.0.stepgen.01.step_type      0
+setp hm2_7i97.0.stepgen.01.control-type   0
+setp hm2_7i97.0.stepgen.01.position-scale 177.778
+setp hm2_7i97.0.stepgen.01.steplen        2500
+setp hm2_7i97.0.stepgen.01.stepspace      2500
+setp hm2_7i97.0.stepgen.01.dirsetup       20000
+setp hm2_7i97.0.stepgen.01.dirhold        20000
+setp hm2_7i97.0.stepgen.01.maxvel         20
+setp hm2_7i97.0.stepgen.01.maxaccel       40
+
+start
+setp hm2_7i97.0.stepgen.00.enable         1
+setp hm2_7i97.0.stepgen.01.enable         1
+setp hm2_7i97.0.stepgen.00.position-cmd   0
+setp hm2_7i97.0.stepgen.01.position-cmd   0
