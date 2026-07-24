@@ -14,10 +14,12 @@
 #   move.sh hold                  all 4 axes enabled at 0 V, hold to Ctrl-C
 #   move.sh spindle <RPM> <s> [-rev]   Mollom VFD: pwmgen.04 (0..10V -> AI2) + R6/R7
 #       needs Mollom powered + F0-02=1 (Terminal run), F0-03=3 (AI2), F4-00=1. START LOW.
-#   move.sh b  <RPM>              both B rotaries opposite directions, Ctrl-C stop
+#   move.sh rotary <RPM>         both workpiece rotaries, opposite directions, Ctrl-C stop
 #   move.sh a  <RPM> <seconds>    head TILT, time-BOUNDED (hard +/-120 stops!)
 #   move.sh c  <RPM> <seconds>    head SPIN, time-BOUNDED   (head deg ~= 0.03*RPM*sec)
 #
+# HOLD: x/y/z/w and a/c END the move HOLDING position (drives stay enabled) --
+# Ctrl-C releases + tears down. rotary spins to Ctrl-C; spindle stops after its time.
 # SAFETY: open-loop, NO software limits. e-stops released, axis clear, finger on e-stop.
 
 P=hm2_7i97.0
@@ -51,14 +53,14 @@ estop_ok(){ [ "$(halcmd getp $P.inmux.00.input-04 2>/dev/null)" = "TRUE" ]; }
 
 case "$axis" in
 
-# ================= STEPGEN: B rotaries =================
-b)
-  RPM="$1"; [ -z "$RPM" ] && { echo "usage: move.sh b <RPM>"; exit 1; }
+# ================= STEPGEN: workpiece rotary pair (stepgen 00/01) =================
+rotary|rot)
+  RPM="$1"; [ -z "$RPM" ] && { echo "usage: move.sh rotary <RPM>"; exit 1; }
   REVS=$(awk "BEGIN{printf \"%.4f\", $RPM/60}")
   halcmd setp $OUT08 1; echo "drive-enable on (R11 -> 70V brick); settling 1.5s"; sleep 1.5
   halcmd setp $P.stepgen.00.enable 1; halcmd setp $P.stepgen.01.enable 1
   halcmd setp $P.stepgen.00.velocity-cmd "$REVS"; halcmd setp $P.stepgen.01.velocity-cmd "-$REVS"
-  echo "spinning BOTH rotaries at $RPM RPM, opposite. Ctrl-C to stop."
+  echo "spinning BOTH rotary steppers at $RPM RPM, opposite. Ctrl-C to stop."
   while kill -0 "$HALPID" 2>/dev/null; do
     V0=$(halcmd getp $P.stepgen.00.velocity-fb 2>/dev/null); V1=$(halcmd getp $P.stepgen.01.velocity-fb 2>/dev/null)
     printf '  s00 ~ %.0f RPM   s01 ~ %.0f RPM   (target %s)\n' "$(awk "BEGIN{print ${V0:-0}*60}")" "$(awk "BEGIN{print ${V1:-0}*60}")" "$RPM"
@@ -82,7 +84,9 @@ a|c)
     printf '  +%.1fs  ~ %.0f RPM\n' "$(awk "BEGIN{print $k*0.5}")" "$(awk "BEGIN{print ${V:-0}*60}")"
     sleep 0.5
   done
-  echo ">>> ${SECS}s elapsed." ;;
+  halcmd setp $SG.velocity-cmd 0
+  echo ">>> ${SECS}s elapsed. HOLDING position (servo stays enabled). Ctrl-C to release."
+  while true; do sleep 1; done ;;
 
 # ================= SPINDLE (Mollom VFD) =================
 spindle|s)
@@ -160,6 +164,8 @@ x|y|z|w)
     done
     halcmd sets gvel 0; sleep 0.7
     echo "=== X enc $x0 -> $(halcmd getp $P.encoder.00.count 2>/dev/null) | W enc $w0 -> $(halcmd getp $P.encoder.03.count 2>/dev/null) | stop: ${stop:-time} ==="
+    echo ">>> HOLDING at 0 V (drives stay enabled). Ctrl-C to release."
+    while true; do sleep 1; done
   else
     ENC=$P.encoder.$idx.count
     e0=$(halcmd getp $ENC 2>/dev/null)
@@ -177,6 +183,8 @@ x|y|z|w)
     done
     halcmd setp $P.pwmgen.$idx.value 0; sleep 0.7
     echo "=== enc.$idx $e0 -> $(halcmd getp $ENC 2>/dev/null) | stop: ${stop:-time} ==="
+    echo ">>> HOLDING at 0 V (drives stay enabled). Ctrl-C to release."
+    while true; do sleep 1; done
   fi ;;
 
 *) echo "unknown axis: $axis"; usage ;;

@@ -18,12 +18,27 @@ When a new cabinet-side trace lands on a field device, add (or update) the devic
 - **Location**: on the spindle motor (field-mounted).
 - **Function**: **NC thermostat — CLOSED when cool, opens on overheat** (fail-safe; per user, the Colombo had to be *closed* to run). Continuity present = OK; open (hot **or** broken wire) = over-temp → **loss-of-signal = fault.** *(Corrected 2026-07-09 — earlier note wrongly said NO/closes-on-overheat.)* Sourcing-vs-sinking at the CNC input = separate, not verified.
 - **Cable**: cable "9".
-- **Wires**:
+- **Wires — FAGOR original (preserved):**
   | Color | Cabinet-side terminal | Role |
   |---|---|---|
   | White | `*71` | +24 V supply to thermostat |
   | Red | `*39` (then BLK → Fagor X9/pin 36, OVERTEMP I32) | Signal back to CNC |
-- **Notes**: ✓ both wires verified. PIM comment "BLK 2/9 (RED +24)" matches in cable label ("9") but swaps colors vs the actual cable.
+
+  Fagor used the thermostat as a *standalone* OVERTEMP input (X9/pin 36) — powered from `*71`,
+  read by the Fagor firmware, **not** part of the e-stop chain.
+
+- **Wires — as-built 2026-07-23 (Mesa retrofit): thermostat now IN SERIES in the e-stop chain.**
+  | Lead | Now lands on | Role |
+  |---|---|---|
+  | White | **off `*71`** → one side spans `*39`↔`*67` | chain-side of the thermostat NC |
+  | Red | other side spans `*39`↔`*67` | chain-side of the thermostat NC |
+
+  Series path: LHS e-stop → `*39` → thermostat NC → `*67` → yellow jumper → `*6`. White is
+  **removed from `*71`** (thermostat is now fed by the chain, not +24 V). Hot → opens → `*6`
+  drops → R2 → Mollom S3 ext-fault → spindle coasts (hardware kill). Mesa taps `*39` at **IN14**
+  (`sig-spindle-overtemp`) for diagnosis only: `*39`=24 V & `*6`=0 V → over-temp; `*39`=0 V →
+  e-stop. See `screw_terminals.md` `*39`/`*6`/`*67`/`*5`.
+- **Notes**: ✓ both wires verified. PIM comment "BLK 2/9 (RED +24)" matches cable label ("9") but swaps colors vs the actual cable.
 
 ---
 

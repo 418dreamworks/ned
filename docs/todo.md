@@ -1,11 +1,13 @@
 # To do
 
-## B-axis steppers — ned.hal wrong (2 SEPARATE joints, not 1)
-- ✓ CONFIRMED 2026-07-09: BOTH drives + motors work **independently** — stepgen.00 (TB2 11-14) turns motor 1, stepgen.01 (TB2 19-22) turns motor 2. position-fb ramps on both; each turns its own motor. Mesa→both drives→both motors all good. No hardware fault — the earlier "only one turned" was the bench file commanding only stepgen.00.
-- ⚠ `ned.hal` §8 is WRONG: drives only stepgen.00 for joint 4 and calls the pair "one stepgen / one reversed in copper". They are **TWO SEPARATE axes** — separate mechanically + electrically, only software-linked.
-- Fix ned.hal: give **each stepper its own joint** (stepgen.00 and stepgen.01), not one joint driving both. stepgen.01 = "twist" per `mesa_7i85s_wiring.md:16` — axis letter + kinematics slot TBD.
-- ✓ DONE 2026-07-09: set up as B gantry (joints 4 & 7, duplicate B in coordinates), joint 7 counter-rotates via negative SCALE. ned.ini done; ned.hal joint-7 wiring + §8 stepgen.01 done.
-- ✓ DONE 2026-07-22 (user-confirmed). ~~**Match the two B steppers (open — deferred):**~~ they turn different amounts for the same command; **user determined it's NOT slipping — a fixed manufacturing/ratio variance** (2026-07-09). **Both drives confirmed at 400 pulses/rev + no slip → the motor shafts turn identically; the variance is downstream in the worm/wheel reduction (gearing), not motor/drive.** Fix = per-joint `SCALE` trim so both rotate identically for the same B command (works at all speeds/positions since it's a constant ratio). Method: command a known move (e.g. 10 motor revs) on each, measure each output's actual travel, ratio = the correction; multiply the short joint's `SCALE` by it. One number in `[JOINT_4]`/`[JOINT_7]SCALE` — no new HAL. (Only revisit as slip if the offset ever changes with load/speed.)
+## Workpiece rotary pair (LinuxCNC axis B, joints 4 & 7) — DONE
+- ✓ DONE 2026-07-09: both steppers work independently (stepgen.00 = motor 1, stepgen.01 =
+  motor 2); set up as a B gantry (joints 4 & 7, duplicate B in coordinates), joint 7
+  counter-rotates via negative SCALE. ned.ini + ned.hal §3/§8 done.
+- ✓ RESOLVED 2026-07-23 (user): the "two rotaries turn different amounts" symptom was **a
+  shield grounded in the wrong place** (noise → miscounts), NOT a gearing/ratio variance.
+  Re-grounding the shield fixed it → **no per-joint SCALE trim needed.** (Supersedes the
+  earlier 2026-07-09 "fixed gearing variance" conclusion.)
 
 ## Head servo → LinuxCNC
 - ✓ DONE 2026-07-22: HAL brought up — AB/C axes (stepgen 02/03), /S-ON + ALM, un-INERTed
@@ -15,7 +17,8 @@
   Pn50A=8171/Pn50B=6548 (not-pot cleared), Pn515=8887 (SEN always-active → leaves bb in
   absolute, no SEN wire), Pn20E=8192/Pn210=1 (electronic gear). Params copied C→A. move.hal
   stepgen.02/.03 scale=8192 to match. 10° test move confirmed on both.
-- **CALIBRATION STAGE (deferred, agreed 2026-07-23):**
+- **CALIBRATION STAGE (deferred, agreed 2026-07-23):** → master list:
+  **`docs/commissioning/calibration_plan.md`** (all axes+spindle, Fagor-decoded values)
   - Electronic gear / SCALE: 8192 pulses/rev is provisional — finalize with `[JOINT_5]/[JOINT_6]SCALE`.
   - Direction: both run **negative** for a +command → fix sign (Pn000.0 or scale sign).
   - Real AB/C axis limits: `MIN_LIMIT`/`MAX_LIMIT` in `ned.ini` (drive has NO soft limit — host's job).
@@ -28,24 +31,16 @@
   (pwmgen.04 0-10 V → AI2; R6→S1 FWD, R7→S2 REV; negative RPM = reverse). Err15 verified
   as the e-stop kill (chain → R2 → S3). move.sh is fully standalone (kills LCNC, own HAL).
 
-## Spindle over-temp
-- ✓ WIRED 2026-07-23 (as-built): thermostat in SERIES at chain end — LHS e-stop → `*39`
-  → thermostat NC → `*67` → yellow jumper → `*6`; white off `*71`; IN14 taps `*39`
-  (24 V + `*6` low = over-temp; 0 V = e-stop). Verified healthy (estop TRUE, tap TRUE).
-- ⚠ TODO: tracing-doc notes for this rewire (`*5`/`*6`/`*39`/`*67`/`*71`, field_devices,
-  ned.hal:462 comment) — user deferred; not yet written.
-- Now: NC thermostat → `*39` → 7I97 IN14, but `sig-spindle-overtemp` is **DANGLING** in ned.hal (read only, wired to nothing) → **no working over-temp protection yet** (`ned.hal:456`, `:261`).
-- **DECIDED 2026-07-22 (supersedes the R4-duplication plan):** wire the NC thermostat **in
-  series at the END of the e-stop chain** (between the last button and `*6`) → opens hot →
-  `*6` drops → R2 drops → Mollom S3 external fault → spindle coasts. Kill path is **pure
-  hardware** (chain → R2 → S3); works even if Mesa/HAL is wrong.
-  - **Diagnosis = one extra reading:** tap the node between the last button and the
-    thermostat → a spare Mesa input.
-    - tap 24 V + `*6` 24 V → healthy
-    - tap 24 V + `*6` 0 V → **spindle over-temp** (thermostat open)
-    - tap 0 V → **an e-stop button**
-  - No R4 needed. If Mesa/HAL is misconfigured it only muddies the diagnosis, never the kill.
-- A chiller with a temp sensor (if bought) is complementary **loop monitoring** — reads coolant, not the stator winding — NOT a substitute for the thermostat protection.
+## Spindle over-temp — DONE (hardware kill in the e-stop chain)
+- ✓ WIRED + DOCUMENTED 2026-07-23: NC thermostat in SERIES at the chain end — LHS e-stop
+  → `*39` → thermostat NC → `*67` → yellow jumper → `*6`; white off `*71`; IN14 taps `*39`
+  as a **diagnostic** (24 V + `*6` low = over-temp; `*39` 0 V = e-stop). Hot opens →
+  `*6` drops → R2 → Mollom S3 ext-fault → spindle coasts. Pure hardware kill, works even if
+  HAL is wrong. Verified healthy (estop TRUE, tap TRUE). Tracing docs written:
+  `screw_terminals.md` (`*5`/`*6`/`*39`/`*67`), `field_devices.md`, `ned.hal:462` — Fagor
+  original wiring preserved alongside the as-built.
+- Later (optional): a chiller with a temp sensor is complementary **loop monitoring** (reads
+  coolant, not the stator winding) — NOT a substitute for this thermostat protection.
 
 ## Spindle cooling — bucket (planned 2026-07-22)
 - **Just a bucket first**: pump in the bucket → spindle → return to the bucket. Hook up the pump.
@@ -66,6 +61,10 @@
 ## Safety
 - ✓ DONE 2026-07-22 (user-confirmed): R11 swapped to NORMALLY-OPEN — fail-safe restored;
   70 V brick + head power now only with drive-enable.
+- ✓ DONE 2026-07-23 (user-confirmed): R11 coil suppression fixed. Original P6KE33CA TVS
+  went leaky→thermal-runaway→short (root cause of the intermittent estop/6V-sag saga +
+  magic smoke); replaced with a **flyback diode** across R11 A1/A2 (band/cathode → A2/`*7`,
+  anode → A1/GND). Rotary run confirms R11 pulls in cleanly, no sag.
 
 ## Misc
 - ✓ DONE 2026-07-22 (user-confirmed): 5 V brick ratings recorded.

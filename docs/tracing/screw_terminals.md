@@ -47,11 +47,12 @@ Convention: `*<n>` means cabinet screw terminal n. See `INDEX.md` for full conve
 
 - **Left side**: LHS (left-hand-side machine) e-stop, one NC contact wire (via cable 20)
 - **Right side**: jumpered to `*4`
-- **Notes**: ✓ verified. Polarity not important (daisy-chain link).
+- **Notes**: ✓ verified. Polarity not important (daisy-chain link). The LHS e-stop's *other* NC-contact wire was originally on `*6`; **as-built 2026-07-23 that wire moved to `*39`** to insert the spindle thermostat in series at the chain end (see `*39`).
 
 ## *6
 
-- **Left side**: LHS (left-hand-side machine) e-stop, the other NC contact wire (via cable 20)
+- **Left side (FAGOR original)**: LHS e-stop, the other NC contact wire (via cable 20) — landed directly on `*6`.
+- **Left side (as-built 2026-07-23)**: that LHS wire is **moved to `*39`**; `*6` left is now fed by a **YELLOW jumper from `*67`** (the spindle thermostat's output). The thermostat is now in series at the chain end: LHS e-stop → `*39` → thermostat NC → `*67` → yellow jumper → `*6`. `*6` still carries chain +24 V when healthy; hot thermostat opens → `*6` drops (same as any e-stop). Right-side wires unchanged.
 - **Right side**: **three wires land here**:
   - Wire #1: connected to Fagor X9/pin 2 (`/EMERINP`). Function: CNC firmware reads this input.
   - Wire #2: connected to R2C2 (R2's coil high side). Function: when chain is intact, R2C2 = +24 V → R2 energizes; chain break → R2C2 = 0 V → R2 drops out → VFD external-fault path closes → spindle stops.
@@ -225,9 +226,15 @@ All three NC contacts must be closed simultaneously (no e-stop pressed) for 24 V
 
 ## *39
 
+**FAGOR original wiring (preserved):**
 - **Left side**: RED wire from cable "9" → spindle overheat thermostat (signal output). Partner wire in cable "9" is white → `*71` (+24 V), supplying the thermostat.
-- **Right side**: BLACK wire → Fagor X9/pin 36 (PIM-named `OVERTEMP I32`, spindle overheat input)
-- **Notes**: ✓ verified end-to-end. Thermostat is **NC** (closed cool, opens on overheat — per user; had to be closed to run). **Cool → closed → +24 V from `*71` passes** red → `*39` → black → X9/pin 36 = "OK". **Hot or broken wire → opens → +24 V drops → over-temp (loss-of-signal = fault, fail-safe).** *(Corrected 2026-07-09: earlier note wrongly said NO/closes-on-overheat.)* Sourcing-vs-sinking at X9/pin 36 = separate, not verified. PIM color "BLK 2/9 (RED +24)": cable label "9" matches; PIM colors unreliable.
+- **Right side**: BLACK wire → Fagor X9/pin 36 (PIM-named `OVERTEMP I32`, spindle overheat input).
+- Fagor logic: thermostat **NC** (closed cool, opens on overheat — per user; had to be closed to run). **Cool → closed → +24 V from `*71` passes** red → `*39` → black → X9/pin 36 = "OK". **Hot/broken → opens → +24 V drops → over-temp** (loss-of-signal = fault, fail-safe). Here `*39` was a *standalone* signal into the Fagor OVERTEMP input, NOT part of the e-stop chain. *(Corrected 2026-07-09: earlier note wrongly said NO/closes-on-overheat.)* Sourcing-vs-sinking at X9/pin 36 = separate, not verified. PIM color "BLK 2/9 (RED +24)": cable label "9" matches; PIM colors unreliable.
+
+**As-built 2026-07-23 (Mesa retrofit — `*39` re-purposed as an e-stop-chain junction):**
+- The thermostat is moved into series at the **end of the e-stop chain**. `*39` now lands: (1) the **LHS e-stop's 2nd NC-contact wire** (moved here from `*6`), (2) one **thermostat lead**, (3) the **Mesa tap** (black wire → now 7I97 **IN14**, was X9/pin 36).
+- Path: LHS e-stop → `*39` → thermostat NC → `*67` → yellow jumper → `*6`. The thermostat's white lead is **off `*71`** (it's now fed by the chain, not +24 V) — critical, else `*39` would read 24 V forever.
+- **IN14 is now a diagnostic tap**, not a kill: `*39` = 24 V & `*6` = 0 V → **thermostat open (over-temp)**; `*39` = 0 V → an **e-stop** upstream; both 24 V → healthy. The actual kill is hardware (chain drops `*6` → R2 → Mollom S3 ext-fault → spindle coasts). Verified 2026-07-23: estop TRUE, tap TRUE (healthy).
 
 ## *40
 
@@ -359,9 +366,9 @@ All three NC contacts must be closed simultaneously (no e-stop pressed) for 24 V
 
 ## *67
 
-- **Left side**: ORANGE wire from cable 91 (cable 91 terminates at the top junction box on the other end)
-- **Right side**: nothing — dead-ended at this terminal
-- **Notes**: ✓ verified. This wire is connected at one end (`*67`) and dead-ended at the other end (top junction box). Probably pre-wiring for an unused future function. Not the same as wire labelled "91" landing on `*91` — that's a different conductor.
+- **Left side**: ORANGE wire from cable 91 (cable 91 terminates at the top junction box on the other end) — dead-ended, unused (Fagor-era pre-wiring, still present).
+- **Right side (as-built 2026-07-23)**: the other **spindle thermostat lead** + a **YELLOW jumper to `*6`**. `*67` is now the thermostat's output node in the e-stop chain (`*39` → thermostat → `*67` → yellow → `*6`).
+- **Notes**: ✓ Fagor: `*67` was just the dead-ended orange cable-91 wire (unused). The retrofit reuses this spare terminal as the thermostat's downstream junction. Orange cable-91 wire left in place. Not the same as wire labelled "91" landing on `*91`.
 
 ## *68
 
