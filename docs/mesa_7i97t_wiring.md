@@ -1,6 +1,6 @@
 # Mesa 7I97T — Wiring Decisions
 
-Companion notes to `mesa_7i97t_manual.pdf` and the HAL signal map in `wiring_to_hal_guide.md`. Records the physical landings on the 7I97T card for this machine.
+Companion notes to `mesa_7i97t_manual.pdf` and the HAL signal map in `configs/ned/ned.hal`. Records the physical landings on the 7I97T card for this machine.
 
 Card orientation (per manual): Ethernet RJ-45 on the **LEFT**, frame-ground mounting hole top-left. Terminal blocks along the top edge, left to right: **TB1, TB2, TB3, TB4, TB5**. PCB silkscreen marks pin 1 of each block with a black square pad.
 

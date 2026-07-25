@@ -41,9 +41,9 @@ Of the 10 conductors: 8 in the 4 colored signal cables go to MPG/axis-selector t
 - **Row A** = the row closer to the model-info sticker on the MPG body.
 - **Row B** = the row farther from the sticker.
 
-Pin-function assignment (which terminal carries which signal) is TBD — to be identified during the X6 trace.
+The cable-conductor mapping per terminal is in the table below (traced); which conductor carries which electrical function (encoder A/B, +5 V, 0 V) is not yet identified.
 
-#### MPG terminal traces (in progress)
+#### MPG terminal traces
 
 | MPG terminal | Connected to (internal) | Cable conductor | Notes |
 |---|---|---|---|
@@ -66,7 +66,7 @@ Pin-function assignment (which terminal carries which signal) is TBD — to be i
 
 - Routes from the pendant to the cabinet, terminating at **X6** on the Fagor AXES module.
 - **7 of 8 conductors used + shield** (one conductor unused).
-- Pin-level signal mapping at X6: **NOT YET TRACED**. Planned tracing target.
+- X6 pin → conductor → pendant map is traced — see §X6 Connector Pin Mapping below.
 
 ## Pendant E-Stop
 
@@ -109,20 +109,11 @@ PIM does reference two pendant-related digital inputs, but they appear at **X9**
 
 Whether these signals route through X6 first (and are internally cross-connected to X9 inputs by the AXES module) or arrive at X9 via separate cabinet wires is **unknown**.
 
-## Plan for X6 Tracing
+## Conductor functions (still open)
 
-Expected breakdown of the 7 used conductors + shield:
-- 4 lines: differential handwheel encoder (A, /A, B, /B)
-- 2 lines: +5 V supply and 0 V return
-- 1 line: axis selector switch position OR button common
-- (1 unused conductor)
-- Plus shield
-
-To map each conductor:
-1. Identify shield (continuity to pendant body).
-2. Spin the handwheel and probe for toggling lines → identifies A/B encoder pair (and probably differential partners by signal inversion).
-3. Probe for +5 V and 0 V rails (continuity to known supply rails inside the cabinet, or measured DC voltage from X6 with everything powered).
-4. Press each pendant button / move the axis selector and watch which conductor changes state → identifies button signals.
+The X6 pin→conductor map is traced (above); the electrical function of each used conductor is
+not yet identified. Expected: 4 = differential handwheel encoder (A,/A,B,/B), 2 = +5 V / 0 V,
+1 = axis-selector/button common, +1 unused, + shield.
 
 ## LinuxCNC Migration Notes
 
@@ -133,8 +124,5 @@ When migrating to LinuxCNC + Mesa (7I97T + 7I85S + 7I84U):
 
 ## Open Items
 
-- [ ] Physically trace each of the 7 used X6 conductors to identify function.
-- [ ] Confirm MPG PPR rating (100 vs other).
-- [ ] Confirm supply voltage (5 V vs 12 V).
-- [ ] Identify which conductor is unused.
-- [ ] Map pendant buttons to specific cable conductors.
+- [ ] Identify each conductor's electrical function (encoder A/B, +5 V, 0 V, button).
+- [ ] Confirm MPG PPR rating and supply voltage (5 V vs 12 V) — datasheet not on hand.

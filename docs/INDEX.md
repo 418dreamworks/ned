@@ -7,6 +7,16 @@ per vendor/topic; your physical wiring traces are grouped under `tracing/`.
 > single source of truth.** Detail lives there only; everything else references a
 > part by its key, `[cmp:<key>]`, and does not restate specs.
 
+## Current machine state — start here
+
+| Doc | What |
+|---|---|
+| [`../configs/ned/ned.hal`](../configs/ned/ned.hal) · [`ned.ini`](../configs/ned/ned.ini) | The live LinuxCNC/Mesa config — as-built control state |
+| [commissioning/calibration_plan.md](commissioning/calibration_plan.md) | Master calibration target list (Fagor-decoded, per axis + spindle) |
+| [servo/yaskawa_params_quickref.md](servo/yaskawa_params_quickref.md) | Yaskawa head-servo drive params (read-first) |
+| [vfd/mollom_parameterization.md](vfd/mollom_parameterization.md) | Mollom spindle VFD params (authoritative) |
+| [`../fagor8055/backup/2026-06-23-windnc/`](../fagor8055/backup/2026-06-23-windnc/) | The Fagor's as-built config (WinDNC backup) — final Fagor state |
+
 **Root-level wiring docs** (the working build docs; card-centric + device-centric views):
 
 | File | What it covers |
@@ -22,14 +32,16 @@ per vendor/topic; your physical wiring traces are grouped under `tracing/`.
 
 | Folder | Contents |
 |---|---|
-| [`tracing/`](tracing/) | **Your physical wiring traces** (cabinet, Fagor connectors, pendant, VFD terminals) + the wiring→HAL guide |
+| [`tracing/`](tracing/) | **Your physical wiring traces** (cabinet, Fagor connectors, pendant, VFD terminals) |
+| [`commissioning/`](commissioning/) | Current bring-up state — axis directions + calibration plan |
+| [`archive/`](archive/) | Historical — dated session logs, done plans, card-selection scratch, superseded guides |
 | [`fagor/`](fagor/) | Fagor 8055 CNC manuals (PDF + text extracts) |
 | [`hqd/`](hqd/) | HQD electric spindle + swivel-head spec sheets |
 | [`servo/`](servo/) | Servo drives — Yaskawa (LinuxCNC target) + legacy Servo Dynamics SDSM |
 | [`vfd/`](vfd/) | Spindle VFDs — Saftronics VG5 (legacy) + Mollom G75 (replacement) |
-| [`mesa/`](mesa/) | Mesa FPGA cards (7I97T/7I84U/7I85S) + card-selection notes |
+| [`mesa/`](mesa/) | Mesa FPGA card manuals (7I97T/7I84U/7I85S) |
 | [`linuxcnc/`](linuxcnc/) | Offline mirror of the LinuxCNC HAL manual + driver man pages |
-| [`plans/`](plans/) | Forward-looking bring-up plans (numbered; superseded ones kept) |
+| [`plans/`](plans/) | Forward-looking bring-up plans (active; superseded ones archived) |
 
 Conventions:
 - PDFs are texified — searchable plain-text extracts live in each folder's `text/` subfolder.
@@ -67,8 +79,7 @@ Conventions:
 | [fagor_8055_axes.md](tracing/fagor_8055_axes.md) | Fagor AXES module — X8 (analog→drives), X9 (inputs), X10 (outputs), pin-by-pin |
 | [fagor_8055_io.md](tracing/fagor_8055_io.md) | Fagor separate I/O module (X1, X2) |
 | [vg5_vfd.md](tracing/vg5_vfd.md) | Saftronics VG5 terminal wiring (legacy) |
-| [mollom_g75_vfd.md](tracing/mollom_g75_vfd.md) | Mollom G75 terminal wiring (replacement) |
-| [wiring_to_hal_guide.md](tracing/wiring_to_hal_guide.md) | Translation guide: wiring traces → LinuxCNC HAL signal map |
+| [mollom_g75_vfd.md](tracing/mollom_g75_vfd.md) | Mollom G75 terminal wiring (LinuxCNC spindle drive) |
 
 ## `fagor/` — Fagor 8055 CNC Manuals
 
@@ -97,6 +108,7 @@ Per-chapter + tagged text extracts (install/operating/programming) and the split
 | [Sigma-X SERVOPACK](servo/yaskawa_sigma_xs_servopack_analog_pulse_product_manual.pdf) | [txt](servo/text/yaskawa_sigma_xs_servopack_analog_pulse_product_manual.txt) | SGDXS analog/pulse — **our head drive** [cmp:head-servo] |
 | [Sigma-X rotary motor](servo/yaskawa_sigma_x_rotary_servomotor_product_manual.pdf) | [txt](servo/text/yaskawa_sigma_x_rotary_servomotor_product_manual.txt) | SGMXJ/A/P/G motors — **our head motor** [cmp:head-servo] |
 | [Servo Dynamics SDSM](servo/servo_dynamics_sdsm_manual.pdf) | [txt](servo/text/servo_dynamics_sdsm_manual.txt) | **Main-axis** analog drives [cmp:main-servo] (OCR'd) |
+| [yaskawa_params_quickref.md](servo/yaskawa_params_quickref.md) | — | **Head-servo drive params (read-first)** — Pn000, Pn50A/B, Pn515, gear, bb |
 
 > Pruned to the models actually used: head = Yaskawa drive `SGDXS-2R8A00A` + motor
 > `SGMXJ-04AUA6SC2` (see [cmp:head-servo] in [`components.md`](components.md)); main
@@ -109,7 +121,8 @@ Per-chapter + tagged text extracts (install/operating/programming) and the split
 |---|---|---|
 | [Saftronics VG5](vfd/saftronics_vg5_users_manual.pdf) | [txt](vfd/text/saftronics_vg5_users_manual.txt) | **Legacy** VFD |
 | [Mollom G75](vfd/mollom_G75_AC_drive_manual.pdf) | [txt](vfd/text/mollom_G75_AC_drive_manual.txt) | Spindle VFD [cmp:vfd] (replaces the VG5) |
-| [mollom_facts.md](vfd/mollom_facts.md) | — | Model decode, single-phase derate, VG5→Mollom migration wiring + params |
+| [mollom_parameterization.md](vfd/mollom_parameterization.md) | — | **Mollom spindle VFD params — authoritative** |
+| [mollom_facts.md](vfd/mollom_facts.md) | — | Model decode, single-phase derate, VG5→Mollom migration wiring |
 
 ## `mesa/` — Mesa FPGA Cards (the chosen LinuxCNC hardware)
 
@@ -118,10 +131,6 @@ Per-chapter + tagged text extracts (install/operating/programming) and the split
 | [7I97T manual](mesa/mesa_7i97t_manual.pdf) | [txt](mesa/text/mesa_7i97t_manual.txt) | [cmp:mesa-7i97t]. Jumpers W11/W12 (IP), W21/W22 (DB25), W23 (sserial term) |
 | [7I84U manual](mesa/mesa_7i84u_manual.pdf) | [txt](mesa/text/mesa_7i84u_manual.txt) | [cmp:mesa-7i84u]. TB1 power 8–32 V; W1 (VIN src), W3 (operate/setup) |
 | [7I85S manual](mesa/mesa_7i85s_manual.pdf) | [txt](mesa/text/mesa_7i85s_manual.txt) | [cmp:mesa-7i85s]. 5V via own terminal; W3 (cable/aux 5V) |
-| [01_albersx_mesa_guide.md](mesa/01_albersx_mesa_guide.md) | — | Mesa card-selection guide (general) |
-| [02_linuxcnc_forum_mesa_guide.md](mesa/02_linuxcnc_forum_mesa_guide.md) | — | Forum card-selection guide |
-| [fpga_cards_listing.md](mesa/fpga_cards_listing.md) | — | Mesa FPGA card listing |
-| [products_fetched.md](mesa/products_fetched.md) | — | Fetched Mesa product pages |
 
 ## `linuxcnc/` — LinuxCNC Software Docs (offline mirror)
 

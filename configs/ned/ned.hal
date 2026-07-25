@@ -207,10 +207,10 @@ net sig-c-servo-on  joint.6.amp-enable-out             => hm2_7i97.0.stepgen.03.
 # 4. SPINDLE   (VFD: +/-10V magnitude on AI2, FWD/REV via S1/S2)
 # ============================================================================
 # VFD takes a 0..10V magnitude (speed-out-abs) plus discrete FWD/REV.
-# Interlock: spindle is permitted only while the drawbar is UP (tool clamped).
+# Interlock: spindle is permitted only while the tool is LOCKED (HQD S1).
 
 net spindle-on             spindle.0.on       => spindle.permit.in0
-net sig-drawbar-up         => spindle.permit.in1
+net sig-tool-locked        => spindle.permit.in1
 net sig-spindle-vel-enable spindle.permit.out => spindle.cw.in0  spindle.ccw.in0
 
 net spindle-fwd            spindle.0.forward  => spindle.cw.in1
@@ -284,24 +284,23 @@ net tool-prep-loop    iocontrol.0.tool-prepare => iocontrol.0.tool-prepared
 net tool-change-loop  iocontrol.0.tool-change  => iocontrol.0.tool-changed
 
 # Tool-change actuators -> exposed as digital outputs (M64/M65 P# or remap):
-#   digital-out-00 = drawbar RELEASE (ODRAW)     *65
-#   digital-out-01 = drawbar CLAMP   (OCLAMP)    *63
-#   digital-out-02 = spindle taper PURGE         *64
+#   digital-out-00 = HQD TOOL-RELEASE air -- fires ALL 3 BIGGREEN solenoids (*63/*64/*65)
 #   digital-out-03 = toolsetter DEPLOY           *61
 #   digital-out-04 = chip blow-off (air blast)   *55
-net sig-drawbar-release   motion.digital-out-00
-net sig-drawbar-clamp     motion.digital-out-01
-net sig-taper-purge       motion.digital-out-02
+# GDL65 is DRAWBAR-ONLY (spring clamps, air releases): the old separate OCLAMP (*63) and
+# OBLOWOFF taper-purge (*64) functions are RETIRED -- all 3 field solenoids now blast
+# together as the single tool-release. (motion.digital-out-01/02 freed, as-built 2026-07-25.)
+net sig-hqd-tool-release  motion.digital-out-00
 net sig-toolsetter-deploy motion.digital-out-03
 net sig-chip-blowoff      motion.digital-out-04
 
-# Tool-change sensors -> exposed as digital inputs (M66 or remap):
-#   digital-in-00 = drawbar UP (clamped)   *69
-#   digital-in-01 = drawbar DOWN (released)*70
-#   digital-in-02 = rack position          *68
-net sig-drawbar-up   => motion.digital-in-00
-net sig-drawbar-down => motion.digital-in-01
-net sig-rack-pos     => motion.digital-in-02
+# HQD ATC sensors -> exposed as digital inputs (M66 or remap):
+#   digital-in-00 = tool-locked   S1  *69
+#   digital-in-01 = tool-released S2  *70
+#   digital-in-02 = shaft-stopped S3  *68
+net sig-tool-locked   => motion.digital-in-00
+net sig-tool-released => motion.digital-in-01
+net sig-shaft-stopped => motion.digital-in-02
 
 # Tool-length probe (toolsetter contact, via R10) -> motion probe for G38.x.
 net sig-tool-probe   => motion.probe-input
@@ -402,15 +401,16 @@ setp hm2_7i97.0.pwmgen.00.output-type 1
 setp hm2_7i97.0.pwmgen.01.output-type 1
 setp hm2_7i97.0.pwmgen.02.output-type 1
 setp hm2_7i97.0.pwmgen.03.output-type 1
-setp hm2_7i97.0.pwmgen.04.output-type 1
+setp hm2_7i97.0.pwmgen.05.output-type 1
 # BIPOLAR +/-10V for the 4 servo axes: offset-mode makes value 0 -> 0V and
 # +/- value -> +/-10V (without it the axes can only swing 0..+10V = one way).
-# Spindle (04) stays UNIPOLAR (0..10V magnitude + dir relays) -> offset-mode 0.
+# Spindle = pwmgen.05 = AOUT5 (TB3-24). AOUT4 is MPG-reserved (mesa_7i97t_wiring.md:114).
+# Spindle (05): offset-mode 1 (linear offset-PWM, same as the axes). Command 0..max = 0..+10 V, dir via R6/R7.
 setp hm2_7i97.0.pwmgen.00.offset-mode 1
 setp hm2_7i97.0.pwmgen.01.offset-mode 1
 setp hm2_7i97.0.pwmgen.02.offset-mode 1
 setp hm2_7i97.0.pwmgen.03.offset-mode 1
-setp hm2_7i97.0.pwmgen.04.offset-mode 0
+setp hm2_7i97.0.pwmgen.05.offset-mode 1
 # CONFIRMED 2026-06-25: bipolar (offset-mode) AOUT reads 0 V at 40 kHz / no dither.
 # 7I97 manual "SUGGESTED PWM SETUP": current LinuxCNC needs 75 kHz + dither for the
 # offset-PWM bipolar output. With these, the axis AOUTs produce the commanded ±10 V
@@ -419,7 +419,7 @@ setp hm2_7i97.0.pwmgen.00.dither 1
 setp hm2_7i97.0.pwmgen.01.dither 1
 setp hm2_7i97.0.pwmgen.02.dither 1
 setp hm2_7i97.0.pwmgen.03.dither 1
-setp hm2_7i97.0.pwmgen.04.dither 1
+setp hm2_7i97.0.pwmgen.05.dither 1
 setp hm2_7i97.0.pwmgen.00.scale [JOINT_0]OUTPUT_SCALE
 setp hm2_7i97.0.pwmgen.01.scale [JOINT_1]OUTPUT_SCALE
 setp hm2_7i97.0.pwmgen.02.scale [JOINT_2]OUTPUT_SCALE
@@ -435,10 +435,10 @@ net sig-y-amp-enable   => hm2_7i97.0.pwmgen.01.enable
 net sig-z-amp-enable   => hm2_7i97.0.pwmgen.02.enable
 net sig-w-amp-enable   => hm2_7i97.0.pwmgen.03.enable
 
-# --- Spindle analog (pwmgen 04, scale = max RPM -> 10 V) --------------------
-setp hm2_7i97.0.pwmgen.04.scale [SPINDLE_0]MAX_FORWARD_VELOCITY
-net sig-spindle-vel-volts  => hm2_7i97.0.pwmgen.04.value
-net sig-spindle-vel-enable => hm2_7i97.0.pwmgen.04.enable
+# --- Spindle analog (pwmgen 05 = AOUT5, scale = max RPM -> 10 V) ------------
+setp hm2_7i97.0.pwmgen.05.scale [SPINDLE_0]MAX_FORWARD_VELOCITY
+net sig-spindle-vel-volts  => hm2_7i97.0.pwmgen.05.value
+net sig-spindle-vel-enable => hm2_7i97.0.pwmgen.05.enable
 
 # --- Digital INPUTS ---------------------------------------------------------
 # Cabinet inputs (X9) -> 7I97T isolated inputs via InMux (num_inmuxs=1).
@@ -462,9 +462,9 @@ net sig-vfd-fault        <= hm2_7i97.0.inmux.00.input-13       # TB5-8  IN13 *38
 net sig-spindle-overtemp <= hm2_7i97.0.inmux.00.input-14       # TB5-10 IN14 taps *39 = e-stop-chain node BETWEEN the LHS e-stop and the spindle thermostat (as-built 2026-07-23). DIAGNOSTIC ONLY -- over-temp KILL is hardware (thermostat opens -> *6 drops -> R2 -> Mollom S3). Decode w/ estop: *39 TRUE + estop FALSE = OVER-TEMP; *39 FALSE = e-stop. NOT a standalone temp input.
 # Tool-changer inputs (X10) -> 7I84U TB2:
 net sig-tool-probe       <= hm2_7i97.0.7i84.0.0.input-28       # TB2-13 *54 toolsetter contact (via R10)
-net sig-rack-pos         <= hm2_7i97.0.7i84.0.0.input-29       # TB2-14 *68 rack position
-net sig-drawbar-up       <= hm2_7i97.0.7i84.0.0.input-30       # TB2-15 *69 drawbar UP (clamped)
-net sig-drawbar-down     <= hm2_7i97.0.7i84.0.0.input-31       # TB2-16 *70 drawbar DOWN (released)
+net sig-shaft-stopped    <= hm2_7i97.0.7i84.0.0.input-29       # TB2-14 *68 HQD S3 shaft-stopped (BIGGREEN grey; PNP-NO; verified)
+net sig-tool-locked      <= hm2_7i97.0.7i84.0.0.input-30       # TB2-15 *69 HQD S1 tool-locked   (BIGGREEN red;  PNP-NO)
+net sig-tool-released    <= hm2_7i97.0.7i84.0.0.input-31       # TB2-16 *70 HQD S2 tool-released (BIGGREEN brown; PNP-NO)
 # Head servo alarms (7I84U TB3). ALM is fail-safe / normally-conducting (ON when
 # healthy) -> use the -not pin so the signal is TRUE on fault OR power loss.
 # Monitored only for now (like sig-spindle-running) -- consume in estop logic later.
@@ -477,9 +477,11 @@ net sig-spin-cw           => hm2_7i97.0.7i84.0.0.output-09     # TB2-18 *40 SPIN
 net sig-spin-ccw          => hm2_7i97.0.7i84.0.0.output-10     # TB2-19 *41 SPIN-CCW -> R7
 net sig-chip-blowoff      => hm2_7i97.0.7i84.0.0.output-11     # TB2-20 *55 chip blow-off -> R9
 net sig-toolsetter-deploy => hm2_7i97.0.7i84.0.0.output-12     # TB2-21 *61 toolsetter deploy
-net sig-drawbar-clamp     => hm2_7i97.0.7i84.0.0.output-13     # TB2-22 *63 drawbar clamp (OCLAMP)
-net sig-taper-purge       => hm2_7i97.0.7i84.0.0.output-14     # TB2-23 *64 taper air purge (OBLOWOFF)
-net sig-drawbar-release   => hm2_7i97.0.7i84.0.0.output-15     # TB2-24 *65 drawbar release (ODRAW)
+# HQD GDL65 tool-release: all 3 BIGGREEN field solenoids fire TOGETHER off one signal
+# (drawbar-only spindle; old OCLAMP/OBLOWOFF/ODRAW consolidated into one unclamp air blast).
+net sig-hqd-tool-release  => hm2_7i97.0.7i84.0.0.output-13     # TB2-22 *63 BIGGREEN pink    (was OCLAMP)
+net sig-hqd-tool-release  => hm2_7i97.0.7i84.0.0.output-14     # TB2-23 *64 BIGGREEN yellow  (was OBLOWOFF)
+net sig-hqd-tool-release  => hm2_7i97.0.7i84.0.0.output-15     # TB2-24 *65 BIGGREEN bluered (was ODRAW)
 # Head servo /S-ON (7I84U TB3, OUTPUT6/7 set to SOURCING -- push +24 V into CN1-40):
 net sig-a-servo-on        => hm2_7i97.0.7i84.0.0.output-06     # TB3-23 /S-ON A (CN1-40)
 net sig-c-servo-on        => hm2_7i97.0.7i84.0.0.output-07     # TB3-24 /S-ON C (CN1-40)

@@ -1,0 +1,11 @@
+# solenoid.hal -- loaded by solenoid.sh. Minimal board bring-up so the 7I84U outputs can be
+# setp'd directly. No stepgens/pwmgens configured (nothing moves -- air only). ONE cmd per line.
+loadrt hostmot2
+loadrt hm2_eth board_ip="10.10.10.10" config="num_encoders=6 num_pwmgens=6 num_stepgens=4 num_inmuxs=1 sserial_port_0=0xxxxxxx"
+loadrt threads name1=servo period1=1000000
+addf hm2_7i97.0.read  servo
+addf hm2_7i97.0.write servo
+setp hm2_7i97.0.watchdog.timeout_ns 1000000000
+start
+# hold the session open until solenoid.sh tears it down
+loadusr -w sleep 100000

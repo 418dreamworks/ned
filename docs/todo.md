@@ -28,8 +28,11 @@
 
 ## Spindle — turns via software
 - ✓ DONE 2026-07-23: `move.sh spindle <RPM> <s>` spins the Mollom/HQD both directions
-  (pwmgen.04 0-10 V → AI2; R6→S1 FWD, R7→S2 REV; negative RPM = reverse). Err15 verified
-  as the e-stop kill (chain → R2 → S3). move.sh is fully standalone (kills LCNC, own HAL).
+  (R6→S1 FWD, R7→S2 REV; negative RPM = reverse). Err15 = e-stop kill (chain → R2 → S3).
+  move.sh is fully standalone (kills LCNC, own HAL).
+- ✓ DONE 2026-07-25: **AI2 speed control tracks commanded RPM.** Spindle analog =
+  **pwmgen.05 (AOUT5 = TB3-24), offset-mode 1, scale 18000** — was wrongly on pwmgen.04
+  (dead AOUT4) + offset-mode 0. Fixed in ned.hal + move.hal + move.sh. `move.sh spindle N` = N rpm.
 
 ## Spindle over-temp — DONE (hardware kill in the e-stop chain)
 - ✓ WIRED + DOCUMENTED 2026-07-23: NC thermostat in SERIES at the chain end — LHS e-stop
@@ -50,9 +53,23 @@
 ## HQD spindle ATC sensors
 - Wiring DONE (as-built HQD 2026-07-09): S1 tool-lock → input-30/`*69`, S2 tool-release → input-31/`*70`, S3 shaft-stop → input-29/`*68`. All PNP-NO (brown +24, black sig, blue 0V).
 - ✓ S3 shaft-stop (input-29) VERIFIED 2026-07-09 — toggles TRUE/FALSE on hand-rotation.
-- TODO — confirm **S1 tool-lock (input-30)**: seat a tool holder in the taper (no air) → expect TRUE. (FALSE when empty is normal — spring over-travels the clamp detent; not a drawbar-position sensor like the Colombo.)
-- TODO — confirm **S2 tool-release (input-31)**: apply unclamp air (port B, 10.5–11.5 bar) → expect TRUE. Only signal leg still unproven end-to-end.
+- ✓ VERIFIED 2026-07-25 — **S1 tool-lock (input-30)**: with a tool holder seated + clamped, input-30 reads **TRUE** (FALSE when empty). End-to-end confirmed (BIGGREEN red → `*69` → 7I84 input-30).
+- ✓ VERIFIED 2026-07-25 — **S2 tool-release (input-31)**: went **TRUE the instant the unclamp air fired** (mesalog 16:47:49) and dropped FALSE when the air released. End-to-end confirmed (BIGGREEN brown → `*70` → 7I84 input-31). All 3 HQD ATC sensors (S1/S2/S3) now proven.
 - Interlocks (later): S3 must confirm stopped before unclamp; S1 must confirm locked before spin.
+
+## Pendant / MPG handwheel
+- Identify each X6 conductor's electrical **function** (encoder A/B/A̅/B̅, +5 V, 0 V, axis-selector) —
+  the pin→conductor map is traced (`tracing/pendant.md`), the functions are not. Confirm MPG PPR
+  rating + supply voltage (datasheet not on hand).
+- Then land on Mesa (handwheel → 7I97T/7I85S encoder input; buttons → Mesa DI) + HAL.
+
+## Greaser (way-oil pump) — move to a schedule (deferred, 2026-07-25)
+- Now: grease pump AC hot is switched by **R1** (spindle-running relay ← Mollom Y1). So it only
+  runs while the spindle runs. User doesn't want that tie.
+- Want: run the greaser on a **schedule** (periodic timed lube, e.g. N s every M min), independent
+  of spindle. Candidate: drive it from the **spare relay R4** (coil parallels R3, contacts unwired
+  per `relays.md`) via a Mesa output on a HAL/LinuxCNC timer. Rewire R1A1/R1D1 pump-hot leg over
+  to R4 when done.
 
 ## Docs — consistency sweep
 - ✓ DONE 2026-07-22 (user-confirmed): components.md AB rename + encoder battery;

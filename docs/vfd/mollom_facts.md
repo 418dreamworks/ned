@@ -269,22 +269,12 @@ DC+ and DC- come from Mollom's own +24 V/COM (not the cabinet `*71`-`*76` bus), 
 
 Don't connect anything to TB. Leave the spare red + spare black of cable "7" dead-ended.
 
-### Parameter Settings to Make on the Mollom Keypad
+### Parameters
 
-| Parameter | Value | Function |
-|---|---|---|
-| F4-00 | 1 | S1 = Forward RUN (default — may already be set) |
-| F4-01 | 2 | S2 = Reverse RUN (default — may already be set) |
-| **F4-02** | **33** | S3 = External fault (closed-relay logic — fault asserted when DI closed to COM). Matches existing R2 NC scheme. |
-| **F4-03** | **9** | S4 = Fault reset |
-| F4-04 | 0 | S5/HDI unused |
-| **B1-01** | **1** | Master frequency reference from terminal 13/14 (i.e., AI2) |
-| **B1-02** | **1** | Run command from terminal inputs (S1/S2) |
-| **F5-02** | **2** | RY1 (TA/TB/TC) = Fault output |
-| **F5-03** | **1** | Y1 = AC drive operating (running indicator) |
-| **F9-12** | **10** | Disable input phase loss detection (single-phase derated operation — see "Single-Phase Operation" section above) |
-
-Defaults that match without change: AI2 scaling (F4-18 = −10 V, F4-19 = −100 %, F4-20 = +10 V).
+Authoritative, verified param record: **`mollom_parameterization.md`** — the values live there
+(run source **F0-02=1**, speed source **F0-03=3 (AI2)**, F4-00/01/02/03, F5-02/03, F9-12=10,
+motor F1 group, single-phase power cap F8-36). Note: this drive has **no B group** — the
+`B1-01`/`B1-02` naming used in older notes does not exist; run/speed source = `F0-02`/`F0-03`.
 
 ### Sanity-Check Tally
 

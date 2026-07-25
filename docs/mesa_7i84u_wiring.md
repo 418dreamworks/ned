@@ -40,9 +40,9 @@ Tying VFIELDA and VFIELDB both to cabinet +24 V means all TB2 and TB3 I/O run at
 | TB2 pin | Direction | Signal | Cabinet `*N` | Fagor X10 pin (was) | HAL signal |
 |---|---|---|---|---|---|
 | 13 | INPUT28 | Tool-probe contact | `*54` | 17 (TOOLLEN) | `tool-probe-contact` |
-| 14 | INPUT29 | Rack position sensor | `*68` | 34 (ITOOLIN, repurposed) | `rack-position` |
-| 15 | INPUT30 | Drawbar UP sensor | `*69` | 35 (IDRAWUP) | `drawbar-up` |
-| 16 | INPUT31 | Drawbar DOWN sensor | `*70` | 36 (IDRAWDN) | `drawbar-down` |
+| 14 | INPUT29 | HQD S3 shaft-stopped | `*68` | 34 | `shaft-stopped` |
+| 15 | INPUT30 | HQD S1 tool-locked | `*69` | 35 | `tool-locked` |
+| 16 | INPUT31 | HQD S2 tool-released | `*70` | 36 | `tool-released` |
 | 17 | OUTPUT8 | Drive enable → R5 coil | `*8` | 2 (/EMEROUT) | `drive-enable` |
 | 18 | OUTPUT9 | Spin CW → R6 coil → Mollom S1 | `*40` | 3 (SPIN-CW) | `spin-cw` |
 | 19 | OUTPUT10 | Spin CCW → R7 coil → Mollom S2 | `*41` | 4 (SPIN-CCW) | `spin-ccw` |

@@ -83,8 +83,8 @@ Main power contactor for [cmp:main-servo] (SDSM transformer feed). Coil on `*7`,
 - **Source:** `docs/tracing/relays.md`. **Status:** wiring VERIFIED; P/N TBD.
 
 ### Head/stepper contactor  ·  Key: `head-contactor`  ·  relay **R11**
-4-pole, 24 VDC coil. Coil **A2 → `*7`** (drive-enable node, with R0), A1 → GND (`relays.md` R11). Poles 1–3 → [cmp:head-servo] L1/L2/L3 (single-phase uses L1/L2, 1 idle); pole 4 → [cmp:stepper-brick] L1.
-- **Status:** installed & wired 2026-07-09.
+4-pole, **NORMALLY-OPEN**, 24 VDC coil with a flyback diode across A1–A2 (cathode → A2/`*7`). Coil **A2 → `*7`** (drive-enable node, with R0), A1 → GND (`relays.md` R11). Poles 1–3 → [cmp:head-servo] L1/L2/L3 (single-phase uses L1/L2, 1 idle); pole 4 → [cmp:stepper-brick] L1. Fail-safe: `*7` high → power; e-stop/fault drops `*7` → power cut.
+- **Status:** installed & wired.
 
 ### Cabinet supplies & relays
 24 VDC supply (V−→GND), 5 VDC supply ([5 V power brick](#5-v-power-brick)), relays R0–R10. Detail: `docs/tracing/relays.md`, `docs/tracing/screw_terminals.md`. **Status:** see tracing docs.
@@ -112,13 +112,10 @@ GE Type **QB** dry-type general-purpose transformer. **3 kVA · SINGLE-PHASE · 
 
 ### Spindle motor (Colombo — off the machine)  ·  Key: `spindle-motor`
 Colombo — nameplate **380 V / 300 Hz / 18000 RPM, 11.8 kW (16 HP), 28 A**. Oversized for the single-phase-derated VFD.
-- **Source:** nameplate (2026-06-25). **Status:** **REMOVED from ned (2026-07)** for the GDL65 install; retained as an alternate config (VFD Motor 1).
+- **Source:** nameplate. **Status:** off the machine. Nameplate kept for reference only — **not** in the Mollom config.
 
-> **Two spindle configurations — NOT a replacement.** The Colombo and the GDL65 head
-> ([cmp:swivel-head] / [cmp:head-spindle]) are **alternate setups**, not a swap-out. **Currently
-> the GDL65 is installed & active** (VFD Motor 2, `F0-24=1`); the **Colombo is off the machine**
-> but kept. The VFD carries both as separate motor sets (Colombo = Motor 1 `F1`, GDL65 = Motor 2
-> `A2`; `vfd/mollom_parameterization.md`). One VFD output drives one spindle at a time.
+> **GDL65 = the only spindle in the VFD: Motor 1 (F1 group, `F0-24=0`). Motor 2 (A2) is empty.**
+> (`vfd/mollom_parameterization.md` = param authority.)
 
 ### Swivel head  ·  Key: `swivel-head`
 HQD **GDL65** 5-axis electric **water-cooled, auto-tool-change** swivel head — carries the
@@ -135,9 +132,9 @@ The spindle **inside** [cmp:swivel-head] (distinct from the Colombo [cmp:spindle
   18000 rpm (600 Hz). (Check: 6.36 Nm @ 13500 ≈ 4.77 Nm @ 18000 ≈ 9 kW.)
 - **Tool retention:** retention knob / pull stud **DIN 69871** (ISO-30; HQD pull stud
   0804H0009 per GDL65 manual §8.4.1).
-- **VFD:** this is the **Motor-2 nameplate for the Mollom** [cmp:vfd] — key into the A2 /
-  Motor-2 parameter set (`vfd/mollom_parameterization.md`). Colombo = Motor 1.
-- **Source:** user-supplied nameplate, 2026-07-05. **Status:** VERIFIED; not yet commissioned.
+- **VFD:** GDL65 = the Mollom's **Motor 1 (F1 group, `F0-24=0`)** [cmp:vfd]
+  (`vfd/mollom_parameterization.md`). Spins under software both directions.
+- **Source:** nameplate. **Status:** VERIFIED, spins; motion calibration pending.
 
 **Wires to the head** (manual §4 "Electrical Connections"; power+signal exit the central
 through-hole, §2.4.1). Air/water lines are separate (§3), not wires.
@@ -156,12 +153,12 @@ through-hole, §2.4.1). Air/water lines are separate (§3), not wires.
 
 **9 circuits total.** Servo pulse/seq-I/O pins: `mesa_7i85s_wiring.md` + `mesa_7i84u_wiring.md`.
 
-**Decision (forward note):** the three GDL65 sensors (S1/S2/S3), each **3-conductor PNP NO**, reuse
-the existing 7I84 inputs **29, 30, 31** (same input family as today's clamp/drawbar prox).
-**Exact sensor↔input assignment, polarity, and testing = TBD.** The Colombo **clamp** (output-13,
-input-29) has **no GDL65 equivalent** (GDL65 is drawbar-only, ISO30) — input-29 is freed and
-folds into this S1/S2/S3 pool. Drawbar **unclamp valve** → reuse `drawbar-release` (output-15) →
-GDL65 port B.
+**GDL65 ATC sensors (3-conductor PNP-NO) → 7I84 inputs** (`field_devices.md`, GDL65 manual §4.2):
+- **S3 shaft-stopped** → input-29 · `*68` · BIGGREEN grey — `sig-shaft-stopped` (✓ verified)
+- **S1 tool-locked** → input-30 · `*69` · BIGGREEN red — `sig-tool-locked` (needs a holder seated to read TRUE)
+- **S2 tool-released** → input-31 · `*70` · BIGGREEN brown — `sig-tool-released` (needs unclamp air to read TRUE)
+
+Tool-unclamp valve → `sig-drawbar-release` (output-15) → GDL65 port B.
 
 **GDL65 pneumatics = one switched solenoid only.** Port B (tool-unclamp, 10.5–11.5 bar) is the
 single switched valve (reuse output-15). Port A (air-seal + taper-clean, 4–4.5 bar) is
@@ -178,5 +175,5 @@ manual §4. **Logic sense and VFD params still to confirm — proposed, nothing 
 
 | # | GDL65 head need | Reuse existing | Existing signal (source) | Notes |
 |---|---|---|---|---|
-| 1 | Spindle power U/V/W/G | shares the VFD (not the Colombo cable) | Mollom [cmp:vfd] | **NOT a replacement** — Colombo stays; GDL65 is a separate config. Head gets its **own** power cable; VFD switches to its motor set (Motor 2). Changeover TBD. |
+| 1 | Spindle power U/V/W/G | own power cable from the Mollom | Mollom [cmp:vfd] | GDL65 is the VFD's Motor 1; its own U/V/W/G cable off the Mollom output. |
 | 2 | Thermal switch (NC, 2-wire) | 7I97 **IN14** `spindle-overtemp` (`*39` OVERTEMP) | mesa_7i97t_wiring.md:273, 282 | **identical wiring** — cabinet +24 V → NC contact → IN14, IN COMMON pin 12 @ 0 V. Closed=OK, opens on overheat=fault (fail-safe). **Field-end swap only**: old spindle's thermal contact → GDL65's 2 brown wires. Existing `spindle-overtemp` HAL logic unchanged. |

@@ -12,8 +12,8 @@ The OEM PLC source (`PLC_PRG.PIM`) **does not reference any signals on the I/O m
 
 | Wire | Lands at | OEM PLC behavior | Status |
 |---|---|---|---|
-| `44mys` | X1 or X2 (specific pin not yet identified) | No PLC DEF — input not assigned a function. The wire is connected to an input pin but the PLC ignores it. | ✓ NotesToSelf note 15 |
-| `45mys` | X1 or X2 (specific pin not yet identified) | Same — pre-wired but unused | ✓ NotesToSelf note 12 |
+| `44mys` | X1 or X2 (specific pin not yet identified) | No PLC DEF — input not assigned a function. The wire is connected to an input pin but the PLC ignores it. | ✓ |
+| `45mys` | X1 or X2 (specific pin not yet identified) | Same — pre-wired but unused | ✓ |
 
 ## Implication for LinuxCNC migration
 

@@ -1,8 +1,12 @@
 # From Wiring Docs to LinuxCNC HAL — Translation Guide
 
-**For future Claude (and human collaborators).** This file explains how to take the verified wiring in `screw_terminals.md` / `relays.md` / `field_devices.md` / `fagor_8055_axes.md` and turn it into a LinuxCNC HAL/INI configuration on Mesa hardware.
-
-The previous sessions exhaustively traced every wire in the cabinet. This guide tells you which of those wires becomes a HAL input, which becomes a HAL output, and which stay purely electrical (invisible to HAL).
+> **SUPERSEDED / illustrative — do NOT trust the pin assignments below.** The as-built HAL
+> exists; the authoritative signal map is **`configs/ned/ned.hal`** + the card docs
+> **`mesa_7i97t_wiring.md` / `mesa_7i84u_wiring.md` / `mesa_7i85s_wiring.md`**. Wiring truth:
+> `screw_terminals.md`, `relays.md`, `field_devices.md`, `fagor_8055_axes.md`. Several specific
+> assignments here are wrong vs as-built (spindle-running/vfd-fault/overtemp are IN11/13/14 not
+> `in.07/09/10`; the ATC sensors live on the 7I84 and are renamed HQD S1/S2/S3). Kept only for
+> the how-wiring-maps-to-HAL rationale. **Archive candidate.**
 
 ---
 

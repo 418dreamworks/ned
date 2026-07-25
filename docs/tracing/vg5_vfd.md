@@ -1,9 +1,10 @@
-# Saftronics VG5 VFD (Legacy — being removed)
+# Saftronics VG5 VFD — Fagor spindle drive (removed; wiring preserved as the Fagor record)
 
-The original VFD installed in the cabinet, driving the spindle motor. Being replaced by the Mollom G75. This file documents the VG5's terminal wiring as it stood, for reference during the transition.
+The Fagor machine's spindle VFD. Physically removed; the Mollom G75 [cmp:vfd] took its place
+(`mollom_g75_vfd.md`). This file preserves the VG5 terminal wiring as the **Fagor as-built
+record** — how the cabinet wires ran to the spindle drive under the Fagor.
 
 Source manual: `saftronics_vg5_users_manual.pdf` (113 pages).
-Detailed trace document: `../trash/VG5_wiring.md`.
 
 ## Power Terminals
 
@@ -40,6 +41,6 @@ Detailed trace document: `../trash/VG5_wiring.md`.
 - VG5/12 (shield) and VG5/17 (signal common) were **internally bonded** inside the VG5 — verified by continuity measurement during tracing.
 - The Mollom replacement is **sinking** on its open-collector outputs (Y1). **R1 is not changed** (golden rule: no cabinet wiring changes) — the sink/source polarity is handled by the interposing relay on Y1 (see `mollom_g75_vfd.md`).
 
-## Migration Plan
+## Wire destinations on the Mollom
 
-Each VG5 wire's destination on the Mollom is documented in `mollom_g75_vfd.md`. After the Mollom is fully wired and tested, the VG5 will be physically removed and this file becomes purely historical.
+Each VG5 wire's landing on the as-built Mollom is in `mollom_g75_vfd.md` (`[Fagor: VG5/n]` tags).

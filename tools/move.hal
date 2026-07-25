@@ -6,7 +6,8 @@
 #   stepgen.03     = C head SPIN  (/S-ON = 7I84 output-07)   (26-bit enc / 8192)
 #   pwmgen.00-03   = X/Y/Z/W servo analog, BIPOLAR offset-PWM recipe (75 kHz + dither
 #                    + offset-mode, per ned.hal CONFIRMED 2026-06-25), scales 50/50/40/50
-#   pwmgen.04      = spindle VFD analog, UNIPOLAR 0..10 V, scale 24000 RPM = 10 V
+#   pwmgen.05      = spindle VFD analog (AOUT5=TB3-24), UNIPOLAR 0..10 V, scale 18000 RPM = 10 V
+#                    (Mollom 10 V = 100% = 600 Hz = 18000 rpm; so cmd value = real motor RPM)
 loadrt hostmot2
 loadrt hm2_eth board_ip="10.10.10.10" config="num_encoders=6 num_pwmgens=6 num_stepgens=4 num_inmuxs=1 sserial_port_0=0xxxxxxx"
 loadrt threads name1=servo period1=1000000
@@ -60,22 +61,22 @@ setp hm2_7i97.0.pwmgen.00.output-type 1
 setp hm2_7i97.0.pwmgen.01.output-type 1
 setp hm2_7i97.0.pwmgen.02.output-type 1
 setp hm2_7i97.0.pwmgen.03.output-type 1
-setp hm2_7i97.0.pwmgen.04.output-type 1
+setp hm2_7i97.0.pwmgen.05.output-type 1
 setp hm2_7i97.0.pwmgen.00.offset-mode 1
 setp hm2_7i97.0.pwmgen.01.offset-mode 1
 setp hm2_7i97.0.pwmgen.02.offset-mode 1
 setp hm2_7i97.0.pwmgen.03.offset-mode 1
-setp hm2_7i97.0.pwmgen.04.offset-mode 0
+setp hm2_7i97.0.pwmgen.05.offset-mode 1
 setp hm2_7i97.0.pwmgen.00.dither 1
 setp hm2_7i97.0.pwmgen.01.dither 1
 setp hm2_7i97.0.pwmgen.02.dither 1
 setp hm2_7i97.0.pwmgen.03.dither 1
-setp hm2_7i97.0.pwmgen.04.dither 1
+setp hm2_7i97.0.pwmgen.05.dither 1
 setp hm2_7i97.0.pwmgen.00.scale 50
 setp hm2_7i97.0.pwmgen.01.scale 50
 setp hm2_7i97.0.pwmgen.02.scale 40
 setp hm2_7i97.0.pwmgen.03.scale 50
-setp hm2_7i97.0.pwmgen.04.scale 24000
+setp hm2_7i97.0.pwmgen.05.scale 18000
 setp hm2_7i97.0.pwmgen.pwm_frequency 75000
 
 start
@@ -92,12 +93,12 @@ setp hm2_7i97.0.pwmgen.00.enable 0
 setp hm2_7i97.0.pwmgen.01.enable 0
 setp hm2_7i97.0.pwmgen.02.enable 0
 setp hm2_7i97.0.pwmgen.03.enable 0
-setp hm2_7i97.0.pwmgen.04.enable 0
+setp hm2_7i97.0.pwmgen.05.enable 0
 setp hm2_7i97.0.pwmgen.00.value 0
 setp hm2_7i97.0.pwmgen.01.value 0
 setp hm2_7i97.0.pwmgen.02.value 0
 setp hm2_7i97.0.pwmgen.03.value 0
-setp hm2_7i97.0.pwmgen.04.value 0
+setp hm2_7i97.0.pwmgen.05.value 0
 
 # hold the session open until move.sh tears it down
 loadusr -w sleep 100000

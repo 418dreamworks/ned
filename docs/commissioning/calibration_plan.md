@@ -137,7 +137,7 @@ no index):
 
 | Setting | Value | Source/status |
 |---|---|---|
-| **[SPINDLE_0]MAX_FORWARD/REVERSE_VELOCITY** | **13500** | GDL65 nameplate (F1-05, 450 Hz). ini says 24000 ⚠, Fagor said 18000 (OLD motor) — both wrong. Also fix `tools/move.hal` pwmgen.04.scale 24000 → 13500 |
+| **[SPINDLE_0]MAX_FORWARD/REVERSE_VELOCITY** | **18000** ✅ set 2026-07-25 | Mollom is configured F0-10/F0-12 = **600 Hz** (field-weakened top) → 10 V = 600 Hz = **18000 rpm**. So scale must be 18000 (NOT the 13500 base-speed, NOT the old 24000). Set in `ned.ini` + `tools/move.hal` pwmgen.04.scale. `move.sh spindle N` now = N rpm. (Cap at 13500 instead = lower F0-12 to 450 Hz + scale 13500.) |
 | MIN_FORWARD_VELOCITY | TBD — VFD min useful freq + bearing/cooling floor | currently 1000 |
 | Analog mapping | pwmgen.04 0–10 V unipolar → AI2; verify VFD curve = 0–10 V → 0–450 Hz (F4-18..21 default is ±10 V bipolar — confirm the 0..10 half maps 0..100 %) | bench check with DMM at 6750 cmd = 5.00 V |
 | Direction | R6→S1 FWD / R7→S2 REV (relay, not analog sign) | ✅ proven both ways 2026-07-23 |

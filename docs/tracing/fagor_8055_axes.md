@@ -137,9 +137,9 @@ Note: cable "7" uses pin 8 for signal (pin 7 is skipped — possibly unused or r
 ### Cable "7" — Spindle (previously documented)
 
 Cable "7" is a 4-conductor shielded cable carrying the spindle ±10 V velocity command:
-- Active red → VG5/13 (legacy) / Mollom AI2 (planned)
-- Active black → VG5/17 (legacy) / Mollom GND (planned)
-- Shield + green wire → VG5/12 + GND (legacy, internally tied to VG5/17) / Mollom GND (planned)
+- Active red → Mollom AI2 (as-built) [Fagor: VG5/13]
+- Active black → Mollom GND (as-built) [Fagor: VG5/17]
+- Shield + green wire → Mollom GND (as-built) [Fagor: VG5/12 + GND, internally tied to VG5/17]
 - Spare red + spare black: dead-ended in cabinet
 
 The X8 pins for cable "7" will be added as the user traces them.

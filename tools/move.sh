@@ -12,7 +12,7 @@
 #       flags:  -hold   hold until Ctrl-C, auto-abort at +/-3000 encoder counts
 #               -meter  force the AOUT only, DRIVES NOT ENABLED, hold to meter TB3
 #   move.sh hold                  all 4 axes enabled at 0 V, hold to Ctrl-C
-#   move.sh spindle <RPM> <s> [-rev]   Mollom VFD: pwmgen.04 (0..10V -> AI2) + R6/R7
+#   move.sh spindle <RPM> <s> [-rev]   Mollom VFD: pwmgen.05 (0..10V -> AI2) + R6/R7
 #       needs Mollom powered + F0-02=1 (Terminal run), F0-03=3 (AI2), F4-00=1. START LOW.
 #   move.sh rotary <RPM>         both workpiece rotaries, opposite directions, Ctrl-C stop
 #   move.sh a  <RPM> <seconds>    head TILT, time-BOUNDED (hard +/-120 stops!)
@@ -43,7 +43,7 @@ kill -0 "$HALPID" 2>/dev/null || { echo "FAILED to start -- Mesa powered? cable 
 alloff(){
   halcmd sets gvel 0 2>/dev/null; halcmd sets gen 0 2>/dev/null   # gantry shared signals, if made
   for i in 00 01 02 03; do halcmd setp $P.stepgen.$i.velocity-cmd 0 2>/dev/null; halcmd setp $P.stepgen.$i.enable 0 2>/dev/null; done
-  for i in 00 01 02 03 04; do halcmd setp $P.pwmgen.$i.value 0 2>/dev/null; halcmd setp $P.pwmgen.$i.enable 0 2>/dev/null; done
+  for i in 00 01 02 03 04 05; do halcmd setp $P.pwmgen.$i.value 0 2>/dev/null; halcmd setp $P.pwmgen.$i.enable 0 2>/dev/null; done
   for o in output-06 output-07 output-08 output-09 output-10; do halcmd setp $P.7i84.0.0.$o 0 2>/dev/null; done
 }
 teardown(){ echo; echo ">>> stop + all off"; alloff; sleep 0.5; kill "$HALPID" 2>/dev/null; halrun -U >/dev/null 2>&1; echo "done."; }
@@ -97,7 +97,7 @@ spindle|s)
   awk "BEGIN{exit !($SECS>0 && $SECS<=60)}" 2>/dev/null || { echo "seconds must be 0..60"; exit 1; }
   estop_ok || { echo "E-STOP ENGAGED (input-04 != TRUE) -> Mollom S3 faults (Err15). Abort."; exit 1; }
   halcmd setp $REL 1                                      # R6->S1 FWD  (or R7->S2 REV)
-  halcmd setp $P.pwmgen.04.value "$RPM"; halcmd setp $P.pwmgen.04.enable 1   # scale 24000 = 10V
+  halcmd setp $P.pwmgen.05.value "$RPM"; halcmd setp $P.pwmgen.05.enable 1   # AOUT5=TB3-24, scale 18000 = 10V
   echo ">>> SPINDLE $DIR @ $RPM RPM for ${SECS}s ($(date +%H:%M:%S)). e-stop ready."
   loops=$(awk "BEGIN{printf \"%d\",($SECS/0.5)+0.5}")
   for ((k=1;k<=loops;k++)); do

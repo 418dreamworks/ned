@@ -220,7 +220,7 @@ All three NC contacts must be closed simultaneously (no e-stop pressed) for 24 V
 
 ## *38
 
-- **Left side**: YELLOW wire → VG5/18 (legacy connection — VG5's fault contact NO output) / planned to land on Mollom RY1 TC instead
+- **Left side**: YELLOW wire → Mollom RY1 TC (as-built; VFD fault output) [Fagor: VG5/18]
 - **Right side**: WHITE wire → Fagor X9/pin 35 (`SPINFLT I30`, spindle fault input)
 - **Notes**: ✓ verified end-to-end. Carries +24 V when the VFD is in fault state. Full chain: VFD detects internal fault → VFD/18 contact closes → +24 V flows through yellow wire → `*38` → white wire → X9/pin 35 → CNC reads "spindle fault" and reacts (typically aborts the running program and asserts error). Wire-color change at `*38` (yellow VG5-side, white Fagor-side).
 
@@ -246,7 +246,7 @@ All three NC contacts must be closed simultaneously (no e-stop pressed) for 24 V
 
 - **Left side**: ORANGE wire → Fagor X10/pin 4 (`SPIN-CCW O5`)
 - **Right side**: ORANGE wire → R7C2 (R7's coil high side)
-- **Notes**: ✓ verified end-to-end. `*41` is the SPIN-CCW splice analog of `*40` (SPIN-CW splice for R6). When the Fagor asserts SPIN-CCW, +24 V at X10/pin 4 flows through orange wire → `*41` → orange wire → R7C2 → R7 energizes → R7A2 closes → reverse-run command reaches VG5/2 (legacy) / Mollom S2 (planned). Both wires at `*41` are orange — no wire-color change at this splice (unlike `*40` where red "05" changed to brown).
+- **Notes**: ✓ verified end-to-end. `*41` is the SPIN-CCW splice analog of `*40` (SPIN-CW splice for R6). When the Fagor asserts SPIN-CCW, +24 V at X10/pin 4 flows through orange wire → `*41` → orange wire → R7C2 → R7 energizes → R7A2 closes → reverse-run command reaches Mollom S2 (as-built) [Fagor: VG5/2]. Both wires at `*41` are orange — no wire-color change at this splice (unlike `*40` where red "05" changed to brown).
 
 ## *42
 
@@ -395,14 +395,14 @@ All three NC contacts must be closed simultaneously (no e-stop pressed) for 24 V
 
 ## +24 VDC Bus — `*71` through `*76`
 
-`*71`–`*76` are all bonded together into one electrical node — the +24 VDC bus, supplied by the +24 V transformer output. Each terminal below lists only the **external wires landing on it** (the +24 V bus side is implicit for every entry). External loads include relay coils, limit-switch COMs, field-sensor +24 V power, and (legacy) VG5/10.
+`*71`–`*76` are all bonded together into one electrical node — the +24 VDC bus, supplied by the +24 V transformer output. Each terminal below lists only the **external wires landing on it** (the +24 V bus side is implicit for every entry). External loads include relay coils, limit-switch COMs, field-sensor +24 V power, and the Mollom RY1 fault-output supply (TA).
 
 ### *71
 
 - **External wires landing here**:
   - WHITE wire from cable "00" → air pressure sensor's +24 V power input
   - WHITE wire from cable "9" → spindle overheat thermostat's +24 V power input
-  - WHITE wire from VG5/10 → VG5 running-contact source (legacy; will be removed when VG5 is replaced by the Mollom)
+  - WHITE wire → Mollom TA (RY1 fault-output +24 V supply) [Fagor: VG5/10]
 
 ### *72
 

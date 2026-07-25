@@ -164,6 +164,12 @@ Cable 92 terminates in the **top junction box** at the field end. There, the sig
 | Orange (`*63`) | Pink | Drawbar clamp solenoid | `OCLAMP O18` |
 | Yellow (`*64`) | Yellow | Spindle taper air-purge solenoid | `OBLOWOFF O20` |
 
+> **⚙ AS-BUILT = HQD (LinuxCNC, 2026-07-25):** the GDL65 is **drawbar-only** (spring clamps, air
+> releases), so all **three** solenoids above — BIGGREEN **pink `*63`**, **yellow `*64`**,
+> **bluered `*65`** = 7I84 **OUTPUT13/14/15** — now fire **together** as one **HQD tool-release**
+> air blast. In `ned.hal` one signal **`sig-hqd-tool-release`** (← `motion.digital-out-00`) fans
+> out to output-13/14/15. The old separate OCLAMP / OBLOWOFF / ODRAW functions are **retired**.
+
 - **BIGGREEN white = chip blow-off (BITCOOL)** (per user 2026-07-09) — the BITCOOL line continues into BIGGREEN as white.
 - **BIGGREEN grey-red striped = +24 V** (per user 2026-07-09) — a second +24 V conductor on BIGGREEN (in addition to purple, which feeds the rack sensor).
 
@@ -174,6 +180,7 @@ Cable 92 terminates in the **top junction box** at the field end. There, the sig
 - The "drawbar in / drawbar out" pair (OCLAMP + ODRAW) implies a **two-solenoid drawbar mechanism**: one to clamp, one to release. Position feedback is from the drawbar UP/DOWN sensors at `*69` (X10/pin 35, IDRAWUP) and `*70` (X10/pin 36, IDRAWDN) — those tell the CNC when the drawbar has reached the commanded position.
 - PIM colors are quite consistent on the **field-side wire** for this cable: BITCOOL=BRN matches, OCLAMP=ORN matches, OBLOWOFF=YEL matches, ODRAW=GRN matches. All four are 4-for-4 on the cable 92 side. Wire-color changes happen at each `*N` splice.
 - For wood machining, BITCOOL is **air-only chip blow-off** (no liquid coolant). M95/M96 toggle it. OBLOWOFF is a separate output used during tool change (not during cutting).
+- **Chip blow-off solenoid field leads (per user 2026-07-25):** 2 leads, **RED + BLUE, 24 VDC**. Metered **72 Ω both directions** → **bare coil, no internal diode → NON-POLAR** (red/blue either way, no polarity concern). Draws ~0.33 A @ 24 V (passes through R9's contact, not the 7I84 output directly). Cabinet drive is cable 92 **brown** → `*85` ← +24 V from R9A2.
 
 ---
 
