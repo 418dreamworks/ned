@@ -58,6 +58,16 @@ accept /S-ON when ALL of these hold —
   **[Monitor]→[Monitor]→[Status Monitor]** (/S-RDY flag; Main Circuit DC Voltage ≈0 =
   main power/head-contactor absent).
 
+## Panel JOG (Fn002) — why it gives `no_oP` / "run" with no host
+- `Pn50A.1 = 7` (n.8171) = **/S-ON always active** → manual line 8437: "keeps the servo ON and
+  supplies power to the motor continuously." Symptom: panel shows **"run" even with LinuxCNC off**,
+  and the panel can't take servo control → JOG blocked.
+- **To jog from the panel, set `Pn50A.1 = 0` (n.8171 → n.8101)** = /S-ON follows CN1-40 (manual 8442).
+  Host off → CN1-40 open → servo drops to **bb** → Fn002 can turn it on itself. (n.8101 is also the
+  correct normal-op value — host drives /S-ON via 7I84 output-06/07 → CN1-40.)
+- Fn002 also needs: **main power on** (L1/L2/L3, NOT just control L1C/L2C) and **no active alarm**.
+- A host (LinuxCNC/mpgjog) actively asserting /S-ON + pulses also fights a panel jog (two masters).
+
 ## Electronic gear (Pn20E / Pn210) — motor barely moves / wrong speed
 - Encoder: SGMXJ…**U = 26-bit = 67,108,864 counts/rev** (manual line 10087).
 - **Command pulses per motor rev = enc_res × Pn210 / Pn20E = 67,108,864 × Pn210/Pn20E.**
@@ -81,3 +91,22 @@ accept /S-ON when ALL of these hold —
 ## Encoder
 - `Pn002 = n.□X□□`: `0`=absolute (battery-required, BAT± on CN2 3/4), `1`=incremental.
 - Battery-required 26-bit absolute → **A.810** every power-up if BAT± unbatteried.
+
+## Alarm codes seen (panel shows `A.□□□`; the "A." can read like "E")
+- **A.101 = Motor Overcurrent Detected** (Σ-XS servopack manual §13.2, line 31929). Servo trips → ignores
+  step pulses → axis won't move even though the stepgen outputs steps + /S-ON is on. Manual causes, in order:
+  (1) **main-circuit (U/V/W) motor cable miswired or faulty contact** ← check first; (2) short/ground fault
+  across U/V/W in the cable, motor, or servopack; (3) heavy load applied while stopped or at low speed;
+  (4) noise (FG wiring). A.100 = Overcurrent Detected (same causes + regen/DB).
+- **A.C90 = Encoder Communications Error** (manual §13.2, line 33152) — CN2 encoder side. Top cause:
+  **faulty contact in the encoder cable connector**; also noise. NOT the step/dir or motor-power path.
+- Servo jogs from the panel (Fn002) but not from Mesa step pulses, with NO alarm = either the **step/dir
+  pulse wiring** (7I85 → CN1 pulse input) isn't reaching the drive, OR (if wiring is identical to the
+  working axis) a **parameter**: **Pn200.0 = 0** (Sign+pulse train, positive logic — matches Mesa step/dir;
+  1=CW/CCW, 2–4=quadrature won't respond) and **Pn000.1 = 1** (position control). Manual line 12704.
+  Diagnose by reading Pn000 + Pn200 in SigmaWin+ and matching the non-working axis to the working one.
+- A Gr.1 alarm latches: **remove the cause, then reset** (manual line 2098); motion utility fns (JOG Fn002 etc.)
+  require **no active alarm** (line 9001). A position-mode HOLD against the 200:1 worm is cause #3 ("heavy load
+  at stop/low speed"), unlike a brief velocity spin.
+- **`no_oP`** flashing on the panel = **write-protection set (Fn010)** or a **wrong-key press** (lines 36707, 37417).
+  It is NOT itself an alarm — but a live alarm still blocks a panel run.

@@ -22,7 +22,12 @@
   - Electronic gear / SCALE: 8192 pulses/rev is provisional — finalize with `[JOINT_5]/[JOINT_6]SCALE`.
   - Direction: both run **negative** for a +command → fix sign (Pn000.0 or scale sign).
   - Real AB/C axis limits: `MIN_LIMIT`/`MAX_LIMIT` in `ned.ini` (drive has NO soft limit — host's job).
-  - /S-ON: revert from always-active (Pn50A d2=7, n.8171) → **driven** (n.8101) for normal op.
+  - ✓ /S-ON is host-driven: **Pn50A = n.8101** on both A and C. Host asserts /S-ON via
+    output-06/07 → CN1-40. Both jog from the panel.
+  - **Head packs CROSS-WIRED** (motor+enc swapped at the packs; CN1 kept). Mesa channels now drive
+    the opposite motor: **A/tilt = stepgen.03/out-07/in-15, C/spin = stepgen.02/out-06/in-14.**
+    Bench tools swapped. **`ned.hal` §3/§7/§8 still maps the old way — swap A↔C there for LinuxCNC.**
+    See `yaskawa_servo_wiring.md`.
   - 5axiskins: unresolved — stock 5axiskins is B/C bridge mill, head is AB/C.
 - Pn002 = absolute (n.□0□□) set on both; A.810 cleared (batteries wired).
 
@@ -58,10 +63,17 @@
 - Interlocks (later): S3 must confirm stopped before unclamp; S1 must confirm locked before spin.
 
 ## Pendant / MPG handwheel
-- Identify each X6 conductor's electrical **function** (encoder A/B/A̅/B̅, +5 V, 0 V, axis-selector) —
-  the pin→conductor map is traced (`tracing/pendant.md`), the functions are not. Confirm MPG PPR
-  rating + supply voltage (datasheet not on hand).
-- Then land on Mesa (handwheel → 7I97T/7I85S encoder input; buttons → Mesa DI) + HAL.
+- ✓ Mesa landing MAPPED 2026-07-25 (`tracing/pendant.md`): **axis-selector button → 7I97 InMux
+  input-00** (NC, TRUE at rest → FALSE pressed); **MPG handwheel → encoder.04** (~400 counts/rev,
+  100 PPR ×4; CW = +count). MPG supply voltage still TBD.
+- ✓ Jog UX built + standalone test: **`tools/mpgjog.sh`** (dry-run default; `arm` to drive).
+  Single button: tap = next axis (X→Y→Z), hold+wheel = speed select (L=slow/R=fast/hold=med;
+  0.01/0.1/1 mm ratio → jog voltages in the test). Limit gating baked in: a hit limit blocks
+  motion INTO it, allows away, all axes.
+- LinuxCNC integration (later): `configs/ned/mpgjog.comp` (compiled, real-time incremental jog
+  → `axis.L.jog` with 0.01/0.1/1 mm jog-scale) + a `postgui.hal`. The comp gives PRECISE
+  mm-per-detent (position loop) that the open-loop test script can't.
+- Verify on first `arm`: Y/Z limit-direction sign (map assumes +volts→+count, confirmed only for X).
 
 ## Greaser (way-oil pump) — move to a schedule (deferred, 2026-07-25)
 - Now: grease pump AC hot is switched by **R1** (spindle-running relay ← Mollom Y1). So it only

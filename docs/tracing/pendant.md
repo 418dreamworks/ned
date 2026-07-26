@@ -18,6 +18,8 @@ A small button on the pendant labeled as the "axis selector". Has **5 terminals*
 
 Only **C and NC are wired**; the NO contact and the LED illumination (+, −) are unused. The button is acting purely as a momentary NC contact between Yel/BLK (via MPG/B2) and ORN/RED.
 
+**Mesa landing (verified 2026-07-25):** the axis-selector NC contact reads on **7I97 InMux input-00**. Active-low: **TRUE at rest (closed) → FALSE when pressed (open)**. Confirmed repeatable (input-00 FALSE while held, TRUE on release).
+
 Note: the pendant has **5 cables** entering it, for a total of **10 conductors**:
 
 | Cable | Conductors | Notes |
@@ -122,7 +124,13 @@ When migrating to LinuxCNC + Mesa (7I97T + 7I85S + 7I84U):
 - Pendant button digital signals → Mesa digital inputs (7I97T native or 7I84U via sserial).
 - Identification is easiest by landing all conductors first, then pressing buttons / spinning the wheel and watching HAL pins live.
 
+## MPG handwheel — Mesa landing (verified 2026-07-25)
+
+- Handwheel encoder reads on **7I97 encoder.04** (only channel that moved on a 5-CW/5-CCW spin;
+  all others flat). **CW = count UP (positive).**
+- **~420 counts/turn → 100-PPR handwheel × 4 quadrature = ~400 counts/rev.** (Resolves the PPR TBD.)
+
 ## Open Items
 
 - [ ] Identify each conductor's electrical function (encoder A/B, +5 V, 0 V, button).
-- [ ] Confirm MPG PPR rating and supply voltage (5 V vs 12 V) — datasheet not on hand.
+- [x] ~~Confirm MPG PPR rating~~ — ~100 PPR (400 counts/rev), verified 2026-07-25. Supply voltage still TBD.

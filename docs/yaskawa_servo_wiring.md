@@ -19,8 +19,15 @@ Axis assignment (`components.md:31-33`). **Naming: head servos are `C` (spin) an
 "AB" = the tilt axis, **A or B TBD** — depends on the XY-axis convention / head kinematics (the
 5axiskins A/C-vs-B/C question). *The LinuxCNC axis letter stays a single letter (provisional `A`)
 in `ned.ini` until resolved — "AB" is the doc label, not a valid LinuxCNC axis letter.*
-- **Servopack AB** → head **TILT** (AB axis, joint 5, stepgen **02**).
-- **Servopack C** → head **SPIN** (C axis, joint 6, stepgen **03**).
+- **Mesa `stepgen.02` / out-06 / in-14** drives the **SPIN (C)** motor.
+- **Mesa `stepgen.03` / out-07 / in-15** drives the **TILT (AB)** motor.
+
+> **⚠ AS-BUILT — head packs CROSS-WIRED:** motor power + encoder are swapped between the two
+> servopacks; each pack's CN1 (Mesa step/dir + /S-ON + ALM) is unchanged. So each Mesa channel
+> drives the OPPOSITE motor from the pack's printed label — per the two lines above. HAL/tools
+> command **A/tilt via stepgen.03 (out-07, in-15)** and **C/spin via stepgen.02 (out-06, in-14)**.
+> Bench tools already swapped (`move.sh`, `mpgjog.sh`, `move.hal`). **`ned.hal` §3/§7/§8 is NOT yet
+> swapped — do it before running LinuxCNC.**
 
 ---
 

@@ -24,8 +24,8 @@
 
 P=hm2_7i97.0
 OUT08=$P.7i84.0.0.output-08     # drive-enable -> R5 -> *7 (R0 + head/rotary contactors)
-SONA=$P.7i84.0.0.output-06      # /S-ON head A (tilt)
-SONC=$P.7i84.0.0.output-07      # /S-ON head C (spin)
+SONA=$P.7i84.0.0.output-07      # /S-ON head A (tilt) -- head packs cross-wired (motor+enc swapped at the packs)
+SONC=$P.7i84.0.0.output-06      # /S-ON head C (spin)
 HAL="$(dirname "$(readlink -f "$0")")/move.hal"
 
 usage(){ awk 'NR==1{next} /^#/{sub(/^# ?/,"");print;next} {exit}' "$0"; exit 1; }
@@ -72,7 +72,7 @@ a|c)
   RPM="$1"; SECS="$2"
   { [ -z "$RPM" ] || [ -z "$SECS" ]; } && { echo "usage: move.sh $axis <RPM> <seconds>   (head deg ~= 0.03*RPM*sec)"; exit 1; }
   awk "BEGIN{exit !($SECS>0 && $SECS<=30)}" 2>/dev/null || { echo "seconds must be 0..30"; exit 1; }
-  if [ "$axis" = a ]; then SG=$P.stepgen.02; SON=$SONA; else SG=$P.stepgen.03; SON=$SONC; fi
+  if [ "$axis" = a ]; then SG=$P.stepgen.03; SON=$SONA; else SG=$P.stepgen.02; SON=$SONC; fi
   REVS=$(awk "BEGIN{printf \"%.4f\", $RPM/60}")
   halcmd setp $OUT08 1; halcmd setp $SON 1
   echo "drive-enable + /S-ON asserted; settling 1.5s"; sleep 1.5

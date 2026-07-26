@@ -1,0 +1,53 @@
+component mpgjog "ned pendant single-button MPG jog: tap = next axis (X/Y/Z); hold = pick speed (wheel Left=slow / Right=fast / still=med)";
+
+pin in bit button  "pendant button, TRUE = pressed  (wire from inmux input-00-not: NC contact, active-low)";
+pin in s32 counts  "MPG counts  (wire from encoder.04.counts, x4 quadrature)";
+
+pin out bit enx      "X jog-enable";
+pin out bit eny      "Y jog-enable";
+pin out bit enz      "Z jog-enable";
+pin out float scale  "jog-scale (mm per encoder count) for the current speed";
+pin out s32 selaxis  "selected axis: 0=X 1=Y 2=Z (display)";
+pin out s32 selspeed "selected speed: 0=slow 1=med 2=fast (display)";
+
+param rw float holdtime = 0.4 "seconds held to enter speed-select instead of a tap";
+param rw s32   gesture  = 6   "wheel counts while held to trigger slow / fast";
+param rw s32   cpd      = 4   "MPG counts per detent (100-PPR wheel x4). Adjust if jog step is off.";
+param rw float incslow  = 0.01 "slow: mm per detent";
+param rw float incmed   = 0.10 "med:  mm per detent";
+param rw float incfast  = 1.00 "fast: mm per detent";
+
+variable int    pbtn = 0;
+variable double thold = 0;
+variable int    held = 0;
+variable int    ax = 0;
+variable int    sp = 1;
+variable int    c0 = 0;
+
+function _ fp;
+license "GPL";
+;;
+
+FUNCTION(_) {
+    if (button && !pbtn) { thold = 0; held = 0; }          /* press edge */
+    if (button) {
+        thold += fperiod;
+        if (!held && thold >= holdtime) { held = 1; sp = 1; c0 = counts; }
+        if (held) {
+            int d = counts - c0;
+            if (d <= -gesture)     sp = 0;                 /* wheel left  -> slow */
+            else if (d >= gesture) sp = 2;                 /* wheel right -> fast */
+            else                   sp = 1;                 /* just holding -> med */
+        }
+    }
+    if (!button && pbtn && !held) ax = (ax + 1) % 3;       /* tap release -> next axis */
+    pbtn = button;
+
+    int jog = !button;                                     /* wheel jogs only while button is UP */
+    enx = jog && (ax == 0);
+    eny = jog && (ax == 1);
+    enz = jog && (ax == 2);
+    scale = ((sp == 0) ? incslow : (sp == 2) ? incfast : incmed) / (double)cpd;
+    selaxis = ax;
+    selspeed = sp;
+}
