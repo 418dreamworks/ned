@@ -26,8 +26,7 @@
     output-06/07 → CN1-40. Both jog from the panel.
   - **Head packs CROSS-WIRED** (motor+enc swapped at the packs; CN1 kept). Mesa channels now drive
     the opposite motor: **A/tilt = stepgen.03/out-07/in-15, C/spin = stepgen.02/out-06/in-14.**
-    Bench tools swapped. **`ned.hal` §3/§7/§8 still maps the old way — swap A↔C there for LinuxCNC.**
-    See `yaskawa_servo_wiring.md`.
+    Swapped in the bench tools AND `ned.hal` §3/§7/§8. See `yaskawa_servo_wiring.md`.
   - 5axiskins: unresolved — stock 5axiskins is B/C bridge mill, head is AB/C.
 - Pn002 = absolute (n.□0□□) set on both; A.810 cleared (batteries wired).
 

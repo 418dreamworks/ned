@@ -195,12 +195,13 @@ net b2-enable   joint.7.amp-enable-out             => hm2_7i97.0.stepgen.01.enab
 #   joint 5 = A (tilt) -> stepgen.02 (7I85 TB1 3/4/5/6)
 #   joint 6 = C (spin) -> stepgen.03 (7I85 TB1 11/12/13/14)
 # sig-a/c-servo-on also drives the drive's /S-ON input via 7I84 OUTPUT6/7 (section 7).
-net a-pos-cmd       joint.5.motor-pos-cmd              => hm2_7i97.0.stepgen.02.position-cmd
-net a-pos-fb        hm2_7i97.0.stepgen.02.position-fb  => joint.5.motor-pos-fb
-net sig-a-servo-on  joint.5.amp-enable-out             => hm2_7i97.0.stepgen.02.enable
-net c-pos-cmd       joint.6.motor-pos-cmd              => hm2_7i97.0.stepgen.03.position-cmd
-net c-pos-fb        hm2_7i97.0.stepgen.03.position-fb  => joint.6.motor-pos-fb
-net sig-c-servo-on  joint.6.amp-enable-out             => hm2_7i97.0.stepgen.03.enable
+# head packs CROSS-WIRED (motor+enc swapped at the packs): A tilt -> stepgen.03, C spin -> stepgen.02
+net a-pos-cmd       joint.5.motor-pos-cmd              => hm2_7i97.0.stepgen.03.position-cmd
+net a-pos-fb        hm2_7i97.0.stepgen.03.position-fb  => joint.5.motor-pos-fb
+net sig-a-servo-on  joint.5.amp-enable-out             => hm2_7i97.0.stepgen.03.enable
+net c-pos-cmd       joint.6.motor-pos-cmd              => hm2_7i97.0.stepgen.02.position-cmd
+net c-pos-fb        hm2_7i97.0.stepgen.02.position-fb  => joint.6.motor-pos-fb
+net sig-c-servo-on  joint.6.amp-enable-out             => hm2_7i97.0.stepgen.02.enable
 
 
 # ============================================================================
@@ -234,7 +235,7 @@ net sig-spindle-vel-volts  spindle.0.speed-out-abs
 # E-stop is a HARDWARE daisy chain; HAL only reads the result (e-stop-released
 # HIGH when the whole chain is intact) and asserts drive-enable to R5.
 net sig-estop-released  => iocontrol.0.emc-enable-in
-net sig-drive-enable    iocontrol.0.user-enable-out
+net sig-drive-enable    motion.motion-enabled
 
 # Limit switches are NC / fail-safe: contact OPENS at the limit (or on a broken
 # wire), so "at limit" = input LOW. The PHYSICAL block (section 7) feeds these
@@ -468,8 +469,8 @@ net sig-tool-released    <= hm2_7i97.0.7i84.0.0.input-31       # TB2-16 *70 HQD 
 # Head servo alarms (7I84U TB3). ALM is fail-safe / normally-conducting (ON when
 # healthy) -> use the -not pin so the signal is TRUE on fault OR power loss.
 # Monitored only for now (like sig-spindle-running) -- consume in estop logic later.
-net sig-a-alarm          <= hm2_7i97.0.7i84.0.0.input-14-not   # TB3-15 ALM- A (CN1-32)
-net sig-c-alarm          <= hm2_7i97.0.7i84.0.0.input-15-not   # TB3-16 ALM- C (CN1-32)
+net sig-a-alarm          <= hm2_7i97.0.7i84.0.0.input-15-not   # TB3-16 ALM- -> pack driving A tilt (cross-wired)
+net sig-c-alarm          <= hm2_7i97.0.7i84.0.0.input-14-not   # TB3-15 ALM- -> pack driving C spin
 
 # --- Digital OUTPUTS (7I84U TB2) -------------------------------------------
 net sig-drive-enable      => hm2_7i97.0.7i84.0.0.output-08     # TB2-17 *8  drive-enable -> R5 coil
@@ -483,8 +484,8 @@ net sig-hqd-tool-release  => hm2_7i97.0.7i84.0.0.output-13     # TB2-22 *63 BIGG
 net sig-hqd-tool-release  => hm2_7i97.0.7i84.0.0.output-14     # TB2-23 *64 BIGGREEN yellow  (was OBLOWOFF)
 net sig-hqd-tool-release  => hm2_7i97.0.7i84.0.0.output-15     # TB2-24 *65 BIGGREEN bluered (was ODRAW)
 # Head servo /S-ON (7I84U TB3, OUTPUT6/7 set to SOURCING -- push +24 V into CN1-40):
-net sig-a-servo-on        => hm2_7i97.0.7i84.0.0.output-06     # TB3-23 /S-ON A (CN1-40)
-net sig-c-servo-on        => hm2_7i97.0.7i84.0.0.output-07     # TB3-24 /S-ON C (CN1-40)
+net sig-a-servo-on        => hm2_7i97.0.7i84.0.0.output-07     # TB3-24 /S-ON -> pack driving A tilt (cross-wired)
+net sig-c-servo-on        => hm2_7i97.0.7i84.0.0.output-06     # TB3-23 /S-ON -> pack driving C spin
 
 # ============================================================================
 # 8. ROTARY STEP/DIR  (7I85S stepgen.00 + stepgen.01 -> the two B steppers)
@@ -524,14 +525,14 @@ setp hm2_7i97.0.stepgen.01.dirhold        20000                # ns             
 # *** ALL TIMING VALUES UNVERIFIED -- confirm against the manual + a live run. ***
 setp hm2_7i97.0.stepgen.02.control-type   0                    # 0 = position mode
 setp hm2_7i97.0.stepgen.02.step_type      0                    # 0 = step/dir
-setp hm2_7i97.0.stepgen.02.position-scale [JOINT_5]SCALE
-setp hm2_7i97.0.stepgen.02.maxvel         [JOINT_5]STEPGEN_MAXVEL
-setp hm2_7i97.0.stepgen.02.maxaccel       [JOINT_5]STEPGEN_MAXACCEL
+setp hm2_7i97.0.stepgen.02.position-scale [JOINT_6]SCALE          # stepgen.02 drives C spin (cross-wired)
+setp hm2_7i97.0.stepgen.02.maxvel         [JOINT_6]STEPGEN_MAXVEL
+setp hm2_7i97.0.stepgen.02.maxaccel       [JOINT_6]STEPGEN_MAXACCEL
 setp hm2_7i97.0.stepgen.03.control-type   0                    # 0 = position mode
 setp hm2_7i97.0.stepgen.03.step_type      0                    # 0 = step/dir
-setp hm2_7i97.0.stepgen.03.position-scale [JOINT_6]SCALE
-setp hm2_7i97.0.stepgen.03.maxvel         [JOINT_6]STEPGEN_MAXVEL
-setp hm2_7i97.0.stepgen.03.maxaccel       [JOINT_6]STEPGEN_MAXACCEL
+setp hm2_7i97.0.stepgen.03.position-scale [JOINT_5]SCALE          # stepgen.03 drives A tilt (cross-wired)
+setp hm2_7i97.0.stepgen.03.maxvel         [JOINT_5]STEPGEN_MAXVEL
+setp hm2_7i97.0.stepgen.03.maxaccel       [JOINT_5]STEPGEN_MAXACCEL
 setp hm2_7i97.0.stepgen.02.steplen        2500                 # ns                                   UNVERIFIED
 setp hm2_7i97.0.stepgen.02.stepspace      2500                 # ns                                   UNVERIFIED
 setp hm2_7i97.0.stepgen.02.dirsetup       20000                # ns                                   UNVERIFIED

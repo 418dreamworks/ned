@@ -11,8 +11,8 @@ both.
   `mesa_7i84u_wiring.md`) hold the card-centric view and point here.
 - **Status:** both head servopacks fully wired; both axes **move under software** (`move.sh a|c`).
   Drive params in `servo/yaskawa_params_quickref.md` (Pn000=0010 position, Pn50A/B not-pot,
-  Pn515=8887 SEN, Pn20E/210=8192 gear, Pn002 absolute). HAL joints 5/6 → stepgen 02/03,
-  /S-ON via 7I84 output-06/07, ALM on input-14/15(-not) (`ned.hal` §3/§7/§8). SCALE + limits =
+  Pn515=8887 SEN, Pn20E/210=8192 gear, Pn002 absolute). HAL joints 5/6 (A/C) → stepgen **03/02**,
+  /S-ON output-07/06, ALM input-15/14(-not) — packs cross-wired (`ned.hal` §3/§7/§8). SCALE + limits =
   calibration (`commissioning/calibration_plan.md`).
 
 Axis assignment (`components.md:31-33`). **Naming: head servos are `C` (spin) and `AB` (tilt).**
@@ -26,8 +26,8 @@ in `ned.ini` until resolved — "AB" is the doc label, not a valid LinuxCNC axis
 > servopacks; each pack's CN1 (Mesa step/dir + /S-ON + ALM) is unchanged. So each Mesa channel
 > drives the OPPOSITE motor from the pack's printed label — per the two lines above. HAL/tools
 > command **A/tilt via stepgen.03 (out-07, in-15)** and **C/spin via stepgen.02 (out-06, in-14)**.
-> Bench tools already swapped (`move.sh`, `mpgjog.sh`, `move.hal`). **`ned.hal` §3/§7/§8 is NOT yet
-> swapped — do it before running LinuxCNC.**
+> Swapped everywhere in software: bench tools (`move.sh`, `mpgjog.sh`, `move.hal`) AND
+> **`ned.hal` §3/§7/§8** (A = stepgen.03/out-07/in-15, C = stepgen.02/out-06/in-14).
 
 ---
 
