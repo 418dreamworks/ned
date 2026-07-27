@@ -78,7 +78,7 @@ loadrt [EMCMOT]EMCMOT servo_period_nsec=[EMCMOT]SERVO_PERIOD num_joints=[KINS]JO
 loadrt pid names=pid.x,pid.y,pid.z,pid.w
 
 # --- Logic gates for the spindle + drawbar interlock -----------------------
-loadrt and2 names=spindle.permit,spindle.cw,spindle.ccw
+loadrt and2 names=spindle.permit,spindle.cw,spindle.ccw,rotary.permit
 
 
 # ----------------------------------------------------------------------------
@@ -167,6 +167,14 @@ setp pid.w.FF2       [JOINT_3]FF2
 setp pid.w.deadband  [JOINT_3]DEADBAND
 setp pid.w.maxoutput [JOINT_3]MAX_OUTPUT
 setp pid.w.error-previous-target true
+
+# Integral windup bound -- REQUIRED now that I is nonzero (maxerrorI=0 means "no
+# limit" per pid.9, so the integrator could wind up unbounded and lurch). Caps the
+# error integrator; safety bound (I*maxerrorI <= the integral's velocity ceiling).
+setp pid.x.maxerrorI 2.0
+setp pid.y.maxerrorI 2.0
+setp pid.z.maxerrorI 2.0
+setp pid.w.maxerrorI 2.0
 
 net sig-w-amp-enable  joint.3.amp-enable-out => pid.w.enable
 net w-pos-cmd         joint.3.motor-pos-cmd  => pid.w.command
@@ -329,9 +337,10 @@ net sig-mpg-sel-z   => axis.z.jog-enable
 
 # Distance per MPG count (machine units). TUNE, or drive from an x1/x10/x100
 # selector. 0.01 mm/count is sane for a 100 PPR wheel at the x1 detent.
-setp axis.x.jog-scale 0.01
-setp axis.y.jog-scale 0.01
-setp axis.z.jog-scale 0.01
+# jog-scale is driven by mpgjog.0.scale in postgui.hal (variable 0.01/0.1/1 mm per detent)
+#setp axis.x.jog-scale 0.01
+#setp axis.y.jog-scale 0.01
+#setp axis.z.jog-scale 0.01
 setp axis.x.jog-vel-mode 0
 setp axis.y.jog-vel-mode 0
 setp axis.z.jog-vel-mode 0
@@ -486,6 +495,15 @@ net sig-hqd-tool-release  => hm2_7i97.0.7i84.0.0.output-15     # TB2-24 *65 BIGG
 # Head servo /S-ON (7I84U TB3, OUTPUT6/7 set to SOURCING -- push +24 V into CN1-40):
 net sig-a-servo-on        => hm2_7i97.0.7i84.0.0.output-07     # TB3-24 /S-ON -> pack driving A tilt (cross-wired)
 net sig-c-servo-on        => hm2_7i97.0.7i84.0.0.output-06     # TB3-23 /S-ON -> pack driving C spin
+
+# Rotary (B) 70 V stepper-brick power -- separately actuated (steppers whine when
+# idle-energized). Spare relay R4 gates the brick mains (moved off R11 pole 4):
+# 110 V -> R4A2, R4D2 -> brick; R4C2 coil driven here (was on *7/R5D2 drive-enable node).
+# ANDed with drive-enable so e-stop / machine-off still cuts brick power.
+addf   rotary.permit servo-thread
+net sig-drive-enable    => rotary.permit.in0
+setp   rotary.permit.in1 0      # rotary-power request; drive from a GUI toggle later (task #7)
+net sig-rotary-power    rotary.permit.out => hm2_7i97.0.7i84.0.0.output-05   # TB3-22 -> R4C2 (sourcing) -> R4 -> brick
 
 # ============================================================================
 # 8. ROTARY STEP/DIR  (7I85S stepgen.00 + stepgen.01 -> the two B steppers)

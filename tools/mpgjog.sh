@@ -13,6 +13,8 @@
 #   A/C    head, stepgen POSITION mode (precise): 1 arcmin per detent, very slow.
 #          Software stops: A +/-120 deg, C +/-320 deg (clamped target).
 #   B      workpiece rotary PAIR (stepgen 00 +, 01 -, counter-rotating), 0.1 deg/detent.
+#          Selecting B clicks R4 (output-05) -> 70 V brick: settle before jog, ~10s hold-off
+#          after leaving B (arm mode only).
 #
 #   mpgjog.sh          DRY-RUN: reads button/wheel/limits + shows the logic, DRIVES NOTHING
 #   mpgjog.sh arm      ENERGIZES drives (+ head /S-ON) and actually jogs
@@ -23,12 +25,14 @@
 
 P=hm2_7i97.0
 OUT08=$P.7i84.0.0.output-08          # drive-enable -> R5 -> *7
+OUT05=$P.7i84.0.0.output-05          # rotary (B) 70 V-brick power -> R4 (TB3-22)
 SONA=$P.7i84.0.0.output-07 ; SONC=$P.7i84.0.0.output-06   # head /S-ON A/C -- head packs cross-wired
 HAL="$(dirname "$(readlink -f "$0")")/move.hal"
 
 # ---- tunables ----
-SLOW_V=0.10 ; MED_V=0.25 ; FAST_V=0.50   # X/Y/Z jog voltages (of 10 V) slow/med/fast
+SLOW_V=0.02 ; MED_V=0.05 ; FAST_V=0.25   # X/Y/Z jog voltages (of 10 V); fast = 5x medium
 HOLD_T=0.4 ; GESTURE=6 ; IDLE_T=0.15 ; DT=0.05 ; CPD=4
+BRICK_SETTLE=0.5 ; BRICK_HOLD=10          # R4/brick: settle (s) before B jog; hold-off (s) after leaving B
 # stepgen axes (A C B): degrees per detent, gear (motor-rev per axis-rev), soft limits (deg)
 DEG_A=0.016667 ; DEG_C=0.016667 ; DEG_B=0.1       # 1' / 1' / 0.1 deg per detent
 GEAR_A=200 ; GEAR_C=200 ; GEAR_B=20
@@ -52,7 +56,7 @@ kill -0 "$HALPID" 2>/dev/null || { echo "FAILED to start -- Mesa powered? cable 
 alloff(){
   for i in 00 01 02 03; do halcmd setp $P.pwmgen.$i.value 0 2>/dev/null; halcmd setp $P.pwmgen.$i.enable 0 2>/dev/null; done
   for i in 00 01 02 03; do halcmd setp $P.stepgen.$i.enable 0 2>/dev/null; done
-  for o in output-06 output-07 output-08; do halcmd setp $P.7i84.0.0.$o 0 2>/dev/null; done
+  for o in output-05 output-06 output-07 output-08; do halcmd setp $P.7i84.0.0.$o 0 2>/dev/null; done
 }
 teardown(){ echo; echo ">>> stop + all off"; alloff; sleep 0.4; kill "$HALPID" 2>/dev/null; pkill -9 -f "halcmd -f.*move.hal" 2>/dev/null; halrun -U >/dev/null 2>&1; echo "done."; }
 trap 'teardown; exit' EXIT INT TERM
@@ -85,6 +89,7 @@ fi
 
 # ---- state ----
 ax=0 ; sp=1 ; held=0 ; prev_pressed=0 ; press_t=0 ; c_hold=0
+brick=0 ; brick_on_t=0 ; last_b_t=0          # rotary-brick (R4/output-05) state
 tgt=(0 0 0 0 0 0)          # stepgen targets (motor-rev) for A(3) C(4) B(5)
 readpins ; prev_mpg=${V[1]} ; last_move=0 ; dir=1 ; prev_sel_enc=0 ; prev_ax=0
 echo ">>> ${MODE^^}. selected=X. tap=next axis, hold+wheel=speed (X/Y/Z). Ctrl-C to quit."
@@ -109,6 +114,20 @@ while kill -0 "$HALPID" 2>/dev/null; do
     ax=$(((ax+1)%6)) ; printf '\n  axis  -> %s\n' "${AXNAME[$ax]}"
   fi
   prev_pressed=$pressed
+
+  # ---- rotary (B) brick power: R4/output-05 clicks on B-select, settle, hold-off ----
+  bsettle=1
+  if [ "$ax" = 5 ]; then
+    last_b_t=$now
+    if [ "$brick" = 0 ]; then
+      [ "$MODE" = arm ] && halcmd setp $OUT05 1 ; brick=1 ; brick_on_t=$now
+      printf '\n  R4 -> ON (brick power; settle %ss)\n' "$BRICK_SETTLE"
+    fi
+    awk "BEGIN{exit !($now-$brick_on_t<$BRICK_SETTLE)}" && bsettle=0
+  elif [ "$brick" = 1 ] && awk "BEGIN{exit !($now-$last_b_t>=$BRICK_HOLD)}"; then
+    [ "$MODE" = arm ] && halcmd setp $OUT05 0 ; brick=0
+    printf '\n  R4 -> OFF (hold-off elapsed)\n'
+  fi
 
   dmpg=$((mpg - prev_mpg)) ; prev_mpg=$mpg
   v00=0;v01=0;v02=0;v03=0 ; gate="" ; info=""
@@ -135,7 +154,7 @@ while kill -0 "$HALPID" 2>/dev/null; do
     info=$(printf 'vel:%+5.2fV lim[+:%s -:%s]%s' "$velv" "$([ "$pl" = FALSE ]&&echo HIT||echo .)" "$([ "$nl" = FALSE ]&&echo HIT||echo .)" " $gate")
   else
     # ---- stepgen position jog (A/C/B), software-clamped ----
-    if [ "$pressed" = 0 ] && [ "$dmpg" -ne 0 ]; then
+    if [ "$pressed" = 0 ] && [ "$dmpg" -ne 0 ] && [ "$bsettle" = 1 ]; then
       tgt[$ax]=$(awk "BEGIN{t=${tgt[$ax]}+$dmpg*${RD[$ax]}; if(t<${RLO[$ax]})t=${RLO[$ax]}; if(t>${RHI[$ax]})t=${RHI[$ax]}; print t}")
     fi
     case $ax in
@@ -145,7 +164,7 @@ while kill -0 "$HALPID" 2>/dev/null; do
     esac | { [ "$MODE" = arm ] && halcmd -f /dev/stdin 2>/dev/null || cat >/dev/null; }
     deg=$(awk "BEGIN{printf \"%+.4f\",${tgt[$ax]}*${D2R[$ax]}}")
     lo=$([ $ax = 3 ]&&echo $LO_A; [ $ax = 4 ]&&echo $LO_C; [ $ax = 5 ]&&echo $LO_B) ; hi=$([ $ax = 3 ]&&echo $HI_A; [ $ax = 4 ]&&echo $HI_C; [ $ax = 5 ]&&echo $HI_B)
-    info=$(printf 'pos:%s deg (soft %s..%s)' "$deg" "$lo" "$hi")
+    info=$(printf 'pos:%s deg (soft %s..%s)' "$deg" "$lo" "$hi") ; { [ "$ax" = 5 ] && [ "$bsettle" = 0 ]; } && info="$info SETTLE(brick)"
   fi
   prev_ax=$ax
 

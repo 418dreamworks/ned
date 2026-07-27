@@ -61,7 +61,7 @@ Optional 9th X10 output `*42`/LATCH1 (pin 5, currently drives unused R8) is **sk
 ## TB3 — Head Yaskawa sequence I/O (A & C) + spare
 
 16 inputs (INPUT0–INPUT15) + 8 outputs (OUTPUT0–OUTPUT7). Reserved for the head Yaskawa
-servos ([cmp:head-servo]); everything else free.
+servos ([cmp:head-servo]). **OUTPUT5 (TB3-22)** = rotary (B) 70 V-brick power → R4 coil (sourcing; see `relays.md` R4). Everything else free.
 
 If using TB3: VFIELDA on TB1 must be powered (+24 V from cabinet, same as VFIELDB).
 

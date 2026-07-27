@@ -1,0 +1,14 @@
+# postgui.hal -- MPG pendant jog (mpgjog.comp). ned.hal already wires the jog STRUCTURE
+# (encoder.04 -> sig-mpg-counts -> axis.*.jog-counts, jog-enable <- sig-mpg-sel-*, jog-vel-mode 0).
+# This only adds the comp and drives the missing pieces: the axis-select signals + the scale.
+# Single button on inmux input-00 (NC): TAP = next axis (X->Y->Z), HOLD + wheel = speed
+# (left slow / right fast / hold med). 0.01 / 0.10 / 1.0 mm per detent.
+loadrt mpgjog
+addf mpgjog.0 servo-thread
+
+net sig-mpg-button  hm2_7i97.0.inmux.00.input-00-not => mpgjog.0.button
+net sig-mpg-counts  => mpgjog.0.counts
+net sig-mpg-sel-x   mpgjog.0.enx
+net sig-mpg-sel-y   mpgjog.0.eny
+net sig-mpg-sel-z   mpgjog.0.enz
+net sig-mpg-jscale  mpgjog.0.scale => axis.x.jog-scale axis.y.jog-scale axis.z.jog-scale

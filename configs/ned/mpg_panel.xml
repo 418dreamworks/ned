@@ -1,0 +1,78 @@
+<pyvcp>
+
+  <!-- =====================================================================
+       ned  MPG jog + limit-switch indicator panel.
+       INERT: nothing references this file yet. To activate:
+         (1) ned.ini  [DISPLAY]   PYVCP = mpg_panel.xml
+         (2) postgui.hal          the net/setp lines in
+             docs/commissioning/mpg_gui_and_jog_safeguard_proposal.md
+       Every widget halpin below is reachable as  pyvcp.<halpin>  once loaded.
+       Widget syntax per docs/linuxcnc .../gui/pyvcp.adoc.
+       ===================================================================== -->
+
+  <!-- (A) MPG axis + speed / increment -->
+  <labelframe text="MPG JOG">
+    <font>("Helvetica", 11)</font>
+
+    <!-- persistent selected axis (mpgjog.0.selaxis: 0=X 1=Y 2=Z) -->
+    <label><text>"selected axis   0=X  1=Y  2=Z"</text></label>
+    <s32>
+      <halpin>"mpg-axis"</halpin>
+      <font>("courier 10 pitch", 28)</font>
+      <format>"1d"</format>
+      <width>2</width>
+    </s32>
+
+    <!-- live jog-enable LEDs (mpgjog.0.enx/eny/enz): lit = that axis jogging now -->
+    <hbox>
+      <label><text>"jogging:  X "</text></label>
+      <led><halpin>"jog-x"</halpin><size>18</size><on_color>"green"</on_color><off_color>"gray50"</off_color></led>
+      <label><text>"   Y "</text></label>
+      <led><halpin>"jog-y"</halpin><size>18</size><on_color>"green"</on_color><off_color>"gray50"</off_color></led>
+      <label><text>"   Z "</text></label>
+      <led><halpin>"jog-z"</halpin><size>18</size><on_color>"green"</on_color><off_color>"gray50"</off_color></led>
+    </hbox>
+
+    <!-- persistent selected speed (mpgjog.0.selspeed: 0=slow 1=med 2=fast) -->
+    <label><text>"selected speed  0=slow 1=med 2=fast"</text></label>
+    <s32>
+      <halpin>"mpg-speed"</halpin>
+      <font>("courier 10 pitch", 28)</font>
+      <format>"1d"</format>
+      <width>2</width>
+    </s32>
+    <label><text>"increment / detent:  0.01 / 0.10 / 1.00 mm"</text></label>
+
+    <!-- live jog-scale (mpgjog.0.scale, mm per MPG count = increment / cpd) -->
+    <label><text>"jog-scale (mm per MPG count)"</text></label>
+    <number>
+      <halpin>"mpg-scale"</halpin>
+      <font>("courier 10 pitch", 16)</font>
+      <format>"1.4f"</format>
+    </number>
+  </labelframe>
+
+  <!-- (B) limit switches: NC, TRUE = AT LIMIT so LED shows red -->
+  <labelframe text="LIMIT SWITCHES   red = AT LIMIT">
+    <font>("Helvetica", 11)</font>
+    <hbox>
+      <label><text>"X aft    "</text></label>
+      <rectled><halpin>"lim-x-aft"</halpin><height>"18"</height><width>"38"</width><on_color>"red"</on_color><off_color>"green"</off_color></rectled>
+      <label><text>"   X fore  "</text></label>
+      <rectled><halpin>"lim-x-fore"</halpin><height>"18"</height><width>"38"</width><on_color>"red"</on_color><off_color>"green"</off_color></rectled>
+    </hbox>
+    <hbox>
+      <label><text>"Y sb     "</text></label>
+      <rectled><halpin>"lim-y-sb"</halpin><height>"18"</height><width>"38"</width><on_color>"red"</on_color><off_color>"green"</off_color></rectled>
+      <label><text>"   Y port  "</text></label>
+      <rectled><halpin>"lim-y-port"</halpin><height>"18"</height><width>"38"</width><on_color>"red"</on_color><off_color>"green"</off_color></rectled>
+    </hbox>
+    <hbox>
+      <label><text>"Z bottom "</text></label>
+      <rectled><halpin>"lim-z-bottom"</halpin><height>"18"</height><width>"38"</width><on_color>"red"</on_color><off_color>"green"</off_color></rectled>
+      <label><text>"   Z top   "</text></label>
+      <rectled><halpin>"lim-z-top"</halpin><height>"18"</height><width>"38"</width><on_color>"red"</on_color><off_color>"green"</off_color></rectled>
+    </hbox>
+  </labelframe>
+
+</pyvcp>

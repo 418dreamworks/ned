@@ -36,7 +36,7 @@ R0 works in parallel with R3/R4: when `*7` loses voltage, R0 cuts the power AND 
 24 VDC coil on `*7` (drive-enable node), same as R0. **Flyback diode across A1–A2**
 (band/cathode → A2/`*7`, anode → A1/GND).
 
-Fail-safe: energize `*7` → poles close → head servopack + 70 V stepper brick get power;
+Fail-safe: energize `*7` → poles close → head servopack gets power (70 V brick mains moved to R4);
 drop `*7` (e-stop / no drive-enable) → poles open → power cut.
 
 **Retrofit addition — NOT part of the original Fagor cabinet.** R11 was added for the
@@ -48,7 +48,7 @@ relay not in the original cabinet.
 | R11A2 (coil +) | → `*7` (drive-enable node = R5D2 = R0's coil node) | ✓ |
 | R11A1 (coil −) | → GND (0 V) | ✓ |
 | Poles 1–3 | L1/L2/L3 supply → head servopack L1/L2/L3 ([cmp:head-servo], A & C) | ✓ |
-| Pole 4 | mains → 70 V brick ([cmp:stepper-brick] L1) | ✓ |
+| Pole 4 | **unused** — brick mains moved to R4 (see R4) | ✓ |
 
 Cross-refs: R0 (same enable node), R5 (drive-enable gate), `components.md` [cmp:head-contactor], [cmp:head-servo], [cmp:stepper-brick].
 
@@ -174,17 +174,17 @@ This is fail-safe by construction: R3 cannot end up "stuck running" from a wire 
 
 ---
 
-## R4 — Unused (coil energizes with R3 but contacts not connected)
+## R4 — Rotary (B) 70 V stepper-brick power switch  (repurposed Fagor spare)
 
-R4 is a 4-pole relay (same type as R1, R3, R5–R10). Its coil is paralleled with R3 (energizes together when R5 routes power), but none of its contacts are wired to anything. R4 appears to be a spare — possibly intended as redundancy for R3 or for future expansion, but unused in the current configuration.
+R4 is a 4-pole relay (same type as R1, R3, R5–R10), a Fagor-era spare now repurposed to gate the 70 V stepper-brick mains so the noisy B rotary steppers can be powered separately from the rest of the machine. NO pole A2→D2 carries the brick mains (moved here off R11 pole 4); the coil is driven by Mesa 7I84 **OUTPUT5 (TB3-22, sourcing)** via HAL `sig-rotary-power` (= drive-enable AND operator request). **Fagor did not use R4.**
 
 | Terminal | Wire | Other end / function | Status |
 |---|---|---|---|
 | R4C1 | coil low side | → GND (0 V) | ✓ |
-| R4C2 | coil high side | Same electrical node as `*7`, R5D2, R3C2 (all directly wired together). Node is at +24 V when R5 is energized AND `*6` carries +24 V — that's when R4's coil sees voltage. | ✓ |
-| R4A1, R4A2, R4A3, R4A4 | NO contacts | **EMPTY** — confirmed unwired | ✓ |
+| R4C2 | coil high side | → Mesa 7I84 **OUTPUT5 (TB3-22)**, sourcing. Energizes when HAL asserts `sig-rotary-power`. Lifted off the `*7`/R5D2 node. | ✓ |
+| R4A2 | NO contact | ← 110 V brick mains (from R11 pole 4). A1/A3/A4 empty. | ✓ |
 | R4B1, R4B2, R4B3, R4B4 | NC contacts | **EMPTY** — confirmed unwired | ✓ |
-| R4D1, R4D2, R4D3, R4D4 | COMs | **EMPTY** — confirmed unwired | ✓ |
+| R4D2 | COM | → 70 V brick ([cmp:stepper-brick] L1). D1/D3/D4 empty. | ✓ |
 
 ---
 
