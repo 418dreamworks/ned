@@ -1,0 +1,87 @@
+component pso_sniff "Sniff Yaskawa PSO absolute serial on a Mesa PktUART (9600, raw 8-bit capture)";
+
+description """Configures hm2_...pktuart.N RX at 9600 baud and reports whatever arrives:
+byte / frame counts on HAL pins, plus a hex+ASCII dump of the first frames to dmesg. The
+Yaskawa PSO is 7E1 ASCII -- the low 7 bits of each captured byte are the char (mask 0x7f;
+the parity bit is the masked-off MSB). Load:
+  loadrt pso_sniff names=hm2_7i97.0.pktuart.0
+  addf hm2_7i97.0.pktuart.0.receive servo-thread""";
+
+author "ned";
+license "GPL";
+
+include "hostmot2-serial.h";
+
+pin out s32 rxbytes  "bytes read this cycle (negative = error code)";
+pin out u32 frames   "frames read this cycle";
+pin out u32 total    "total bytes seen since load";
+pin out s32 last_err "last negative return from read/config";
+
+variable char pname[64];      // copy of the instance name (prefix is not persistent)
+variable int  printed;        // frames dumped so far (cap the dump)
+option extra_setup yes;
+function receive;
+
+;;
+
+#define BAUDRATE 9600
+#define DUMP_MAX 24
+
+char *pktuart_chans[4] = {0,};
+RTAPI_MP_ARRAY_STRING(pktuart_chans, 2, "PktUART channel names");
+
+FUNCTION(receive){
+    rtapi_u16 max_frame_length = 80;
+    rtapi_u8  num_frames = 16;
+    unsigned char buf[16*80];
+    rtapi_u16 sizes[16];
+    int r = hm2_pktuart_read(pname, buf, &num_frames, &max_frame_length, sizes);
+    rxbytes = r;
+    frames = num_frames;
+    if (r < 0) { last_err = r; return; }
+    if (r > 0) {
+        int i, off = 0;
+        total += r;
+        for (i = 0; i < num_frames; i++) {
+            if (printed < DUMP_MAX && sizes[i] > 0) {
+                char line[300]; int p = 0, j;
+                for (j = 0; j < sizes[i] && p < 288; j++) {
+                    unsigned char c = buf[off+j];
+                    unsigned char a = c & 0x7f;
+                    p += rtapi_snprintf(line+p, sizeof(line)-p, "%02x", c);
+                    line[p++] = (a >= 32 && a < 127) ? (char)a : '.';
+                    line[p++] = ' ';
+                }
+                line[p] = 0;
+                rtapi_print_msg(RTAPI_MSG_ERR, "PSO frame[%d]: %s\n", sizes[i], line);
+                printed++;
+            }
+            off += sizes[i];
+        }
+    }
+}
+
+EXTRA_SETUP(){
+    if (prefix[0] != 'h') {
+        rtapi_print_msg(RTAPI_MSG_ERR, "pso_sniff: use names=hm2_...pktuart.N, not count=\n");
+        return -1;
+    }
+    rtapi_snprintf(pname, sizeof(pname), "%s", prefix);   // COPY -- prefix is not persistent
+    hm2_pktuart_config_t cfgrx = {
+        .baudrate = BAUDRATE, .filterrate = 0, .drivedelay = 0, .ifdelay = 100,
+        .flags = HM2_PKTUART_CONFIG_FLUSH | HM2_PKTUART_CONFIG_RXEN
+    };
+    hm2_pktuart_config_t cfgtx = {
+        .baudrate = BAUDRATE, .filterrate = 0, .drivedelay = 0, .ifdelay = 100,
+        .flags = HM2_PKTUART_CONFIG_FLUSH
+    };
+    int r = hm2_pktuart_config(pname, &cfgrx, &cfgtx, 0);
+    if (r < 0) {
+        rtapi_print_msg(RTAPI_MSG_ERR, "pso_sniff: pktuart config failed %d\n", r);
+        return -1;
+    }
+    rtapi_print_msg(RTAPI_MSG_ERR, "pso_sniff: %s configured %d baud, RX enabled\n", pname, BAUDRATE);
+    return 0;
+}
+
+int get_count(void){ int i; for (i = 0; pktuart_chans[i] != NULL && i < 2; i++){} return i; }
