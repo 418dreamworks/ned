@@ -1,5 +1,13 @@
 # HANDOFF — build a 7I97T bitfile with a UART (to read the Yaskawa absolute encoder)
 
+> ## ✅ DONE (2026-07-29)
+> Built + flashed. Bitfile = `hostmot2/7i97t_7i85sd_pktuart.bin`; exact recipe =
+> `hostmot2/pktuart_build/BUILD_NOTES.md`. A full **PktUART** landed on **I/O 34** (RX) /
+> I/O 35 (TX) — confirmed by `mesaflash --readhmid` (PktUARTRX/TX present) and a LinuxCNC
+> load (`created PktUART Interface hm2_7i97.0.pktuart.0`, no version rejection). `ned.hal`
+> now has `num_pktuarts=1`. The "confirm with Mesa/PCW" open question below was resolved
+> empirically: the PktUART builds and loads on I/O 34. Plan kept for record.
+
 **Do this on an x86 Windows/Linux box with Efinix Efinity installed.** It cannot be built on ned's
 Raspberry Pi 5 (ARM; Efinity is x86-only). Deliverable: a `.bin` to flash onto the 7I97T.
 

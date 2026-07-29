@@ -58,8 +58,13 @@ loadrt hostmot2
 #   0V, per 7I85S need). W23 LEFT (sserial termination on, for the 7I84).
 #   Encoders 0-3 differential.
 # num_encoders=6 -> 4 axis encoders (00-03) + pendant MPG (04) + 1 spare (05).
-loadrt hm2_eth board_ip="10.10.10.10" config="num_encoders=6 num_pwmgens=6 num_stepgens=4 num_inmuxs=1 sserial_port_0=0xxxxxxx"
-# Board flashed to 7i97t_7i85sd firmware (sserial + 4 stepgen on DB25 + 6 pwm + enc).
+loadrt hm2_eth board_ip="10.10.10.10" config="num_encoders=6 num_pwmgens=6 num_stepgens=4 num_inmuxs=1 num_pktuarts=1 sserial_port_0=0xxxxxxx"
+# Board flashed to 7i97t_7i85sd_pktuart firmware: the stock 7i97t_7i85sd (sserial +
+# 4 stepgen on DB25 + 6 pwm + enc) with a PktUART added on FPGA I/O 34/35 (= 7I85
+# sserial RXData1/TXData1 = TB1-19/20). num_pktuarts=1 exports hm2_7i97.0.pktuart.0
+# to read the Yaskawa head A/C absolute-encoder serial (PSO, 9600 7E1) through the
+# R4 mux. Bitfile: firmware/7i97t/hostmot2/7i97t_7i85sd_pktuart.bin (built 2026-07-29,
+# Efinity 2026.1). Loading verified (created PktUART Interface hm2_7i97.0.pktuart.0).
 # num_inmuxs=1: the 7I97T's 16 isolated inputs (TB4/TB5 IN0-15) are read through an
 # InMux (mesaflash --readhmid: Addr0-3 + Data0, all Internal pins). The mux is
 # independent of SSerial (which uses TB4-15..18), so enabling it does NOT disturb
