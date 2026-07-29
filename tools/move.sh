@@ -27,6 +27,8 @@ source "$(dirname "${BASH_SOURCE[0]}")/ned_params.sh"   # gear ratios + SCALEs -
 OUT08=$P.7i84.0.0.output-08     # drive-enable -> R5 -> *7 (R0 + head/rotary contactors)
 SONA=$P.7i84.0.0.output-07      # /S-ON head A (tilt) -- head packs cross-wired (motor+enc swapped at the packs)
 SONC=$P.7i84.0.0.output-06      # /S-ON head C (spin)
+SEN=$P.7i84.0.0.output-04       # head SEN (CN1-42, both packs). Pn515=8882 -> SEN MUST be high with /S-ON or /S-RDY
+                                # never comes up and the pack stays BB (manual 6.1.9 L11711-15). Costless to hold high.
 HAL="$(dirname "$(readlink -f "$0")")/move.hal"
 
 usage(){ awk 'NR==1{next} /^#/{sub(/^# ?/,"");print;next} {exit}' "$0"; exit 1; }
@@ -56,7 +58,7 @@ alloff(){
   halcmd sets gvel 0 2>/dev/null; halcmd sets gen 0 2>/dev/null   # gantry shared signals, if made
   for i in 00 01 02 03; do halcmd setp $P.stepgen.$i.velocity-cmd 0 2>/dev/null; halcmd setp $P.stepgen.$i.enable 0 2>/dev/null; done
   for i in 00 01 02 03 04 05; do halcmd setp $P.pwmgen.$i.value 0 2>/dev/null; halcmd setp $P.pwmgen.$i.enable 0 2>/dev/null; done
-  for o in output-06 output-07 output-08 output-09 output-10; do halcmd setp $P.7i84.0.0.$o 0 2>/dev/null; done
+  for o in output-04 output-06 output-07 output-08 output-09 output-10; do halcmd setp $P.7i84.0.0.$o 0 2>/dev/null; done
 }
 teardown(){ echo; echo ">>> stop + all off"; alloff; sleep 0.5; kill "$HALPID" 2>/dev/null; halrun -U >/dev/null 2>&1; echo "done."; }
 trap 'teardown; exit' EXIT INT TERM
@@ -86,7 +88,7 @@ a|c)
   if [ "$1" = deg ]; then
     DEG="$2"; [ -z "$DEG" ] && { echo "usage: move.sh $axis deg <degrees>"; exit 1; }
     REVS=$(awk "BEGIN{printf \"%.5f\", $DEG*$GEAR/360}")   # axis deg -> motor-rev (gear from ned_params.sh: A=$GEAR_A / C=$GEAR_C)
-    halcmd setp $OUT08 1; halcmd setp $SON 1; echo "drive-enable + /S-ON; settling 1.5s"; sleep 1.5
+    halcmd setp $OUT08 1; halcmd setp $SON 1; halcmd setp $SEN 1; echo "drive-enable + /S-ON + SEN; settling 3s"; sleep 3
     halcmd setp $SG.control-type 0; halcmd setp $SG.position-cmd 0; halcmd setp $SG.enable 1
     for n in 0 1 2 3 4 5 6 7 8 9; do eb[$n]=$(halcmd getp $P.encoder.0$n.rawcounts 2>/dev/null); done
     echo ">>> head $axis -> $DEG deg ($REVS motor-rev), position mode. NO soft limits -- ensure clearance. e-stop ready."
@@ -104,8 +106,8 @@ a|c)
   { [ -z "$RPM" ] || [ -z "$SECS" ]; } && { echo "usage: move.sh $axis <RPM> <seconds>   |   move.sh $axis deg <degrees>"; exit 1; }
   awk "BEGIN{exit !($SECS>0 && $SECS<=30)}" 2>/dev/null || { echo "seconds must be 0..30"; exit 1; }
   REVS=$(awk "BEGIN{printf \"%.4f\", $RPM/60}")
-  halcmd setp $OUT08 1; halcmd setp $SON 1
-  echo "drive-enable + /S-ON asserted; settling 1.5s"; sleep 1.5
+  halcmd setp $OUT08 1; halcmd setp $SON 1; halcmd setp $SEN 1
+  echo "drive-enable + /S-ON + SEN asserted; settling 3s"; sleep 3
   halcmd setp $SG.enable 1; halcmd setp $SG.velocity-cmd "$REVS"
   echo ">>> head $axis @ $RPM motor-RPM for ${SECS}s ($(date +%H:%M:%S)). e-stop ready."
   for n in 0 1 2 3 4 5 6 7 8 9; do eb[$n]=$(halcmd getp $P.encoder.0$n.rawcounts 2>/dev/null); done   # head fb baselines (7I85 e6-e9)

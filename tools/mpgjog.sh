@@ -27,6 +27,8 @@ P=hm2_7i97.0
 OUT08=$P.7i84.0.0.output-08          # drive-enable -> R5 -> *7
 OUT05=$P.7i84.0.0.output-05          # rotary (B) 70 V-brick power -> R4 (TB3-22)
 SONA=$P.7i84.0.0.output-07 ; SONC=$P.7i84.0.0.output-06   # head /S-ON A/C -- head packs cross-wired
+SEN=$P.7i84.0.0.output-04            # head SEN (CN1-42, both packs). Pn515=8882 -> SEN MUST be high for /S-RDY,
+                                     # else /S-ON is refused and the pack stays BB (manual 6.1.9 L11711-15).
 HAL="$(dirname "$(readlink -f "$0")")/move.hal"
 
 # ---- tunables ----
@@ -69,7 +71,7 @@ fi
 alloff(){
   for i in 00 01 02 03; do halcmd setp $P.pwmgen.$i.value 0 2>/dev/null; halcmd setp $P.pwmgen.$i.enable 0 2>/dev/null; done
   for i in 00 01 02 03; do halcmd setp $P.stepgen.$i.enable 0 2>/dev/null; done
-  for o in output-05 output-06 output-07 output-08; do halcmd setp $P.7i84.0.0.$o 0 2>/dev/null; done
+  for o in output-04 output-05 output-06 output-07 output-08; do halcmd setp $P.7i84.0.0.$o 0 2>/dev/null; done
 }
 teardown(){ echo; echo ">>> stop + all off"; alloff; sleep 0.4; kill "$HALPID" 2>/dev/null; pkill -9 -f "halcmd -f.*move.hal" 2>/dev/null; halrun -U >/dev/null 2>&1; echo "done."; }
 trap 'teardown; exit' EXIT INT TERM
@@ -93,9 +95,10 @@ if [ "$MODE" = arm ]; then
   [ "${V[11]}" = TRUE ] || { echo "E-STOP ENGAGED (input-04 != TRUE) -> enable does nothing. Abort."; exit 1; }
   echo ">>> ARMING: drive-enable + head /S-ON, X/Y/Z at 0 V, stepgens -> position mode. settling 1.5s"
   halcmd setp $OUT08 1    # head /S-ON asserted PER-AXIS in the loop (single /S-ON exposes cross-wiring)
+  halcmd setp $SEN 1      # SEN high: pack does its absolute read -> /S-RDY comes up. REQUIRED in Pn515=8882, or /S-ON is refused (BB).
   for i in 00 01 02 03; do halcmd setp $P.pwmgen.$i.value 0; halcmd setp $P.pwmgen.$i.enable 1; done
   for i in 00 01 02 03; do halcmd setp $P.stepgen.$i.control-type 0; halcmd setp $P.stepgen.$i.position-cmd 0; halcmd setp $P.stepgen.$i.enable 1; done
-  sleep 1.5
+  sleep 3                 # let the SEN-triggered absolute read complete so /S-RDY is up before the loop asserts /S-ON
 else
   echo ">>> DRY-RUN: nothing will move. Turn the wheel / tap+hold the button to watch the logic."
 fi
