@@ -32,6 +32,7 @@ Drives the swivel head — **A (tilt, j5)** and **C (spin, j6)**. Currently INER
   - **Servopack "A"** → head **TILT** (A axis, about X/W) — joint 5, stepgen.02, 7I85 TB1 STEP2/DIR2.
   - **Servopack "C"** → head **SPIN** (C axis, about Z) — joint 6, stepgen.03, 7I85 TB1 STEP3/DIR3.
 - **Motor:** Yaskawa **SGMXJ-04AUA6SC2** ×2 — 400 W, 200 V, Σ-X medium-inertia.
+- **Drivetrain:** **harmonic drive** (both A tilt & C spin), **not self-locking → back-drivable**; the tilt is gravity-loaded off-axis, so it needs its servo energized to hold position. **Reduction is PER-AXIS and differs** (HQD AC-D90-65, 400 W head — `docs/hqd/text/hq_ac_d90_65_spec_sheet.txt`): **A = 1:128.25, C = 1:203.7471** (NOT 200 for both — verified 2026-07-28: a commanded 90° on A physically moved ~140°). SCALE = 8192 p/rev × ratio ÷ 360 → **A = 2918.40, C = 4636.38** (the old 4551.111-for-both was wrong). Ratios/scales now live in `tools/ned_params.sh` (single source; `sync` regenerates the INI).
 - **Drive:** Yaskawa **SGDXS-2R8A00A** ×2 — Σ-XS SERVOPACK, analog/pulse, 200 V, 2.8 A.
 - **Power:** single- or three-phase 200–240 VAC (single-phase = L1,L2 only, no N; set Pn00B=n.□1□□). Mandatory magnetic contactor [cmp:head-contactor].
 - **Terminals (servopack manual §4.3):** main `L1/L2/L3` (3-phase) or `L1/L2` (1-phase) · control `L1C/L2C` (single-phase 200–240 VAC, both phase modes) · regen `B1/B2/B3` (2R8A: external resistor B1–B2 *only if* internal capacity insufficient; no internal resistor) · motor out `U/V/W` + PE.
@@ -44,6 +45,7 @@ Drives the swivel head — **A (tilt, j5)** and **C (spin, j6)**. Currently INER
 
 ### Workpiece-rotary steppers (B)  ·  Key: `rotary-stepper`
 Drives **B (workpiece rotary about Y, j4)** — 2 mirrored steppers as ONE stepgen (one motor reversed in copper).
+- **Drivetrain:** **worm, 1:20 stepper→chuck.** Worm = **self-locking → holds position unpowered, no back-drive** (the 70 V brick can be de-energized and B still holds). SCALE **22.222** = 400 p/rev × 20 ÷ 360.
 - **Drive model:** TBD (no datasheet on hand). Spec (user-transcribed 2026-06-27):
   18–110 VAC / 18–160 VDC supply (NOTICE: ≤110 V either), 2.2–8.2 A out, pulse ≤300 kHz / ≥1.2 µs / falling-edge, DIR setup ≥5 µs, control 5–20 mA (typ 10), inputs 3.3–5 V, 2 s init, UV 7.5 V / OV 170 V.
 - **Motor:** TBD — ~4 A/phase.

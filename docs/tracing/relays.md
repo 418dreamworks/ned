@@ -36,8 +36,8 @@ R0 works in parallel with R3/R4: when `*7` loses voltage, R0 cuts the power AND 
 24 VDC coil on `*7` (drive-enable node), same as R0. **Flyback diode across A1–A2**
 (band/cathode → A2/`*7`, anode → A1/GND).
 
-Fail-safe: energize `*7` → poles close → head servopack gets power (70 V brick mains moved to R4);
-drop `*7` (e-stop / no drive-enable) → poles open → power cut.
+Fail-safe: energize `*7` → poles close → head servopack gets power, and pole 4 passes the 110 V brick mains through to R4 (R4 does the rotary on/off);
+drop `*7` (e-stop / no drive-enable) → poles open → power cut (and no mains reaches R4).
 
 **Retrofit addition — NOT part of the original Fagor cabinet.** R11 was added for the
 LinuxCNC head servos + 70 V stepper brick (the Fagor machine had neither); it is the only
@@ -48,7 +48,7 @@ relay not in the original cabinet.
 | R11A2 (coil +) | → `*7` (drive-enable node = R5D2 = R0's coil node) | ✓ |
 | R11A1 (coil −) | → GND (0 V) | ✓ |
 | Poles 1–3 | L1/L2/L3 supply → head servopack L1/L2/L3 ([cmp:head-servo], A & C) | ✓ |
-| Pole 4 | **unused** — brick mains moved to R4 (see R4) | ✓ |
+| Pole 4 | **110 V brick mains → R4** — R11 closed passes the mains through pole 4 to R4, which does the rotary on/off switching (see R4) | ✓ |
 
 Cross-refs: R0 (same enable node), R5 (drive-enable gate), `components.md` [cmp:head-contactor], [cmp:head-servo], [cmp:stepper-brick].
 
@@ -62,7 +62,7 @@ Closes its contacts when the VFD is running, signaling the CNC that the spindle 
 |---|---|---|---|
 | R1C1 | one coil terminal | → GND (0 V). Mollom Y1 polarity is handled by the interposing relay (`mollom_g75_vfd.md`). | ✓ |
 | R1C2 | other coil terminal | Blue wire (unlabelled) → Mollom Y1 (as-built) [Fagor: VG5/9] | ✓ |
-| R1A1 | NO contact, col 1 | Black wire to grease pump's hot terminal. (The pump's neutral terminal returns to `*77` — neutral side is NOT on R1.) See "Grease pump path" note below. | ✓ user-observed |
+| R1A1 | NO contact, col 1 | AC hot (from R1D1) out to **two 110 V loads in parallel**: (1) the **grease pump** hot terminal (black wire; pump neutral returns to `*77`, not on R1); (2) the **main-junction AC outlet** (`ACOutlet_MainJunction`) — the **coolant pump** plugs in there. Both energize together when R1 closes (spindle running). See "Grease pump path" note below. | ✓ user-observed |
 | R1A2 | NO contact, col 2 | → spindle use counter (hour meter — tracks accumulated spindle-on time). When R1 energizes (spindle running), R1A2 closes onto R1D2 (+24 V) → counter receives +24 V and increments. | ✓ |
 | R1A3 | NO contact, col 3 | → `*36` → Fagor X9/pin 33 (`IROTATE`, spindle rotating feedback). When R1 energizes, R1A3 closes onto R1D3 (+24 V) → CNC reads "spindle is actually rotating." | ✓ |
 | R1A4 | NO contact, col 4 | **EMPTY** — confirmed unwired | ✓ |
@@ -182,9 +182,19 @@ R4 is a 4-pole relay (same type as R1, R3, R5–R10), a Fagor-era spare now repu
 |---|---|---|---|
 | R4C1 | coil low side | → GND (0 V) | ✓ |
 | R4C2 | coil high side | → Mesa 7I84 **OUTPUT5 (TB3-22)**, sourcing. Energizes when HAL asserts `sig-rotary-power`. Lifted off the `*7`/R5D2 node. | ✓ |
-| R4A2 | NO contact | ← 110 V brick mains (from R11 pole 4). A1/A3/A4 empty. | ✓ |
-| R4B1, R4B2, R4B3, R4B4 | NC contacts | **EMPTY** — confirmed unwired | ✓ |
-| R4D2 | COM | → 70 V brick ([cmp:stepper-brick] L1). D1/D3/D4 empty. | ✓ |
+| R4A2 | NO col 2 | ← 110 V brick mains (from R11 pole 4). Pole 1 (A1/B1/D1) empty. | ✓ |
+| R4D2 | COM col 2 | → 70 V brick ([cmp:stepper-brick] L1). | ✓ |
+
+**Poles 3 & 4 — head absolute-encoder (PSO) DPDT mux.** Pipes the two head drives' PSO serial output into the 7I85's free sserial RX (cross-refs: `mesa_7i85s_wiring.md`, `yaskawa_servo_wiring.md`). R4 coil does **double duty**; the boot read runs with the drives cold (R11 open → no 110 V at pole 2), so flipping R4 then is harmless. **Coil OFF → C (NC), ON → A (NO).** Wire colors **reused: red on D3 & C3, blue on D4 & A3.** (NC contacts referenced by the operator as C3/C4 = each pole's NC contact, elsewhere in this doc labeled B.)
+
+| Pole | Term | Contact | Wire | → |
+|---|---|---|---|---|
+| **4** (+ leg) | D4 | COM | **blue** | 7I85 TB1-19 (SRX+) |
+| 4 | A4 | NO → A | **yellow** | A drive OrW = PSO+ (CN1-48) |
+| 4 | C4 | NC → C | **white** | C drive OrW = PSO+ (CN1-48) |
+| **3** (− leg) | D3 | COM | **red** | 7I85 TB1-20 (SRX−) |
+| 3 | A3 | NO → A | **blue** | A drive Or = /PSO (CN1-49) |
+| 3 | C3 | NC → C | **red** | C drive Or = /PSO (CN1-49) |
 
 ---
 

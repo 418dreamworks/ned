@@ -28,6 +28,24 @@
     the opposite motor: **A/tilt = stepgen.03/out-07/in-15, C/spin = stepgen.02/out-06/in-14.**
     Swapped in the bench tools AND `ned.hal` §3/§7/§8. See `yaskawa_servo_wiring.md`.
   - 5axiskins: unresolved — stock 5axiskins is B/C bridge mill, head is AB/C.
+  - **Indicator calibration procedure (planned, needs a dial indicator in hand):**
+    1. **C ⟂ check:** fix A at any angle, rotate C against a flat reference surface —
+       indicator should read the same distance all the way round (C axis square to the surface).
+    2. **A zero:** with a machinist's square against A, find where it reads square → that is A = 0
+       (C irrelevant here).
+    3. **C zero:** mount a long rod; sweep A ±90° — C = 0 is the C angle at which the rod stays at
+       constant X (equal reach either side).
+    - For now: **eyeball A0/C0** and park the head there so rotation scripts have a datum.
+  - **Absolute-encoder readback → homing — DECIDED 2026-07-27: DO THIS (wire A + C head servos),
+    and the head calibration then happens IN LinuxCNC off the DRO, not the bench.** The drive
+    knows abs position but ned lands only PULS/SIGN + /S-ON + ALM (`yaskawa_servo_wiring.md:53-71`);
+    the encoder OUTPUTS on CN1 are unwired. (B workpiece rotary is steppers — no abs encoder; not part of this.) Options:
+    - **PAO/PBO/PCO (CN1 33/34, 35/36, 19/20) → Mesa encoder counter** → LinuxCNC `home-use-index`.
+      PCO = 1 pulse/motor-rev = every 1.8° of axis (1:200 harmonic) → index repeats; needs a coarse
+      home switch / abs channel to disambiguate.
+    - **PSO/PSO (CN1 48/49) = true absolute serial** (manual §4, txt 7264-66) → no homing move, but
+      a stock Mesa hm2 counter is quadrature-only, won't decode Yaskawa serial-ABS (needs a serial
+      interface). Drive-side zero taught via **Fn008 (Reset Abs Encoder)** / **Fn003 (Origin Search)**.
 - Pn002 = absolute (n.□0□□) set on both; A.810 cleared (batteries wired).
 
 ## Spindle — turns via software

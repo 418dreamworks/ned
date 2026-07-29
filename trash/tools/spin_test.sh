@@ -34,7 +34,7 @@ while :; do
   sleep 0.2
 done
 halcmd setp $OUT 0 2>/dev/null
-halcmd net sig-drawbar-clamp $OUT 2>/dev/null
+halcmd net sig-hqd-tool-release $OUT 2>/dev/null
 echo "================================================================"
 echo " rack LEFT LOCKED, output-13 relinked to sig-drawbar-clamp"
 echo " SUMMARY: in29 transitions   STATIC=$st    SPIN=$sp"

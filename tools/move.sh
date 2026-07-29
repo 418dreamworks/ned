@@ -23,6 +23,7 @@
 # SAFETY: open-loop, NO software limits. e-stops released, axis clear, finger on e-stop.
 
 P=hm2_7i97.0
+source "$(dirname "${BASH_SOURCE[0]}")/ned_params.sh"   # gear ratios + SCALEs -- SINGLE SOURCE (edit ned_params.sh only)
 OUT08=$P.7i84.0.0.output-08     # drive-enable -> R5 -> *7 (R0 + head/rotary contactors)
 SONA=$P.7i84.0.0.output-07      # /S-ON head A (tilt) -- head packs cross-wired (motor+enc swapped at the packs)
 SONC=$P.7i84.0.0.output-06      # /S-ON head C (spin)
@@ -39,6 +40,14 @@ halrun -f "$HAL" >/dev/null 2>&1 & HALPID=$!
 echo "starting the board (a few seconds)..."
 sleep 5
 kill -0 "$HALPID" 2>/dev/null || { echo "FAILED to start -- Mesa powered? cable in? (10.10.10.10)"; exit 1; }
+
+# --- air-pressure warning (input-12 / *37; active-high: TRUE=OK, FALSE=low; fail-safe NC switch) ---
+air=$(halcmd getp $P.inmux.00.input-12 2>/dev/null)
+case "$air" in
+  TRUE)  echo "  air pressure: OK (*37)" ;;
+  FALSE) echo "  ⚠️  WARNING: LOW AIR PRESSURE (*37/input-12) -- spindle air-seal + drawbar NOT pressurized" ;;
+  *)     echo "  ⚠️  air pressure UNREADABLE (input-12=${air:-?})" ;;
+esac
 
 alloff(){
   halcmd sets gvel 0 2>/dev/null; halcmd sets gen 0 2>/dev/null   # gantry shared signals, if made
@@ -69,19 +78,40 @@ rotary|rot)
 
 # ================= STEPGEN: head A (tilt) / C (spin) =================
 a|c)
+  if [ "$axis" = a ]; then SG=$P.stepgen.03; SON=$SONA; GEAR=$GEAR_A; else SG=$P.stepgen.02; SON=$SONC; GEAR=$GEAR_C; fi
+  # ---- precise degree move (position mode):  move.sh a deg 45   /   move.sh c deg -45 ----
+  if [ "$1" = deg ]; then
+    DEG="$2"; [ -z "$DEG" ] && { echo "usage: move.sh $axis deg <degrees>"; exit 1; }
+    REVS=$(awk "BEGIN{printf \"%.5f\", $DEG*$GEAR/360}")   # axis deg -> motor-rev (gear from ned_params.sh: A=$GEAR_A / C=$GEAR_C)
+    halcmd setp $OUT08 1; halcmd setp $SON 1; echo "drive-enable + /S-ON; settling 1.5s"; sleep 1.5
+    halcmd setp $SG.control-type 0; halcmd setp $SG.position-cmd 0; halcmd setp $SG.enable 1
+    for n in 0 1 2 3 4 5 6 7 8 9; do eb[$n]=$(halcmd getp $P.encoder.0$n.rawcounts 2>/dev/null); done
+    echo ">>> head $axis -> $DEG deg ($REVS motor-rev), position mode. NO soft limits -- ensure clearance. e-stop ready."
+    halcmd setp $SG.position-cmd "$REVS"
+    for k in $(seq 1 60); do
+      pf=$(halcmd getp $SG.position-fb 2>/dev/null)
+      enc=""; for n in 0 1 2 3 4 5 6 7 8 9; do r=$(halcmd getp $P.encoder.0$n.rawcounts 2>/dev/null); enc+=$(printf "e%s=%+d " "$n" "$(( ${r:-0} - ${eb[$n]:-0} ))"); done
+      printf '  pos-fb %.3f / %.3f rev   %s\n' "${pf:-0}" "$REVS" "$enc"
+      awk "BEGIN{d=${pf:-0}-$REVS; exit !(d<0.01 && d>-0.01)}" && { echo ">>> reached $DEG deg. HOLDING (Ctrl-C releases)."; break; }
+      sleep 0.5
+    done
+    while true; do sleep 1; done
+  fi
   RPM="$1"; SECS="$2"
-  { [ -z "$RPM" ] || [ -z "$SECS" ]; } && { echo "usage: move.sh $axis <RPM> <seconds>   (head deg ~= 0.03*RPM*sec)"; exit 1; }
+  { [ -z "$RPM" ] || [ -z "$SECS" ]; } && { echo "usage: move.sh $axis <RPM> <seconds>   |   move.sh $axis deg <degrees>"; exit 1; }
   awk "BEGIN{exit !($SECS>0 && $SECS<=30)}" 2>/dev/null || { echo "seconds must be 0..30"; exit 1; }
-  if [ "$axis" = a ]; then SG=$P.stepgen.03; SON=$SONA; else SG=$P.stepgen.02; SON=$SONC; fi
   REVS=$(awk "BEGIN{printf \"%.4f\", $RPM/60}")
   halcmd setp $OUT08 1; halcmd setp $SON 1
   echo "drive-enable + /S-ON asserted; settling 1.5s"; sleep 1.5
   halcmd setp $SG.enable 1; halcmd setp $SG.velocity-cmd "$REVS"
   echo ">>> head $axis @ $RPM motor-RPM for ${SECS}s ($(date +%H:%M:%S)). e-stop ready."
+  for n in 0 1 2 3 4 5 6 7 8 9; do eb[$n]=$(halcmd getp $P.encoder.0$n.rawcounts 2>/dev/null); done   # head fb baselines (7I85 e6-e9)
+  echo "    watching head encoders e6-e9 (raw delta) -- the column that MOVES is $axis's feedback channel"
   loops=$(awk "BEGIN{printf \"%d\",($SECS/0.5)+0.5}")
   for ((k=1;k<=loops;k++)); do
     V=$(halcmd getp $SG.velocity-fb 2>/dev/null)
-    printf '  +%.1fs  ~ %.0f RPM\n' "$(awk "BEGIN{print $k*0.5}")" "$(awk "BEGIN{print ${V:-0}*60}")"
+    enc=""; for n in 0 1 2 3 4 5 6 7 8 9; do r=$(halcmd getp $P.encoder.0$n.rawcounts 2>/dev/null); enc+=$(printf "e%s=%+d " "$n" "$(( ${r:-0} - ${eb[$n]:-0} ))"); done
+    printf '  +%.1fs  ~ %.0f RPM   %s\n' "$(awk "BEGIN{print $k*0.5}")" "$(awk "BEGIN{print ${V:-0}*60}")" "$enc"
     sleep 0.5
   done
   halcmd setp $SG.velocity-cmd 0

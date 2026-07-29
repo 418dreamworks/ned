@@ -10,10 +10,10 @@
 #  Hardware: Mesa 7I97T (Ethernet, hm2_eth) + 7I85S (DB25) + 7I84U (sserial).
 #  Component models/ratings (drives, motors, cards, supplies, relays) are NOT
 #  restated in this file -- see docs/components.md (single source of truth).
-#  Kinematics (set in ned.ini): trivkins coordinates=XYZXBAC  -> JOINTS=7
+#  Kinematics (set in ned.ini): trivkins coordinates=XYZXBACB kinstype=B -> JOINTS=8
 #            joint 0 = X (gantry side 1, STARBOARD)   joint 1 = Y
 #            joint 2 = Z                              joint 3 = X (gantry side 2 / "W", PORT)
-#            joint 4 = B (workpiece rotary, about Y -- 7I85S stepgen, LIVE)
+#            joint 4 = B (workpiece rotary side 1)    joint 7 = B (side 2, counter-rotating)
 #            joint 5 = A (swivel-head TILT about X/W) } SWIVEL HEAD -- INERT (parked 0,
 #            joint 6 = C (swivel-head SPIN about Z)   } loopback feedback) until driven.
 #  5-axis-ready topology now; with the head at 0 trivkins identity == any RTCP kins.
@@ -199,11 +199,10 @@ net b2-enable   joint.7.amp-enable-out             => hm2_7i97.0.stepgen.01.enab
 # --- Joints 5 : A (head TILT) & 6 : C (head SPIN) -- Yaskawa step/dir -------
 # Swivel head: two SGDXS servopacks in position (step/dir) mode, driven like the
 # B steppers -- open-loop stepgen POSITION mode, feedback = commanded position.
-# Mapping (docs/yaskawa_servo_wiring.md "Per-axis differences"):
-#   joint 5 = A (tilt) -> stepgen.02 (7I85 TB1 3/4/5/6)
-#   joint 6 = C (spin) -> stepgen.03 (7I85 TB1 11/12/13/14)
-# sig-a/c-servo-on also drives the drive's /S-ON input via 7I84 OUTPUT6/7 (section 7).
-# head packs CROSS-WIRED (motor+enc swapped at the packs): A tilt -> stepgen.03, C spin -> stepgen.02
+# Mapping -- head packs CROSS-WIRED (motor+encoder swapped at the packs, so each
+# axis is driven by the OTHER pack's stepgen; docs/yaskawa_servo_wiring.md):
+#   joint 5 = A (tilt) -> stepgen.03 ; /S-ON via 7I84 OUTPUT7 (section 7)
+#   joint 6 = C (spin) -> stepgen.02 ; /S-ON via 7I84 OUTPUT6 (section 7)
 net a-pos-cmd       joint.5.motor-pos-cmd              => hm2_7i97.0.stepgen.03.position-cmd
 net a-pos-fb        hm2_7i97.0.stepgen.03.position-fb  => joint.5.motor-pos-fb
 net sig-a-servo-on  joint.5.amp-enable-out             => hm2_7i97.0.stepgen.03.enable

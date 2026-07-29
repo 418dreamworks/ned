@@ -4,6 +4,29 @@ Definitive answers pulled from the manual
 (`docs/servo/text/yaskawa_sigma_xs_servopack_analog_pulse_product_manual.txt`).
 Read this BEFORE re-opening the manual — these questions recur.
 
+## Absolute readout — the EXACT Sigma-X protocol (from THIS drive's manual §6.12.5, verified 2026-07-28)
+- Authoritative section is **§6.12** (Absolute Encoders), NOT §10.3.6 (that's linear/fully-closed-loop).
+- **PSO (CN1-48/49)** = full absolute stream, **every 40 ms**. UART: **9600 baud, 7 data bits, EVEN parity, 1 stop (7E1)**, async.
+- **Rotary frame = 17 chars:** `P ± NNNNN , PPPPPPPP <CR>` = status(`P`=ok) + sign + **5-digit multiturn** + `,` + **8-digit within-one-turn** + CR. **No checksum.** (PAO burst = 8 chars, multiturn only.)
+- Encoder **26-bit = 67,108,864 cnt/rev**; multiturn limit Pn205 (default 65535 → ±32767 turns).
+- **Enable no-SEN auto-output:** `Pn002.2=0` (absolute) + `Pn50A.0=1` + `Pn515=n.□□□7` (always active) → streams after power-up, no handshake. (Default `Pn515=8` = SEN on CN1-4.)
+- **Formula:** pos = multiturn × R + within-turn (R = Pn212); machine = pos − stored-zero. Reverse mode (Pn000=n.□□□1): PE = −M×R + PO.
+- Wiring: PSO/PSO CN1-48/49 → RS-422 line-receiver → UART. SEN=CN1-4, +24VIN=CN1-47. Encoder↔drive raw serial = CN2-5/6 (PS//PS).
+- **Unresolved (image-only in manual):** whether the 8-digit within-turn field is raw 26-bit or Pn212-divided — confirm from the frame diagram or empirically. No turnkey Mesa/LinuxCNC decoder exists (forum 50063); build = MCU (RS-422→UART) parses PSO, feeds lcnc absolute at startup → immediate-home. Battery retains multiturn across power-off (prerequisite).
+
+## Absolute position IS host-readable (PSO/SEN + UART) — the head-home goal is achievable
+- **§6.12.4 "Reading the Position Data from the Absolute Encoder"** (this analog/pulse pack): a host
+  CAN read the 26-bit multiturn absolute position. **PSO / /PSO = CN1-48/49** ("Absolute Encoder
+  Position Output", serial); **SEN = CN1-4** ("Absolute Data Request Input"; or `Pn515=n.□□□7` =
+  always output, no SEN). Line 15599: *"The host controller must have a reception circuit (e.g.,
+  UART)."* At power-up the drive dumps initial position on **PAO/PBO** (already wired), then PSO streams it.
+- **What ned has vs needs:** battery keeps multiturn alive (done); PAO/PBO quadrature → Mesa =
+  INCREMENTAL feedback (done, `encoder.08/.09`). To get ABSOLUTE (home once, keep it): add **PSO+SEN
+  wiring + a UART decoder of Yaskawa's absolute format** (Mesa serial port + LinuxCNC driver, or an
+  external MCU translator). The plain hm2 quadrature counter does NOT decode it. This is a build, not impossible.
+- Interim with zero new hardware: 200:1 worm self-locks → park at 0/0, LinuxCNC immediate-home
+  (`HOME_SEARCH_VEL=0`) each session. Same practical result; only lacks the "did it move while off?" safety.
+
 ## Software position limits — the servopack does NOT have them
 - This SGDXS **analog/pulse** SERVOPACK has **no settable position software limit**.
   No `Pn8xx` parameter, no "software limit setting" section, no ToC entry. The term
@@ -11,6 +34,14 @@ Read this BEFORE re-opening the manual — these questions recur.
   enabled…", lines 9360 & 33606).
 - Software limits belong to the **network / SigmaLINK-II positioning** variant, not
   this pulse-input drive. In step/dir (pulse) mode the drive is a pure follower.
+- **Hardware-confirmed (don't re-litigate):** ned's drive is **SGDXS-2R8A00A** — the `A`
+  interface = analog/pulse (`components.md:36`). The software position limit is CiA-402 object
+  **607Dh** (min/max), which exists **only** on the EtherCAT/CANopen variant's object dictionary
+  (manual SIEP C710812 04, not on hand). The analog/pulse pack has no object dictionary → **no
+  607Dh, no Pn801/804/806**. `Fn008` (Reset Absolute Encoder) zeroes the encoder, but there is no
+  drive-side limit to reference it to — enforce ±limits in the controller. The old "soft limit"
+  message that got disabled was the **overtravel / not-pot** (P-OT/N-OT, `Pn50A=8101/Pn50B=6548`),
+  not a position limit.
 - ∴ "zero, then set + and − stops" is **LinuxCNC's** job, not the drive's:
   home the axis to zero (repeatable via the absolute encoder), then set per-joint
   **`MIN_LIMIT` / `MAX_LIMIT`** in `ned.ini`. Hardware P-OT/N-OT switches are the

@@ -483,7 +483,9 @@ All three NC contacts must be closed simultaneously (no e-stop pressed) for 24 V
 
 ### *F
 
-- **External wires landing here**: TBD (spindle motor cooling fan hot lands somewhere on this bus — specific terminal not yet identified)
+- **External wires landing here**:
+  - 110 V AC to the **cabinet cooling fan**
+  - 110 V AC to the **spindle cooling fan**
 
 ## *80
 

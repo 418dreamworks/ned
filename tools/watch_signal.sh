@@ -18,12 +18,12 @@ case "$name" in
   vfd-fault)       pin=inmux.00.input-13; desc="VFD fault            TB5-8  *38" ;;
   overtemp)        pin=inmux.00.input-14; desc="spindle overtemp     TB5-10 *39" ;;
   tool-probe)      pin=7i84.0.0.input-28; desc="tool probe           TB2-13 *54" ;;
-  rack)            pin=7i84.0.0.input-29; desc="rack position        TB2-14 *68" ;;
-  drawbar-up)      pin=7i84.0.0.input-30; desc="drawbar UP (clamped) TB2-15 *69" ;;
-  drawbar-down)    pin=7i84.0.0.input-31; desc="drawbar DOWN         TB2-16 *70" ;;
+  shaft-stopped)   pin=7i84.0.0.input-29; desc="HQD S3 shaft-stopped TB2-14 *68" ;;
+  tool-locked)     pin=7i84.0.0.input-30; desc="HQD S1 tool-locked   TB2-15 *69" ;;
+  tool-released)   pin=7i84.0.0.input-31; desc="HQD S2 tool-released TB2-16 *70" ;;
   *) echo "usage: watch_signal.sh <name> [seconds]"
      echo "names: estop x-aft x-fore y-sb y-port z-bottom z-top \\"
-     echo "       spindle-running air vfd-fault overtemp tool-probe rack drawbar-up drawbar-down"
+     echo "       spindle-running air vfd-fault overtemp tool-probe shaft-stopped tool-locked tool-released"
      exit 1 ;;
 esac
 PIN="hm2_7i97.0.$pin"

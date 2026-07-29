@@ -42,6 +42,32 @@ tied to the card GND becomes a ground-loop / noise path between the encoder grou
 the step/dir shield. At that point, move the shield to the cabinet PE bar (single-end)
 instead.
 
+## Head encoder feedback (A / C) → 7I85 encoder inputs (as-built 2026-07-28, VERIFIED)
+
+Yaskawa servopack encoder outputs (PAO/PBO/PCO, RS-422 line drivers) → 7I85 **muxed** encoder inputs.
+Needs **`num_encoders=10`** in the hm2_eth config (was 6) to expose the 7I85 counters (MuxedQCount 3/4
+via the DB25). Hand-tested clean 2026-07-28: both ramp ~6800 cnt / (−10 rpm × 5 s) ≈ **8190 cnt/motor-rev**.
+
+| Axis | 7I85 landing | enc ch | LinuxCNC pin |
+|---|---|---|---|
+| **A** (tilt) | TB2 pins **1–8** | ch 3 | **`encoder.09`** |
+| **C** (spin) | TB3 pins **17–24** | ch 2 | **`encoder.08`** |
+
+Per-conductor landing (both drives; colored = +, white = −):
+
+| Color | CN1 | Signal | A → 7I85 TB2 (ch3) | C → 7I85 TB3 (ch2) | Role |
+|---|---|---|---|---|---|
+| blue / blue-white | 33/34 | PAO / /PAO | TB2-1 / -2 | TB3-17 / -18 | incremental (live) |
+| brown / brown-white | 35/36 | PBO / /PBO | TB2-4 / -5 | TB3-20 / -21 | incremental (live) |
+| green / green-white | 19/20 | PCO / /PCO | TB2-7 / -8 (IDX3) | TB3-23 / -24 (IDX2) | index (wired, not enabled) |
+| SG wire | 1 | SG | TB2-3 (GND) | TB3-19 (GND) | ground ref |
+
+- Incremental A/B (blue+brown) → **A = `encoder.09`, C = `encoder.08`**. Two mux-phases of MuxedQCount 4; ch↔pin order is hand-tested, not obvious.
+- **Index (PCO, green)** on the IDX inputs (green = PCO+ → IDX+; green-white = /PCO → /IDX). Wired and available but **not enabled** in the config (no home switch → not needed); optional future index-reset. Harmless.
+- **Absolute (PSO, orange pair, CN1-48/49) does NOT land on the 7I85 encoder block** — those inputs are 2:1 muxed, useless for a continuous UART (`7i97t_7i85sd.pin`: A-IDX & C-IDX both = FPGA I/O 50). Instead PSO routes through an **R4 DPDT mux** (poles 3 & 4: COM→Mesa TB1-19/20, NC = C drive, NO = A drive; coil = 7I84 OUTPUT5 — full pole/color map in `relays.md` → R4) into the 7I85's only free non-muxed RS-422 receiver = **sserial RXData1 = TB1-19 (SRX+) / TB1-20 (SRX−)** (I/O 34; `mesa_7i85s_manual.txt:326-327`). Mux COMs: D4 (blue) → TB1-19, D3 (red) → TB1-20. **NOT live:** needs a serial reader (custom PktUART bitfile, or a Pi/MCU UART) + the R4-mux HAL; read once at boot to home (A vs C via the R4 coil). Protocol/params: `docs/servo/yaskawa_params_quickref.md`.
+- RS-422 jumpers (all down): ch3 = W8/W10/W12, ch2 = W1/W2/W4. +5 V (TB2-6 / TB3-22) open (Yaskawa self-powered).
+- **⚠ TEMPORARY HARNESS** (mixed gauge) — re-run with gauge-appropriate cable when the machine is next moved.
+
 ## Head Yaskawa pulse reference (A & C) — reserved (inert/future, not landed)
 
 stepgen 02/03 → the Yaskawa CN1 pulse-reference pins. The 24 V sequence I/O (/S-ON, ALM±,

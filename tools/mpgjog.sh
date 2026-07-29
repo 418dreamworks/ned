@@ -11,7 +11,7 @@
 #          the stop -- that is the missing accel/decel, fixed by MAX_ACCELERATION in LinuxCNC).
 #          Limit switch hit -> blocks motion INTO it, allows away.
 #   A/C    head, stepgen POSITION mode (precise): 1 arcmin per detent, very slow.
-#          Software stops: A +/-120 deg, C +/-320 deg (clamped target).
+#          NO software stops on A/C -- limits mean nothing until commanded-deg = physical-deg is verified.
 #   B      workpiece rotary PAIR (stepgen 00 +, 01 -, counter-rotating), 0.1 deg/detent.
 #          Selecting B clicks R4 (output-05) -> 70 V brick: settle before jog, ~10s hold-off
 #          after leaving B (arm mode only).
@@ -19,7 +19,7 @@
 #   mpgjog.sh          DRY-RUN: reads button/wheel/limits + shows the logic, DRIVES NOTHING
 #   mpgjog.sh arm      ENERGIZES drives (+ head /S-ON) and actually jogs
 #
-# Head/rotary detents are EXACT only if the gear ratios are right (head 200:1 worm, rotary
+# Head/rotary detents are EXACT only if the gear ratios are right (head gear per ned_params.sh, rotary
 # 20:1 -- from calibration_plan.md / ned.ini). Position mode is relative to the arm point
 # (stepgen starts at 0), not absolute. Run DRY first. e-stop ready, axis clear, START SLOW.
 
@@ -35,8 +35,8 @@ HOLD_T=0.4 ; GESTURE=6 ; IDLE_T=0.15 ; DT=0.05 ; CPD=4
 BRICK_SETTLE=0.5 ; BRICK_HOLD=10          # R4/brick: settle (s) before B jog; hold-off (s) after leaving B
 # stepgen axes (A C B): degrees per detent, gear (motor-rev per axis-rev), soft limits (deg)
 DEG_A=0.016667 ; DEG_C=0.016667 ; DEG_B=0.1       # 1' / 1' / 0.1 deg per detent
-GEAR_A=200 ; GEAR_C=200 ; GEAR_B=20
-LO_A=-120 ; HI_A=120 ; LO_C=-320 ; HI_C=320 ; LO_B=-100000 ; HI_B=100000
+source "$(dirname "${BASH_SOURCE[0]}")/ned_params.sh" ; GEAR_B=$ROT_GEAR   # GEAR_A/GEAR_C from ned_params.sh (SINGLE SOURCE)
+LO_A=-100000 ; HI_A=100000 ; LO_C=-100000 ; HI_C=100000 ; LO_B=-100000 ; HI_B=100000   # NO soft stops -- meaningless until deg scale is verified
 
 AXNAME=(X Y Z A C B) ; KIND=(vel vel vel pos pos pos) ; SPNAME=(SLOW MED FAST)
 SV=("$SLOW_V" "$MED_V" "$FAST_V") ; SCALE=(50 50 40)   # pwmgen scale X/Y/Z (W shares X=50)
@@ -52,6 +52,14 @@ halrun -f "$HAL" >/dev/null 2>&1 & HALPID=$!
 echo "starting the board (a few seconds)..."
 sleep 5
 kill -0 "$HALPID" 2>/dev/null || { echo "FAILED to start -- Mesa powered? cable in? (10.10.10.10)"; exit 1; }
+
+# --- air-pressure warning (input-12 / *37; active-high: TRUE=OK, FALSE=low; fail-safe NC switch) ---
+air=$(halcmd getp $P.inmux.00.input-12 2>/dev/null)
+case "$air" in
+  TRUE)  echo "  air pressure: OK (*37)" ;;
+  FALSE) echo "  ⚠️  WARNING: LOW AIR PRESSURE (*37/input-12) -- spindle air-seal + drawbar NOT pressurized" ;;
+  *)     echo "  ⚠️  air pressure UNREADABLE (input-12=${air:-?})" ;;
+esac
 
 alloff(){
   for i in 00 01 02 03; do halcmd setp $P.pwmgen.$i.value 0 2>/dev/null; halcmd setp $P.pwmgen.$i.enable 0 2>/dev/null; done
@@ -79,7 +87,7 @@ if [ "$MODE" = arm ]; then
   readpins
   [ "${V[11]}" = TRUE ] || { echo "E-STOP ENGAGED (input-04 != TRUE) -> enable does nothing. Abort."; exit 1; }
   echo ">>> ARMING: drive-enable + head /S-ON, X/Y/Z at 0 V, stepgens -> position mode. settling 1.5s"
-  halcmd setp $OUT08 1 ; halcmd setp $SONA 1 ; halcmd setp $SONC 1
+  halcmd setp $OUT08 1    # head /S-ON asserted PER-AXIS in the loop (single /S-ON exposes cross-wiring)
   for i in 00 01 02 03; do halcmd setp $P.pwmgen.$i.value 0; halcmd setp $P.pwmgen.$i.enable 1; done
   for i in 00 01 02 03; do halcmd setp $P.stepgen.$i.control-type 0; halcmd setp $P.stepgen.$i.position-cmd 0; halcmd setp $P.stepgen.$i.enable 1; done
   sleep 1.5
@@ -112,6 +120,13 @@ while kill -0 "$HALPID" 2>/dev/null; do
   fi
   if [ "$pressed" = 0 ] && [ "$prev_pressed" = 1 ] && [ "$held" = 0 ]; then
     ax=$(((ax+1)%6)) ; printf '\n  axis  -> %s\n' "${AXNAME[$ax]}"
+    if [ "$MODE" = arm ]; then     # single head /S-ON: only the SELECTED head axis's enable
+      case $ax in
+        3) halcmd setp $SONA 1; halcmd setp $SONC 0 ;;   # A -> /S-ON output-07 only
+        4) halcmd setp $SONC 1; halcmd setp $SONA 0 ;;   # C -> /S-ON output-06 only
+        *) halcmd setp $SONA 0; halcmd setp $SONC 0 ;;   # linear / B -> both head enables off
+      esac
+    fi
   fi
   prev_pressed=$pressed
 
