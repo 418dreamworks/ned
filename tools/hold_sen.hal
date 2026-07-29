@@ -1,0 +1,16 @@
+# Holds 7I84 OUTPUT4 (TB3-21) HIGH = SEN asserted on CN1-42, for DMM.
+#   Run:   halrun -f ~/Documents/ned/tools/hold_sen.hal
+#   DMM:   black on CN1-47 (0 V input common), red on:
+#            TB3-21  -> expect ~+24 V  (7I84 output itself)
+#            CN1-42  -> expect ~+24 V  (wire delivered it to the drive)
+#          If TB3-21 is +24 V but CN1-42 is ~0 V, the wire/connection is the break.
+#          If both are +24 V and SEN still returns nothing, Pn515 on C != 8882.
+#   Quit:  type  exit   (or Ctrl-C)
+loadrt hostmot2
+loadrt hm2_eth board_ip="10.10.10.10" config="num_encoders=10 num_pwmgens=6 num_stepgens=4 num_inmuxs=1 num_pktuarts=1 sserial_port_0=0xxxxxxx"
+loadrt threads name1=servo period1=1000000
+addf hm2_7i97.0.read  servo
+addf hm2_7i97.0.write servo
+setp hm2_7i97.0.7i84.0.0.output-04 1
+start
+loadusr -w sleep 300

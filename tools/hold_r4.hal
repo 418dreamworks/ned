@@ -1,0 +1,13 @@
+# Holds 7I84 OUTPUT5 (TB3-22) HIGH = R4 coil energized, for DMM.
+#   Run:   halrun -f ~/Documents/ned/tools/hold_r4.hal
+#   Check: R4 coil energized (~24 V across the coil), and poles 3&4 switched
+#          COM (D4→TB1-19, D3→TB1-20) now on NO = A drive (not NC = C).
+#   Quit:  type  exit   (or Ctrl-C)
+loadrt hostmot2
+loadrt hm2_eth board_ip="10.10.10.10" config="num_encoders=10 num_pwmgens=6 num_stepgens=4 num_inmuxs=1 num_pktuarts=1 sserial_port_0=0xxxxxxx"
+loadrt threads name1=servo period1=1000000
+addf hm2_7i97.0.read  servo
+addf hm2_7i97.0.write servo
+setp hm2_7i97.0.7i84.0.0.output-05 1
+start
+loadusr -w sleep 300

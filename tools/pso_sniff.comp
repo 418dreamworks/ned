@@ -16,6 +16,9 @@ pin out s32 rxbytes  "bytes read this cycle (negative = error code)";
 pin out u32 frames   "frames read this cycle";
 pin out u32 total    "total bytes seen since load";
 pin out s32 last_err "last negative return from read/config";
+pin out u32 rx_status "raw RX status reg: b0=false-start b1=overrun b3=rxen b4=rcfifo-err b16-20=frames b21=has-data";
+pin out s32 pver     "pktuart module version (known-nonzero if runtime reads work)";
+pin out s32 pclk     "pktuart clock Hz (known-nonzero if runtime reads work)";
 
 variable char pname[64];      // copy of the instance name (prefix is not persistent)
 variable int  printed;        // frames dumped so far (cap the dump)
@@ -36,9 +39,12 @@ FUNCTION(receive){
     unsigned char buf[16*80];
     rtapi_u16 sizes[16];
     int r = hm2_pktuart_read(pname, buf, &num_frames, &max_frame_length, sizes);
+    rx_status = hm2_pktuart_get_rx_status(pname);
+    pver = hm2_pktuart_get_version(pname);   // actually read them this time (were unset -> defaulting to 0)
+    pclk = hm2_pktuart_get_clock(pname);
     rxbytes = r;
     frames = num_frames;
-    if (r < 0) { last_err = r; return; }
+    if (r < 0) { last_err = r; hm2_pktuart_reset(pname); return; }   // clear sticky overrun/false-start so a clean burst reads next cycle
     if (r > 0) {
         int i, off = 0;
         total += r;
