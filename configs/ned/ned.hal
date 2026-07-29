@@ -83,7 +83,7 @@ loadrt [EMCMOT]EMCMOT servo_period_nsec=[EMCMOT]SERVO_PERIOD num_joints=[KINS]JO
 loadrt pid names=pid.x,pid.y,pid.z,pid.w
 
 # --- Logic gates for the spindle + drawbar interlock -----------------------
-loadrt and2 names=spindle.permit,spindle.cw,spindle.ccw,rotary.permit
+loadrt and2 names=spindle.permit,spindle.cw,spindle.ccw,rotary.permit,air.permit
 
 
 # ----------------------------------------------------------------------------
@@ -99,6 +99,7 @@ addf pid.w.do-pid-calcs       servo-thread
 addf spindle.permit           servo-thread
 addf spindle.cw               servo-thread
 addf spindle.ccw              servo-thread
+addf air.permit               servo-thread
 addf hm2_7i97.0.write         servo-thread
 
 
@@ -246,7 +247,15 @@ net sig-spindle-vel-volts  spindle.0.speed-out-abs
 # ============================================================================
 # E-stop is a HARDWARE daisy chain; HAL only reads the result (e-stop-released
 # HIGH when the whole chain is intact) and asserts drive-enable to R5.
-net sig-estop-released  => iocontrol.0.emc-enable-in
+# --- HARD AIR INTERLOCK (added 2026-07-29) -----------------------------------
+# Air is a PREREQUISITE for motion: emc-enable-in = e-stop-released AND air-OK.
+# Loss of air (or a low-air / broken-sensor fault -> input-12 reads not-TRUE)
+# drops emc-enable-in and E-STOPS the machine, so NOTHING runs without air --
+# no jog, no MDI, no spindle. Restore air, then reset e-stop to run.
+# (sig-air-pressure-ok = inmux input-12 / *37, HIGH=OK; sourced in section 7.)
+net sig-estop-released   => air.permit.in0
+net sig-air-pressure-ok  => air.permit.in1
+net sig-emc-enable       air.permit.out => iocontrol.0.emc-enable-in
 net sig-drive-enable    motion.motion-enabled
 
 # Limit switches are NC / fail-safe: contact OPENS at the limit (or on a broken
@@ -275,12 +284,13 @@ net sig-limit-x-aft  => joint.0.home-sw-in   joint.3.home-sw-in
 net sig-limit-y-sb  => joint.1.home-sw-in
 net sig-limit-z-top   => joint.2.home-sw-in
 
-# Monitored safety inputs (faithful to the Fagor: these did not drop machine
-# e-stop, they were status the CNC read). Exposed here for the GUI / optional
-# interlocks; wire into emc-enable-in via and2 later if you want them to E-stop.
-#   sig-air-pressure-ok   HIGH = air OK
-#   sig-vfd-fault         HIGH = VFD faulted
-#   sig-spindle-overtemp  HIGH = spindle thermostat tripped
+# Safety inputs. sig-air-pressure-ok is now a HARD interlock -- ANDed into
+# emc-enable-in (section 5 estop block), so air loss E-stops the machine (no
+# motion, no spindle). vfd-fault and spindle-overtemp stay status-only for the
+# GUI; AND them into air.permit / emc-enable-in later to make them E-stop too.
+#   sig-air-pressure-ok   HIGH = air OK   <-- HARD INTERLOCK (section 5)
+#   sig-vfd-fault         HIGH = VFD faulted            (monitored only)
+#   sig-spindle-overtemp  HIGH = spindle thermostat tripped (monitored only)
 
 
 # ============================================================================

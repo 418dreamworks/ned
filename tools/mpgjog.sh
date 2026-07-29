@@ -53,13 +53,18 @@ echo "starting the board (a few seconds)..."
 sleep 5
 kill -0 "$HALPID" 2>/dev/null || { echo "FAILED to start -- Mesa powered? cable in? (10.10.10.10)"; exit 1; }
 
-# --- air-pressure warning (input-12 / *37; active-high: TRUE=OK, FALSE=low; fail-safe NC switch) ---
+# --- HARD AIR INTERLOCK: air is a prerequisite. ARM refuses without air; ------
+# dry-run only warns (it drives nothing). input-12 / *37, fail-safe: TRUE=air OK.
 air=$(halcmd getp $P.inmux.00.input-12 2>/dev/null)
-case "$air" in
-  TRUE)  echo "  air pressure: OK (*37)" ;;
-  FALSE) echo "  ⚠️  WARNING: LOW AIR PRESSURE (*37/input-12) -- spindle air-seal + drawbar NOT pressurized" ;;
-  *)     echo "  ⚠️  air pressure UNREADABLE (input-12=${air:-?})" ;;
-esac
+if [ "$air" = "TRUE" ]; then
+  echo "  air pressure: OK (*37/input-12)"
+elif [ "$MODE" = arm ]; then
+  echo "🛑 AIR NOT CONNECTED (input-12/*37 = ${air:-unreadable}) -- refusing to ARM (no motion without air)."
+  kill "$HALPID" 2>/dev/null; halrun -U >/dev/null 2>&1   # trap not set yet -- clean up here
+  exit 1
+else
+  echo "  ⚠️  LOW/NO AIR (input-12/*37 = ${air:-unreadable}) -- dry-run only; 'arm' will refuse until air is connected."
+fi
 
 alloff(){
   for i in 00 01 02 03; do halcmd setp $P.pwmgen.$i.value 0 2>/dev/null; halcmd setp $P.pwmgen.$i.enable 0 2>/dev/null; done

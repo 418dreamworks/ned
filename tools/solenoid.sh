@@ -42,13 +42,16 @@ halrun -f "$HAL" >/dev/null 2>&1 & HALPID=$!
 echo "starting the board (a few seconds)..."; sleep 5
 kill -0 "$HALPID" 2>/dev/null || { echo "FAILED to start -- Mesa powered? cable in? (10.10.10.10)"; exit 1; }
 
-# --- air-pressure warning (input-12 / *37; active-high: TRUE=OK, FALSE=low; fail-safe NC switch) ---
+# --- HARD AIR INTERLOCK: air is a prerequisite -- do NOTHING without it --------
+# input-12 / *37, fail-safe: TRUE=air OK; FALSE/unreadable => refuse (these ARE the
+# air actuators -- no point, and drawbar unclamp must not run dry).
 air=$(halcmd getp $P.inmux.00.input-12 2>/dev/null)
-case "$air" in
-  TRUE)  echo "  air pressure: OK (*37)" ;;
-  FALSE) echo "  ⚠️  WARNING: LOW AIR PRESSURE (*37/input-12) -- unclamp/blow-off air not pressurized" ;;
-  *)     echo "  ⚠️  air pressure UNREADABLE (input-12=${air:-?})" ;;
-esac
+if [ "$air" != "TRUE" ]; then
+  echo "🛑 AIR NOT CONNECTED (input-12/*37 = ${air:-unreadable}) -- refusing to fire any solenoid."
+  kill "$HALPID" 2>/dev/null; halrun -U >/dev/null 2>&1   # trap not set yet -- clean up here
+  exit 1
+fi
+echo "  air pressure: OK (*37/input-12)"
 
 on(){  for o in "$@"; do halcmd setp $P.7i84.0.0.$o 1 2>/dev/null; done; }
 off(){ for o in "$@"; do halcmd setp $P.7i84.0.0.$o 0 2>/dev/null; done; }

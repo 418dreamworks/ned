@@ -85,7 +85,7 @@ for ((k=1;k<=cyc;k++)); do
 
   if (( k % FLIP == 0 )); then
     acs=$(( -acs )); bs=$(( -bs ))
-    at=$(awk "BEGIN{print $acs*$ACREV}"); bv=$(awk "BEGIN{print $bs*$BRPS}"); nbv=$(awk "BEGIN{print -$bs*$BRPS}")
+    at=$(awk "BEGIN{print $acs*$ACREV}"); bv=$(awk "BEGIN{print $bs*$BRPS}"); nbv=$(awk "BEGIN{print -($bs*$BRPS)}")   # paren: bs=-1 -> -(-1) not --1 (awk read '--1' as decrement -> "syntax error at or near 1")
     printf "setp $P.stepgen.03.position-cmd %s\nsetp $P.stepgen.02.position-cmd %s\nsetp $P.stepgen.00.velocity-cmd %s\nsetp $P.stepgen.01.velocity-cmd %s\n" "$at" "$at" "$bv" "$nbv" | halcmd -f /dev/stdin 2>/dev/null
   fi
   # stop the spindle ~60% through, so start AND stop both show

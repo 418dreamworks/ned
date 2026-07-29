@@ -23,13 +23,16 @@ halrun -f "$HAL" >/dev/null 2>&1 & HALPID=$!
 echo "starting the board (a few seconds)..."; sleep 5
 kill -0 "$HALPID" 2>/dev/null || { echo "FAILED to start -- Mesa powered? cable in? (10.10.10.10)"; exit 1; }
 
-# --- air-pressure warning (input-12 / *37; active-high: TRUE=OK, FALSE=low; fail-safe NC switch) ---
+# --- HARD AIR INTERLOCK: air is a prerequisite -- do NOTHING without it --------
+# input-12 / *37, fail-safe: TRUE=air OK; FALSE/unreadable => refuse. (This asserts
+# /S-ON + stepgen velocity; motion iff servo power is left on -- so gate it too.)
 air=$(halcmd getp $P.inmux.00.input-12 2>/dev/null)
-case "$air" in
-  TRUE)  echo "  air pressure: OK (*37)" ;;
-  FALSE) echo "  ⚠️  WARNING: LOW AIR PRESSURE (*37/input-12)" ;;
-  *)     echo "  ⚠️  air pressure UNREADABLE (input-12=${air:-?})" ;;
-esac
+if [ "$air" != "TRUE" ]; then
+  echo "🛑 AIR NOT CONNECTED (input-12/*37 = ${air:-unreadable}) -- refusing to pulse."
+  kill "$HALPID" 2>/dev/null; halrun -U >/dev/null 2>&1   # trap not set yet -- clean up here
+  exit 1
+fi
+echo "  air pressure: OK (*37/input-12)"
 
 teardown(){ echo; echo ">>> stop + off";
   for i in 02 03; do halcmd setp $P.stepgen.$i.velocity-cmd 0 2>/dev/null; halcmd setp $P.stepgen.$i.enable 0 2>/dev/null; done
