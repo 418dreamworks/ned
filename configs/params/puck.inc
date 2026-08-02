@@ -1,3 +1,5 @@
+# GENERATED from configs/params/MASTER.params by tools/live/gen_params.py -- DO NOT HAND-EDIT.
+# Edit MASTER.params, then run: gen_params.py check && gen_params.py write
 # puck.inc -- SINGLE SOURCE for the tool-probe ("puck") LOCATION.  [PUCK] section.
 # G-code CANNOT rewrite an INI, so the checkpoint routines READ the seeds here and
 # LOG their refined results to puck_result.txt (in the config dir) for you to paste

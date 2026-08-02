@@ -1,3 +1,5 @@
+# GENERATED from configs/params/MASTER.params by tools/live/gen_params.py -- DO NOT HAND-EDIT.
+# Edit MASTER.params, then run: gen_params.py check && gen_params.py write
 # display_common.inc -- shared [DISPLAY] body (minus the DISPLAY= GUI selector,
 # which is per-config). #INCLUDE'd under a [DISPLAY] header, AFTER the DISPLAY=
 # line. Lifted verbatim from configs/ned/ned.ini.

@@ -34,6 +34,57 @@ fi
 # shellcheck disable=SC1091
 source "$VENV/bin/activate"
 
+# 0. ALREADY-RUNNING CHECK (operator 2026-08-02): a second launch on top of a
+# live session used to go straight into `halrun -U` below and wreck the running
+# machine. Detect first, ASK, and never touch anything unless told to.
+# Bracket patterns ([b]in/...) so pgrep can never match this script's own
+# command line -- that self-match has bitten us three times.
+run5_running_pids() {
+  { pgrep -f "[b]in/probe_basic"
+    pgrep -x linuxcncsvr
+    pgrep -x milltask
+    pgrep -x halui; } 2>/dev/null | sort -u
+}
+EXISTING=$(run5_running_pids)
+if [ -n "$EXISTING" ]; then
+  echo "run5: a LinuxCNC/Probe Basic session is ALREADY RUNNING:"
+  # shellcheck disable=SC2086
+  ps -o pid=,etime=,args= -p $EXISTING 2>/dev/null | cut -c1-110 | sed 's/^/      /'
+  if [ ! -t 0 ]; then
+    echo "run5: refusing to launch on top of it (no terminal to ask on)."
+    echo "      Close that session first, then run5.sh again."
+    exit 1
+  fi
+  read -r -p "run5: close it and launch a fresh session? [y/N] " closeok
+  if [ "$closeok" != "y" ]; then
+    echo "run5: left the running session alone -- nothing was touched."
+    exit 1
+  fi
+  echo "run5: closing the running session ..."
+  # shellcheck disable=SC2086
+  kill $EXISTING 2>/dev/null
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    sleep 1
+    [ -z "$(run5_running_pids)" ] && break
+  done
+  STUBBORN=$(run5_running_pids)
+  if [ -n "$STUBBORN" ]; then
+    echo "run5: still up after 10 s -- forcing"
+    # shellcheck disable=SC2086
+    kill -9 $STUBBORN 2>/dev/null
+    sleep 2
+  fi
+  if [ -n "$(run5_running_pids)" ]; then
+    echo "run5: FAILED to close the old session -- aborting so nothing is corrupted"
+    exit 1
+  fi
+  # the brain/pendant are children of that session; make sure they went too
+  pkill -f "[n]ed_brain.py"   2>/dev/null
+  pkill -f "[n]ed_pendant.py" 2>/dev/null
+  sleep 1
+  echo "run5: old session closed."
+fi
+
 # `resume` -> stored homing. HOME_SEARCH_VEL is config-time only (inihal exposes
 # just home/home_offset/home_sequence at runtime), so skipping the switch search
 # REQUIRES a different ini: generate one whose [JOINT_0..3] home IN PLACE

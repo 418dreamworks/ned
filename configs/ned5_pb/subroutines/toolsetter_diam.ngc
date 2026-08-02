@@ -1,0 +1,145 @@
+(ned -- TOOLSETTER DIAMETER PROBE)
+(Repurposes Probe Basic's dead "tool diameter probe" hook, which shipped)
+(as nothing but an abort telling you to write this yourself. Operator)
+(2026-08-02: "lets repurpose Tool Diam Probe to be : ToolSetter Diam)
+(Probe. This returns the rough diameter of the tool setter for us to use)
+(in our calibrate routines.")
+
+(HOW IT WORKS -- a Z-only touch plate cannot be probed from the side, so)
+(the plate's extent is found by WHERE IT STOPS TRIGGERING: step the tool)
+(outward from the plate centre and probe straight down at each step.)
+(While the tool still overlaps the plate the probe trips at plate height;)
+(one step past the rim it does not trip at all. The rim sits between the)
+(last trip and the first miss. Repeated on -X/+X/-Y/+Y that yields two)
+(diameters and, as a free by-product, the plate CENTRE -- which nothing)
+(else in this GUI can find.)
+
+(TOOL RADIUS: contact persists until the tool's trailing edge clears the)
+(rim, so the swept span reads one whole TOOL diameter too wide. Subtract)
+(#5410 when the tool table knows the diameter; report the raw span either)
+(way.)
+
+(PREREQUISITE -- the plate must be PARALLEL TO XY. A tilted plate changes)
+(trigger height across its face, which this routine reads as geometry.)
+
+(RESULTS, machine coordinates:)
+(  #3040 = plate diameter along X   #3041 = plate diameter along Y)
+(  #3042 = plate centre X           #3043 = plate centre Y)
+(  #3044 = plate top trigger Z)
+
+o<toolsetter_diam> sub
+  #<cx>        = #1    (start X, machine -- approx plate centre)
+  #<cy>        = #2    (start Y, machine)
+  #<plate_z>   = #3    (plate top trigger Z, machine, from the centre probe)
+  #<probe_fr>  = #4    (probe feed)
+  #<trav_fr>   = #5    (traverse feed)
+  #<tool_dia>  = #6    (current tool diameter, 0 = unknown -> no correction)
+  #<max_reach> = #7    (mm to search outward before giving up)
+
+  #<z_clear>   = 0.5   (hover above the plate between probes)
+  #<overshoot> = 0.3
+(overshoot: how far BELOW plate top a miss may travel -- small on purpose,)
+(off the rim there is setter body)
+  #<coarse>    = 1.0
+  #<fine>      = 0.2
+
+  o10 if [#<probe_fr> LE 0 OR #<trav_fr> LE 0]
+    (abort, TOOLSETTER DIAM: probe/traverse feeds are ZERO - set #3004..#3006)
+  o10 endif
+  o11 if [#<max_reach> LE 0]
+    #<max_reach> = 60
+  o11 endif
+
+  #<probe_depth> = [#<z_clear> + #<overshoot>]
+
+  (--- one direction: returns the rim offset from centre in #<rim> ---------)
+(dirx/diry are +-1/0; walk coarse until the trip stops, then re-walk the)
+(last coarse gap in fine steps for the actual rim)
+  #<d> = 0
+  o100 while [#<d> LT 4]
+    o110 if [#<d> EQ 0]
+      #<dirx> = 1  #<diry> = 0
+    o110 elseif [#<d> EQ 1]
+      #<dirx> = -1 #<diry> = 0
+    o110 elseif [#<d> EQ 2]
+      #<dirx> = 0  #<diry> = 1
+    o110 else
+      #<dirx> = 0  #<diry> = -1
+    o110 endif
+
+    #<pos>      = 0
+    #<last_hit> = 0
+    #<step>     = #<coarse>
+    #<refining> = 0
+    #<done>     = 0
+
+    o120 while [#<done> EQ 0]
+      #<pos> = [#<pos> + #<step>]
+
+      o121 if [#<pos> GT #<max_reach>]
+        (abort, TOOLSETTER DIAM: no rim found within max reach)
+      o121 endif
+
+      (hover, move out, probe down)
+      G90
+      G53 G1 F[#<trav_fr>] Z[#<plate_z> + #<z_clear>]
+      G53 G1 F[#<trav_fr>] X[#<cx> + #<dirx> * #<pos>] Y[#<cy> + #<diry> * #<pos>]
+      G91
+      G38.3 F[#<probe_fr>] Z-[#<probe_depth>]
+      G90
+      G53 G1 F[#<trav_fr>] Z[#<plate_z> + #<z_clear>]
+
+      o130 if [#5070 EQ 1]
+        (still on the plate)
+        #<last_hit> = #<pos>
+      o130 else
+        (past the rim)
+        o131 if [#<refining> EQ 1]
+          (rim = midpoint of the last fine gap)
+          #<rim>  = [#<last_hit> + #<fine> / 2]
+          #<done> = 1
+        o131 else
+          (re-walk the last coarse gap finely)
+          #<refining> = 1
+          #<pos>      = #<last_hit>
+          #<step>     = #<fine>
+        o131 endif
+      o130 endif
+    o120 endwhile
+
+    o140 if [#<d> EQ 0]
+      #<rim_xp> = #<rim>
+    o140 elseif [#<d> EQ 1]
+      #<rim_xm> = #<rim>
+    o140 elseif [#<d> EQ 2]
+      #<rim_yp> = #<rim>
+    o140 else
+      #<rim_ym> = #<rim>
+    o140 endif
+
+    #<d> = [#<d> + 1]
+  o100 endwhile
+
+  (--- results ------------------------------------------------------------)
+  #<span_x> = [#<rim_xp> + #<rim_xm>]
+  #<span_y> = [#<rim_yp> + #<rim_ym>]
+  #3040 = [#<span_x> - #<tool_dia>]
+  #3041 = [#<span_y> - #<tool_dia>]
+(centre: the rims are unequal only if the start point was off-centre --)
+(half that difference IS the centre error, so correct for it)
+  #3042 = [#<cx> + [#<rim_xp> - #<rim_xm>] / 2]
+  #3043 = [#<cy> + [#<rim_yp> - #<rim_ym>] / 2]
+  #3044 = #<plate_z>
+
+  (PRINT, TOOLSETTER DIAM raw span X=%.3f#<span_x> Y=%.3f#<span_y> tool=%.3f#<tool_dia>)
+  (PRINT, TOOLSETTER DIAM plate X=%.3f#3040 Y=%.3f#3041 centre X=%.4f#3042 Y=%.4f#3043 Z=%.4f#3044)
+  (DEBUG, TOOLSETTER DIAM: plate %.2f#3040 x %.2f#3041 mm, centre %.3f#3042 / %.3f#3043)
+
+  (park back over the measured centre, clear of the plate)
+  G90
+  G53 G1 F[#<trav_fr>] Z[#<plate_z> + #<z_clear>]
+  G53 G1 F[#<trav_fr>] X#3042 Y#3043
+
+o<toolsetter_diam> endsub
+
+M2 (end program)

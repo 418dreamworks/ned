@@ -14,6 +14,8 @@ o<toolchange> sub
 
 (PRINT, o<toolchange> selected_tool: #<selected_tool>, tool_in_spindle: #<tool_in_spindle>, selected_pocket: #<selected_pocket>, current_pocket: #<current_pocket>, task: #<_task>)
 
+M64 P1 ; TOOL CHANGE IN PROGRESS flag (ned: brain suspends its
+;        MANUAL/teleop restore while this is high)
 o100 if [#<_task> EQ 0]
     (DEBUG, Task is null)
     o<toolchange> return [999]
@@ -98,6 +100,7 @@ o170 if [1 EQ 1]
     G43 H#<selected_tool>
 o170 endif
 
+M65 P1 ; tool change complete -> release the brain
 o<program_coolant> call
 
 (PRINT, o<toolchange> endsub)

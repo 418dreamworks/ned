@@ -37,15 +37,15 @@ STYLE_DOWN = 'font: 75 18pt; background: rgb(140,30,30); color: white;'
 STYLE_NOAIR = 'font: 75 18pt; background: rgb(70,70,70); color: rgb(180,180,180);'
 
 # JOG & PRESETS speed table: key -> (linear F mm/min, angular F deg/min).
-# SLOW = 1 ft/min, MEDIUM = 12 ft/min, FAST = 12 ft in 10 s. FAST is
-# COMMANDED above the machine limits on purpose: the planner clamps to
-# MAXV/accel (axis X/Y 200 mm/s = F12000, Z 169.3 mm/s; TRAJ angular
-# 30 deg/s = 1800 deg/min) and never errors. Angular mapping per spec:
-# slow 60 / medium 720 / fast 4320 deg/min.
+# v2 operator spec 2026-08-01 23:14: SLOW 200 / MEDIUM 1200 / FAST 4000
+# mm/min, rotary 15 / 60 / 180 deg/min. Emitted as the F word on every
+# command; the selection persists between moves. All values are inside the
+# machine limits (X/Y 200 mm/s, Z 169.3 mm/s, angular 30 deg/s), so the
+# planner never has to clamp these.
 JOG_SPEEDS = {
-    'slow':   (304.8,    60.0),
-    'medium': (3657.6,  720.0),
-    'fast':   (21945.6, 4320.0),
+    'slow':   (200.0,   15.0),
+    'medium': (1200.0,  60.0),
+    'fast':   (4000.0, 180.0),
 }
 
 # EMC 9-axis order XYZABCUVW -> stat.actual_position/g5x_offset/... index
@@ -406,12 +406,31 @@ class UserTab(QWidget):
         # them LOUDLY here.
         self._jog_speed = 'medium'
         self._jog_wire()
+        # 6000 ms like _number_badges: a singleShot(0) reparent during
+        # window construction spun Qt at 95% CPU and PB never finished
+        # booting (2026-08-02 10:08 launch)
+        QTimer.singleShot(6000, self._jog_page_takeover)
+        # UNITS IN/MM buttons on the SETTINGS tab (operator 2026-08-02
+        # 13:0x: PB has no units control; G20/G21 is the only path)
+        QTimer.singleShot(6000, self._units_panel_install)
+        # one-shot geometry dump: global click coords of every jp_/units
+        # widget, for the click-test harness (and future ones)
+        QTimer.singleShot(9000, self._jp_dump_coords)
 
         # UNLOAD SPINDLE (core button remove_tool_2): 5 s countdown, second
         # click cancels; then the ned unload_spindle sub (real drawbar release
         # + PB software unload). Deterministic MDI like the zero buttons.
         self._unload_pend = None
         QTimer.singleShot(0, self._wire_unload)
+
+        # LOAD SPINDLE (core SubCallButtons load_spindle_button[_2]): same
+        # 5 s countdown, second click cancels (operator 2026-08-02 13:5x
+        # "load spindle should also have a 5 second countdown"). The
+        # countdown then calls the button's OWN callSub() -- PB already
+        # resolves the .ngc and pulls the tool number from the paired
+        # load_spindle_tool_number[_2] field, so none of that is duplicated.
+        self._load_pend = {}
+        QTimer.singleShot(0, self._wire_load)
 
         # SPINDLE SECTION (operator 2026-08-01): spindle load meter ->
         # chip-load-per-flute PLACEHOLDER; left RPM readout -> live
@@ -517,19 +536,55 @@ class UserTab(QWidget):
     # (current work position + delta, house offset math) and sent as one
     # G90 G1 line -- an abort partway can never leave G91 modal.
 
-    _JOG_WIDGETS = ('jp_abs', 'jp_rel', 'jp_slow', 'jp_medium', 'jp_fast',
-                    'jp_feed_readout', 'jp_p_xy0', 'jp_p_xyz0', 'jp_p_z0',
+    _JOG_WIDGETS = ('jp_slow', 'jp_medium', 'jp_fast', 'jp_feed_readout',
+                    'jp_p_xy0', 'jp_p_xyz0', 'jp_p_z0',
                     'jp_p_zp10', 'jp_p_xy0z10', 'jp_p_a0c0',
                     'jp_in_x', 'jp_in_y', 'jp_in_z', 'jp_in_a', 'jp_in_c',
-                    'jp_clear', 'jp_go')
+                    'jp_clear', 'jp_go_abs', 'jp_go_rel',
+                    'jp_status_dot', 'jp_status_text', 'jp_stop')
+    # jp_stop is HIDDEN at wire time -- the main movement panel's STOP is
+    # the one STOP (operator 2026-08-02 13:44: "the stop button in that jog
+    # panel is redundant"). Kept wired so nothing else has to change.
 
-    # preset -> (words or None-for-computed, feed kind)
-    _JOG_PRESETS = (('jp_p_xy0',    'XY 0',    'X0 Y0',      'lin'),
-                    ('jp_p_xyz0',   'XYZ 0',   'X0 Y0 Z0',   'lin'),
-                    ('jp_p_z0',     'Z 0',     'Z0',         'lin'),
-                    ('jp_p_zp10',   'Z +10',   None,         'zlift'),
-                    ('jp_p_xy0z10', 'XY0 Z10', 'X0 Y0 Z10',  'lin'),
-                    ('jp_p_a0c0',   'A0 C0',   'A0 C0',      'ang'))
+    # preset -> (label, ((axis, work-target), ...) or None, zlift?)
+    # All presets are ABSOLUTE work-coordinate targets except Z +10, which
+    # is computed from the CURRENT work Z at click time (zlift=True).
+    _JOG_PRESETS = (
+        ('jp_p_xy0',    'XY 0',    (('x', 0.0), ('y', 0.0)),              False),
+        ('jp_p_xyz0',   'XYZ 0',   (('x', 0.0), ('y', 0.0), ('z', 0.0)),  False),
+        ('jp_p_z0',     'Z 0',     (('z', 0.0),),                         False),
+        ('jp_p_zp10',   'Z +10',   None,                                  True),
+        ('jp_p_xy0z10', 'XY0 Z10', (('x', 0.0), ('y', 0.0), ('z', 10.0)), False),
+        ('jp_p_a0c0',   'A0 C0',   (('a', 0.0), ('c', 0.0)),              False))
+
+    _JOG_MOVERS = ('jp_p_xy0', 'jp_p_xyz0', 'jp_p_z0', 'jp_p_zp10',
+                   'jp_p_xy0z10', 'jp_p_a0c0')   # lock these while moving
+
+    _jp_w = {}   # class default so handlers never AttributeError pre-wire
+    _ac_locked = {'a': False, 'c': False}   # LOCK A / LOCK C state
+
+
+    def _jog_page_takeover(self):
+        # v2 port target (operator 2026-08-02): the panel REPLACES the stock
+        # jog arrow buttons in the sidebar JOG page. jogDisplay is unique
+        # (probe_basic.ui:22575); its page layout is a QVBoxLayout
+        # (probe_basic.ui:22561); replaceWidget per the house pattern.
+        from PySide6.QtWidgets import QWidget as _QW
+        win = self.window()
+        jd = win.findChild(_QW, 'jogDisplay') if win else None
+        panel = self.findChild(_QW, 'jp_panel')
+        if jd is None or panel is None or jd.parentWidget() is None \
+           or jd.parentWidget().layout() is None:
+            LOG.error('JOG page takeover FAILED: jogDisplay/jp_panel/layout '
+                      'not found -- stock jog page left as-is')
+            return
+        lay = jd.parentWidget().layout()
+        if self.layout() is not None:
+            self.layout().removeWidget(panel)
+        lay.replaceWidget(jd, panel)
+        jd.hide()
+        LOG.info('JOG page takeover: jogDisplay (stock jog arrows) replaced '
+                 'by jp_panel at 200x730; ned tab page now empty')
 
     def _jog_wire(self):
         try:
@@ -542,11 +597,24 @@ class UserTab(QWidget):
                     missing.append(name)
                 else:
                     w[name] = x
+            # DIRECT REFS, kept for the panel's whole life: after
+            # _jog_page_takeover reparents jp_panel into the stock JOG
+            # page, self.findChild() can NO LONGER see these widgets --
+            # click-time lookups through it silently no-op'd (operator's
+            # dead CLEAR, 2026-08-02 12:5x). Handlers use THIS dict only.
+            self._jp_w = w
             if missing:
                 LOG.error('JOG panel: %d missing: %s', len(missing),
                           ', '.join(missing))
+            # panel state
+            self._ac_locked = {'a': False, 'c': False}
+            self._jog_go_ok = False    # >=1 typed field parses as a number
+            self._jog_idle = None      # None = unknown (before first poll)
+            self._jog_stat_nml = None  # status-strip stat channel
+            self._jog_status_warned = False
+            self._jog_last_state = None
             # SPEED toggles: exclusive group, amber = selected; every toggle
-            # updates the live readout.
+            # updates the live readout. Selection persists between moves.
             self._jog_speed_grp = QButtonGroup(self)
             self._jog_speed_grp.setExclusive(True)
             for key in ('slow', 'medium', 'fast'):
@@ -556,33 +624,86 @@ class UserTab(QWidget):
                 self._jog_speed_grp.addButton(b)
                 b.toggled.connect(
                     lambda on, k=key: on and self._jog_set_speed(k))
-            # ABS/REL: exclusive pair; applies ONLY to typed GO moves.
-            self._jog_mode_grp = QButtonGroup(self)
-            self._jog_mode_grp.setExclusive(True)
-            for name in ('jp_abs', 'jp_rel'):
-                if w.get(name) is not None:
-                    self._jog_mode_grp.addButton(w[name])
             # PRESETS: execute IMMEDIATELY on click, no GO.
-            for name, label, words, kind in self._JOG_PRESETS:
+            for name, label, vals, zlift in self._JOG_PRESETS:
                 if w.get(name) is not None:
                     w[name].clicked.connect(
-                        lambda _=False, l=label, s=words, k=kind:
-                        self._jog_preset(l, s, k))
+                        lambda _=False, l=label, v=vals, z=zlift:
+                        self._jog_preset(l, v, z))
+            # TYPED MOVE: GOs gate on any-field-parses; Enter = GO ABS;
+            # fields retain their values after a move (no auto-clear).
+            for ax in 'xyzac':
+                e = w.get('jp_in_' + ax)
+                if e is None:
+                    continue
+                e.textChanged.connect(
+                    lambda _='', s=self: s._jog_entry_changed())
+                e.returnPressed.connect(
+                    lambda s=self: s._jog_enter())
             if w.get('jp_clear') is not None:
                 w['jp_clear'].clicked.connect(self._jog_clear)
-            if w.get('jp_go') is not None:
-                w['jp_go'].clicked.connect(self._jog_go)
+            if w.get('jp_go_abs') is not None:
+                w['jp_go_abs'].clicked.connect(
+                    lambda _=False: self._jog_go(rel=False))
+            if w.get('jp_go_rel') is not None:
+                w['jp_go_rel'].clicked.connect(
+                    lambda _=False: self._jog_go(rel=True))
+            if w.get('jp_stop') is not None:
+                w['jp_stop'].clicked.connect(self._jog_stop)
+            # SOFT-LIMIT table: [AXIS_*] MIN/MAX_LIMIT via linuxcnc.ini at
+            # panel init (house pattern, dros_xyzac.py). NOTE: LinuxCNC also
+            # exposes runtime-WRITABLE ini.N.min_limit/max_limit HAL pins
+            # that can override these live; those pins are not readable
+            # here (no HAL in GUI code), so this table is the static INI
+            # truth -- the planner still hard-rejects beyond the live pins.
+            self._jog_limits = None
+            self._jog_limits_load()
+            # STATUS STRIP: NML-only poll (no HAL), 400 ms; drives the dot,
+            # the state text, STOP arming and the moving-lockout.
+            self._jog_status_timer = QTimer(self)
+            self._jog_status_timer.timeout.connect(self._jog_status_tick)
+            # 150 ms, not 400: the enable-lockout is driven by THIS tick,
+            # so a slow tick leaves presets/GOs disabled for up to a tick
+            # after motion ends and SILENTLY swallows the next click
+            # (measured 2026-08-02: every click ~0.3 s after a move died).
+            self._jog_status_timer.start(150)
             # init the readout from the default selection (jp_medium ships
-            # checked in the .ui, so toggled won't refire it here)
+            # checked in the .ui, so toggled won't refire it here) and the
+            # GO gate from the (empty) fields
             self._jog_set_speed(self._jog_speed)
+            self._jog_entry_changed()
             LOG.info('JOG panel: %d widgets wired', len(w))
         except Exception as e:
             LOG.error('JOG panel wiring failed: %s', e)
 
+    def _jog_limits_load(self):
+        try:
+            import linuxcnc
+            ini_path = os.getenv('INI_FILE_NAME')
+            if not ini_path:
+                raise RuntimeError('INI_FILE_NAME not set')
+            ini = linuxcnc.ini(ini_path)
+            lims = {}
+            for ax in 'xyzac':
+                sec = 'AXIS_' + ax.upper()
+                lo = ini.find(sec, 'MIN_LIMIT')
+                hi = ini.find(sec, 'MAX_LIMIT')
+                if lo is None or hi is None:
+                    raise RuntimeError('[%s] MIN/MAX_LIMIT missing' % sec)
+                lims[ax] = (float(lo), float(hi))
+            self._jog_limits = lims
+            LOG.info('JOG panel: soft limits loaded: %s',
+                     ' '.join('%s[%g..%g]' % (a.upper(), lo, hi)
+                              for a, (lo, hi) in sorted(lims.items())))
+        except Exception as e:
+            self._jog_limits = None
+            LOG.error('JOG panel: soft-limit table unavailable (%s) -- '
+                      'pre-check DISABLED, planner limits still apply', e)
+
     def _jog_set_speed(self, key):
         self._jog_speed = key
         lin, ang = JOG_SPEEDS[key]
-        lbl = self.findChild(QWidget, 'jp_feed_readout')
+        lbl = self._jp_w.get('jp_feed_readout')
         if lbl is not None:
             lbl.setText('F{:g} mm/min · {:g} deg/min'.format(lin, ang))
         LOG.info('JOG speed -> %s (F%g mm/min, %g deg/min)',
@@ -594,79 +715,246 @@ class UserTab(QWidget):
         return (s.actual_position[i] - s.g5x_offset[i]
                 - s.g92_offset[i] - s.tool_offset[i])
 
-    def _jog_preset(self, label, words, kind):
+    def _jog_preset(self, label, vals, zlift):
         # Presets are ALWAYS absolute work-coordinate G90 G1 moves at the
-        # selected speed. Z +10 is relative-SAFE: current work Z is read
-        # from stat and the ABSOLUTE target commanded (never G91, never
-        # absolute Z10). A/C locks do NOT gate any move here -- locks only
-        # remove axes from MPG cycling.
+        # selected speed, and execute IMMEDIATELY on click. Z +10 is
+        # relative-SAFE: current work Z is read from stat and the ABSOLUTE
+        # target commanded (never G91, never absolute Z10). A/C locks do
+        # NOT gate any move here -- locks only remove axes from MPG cycling.
         try:
             import linuxcnc
-            lin, ang = JOG_SPEEDS[self._jog_speed]
-            if kind == 'zlift':
+            if zlift:
                 s = linuxcnc.stat()
                 s.poll()
                 z = self._jog_work_pos(s, 'z')
-                words = 'Z{:.4f}'.format(z + 10.0)
-                LOG.info('Z +10: work Z %.4f -> absolute target %s', z, words)
-            feed = ang if kind == 'ang' else lin
-            self._jog_mdi(label, words, feed)
+                vals = (('z', z + 10.0),)
+                LOG.info('Z +10: work Z %.4f -> absolute target Z%.4f',
+                         z, z + 10.0)
+            self._jog_issue(label, list(vals))
         except Exception as e:
             LOG.error('%s preset failed: %s', label, e)
 
     def _jog_clear(self):
+        n = 0
         for ax in 'xyzac':
-            w = self.findChild(QWidget, 'jp_in_' + ax)
+            w = self._jp_w.get('jp_in_' + ax)
             if w is not None:
                 w.clear()
-        LOG.info('TYPED MOVE fields cleared')
+                n += 1
+        if n:
+            LOG.info('TYPED MOVE fields cleared (%d fields)', n)
+        else:
+            LOG.error('TYPED MOVE clear: NO fields found -- panel refs broken')
 
-    def _jog_go(self):
-        # One linear move of exactly the filled-in words. ABSOLUTE = the
-        # values ARE the G90 targets. RELATIVE = deltas, converted to
-        # absolute targets (current work pos + delta) and STILL sent as one
-        # G90 line -- G91 never enters the modal state (see class comment).
+    # ---- typed-move gating -------------------------------------------------
+    def _jog_parse_fields(self):
+        # (vals, bad): vals = [(axis, float)] of the parsable non-blank
+        # fields; bad = [(axis, text)] of non-blank fields that do NOT
+        # parse. Blank fields are OMITTED -- never sent as 0.
+        vals, bad = [], []
+        for ax in 'xyzac':
+            w = self._jp_w.get('jp_in_' + ax)
+            txt = (w.text().strip() if w is not None else '')
+            if not txt:
+                continue
+            try:
+                vals.append((ax, float(txt)))
+            except ValueError:
+                bad.append((ax, txt))
+        return vals, bad
+
+    def _jog_entry_changed(self):
+        vals, _bad = self._jog_parse_fields()
+        self._jog_go_ok = bool(vals)
+        self._jog_apply_enables()
+
+    def _jog_enter(self):
+        # Enter in any field fires GO ABS -- but only when GO ABS would be
+        # clickable (>=1 field parses AND the machine is not mid-move).
+        b = self._jp_w.get('jp_go_abs')
+        if b is not None and b.isEnabled():
+            self._jog_go(rel=False)
+
+    def _jog_apply_enables(self):
+        # idle: None = unknown (status poll not landed/failed) -> leave the
+        # panel USABLE; the _jog_issue guards still refuse loudly. False =
+        # motion running -> presets + GOs locked, STOP armed.
+        idle = self._jog_idle is not False
+        for name in self._JOG_MOVERS:
+            b = self._jp_w.get(name)
+            if b is not None and b.isEnabled() != idle:
+                b.setEnabled(idle)
+        for name in ('jp_go_abs', 'jp_go_rel'):
+            b = self._jp_w.get(name)
+            want = idle and self._jog_go_ok
+            if b is not None and b.isEnabled() != want:
+                b.setEnabled(want)
+        b = self._jp_w.get('jp_stop')
+        if b is not None and b.isVisible():
+            b.hide()          # redundant with the main movement STOP
+
+    def _jog_flash(self, ax):
+        # soft-limit reject / bad value: flash the axis field red. Setting
+        # the widget's own stylesheet overrides the jp_panel QSS; clearing
+        # it restores the panel look.
+        w = self._jp_w.get('jp_in_' + ax)
+        if w is None:
+            return
+        # metrics mirror the narrow-panel QLineEdit QSS (padding 2px 6px,
+        # 10pt) so the flash never changes the field's height at 200 px
+        w.setStyleSheet('background: rgb(96,28,28); color: white; '
+                        'border: 1px solid rgb(220,80,80); '
+                        'border-radius: 5px; padding: 2px 6px; font: 10pt;')
+        QTimer.singleShot(700, lambda: w.setStyleSheet(''))
+
+    # ---- UNITS IN/MM (settings tab) ---------------------------------------
+
+    _UNITS_ON = ('background-color: rgb(235,170,40); color: black; '
+                 'font-weight: bold;')   # house amber = active/selected
+
+    def _units_panel_install(self):
+        # PB has NO in/mm control -- units are the G20/G21 modal only
+        # (status labels merely display them). Two big buttons in the
+        # settings tab right column (widget_51, QVBoxLayout, verified in
+        # probe_basic.ui). Active unit stays amber via a 500 ms stat poll
+        # (own linuxcnc.stat channel -- NEVER hal.get_value in GUI code).
+        try:
+            from PySide6.QtWidgets import (QFrame, QVBoxLayout, QHBoxLayout,
+                                           QLabel, QPushButton)
+            from PySide6.QtWidgets import QWidget as _QW
+            win = self.window()
+            host = win.findChild(_QW, 'widget_51') if win else None
+            if host is None or host.layout() is None:
+                LOG.error('UNITS panel: settings host widget_51 not found '
+                          '-- NOT installed')
+                return
+            fr = QFrame()
+            fr.setObjectName('ned_units_frame')
+            v = QVBoxLayout(fr)
+            v.setContentsMargins(4, 4, 4, 4)
+            v.setSpacing(4)
+            lab = QLabel('UNITS')
+            v.addWidget(lab)
+            row = QHBoxLayout()
+            row.setSpacing(6)
+            self._units_btns = {}
+            for key, txt in (('in', 'IN'), ('mm', 'MM')):
+                b = QPushButton(txt)
+                b.setObjectName('ned_units_' + key)
+                b.setMinimumHeight(56)
+                b.clicked.connect(lambda _=False, k=key: self._units_click(k))
+                row.addWidget(b)
+                self._units_btns[key] = b
+            v.addLayout(row)
+            host.layout().insertWidget(3, fr)
+            self._units_stat = None
+            self._units_timer = QTimer(self)
+            self._units_timer.timeout.connect(self._units_poll)
+            self._units_timer.start(500)
+            LOG.info('UNITS panel installed in settings tab '
+                     '(IN/MM -> G20/G21)')
+        except Exception as e:
+            LOG.error('UNITS panel FAILED: %s', e)
+
+    def _units_click(self, key):
+        # G20/G21 via MDI, same LOUD gate family as _jog_issue. No homed
+        # requirement (units switch moves nothing), but interp must be
+        # IDLE: the MDI mode switch aborts in-flight motion (house rule).
+        label = 'UNITS %s' % key.upper()
         try:
             import linuxcnc
             c = linuxcnc.command()
-            vals = []
-            for ax in 'xyzac':
-                w = self.findChild(QWidget, 'jp_in_' + ax)
-                txt = (w.text().strip() if w is not None else '')
-                if not txt:
-                    continue
-                try:
-                    vals.append((ax, float(txt)))
-                except ValueError:
-                    c.error_msg('TYPED MOVE: bad %s value %r'
-                                % (ax.upper(), txt))
-                    LOG.error('TYPED MOVE: bad %s value %r', ax.upper(), txt)
-                    return
-            if not vals:
-                c.error_msg('TYPED MOVE: no axis values entered')
-                LOG.error('TYPED MOVE: no axis values entered')
+            s = linuxcnc.stat()
+            s.poll()
+            if s.task_state != linuxcnc.STATE_ON:
+                c.error_msg('%s refused: machine is not ON' % label)
+                LOG.error('%s refused: machine is not ON', label)
                 return
-            rel_btn = self.findChild(QWidget, 'jp_rel')
-            rel = bool(rel_btn is not None and rel_btn.isChecked())
+            if s.interp_state != linuxcnc.INTERP_IDLE or not s.inpos \
+               or any(s.joint[j]['homing'] for j in range(6)):
+                c.error_msg('%s refused: machine is busy' % label)
+                LOG.error('%s refused: machine busy', label)
+                return
+            c.mode(linuxcnc.MODE_MDI)
+            c.wait_complete()
+            c.mdi('G20' if key == 'in' else 'G21')
+            LOG.info('UNITS -> %s issued',
+                     'G20 (inch)' if key == 'in' else 'G21 (mm)')
+        except Exception as e:
+            LOG.error('%s failed: %s', label, e)
+
+    def _units_poll(self):
+        try:
+            import linuxcnc
+            if self._units_stat is None:
+                self._units_stat = linuxcnc.stat()
+            s = self._units_stat
+            s.poll()
+            active = 'in' if s.program_units == 1 else 'mm'
+            for key, b in self._units_btns.items():
+                style = self._UNITS_ON if key == active else ''
+                if b.styleSheet() != style:
+                    b.setStyleSheet(style)
+        except Exception:
+            self._units_stat = None   # linuxcnc down; retry next tick
+
+    def _jp_dump_coords(self):
+        # one-shot INFO dump of global click coordinates for every JOG
+        # panel + UNITS widget -- feeds the click-test harness. Runs at
+        # +9 s (after takeover + units install have settled).
+        try:
+            items = dict(self._jp_w)
+            items.update(getattr(self, '_units_btns', {}))
+            for name in sorted(items):
+                w = items[name]
+                try:
+                    c = w.mapToGlobal(w.rect().center())
+                    LOG.info('JPCOORD %s %d %d vis=%d', name, c.x(), c.y(),
+                             int(w.isVisible()))
+                except Exception as e:
+                    LOG.error('JPCOORD %s FAILED: %s', name, e)
+        except Exception as e:
+            LOG.error('JPCOORD dump failed: %s', e)
+
+    def _jog_go(self, rel):
+        # GO ABS ("move to"): the typed values ARE the G90 work targets.
+        # GO REL ("move by"): deltas from the current position, converted
+        # to absolute targets (current work pos + delta) and STILL sent as
+        # one G90 line -- G91 never enters the modal state (class comment).
+        # Blank fields are omitted; fields RETAIN their values afterward.
+        try:
+            import linuxcnc
+            label = 'GO REL' if rel else 'GO ABS'
+            vals, bad = self._jog_parse_fields()
+            if bad:
+                for ax, txt in bad:
+                    self._jog_flash(ax)
+                linuxcnc.command().error_msg(
+                    '%s: bad %s value %r' % (label, bad[0][0].upper(),
+                                             bad[0][1]))
+                LOG.error('%s: bad field(s): %s', label,
+                          ', '.join('%s=%r' % (a.upper(), t)
+                                    for a, t in bad))
+                return
+            if not vals:
+                linuxcnc.command().error_msg(
+                    '%s: no axis values entered' % label)
+                LOG.error('%s: no axis values entered', label)
+                return
             if rel:
                 s = linuxcnc.stat()
                 s.poll()
                 vals = [(ax, self._jog_work_pos(s, ax) + v)
                         for ax, v in vals]
-            words = ' '.join('{}{:.4f}'.format(ax.upper(), v)
-                             for ax, v in vals)
-            lin, ang = JOG_SPEEDS[self._jog_speed]
-            # pure-rotary line: LinuxCNC reads F as deg/min there; any
-            # linear word present -> F is mm/min on the linear path
-            feed = ang if all(ax in 'ac' for ax, _ in vals) else lin
-            self._jog_mdi('TYPED MOVE (%s)' % ('REL' if rel else 'ABS'),
-                          words, feed)
+            self._jog_issue(label, vals)
         except Exception as e:
-            LOG.error('TYPED MOVE failed: %s', e)
+            LOG.error('GO failed: %s', e)
 
-    def _jog_mdi(self, label, words, feed):
-        # Guard -> MDI mode CONFIRMED by poll -> ONE fire-and-forget mdi().
-        # Refusals are LOUD: error toast + log line, never a silent no-op.
+    def _jog_issue(self, label, vals):
+        # vals = [(axis letter, ABSOLUTE work target)]. Guards -> soft-limit
+        # pre-check (REJECT, never clamp) -> MDI mode CONFIRMED by poll ->
+        # ONE fire-and-forget mdi(). Refusals are LOUD: error toast + log
+        # line + red field flash for a limit hit -- never a silent no-op.
         try:
             import linuxcnc
             import time
@@ -689,6 +977,50 @@ class UserTab(QWidget):
                             'running or homing)' % label)
                 LOG.error('%s refused: machine busy', label)
                 return
+            # A/C LOCK GATE (operator 2026-08-02): a locked head axis must
+            # never be turned by a typed move or a preset, and the refusal
+            # must SAY SO -- silently dropping the axis would be worse.
+            locked = [ax.upper() for ax, _t in vals
+                      if ax in ('a', 'c') and self._ac_locked.get(ax)]
+            if locked:
+                names = ' and '.join(locked)
+                c.error_msg('%s refused: %s axis is LOCKED -- click LOCK %s '
+                            'in the DRO to unlock it first'
+                            % (label, names, locked[0]))
+                LOG.error('%s refused: %s LOCKED', label, names)
+                for ax, _t in vals:
+                    if ax.upper() in locked:
+                        self._jog_flash(ax)
+                return
+
+            # SOFT-LIMIT PRE-CHECK, machine coordinates: limits are machine-
+            # frame, targets are work-frame -> machine target = work target
+            # + (g5x + g92 + tool) offset (house math; XY G5x rotation not
+            # modeled, same as every other panel). A violating move is
+            # REJECTED -- never clamped silently.
+            if self._jog_limits:
+                for ax, tw in vals:
+                    i = JOG_AXIS_IDX[ax]
+                    off = (s.g5x_offset[i] + s.g92_offset[i]
+                           + s.tool_offset[i])
+                    mt = tw + off
+                    lo, hi = self._jog_limits[ax]
+                    if mt < lo - 1e-6 or mt > hi + 1e-6:
+                        self._jog_flash(ax)
+                        c.error_msg(
+                            '%s REJECTED: %s target %.3f (machine %.3f) '
+                            'outside soft limits [%g .. %g]'
+                            % (label, ax.upper(), tw, mt, lo, hi))
+                        LOG.error('%s REJECTED: %s work %.4f -> machine '
+                                  '%.4f outside [%g .. %g]',
+                                  label, ax.upper(), tw, mt, lo, hi)
+                        return
+            words = ' '.join('{}{:.4f}'.format(ax.upper(), v)
+                             for ax, v in vals)
+            lin, ang = JOG_SPEEDS[self._jog_speed]
+            # pure-rotary line: LinuxCNC reads F as deg/min there; any
+            # linear word present -> F is mm/min on the linear path
+            feed = ang if all(ax in 'ac' for ax, _ in vals) else lin
             c.mode(linuxcnc.MODE_MDI)
             c.wait_complete()
             # CONFIRM the mode actually landed: ned_brain hands MANUAL back
@@ -711,6 +1043,80 @@ class UserTab(QWidget):
                      'MANUAL+teleop when motion completes)', label, line)
         except Exception as e:
             LOG.error('%s failed: %s', label, e)
+
+    # ---- status strip (dot + text + STOP) ----------------------------------
+    def _jog_status_tick(self):
+        # NML-only (no HAL). Drives the dot/text, the moving-lockout of
+        # presets+GOs and STOP arming. Logs TRANSITIONS only (the text
+        # itself updates silently -- velocity changes every tick).
+        state = None
+        try:
+            import linuxcnc
+            if self._jog_stat_nml is None:
+                self._jog_stat_nml = linuxcnc.stat()
+            st = self._jog_stat_nml
+            st.poll()
+            homing = any(st.joint[j]['homing'] for j in range(6))
+            moving = (st.interp_state != linuxcnc.INTERP_IDLE) \
+                or (not getattr(st, 'inpos', True)) \
+                or (getattr(st, 'current_vel', 0.0) > 1e-6)
+            if st.task_state != linuxcnc.STATE_ON:
+                state, dot, txt = 'off', 'rgb(220,90,90)', \
+                    'OFF — machine not on'
+                self._jog_idle = True   # guards explain on click
+            elif homing:
+                state, dot, txt = 'homing', 'rgb(232,166,53)', 'HOMING'
+                self._jog_idle = False
+            elif moving:
+                state, dot = 'moving', 'rgb(232,166,53)'
+                txt = 'MOVING — {:.1f} mm/s'.format(
+                    getattr(st, 'current_vel', 0.0))
+                self._jog_idle = False
+            else:
+                state, dot, txt = 'idle', 'rgb(80,200,120)', 'IDLE — ready'
+                self._jog_idle = True
+        except Exception as e:
+            state, dot, txt = 'nostat', 'rgb(120,126,132)', \
+                'state unavailable'
+            self._jog_idle = None
+            if not self._jog_status_warned:
+                self._jog_status_warned = True
+                LOG.error('JOG status: stat poll failed (%s)', e)
+        d = self._jp_w.get('jp_status_dot')
+        t = self._jp_w.get('jp_status_text')
+        if d is not None:
+            style = 'color: %s; font: 11pt;' % dot
+            if d.styleSheet() != style:
+                d.setStyleSheet(style)
+        if t is not None and t.text() != txt:
+            t.setText(txt)
+        if state != self._jog_last_state:
+            LOG.info('JOG status: %s', txt)
+            self._jog_last_state = state
+        self._jog_apply_enables()
+
+    def _jog_stop(self):
+        # STOP = linuxcnc abort: kills the in-flight MDI move (and anything
+        # else task is executing). The brain then restores MANUAL + teleop.
+        try:
+            import linuxcnc
+            linuxcnc.command().abort()
+            LOG.info('STOP: linuxcnc abort issued')
+        except Exception as e:
+            LOG.error('STOP failed: %s', e)
+
+    # ---- pendant double-tap+hold -> the 0-100% jog speed slider ----------
+    def _on_jogspeed(self, val):
+        win = self.window()
+        if win is None:
+            return
+        slider = win.findChild(QWidget, 'linear_jog_slider')
+        if slider is not None:
+            try:
+                slider.setValue(int(round(float(val))))
+            except Exception:
+                pass
+
 
     # ---- override cluster (V/F/S/R rows -> -10%/+10% button clusters) ----
     # The first cluster attempt (2026-08-01) half-hid the FSR sliders and
@@ -746,10 +1152,20 @@ class UserTab(QWidget):
             # insertWidget does NOT exist on QGridLayout (crashed 13:0x).
             m = win.findChild(QWidget, 'spindle_load_indicator')
             if m is not None and m.parentWidget().layout() is not None:
-                lbl = QLabel('CHIP LOAD\n-- mm/flute')
+                # BOTH units, always (operator 2026-08-02 13:5x: "chipload
+                # should always display both mm/flute and in/flute ... two
+                # displays since reference values are annoying to convert").
+                # Values are TBD until the feed/RPM/flute-count wiring lands
+                # (operator: "put TBD for those 2 for now because we need to
+                # wire it in with other stuff later on") -- the tool table
+                # carries NO flute count today (columns: tool/tool_mill,
+                # checked 2026-08-02), so nothing real can be computed yet.
+                lbl = QLabel('CHIP LOAD\nTBD mm/flute\nTBD in/flute')
+                lbl.setObjectName('ned_chipload')
                 lbl.setStyleSheet('color: rgb(160,160,160); font: 9pt;')
                 m.parentWidget().layout().replaceWidget(m, lbl)
                 m.hide()
+                self._chipload_lbl = lbl
             # left RPM readout: keep the STOCK labels and their format --
             # only the NUMBER changes ("keep the same old format, just
             # change the displayed number"). Drive every label inside the
@@ -837,6 +1253,62 @@ class UserTab(QWidget):
             except Exception:
                 pass
         b.clicked.connect(lambda _=False: self._unload_click(b))
+
+    def _wire_load(self):
+        win = self.window()
+        wired, missing = [], []
+        for name in ('load_spindle_button', 'load_spindle_button_2'):
+            b = win.findChild(QWidget, name) if win else None
+            if b is None or not hasattr(b, 'callSub'):
+                missing.append(name)
+                continue
+            try:
+                b.clicked.disconnect()      # severs SubCallButton.callSub
+            except Exception:
+                pass
+            b.clicked.connect(lambda _=False, btn=b: self._load_click(btn))
+            wired.append(name)
+        if wired:
+            LOG.info('LOAD SPINDLE: 5 s countdown wired on %d button(s): %s',
+                     len(wired), ', '.join(wired))
+        if missing:
+            LOG.error('LOAD SPINDLE: %d button(s) NOT wired (no countdown, '
+                      'stock instant call still live): %s',
+                      len(missing), ', '.join(missing))
+
+    def _load_click(self, b):
+        pend = self._load_pend.get(b)
+        if pend is not None:                     # second click = cancel
+            pend['timer'].stop()
+            b.setText(pend['text'])
+            self._load_pend.pop(b, None)
+            LOG.info('LOAD SPINDLE cancelled')
+            return
+        pend = {'text': b.text(), 'left': 5}
+        timer = QTimer(self)
+        pend['timer'] = timer
+        self._load_pend[b] = pend
+
+        def tick():
+            if self._load_pend.get(b) is not pend:
+                timer.stop()
+                return
+            pend['left'] -= 1
+            if pend['left'] > 0:
+                b.setText('CANCEL  {}'.format(pend['left']))
+                return
+            timer.stop()
+            b.setText(pend['text'])
+            self._load_pend.pop(b, None)
+            try:
+                b.callSub()          # PB's own sub call (tool no. from field)
+                LOG.info('LOAD SPINDLE executed (countdown elapsed)')
+            except Exception as e:
+                LOG.error('LOAD SPINDLE failed: %s', e)
+
+        timer.timeout.connect(tick)
+        b.setText('CANCEL  5')
+        timer.start(1000)
 
     def _unload_click(self, b):
         if self._unload_pend is not None:          # second click = cancel
@@ -943,43 +1415,13 @@ class UserTab(QWidget):
         # via the postgui sig-lock-a/-c nets).
         try:
             self.comp.getPin('lock-' + ax + '-out').value = bool(on)
+            # remembered so typed moves / presets can REFUSE loudly instead
+            # of quietly turning a locked head (operator 2026-08-02 13:43)
+            self._ac_locked[ax] = bool(on)
             LOG.info('LOCK %s -> %s', ax.upper(), 'ON' if on else 'OFF')
         except Exception as e:
             LOG.error('set_ac_lock failed: %s', e)
 
-
-    def _seq_flip_verified(self, flips):
-        """setp each (pin, value) and CONFIRM it landed before returning.
-        The old handlers fired home(-1) 0.2 s after an async halcmd setp --
-        if the sequence change lands while motion is arming the homing
-        group, membership changes mid-dispatch and the group freezes at
-        INITIAL_SEARCH_START (the 2026-08-01 wedge family). No home is ever
-        issued on unconfirmed sequence state: returns False -> caller MUST
-        bail loudly."""
-        import subprocess
-        import time as _t
-        for pin, val in flips:
-            subprocess.run(['halcmd', 'setp', pin, str(val)],
-                           capture_output=True)
-        deadline = _t.time() + 2.0
-        pending = dict(flips)
-        while pending and _t.time() < deadline:
-            for pin, val in list(pending.items()):
-                r = subprocess.run(['halcmd', 'getp', pin],
-                                   capture_output=True, text=True)
-                try:
-                    if int(float(r.stdout.strip())) == int(val):
-                        del pending[pin]
-                except ValueError:
-                    pass
-            if pending:
-                _t.sleep(0.05)
-        if pending:
-            LOG.error('SEQ FLIP NOT CONFIRMED: %s -- homing NOT issued', pending)
-            return False
-        _t.sleep(0.5)      # settle: let motion consume the param change
-        LOG.info('seq flips confirmed: %s', flips)
-        return True
 
     def request_single_ref(self, ax):
         # REF A / REF C: one-axis REF ALL (operator 2026-08-01). Pulse the
@@ -1026,10 +1468,6 @@ class UserTab(QWidget):
             # VERIFIED flip: never issue a home against unconfirmed sequence
             # state (the old async setp + 0.2 s sleep raced the sequencer's
             # group arming -- the 2026-08-01 wedge family).
-            if not self._seq_flip_verified([('ini.0.home_sequence', -1),
-                                            ('ini.3.home_sequence', -1)]):
-                c.error_msg('REF ALL aborted: sequence flip unconfirmed')
-                return
             c.mode(linuxcnc.MODE_MANUAL)
             c.wait_complete()
             # homing acts on JOINTS -- leave world/teleop first, like the
@@ -1044,14 +1482,10 @@ class UserTab(QWidget):
                 self.comp.getPin('homeall-out').value = True
                 QTimer.singleShot(1000, self._homeall_pin_off)
             c.home(-1)
-            LOG.info('REF ALL: A/C unhomed, read requested, HOME ALL issued')
+            LOG.info('REF ALL: physical reset dispatched (sequences are '
+                     'static: Z 0, Y 1, X pair -2, A/C 3)')
         except Exception as e:
-            # NEVER leak the -1 flip: while it stands, Y shares |sequence|=1
-            # with the X pair, so a later REF Y would home the whole set
-            # ("hitting refy also does refx", 2026-08-01)
-            os.system('halcmd setp ini.0.home_sequence 1')
-            os.system('halcmd setp ini.3.home_sequence 1')
-            LOG.error('REF ALL failed (X-pair sequence restored to +1): %s', e)
+            LOG.error('REF ALL failed: %s', e)
 
     def _homeall_pin_off(self):
         try:
@@ -1083,17 +1517,6 @@ class UserTab(QWidget):
             except Exception:
                 pass
 
-    # ---- pendant double-tap+hold -> the 0-100% jog speed slider ----------
-    def _on_jogspeed(self, val):
-        win = self.window()
-        if win is None:
-            return
-        slider = win.findChild(QWidget, 'linear_jog_slider')
-        if slider is not None:
-            try:
-                slider.setValue(int(round(float(val))))
-            except Exception:
-                pass
 
     # ---- pendant jump size -> on-screen increment button -----------------
     def _on_inc(self, val):
@@ -1193,7 +1616,7 @@ class UserTab(QWidget):
         # ABS(sequence) (homing.c sync_ready + HOME_SEQUENCE_START), so Y
         # (+1) would be swept in (watchdog save #1, 2026-08-01 21:32).
         # Therefore Y's sequence is PARKED at 4 for the duration; ned_brain
-        # restores Y=1 and the pair=+1 on the homed edge / leak watchdog.
+        # (sequences permanent since 2026-08-02: Z 0, Y 1, pair -2, A/C 3)
         # All flips are VERIFIED before any home command is issued.
         try:
             import linuxcnc
@@ -1206,27 +1629,18 @@ class UserTab(QWidget):
             if s.interp_state != linuxcnc.INTERP_IDLE or not s.inpos:
                 c.error_msg('Home X refused: machine is busy')
                 return
-            if not self._seq_flip_verified([('ini.0.home_sequence', -1),
-                                            ('ini.3.home_sequence', -1),
-                                            ('ini.1.home_sequence', 4)]):
-                c.error_msg('Home X aborted: sequence flip unconfirmed')
-                os.system('halcmd setp ini.1.home_sequence 1')
-                return
             c.mode(linuxcnc.MODE_MANUAL)
             c.wait_complete()
             c.teleop_enable(0)
             c.wait_complete()
             c.home(0)
-            LOG.info('Home X -> synchronized gantry pair homing (Y parked at seq 4)')
+            LOG.info('Home X -> synchronized pair homing (permanent seq -2)')
         except Exception as e:
-            os.system('halcmd setp ini.0.home_sequence 1')
-            os.system('halcmd setp ini.3.home_sequence 1')
-            os.system('halcmd setp ini.1.home_sequence 1')
-            LOG.error('Home X failed (sequences restored: pair +1, Y 1): %s', e)
+            LOG.error('Home X failed: %s', e)
 
     def home_joint(self, label, jn):
         # Home Y / Home Z: THAT joint only. Normalize the X pair to +1
-        # first -- a leaked -1 would home the whole |seq|=1 set.
+        # (permanent -2 pair: home(0) always homes both sides, only both)
         try:
             import linuxcnc
             c = linuxcnc.command()
@@ -1238,8 +1652,6 @@ class UserTab(QWidget):
             if s.interp_state != linuxcnc.INTERP_IDLE or not s.inpos:
                 c.error_msg('Home %s refused: machine is busy' % label)
                 return
-            os.system('halcmd setp ini.0.home_sequence 1')
-            os.system('halcmd setp ini.3.home_sequence 1')
             c.mode(linuxcnc.MODE_MANUAL)
             c.wait_complete()
             c.teleop_enable(0)

@@ -12,3 +12,12 @@
 | `screenlog.sh` | Screen-blanking watcher (open task #12). |
 | `ned_params.sh` | Parameter SSOT (gears, PPR, SCALEs) + `sync` writes the generated config values — CLAUDE.md rule 11. |
 | `qt_pb.sh` | Probe Basic install/update wrapper (WIPES the qt_pb venv when re-run — see migration runbook before using). |
+
+## gen_params.py (added 2026-08-02)
+The MASTER parameter system (task #16). `configs/params/MASTER.params`
+is the single authoritative source for every `configs/params/*.inc`
+value (comment-preserving; derived scales/velocities computed from
+[drivetrain] primitives). Commands: `check` (round-trip byte compare +
+ned_params.sh cross-check), `write` (regenerate the .inc files),
+`extract` (one-time bootstrap, refuses if MASTER exists). head_zero.inc
+is EXCLUDED (ned_brain writes it at zero capture).

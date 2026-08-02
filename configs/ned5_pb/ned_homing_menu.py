@@ -115,6 +115,11 @@ class NedHomingMenu(QMenu):
                 pass
             return
         try:
+            if meth == 'request_homeall':
+                # STALE/SESSION HOME banner state: a plain click counter
+                # (operator 2026-08-02); the DRO banner flips to SESSION
+                # HOME once clicks > 0 AND all joints report homed.
+                tab._homeall_clicks = getattr(tab, '_homeall_clicks', 0) + 1
             getattr(tab, meth)(*args)
         except Exception as e:
             LOG.error('NED Homing menu: %s failed: %s', label, e)

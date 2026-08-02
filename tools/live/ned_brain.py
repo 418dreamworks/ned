@@ -99,6 +99,7 @@ h.newpin('within-in', hal.HAL_U32, hal.HAL_IN)
 h.newpin('homeall-in', hal.HAL_BIT, hal.HAL_IN)
 # rising edge = REF A / REF C button (one-axis REF ALL, operator 2026-08-01):
 # unhome that joint -> fresh read -> home THAT joint only -> verify it only.
+h.newpin('tcactive-in', hal.HAL_BIT, hal.HAL_IN)
 h.newpin('ref-a-in', hal.HAL_BIT, hal.HAL_IN)
 h.newpin('ref-c-in', hal.HAL_BIT, hal.HAL_IN)
 h.ready()
@@ -176,7 +177,7 @@ class Brain(object):
         self.prev_head_homed = {4: False, 5: False}
         self.prev_refa = False
         self.prev_refc = False
-        # X-pair -1 leak watchdog (see tick)
+        # (flip machinery deleted 2026-08-02: sequences are permanent)
         self.seq_watch_n = 0
 
     # ---- head read (exact port of nedgui _hr_start/_hr_tick/_hr_report) -----
@@ -325,6 +326,118 @@ class Brain(object):
             saved, '  '.join('J{}={:+.3f}'.format(jn, vals[jn]) for jn in (0, 1, 2, 3))))
         return True
 
+    def declare_xyzw(self):
+        # TRUE home-in-place via EMC_JOINT_SET_HOMING_PARAMS (NML 112,
+        # tools/live/ned_homing_params -- runtime homing override, operator
+        # 2026-08-02): search/latch velocities zeroed -> the home command
+        # declares at the current position with ZERO MOTION anywhere in the
+        # travel; real switch-homing values restored right after, so the
+        # menu physical reset is untouched.
+        try:
+            self.stat.poll()
+        except Exception:
+            return
+        # A/C (4,5) declare TOO (operator 2026-08-02 15:5x: "i SHOULD be able
+        # to unclamp the spindle after power up since we are homed but it
+        # errors out"). They used to wait for the PSO read, leaving a several
+        # second window where all(homed[:6]) was FALSE and every homed-gated
+        # button refused -- the drawbar click at 15:57:03 landed 2 s after the
+        # 0-3 declare and died on exactly that. The read still lands seconds
+        # later and re-homes A/C to the true absolute offset, so this only
+        # fills the gap; it never decides the final head coordinate.
+        jns = [j for j in (0, 1, 2, 3, 4, 5) if not self.stat.homed[j]]
+        if not jns:
+            return
+        SEND = '/home/brains/Documents/ned/tools/live/ned_homing_params'
+        try:
+            ini = linuxcnc.ini(os.environ['INI_FILE_NAME'])
+
+            def jini(jn, key, dflt='0'):
+                return ini.find('JOINT_%d' % jn, key) or dflt
+
+            def send(jn, home, offset, final, search, latch):
+                seq = jini(jn, 'HOME_SEQUENCE', '0')
+                os.system('%s %d %s %s %s %s %s 0 1 %s >/dev/null 2>&1'
+                          % (SEND, jn, home, offset, final, search, latch, seq))
+
+            self.stat.poll()
+            for jn in jns:
+                pos = '%.4f' % self.stat.joint_actual_position[jn]
+                send(jn, pos, pos, '0', '0', '0')
+            time.sleep(0.3)      # let task/motion consume the four settings
+            self.cmd.mode(linuxcnc.MODE_MANUAL)
+            self.cmd.wait_complete()
+            self.cmd.teleop_enable(0)
+            self.cmd.wait_complete()
+            seqs = [(0, (0, 3)), (1, (1,)), (2, (2,))]
+            for j in (4, 5):
+                if j in jns:
+                    seqs.append((j, (j,)))
+            for jarg, expect in seqs:
+                for attempt in (1, 2):
+                    self.cmd.home(jarg)
+                    t0 = time.time()
+                    while time.time() - t0 < 3:
+                        self.stat.poll()
+                        if all(self.stat.homed[j] for j in expect):
+                            break
+                        time.sleep(0.1)
+                    if all(self.stat.homed[j] for j in expect):
+                        break
+                    log('DECLARE: home({}) missed (attempt {}), reissuing'
+                        .format(jarg, attempt))
+                time.sleep(0.4)
+            # restore the REAL switch-homing config for the menu reset
+            for jn in jns:
+                send(jn,
+                     jini(jn, 'HOME', '0.0'),
+                     jini(jn, 'HOME_OFFSET', '0.0'),
+                     jini(jn, 'HOME_FINAL_VEL', '0'),
+                     jini(jn, 'HOME_SEARCH_VEL', '0'),
+                     jini(jn, 'HOME_LATCH_VEL', '0'))
+            self.stat.poll()
+            log('DECLARED HOME (zero-motion, NML 112): joints {} where '
+                'they stand; homed={} all6={} (STALE HOME until menu Home All)'
+                .format(jns, self.stat.homed[:6],
+                        all(self.stat.homed[:6])))
+        except Exception as e:
+            log('DECLARE HOME failed: {}'.format(e))
+
+
+    def do_inplace(self):
+        # home unhomed A/C where they stand using the armed read; no motion.
+        # Skipped if a real cycle is in flight.
+        if not getattr(self, 'inplace_pending', False) or self.pending_ref \
+           or self.verify_want:
+            return
+        self.inplace_pending = False
+        try:
+            self.stat.poll()
+        except Exception:
+            return
+        jns = [(jn, ax) for jn, ax in ((4, 'a'), (5, 'c'))
+               if not self.stat.homed[jn] and self.hr_deg.get(ax) is not None]
+        if not jns:
+            return
+        try:
+            self.cmd.mode(linuxcnc.MODE_MANUAL)
+            self.cmd.wait_complete()
+            self.cmd.teleop_enable(0)
+            self.cmd.wait_complete()
+            self.inplace_restore = set()
+            for jn, ax in jns:
+                os.system('halcmd setp ini.{}.home {:.4f} >/dev/null 2>&1'
+                          .format(jn, self.hr_deg[ax]))
+                self.cmd.home(jn)
+                self.inplace_restore.add(jn)
+            log('IN-PLACE HOME: joint(s) {} homed where they stand '
+                '(no motion): {}'.format(
+                    [j for j, _ in jns],
+                    '  '.join('{}={:+.3f}'.format(ax.upper(), self.hr_deg[ax])
+                              for _, ax in jns)))
+        except Exception as e:
+            log('IN-PLACE HOME failed: {}'.format(e))
+
     def read_done(self):
         # a read cycle finished; armed ONLY if BOTH axes produced an accepted
         # value (offsets written) -- a no-frame/rejected read must not arm.
@@ -335,32 +448,11 @@ class Brain(object):
             log('HEAD READ armed: C={:+.3f} A={:+.3f}'.format(
                 self.hr_deg['c'], self.hr_deg['a']))
             # STARTUP IN-PLACE HOME: read armed at power-on -> home unhomed
-            # A/C joints where they stand (home=reading => zero-length final
-            # move). Skipped if a real cycle is already in flight.
-            if getattr(self, 'inplace_pending', False) and not self.pending_ref \
-               and not self.verify_want:
-                self.inplace_pending = False
-                jns = [(jn, ax) for jn, ax in ((4, 'a'), (5, 'c'))
-                       if not self.stat.homed[jn] and self.hr_deg.get(ax) is not None]
-                if jns:
-                    try:
-                        self.cmd.mode(linuxcnc.MODE_MANUAL)
-                        self.cmd.wait_complete()
-                        self.cmd.teleop_enable(0)
-                        self.cmd.wait_complete()
-                        self.inplace_restore = set()
-                        for jn, ax in jns:
-                            os.system('halcmd setp ini.{}.home {:.4f} >/dev/null 2>&1'
-                                      .format(jn, self.hr_deg[ax]))
-                            self.cmd.home(jn)
-                            self.inplace_restore.add(jn)
-                        log('IN-PLACE HOME: joint(s) {} homed where they stand '
-                            '(no motion): {}'.format(
-                                [j for j, _ in jns],
-                                '  '.join('{}={:+.3f}'.format(ax.upper(), self.hr_deg[ax])
-                                          for _, ax in jns)))
-                    except Exception as e:
-                        log('IN-PLACE HOME failed: {}'.format(e))
+            # A/C joints where they stand. Factored to do_inplace() so the
+            # PRE-LAUNCH-read path (ON edge with read already armed) can run
+            # the same code from the tick (the 02:06 bug: inplace_at was
+            # scheduled but nothing consumed it -> A/C never homed).
+            self.do_inplace()
             # per-axis REF A / REF C: the read is armed -- home the requested
             # joint(s) NOW, nothing else (spec: the other head axis untouched)
             if self.pending_ref:
@@ -524,6 +616,10 @@ class Brain(object):
             # Requested homing (menu) still returns to zero: ini.N.home is
             # restored to 0 the moment the in-place home completes.
             self.inplace_pending = True
+            # DECLARE-HOME XYZ/W where they stand ~1.5 s after ON
+            # (operator: jog-ready immediately; menu homing = the
+            # physical reset; banner shows STALE HOME until then)
+            self.declare_at = now + 1.5
             if self.read_armed and self.hr_deg.get('a') is not None \
                and self.hr_deg.get('c') is not None:
                 # pre-launch read is armed; drives were off and A/C are
@@ -537,6 +633,12 @@ class Brain(object):
             else:
                 self.want_read = True
                 log('MACHINE ON -> head read (A/C will home IN PLACE, no motion)')
+        if getattr(self, 'declare_at', None) and now >= self.declare_at:
+            self.declare_at = None
+            self.declare_xyzw()
+        if getattr(self, 'inplace_at', None) and now >= self.inplace_at:
+            self.inplace_at = None
+            self.do_inplace()
         if self.teleop_at and now >= self.teleop_at:
             self.teleop_at = None
             self.ensure_teleop()
@@ -713,6 +815,11 @@ class Brain(object):
         else:
             if self.done_since is None:
                 self.done_since = now
+            if bool(h['tcactive-in']):
+                # TOOL CHANGE IN PROGRESS: never steal the mode --
+                # the restore aborted an M6 mid-return (01:34).
+                self.flip_armed = False
+                self.done_since = now
             if self.flip_armed and on \
                and s.task_mode != linuxcnc.MODE_MANUAL \
                and now - self.done_since >= 1.0:
@@ -726,48 +833,7 @@ class Brain(object):
                 self.flip_armed = False
         self.prev_interp_busy = interp_busy
 
-        # X-pair sequence restore: REF X / REF ALL flip joints 0+3 to -1 so
-        # the gantry homes SYNCHRONIZED; once both sides are homed, restore +1
-        # so unhomed joint jogging stays allowed next time (LinuxCNC bars
-        # joint-jogging negative-sequence joints, ini-homing.adoc:269).
-        xpair_homed = bool(s.homed[0] and s.homed[3])
-        if xpair_homed and not getattr(self, 'prev_xpair_homed', False):
-            os.system('halcmd setp ini.0.home_sequence 1 >/dev/null 2>&1')
-            os.system('halcmd setp ini.3.home_sequence 1 >/dev/null 2>&1')
-            # Home X parks Y at sequence 4 so the synchronized group can't
-            # sweep it in (ABS-value grouping); restore Y to 1 here too
-            os.system('halcmd setp ini.1.home_sequence 1 >/dev/null 2>&1')
-            log('X pair homed -> home_sequence restored to +1, Y to 1 '
-                '(unhomed jog allowed)')
-        self.prev_xpair_homed = xpair_homed
 
-        # GANTRY ANTI-RACK INTERLOCK (added after 'home X racks the gantry',
-        # 2026-08-01 13:08 -- a silently-unrebound menu entry ran the stock
-        # ONE-SIDED home.axis:x): if EXACTLY ONE of joints 0/3 is in a homing
-        # cycle for 2 consecutive ticks (~0.5 s), ABORT. Synchronized (-1
-        # flip) and HOME-ALL homing always run BOTH sides together; nothing
-        # legitimate ever homes one side of a rigid gantry alone. Catches
-        # every path: menus, GUIs, halui, MDI, future code.
-        try:
-            j0h = bool(s.joint[0]['homing'])
-            j3h = bool(s.joint[3]['homing'])
-        except Exception:
-            j0h = j3h = False
-        if j0h != j3h:
-            self.xrack_n = getattr(self, 'xrack_n', 0) + 1
-            if self.xrack_n >= 2:
-                try:
-                    self.cmd.abort()
-                    self.cmd.error_msg('GANTRY PROTECTION: one-sided X homing '
-                                       'aborted (joint {} alone). Use Home X / '
-                                       'Home All.'.format(0 if j0h else 3))
-                except Exception:
-                    pass
-                log('GANTRY PROTECTION: one-sided X homing ABORTED '
-                    '(j0={} j3={})'.format(j0h, j3h))
-                self.xrack_n = 0
-        else:
-            self.xrack_n = 0
 
         # HOMING WEDGE WATCHDOG (2026-08-01 evening): three operator Home
         # Alls froze pre-search -- joints 0/1/3 homing=TRUE, home-state
@@ -807,42 +873,6 @@ class Brain(object):
         else:
             self.wedge_ref = None
 
-        # -1 LEAK WATCHDOG: the homed-edge restore above misses any path where
-        # the -1 flip happened but the pair never re-homed (e.g. the read
-        # guard's abort killing HOME ALL mid-cycle). While -1 stands, Y shares
-        # |sequence|=1 with the pair, so REF Y homes ALL THREE synchronized
-        # ("hitting refy also does refx", 2026-08-01). If the pair sits at -1
-        # with NO homing active for ~3 s, restore +1. Checked every ~1 s;
-        # REF X's flip->home window is <0.5 s and homing is active right
-        # after, so a live homing flow is never touched.
-        self.seq_watch_n += 1
-        if self.seq_watch_n >= 4:                       # every 4th tick ~1 s
-            self.seq_watch_n = 0
-            try:
-                any_homing = any(s.joint[j]['homing'] for j in range(6))
-                if any_homing:
-                    self.seq_neg_idle = 0
-                else:
-                    v = os.popen('halcmd getp ini.0.home_sequence 2>/dev/null').read().strip()
-                    vy = os.popen('halcmd getp ini.1.home_sequence 2>/dev/null').read().strip()
-                    y_parked = vy.lstrip('-').isdigit() and int(vy) != 1
-                    if (v.lstrip('-').isdigit() and int(v) < 0) or y_parked:
-                        self.seq_neg_idle = getattr(self, 'seq_neg_idle', 0) + 1
-                        # 10 s window: the verified flip in the GUI handler
-                        # legitimately holds -1 for 3-4 s before homing flags
-                        # rise; the 3 s window fought its own team (22:13)
-                        if self.seq_neg_idle >= 10:
-                            os.system('halcmd setp ini.0.home_sequence 1 >/dev/null 2>&1')
-                            os.system('halcmd setp ini.3.home_sequence 1 >/dev/null 2>&1')
-                            os.system('halcmd setp ini.1.home_sequence 1 >/dev/null 2>&1')
-                            self.seq_neg_idle = 0
-                            log('WATCHDOG: leaked homing sequences (pair {} / Y {}) '
-                                'with no homing active -> restored (pair +1, Y 1)'
-                                .format(v, vy))
-                    else:
-                        self.seq_neg_idle = 0
-            except Exception:
-                pass
 
         # stored-home saver
         self.sh_save(now)

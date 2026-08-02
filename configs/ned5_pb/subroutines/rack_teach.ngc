@@ -1,0 +1,79 @@
+o<rack_teach> sub
+
+; =========================== RACK TABLE TEACH ==============================
+; o<rack_teach> call [N] [MODE]      (staging/rack_map, 2026-08-02)
+;
+;   MODE 1 (SEAT): capture the CURRENT MACHINE X/Y as pocket N's seat.
+;     Machine coords come from the predefined named parameters #<_abs_x> /
+;     #<_abs_y> -- "Return current absolute X coordinate (G53) including no
+;     offsets" (LinuxCNC manual, gcode/overview "Predefined Named
+;     Parameters"). Writes #[4100+N*4], #[4101+N*4]; sets the seat-taught
+;     bit and CLEARS the clearance-taught bit (a moved seat invalidates the
+;     old clearance).
+;
+;   MODE 2 (CLEARANCE): park the head at the pocket's clearance position
+;     first. Requires the seat already taught. The ENTRY AXIS is derived
+;     from the seat-vs-current comparison: whichever of |X-seatX| / |Y-seatY|
+;     is LARGER is the entry axis; that coordinate is stored as the single
+;     clearance scalar #[4102+N*4] and the axis lands in flags bit 0.
+;     Sets the clearance-taught bit -> flags become 6 (X entry) or
+;     7 (Y entry) and the pocket is usable by m21/m22.
+;
+; flags param #[4103+N*4] = entry_axis + 2*seat_taught + 4*clear_taught.
+; Every write is confirmed with a PRINT line (readable in the terminal /
+; print dialog); every refusal is an abort -- never a silent no-op.
+; ===========================================================================
+
+#<n>    = #1
+#<mode> = #2
+
+o101 if [[#<n> LT 1] OR [#<n> GT 15]]
+    (abort, rack_teach: pocket #<n> outside 1..15)
+o101 endif
+
+#<base>     = [4100 + [#<n> * 4]]
+#<flags>    = #[#<base> + 3]
+#<old_axis> = [#<flags> MOD 2]
+#<seat_bit> = [FIX[#<flags> / 2] MOD 2]
+
+; current MACHINE position (G53, no offsets -- manual cite in header)
+#<mx> = #<_abs_x>
+#<my> = #<_abs_y>
+
+o110 if [#<mode> EQ 1]
+    ; ---- SEAT capture ----
+    #[#<base>]     = #<mx>
+    #[#<base> + 1] = #<my>
+    ; seat-taught set, clearance-taught cleared, old axis bit kept
+    #[#<base> + 3] = [#<old_axis> + 2]
+    (PRINT, rack_teach: pocket #<n> SEAT captured X#<mx> Y#<my> [machine] -- now park at clearance and run MODE 2)
+o110 elseif [#<mode> EQ 2]
+    ; ---- CLEARANCE capture ----
+    o120 if [#<seat_bit> NE 1]
+        (abort, rack_teach: pocket #<n> seat not taught - MODE 1 first)
+    o120 endif
+    #<seat_x> = #[#<base>]
+    #<seat_y> = #[#<base> + 1]
+    #<dx> = [ABS[#<mx> - #<seat_x>]]
+    #<dy> = [ABS[#<my> - #<seat_y>]]
+    o130 if [[#<dx> LT 0.5] AND [#<dy> LT 0.5]]
+        (abort, rack_teach: pocket #<n> clearance is on top of the seat [dX #<dx> dY #<dy> mm] - park at the clearance position first)
+    o130 endif
+    o140 if [#<dx> GE #<dy>]
+        ; X entry: clearance scalar is the current machine X
+        #[#<base> + 2] = #<mx>
+        #[#<base> + 3] = 6
+        (PRINT, rack_teach: pocket #<n> CLEARANCE captured X#<mx> [X entry, seat X #<seat_x>] flags=6 -- pocket usable)
+    o140 else
+        ; Y entry: clearance scalar is the current machine Y
+        #[#<base> + 2] = #<my>
+        #[#<base> + 3] = 7
+        (PRINT, rack_teach: pocket #<n> CLEARANCE captured Y#<my> [Y entry, seat Y #<seat_y>] flags=7 -- pocket usable)
+    o140 endif
+o110 else
+    (abort, rack_teach: MODE #<mode> invalid [1=seat 2=clearance])
+o110 endif
+
+o<rack_teach> endsub
+
+M2

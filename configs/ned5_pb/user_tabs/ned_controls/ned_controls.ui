@@ -1,312 +1,254 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>ned_controls</class>
- <!-- JOG & PRESETS panel (operator mockup 2026-08-01). All widgets/layouts are
-      declared HERE (no runtime layout insertion anywhere -> no QGridLayout
-      insertWidget hazard); ned_controls.py only findChild()s + connects and
-      logs the wired/missing count loudly. Styling: one panel-level QSS on
-      jp_panel using #objectName selectors (dark + amber, mockup palette). -->
+ <!-- JOG & PRESETS panel v2, NARROW SQUEEZE (2026-08-02): single 200 px
+      column sized for the STOCK JOG PAGE of PB's right sidebar stack
+      (probe_basic.ui sidebar_widget > sb_page_1 > jogDisplay, ~200x730).
+      All widgets/layouts are declared HERE (no runtime layout insertion
+      -> no QGridLayout insertWidget hazard); ned_controls.py only
+      findChild()s + connects and logs the wired/missing count loudly.
+      Styling: one panel-level QSS on jp_panel using #objectName selectors
+      (dark + amber). Same 21 _JOG_WIDGETS names as the wide v2 layout;
+      deltas are geometry only: SPEED buttons stacked vertically, presets
+      2 cols x 3 rows, typed-move fields full-width (axis+unit live in the
+      placeholder, jp_lbl_*/jp_unit_* labels deleted), CLEAR + GO ABS +
+      GO REL stacked full-width, status strip + full-width STOP at the
+      bottom. Tap-target fonts >= 9pt. -->
  <widget class="QWidget" name="ned_controls_root">
   <layout class="QVBoxLayout" name="nedLayout">
-   <property name="leftMargin"><number>12</number></property>
-   <property name="topMargin"><number>12</number></property>
-   <property name="rightMargin"><number>12</number></property>
-   <property name="bottomMargin"><number>12</number></property>
+   <property name="leftMargin"><number>0</number></property>
+   <property name="topMargin"><number>0</number></property>
+   <property name="rightMargin"><number>0</number></property>
+   <property name="bottomMargin"><number>0</number></property>
+   <property name="spacing"><number>0</number></property>
    <item>
-    <layout class="QHBoxLayout" name="jp_outer_h">
-     <item>
-      <widget class="QFrame" name="jp_panel">
-       <property name="maximumSize"><size><width>500</width><height>16777215</height></size></property>
-       <property name="styleSheet"><string notr="true">
-#jp_panel { background: rgb(24,27,31); border: none; border-radius: 8px; }
+    <widget class="QFrame" name="jp_panel">
+     <property name="styleSheet"><string notr="true">
+#jp_panel { background: rgb(24,27,31); border: none; border-radius: 6px; }
 QLabel { background: transparent; color: rgb(148,155,163); }
-#jp_title, #jp_speed_caption, #jp_presets_caption, #jp_typed_caption {
-  font: 75 10pt; color: rgb(148,155,163); }
-#jp_feed_readout { font: 75 10pt; color: rgb(232,166,53); }
+#jp_title { font: 75 9pt; color: rgb(148,155,163); }
+#jp_speed_caption, #jp_presets_caption, #jp_typed_caption {
+  font: 75 8pt; color: rgb(148,155,163); }
+#jp_feed_readout { font: 75 8pt; color: rgb(232,166,53); }
 #jp_presets_note { font: 8pt; color: rgb(110,117,124); }
-#jp_lbl_x, #jp_lbl_y, #jp_lbl_z, #jp_lbl_a, #jp_lbl_c {
-  font: 75 12pt; color: rgb(214,218,222); }
-#jp_unit_x, #jp_unit_y, #jp_unit_z, #jp_unit_a, #jp_unit_c {
-  font: 8pt; color: rgb(110,117,124); }
 QPushButton { background: rgb(43,48,54); color: rgb(214,218,222);
-  border: 1px solid rgb(72,79,87); border-radius: 5px; font: 75 11pt; }
+  border: 1px solid rgb(72,79,87); border-radius: 5px; font: 75 10pt; }
 QPushButton:pressed { background: rgb(60,66,73); }
+QPushButton:disabled { background: rgb(34,38,43);
+  color: rgb(105,111,118); border-color: rgb(55,60,66); }
 #jp_slow:checked, #jp_medium:checked, #jp_fast:checked {
   background: rgb(232,166,53); color: rgb(20,20,20);
   border-color: rgb(232,166,53); }
-#jp_absrel_frame { background: rgb(30,34,39);
-  border: 1px solid rgb(72,79,87); border-radius: 6px; }
-#jp_abs, #jp_rel { background: transparent; border: none;
-  color: rgb(130,137,144); font: 75 11pt; }
-#jp_abs:checked, #jp_rel:checked { background: rgb(58,65,73);
-  color: white; border-radius: 5px; }
 #jp_p_xy0, #jp_p_xyz0, #jp_p_z0, #jp_p_zp10, #jp_p_xy0z10, #jp_p_a0c0 {
-  text-align: left; padding-left: 10px; font: 75 11pt; }
-#jp_typed_frame { background: transparent;
-  border: 1px solid rgb(60,66,73); border-radius: 6px; }
+  font: 75 9pt; }
 QLineEdit { background: rgb(28,32,36); color: white;
   border: 1px solid rgb(72,79,87); border-radius: 5px;
-  padding: 4px 8px; font: 11pt;
+  padding: 2px 6px; font: 10pt;
   selection-background-color: rgb(232,166,53); }
 QLineEdit:focus { border: 1px solid rgb(232,166,53); }
-#jp_go { background: rgb(32,30,24); color: rgb(232,166,53);
-  border: 1px solid rgb(232,166,53); font: 75 12pt; }
-#jp_go:pressed { background: rgb(60,50,30); }
-       </string></property>
-       <layout class="QVBoxLayout" name="jp_v">
-        <property name="leftMargin"><number>14</number></property>
-        <property name="topMargin"><number>12</number></property>
-        <property name="rightMargin"><number>14</number></property>
-        <property name="bottomMargin"><number>14</number></property>
-        <property name="spacing"><number>10</number></property>
-        <item>
-         <widget class="QLabel" name="jp_title">
-          <property name="text"><string>J O G   &amp;   P R E S E T S</string></property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QFrame" name="jp_absrel_frame">
-          <property name="minimumSize"><size><width>0</width><height>44</height></size></property>
-          <layout class="QHBoxLayout" name="jp_absrel_h">
-           <property name="leftMargin"><number>3</number></property>
-           <property name="topMargin"><number>3</number></property>
-           <property name="rightMargin"><number>3</number></property>
-           <property name="bottomMargin"><number>3</number></property>
-           <property name="spacing"><number>0</number></property>
-           <item>
-            <widget class="QPushButton" name="jp_abs">
-             <property name="text"><string>ABSOLUTE</string></property>
-             <property name="checkable"><bool>true</bool></property>
-             <property name="checked"><bool>true</bool></property>
-             <property name="minimumSize"><size><width>0</width><height>36</height></size></property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="jp_rel">
-             <property name="text"><string>RELATIVE</string></property>
-             <property name="checkable"><bool>true</bool></property>
-             <property name="minimumSize"><size><width>0</width><height>36</height></size></property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item>
-         <layout class="QHBoxLayout" name="jp_speed_h">
-          <item>
-           <widget class="QLabel" name="jp_speed_caption">
-            <property name="text"><string>S P E E D</string></property>
-           </widget>
-          </item>
-          <item>
-           <spacer name="jp_speed_spacer">
-            <property name="orientation"><enum>Qt::Horizontal</enum></property>
-            <property name="sizeHint" stdset="0"><size><width>10</width><height>10</height></size></property>
-           </spacer>
-          </item>
-          <item>
-           <widget class="QLabel" name="jp_feed_readout">
-            <property name="text"><string>F- mm/min · - deg/min</string></property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item>
-         <layout class="QHBoxLayout" name="jp_speed_btn_h">
-          <property name="spacing"><number>8</number></property>
-          <item>
-           <widget class="QPushButton" name="jp_slow">
-            <property name="text"><string>SLOW</string></property>
-            <property name="checkable"><bool>true</bool></property>
-            <property name="minimumSize"><size><width>0</width><height>44</height></size></property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="jp_medium">
-            <property name="text"><string>MEDIUM</string></property>
-            <property name="checkable"><bool>true</bool></property>
-            <property name="checked"><bool>true</bool></property>
-            <property name="minimumSize"><size><width>0</width><height>44</height></size></property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="jp_fast">
-            <property name="text"><string>FAST</string></property>
-            <property name="checkable"><bool>true</bool></property>
-            <property name="minimumSize"><size><width>0</width><height>44</height></size></property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item>
-         <widget class="QLabel" name="jp_presets_caption">
-          <property name="text"><string>P R E S E T   M O V E S</string></property>
-         </widget>
-        </item>
-        <item>
-         <layout class="QGridLayout" name="jp_grid">
-          <property name="horizontalSpacing"><number>8</number></property>
-          <property name="verticalSpacing"><number>8</number></property>
-          <item row="0" column="0">
-           <widget class="QPushButton" name="jp_p_xy0">
-            <property name="text"><string>XY 0
+#jp_go_abs, #jp_go_rel { background: rgb(32,30,24);
+  color: rgb(232,166,53); border: 1px solid rgb(232,166,53);
+  font: 75 10pt; }
+#jp_go_abs:pressed, #jp_go_rel:pressed { background: rgb(60,50,30); }
+#jp_go_abs:disabled, #jp_go_rel:disabled { background: rgb(30,31,33);
+  color: rgb(115,102,75); border-color: rgb(85,78,60); }
+#jp_status_dot { color: rgb(80,200,120); font: 11pt; }
+#jp_status_text { color: rgb(148,155,163); font: 9pt; }
+#jp_stop { background: transparent; color: rgb(220,90,90);
+  border: 1px solid rgb(200,80,80); font: 75 10pt; }
+#jp_stop:pressed { background: rgb(70,32,32); }
+#jp_stop:disabled { background: transparent; color: rgb(110,80,80);
+  border-color: rgb(80,60,60); }
+     </string></property>
+     <layout class="QVBoxLayout" name="jp_v">
+      <property name="leftMargin"><number>8</number></property>
+      <property name="topMargin"><number>8</number></property>
+      <property name="rightMargin"><number>8</number></property>
+      <property name="bottomMargin"><number>8</number></property>
+      <property name="spacing"><number>4</number></property>
+      <item>
+       <widget class="QLabel" name="jp_title">
+        <property name="text"><string>JOG &amp; PRESETS</string></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="jp_speed_caption">
+        <property name="text"><string>S P E E D</string></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="jp_slow">
+        <property name="text"><string>SLOW</string></property>
+        <property name="checkable"><bool>true</bool></property>
+        <property name="minimumSize"><size><width>0</width><height>30</height></size></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="jp_medium">
+        <property name="text"><string>MEDIUM</string></property>
+        <property name="checkable"><bool>true</bool></property>
+        <property name="checked"><bool>true</bool></property>
+        <property name="minimumSize"><size><width>0</width><height>30</height></size></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="jp_fast">
+        <property name="text"><string>FAST</string></property>
+        <property name="checkable"><bool>true</bool></property>
+        <property name="minimumSize"><size><width>0</width><height>30</height></size></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="jp_feed_readout">
+        <property name="text"><string>F- mm/min · - deg/min</string></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="jp_presets_caption">
+        <property name="text"><string>P R E S E T S</string></property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QGridLayout" name="jp_grid">
+        <property name="horizontalSpacing"><number>4</number></property>
+        <property name="verticalSpacing"><number>4</number></property>
+        <item row="0" column="0">
+         <widget class="QPushButton" name="jp_p_xy0">
+          <property name="text"><string>XY 0
 X0 Y0</string></property>
-            <property name="minimumSize"><size><width>0</width><height>56</height></size></property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QPushButton" name="jp_p_xyz0">
-            <property name="text"><string>XYZ 0
-linear move</string></property>
-            <property name="minimumSize"><size><width>0</width><height>56</height></size></property>
-           </widget>
-          </item>
-          <item row="0" column="2">
-           <widget class="QPushButton" name="jp_p_z0">
-            <property name="text"><string>Z 0
+          <property name="minimumSize"><size><width>0</width><height>44</height></size></property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QPushButton" name="jp_p_xyz0">
+          <property name="text"><string>XYZ 0
+linear</string></property>
+          <property name="minimumSize"><size><width>0</width><height>44</height></size></property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QPushButton" name="jp_p_z0">
+          <property name="text"><string>Z 0
 Z0 only</string></property>
-            <property name="minimumSize"><size><width>0</width><height>56</height></size></property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QPushButton" name="jp_p_zp10">
-            <property name="text"><string>Z +10
+          <property name="minimumSize"><size><width>0</width><height>44</height></size></property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QPushButton" name="jp_p_zp10">
+          <property name="text"><string>Z +10
 safe lift</string></property>
-            <property name="minimumSize"><size><width>0</width><height>56</height></size></property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QPushButton" name="jp_p_xy0z10">
-            <property name="text"><string>XY0 Z10
+          <property name="minimumSize"><size><width>0</width><height>44</height></size></property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QPushButton" name="jp_p_xy0z10">
+          <property name="text"><string>XY0 Z10
 X0 Y0 Z10</string></property>
-            <property name="minimumSize"><size><width>0</width><height>56</height></size></property>
-           </widget>
-          </item>
-          <item row="1" column="2">
-           <widget class="QPushButton" name="jp_p_a0c0">
-            <property name="text"><string>A0 C0
-head upright</string></property>
-            <property name="minimumSize"><size><width>0</width><height>56</height></size></property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item>
-         <widget class="QLabel" name="jp_presets_note">
-          <property name="text"><string>Presets execute immediately at the selected speed — no GO needed.</string></property>
-          <property name="wordWrap"><bool>true</bool></property>
+          <property name="minimumSize"><size><width>0</width><height>44</height></size></property>
          </widget>
         </item>
-        <item>
-         <widget class="QLabel" name="jp_typed_caption">
-          <property name="text"><string>T Y P E D   M O V E</string></property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QFrame" name="jp_typed_frame">
-          <layout class="QGridLayout" name="jp_typed_grid">
-           <property name="leftMargin"><number>10</number></property>
-           <property name="topMargin"><number>10</number></property>
-           <property name="rightMargin"><number>10</number></property>
-           <property name="bottomMargin"><number>10</number></property>
-           <property name="horizontalSpacing"><number>10</number></property>
-           <property name="verticalSpacing"><number>8</number></property>
-           <item row="0" column="0">
-            <widget class="QLabel" name="jp_lbl_x"><property name="text"><string>X</string></property></widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QLineEdit" name="jp_in_x">
-             <property name="placeholderText"><string>—</string></property>
-             <property name="minimumSize"><size><width>0</width><height>34</height></size></property>
-            </widget>
-           </item>
-           <item row="0" column="2">
-            <widget class="QLabel" name="jp_unit_x"><property name="text"><string>mm</string></property></widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="jp_lbl_y"><property name="text"><string>Y</string></property></widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QLineEdit" name="jp_in_y">
-             <property name="placeholderText"><string>—</string></property>
-             <property name="minimumSize"><size><width>0</width><height>34</height></size></property>
-            </widget>
-           </item>
-           <item row="1" column="2">
-            <widget class="QLabel" name="jp_unit_y"><property name="text"><string>mm</string></property></widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="jp_lbl_z"><property name="text"><string>Z</string></property></widget>
-           </item>
-           <item row="2" column="1">
-            <widget class="QLineEdit" name="jp_in_z">
-             <property name="placeholderText"><string>—</string></property>
-             <property name="minimumSize"><size><width>0</width><height>34</height></size></property>
-            </widget>
-           </item>
-           <item row="2" column="2">
-            <widget class="QLabel" name="jp_unit_z"><property name="text"><string>mm</string></property></widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="jp_lbl_a"><property name="text"><string>A</string></property></widget>
-           </item>
-           <item row="3" column="1">
-            <widget class="QLineEdit" name="jp_in_a">
-             <property name="placeholderText"><string>—</string></property>
-             <property name="minimumSize"><size><width>0</width><height>34</height></size></property>
-            </widget>
-           </item>
-           <item row="3" column="2">
-            <widget class="QLabel" name="jp_unit_a"><property name="text"><string>deg</string></property></widget>
-           </item>
-           <item row="4" column="0">
-            <widget class="QLabel" name="jp_lbl_c"><property name="text"><string>C</string></property></widget>
-           </item>
-           <item row="4" column="1">
-            <widget class="QLineEdit" name="jp_in_c">
-             <property name="placeholderText"><string>—</string></property>
-             <property name="minimumSize"><size><width>0</width><height>34</height></size></property>
-            </widget>
-           </item>
-           <item row="4" column="2">
-            <widget class="QLabel" name="jp_unit_c"><property name="text"><string>deg</string></property></widget>
-           </item>
-           <item row="5" column="0" colspan="3">
-            <layout class="QHBoxLayout" name="jp_btnrow_h">
-             <property name="spacing"><number>8</number></property>
-             <item>
-              <widget class="QPushButton" name="jp_clear">
-               <property name="text"><string>CLEAR</string></property>
-               <property name="minimumSize"><size><width>90</width><height>44</height></size></property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="jp_go">
-               <property name="text"><string>G O</string></property>
-               <property name="minimumSize"><size><width>0</width><height>44</height></size></property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-          </layout>
+        <item row="2" column="1">
+         <widget class="QPushButton" name="jp_p_a0c0">
+          <property name="text"><string>A0 C0
+head up</string></property>
+          <property name="minimumSize"><size><width>0</width><height>44</height></size></property>
          </widget>
         </item>
        </layout>
-      </widget>
-     </item>
-     <item>
-      <spacer name="jp_right_spacer">
-       <property name="orientation"><enum>Qt::Horizontal</enum></property>
-       <property name="sizeHint" stdset="0"><size><width>40</width><height>10</height></size></property>
-      </spacer>
-     </item>
-    </layout>
-   </item>
-   <item>
-    <spacer name="nedSpacer">
-     <property name="orientation"><enum>Qt::Vertical</enum></property>
-     <property name="sizeHint" stdset="0"><size><width>10</width><height>40</height></size></property>
-    </spacer>
+      </item>
+      <item>
+       <widget class="QLabel" name="jp_presets_note">
+        <property name="text"><string>Presets run immediately at the selected speed.</string></property>
+        <property name="wordWrap"><bool>true</bool></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="jp_typed_caption">
+        <property name="text"><string>T Y P E D   M O V E</string></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="jp_in_x">
+        <property name="placeholderText"><string>X · mm</string></property>
+        <property name="minimumSize"><size><width>0</width><height>28</height></size></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="jp_in_y">
+        <property name="placeholderText"><string>Y · mm</string></property>
+        <property name="minimumSize"><size><width>0</width><height>28</height></size></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="jp_in_z">
+        <property name="placeholderText"><string>Z · mm</string></property>
+        <property name="minimumSize"><size><width>0</width><height>28</height></size></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="jp_in_a">
+        <property name="placeholderText"><string>A · deg</string></property>
+        <property name="minimumSize"><size><width>0</width><height>28</height></size></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="jp_in_c">
+        <property name="placeholderText"><string>C · deg</string></property>
+        <property name="minimumSize"><size><width>0</width><height>28</height></size></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="jp_clear">
+        <property name="text"><string>CLEAR</string></property>
+        <property name="minimumSize"><size><width>0</width><height>26</height></size></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="jp_go_abs">
+        <property name="text"><string>GO ABS · move to</string></property>
+        <property name="enabled"><bool>false</bool></property>
+        <property name="minimumSize"><size><width>0</width><height>40</height></size></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="jp_go_rel">
+        <property name="text"><string>GO REL · move by</string></property>
+        <property name="enabled"><bool>false</bool></property>
+        <property name="minimumSize"><size><width>0</width><height>40</height></size></property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="jp_status_h">
+        <property name="spacing"><number>6</number></property>
+        <item>
+         <widget class="QLabel" name="jp_status_dot">
+          <property name="text"><string>●</string></property>
+          <property name="minimumSize"><size><width>16</width><height>16</height></size></property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="jp_status_text">
+          <property name="text"><string>IDLE — ready</string></property>
+          <property name="minimumSize"><size><width>150</width><height>16</height></size></property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="jp_status_spacer">
+          <property name="orientation"><enum>Qt::Horizontal</enum></property>
+          <property name="sizeHint" stdset="0"><size><width>5</width><height>5</height></size></property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QPushButton" name="jp_stop">
+        <property name="text"><string>STOP</string></property>
+        <property name="enabled"><bool>false</bool></property>
+        <property name="minimumSize"><size><width>0</width><height>30</height></size></property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
    </item>
   </layout>
  </widget>

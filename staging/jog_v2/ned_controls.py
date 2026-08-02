@@ -498,9 +498,11 @@ class UserTab(QWidget):
         w = self.findChild(QWidget, 'jp_in_' + ax)
         if w is None:
             return
+        # metrics mirror the narrow-panel QLineEdit QSS (padding 2px 6px,
+        # 10pt) so the flash never changes the field's height at 200 px
         w.setStyleSheet('background: rgb(96,28,28); color: white; '
                         'border: 1px solid rgb(220,80,80); '
-                        'border-radius: 5px; padding: 4px 8px; font: 11pt;')
+                        'border-radius: 5px; padding: 2px 6px; font: 10pt;')
         QTimer.singleShot(700, lambda: w.setStyleSheet(''))
 
     def _jog_go(self, rel):

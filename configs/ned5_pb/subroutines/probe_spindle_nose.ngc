@@ -28,6 +28,15 @@ o<probe_spindle_nose> sub
 
   #<offset_z> = #5422
 
+(ned 2026-08-02: the toolsetter is PNEUMATIC on this machine -- stock PB)
+(assumes a fixed plate and never raises it, so the nose probed thin air)
+(and G38.2 errored "move finished without making contact" [15:20 log].)
+(Deploy is motion.digital-out-03 -> sol.ts -> 7I84 TB2-21. There is NO)
+(deployed-sensor input, only the contact input, so the rise is a timed)
+(dwell.)
+  M64 P3       (PUCK UP)
+  G4 P1.5      (no position feedback -- dwell for the cylinder to seat)
+
   (Initial Fast Z- Probe)
   G91
   F[#<probe_fast_fr>]
@@ -40,6 +49,7 @@ o<probe_spindle_nose> sub
       G90
       G1 F[#<probe_traverse_fr>] Z#<z>
       F[#<probe_fast_fr>]
+      M65 P3   (PUCK DOWN before bailing out)
       (abort, probe event failed to record point data, aborting)
   o110 endif
 
@@ -72,6 +82,9 @@ o<probe_spindle_nose> sub
   (DEBUG, EVAL[vcp.getWidget{"z_max_travel_3007"}.setValue{#3007}])
 
   G53 G0 Z0.0
+
+  M65 P3   (PUCK DOWN -- retract once the nose is clear)
+  G4 P0.5
 
   M50 P1 (Reinstate Feedrate Override)
 

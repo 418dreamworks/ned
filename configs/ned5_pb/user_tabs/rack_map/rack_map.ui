@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>rack_map</class>
+ <!-- RACK MAP user tab (staging/rack_map 2026-08-02). ALL widgets declared
+      HERE (house rule: no runtime layout insertion). rack_map.py only
+      findChild()s + connects + polls the var file; every wire and every
+      refusal is logged loudly. Table params: tool #[4000+N]; per-pocket
+      seat/clearance/flags #[4100+N*4]..#[4103+N*4], N=1..15. -->
+ <widget class="QWidget" name="rack_map_root">
+  <layout class="QVBoxLayout" name="rmLayout">
+   <property name="leftMargin"><number>0</number></property>
+   <property name="topMargin"><number>0</number></property>
+   <property name="rightMargin"><number>0</number></property>
+   <property name="bottomMargin"><number>0</number></property>
+   <property name="spacing"><number>0</number></property>
+   <item>
+    <widget class="QFrame" name="rm_panel">
+     <property name="styleSheet"><string notr="true">
+#rm_panel { background: rgb(24,27,31); border: none; border-radius: 6px; }
+QLabel { background: transparent; color: rgb(214,218,222); font: 10pt; }
+#rm_title { font: 75 11pt; color: rgb(148,155,163); }
+#rm_hdr_pk, #rm_hdr_tool, #rm_hdr_seatx, #rm_hdr_seaty, #rm_hdr_clr,
+#rm_hdr_teach { font: 75 9pt; color: rgb(148,155,163); }
+QPushButton { background: rgb(43,48,54); color: rgb(214,218,222);
+  border: 1px solid rgb(72,79,87); border-radius: 5px; font: 75 9pt; }
+QPushButton:pressed { background: rgb(60,66,73); }
+QPushButton:disabled { background: rgb(34,38,43);
+  color: rgb(105,111,118); border-color: rgb(55,60,66); }
+QSpinBox { background: rgb(28,32,36); color: white;
+  border: 1px solid rgb(72,79,87); border-radius: 5px;
+  padding: 1px 4px; font: 10pt;
+  selection-background-color: rgb(232,166,53); }
+QSpinBox:focus { border: 1px solid rgb(232,166,53); }
+#rm_sync_caption { font: 75 10pt; color: rgb(232,166,53); }
+#rm_status { font: 9pt; color: rgb(110,117,124); }
+</string></property>
+     <layout class="QVBoxLayout" name="rm_v">
+      <property name="leftMargin"><number>10</number></property>
+      <property name="topMargin"><number>8</number></property>
+      <property name="rightMargin"><number>10</number></property>
+      <property name="bottomMargin"><number>8</number></property>
+      <property name="spacing"><number>4</number></property>
+      <item>
+       <widget class="QLabel" name="rm_title"><property name="text"><string>RACK MAP — per-pocket seat / clearance table (machine coords)</string></property></widget>
+      </item>
+      <item>
+       <layout class="QGridLayout" name="rm_grid" columnstretch="0,0,1,1,1,0,0">
+        <property name="horizontalSpacing"><number>10</number></property>
+        <property name="verticalSpacing"><number>3</number></property>
+        <item row="0" column="0"><widget class="QLabel" name="rm_hdr_pk"><property name="text"><string>PK</string></property></widget></item>
+        <item row="0" column="1"><widget class="QLabel" name="rm_hdr_tool"><property name="text"><string>TOOL IN FORK</string></property></widget></item>
+        <item row="0" column="2"><widget class="QLabel" name="rm_hdr_seatx"><property name="text"><string>SEAT X (machine)</string></property></widget></item>
+        <item row="0" column="3"><widget class="QLabel" name="rm_hdr_seaty"><property name="text"><string>SEAT Y (machine)</string></property></widget></item>
+        <item row="0" column="4"><widget class="QLabel" name="rm_hdr_clr"><property name="text"><string>CLEARANCE (entry axis)</string></property></widget></item>
+        <item row="0" column="5" colspan="2"><widget class="QLabel" name="rm_hdr_teach"><property name="text"><string>TEACH (park head first)</string></property></widget></item>
+        <item row="1" column="0"><widget class="QLabel" name="rm_pk_1"><property name="text"><string>1</string></property><property name="minimumSize"><size><width>34</width><height>30</height></size></property></widget></item>
+        <item row="1" column="1"><widget class="QSpinBox" name="rm_tool_1"><property name="maximum"><number>99</number></property><property name="minimumSize"><size><width>90</width><height>30</height></size></property></widget></item>
+        <item row="1" column="2"><widget class="QLabel" name="rm_seatx_1"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="1" column="3"><widget class="QLabel" name="rm_seaty_1"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="1" column="4"><widget class="QLabel" name="rm_clr_1"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="1" column="5"><widget class="QPushButton" name="rm_teachs_1"><property name="text"><string>TEACH SEAT</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="1" column="6"><widget class="QPushButton" name="rm_teachc_1"><property name="text"><string>TEACH CLEAR</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="2" column="0"><widget class="QLabel" name="rm_pk_2"><property name="text"><string>2</string></property><property name="minimumSize"><size><width>34</width><height>30</height></size></property></widget></item>
+        <item row="2" column="1"><widget class="QSpinBox" name="rm_tool_2"><property name="maximum"><number>99</number></property><property name="minimumSize"><size><width>90</width><height>30</height></size></property></widget></item>
+        <item row="2" column="2"><widget class="QLabel" name="rm_seatx_2"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="2" column="3"><widget class="QLabel" name="rm_seaty_2"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="2" column="4"><widget class="QLabel" name="rm_clr_2"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="2" column="5"><widget class="QPushButton" name="rm_teachs_2"><property name="text"><string>TEACH SEAT</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="2" column="6"><widget class="QPushButton" name="rm_teachc_2"><property name="text"><string>TEACH CLEAR</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="3" column="0"><widget class="QLabel" name="rm_pk_3"><property name="text"><string>3</string></property><property name="minimumSize"><size><width>34</width><height>30</height></size></property></widget></item>
+        <item row="3" column="1"><widget class="QSpinBox" name="rm_tool_3"><property name="maximum"><number>99</number></property><property name="minimumSize"><size><width>90</width><height>30</height></size></property></widget></item>
+        <item row="3" column="2"><widget class="QLabel" name="rm_seatx_3"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="3" column="3"><widget class="QLabel" name="rm_seaty_3"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="3" column="4"><widget class="QLabel" name="rm_clr_3"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="3" column="5"><widget class="QPushButton" name="rm_teachs_3"><property name="text"><string>TEACH SEAT</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="3" column="6"><widget class="QPushButton" name="rm_teachc_3"><property name="text"><string>TEACH CLEAR</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="4" column="0"><widget class="QLabel" name="rm_pk_4"><property name="text"><string>4</string></property><property name="minimumSize"><size><width>34</width><height>30</height></size></property></widget></item>
+        <item row="4" column="1"><widget class="QSpinBox" name="rm_tool_4"><property name="maximum"><number>99</number></property><property name="minimumSize"><size><width>90</width><height>30</height></size></property></widget></item>
+        <item row="4" column="2"><widget class="QLabel" name="rm_seatx_4"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="4" column="3"><widget class="QLabel" name="rm_seaty_4"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="4" column="4"><widget class="QLabel" name="rm_clr_4"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="4" column="5"><widget class="QPushButton" name="rm_teachs_4"><property name="text"><string>TEACH SEAT</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="4" column="6"><widget class="QPushButton" name="rm_teachc_4"><property name="text"><string>TEACH CLEAR</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="5" column="0"><widget class="QLabel" name="rm_pk_5"><property name="text"><string>5</string></property><property name="minimumSize"><size><width>34</width><height>30</height></size></property></widget></item>
+        <item row="5" column="1"><widget class="QSpinBox" name="rm_tool_5"><property name="maximum"><number>99</number></property><property name="minimumSize"><size><width>90</width><height>30</height></size></property></widget></item>
+        <item row="5" column="2"><widget class="QLabel" name="rm_seatx_5"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="5" column="3"><widget class="QLabel" name="rm_seaty_5"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="5" column="4"><widget class="QLabel" name="rm_clr_5"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="5" column="5"><widget class="QPushButton" name="rm_teachs_5"><property name="text"><string>TEACH SEAT</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="5" column="6"><widget class="QPushButton" name="rm_teachc_5"><property name="text"><string>TEACH CLEAR</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="6" column="0"><widget class="QLabel" name="rm_pk_6"><property name="text"><string>6</string></property><property name="minimumSize"><size><width>34</width><height>30</height></size></property></widget></item>
+        <item row="6" column="1"><widget class="QSpinBox" name="rm_tool_6"><property name="maximum"><number>99</number></property><property name="minimumSize"><size><width>90</width><height>30</height></size></property></widget></item>
+        <item row="6" column="2"><widget class="QLabel" name="rm_seatx_6"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="6" column="3"><widget class="QLabel" name="rm_seaty_6"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="6" column="4"><widget class="QLabel" name="rm_clr_6"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="6" column="5"><widget class="QPushButton" name="rm_teachs_6"><property name="text"><string>TEACH SEAT</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="6" column="6"><widget class="QPushButton" name="rm_teachc_6"><property name="text"><string>TEACH CLEAR</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="7" column="0"><widget class="QLabel" name="rm_pk_7"><property name="text"><string>7</string></property><property name="minimumSize"><size><width>34</width><height>30</height></size></property></widget></item>
+        <item row="7" column="1"><widget class="QSpinBox" name="rm_tool_7"><property name="maximum"><number>99</number></property><property name="minimumSize"><size><width>90</width><height>30</height></size></property></widget></item>
+        <item row="7" column="2"><widget class="QLabel" name="rm_seatx_7"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="7" column="3"><widget class="QLabel" name="rm_seaty_7"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="7" column="4"><widget class="QLabel" name="rm_clr_7"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="7" column="5"><widget class="QPushButton" name="rm_teachs_7"><property name="text"><string>TEACH SEAT</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="7" column="6"><widget class="QPushButton" name="rm_teachc_7"><property name="text"><string>TEACH CLEAR</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="8" column="0"><widget class="QLabel" name="rm_pk_8"><property name="text"><string>8</string></property><property name="minimumSize"><size><width>34</width><height>30</height></size></property></widget></item>
+        <item row="8" column="1"><widget class="QSpinBox" name="rm_tool_8"><property name="maximum"><number>99</number></property><property name="minimumSize"><size><width>90</width><height>30</height></size></property></widget></item>
+        <item row="8" column="2"><widget class="QLabel" name="rm_seatx_8"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="8" column="3"><widget class="QLabel" name="rm_seaty_8"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="8" column="4"><widget class="QLabel" name="rm_clr_8"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="8" column="5"><widget class="QPushButton" name="rm_teachs_8"><property name="text"><string>TEACH SEAT</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="8" column="6"><widget class="QPushButton" name="rm_teachc_8"><property name="text"><string>TEACH CLEAR</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="9" column="0"><widget class="QLabel" name="rm_pk_9"><property name="text"><string>9</string></property><property name="minimumSize"><size><width>34</width><height>30</height></size></property></widget></item>
+        <item row="9" column="1"><widget class="QSpinBox" name="rm_tool_9"><property name="maximum"><number>99</number></property><property name="minimumSize"><size><width>90</width><height>30</height></size></property></widget></item>
+        <item row="9" column="2"><widget class="QLabel" name="rm_seatx_9"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="9" column="3"><widget class="QLabel" name="rm_seaty_9"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="9" column="4"><widget class="QLabel" name="rm_clr_9"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="9" column="5"><widget class="QPushButton" name="rm_teachs_9"><property name="text"><string>TEACH SEAT</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="9" column="6"><widget class="QPushButton" name="rm_teachc_9"><property name="text"><string>TEACH CLEAR</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="10" column="0"><widget class="QLabel" name="rm_pk_10"><property name="text"><string>10</string></property><property name="minimumSize"><size><width>34</width><height>30</height></size></property></widget></item>
+        <item row="10" column="1"><widget class="QSpinBox" name="rm_tool_10"><property name="maximum"><number>99</number></property><property name="minimumSize"><size><width>90</width><height>30</height></size></property></widget></item>
+        <item row="10" column="2"><widget class="QLabel" name="rm_seatx_10"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="10" column="3"><widget class="QLabel" name="rm_seaty_10"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="10" column="4"><widget class="QLabel" name="rm_clr_10"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="10" column="5"><widget class="QPushButton" name="rm_teachs_10"><property name="text"><string>TEACH SEAT</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="10" column="6"><widget class="QPushButton" name="rm_teachc_10"><property name="text"><string>TEACH CLEAR</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="11" column="0"><widget class="QLabel" name="rm_pk_11"><property name="text"><string>11</string></property><property name="minimumSize"><size><width>34</width><height>30</height></size></property></widget></item>
+        <item row="11" column="1"><widget class="QSpinBox" name="rm_tool_11"><property name="maximum"><number>99</number></property><property name="minimumSize"><size><width>90</width><height>30</height></size></property></widget></item>
+        <item row="11" column="2"><widget class="QLabel" name="rm_seatx_11"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="11" column="3"><widget class="QLabel" name="rm_seaty_11"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="11" column="4"><widget class="QLabel" name="rm_clr_11"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="11" column="5"><widget class="QPushButton" name="rm_teachs_11"><property name="text"><string>TEACH SEAT</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="11" column="6"><widget class="QPushButton" name="rm_teachc_11"><property name="text"><string>TEACH CLEAR</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="12" column="0"><widget class="QLabel" name="rm_pk_12"><property name="text"><string>12</string></property><property name="minimumSize"><size><width>34</width><height>30</height></size></property></widget></item>
+        <item row="12" column="1"><widget class="QSpinBox" name="rm_tool_12"><property name="maximum"><number>99</number></property><property name="minimumSize"><size><width>90</width><height>30</height></size></property></widget></item>
+        <item row="12" column="2"><widget class="QLabel" name="rm_seatx_12"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="12" column="3"><widget class="QLabel" name="rm_seaty_12"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="12" column="4"><widget class="QLabel" name="rm_clr_12"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="12" column="5"><widget class="QPushButton" name="rm_teachs_12"><property name="text"><string>TEACH SEAT</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="12" column="6"><widget class="QPushButton" name="rm_teachc_12"><property name="text"><string>TEACH CLEAR</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="13" column="0"><widget class="QLabel" name="rm_pk_13"><property name="text"><string>13</string></property><property name="minimumSize"><size><width>34</width><height>30</height></size></property></widget></item>
+        <item row="13" column="1"><widget class="QSpinBox" name="rm_tool_13"><property name="maximum"><number>99</number></property><property name="minimumSize"><size><width>90</width><height>30</height></size></property></widget></item>
+        <item row="13" column="2"><widget class="QLabel" name="rm_seatx_13"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="13" column="3"><widget class="QLabel" name="rm_seaty_13"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="13" column="4"><widget class="QLabel" name="rm_clr_13"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="13" column="5"><widget class="QPushButton" name="rm_teachs_13"><property name="text"><string>TEACH SEAT</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="13" column="6"><widget class="QPushButton" name="rm_teachc_13"><property name="text"><string>TEACH CLEAR</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="14" column="0"><widget class="QLabel" name="rm_pk_14"><property name="text"><string>14</string></property><property name="minimumSize"><size><width>34</width><height>30</height></size></property></widget></item>
+        <item row="14" column="1"><widget class="QSpinBox" name="rm_tool_14"><property name="maximum"><number>99</number></property><property name="minimumSize"><size><width>90</width><height>30</height></size></property></widget></item>
+        <item row="14" column="2"><widget class="QLabel" name="rm_seatx_14"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="14" column="3"><widget class="QLabel" name="rm_seaty_14"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="14" column="4"><widget class="QLabel" name="rm_clr_14"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="14" column="5"><widget class="QPushButton" name="rm_teachs_14"><property name="text"><string>TEACH SEAT</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="14" column="6"><widget class="QPushButton" name="rm_teachc_14"><property name="text"><string>TEACH CLEAR</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="15" column="0"><widget class="QLabel" name="rm_pk_15"><property name="text"><string>15</string></property><property name="minimumSize"><size><width>34</width><height>30</height></size></property></widget></item>
+        <item row="15" column="1"><widget class="QSpinBox" name="rm_tool_15"><property name="maximum"><number>99</number></property><property name="minimumSize"><size><width>90</width><height>30</height></size></property></widget></item>
+        <item row="15" column="2"><widget class="QLabel" name="rm_seatx_15"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="15" column="3"><widget class="QLabel" name="rm_seaty_15"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="15" column="4"><widget class="QLabel" name="rm_clr_15"><property name="text"><string>—</string></property><property name="minimumSize"><size><width>150</width><height>30</height></size></property></widget></item>
+        <item row="15" column="5"><widget class="QPushButton" name="rm_teachs_15"><property name="text"><string>TEACH SEAT</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+        <item row="15" column="6"><widget class="QPushButton" name="rm_teachc_15"><property name="text"><string>TEACH CLEAR</string></property><property name="minimumSize"><size><width>130</width><height>30</height></size></property></widget></item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="rm_sync_h">
+        <property name="spacing"><number>10</number></property>
+        <item>
+         <widget class="QLabel" name="rm_sync_caption"><property name="minimumSize"><size><width>130</width><height>24</height></size></property><property name="text"><string>SPINDLE HOLDS</string></property></widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="rm_spindle_holds">
+          <property name="maximum"><number>99</number></property>
+          <property name="minimumSize"><size><width>90</width><height>32</height></size></property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="rm_sync_note"><property name="minimumSize"><size><width>380</width><height>24</height></size></property><property name="text"><string>commit = M61 Qn + #3991 (Enter / leave field)</string></property></widget>
+        </item>
+        <item>
+         <spacer name="rm_sync_spacer">
+          <property name="orientation"><enum>Qt::Horizontal</enum></property>
+          <property name="sizeHint" stdset="0"><size><width>20</width><height>5</height></size></property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QLabel" name="rm_status"><property name="minimumSize"><size><width>420</width><height>24</height></size></property><property name="text"><string>var file: not read yet</string></property></widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

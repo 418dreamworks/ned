@@ -23,6 +23,64 @@ def _load_ui(ui_path, parent):
     return load_runtime_ui(ui_path, parent)
 
 
+
+
+class _HomeBanner(QWidget):
+    """STALE HOME / SESSION HOME banner (operator 2026-08-02): sideways
+    readable text, gentle vertical bob, in the strip left of the ZERO
+    buttons. STALE (amber) until the Machine>Homing>Home All click counter
+    is > 0 AND all six joints report homed; then SESSION (green), latched
+    for the rest of the session. Nothing special -- just a banner."""
+
+    def __init__(self, parent=None):
+        super(_HomeBanner, self).__init__(parent)
+        self.setFixedWidth(26)
+        self._session = False
+        self._phase = 0.0
+        from PySide6.QtCore import QTimer
+        self._t = QTimer(self)
+        self._t.timeout.connect(self._tick)
+        self._t.start(80)
+
+    def _tick(self):
+        import math
+        self._phase += 0.12
+        if self._phase > 2 * math.pi:
+            self._phase -= 2 * math.pi
+        self.update()
+
+    def set_session(self, on):
+        self._session = bool(on)
+        if self._session:
+            # operator 2026-08-02 12:28: SESSION HOME is green and STILL
+            # ("no danger any more") -- only STALE bobs
+            self._t.stop()
+        self.update()
+
+    def paintEvent(self, ev):
+        import math
+        from PySide6.QtGui import QPainter, QColor, QFont
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing)
+        text = 'SESSION HOME' if self._session else 'STALE HOME'
+        color = QColor(60, 200, 90) if self._session else QColor(235, 170, 40)
+        p.setPen(color)
+        f = QFont(self.font())
+        f.setBold(True)
+        f.setPointSize(11)
+        p.setFont(f)
+        fm = p.fontMetrics()
+        # glide the text up/down the full column ("a banner going up and
+        # down"), never past the edges
+        amp = max(0, (self.height() - fm.horizontalAdvance(text)) // 2 - 6)
+        bob = 0 if self._session else int(amp * math.sin(self._phase))
+        p.translate(self.width() - 6, self.height() // 2 + bob)
+        p.rotate(-90)
+        p.drawText(-fm.horizontalAdvance(text) // 2, 0, text)
+        p.end()
+
+
+
 class UserDRO(QWidget):
     # MPG highlight: the WHOLE ROW (work + dtg + machine) of the axis the
     # pendant will jog goes yellow. The axis arrives on OUR OWN netted pin
@@ -51,6 +109,11 @@ class UserDRO(QWidget):
         self._mpg_timer = QTimer(self)
         self._mpg_timer.timeout.connect(self._mpg_apply)
         self._mpg_timer.start(300)
+        # STALE/SESSION HOME banner: added after the window settles (the
+        # 6 s house delay -- early reparenting spun Qt, 2026-08-02 10:08)
+        self._banner = None
+        self._banner_latch = False
+        QTimer.singleShot(6000, self._add_banner)
         # NO REF BUTTONS (operator 2026-08-01: "i really do not need the REF
         # buttons because those things are done very rarely") -- homing lives
         # in Settings > Homing (menu entries rebound to the safe ned cycles
@@ -207,6 +270,38 @@ class UserDRO(QWidget):
         except Exception as e:
             LOG.error('ZERO %s failed: %s', axes, e)
 
+    def _add_banner(self):
+        # operator 2026-08-02 12:16: banner = its own COLUMN, direct left of
+        # ZERO ALL..LOCK C, spanning top to bottom. widget_xyzac (the
+        # buttons' container, header..C rows exactly) sits in a VERTICAL
+        # box, so a slot-insert stacks ABOVE it (the 11:5x mistake). Wrap
+        # instead: HBox [banner | widget_xyzac] takes widget_xyzac's slot.
+        try:
+            from PySide6.QtWidgets import QBoxLayout, QHBoxLayout
+            zb = self.findChild(QWidget, 'zero_x_button')
+            if zb is None or zb.parentWidget() is None:
+                LOG.error('HOME banner: zero_x_button not found -- no banner')
+                return
+            col = zb.parentWidget()                     # widget_xyzac
+            outer = col.parentWidget().layout() if col.parentWidget() else None
+            if not isinstance(outer, QBoxLayout):
+                LOG.error('HOME banner: parent layout is %s, not a box '
+                          'layout -- no banner', type(outer).__name__)
+                return
+            idx = outer.indexOf(col)
+            wrap = QWidget(col.parentWidget())
+            hb = QHBoxLayout(wrap)
+            hb.setContentsMargins(0, 0, 0, 0)
+            hb.setSpacing(2)
+            self._banner = _HomeBanner()
+            hb.addWidget(self._banner)
+            hb.addWidget(col)          # reparents col out of outer into wrap
+            outer.insertWidget(idx, wrap)
+            LOG.info('HOME banner column added left of %s (STALE HOME until '
+                     'menu Home All completes this session)', col.objectName())
+        except Exception as e:
+            LOG.error('HOME banner failed: %s', e)
+
     def set_mpg_axis(self, val):
         self._mpg_ax = int(val)
         self._mpg_apply()
@@ -225,6 +320,19 @@ class UserDRO(QWidget):
                 if w.styleSheet() != style:
                     w.setStyleSheet(style)
         self._unhomed_dro()
+        if self._banner is not None and not self._banner_latch:
+            try:
+                win = self.window()
+                tab = win.findChild(QWidget, 'ned_controls') if win else None
+                clicks = getattr(tab, '_homeall_clicks', 0) if tab else 0
+                if clicks > 0 and self._stat is not None \
+                   and all(self._stat.homed[j] for j in range(6)):
+                    self._banner_latch = True
+                    self._banner.set_session(True)
+                    LOG.info('HOME banner -> SESSION HOME (physical home '
+                             'completed this session)')
+            except Exception:
+                pass
 
     # UNHOMED DRO: free-mode joint jogging moves only JOINT positions -- world
     # coordinates (what the DRO widgets display) FREEZE with kinstype=BOTH, so

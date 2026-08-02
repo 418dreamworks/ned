@@ -1,3 +1,5 @@
+# GENERATED from configs/params/MASTER.params by tools/live/gen_params.py -- DO NOT HAND-EDIT.
+# Edit MASTER.params, then run: gen_params.py check && gen_params.py write
 # joint_y.inc -- Y cross. Lifted verbatim from configs/ned/ned.ini [JOINT_1].
 # In the 5-axis config this is JOINT_1 (axis Y).
 TYPE = LINEAR

@@ -132,6 +132,32 @@ Any line missing = that feature silently dead → fix before trusting the
 GUI. Also verify behavior against `docs/gui_button_spec.md` (the
 contract) — buttons, locks, homing menu, zeros, countdowns.
 
+### B3a. PATCHED qtpyvcp core file: obj_status.py (boot-lottery fix, 2026-08-02)
+
+- **What:** `~/qt_pb/qtpyvcp/src/qtpyvcp/utilities/obj_status.py`,
+  `hal_poll_thread`: stock code runs `halcmd -s show pin` with
+  `stdout=PIPE`. halcmd holds the GLOBAL HAL MUTEX while printing; once
+  output exceeds the 64 KB pipe buffer it sleeps in `pipe_write` STILL
+  HOLDING THE MUTEX. Meanwhile the GUI main thread spins in
+  `hal.component.newpin()` on that same mutex WITHOUT releasing the GIL,
+  so the poll thread can never drain the pipe: GIL <-> pipe <-> HAL-mutex
+  three-way deadlock. Symptom = "boot lottery": PB freezes mid-boot at
+  ~100 % CPU (py-spy: MainThread in hal_qlib.py addPin/newpin, identical
+  stack forever), and every later `halcmd` spins in R-state on the held
+  mutex. Proof captured 2026-08-02 12:36 (py-spy + /proc wchan
+  `pipe_write`), dossier in the session's tmp/boot_lottery.txt.
+- **Patch:** halcmd stdout goes to a `tempfile.TemporaryFile()` instead of
+  a pipe (a file write never blocks), `p.wait()` (releases GIL), then read
+  the file back. Race becomes impossible.
+- **Stock backup:** `obj_status.py.stock` alongside the patched file.
+- **A PB/qtpyvcp update (B1: qt_pb.sh WIPES ~/qt_pb) removes the patch and
+  the lottery RETURNS.**
+- **Detect:** `grep -n "tempfile.TemporaryFile" ~/qt_pb/qtpyvcp/src/qtpyvcp/utilities/obj_status.py`
+  — no match = stock code = lottery is back. Behavior: any PB boot that
+  hangs >30 s with a `halcmd` stuck in `pipe_write` (`cat /proc/<pid>/wchan`).
+- **Restore:** re-apply the patch (this section is the spec; diff vs
+  `.stock` if present), or check whether upstream qtpyvcp fixed it.
+
 ### B4. Known version-coupled items
 
 - `gcode_editor` native plugin: PB ships x86-64; on this Pi it must be
@@ -158,3 +184,16 @@ contract) — buttons, locks, homing menu, zeros, countdowns.
    countdown, notifications non-persistent.
 4. A/C rehome probe (A4.4) — brain verify machinery unchanged by PB
    updates but confirm gui.md shows the cycle.
+
+### A5. Rack ATC + MASTER.params (added 2026-08-02)
+- The M6 remap chain lives in `configs/ned5_pb/` (subroutines/, python/,
+  ini REMAP + [PYTHON] + [ATC]) — config-side, SAFE from PB package
+  updates, but a PB update may change the RackATC widget/QML side:
+  re-test the ATC page after any PB update.
+- `configs/params/*.inc` are GENERATED from `configs/params/MASTER.params`
+  once `gen_params.py write` has stamped them. NEVER hand-edit a stamped
+  .inc: run `tools/live/gen_params.py check` after any upgrade or manual
+  intervention; `write` regenerates.
+- `timedelay` in ned5_iron.hal loads TWO instances in ONE loadrt
+  (`air.debounce,head.ready`) — adding another loadrt of the same comp
+  anywhere kills the launch at insmod.

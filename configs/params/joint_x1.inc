@@ -1,3 +1,5 @@
+# GENERATED from configs/params/MASTER.params by tools/live/gen_params.py -- DO NOT HAND-EDIT.
+# Edit MASTER.params, then run: gen_params.py check && gen_params.py write
 # joint_x1.inc -- X gantry side 1. Lifted verbatim from configs/ned/ned.ini [JOINT_0].
 # In the 5-axis config this is JOINT_0 (axis X). Servo params (PID/scale) are used
 # by the real ned.hal; the ned5 SIM loopback HAL ignores them.
@@ -30,6 +32,6 @@ HOME_FINAL_VEL = 6.35
 # unhomed X jog. Anti-racking is carried by the MPG wiring instead: X-select
 # drives joints 0 AND 3 with identical counts+scale (postgui_pb.hal), and the
 # on-screen per-joint jog buttons are hidden.
-HOME_SEQUENCE = 1
+HOME_SEQUENCE = -2
 HOME_USE_INDEX = NO
 HOME_IGNORE_LIMITS = YES

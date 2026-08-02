@@ -1,0 +1,353 @@
+# ================================================================
+# ned MASTER PARAMETER FILE -- the single authoritative source for
+# every configs/params/*.inc value (task #16, 2026-08-02).
+# Edit HERE; then: tools/live/gen_params.py check && ... write
+# NOT here: head_zero.inc (written by ned_brain at zero capture).
+# [drivetrain] primitives mirror tools/live/ned_params.sh (bench
+# scripts still source that file; `check` cross-checks the two).
+# ================================================================
+
+[drivetrain]
+DRIVE_PPR = 8192  # head Yaskawa servo: reference pulses per MOTOR rev (Pn20E)
+GEAR_A = 128.25  # head A (tilt) reduction motor:axis  -- HQD AC-D90-65 spec 1:128.25
+GEAR_C = 203.7471  # head C (spin) reduction motor:axis  -- HQD AC-D90-65 spec 1:203.7471
+ROT_FULLSTEPS = 200  # rotary-table stepper full steps/rev
+ROT_MICROSTEP = 2  # rotary drive microstep
+ROT_GEAR = 20  # rotary table reduction stepper:chuck (1:20 worm)
+MAXV_DISPLAY = 333.334  # mm/s = 20000 mm/min -- V-slider CEILING (traj/display
+MAX_VEL_LIN = 200  # mm/s -- linear-axis top speed AND PID MAX_OUTPUT clamp (the ONLY
+
+[emcmot]
+# emcmot.inc -- shared [EMCMOT] body. #INCLUDE'd under an [EMCMOT] header.
+# Values lifted verbatim from configs/ned/ned.ini (single source of truth).
+EMCMOT = motmod
+COMM_TIMEOUT = 1.0
+SERVO_PERIOD = 1000000
+
+[traj]
+# traj_common.inc -- shared [TRAJ] body (minus COORDINATES, which is per-case:
+# XYZAC here vs XYZXBACB in the 8-joint config). #INCLUDE'd under a [TRAJ] header
+# AFTER the COORDINATES line. Lifted verbatim from configs/ned/ned.ini.
+LINEAR_UNITS = mm
+ANGULAR_UNITS = degree
+SPINDLES = 1
+DEFAULT_LINEAR_VELOCITY = 20
+MAX_LINEAR_VELOCITY = @MAXV_DISPLAY
+DEFAULT_ANGULAR_VELOCITY = 15
+MAX_ANGULAR_VELOCITY = 30
+NO_FORCE_HOMING = 0
+
+[spindle0]
+# spindle_0.inc -- shared [SPINDLE_0] body. #INCLUDE'd under a [SPINDLE_0] header.
+# Lifted verbatim from configs/ned/ned.ini (pwmgen.04 -> +/-10 V to the VFD).
+MAX_FORWARD_VELOCITY = 18000
+MIN_FORWARD_VELOCITY = 1000
+MAX_REVERSE_VELOCITY = 18000
+
+[display]
+# display_common.inc -- shared [DISPLAY] body (minus the DISPLAY= GUI selector,
+# which is per-config). #INCLUDE'd under a [DISPLAY] header, AFTER the DISPLAY=
+# line. Lifted verbatim from configs/ned/ned.ini.
+CYCLE_TIME = 0.05
+POSITION_OFFSET = RELATIVE
+POSITION_FEEDBACK = ACTUAL
+MAX_FEED_OVERRIDE = 1.5
+MAX_SPINDLE_OVERRIDE = 2.0
+MIN_SPINDLE_OVERRIDE = 0.2
+INTRO_GRAPHIC = linuxcnc.gif
+INTRO_TIME = 2
+PROGRAM_PREFIX = /home/brains/linuxcnc/nc_files
+INCREMENTS = 0.01 mm, 0.1 mm, 1 mm, 5 mm
+SPINDLES = 1
+DEFAULT_LINEAR_VELOCITY = 20
+MAX_LINEAR_VELOCITY = @MAXV_DISPLAY
+
+[rs274ngc]
+# rs274ngc.inc -- shared [RS274NGC] body (minus the per-config PARAMETER_FILE).
+# #INCLUDE'd under an [RS274NGC] header. SUBROUTINE_PATH is relative to the
+# config dir; configs/ned5 sits at the same depth as configs/ned so it resolves
+# identically. Lifted verbatim from configs/ned/ned.ini.
+SUBROUTINE_PATH = ../../nc_files/subroutines
+
+[puck]
+# puck.inc -- SINGLE SOURCE for the tool-probe ("puck") LOCATION.  [PUCK] section.
+# G-code CANNOT rewrite an INI, so the checkpoint routines READ the seeds here and
+# LOG their refined results to puck_result.txt (in the config dir) for you to paste
+# back in. Nothing here is duplicated in any other file (CLAUDE.md rule 11).
+#
+#   APPROX_ABOVE  how far above the top to start CP1's down-probe (safe gap).
+#   Z_TOP, CENTER_X, CENTER_Y  last measured (CP1/CP2 write to persistent params
+#                              #5211/#5212/#5213 for the live run; update these from
+#                              puck_result.txt so the next session seeds well).
+APPROX_ABOVE = 10.0    # mm, safe start gap above the puck top for CP1
+Z_TOP        = 0.0     # mm, measured top-touch spindle-Z reference (from CP1 log)
+CENTER_X     = 0.0     # mm, measured puck center X (from CP2 log)
+CENTER_Y     = 0.0     # mm, measured puck center Y (from CP2 log)
+
+[axis.x]
+# axis_x.inc -- shared [AXIS_X] body (Cartesian limits/velocity). Lifted verbatim
+# from configs/ned/ned.ini. #INCLUDE under an [AXIS_X] header.
+# MAX_VELOCITY: WRITTEN by tools/live/ned_params.sh (MAX_VEL_LIN) -- edit THERE, never here.
+MAX_VELOCITY = @MAX_VEL_LIN
+MAX_ACCELERATION = 200.0
+MIN_LIMIT = -4042.725
+MAX_LIMIT = 1.0
+
+[axis.y]
+# axis_y.inc -- shared [AXIS_Y] body. Lifted verbatim from configs/ned/ned.ini.
+# MAX_VELOCITY: WRITTEN by tools/live/ned_params.sh (MAX_VEL_LIN) -- edit THERE, never here.
+MAX_VELOCITY = @MAX_VEL_LIN
+MAX_ACCELERATION = 200.0
+MIN_LIMIT = -1787.0
+MAX_LIMIT = 1.0
+
+[axis.z]
+# axis_z.inc -- shared [AXIS_Z] body. Lifted verbatim from configs/ned/ned.ini.
+MAX_VELOCITY = 169.3
+MAX_ACCELERATION = 200.0
+MIN_LIMIT = -620.0
+MAX_LIMIT = 1.0
+
+[axis.a]
+# axis_a.inc -- shared [AXIS_A] body (swivel-head TILT about X/W, degrees).
+# SOFT LIMIT A = +/-115 deg (crash-preventing; inside the manufacturer hard range).
+# NOTE: LinuxCNC enforces soft limits only AFTER the axis is homed, and they are
+# only ABSOLUTE if home was set to the true head angle -- see docs/gui.md.
+MAX_VELOCITY = 30
+MAX_ACCELERATION = 300
+MIN_LIMIT = -115.0
+MAX_LIMIT = 115.0
+
+[axis.c]
+# axis_c.inc -- shared [AXIS_C] body (swivel-head SPIN about Z, degrees).
+# SOFT LIMIT C = +/-315 deg (crash-preventing; inside the manufacturer hard range).
+# NOTE: enforced only AFTER homing, and absolute only if home = true head angle.
+# Bounded (NOT a wrapping/rollover axis) so a +ve->-ve move interpolates through 0.
+MAX_VELOCITY = 30
+MAX_ACCELERATION = 300
+MIN_LIMIT = -315.0
+MAX_LIMIT = 315.0
+
+[joint.x1]
+# joint_x1.inc -- X gantry side 1. Lifted verbatim from configs/ned/ned.ini [JOINT_0].
+# In the 5-axis config this is JOINT_0 (axis X). Servo params (PID/scale) are used
+# by the real ned.hal; the ned5 SIM loopback HAL ignores them.
+TYPE = LINEAR
+# MAX_VELOCITY + MAX_OUTPUT: WRITTEN by tools/live/ned_params.sh (MAX_VEL_LIN) -- edit THERE, never here.
+MAX_VELOCITY = @MAX_VEL_LIN
+MAX_ACCELERATION = 200.0
+FERROR = 25.4
+MIN_FERROR = 12.7
+MIN_LIMIT = -4042.725
+MAX_LIMIT = 1.0
+P = 16.7
+I = 4.925
+D = 0.0
+FF0 = 0.0
+FF1 = 0.993
+FF2 = 0.0
+BIAS = 0.860
+DEADBAND = 0.005
+MAX_OUTPUT = @MAX_VEL_LIN
+INPUT_SCALE  = 200.0
+OUTPUT_SCALE = 356.5
+HOME = 0.0
+HOME_OFFSET = 5.0
+HOME_SEARCH_VEL = 64.0
+HOME_LATCH_VEL = 1.666
+HOME_FINAL_VEL = 6.35
+# +1 NOT -1 (2026-07-31): negative = synchronized-final-move marker, and LinuxCNC
+# BARS joint-jogging such joints unhomed (ini-homing.adoc:269) -- operator needs
+# unhomed X jog. Anti-racking is carried by the MPG wiring instead: X-select
+# drives joints 0 AND 3 with identical counts+scale (postgui_pb.hal), and the
+# on-screen per-joint jog buttons are hidden.
+HOME_SEQUENCE = -2
+HOME_USE_INDEX = NO
+HOME_IGNORE_LIMITS = YES
+
+[joint.x2]
+# joint_x2.inc -- X gantry side 2 ("W"). Lifted verbatim from configs/ned/ned.ini
+# [JOINT_3]. In the 5-axis config this is JOINT_3 (second X-gantry joint; axis X).
+TYPE = LINEAR
+# MAX_VELOCITY + MAX_OUTPUT: WRITTEN by tools/live/ned_params.sh (MAX_VEL_LIN) -- edit THERE, never here.
+MAX_VELOCITY = @MAX_VEL_LIN
+MAX_ACCELERATION = 200.0
+FERROR = 25.4
+MIN_FERROR = 12.7
+MIN_LIMIT = -4042.725
+MAX_LIMIT = 1.0
+P = 16.7
+I = 4.828
+D = 0.0
+FF0 = 0.0
+FF1 = 0.986
+FF2 = 0.0
+BIAS = 0.722
+DEADBAND = 0.005
+MAX_OUTPUT = @MAX_VEL_LIN
+INPUT_SCALE  = 200.0
+OUTPUT_SCALE = 356.5
+BACKLASH = 0.0254
+HOME = 0.0
+HOME_OFFSET = 5.0
+HOME_SEARCH_VEL = 64.0
+HOME_LATCH_VEL = 1.666
+HOME_FINAL_VEL = 6.35
+# +1 NOT -1 (2026-07-31): negative = synchronized-final-move marker, and LinuxCNC
+# BARS joint-jogging such joints unhomed (ini-homing.adoc:269) -- operator needs
+# unhomed X jog. Anti-racking is carried by the MPG wiring instead: X-select
+# drives joints 0 AND 3 with identical counts+scale (postgui_pb.hal), and the
+# on-screen per-joint jog buttons are hidden.
+HOME_SEQUENCE = -2
+HOME_USE_INDEX = NO
+HOME_IGNORE_LIMITS = YES
+
+[joint.y]
+# joint_y.inc -- Y cross. Lifted verbatim from configs/ned/ned.ini [JOINT_1].
+# In the 5-axis config this is JOINT_1 (axis Y).
+TYPE = LINEAR
+# MAX_VELOCITY + MAX_OUTPUT: WRITTEN by tools/live/ned_params.sh (MAX_VEL_LIN) -- edit THERE, never here.
+MAX_VELOCITY = @MAX_VEL_LIN
+MAX_ACCELERATION = 200.0
+FERROR = 25.4
+MIN_FERROR = 12.7
+MIN_LIMIT = -1787.0
+MAX_LIMIT = 1.0
+P = 16.7
+I = 4.975
+D = 0.0
+FF0 = 0.0
+FF1 = 1.005
+FF2 = 0.0
+BIAS = 1.0095
+DEADBAND = 0.005
+MAX_OUTPUT = @MAX_VEL_LIN
+INPUT_SCALE  = 250.0
+OUTPUT_SCALE = 356.5
+HOME = 0.0
+HOME_OFFSET = 5.0
+HOME_SEARCH_VEL = 64.0
+HOME_LATCH_VEL = 1.666
+HOME_FINAL_VEL = 6.35
+HOME_SEQUENCE = 1
+HOME_USE_INDEX = NO
+HOME_IGNORE_LIMITS = YES
+
+[joint.z]
+# joint_z.inc -- Z vertical. Lifted verbatim from configs/ned/ned.ini [JOINT_2].
+# In the 5-axis config this is JOINT_2 (axis Z). Z homes first and to the TOP.
+TYPE = LINEAR
+MAX_VELOCITY = 169.3
+MAX_ACCELERATION = 200.0
+FERROR = 12.7
+MIN_FERROR = 2.54
+MIN_LIMIT = -620.0
+MAX_LIMIT = 1.0
+P = 17.21
+I = 4.876
+D = 0.0
+FF0 = 0.0
+FF1 = 0.990
+FF2 = 0.0
+BIAS = 0.437
+DEADBAND = 0.005
+# MAX_OUTPUT: WRITTEN by tools/live/ned_params.sh (MAX_VEL_LIN) -- edit THERE, never here.
+MAX_OUTPUT = @MAX_VEL_LIN
+INPUT_SCALE  = 787.402
+OUTPUT_SCALE = 178.2
+BACKLASH = 0.0254
+HOME = 0.0
+HOME_OFFSET = 5.0
+HOME_SEARCH_VEL = 80.0
+HOME_LATCH_VEL = 1.666
+HOME_FINAL_VEL = 6.35
+HOME_SEQUENCE = 0
+HOME_USE_INDEX = NO
+HOME_IGNORE_LIMITS = YES
+
+[joint.a]
+# joint_a.inc -- A swivel-head TILT (about X/W). Lifted verbatim from
+# configs/ned/ned.ini [JOINT_5]. In the 5-axis config this is JOINT_4 (axis A).
+#
+# !!! ned_params.sh WARNING !!!
+#   tools/live/ned_params.sh is the source-of-truth for SCALE (SCALE_A = DRIVE_PPR*GEAR_A/360).
+#   Its `apply`/`sync` writer keys on the OLD 8-joint map (J4=B-rotary, J5=A, J6=C) and
+#   only rewrites *.ini files. In THIS 5-axis config A is JOINT_4, so running
+#   ned_params.sh against ned5 would write the ROTARY scale onto A. DO NOT run
+#   ned_params.sh apply/sync against configs/ned5 until its joint map is updated.
+#   The value below is the current derived SCALE_A, hand-placed. See docs/gui.md.
+TYPE = ANGULAR
+MAX_VELOCITY = 30
+MAX_ACCELERATION = 300
+STEPGEN_MAXVEL = 36
+STEPGEN_MAXACCEL = 450
+# SCALE sign = A motion direction. POSITIVE (paired with pso_home.sh A sign=-1) so A+ = right-hand-rule
+# while homing still lands at physical zero. Magnitude = ned_params.sh SCALE_A.
+SCALE = +@SCALE_A
+FERROR = 5.0
+MIN_FERROR = 1.0
+# Soft limit A = +/-115 deg (5 deg margin inside the +/-120 mechanical hard range).
+MIN_LIMIT = -115.0
+MAX_LIMIT = 115.0
+HOME = 0.0
+# HOME_OFFSET is WRITTEN at every homing by tools/live/ned_brain.py (live absolute read via
+# ini.4/5.home_offset, zeroed against configs/params/head_zero.inc). SSOT of the zero is
+# head_zero.inc; the value here is a fallback -- do NOT hand-edit. With
+# HOME_ABSOLUTE_ENCODER=1: homing sets the DRO to this position, then MOVES the head to 0
+# (= encoder zero in head_zero.inc = physical zero) at HOME_FINAL_VEL.
+HOME_OFFSET = 0.0
+HOME_ABSOLUTE_ENCODER = 1
+HOME_FINAL_VEL = 5
+HOME_SEARCH_VEL = 0
+HOME_LATCH_VEL = 0
+# sequence 2 (POSITIVE): last in HOME ALL, A+C home concurrently via the homing
+# module's own machinery (individually-commanded concurrent homes wedged joint 4's
+# state machine 2026-07-31). A per-axis ref homes ONLY that joint (ini-homing.adoc:267).
+# The REF ALL button (dros_xyzac.py -> ned_controls.request_homeall) unhomes A/C
+# FIRST (HOME_NO_REHOME no-op otherwise) and tools/live/ned_brain.py arms the fresh
+# absolute read in parallel while XYZ homes; its guard blocks un-armed A/C homing.
+HOME_SEQUENCE = 3
+HOME_USE_INDEX = NO
+
+[joint.c]
+# joint_c.inc -- C swivel-head SPIN (about Z). Lifted verbatim from
+# configs/ned/ned.ini [JOINT_6]. In the 5-axis config this is JOINT_5 (axis C).
+#
+# !!! ned_params.sh WARNING (see joint_a.inc) !!!
+#   SCALE_C = DRIVE_PPR*GEAR_C/360, source-of-truth tools/live/ned_params.sh. Its writer
+#   maps J6=C (8-joint layout); here C is JOINT_5, so ned_params.sh apply/sync would
+#   mis-place scales. DO NOT run it against configs/ned5. Value below hand-placed.
+TYPE = ANGULAR
+MAX_VELOCITY = 30
+MAX_ACCELERATION = 300
+STEPGEN_MAXVEL = 36
+STEPGEN_MAXACCEL = 450
+# SCALE sign = C motion direction (negative: motor turns opposite to encoder/DRO+). Magnitude = ned_params.sh SCALE_C.
+SCALE = -@SCALE_C
+FERROR = 5.0
+MIN_FERROR = 1.0
+# Soft limit C = +/-315 deg. Bounded (WRAPPED_ROTARY unset) so the homing final move
+# unwinds NUMERICALLY to 0 -- from +300 it travels -300, never the +60 shortest wrap.
+MIN_LIMIT = -315.0
+MAX_LIMIT = 315.0
+HOME = 0.0
+# HOME_OFFSET is WRITTEN at every homing by tools/live/ned_brain.py (live absolute read via
+# configs/params/head_zero.inc), UNWRAPPED (no mod-360 fold: +190 stays +190). SSOT of the
+# zero is head_zero.inc; this line is regenerated every launch -- do NOT hand-edit. With
+# HOME_ABSOLUTE_ENCODER=1: homing sets the DRO to this position, then MOVES the head to 0
+# (= encoder zero in head_zero.inc = physical zero) at HOME_FINAL_VEL.
+HOME_OFFSET = 0.0
+HOME_ABSOLUTE_ENCODER = 1
+HOME_FINAL_VEL = 5
+HOME_SEARCH_VEL = 0
+HOME_LATCH_VEL = 0
+# same sequence as A (joint_a.inc) -> A and C home / rotate to zero TOGETHER
+# sequence 2 (POSITIVE): last in HOME ALL, A+C home concurrently via the homing
+# module's own machinery (individually-commanded concurrent homes wedged joint 4's
+# state machine 2026-07-31). A per-axis ref homes ONLY that joint (ini-homing.adoc:267).
+# The REF ALL button (dros_xyzac.py -> ned_controls.request_homeall) unhomes A/C
+# FIRST (HOME_NO_REHOME no-op otherwise) and tools/live/ned_brain.py arms the fresh
+# absolute read in parallel while XYZ homes; its guard blocks un-armed A/C homing.
+HOME_SEQUENCE = 3
+HOME_USE_INDEX = NO
+

@@ -140,3 +140,26 @@ homing runs or the machine is moving.
 | A/C work vs machine | ALWAYS genuinely equal (no button can set an A/C work offset; nothing forces it at display level). Both DRO columns stay visible and must agree. |
 | Chip load | Placeholder label where the (never-wired) spindle load meter was; per-flute chip load calc comes later from tool data. |
 | After any program/MDI finishes | Brain returns MANUAL + teleop (MPG live) ~1 s after motion truly completes — never earlier, never mid-move, and never stealing the mode while you are entering a new MDI command. |
+
+
+## JOG & PRESETS panel v2 (stock JOG page, sidebar) -- ported 2026-08-02
+
+| Control | Behavior |
+|---|---|
+| Panel location | The stock JOG page of the right sidebar stack -- REPLACES the stock jog arrow buttons (MPG owns axis jogging). NED tab page is empty. |
+| SLOW / MEDIUM / FAST | One global feed for every panel move: 200 / 1200 / 4000 mm/min (rotary 15 / 60 / 180 deg/min), emitted as the F word; persists between moves; live readout under the buttons. |
+| Presets (XY 0, XYZ 0, Z 0, Z +10, XY0 Z10, A0 C0) | Fire IMMEDIATELY at the selected speed, always absolute WORK coordinates; Z +10 = incremental lift computed from current work Z; A0 C0 = head upright, XYZ untouched. |
+| Typed move fields (X Y Z A C) | Any subset; blank = omitted (never sent as 0); values persist after the move; Enter in any field fires GO ABS. |
+| GO ABS / GO REL | move-to (work coords) / move-by (delta converted to absolute -- G91 never emitted). Both disabled until a field parses. |
+| Soft-limit pre-check | A violating target is REJECTED with a toast + red field flash -- never silently clamped. Static INI limits; the planner remains hard enforcement. |
+| Status strip + STOP | Live state (IDLE/MOVING/HOMING/OFF); while moving all presets + GOs lock and STOP arms. STOP = task abort (any motion, not just panel moves). |
+
+## RACK MAP tab -- ported 2026-08-02
+
+| Control | Behavior |
+|---|---|
+| Per-pocket rows (1-15) | Seat X/Y, clearance, taught-flags painted from the var file; teach state visible per fork. |
+| TEACH SEAT / TEACH CLEAR | Captures CURRENT machine position into that pocket's table entry via o<rack_teach> (MODE 1 seat, MODE 2 clearance; entry axis derived from the pull-out direction). |
+| Tool spinbox per pocket | Assigns which tool lives in that fork (#4001-4015); duplicate tool numbers are REFUSED with a toast. |
+| SPINDLE HOLDS | Declares the tool in the spindle (M61 Qn + tracker) -- the one sync control. |
+| M6 behavior | Tool N ALWAYS returns to fork N (fixed homes, sawblade rule); aborts loudly if the fork is not marked empty. Per-pocket positions/clearances replace the old interpolated line. |

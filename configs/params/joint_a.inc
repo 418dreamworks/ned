@@ -1,3 +1,5 @@
+# GENERATED from configs/params/MASTER.params by tools/live/gen_params.py -- DO NOT HAND-EDIT.
+# Edit MASTER.params, then run: gen_params.py check && gen_params.py write
 # joint_a.inc -- A swivel-head TILT (about X/W). Lifted verbatim from
 # configs/ned/ned.ini [JOINT_5]. In the 5-axis config this is JOINT_4 (axis A).
 #
@@ -38,5 +40,5 @@ HOME_LATCH_VEL = 0
 # The REF ALL button (dros_xyzac.py -> ned_controls.request_homeall) unhomes A/C
 # FIRST (HOME_NO_REHOME no-op otherwise) and tools/live/ned_brain.py arms the fresh
 # absolute read in parallel while XYZ homes; its guard blocks un-armed A/C homing.
-HOME_SEQUENCE = 2
+HOME_SEQUENCE = 3
 HOME_USE_INDEX = NO

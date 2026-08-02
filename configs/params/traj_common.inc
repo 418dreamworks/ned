@@ -1,3 +1,5 @@
+# GENERATED from configs/params/MASTER.params by tools/live/gen_params.py -- DO NOT HAND-EDIT.
+# Edit MASTER.params, then run: gen_params.py check && gen_params.py write
 # traj_common.inc -- shared [TRAJ] body (minus COORDINATES, which is per-case:
 # XYZAC here vs XYZXBACB in the 8-joint config). #INCLUDE'd under a [TRAJ] header
 # AFTER the COORDINATES line. Lifted verbatim from configs/ned/ned.ini.
