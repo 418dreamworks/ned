@@ -1026,16 +1026,31 @@ class UserTab(QWidget):
             # CONFIRM the mode actually landed: ned_brain hands MANUAL back
             # on its own edge; issuing before task is really in MDI loses
             # the race and paints 'Must be in MDI mode' error toasts.
-            deadline = time.time() + 2.0
+            # RE-ASSERT, don't just wait: the brain hands MANUAL back ~1 s
+            # after the previous move finishes, so a click landing in that
+            # window had its MDI request overwritten and the old code simply
+            # gave up ("task_mode never reached MDI", caught by the
+            # unattended GUI campaign 2026-08-02 16:47:50 -- an intermittent
+            # dead preset, exactly the kind of thing that erodes trust).
+            deadline = time.time() + 4.0
+            reasserts = 0
             while True:
                 s.poll()
                 if s.task_mode == linuxcnc.MODE_MDI:
+                    if reasserts:
+                        LOG.info('%s: MDI mode took %d re-assert(s) '
+                                 '(brain restore race)', label, reasserts)
                     break
                 if time.time() >= deadline:
                     c.error_msg('%s refused: could not enter MDI mode '
                                 '(task busy?)' % label)
-                    LOG.error('%s refused: task_mode never reached MDI', label)
+                    LOG.error('%s refused: task_mode never reached MDI after '
+                              '%d re-asserts', label, reasserts)
                     return
+                if reasserts < 6 and (time.time() - (deadline - 4.0)) > \
+                        0.5 * (reasserts + 1):
+                    reasserts += 1
+                    c.mode(linuxcnc.MODE_MDI)
                 time.sleep(0.02)
             line = 'G90 G1 {} F{:.1f}'.format(words, feed)
             c.mdi(line)   # FIRE AND FORGET -- brain restores MANUAL+teleop
