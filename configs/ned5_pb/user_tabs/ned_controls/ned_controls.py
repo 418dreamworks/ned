@@ -1042,10 +1042,30 @@ class UserTab(QWidget):
                                  '(brain restore race)', label, reasserts)
                     break
                 if time.time() >= deadline:
-                    c.error_msg('%s refused: could not enter MDI mode '
-                                '(task busy?)' % label)
+                    # SAY WHICH CAUSE. This message has two completely
+                    # different meanings and they need different actions:
+                    #  * not homed -> MDI is refused by LinuxCNC on non-
+                    #    identity kinematics, silently. Normal for the first
+                    #    seconds after boot, before the declare lands.
+                    #  * homed but task not consuming -> the task/NML wedge
+                    #    seen 2026-08-02 17:50 (echo_serial frozen, no error
+                    #    from LinuxCNC at all). Only a restart clears it.
+                    try:
+                        s.poll()
+                        homed = all(s.homed[:6])
+                        echo = s.echo_serial_number
+                    except Exception:
+                        homed, echo = None, None
+                    if homed is False:
+                        why = ('machine is NOT fully homed yet -- MDI is '
+                               'refused until all six joints are homed')
+                    else:
+                        why = ('task is not accepting commands (echo_serial '
+                               'stuck at %s) -- RESTART REQUIRED' % echo)
+                    c.error_msg('%s refused: %s' % (label, why))
                     LOG.error('%s refused: task_mode never reached MDI after '
-                              '%d re-asserts', label, reasserts)
+                              '%d re-asserts -- homed=%s echo_serial=%s',
+                              label, reasserts, homed, echo)
                     return
                 if reasserts < 6 and (time.time() - (deadline - 4.0)) > \
                         0.5 * (reasserts + 1):
