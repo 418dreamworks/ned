@@ -121,13 +121,13 @@ no index):
 
 | Setting | Value | Source/status |
 |---|---|---|
-| **SCALE** | **4551.111** (8192 p/rev × 200:1 ÷ 360) | replaces 555.556; drive gear Pn20E=8192/Pn210=1 ✅ set |
+| **SCALE** | **PER-AXIS, A ≠ C** — see `tools/live/ned_params.sh` (single source; `sync` regenerates the INI). Drive gear Pn20E=8192/Pn210=1 ✅ set | reduction differs per axis (HQD AC-D90-65); do NOT restate the number here |
 | Sign | motor runs NEGATIVE for +cmd on both | pick ONE fix: drive **Pn000.0** (direction) or negative SCALE — decide at calibration, then lock |
-| MAX_VELOCITY | ≤ **43.9 °/s** hard ceiling (200 kHz stepgen ÷ 4551.1); keep 30 | STEPGEN_MAXVEL 36 still fits |
-| Limits | A: ±120 (measure the REAL stops), C: ±360 | drive has NO soft limits (quick-ref) — LinuxCNC only |
-| **/S-ON revert** | Pn50A n.8171 → **n.8101** on BOTH before LinuxCNC drives them | else servos are always-on; LCNC enables via output-06/07 |
-| Keep | Pn515=8887 (SEN), Pn50B=6548, Pn002 absolute, Pn000=0010 | quick-ref ✅ |
-| Homing | absolute encoder is NOT readable over step/dir → LinuxCNC homes by convention: park at reference mark, immediate home + HOME_OFFSET | sequences 4/5 after linears |
+| MAX_VELOCITY | ≤ 200 kHz stepgen ÷ SCALE; binding axis is C (larger SCALE) ≈ 43 °/s; keep 30 | STEPGEN_MAXVEL 36 still fits |
+| Limits | A: **±115**, C: **±315** (within maker hard stops; A crashed once) | drive has NO soft limits (quick-ref) — LinuxCNC only |
+| **/S-ON** | Pn50A=**8101**, Pn515=**8882** on BOTH | LinuxCNC enables via /S-ON (A=output-07, C=output-06) **plus SEN high** (output-04→CN1-42) — 8882 refuses /S-ON without SEN (BB) |
+| Keep | Pn50B=6548, Pn002 absolute, Pn000=0010 | quick-ref ✅ |
+| Homing | absolute PSO now readable on demand (SEN + 7I85 PktUART) — zeros captured in `configs/params/head_zero.inc`; LinuxCNC homes A/C to those | sequences 4/5 after linears |
 | steplen/space 2500 ns | verify against SGDXS max input pulse rate (manual) | UNVERIFIED tag in ned.hal §8 |
 | FERROR | open-loop — keep loose (5°) | |
 
@@ -137,7 +137,7 @@ no index):
 
 | Setting | Value | Source/status |
 |---|---|---|
-| **[SPINDLE_0]MAX_FORWARD/REVERSE_VELOCITY** | **18000** ✅ set 2026-07-25 | Mollom is configured F0-10/F0-12 = **600 Hz** (field-weakened top) → 10 V = 600 Hz = **18000 rpm**. So scale must be 18000 (NOT the 13500 base-speed, NOT the old 24000). Set in `ned.ini` + `tools/move.hal` pwmgen.04.scale. `move.sh spindle N` now = N rpm. (Cap at 13500 instead = lower F0-12 to 450 Hz + scale 13500.) |
+| **[SPINDLE_0]MAX_FORWARD/REVERSE_VELOCITY** | **18000** ✅ set 2026-07-25 | Mollom is configured F0-10/F0-12 = **600 Hz** (field-weakened top) → 10 V = 600 Hz = **18000 rpm**. So scale must be 18000 (NOT the 13500 base-speed, NOT the old 24000). Set in `ned.ini` + `tools/groundtruth/move.hal` pwmgen.04.scale. `move.sh spindle N` now = N rpm. (Cap at 13500 instead = lower F0-12 to 450 Hz + scale 13500.) |
 | MIN_FORWARD_VELOCITY | TBD — VFD min useful freq + bearing/cooling floor | currently 1000 |
 | Analog mapping | pwmgen.04 0–10 V unipolar → AI2; verify VFD curve = 0–10 V → 0–450 Hz (F4-18..21 default is ±10 V bipolar — confirm the 0..10 half maps 0..100 %) | bench check with DMM at 6750 cmd = 5.00 V |
 | Direction | R6→S1 FWD / R7→S2 REV (relay, not analog sign) | ✅ proven both ways 2026-07-23 |

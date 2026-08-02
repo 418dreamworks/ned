@@ -1,0 +1,46 @@
+o<find_puck_top> sub
+; ===========================================================================
+;  CP1 -- find_puck_top   (MINIMAL, the FIRST thing you run)
+;  Validates the whole chain in one safe move: config load, homing, the probe
+;  input (INPUT28 -> motion.probe-input), and the Bimba solenoid (M64 P3).
+;
+;  PRE: XYZ + A/C homed (CP0). Jog the rod to ~APPROX_ABOVE mm ABOVE the puck
+;       CENTRE, rod ~vertical (A~0). Then:  o<find_puck_top> call
+;  Does ONE Z-down touch on the flat top -> Z_top (a spindle-Z reference).
+; ===========================================================================
+G21 G90 G94
+#<_ft>    = #<_ini[probe]feed_touch>
+#<_sd>    = #<_ini[probe]search_depth>
+; approx puck centre = current position (operator jogged here)
+#5212 = #5420                       ; persistent: puck centre X (approx; CP2 refines)
+#5213 = #5421                       ; persistent: puck centre Y (approx)
+#<_z0> = #5422
+; Solenoid cycle (mirrors a real tool-probe cycle): assert OFF first so the Bimba
+; returns to its stowed position from wherever the operator left it, THEN assert ON
+; to deploy for the actual probing -- so the touch always starts from a known state.
+M65 P3                              ; assert OFF -> probe returns to original (stowed)
+G4 P1.5
+M64 P3                              ; assert ON  -> deploy to probing position
+G4 P1.5
+G0 X#5212 Y#5213
+; TWO-STAGE touch. A single 15 mm search at FEED_TOUCH (5 mm/min) crawls for ~3 min.
+; Stage 1 finds contact fast (FEED_FIND), back off RETRACT, stage 2 re-touches slowly
+; for the accurate number. Same final precision.
+#<_ff> = #<_ini[probe]feed_find>
+#<_rt> = #<_ini[probe]retract>
+o<probe_down> call [#<_z0>] [#<_z0> - #<_sd>] [#<_ff>]
+#<_zc> = #<_probe_z>                ; coarse contact
+o<probe_down> call [#<_zc> + #<_rt>] [#<_zc> - #<_rt>] [#<_ft>]
+#5211 = #<_probe_z>                 ; persistent: Z_top reference (slow, accurate touch)
+(DEBUG, CP1 OK  Z_TOP = #5211  centre approx (#5212, #5213))
+(LOGOPEN, puck_result.txt)
+(LOG, puck (paste into configs/params/puck.inc):)
+(LOG, Z_TOP = #5211)
+(LOG, CENTER_X = #5212)
+(LOG, CENTER_Y = #5213)
+(LOGCLOSE)
+; finish ABOVE mm over the FOUND top (not back at the start height): clear of the
+; puck, close enough to see the result.
+G0 Z[#5211 + #<_ini[probe]above>]
+; Bimba left UP for CP2/CP3 (lower manually with M65 P3 if you stop here).
+o<find_puck_top> endsub

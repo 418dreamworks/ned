@@ -1,0 +1,18 @@
+# tools/ — READ THIS FIRST (and live/INDEX.md + groundtruth/INDEX.md)
+
+Layout (operator, 2026-08-01):
+- `tools/` root = **staging** — things being built/tried before they earn a
+  home, plus the launcher. Keep it near-empty; an unorganized root is a bug.
+- `tools/live/` = needed to RUN the machine (loaded/invoked every session).
+- `tools/groundtruth/` = proven bench references for checking basic things.
+- Trashed tools are in `trash/tools/` (recoverable; e.g. pso_home.sh, the
+  head-zero capture tool, parked there until A/C calibration needs it).
+
+## Files here
+
+| File | Why it lives at root |
+|---|---|
+| `run5.sh` | THE launcher (USER runs it; never Claude). Starts PB via the qt_pb venv, resume y/N consent, auto-starts the live/ loggers. |
+
+Everything else belongs in live/ or groundtruth/ — if something new lands
+here, it is staging: finish it and move it, or trash it.

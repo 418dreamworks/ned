@@ -1,0 +1,31 @@
+o<drill_line> sub
+; ===========================================================================
+;  drill_line -- LINEAR HOLE PATTERN with G81 (Probe Basic has hole-circle
+;  built in but no linear pattern).
+;
+;  o<drill_line> call [X0] [Y0] [DX] [DY] [N] [ZRETRACT] [ZDEPTH] [FEED]
+;    #1 = X of hole 1 (absolute, current WCS)
+;    #2 = Y of hole 1
+;    #3 = X spacing hole-to-hole
+;    #4 = Y spacing (0 for a straight X row; both nonzero = angled line)
+;    #5 = number of holes
+;    #6 = retract plane Z (absolute -- rapid height between holes)
+;    #7 = hole bottom Z (absolute)
+;    #8 = plunge feed, mm/min
+;
+;  Example: 5 holes 12 mm apart along X, start (10,20), retract 3, depth -6:
+;    o<drill_line> call [10] [20] [12] [0] [5] [3] [-6] [120]
+;  All positions computed ABSOLUTE (no G91 canned-cycle traps).
+; ===========================================================================
+G90 G94
+G0 Z#6
+#<i> = 0
+o<dl> while [#<i> LT #5]
+    G0 X[#1 + #<i> * #3] Y[#2 + #<i> * #4]
+    G81 R#6 Z#7 F#8
+    #<i> = [#<i> + 1]
+o<dl> endwhile
+G80
+G0 Z#6
+o<drill_line> endsub
+M2

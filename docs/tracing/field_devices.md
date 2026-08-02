@@ -1,5 +1,7 @@
 # Field Devices
 
+> **Orientation:** ned sails forward powered by the ATC rack (rack at the stern); starboard/port/aft/fore are ship convention. Homing triggers are physically **+X, +Y, +Z (up)** (operator-confirmed 2026-07-31).
+
 Sensors, switches, solenoids, motors, and other components located **outside** the main cabinet that connect to the cabinet via a single cable. Each device gets a section here so that every cabinet-side terminal entry has a matching field-side entry — full two-entry accounting at both ends of every wire.
 
 **Format**: each device gets a section with
@@ -164,11 +166,14 @@ Cable 92 terminates in the **top junction box** at the field end. There, the sig
 | Orange (`*63`) | Pink | Drawbar clamp solenoid | `OCLAMP O18` |
 | Yellow (`*64`) | Yellow | Spindle taper air-purge solenoid | `OBLOWOFF O20` |
 
-> **⚙ AS-BUILT = HQD (LinuxCNC, 2026-07-25):** the GDL65 is **drawbar-only** (spring clamps, air
-> releases), so all **three** solenoids above — BIGGREEN **pink `*63`**, **yellow `*64`**,
-> **bluered `*65`** = 7I84 **OUTPUT13/14/15** — now fire **together** as one **HQD tool-release**
-> air blast. In `ned.hal` one signal **`sig-hqd-tool-release`** (← `motion.digital-out-00`) fans
-> out to output-13/14/15. The old separate OCLAMP / OBLOWOFF / ODRAW functions are **retired**.
+> **⚙ AS-BUILT = HQD (LinuxCNC):** tool release drives **all THREE solenoids together**:
+> BIGGREEN **pink `*63`** (OUTPUT13), **yellow `*64`** (OUTPUT14), **bluered `*65`** (OUTPUT15).
+> These are **three independent physical solenoids on three independent signals** — NOT one
+> solenoid fed by three wires. **All three are required** to actually release the tool
+> (operator-confirmed: commissioned by driving all three signals independently).
+> One HAL signal **`sig-hqd-tool-release`** (← `motion.digital-out-00`, AND-gated with
+> `sig-estop-released` via `toolrel.permit`) fans out to all three outputs. The Fagor-era
+> OCLAMP / OBLOWOFF / ODRAW *function names* are retired, but the three valves are all live.
 
 - **BIGGREEN white = chip blow-off (BITCOOL)** (per user 2026-07-09) — the BITCOOL line continues into BIGGREEN as white.
 - **BIGGREEN grey-red striped = +24 V** (per user 2026-07-09) — a second +24 V conductor on BIGGREEN (in addition to purple, which feeds the rack sensor).
@@ -240,8 +245,8 @@ Cable 92 terminates in the **top junction box** at the field end. There, the sig
   | Cabinet-side terminal | Role |
   |---|---|
   | `*5` | E-stop chain in |
-  | `*6` | E-stop chain out → drives Fagor X9/pin 2 (/EMERINP I1), R2C2, R5A2 |
-- **Notes**: see `screw_terminals.md` `*5`/`*6` and `relays.md` R2/R5.
+  | `*39` | E-stop chain out → spindle thermostat NC in series → `*67` → `*6` → Fagor X9/pin 2 (/EMERINP I1), R2C2, R5A2 |
+- **Notes**: see `screw_terminals.md` `*5`/`*6`/`*39`/`*67` and `relays.md` R2/R5.
 
 ---
 

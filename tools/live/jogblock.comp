@@ -1,0 +1,54 @@
+component jogblock """directional MPG count gate (one instance per linear axis group).
+
+Sits between the MPG encoder counts and the jog-counts pins of one axis (and
+its gantry twin joints).  While the axis is MPG-selected and its limit switch
+in a direction is depressed, wheel detents TOWARD that switch are swallowed
+(counts-out does not advance); detents AWAY pass through.  So the operator can
+always jog OFF a depressed switch but never further INTO it -- enforced at the
+count level, before motion ever sees a command (LinuxCNC's own directional
+checks cover free-mode joint jogs, control.c:1122, but nothing covers teleop
+axis wheel jogs; this gate covers both uniformly).
+
+blocked-neg / blocked-pos latch for hold-cycles servo cycles after a swallowed
+detent so the GUI can tell the operator WHY the wheel did nothing.
+
+When the axis is not selected (sel FALSE) everything passes through untouched:
+motion ignores the counts anyway (it re-baselines deltas every cycle), and no
+blocked-* flag is raised for an axis nobody is jogging.""";
+
+pin in s32 counts_in "raw MPG counts (sig-mpg-counts)";
+pin out s32 counts_out "gated counts -> axis.L.jog-counts + its joint.N.jog-counts";
+pin in bit sel "this axis is MPG-selected (sig-mpg-sel-*)";
+pin in bit lim_neg "raw limit signal, negative direction (TRUE = at limit)";
+pin in bit lim_pos "raw limit signal, positive direction (TRUE = at limit)";
+pin out bit blocked_neg "a negative-direction detent was just swallowed";
+pin out bit blocked_pos "a positive-direction detent was just swallowed";
+param rw s32 hold_cycles = 1000 "servo cycles a blocked-* flag stays up (1000 = 1 s at 1 kHz)";
+
+variable int last_c = 0;
+variable int started = 0;
+variable int hn = 0;
+variable int hp = 0;
+
+function _;
+license "GPL";
+;;
+
+FUNCTION(_) {
+    int c = counts_in;
+    int d;
+    if (!started) { last_c = c; started = 1; }
+    d = c - last_c;
+    last_c = c;
+    if (sel && d > 0 && lim_pos) {
+        hp = hold_cycles;
+    } else if (sel && d < 0 && lim_neg) {
+        hn = hold_cycles;
+    } else {
+        counts_out += d;
+    }
+    if (hp > 0) hp--;
+    if (hn > 0) hn--;
+    blocked_pos = (hp > 0);
+    blocked_neg = (hn > 0);
+}

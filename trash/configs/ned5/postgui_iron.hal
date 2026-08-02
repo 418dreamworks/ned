@@ -1,0 +1,96 @@
+# ============================================================================
+#  ned5 postgui_iron.hal  --  GUI HAL glue for the REAL-machine config
+#  (ned5_iron.ini). Runs AFTER the nedgui screen builds its HAL pins.
+#  Signals live in ned5_iron.hal; here they drive the Status page LEDs and the
+#  limit-override button.
+# ============================================================================
+
+# --- STATUS page: 6 hard-limit LEDs (red, lit = at limit) -------------------
+net sig-limit-x-aft     =>  nedgui.lim-x-aft
+net sig-limit-x-fore    =>  nedgui.lim-x-fore
+net sig-limit-y-sb      =>  nedgui.lim-y-sb
+net sig-limit-y-port    =>  nedgui.lim-y-port
+net sig-limit-z-bottom  =>  nedgui.lim-z-bot
+net sig-limit-z-top     =>  nedgui.lim-z-top
+
+# --- STATUS page: interlock LEDs (green, lit = OK) --------------------------
+net sig-estop-released  =>  nedgui.il-estop
+net sig-air-pressure-ok =>  nedgui.il-air
+net sig-spindle-overtemp => nedgui.il-sptemp      # *39 diag node: TRUE = upstream chain OK
+net sig-tool-locked     =>  nedgui.il-toollock
+net sig-tool-released   =>  nedgui.il-toolrel
+
+# --- STATUS page: solenoid/output LEDs (amber, lit = energized) -------------
+net sig-toolsetter-deploy =>  nedgui.sol-toolsetter
+net sig-chip-blowoff    =>  nedgui.sol-blowoff
+net sig-hqd-tool-release =>  nedgui.sol-toolrel
+net sig-spin-cw         =>  nedgui.sol-cw
+net sig-spin-ccw        =>  nedgui.sol-ccw
+net sig-drive-enable    =>  nedgui.sol-driveen
+
+# --- LIMIT OVERRIDE ---------------------------------------------------------
+# override-limits is a TASK command, NOT a HAL pin. The handler calls
+# linuxcnc.command().override_limits() on the OVR LIMITS button -- nothing to net.
+
+# --- HEAD ABSOLUTE READ (SEN interlock + R4 mux, driven by the GUI) -------------
+# nedgui.sen-suppress HIGH  -> SEN low  -> both head packs drop to BB (A/C CANNOT move)
+#                              and are primed; releasing it re-raises SEN, and that rising
+#                              edge makes the pack emit the absolute PSO frame into pso_live.
+# nedgui.r4-select picks which pack reaches the single PktUART: 1 = A (NO), 0 = C (NC).
+net sig-sen-suppress  <=  nedgui.sen-suppress
+net sig-sen-force     <=  nedgui.sen-force
+# pso_live (queued reads, RT-safe) still only runs while a read is in progress: enable
+# gates ALL of its activity, and reset (rising edge) flushes FIFO + rolling buffer.
+net sig-pso-enable    nedgui.pso-enable  =>  hm2_7i97.0.pktuart.0.enable
+net sig-pso-reset     nedgui.pso-reset   =>  hm2_7i97.0.pktuart.0.reset
+net sig-r4-select     nedgui.r4-select  =>  hm2_7i97.0.7i84.0.0.output-05
+
+# --- SOLENOID direct drive (works in ANY mode: no MDI, no homing needed) --------
+# Each solenoid = OR(M64/M65 command, GUI force pin). Tool release still passes
+# through toolrel.permit (AND estop-ok), so the e-stop gate is preserved.
+net sol-ts-force    nedgui.sol-ts-force    => sol.ts.in1
+net sol-blow-force  nedgui.sol-blow-force  => sol.blow.in1
+net sol-trel-force  nedgui.sol-trel-force  => sol.trel.in1
+
+# --- MPG PENDANT JOG (handwheel encoder.04 + button input-00) ---------------
+# encoder.04 -> jog-counts is netted to X/Y/Z in ned5_iron.hal:248; add A/C here.
+# The handler runs the button state machine and drives one-hot jog-enable
+# (nedgui.jog-en-*) + one shared jog-scale (nedgui.jog-scale). LinuxCNC's own jog
+# gives accel/decel + soft limits. Requires the axis HOMED (axis/world jog).
+net sig-mpg-counts  =>  axis.a.jog-counts  axis.c.jog-counts
+net sig-mpg-sel-x   <=  nedgui.jog-en-x
+net sig-mpg-sel-y   <=  nedgui.jog-en-y
+net sig-mpg-sel-z   <=  nedgui.jog-en-z
+net mpg-sel-a  nedgui.jog-en-a  =>  axis.a.jog-enable
+net mpg-sel-c  nedgui.jog-en-c  =>  axis.c.jog-enable
+net mpg-scale-lin  nedgui.jog-scale-lin =>  axis.x.jog-scale axis.y.jog-scale axis.z.jog-scale
+net mpg-scale-ang  nedgui.jog-scale-ang =>  axis.a.jog-scale axis.c.jog-scale
+setp axis.y.jog-vel-mode 0
+setp axis.z.jog-vel-mode 0
+setp axis.a.jog-vel-mode 0
+setp axis.c.jog-vel-mode 0
+# JOINT-mode jog -- works UNHOMED. Teleop is hard-gated on homing ("all joints must be
+# homed before going into teleop mode"), so the axis.* pins above are dead until homed.
+# The SAME wheel/select/scale also drives the joint jog pins: free mode uses these,
+# teleop uses the axis ones -- the MPG works in both states with identical feel.
+# X selection drives BOTH gantry joints (0 AND 3) so the gantry cannot rack.
+# X/Y/Z/W take the jogblock-GATED counts (same gate as the axis pins above);
+# A/C have no limit switches and take the raw wheel.
+net sig-jogc-x      =>  joint.0.jog-counts joint.3.jog-counts
+net sig-jogc-y      =>  joint.1.jog-counts
+net sig-jogc-z      =>  joint.2.jog-counts
+net sig-mpg-counts  =>  joint.4.jog-counts joint.5.jog-counts
+net sig-mpg-sel-x   =>  joint.0.jog-enable joint.3.jog-enable
+net sig-mpg-sel-y   =>  joint.1.jog-enable
+net sig-mpg-sel-z   =>  joint.2.jog-enable
+net mpg-sel-a       =>  joint.4.jog-enable
+net mpg-sel-c       =>  joint.5.jog-enable
+net mpg-scale-lin   =>  joint.0.jog-scale joint.1.jog-scale joint.2.jog-scale joint.3.jog-scale
+net mpg-scale-ang   =>  joint.4.jog-scale joint.5.jog-scale
+setp joint.0.jog-vel-mode 0
+setp joint.1.jog-vel-mode 0
+setp joint.2.jog-vel-mode 0
+setp joint.3.jog-vel-mode 0
+setp joint.4.jog-vel-mode 0
+setp joint.5.jog-vel-mode 0
+# ============================================================================

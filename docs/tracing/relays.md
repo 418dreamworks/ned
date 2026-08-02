@@ -8,6 +8,28 @@ The cabinet has ~10 relays. Each section below documents one, terminal by termin
 
 ---
 
+## SPARE / AVAILABLE RELAYS (read this first if you need a relay)
+
+| Relay | Status | Coil driven by | Notes |
+|---|---|---|---|
+| **R8** | **FREE — fully unused** | Fagor X10/pin 5 (`LATCH1 O7`) via `*42`. **NOT wired to any Mesa output** — to use it you must land a 7I84 output on the coil. | Outputs unconnected: R8A2 dead-ends on `*86`. R8D3 sits on the **110 V AC** line (OEM intended an AC load). A genuinely free 4-pole relay. See [R8](#r8--unused-oem-leftover). |
+| R4 | **IN USE — DOUBLE-BOOKED, see warning** | 7I84 **OUTPUT5** (TB3-22) | Was a Fagor-era spare. Now serves TWO functions: gates the rotary-B 70 V brick **and** muxes the head PSO return to 7I85 TB1-19/20 (energized = A, de-energized = C). **Do not reuse, and see the conflict note below.** |
+| R6 / R7 | in use (spindle CW / CCW) | OUTPUT9 / OUTPUT10 | Harmless to click when drive-enable (OUTPUT8) is low — they only pass a run command to the VFD. Used as an audible cue by `tools/sen_meter.sh`. |
+
+Everything else (R0, R1, R2, R3, R5, R9, R10, R11) is committed to a live function — see its section below.
+
+> **Note — R4/OUTPUT5 is shared** between rotary-B brick power and the head A/C PSO mux.
+> This is a side-effect coupling, not a hazard:
+> - A head read **explicitly sets** OUTPUT5 before reading, so a rotary toggle cannot corrupt a
+>   read — the read commands the mux itself.
+> - The reverse is the real (minor) effect: **taking a head read toggles the rotary power
+>   request.** Harmless today because the brick mains pass through **R11 pole 4** first
+>   (R11 coil on `*7` = drive-enable, see R11 below), so R4 alone cannot power the rotaries.
+>
+> If the two ever need to be independent, R8 is free (above) — its coil needs a 7I84 output.
+
+---
+
 ## R0 — Analog Drive Power Contactor (Deltrol)
 
 **R0 is a contactor, not a multi-pole relay.** It uses a different terminal convention than R1-R10: only **4 terminals total**, where **A = signal (coil) side** and **B = load (switched contact) side**. With all 4 terminals traced, R0 is fully defined.

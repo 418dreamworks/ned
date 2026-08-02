@@ -1,0 +1,246 @@
+component pso_live "RT-safe reader of Yaskawa PSO absolute serial on a Mesa PktUART (QUEUED reads only; hm2_eth-safe)";
+
+description """Reads the Yaskawa PSO absolute message  P<sign><5 multiturn>,<8 within>CR
+(9600 7E1 ASCII, one 17-char message every 40 ms) on hm2_...pktuart.N and exposes
+multiturn / within-turn on HAL pins -- WITHOUT any direct board access from realtime.
+
+WHY: hm2_pktuart_read() (pktuart.c) issues hm2->llio->read() -- a DIRECT read. On an
+ETHERNET board (hm2_eth) that is an extra UDP round-trip INSIDE the servo cycle:
+  hm2_eth.c  "ERROR: used llio->read in realtime task"
+At 1 kHz it starves the 7I84 smart-serial DoIt handshake (local error 13/7/3, watchdog
+bite); decimated 1-in-20 it drains too slowly and overflows the receive count FIFO
+(RCFIFO Error). No rate works -- the mechanism is wrong, not the tuning. This comp uses
+ONLY the QUEUED API, whose transfers ride the normal servo-cycle TRAM packet:
+  hm2_pktuart_get_rx_status()          -- free; auto-TRAM-read every cycle
+  hm2_pktuart_queue_get_frame_sizes()  -- llio->queue_read; data lands next cycle
+  hm2_pktuart_queue_read_data()        -- llio->queue_read; data lands next cycle
+  hm2_pktuart_queue_reset()            -- llio->queue_write; FIFO clear next write cycle
+RX-only: this never transmits.
+
+PARSER (ported from the proven tools/pso_abs.comp): at 9600 baud message boundaries fall
+anywhere, so completed frames are appended (masked &0x7F -- 7E1 parity is the MSB) into a
+rolling buffer which is scanned for the LAST complete message. `reset` clears the rolling
+buffer AND queues a FIFO flush, so after an R4 flip no stale bytes from the other axis
+survive. `enable` gates ALL activity: FALSE = this comp does nothing whatsoever.
+
+Load (ifdelay from [PSO]IFDELAY -- see ned5_iron.ini for the measured sweep):
+  loadrt pso_live names=hm2_7i97.0.pktuart.0 ifdelay_p=30
+  addf hm2_7i97.0.pktuart.0.pso-live servo-thread   # AFTER hm2_...read, BEFORE hm2_...write
+NOTE: halcompile converts _ to - : the function is <name>.pso-live with a HYPHEN.""";
+
+author "ned";
+license "GPL";
+
+include "hostmot2-serial.h";
+
+pin out s32 multiturn  "last parsed multiturn (signed motor revs)";
+pin out u32 within     "last parsed within-turn (0 .. 2^26-1)";
+pin out bit valid      "a well-formed message was parsed THIS cycle";
+pin out u32 parsed     "count of scans that yielded a message (freshness counter: compare before/after a read)";
+pin out u32 parse_err  "frames whose new bytes left NO complete message in the buffer";
+pin out u32 frames_seen "total completed frames drained since load";
+pin out u32 rxstatus   "raw RX status reg (b21 has-data, b16-20 nframes, b0/1/4/5 errs)";
+pin out s32 fsm        "state-machine state (0 idle,1 sizes,2 fetch,3 data) -- diagnostic";
+pin in  bit enable     "MUST be TRUE for the reader to run. FALSE = do nothing at all (not even status).";
+pin in  bit reset      "rising edge: queued FIFO flush + clear rolling buffer + zero multiturn/within (so a stale value cannot masquerade as a fresh read)";
+pin out bit oversize   "TRUE = frame far larger than one 17-char message -> ifdelay too long. THAT FAILS SILENTLY otherwise.";
+pin out s32 lastsize   "size of the most recent completed frame (17 = one clean message)";
+pin out s32 buflen     "bytes in the rolling buffer -- verifies a flush emptied it and that it refills";
+pin out s32 newbytes   "bytes appended THIS cycle (proves data is still arriving)";
+
+variable char pname[64];
+variable char ring[512];
+variable int rlen;
+variable int prev_reset;
+variable int warned_oversize;
+variable rtapi_u32 fsizes[32];      // NFRAMES is 5 bits: the driver can pop up to 31 sizes
+variable rtapi_u32 rxdata[256];     // 1024 bytes: any frame the 10-bit size field can describe
+variable int state;
+variable int nframes;
+variable int frame_index;
+variable int cur_bytes;
+variable int holdoff;
+
+option extra_setup yes;
+function pso_live;
+
+;;
+
+#define BAUDRATE 9600
+#define ST_IDLE  0
+#define ST_SIZES 1
+#define ST_FETCH 2
+#define ST_DATA  3
+
+/* Interframe delay in BIT TIMES -- THE critical setting ([PSO]IFDELAY in the ini).
+   PSO sends a 17-char message every 40 ms: ~17.7 ms of data then ~22 ms idle line.
+   Measured sweep:  10 -> 1-byte frames (splits mid-message)
+                    20 -> 17  (one clean message)  <-- correct
+                    40 -> 17  (one clean message)  <-- correct
+                   100 -> 769 (glues ~46 messages into one oversized frame)  <-- was the bug
+   Wrong values fail SILENTLY (no error anywhere); the oversize pin + log shout instead. */
+int ifdelay_p = 30;
+RTAPI_MP_INT(ifdelay_p, "PktUART RX interframe delay in bit times (see [PSO]IFDELAY)");
+
+FUNCTION(pso_live){
+    valid = 0;
+    newbytes = 0;
+    if (!enable) {                  // do NOTHING while idle: zero board access of any kind
+        state = ST_IDLE;
+        fsm = state;
+        prev_reset = reset ? 1 : 0;
+        return;
+    }
+    rxstatus = hm2_pktuart_get_rx_status(pname);   // free: value from this cycle's TRAM read
+
+    if (reset && !prev_reset) {
+        // Flush: queue a FIFO clear (goes out with THIS cycle's write packet -- no direct
+        // access), drop any in-flight fetch, clear the rolling buffer, and zero the OUT
+        // pins so a stale value cannot masquerade as a fresh read after the flush.
+        hm2_pktuart_queue_reset(pname);
+        rlen = 0;
+        multiturn = 0;
+        within = 0;
+        state = ST_IDLE;
+        holdoff = 2;    // let the queued clear land + fresh status arrive before acting
+    }
+    prev_reset = reset ? 1 : 0;
+
+    if (holdoff > 0) {
+        holdoff--;
+        buflen = rlen;
+        fsm = state;
+        return;
+    }
+
+    switch (state) {
+    case ST_IDLE:
+        // b16..20 = COMPLETED-frame count. Gate on that (not HASDATA alone): mid-message
+        // the FIFO holds bytes with no completed frame yet, and queue_get_frame_sizes()
+        // pops exactly NFRAMES entries -- acting on HASDATA with NFRAMES=0 would fetch a
+        // stale size. A frame completes at latest ~40 ms after bytes appear, so this
+        // cannot wedge (the old wedge was the ifdelay=100 glued-frame artifact).
+        nframes = (int)HM2_PKTUART_RXMODE_NFRAMES_VAL(rxstatus);
+        if (nframes > 32) nframes = 32;
+        if (nframes > 0) {
+            hm2_pktuart_queue_get_frame_sizes(pname, fsizes);   // queued; lands next cycle
+            state = ST_SIZES;
+        }
+        break;
+
+    case ST_SIZES:                 // fsizes valid now (queued last cycle)
+        frame_index = 0;
+        /* fall through */
+    case ST_FETCH:
+        if (frame_index < nframes) {
+            cur_bytes = (int)(fsizes[frame_index] & 0x3ff);   // b9..0 = bytes in this frame
+            if (cur_bytes > (int)sizeof(rxdata)) cur_bytes = (int)sizeof(rxdata);
+            if (cur_bytes > 0) {
+                hm2_pktuart_queue_read_data(pname, rxdata, cur_bytes);  // queued; lands next cycle
+                state = ST_DATA;
+            } else {
+                frame_index++;     // empty frame slot; try the next one
+                state = ST_FETCH;
+            }
+        } else {
+            state = ST_IDLE;       // whole batch drained; re-read status fresh
+        }
+        break;
+
+    case ST_DATA: {                // rxdata valid now
+        int i;
+        frames_seen++;
+        lastsize = cur_bytes;
+        /* A PSO message is exactly 17 chars. Much bigger means the PktUART never saw the
+           ~22 ms inter-message gap -- ifdelay too long, messages glued together. That
+           produced NO error anywhere when it happened; shout about it instead. */
+        if (cur_bytes > 40) {
+            oversize = 1;
+            if (!warned_oversize) {
+                warned_oversize = 1;
+                rtapi_print_msg(RTAPI_MSG_ERR,
+                    "pso_live: OVERSIZED FRAME %d bytes (expected 17). ifdelay=%d bit times is "
+                    "TOO LONG -- the inter-message gap is being missed and messages are being "
+                    "concatenated. Use ~20-40.\n", cur_bytes, ifdelay_p);
+            }
+        } else {
+            oversize = 0;
+        }
+        for (i = 0; i < cur_bytes; i++) {
+            // byte 0 of each u32 is the first byte on the wire (pktuart.c read unpack)
+            unsigned char c = (rxdata[i >> 2] >> (8 * (i & 3))) & 0x7f;  // 7E1: mask parity MSB
+            if (rlen >= (int)sizeof(ring)) {          // keep the newest half
+                int h = sizeof(ring)/2, m;
+                for (m = 0; m < h; m++) ring[m] = ring[m+h];
+                rlen = h;
+            }
+            ring[rlen++] = (char)c;
+            newbytes++;
+        }
+        if (newbytes > 0) {           /* only re-scan on NEW data (parsed = freshness signal) */
+            int k, best = -1;
+            for (k = 0; k + 15 <= rlen; k++) {
+                int d, ok = 1;
+                if (ring[k] != 'P') continue;
+                if (ring[k+1] != '+' && ring[k+1] != '-') continue;
+                for (d = 0; d < 5; d++) if (ring[k+2+d] < '0' || ring[k+2+d] > '9') { ok = 0; break; }
+                if (!ok) continue;
+                if (ring[k+7] != ',') continue;
+                for (d = 0; d < 8; d++) if (ring[k+8+d] < '0' || ring[k+8+d] > '9') { ok = 0; break; }
+                if (!ok) continue;
+                best = k;                              // keep the LAST (freshest)
+            }
+            if (best >= 0) {
+                long mt = 0; unsigned long wt = 0; int d;
+                int sign = (ring[best+1] == '-') ? -1 : 1;
+                for (d = 0; d < 5; d++) mt = mt*10 + (ring[best+2+d] - '0');
+                for (d = 0; d < 8; d++) wt = wt*10 + (ring[best+8+d] - '0');
+                multiturn = (rtapi_s32)(sign*mt);
+                within = (rtapi_u32)wt;
+                valid = 1; parsed++;
+            } else {
+                parse_err++;
+            }
+        }
+        frame_index++;
+        state = ST_FETCH;          // fetch the next frame in this batch (or back to idle)
+        break;
+    }
+
+    default:
+        state = ST_IDLE;
+        break;
+    }
+    buflen = rlen;
+    fsm = state;
+}
+
+EXTRA_SETUP(){
+    if (prefix[0] != 'h') {
+        rtapi_print_msg(RTAPI_MSG_ERR, "pso_live: use names=hm2_...pktuart.N, not count=\n");
+        return -1;
+    }
+    rtapi_snprintf(pname, sizeof(pname), "%s", prefix);   // COPY -- prefix is not persistent
+    hm2_pktuart_config_t cfgrx = {
+        .baudrate = BAUDRATE, .filterrate = 0, .drivedelay = 0, .ifdelay = ifdelay_p,
+        .flags = HM2_PKTUART_CONFIG_FLUSH | HM2_PKTUART_CONFIG_RXEN
+    };
+    hm2_pktuart_config_t cfgtx = {
+        .baudrate = BAUDRATE, .filterrate = 0, .drivedelay = 0, .ifdelay = 100,
+        .flags = HM2_PKTUART_CONFIG_FLUSH
+    };
+    // config at load time (non-RT) -- direct writes are fine HERE, never in the servo thread
+    int r = hm2_pktuart_config(pname, &cfgrx, &cfgtx, 0);
+    if (r < 0) {
+        rtapi_print_msg(RTAPI_MSG_ERR, "pso_live: pktuart config failed %d\n", r);
+        return -1;
+    }
+    state = ST_IDLE;
+    /* INFO, not ERR: at ERR severity every error consumer (Probe Basic's
+       notification plugin, statusbars) pops this banner as a red error at
+       every launch. Real faults above stay at RTAPI_MSG_ERR. */
+    rtapi_print_msg(RTAPI_MSG_INFO,
+        "pso_live: %s configured %d baud 8N1(mask 0x7f), ifdelay=%d, queued reads only\n",
+        pname, BAUDRATE, ifdelay_p);
+    return 0;
+}

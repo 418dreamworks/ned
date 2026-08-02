@@ -1,0 +1,11 @@
+(ned M25 -- rack ATC drawbar CLAMP, sensor-verified)
+; The rack_atc_sim original was `M65 P2` (sim pin numbering). On ned the
+; drawbar clamp is M65 P0 (release solenoid de-energized -> spring/air
+; clamps) and MUST be verified: delegate to the ned clamptool sub, which
+; clamps and waits for the S1 tool-locked sensor (digital-in-00),
+; aborting the whole tool change if the tool did not actually seat.
+o<m25> sub
+(PRINT, o<m25> ned drawbar clamp + S1 verify)
+o<clamptool> call
+o<m25> endsub [1]
+M2

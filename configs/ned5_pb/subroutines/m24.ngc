@@ -1,0 +1,12 @@
+(ned M24 -- rack ATC drawbar RELEASE, sensor-verified)
+; The rack_atc_sim original was `M64 P2` (sim pin numbering). On ned the
+; drawbar release is M64 P0 (e-stop gated via toolrel.permit,
+; ned5_iron.hal:318-325) and MUST be verified: delegate to the ned
+; unclamptool sub, which releases and waits for the S2 tool-released
+; sensor (digital-in-01), aborting the whole tool change if the drawbar
+; did not actually open.
+o<m24> sub
+(PRINT, o<m24> ned drawbar release + S2 verify)
+o<unclamptool> call
+o<m24> endsub [1]
+M2

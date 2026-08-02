@@ -1,0 +1,47 @@
+o<probe_z_repeat> sub
+; ===========================================================================
+;  probe_z_repeat -- Z-probe REPEATABILITY test: 10 identical slow touches.
+;  PRE: jog the rod over the puck top, a few mm above (same start as CP1).
+;       o<probe_z_repeat> call
+;  Coarse-finds contact once (FEED_FIND), then 10x: back off RETRACT and
+;  re-touch at FEED_TOUCH. Every touch + min/max/spread goes to
+;  probe_repeat.txt (cwd) and the DEBUG popups. Ends ABOVE mm over the top.
+; ===========================================================================
+G21 G90 G94
+#<_ff> = #<_ini[probe]feed_find>
+#<_ft> = #<_ini[probe]feed_touch>
+#<_rt> = #<_ini[probe]retract>
+#<_sd> = #<_ini[probe]search_depth>
+#<_z0> = #5422
+; Bimba to a known state: assert OFF (stow) then ON (deploy), like find_puck_top
+M65 P3
+G4 P1.5
+M64 P3
+G4 P1.5
+; coarse find once at FEED_FIND
+o<probe_down> call [#<_z0>] [#<_z0> - #<_sd>] [#<_ff>]
+#<_zc> = #<_probe_z>
+#<_zmin> = 999999
+#<_zmax> = -999999
+#<_i> = 0
+(LOGOPEN, probe_repeat.txt)
+(LOG, probe_z_repeat: 10 touches at FEED_TOUCH)
+o<rep> while [#<_i> LT 10]
+    o<probe_down> call [#<_zc> + #<_rt>] [#<_zc> - #<_rt>] [#<_ft>]
+    #<_zt> = #<_probe_z>
+    o<mn> if [#<_zt> LT #<_zmin>]
+        #<_zmin> = #<_zt>
+    o<mn> endif
+    o<mx> if [#<_zt> GT #<_zmax>]
+        #<_zmax> = #<_zt>
+    o<mx> endif
+    #<_i> = [#<_i> + 1]
+    (LOG, touch #<_i>: Z = #<_zt>)
+    (DEBUG, touch #<_i>: Z = #<_zt>)
+o<rep> endwhile
+#<_spread> = [#<_zmax> - #<_zmin>]
+(LOG, min = #<_zmin>  max = #<_zmax>  spread = #<_spread>)
+(LOGCLOSE)
+(DEBUG, Z repeatability: spread #<_spread> mm over 10 touches)
+G0 Z[#<_zmin> + #<_ini[probe]above>]
+o<probe_z_repeat> endsub

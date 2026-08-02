@@ -1,0 +1,28 @@
+o<lean> sub
+; ---------------------------------------------------------------------------
+;  lean  --  measure the rod's lean at A = #1 (used by CP3 find_a_zero).
+;  Two Z-DOWN touches onto the +Y rim EDGE (a point) at two spindle-Y offsets
+;  INSIDE the edge; slope = dZ/dY = cot(tilt). Reads globals set by find_a_zero:
+;    #<_ztop> #<_cx> #<_yedge> #<_zsafe> #<_yn> #<_yf> #<_ft>
+;  Returns the slope in global #<_lean_slope>.  A is moved ONLY while retracted.
+; ---------------------------------------------------------------------------
+G90
+#<_cotA> = [COS[#1] / SIN[#1]]
+G0 Z#<_zsafe>                        ; retract clear BEFORE any A move
+G0 Y#<_yedge>
+G0 A#1                               ; rotate to the measurement angle (clear of probe)
+#<_flr> = [#<_ztop> - 2]
+; near touch (spindle-Y inside the edge by yn -> s_E = yn)
+#<_ra> = [#<_ztop> + #<_yn> * #<_cotA> + 3]
+G0 Z#<_ra>
+G0 X#<_cx> Y[#<_yedge> - #<_yn>]
+o<probe_down> call [#<_ra>] [#<_flr>] [#<_ft>]
+#<_za> = #<_probe_z>
+; far touch (s_E = yf)
+#<_rb> = [#<_ztop> + #<_yf> * #<_cotA> + 3]
+G0 Z#<_rb>
+G0 X#<_cx> Y[#<_yedge> - #<_yf>]
+o<probe_down> call [#<_rb>] [#<_flr>] [#<_ft>]
+#<_zb> = #<_probe_z>
+#<_lean_slope> = [[#<_zb> - #<_za>] / [[#<_yedge> - #<_yf>] - [#<_yedge> - #<_yn>]]]
+o<lean> endsub

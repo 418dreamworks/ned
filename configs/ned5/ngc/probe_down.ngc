@@ -1,0 +1,19 @@
+o<probe_down> sub
+; ---------------------------------------------------------------------------
+;  probe_down  --  Z-DOWN probe primitive (the ONLY touch direction used; the
+;  Bimba piston is never side-loaded).  G38.2 auto-errors on no-contact, so a
+;  miss ABORTS the program (belt-and-suspenders #5070 check below too).
+;    #1 = rapid-to Z   (G0 here first; set ~a few mm above the expected trip)
+;    #2 = floor Z      (probe target; must be BELOW the expected trip)
+;    #3 = feed (mm/min)
+;  Returns the touch spindle-Z in global  #<_probe_z>.
+; ---------------------------------------------------------------------------
+G90
+G0 Z#1
+G38.2 Z#2 F#3
+o<pd> if [#5070 EQ 0]
+    (ABORT, probe_down: no contact between Z#1 and Z#2)
+o<pd> endif
+#<_probe_z> = #5063
+G0 Z#1
+o<probe_down> endsub

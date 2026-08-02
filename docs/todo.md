@@ -83,7 +83,7 @@
 - ✓ Mesa landing MAPPED 2026-07-25 (`tracing/pendant.md`): **axis-selector button → 7I97 InMux
   input-00** (NC, TRUE at rest → FALSE pressed); **MPG handwheel → encoder.04** (~400 counts/rev,
   100 PPR ×4; CW = +count). MPG supply voltage still TBD.
-- ✓ Jog UX built + standalone test: **`tools/mpgjog.sh`** (dry-run default; `arm` to drive).
+- ✓ Jog UX built + standalone test: **`tools/groundtruth/mpgjog.sh`** (dry-run default; `arm` to drive).
   Single button: tap = next axis (X→Y→Z), hold+wheel = speed select (L=slow/R=fast/hold=med;
   0.01/0.1/1 mm ratio → jog voltages in the test). Limit gating baked in: a hit limit blocks
   motion INTO it, allows away, all axes.

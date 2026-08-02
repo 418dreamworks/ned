@@ -1,0 +1,16 @@
+# display_common.inc -- shared [DISPLAY] body (minus the DISPLAY= GUI selector,
+# which is per-config). #INCLUDE'd under a [DISPLAY] header, AFTER the DISPLAY=
+# line. Lifted verbatim from configs/ned/ned.ini.
+CYCLE_TIME = 0.05
+POSITION_OFFSET = RELATIVE
+POSITION_FEEDBACK = ACTUAL
+MAX_FEED_OVERRIDE = 1.5
+MAX_SPINDLE_OVERRIDE = 2.0
+MIN_SPINDLE_OVERRIDE = 0.2
+INTRO_GRAPHIC = linuxcnc.gif
+INTRO_TIME = 2
+PROGRAM_PREFIX = /home/brains/linuxcnc/nc_files
+INCREMENTS = 0.01 mm, 0.1 mm, 1 mm, 5 mm
+SPINDLES = 1
+DEFAULT_LINEAR_VELOCITY = 20
+MAX_LINEAR_VELOCITY = 333.334

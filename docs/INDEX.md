@@ -11,6 +11,8 @@ per vendor/topic; your physical wiring traces are grouped under `tracing/`.
 
 | Doc | What |
 |---|---|
+| [update_survival.md](update_survival.md) | **READ BEFORE UPDATING LinuxCNC or Probe Basic** — what each update clobbers (patched homemod.so #3717, halcompile comps, PB venv, core-touches), detection + restore + post-update checklists |
+| [gui_button_spec.md](gui_button_spec.md) | The GUI button behavior CONTRACT — code must match it |
 | [`../configs/ned/ned.hal`](../configs/ned/ned.hal) · [`ned.ini`](../configs/ned/ned.ini) | The live LinuxCNC/Mesa config — as-built control state |
 | [commissioning/calibration_plan.md](commissioning/calibration_plan.md) | Master calibration target list (Fagor-decoded, per axis + spindle) |
 | [servo/yaskawa_params_quickref.md](servo/yaskawa_params_quickref.md) | Yaskawa head-servo drive params (read-first) |

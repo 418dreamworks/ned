@@ -1,0 +1,37 @@
+# pso_live.hal -- ACTIVE live-PSO-reader wiring (opt-in, RT-safe queued reads).
+# This file is the SOURCE OF TRUTH for the wiring. It is NOT loaded directly by the ini;
+# the safety gate in tools/run5.sh (tools/pso_live_gate.sh) copies it into pso_live_gen.hal
+# ONLY when a board-free A/B self-test passed THIS launch. The ini loads pso_live_gen.hal.
+# If the self-test failed (or the comp is not installed), pso_live_gen.hal is a no-op and this
+# wiring never reaches the live servo thread -> silent fallback to the pso_home snapshot.
+#
+# One-time install of the RT comp (needs root):
+#   sudo halcompile --install /home/brains/Documents/ned/tools/pso_live.comp
+#
+# See docs/commissioning/pso_live_reader_plan.md.
+
+# --- RT-safe reader: instance is named after the pktuart, so its pins/func are
+#     hm2_7i97.0.pktuart.0.<multiturn|within|parsed|valid|...> and .pso_live -------------
+loadrt pso_live names=hm2_7i97.0.pktuart.0
+addf hm2_7i97.0.pktuart.0.pso-live servo-thread
+
+# --- at-rest windows on commanded joint velocity (A=joint4, C=joint5) -----------------
+loadrt wcomp names=pso.rest.a,pso.rest.c
+setp pso.rest.a.min -0.0005
+setp pso.rest.a.max  0.0005
+setp pso.rest.c.min -0.0005
+setp pso.rest.c.max  0.0005
+addf pso.rest.a servo-thread
+addf pso.rest.c servo-thread
+net pso-a-vel joint.4.vel-cmd => pso.rest.a.in
+net pso-c-vel joint.5.vel-cmd => pso.rest.c.in
+
+# --- userspace mux/diff: alternates R4 (output-05, un-netted today), diffs vs the only
+#     stored zero (head_zero.inc), outputs UNWRAPPED per-axis degrees ------------------
+loadusr -Wn pso_mux python3 /home/brains/Documents/ned/tools/pso_mux
+net pso-mt     hm2_7i97.0.pktuart.0.multiturn => pso_mux.mt
+net pso-w      hm2_7i97.0.pktuart.0.within    => pso_mux.w
+net pso-parsed hm2_7i97.0.pktuart.0.parsed    => pso_mux.parsed
+net pso-a-rest pso.rest.a.out                 => pso_mux.a-at-rest
+net pso-c-rest pso.rest.c.out                 => pso_mux.c-at-rest
+net pso-r4     pso_mux.r4-select              => hm2_7i97.0.7i84.0.0.output-05

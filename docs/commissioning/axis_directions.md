@@ -1,7 +1,7 @@
 # Axis directions — commanded voltage vs physical motion
 
 Reference for which physical direction each axis travels for a **positive** analog
-velocity command (`+volts` in `tools/move.sh`,
+velocity command (`+volts` in `tools/groundtruth/move.sh`,
 i.e. a positive `pwmgen.NN.value`). Determined empirically by jogging open-loop and
 watching the machine + encoder. These set the sign of `OUTPUT_SCALE` and the homing
 search direction in `ned.ini`.

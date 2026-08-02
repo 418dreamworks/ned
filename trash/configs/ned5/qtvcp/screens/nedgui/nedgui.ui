@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1024</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>ned - 5 axis</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="rootLayout">
+    <item>
+     <widget class="QWidget" name="leftPanel" native="true">
+      <property name="minimumSize">
+       <size><width>260</width><height>0</height></size>
+      </property>
+      <property name="maximumSize">
+       <size><width>300</width><height>16777215</height></size>
+      </property>
+      <layout class="QVBoxLayout" name="leftLayout">
+       <item>
+        <widget class="QLabel" name="lbl_session_banner">
+         <property name="minimumSize"><size><width>0</width><height>34</height></size></property>
+         <property name="alignment"><set>Qt::AlignCenter</set></property>
+         <property name="text"><string>MACHINE FREE</string></property>
+         <property name="styleSheet"><string notr="true">font: 75 11pt; padding: 3px; color: rgb(20,20,20); background: rgb(80,200,80);</string></property>
+        </widget>
+       </item>
+       <item>
+        <widget class="ActionButton" name="btn_estop">
+         <property name="minimumSize"><size><width>0</width><height>48</height></size></property>
+         <property name="checkable"><bool>true</bool></property>
+         <property name="text"><string>E-STOP</string></property>
+         <property name="estop_action" stdset="0"><bool>true</bool></property>
+        </widget>
+       </item>
+       <item>
+        <widget class="ActionButton" name="btn_power">
+         <property name="minimumSize"><size><width>0</width><height>48</height></size></property>
+         <property name="checkable"><bool>true</bool></property>
+         <property name="text"><string>POWER</string></property>
+         <property name="machine_on_action" stdset="0"><bool>true</bool></property>
+        </widget>
+       </item>
+       <item>
+        <widget class="ActionButton" name="btn_home">
+         <property name="minimumSize"><size><width>0</width><height>40</height></size></property>
+         <property name="text"><string>HOME ALL</string></property>
+         <property name="home_action" stdset="0"><bool>true</bool></property>
+         <property name="joint_number" stdset="0"><number>-1</number></property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btn_override">
+         <property name="minimumSize"><size><width>0</width><height>40</height></size></property>
+         <property name="checkable"><bool>true</bool></property>
+         <property name="text"><string>OVR LIMITS</string></property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="statusRow">
+         <item>
+          <widget class="StateLED" name="led_estop">
+           <property name="minimumSize"><size><width>18</width><height>18</height></size></property>
+           <property name="diameter"><number>14</number></property>
+           <property name="color"><color alpha="255"><red>255</red><green>40</green><blue>40</blue></color></property>
+           <property name="is_estopped_status" stdset="0"><bool>true</bool></property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="lbl_estop"><property name="text"><string>E-STOP</string></property></widget>
+         </item>
+         <item>
+          <widget class="StateLED" name="led_on">
+           <property name="minimumSize"><size><width>18</width><height>18</height></size></property>
+           <property name="diameter"><number>14</number></property>
+           <property name="color"><color alpha="255"><red>40</red><green>220</green><blue>40</blue></color></property>
+           <property name="is_on_status" stdset="0"><bool>true</bool></property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="lbl_on"><property name="text"><string>ON</string></property></widget>
+         </item>
+         <item>
+          <spacer name="statusSpacer"><property name="orientation"><enum>Qt::Horizontal</enum></property>
+           <property name="sizeHint" stdset="0"><size><width>40</width><height>10</height></size></property></spacer>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="droBox">
+         <property name="title"><string>Position (machine)</string></property>
+         <layout class="QGridLayout" name="droGrid">
+          <item row="0" column="0"><widget class="QLabel" name="lblX"><property name="text"><string>X</string></property></widget></item>
+          <item row="0" column="1">
+           <widget class="DROLabel" name="dro_x">
+            <property name="styleSheet"><string notr="true">color: rgb(0,255,255); font: 75 20pt "Courier 10 Pitch";</string></property>
+            <property name="text"><string>0.000</string></property>
+            <property name="Qjoint_number" stdset="0"><number>0</number></property>
+            <!-- reference 0: JOINT position in free mode (moves while jogging UNHOMED;
+                 type 1 'relative' froze there), absolute machine position in teleop -->
+            <property name="Qreference_type" stdset="0"><number>0</number></property>
+           </widget>
+          </item>
+          <item row="1" column="0"><widget class="QLabel" name="lblY"><property name="text"><string>Y</string></property></widget></item>
+          <item row="1" column="1">
+           <widget class="DROLabel" name="dro_y">
+            <property name="styleSheet"><string notr="true">color: rgb(0,255,255); font: 75 20pt "Courier 10 Pitch";</string></property>
+            <property name="text"><string>0.000</string></property>
+            <property name="Qjoint_number" stdset="0"><number>1</number></property>
+            <property name="Qreference_type" stdset="0"><number>0</number></property>
+           </widget>
+          </item>
+          <item row="2" column="0"><widget class="QLabel" name="lblZ"><property name="text"><string>Z</string></property></widget></item>
+          <item row="2" column="1">
+           <widget class="DROLabel" name="dro_z">
+            <property name="styleSheet"><string notr="true">color: rgb(0,255,255); font: 75 20pt "Courier 10 Pitch";</string></property>
+            <property name="text"><string>0.000</string></property>
+            <property name="Qjoint_number" stdset="0"><number>2</number></property>
+            <property name="Qreference_type" stdset="0"><number>0</number></property>
+           </widget>
+          </item>
+          <item row="3" column="0"><widget class="QLabel" name="lblA"><property name="text"><string>A</string></property></widget></item>
+          <item row="3" column="1">
+           <widget class="QLabel" name="dro_a">
+            <property name="styleSheet"><string notr="true">color: rgb(0,255,180); font: 75 20pt "Courier 10 Pitch";</string></property>
+            <property name="text"><string>--- deg</string></property>
+           </widget>
+          </item>
+          <item row="4" column="0"><widget class="QLabel" name="lblC"><property name="text"><string>C</string></property></widget></item>
+          <item row="4" column="1">
+           <widget class="QLabel" name="dro_c">
+            <property name="styleSheet"><string notr="true">color: rgb(0,255,180); font: 75 20pt "Courier 10 Pitch";</string></property>
+            <property name="text"><string>--- deg</string></property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="lbl_mpg_now">
+         <property name="minimumSize"><size><width>0</width><height>54</height></size></property>
+         <property name="alignment"><set>Qt::AlignCenter</set></property>
+         <property name="text"><string>MPG  X  1x</string></property>
+         <property name="styleSheet"><string notr="true">color: rgb(255,220,0); background: rgb(40,40,40); font: 75 22pt "Courier 10 Pitch"; border: 1px solid rgb(90,90,90); padding: 4px;</string></property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="jogRow">
+         <item><widget class="QLabel" name="lbl_jog"><property name="text"><string>Jog incr</string></property></widget></item>
+         <item>
+          <widget class="JogIncrements" name="jogincr">
+           <property name="linear_option" stdset="0"><bool>true</bool></property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <spacer name="leftSpacer">
+         <property name="orientation"><enum>Qt::Vertical</enum></property>
+         <property name="sizeHint" stdset="0"><size><width>10</width><height>40</height></size></property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QTabWidget" name="mainTabs">
+      <property name="currentIndex"><number>0</number></property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry"><rect><x>0</x><y>0</y><width>1024</width><height>24</height></rect></property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <customwidgets>
+  <customwidget><class>ActionButton</class><extends>QPushButton</extends><header>qtvcp.widgets.action_button</header></customwidget>
+  <customwidget><class>StateLED</class><extends>QWidget</extends><header>qtvcp.widgets.state_led</header></customwidget>
+  <customwidget><class>DROLabel</class><extends>QLabel</extends><header>qtvcp.widgets.dro_widget</header></customwidget>
+  <customwidget><class>JogIncrements</class><extends>QComboBox</extends><header>qtvcp.widgets.jog_increments</header></customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

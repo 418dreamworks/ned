@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+# pso_mux -- userspace HAL component (NON-RT). Alternates the R4 head mux, turns pso_live's
+# raw PSO reading into an UNWRAPPED per-axis position, diffs against the ONLY stored zero
+# (configs/params/head_zero.inc), and publishes it for the GUI/corrector. Touches NO board
+# register directly: it only sets a HAL pin (pso_mux.r4-select, net to output-05) and reads
+# pso_live's pins. SEN is left alone (held high in ned5_iron.hal); we never pulse it.
+#
+# READ SEMANTICS (per user): a read is only wanted when the axis is AT REST, purely to trim
+# slow drift -- no specific time or rate is required. So this is OPPORTUNISTIC: capture only
+# while at-rest, and DISCARD the read if any motion occurred near the read window. A discarded
+# read is harmless; we just try again later. This makes the R4 alternation forgiving -- there
+# is never a need for a guaranteed-fresh on-demand read.
+#
+# Pins:
+#   IN  pso_mux.mt   pso_mux.w   pso_mux.parsed   <- net from pso_live.multiturn/.within/.parsed
+#   IN  pso_mux.a-at-rest   pso_mux.c-at-rest     <- net TRUE when that axis is stationary
+#                                                    (e.g. from joint.N.vel-cmd ~ 0; see doc)
+#   OUT pso_mux.r4-select   -> net to hm2_7i97.0.7i84.0.0.output-05   (1=A/NO, 0=C/NC)
+#   OUT pso_mux.a-pos-deg  pso_mux.c-pos-deg   (float, UNWRAPPED +/-315; last GOOD at-rest read)
+#   OUT pso_mux.a-valid    pso_mux.c-valid     (bit; a fresh at-rest frame was captured)
+#   OUT pso_mux.a-flag     pso_mux.c-flag      (bit; |pos|>315 -> lost/extra turn)
+#
+# ON-MACHINE TUNING: SETTLE_FRAMES (frames to discard after an R4 flip so the mux/UART pipeline
+# is fully the new axis) and TIMEOUT_S are guesses -- verify on the bench.
+import hal, time, os, re
+
+NED   = os.path.expanduser('~/Documents/ned')
+ZEROF = os.path.join(NED, 'configs/params/head_zero.inc')
+PARAMS= os.path.join(NED, 'tools/ned_params.sh')
+R      = 67108864          # 2^26 counts/motor-rev
+RANGE  = 315.0             # unwrapped display range; outside -> flag
+SETTLE_FRAMES = 4          # discard this many frames after an R4 flip (mux settle) -- TUNE
+TIMEOUT_S     = 2.0        # give up on an axis if no fresh frames -- TUNE
+# Per-axis sign for the right-hand-rule convention: A is negated, C is unchanged. MUST stay in
+# sync with joint_a.inc SCALE (+2918.4000, positive) and tools/pso_home.sh (A_SIGN=-1, C_SIGN=+1),
+# or the live A readout inverts vs pso_home / the DRO / homing.
+A_SIGN = -1
+C_SIGN = +1
+SIGN   = {'a': A_SIGN, 'c': C_SIGN}
+
+def _num(text, key):
+    m = re.search(r'^\s*%s\s*=\s*(-?\d+)' % key, text, re.M)
+    return int(m.group(1)) if m else None
+
+def _flt(text, key):
+    m = re.search(r'^\s*%s\s*=\s*([-\d.]+)' % key, text, re.M)
+    return float(m.group(1)) if m else None
+
+zt = open(ZEROF).read();  pt = open(PARAMS).read()
+ZERO = {  # PS per axis: (mt0, w0, gear)
+    'a': (_num(zt, 'A_MULTITURN'), _num(zt, 'A_WITHIN'), _flt(pt, 'GEAR_A')),
+    'c': (_num(zt, 'C_MULTITURN'), _num(zt, 'C_WITHIN'), _flt(pt, 'GEAR_C')),
+}
+
+def pos_deg(mt, w, ax):
+    mt0, w0, g = ZERO[ax]
+    return SIGN[ax] * ((mt - mt0) * R + (w - w0)) / (R * g) * 360.0   # UNWRAPPED, no mod-360 fold
+
+h = hal.component('pso_mux')
+h.newpin('mt',        hal.HAL_S32,   hal.HAL_IN)
+h.newpin('w',         hal.HAL_U32,   hal.HAL_IN)
+h.newpin('parsed',    hal.HAL_U32,   hal.HAL_IN)
+h.newpin('r4-select', hal.HAL_BIT,   hal.HAL_OUT)
+for ax in ('a', 'c'):
+    h.newpin('%s-at-rest' % ax, hal.HAL_BIT,   hal.HAL_IN)
+    h.newpin('%s-pos-deg' % ax, hal.HAL_FLOAT, hal.HAL_OUT)
+    h.newpin('%s-valid'   % ax, hal.HAL_BIT,   hal.HAL_OUT)
+    h.newpin('%s-flag'    % ax, hal.HAL_BIT,   hal.HAL_OUT)
+h.ready()
+
+def capture(ax, r4):
+    # OPPORTUNISTIC + AT-REST: only read a stationary axis; discard if it moved near the read.
+    rest = '%s-at-rest' % ax
+    if not h[rest]:
+        return                                  # not at rest -> skip, no harm
+    h['r4-select'] = r4
+    base = h['parsed']; seen = 0; t0 = time.time()
+    while time.time() - t0 < TIMEOUT_S:
+        if not h[rest]:
+            return                              # motion started -> DISCARD this read
+        p = h['parsed']
+        if p != base:
+            seen += (p - base) & 0xffffffff; base = p
+            if seen >= SETTLE_FRAMES:
+                mt, w = h['mt'], h['w']
+                if not h[rest]:                 # moved during the read window -> DISCARD
+                    return
+                d = pos_deg(mt, w, ax)
+                h['%s-pos-deg' % ax] = d
+                h['%s-flag'    % ax] = abs(d) >= RANGE
+                h['%s-valid'   % ax] = True
+                return
+        time.sleep(0.01)
+    # timed out with no usable frame: leave last good value, just mark not-fresh
+    h['%s-valid' % ax] = False
+
+try:
+    while True:
+        capture('a', True)     # R4=1 -> A (NO)
+        capture('c', False)    # R4=0 -> C (NC)
+        time.sleep(0.05)
+except KeyboardInterrupt:
+    pass

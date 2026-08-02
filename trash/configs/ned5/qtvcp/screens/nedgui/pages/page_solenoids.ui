@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SOLENOIDS: individual on/off for the three real air solenoids.
+       tool probe   M64/M65 P3 -> digital-out-03 -> *61 -> NVZ3120 -> Bimba deploy
+       chip blower  M64/M65 P4 -> digital-out-04 -> *55 -> R9 -> blow-off solenoid
+       tool release M64/M65 P0 -> digital-out-00 -> *63/*64/*65 (BIGGREEN)
+     Tool release ALWAYS runs a 5 s countdown in the handler, and is e-stop gated
+     in ned5_iron.hal (toolrel.permit). -->
+<ui version="4.0">
+ <class>pageSolenoids</class>
+ <widget class="QWidget" name="pageSolenoids">
+  <layout class="QVBoxLayout" name="solLayout">
+   <item>
+    <widget class="QLabel" name="sol_hdr">
+     <property name="text"><string>SOLENOIDS</string></property>
+     <property name="styleSheet"><string notr="true">font: 75 15pt; padding: 6px;</string></property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QGridLayout" name="solGrid">
+     <item row="0" column="0"><widget class="QLabel" name="sol_lbl_ts"><property name="text"><string>Tool probe (Bimba)</string></property></widget></item>
+     <item row="0" column="1">
+      <widget class="QPushButton" name="btn_sol_ts_on">
+       <property name="minimumSize"><size><width>90</width><height>52</height></size></property>
+       <property name="text"><string>ON</string></property>
+      </widget>
+     </item>
+     <item row="0" column="2">
+      <widget class="QPushButton" name="btn_sol_ts_off">
+       <property name="minimumSize"><size><width>90</width><height>52</height></size></property>
+       <property name="text"><string>OFF</string></property>
+      </widget>
+     </item>
+     <item row="1" column="0"><widget class="QLabel" name="sol_lbl_blow"><property name="text"><string>Chip blower</string></property></widget></item>
+     <item row="1" column="1">
+      <widget class="QPushButton" name="btn_sol_blow_on">
+       <property name="minimumSize"><size><width>90</width><height>52</height></size></property>
+       <property name="text"><string>ON</string></property>
+      </widget>
+     </item>
+     <item row="1" column="2">
+      <widget class="QPushButton" name="btn_sol_blow_off">
+       <property name="minimumSize"><size><width>90</width><height>52</height></size></property>
+       <property name="text"><string>OFF</string></property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="sol_lbl_trel">
+       <property name="wordWrap"><bool>true</bool></property>
+       <property name="text"><string>TOOL RELEASE — DROPS TOOL</string></property>
+       <property name="styleSheet"><string notr="true">color: rgb(255,120,120);</string></property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QPushButton" name="btn_sol_trel_on">
+       <property name="minimumSize"><size><width>90</width><height>52</height></size></property>
+       <property name="text"><string>ON (5s)</string></property>
+       <property name="styleSheet"><string notr="true">color: rgb(255,120,120);</string></property>
+      </widget>
+     </item>
+     <item row="2" column="2">
+      <widget class="QPushButton" name="btn_sol_trel_off">
+       <property name="minimumSize"><size><width>90</width><height>52</height></size></property>
+       <property name="text"><string>OFF</string></property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QLabel" name="sol_note">
+     <property name="wordWrap"><bool>true</bool></property>
+     <property name="text"><string>Tool release fires all THREE solenoids together (*63/*64/*65 = OUTPUT13/14/15) — three independent valves, all required. GDL65 is drawbar-only: spring clamps, air releases, so de-energized = tool HELD. 5 s countdown (press again to cancel) and e-stop gated: e-stop removes the release, so the tool stays clamped. Spindle CW/CCW and drive-enable are RELAY coils driven by the interlock logic, not solenoids. Live states: Limits tab.</string></property>
+     <property name="styleSheet"><string notr="true">color: #888; font: 9pt; padding: 4px 6px;</string></property>
+    </widget>
+   </item>
+   <item>
+    <spacer name="solSpacer">
+     <property name="orientation"><enum>Qt::Vertical</enum></property>
+     <property name="sizeHint" stdset="0"><size><width>10</width><height>60</height></size></property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget><class>ActionButton</class><extends>QPushButton</extends><header>qtvcp.widgets.action_button</header></customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

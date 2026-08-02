@@ -1,0 +1,81 @@
+o<find_a_zero> sub
+; ===========================================================================
+;  CP3 -- find_a_zero   (square the head)
+;  Reads the puck centre + Z_top from CP1/CP2 (#5211 Z_top, #5212/#5213 centre,
+;  #5214 R). Measures the rod lean at +TILT_LEAN, searches the - side until the
+;  lean magnitude matches, splits the two encoder angles -> A_zero (rod ∥ Z).
+;  Slope-symmetry: pivot-independent, probe-mount-independent, cancels the A
+;  encoder offset. All touches Z-DOWN onto the rim edge (see lean.ngc).
+;
+;  PRE: CP1 + CP2 done this session.   o<find_a_zero> call
+; ===========================================================================
+G21 G90 G94
+o<need> if [#5211 EQ 0]
+    (ABORT, CP3: run CP1 + CP2 first -- puck top/centre unknown)
+o<need> endif
+#<_ztop>  = #5211
+#<_cx>    = #5212
+#<_cy>    = #5213
+#<_rmeas> = #5214
+#<_above> = #<_ini[probe]above>
+#<_ft>    = #<_ini[probe]feed_touch>
+#<_yn>    = #<_ini[probe]y_near>
+#<_yf>    = #<_ini[probe]y_far>
+#<_tl>    = #<_ini[probe]tilt_lean>
+#<_cl>    = #<_ini[probe]c_lean>
+#<_tol>   = #<_ini[probe]tol_slope>
+#<_astep> = #<_ini[probe]a_step>
+#<_maxit> = #<_ini[probe]max_iter>
+M64 P3
+G4 P1.0
+#<_zsafe> = [#<_ztop> + #<_above>]
+#<_yedge> = [#<_cy> + #<_rmeas>]     ; +Y rim edge
+G0 Z#<_zsafe>
+G0 C#<_cl>                           ; put the A-tilt in the Y-Z plane
+; --- + side reference ---
+o<lean> call [#<_tl>]
+#<_sp> = #<_lean_slope>
+(DEBUG, CP3 slope_plus = #<_sp> @ A=#<_tl>)
+; --- null-search the - side: find A s.t. lean(A) = -slope_plus ---
+#<_a0> = [0 - #<_tl>]
+o<lean> call [#<_a0>]
+#<_e0> = [#<_lean_slope> + #<_sp>]
+#<_a1> = [#<_a0> + #<_astep>]
+o<lean> call [#<_a1>]
+#<_e1> = [#<_lean_slope> + #<_sp>]
+#<_it> = 0
+o<nl> while [1 EQ 1]
+    o<c1> if [ABS[#<_e1>] LT #<_tol>]
+        o<nl> break
+    o<c1> endif
+    o<c2> if [#<_it> GE #<_maxit>]
+        (ABORT, CP3 no convergence in max_iter)
+    o<c2> endif
+    o<c3> if [ABS[#<_e1> - #<_e0>] LT 0.000001]
+        (ABORT, CP3 lean not responding to A -- check C_LEAN / geometry)
+    o<c3> endif
+    #<_a2> = [#<_a1> - #<_e1> * [#<_a1> - #<_a0>] / [#<_e1> - #<_e0>]]
+    o<b1> if [#<_a2> GT -20]
+        #<_a2> = -20                 ; keep the - side search on the - side
+    o<b1> endif
+    o<b2> if [#<_a2> LT -110]
+        #<_a2> = -110                ; A soft-limit guard (+/-115)
+    o<b2> endif
+    o<lean> call [#<_a2>]
+    #<_e2> = [#<_lean_slope> + #<_sp>]
+    #<_a0> = #<_a1>   #<_e0> = #<_e1>
+    #<_a1> = #<_a2>   #<_e1> = #<_e2>
+    #<_it> = [#<_it> + 1]
+o<nl> endwhile
+#<_amin> = #<_a1>
+#5215 = [[#<_tl> + #<_amin>] / 2.0]  ; A_zero = encoder midpoint = square
+(DEBUG, CP3 A_ZERO = #5215 deg  (A+=#<_tl>  A-=#<_amin>  slope+=#<_sp>))
+(LOGAPPEND, puck_result.txt)
+(LOG, A_ZERO_DEG = #5215  -- paste into configs/params/head_zero.inc (A LinuxCNC square ref))
+(LOG, A_PLUS = #<_tl>)
+(LOG, A_MINUS = #<_amin>)
+(LOG, SLOPE_PLUS = #<_sp>)
+(LOGCLOSE)
+M65 P3                               ; lower the Bimba
+G0 Z#<_zsafe>
+o<find_a_zero> endsub

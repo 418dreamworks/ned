@@ -1,0 +1,26 @@
+(ned UNLOAD SPINDLE -- physical drawbar release + PB software unload)
+; ned I/O map (ned5_iron.hal): M64/M65 P0 = drawbar release ON/OFF
+; (estop-gated via toolrel.permit); digital-in-00 = tool LOCKED sensor;
+; digital-in-01 = tool RELEASED sensor; digital-in-02 = shaft stopped.
+; The sim versions used the SIM's pin numbers (P2/P4/P5) -- on ned P4 is the
+; chip blow-off. Every pin below is ned's.
+o<unload_spindle> sub
+; spindle must be stopped
+M66 P2 L0
+o<usp1> if [#5399 EQ 0]
+    (ABORT, unload_spindle: shaft not stopped -- not releasing)
+o<usp1> endif
+M64 P0
+; wait for the tool-released sensor, up to 5 s
+M66 P1 L3 Q5
+o<usp2> if [#5399 LT 0]
+    M65 P0
+    (ABORT, unload_spindle: tool-released sensor never confirmed -- re-clamped)
+o<usp2> endif
+; PB software unload (spindle now empty)
+M61 Q0
+G49
+#3991 = 0
+(DEBUG, drawbar RELEASED -- remove the tool. Open until LOAD SPINDLE / M65 P0)
+o<unload_spindle> endsub
+M2 (end program)

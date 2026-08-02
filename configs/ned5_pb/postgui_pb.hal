@@ -1,0 +1,122 @@
+# ============================================================================
+#  ned5_pb postgui_pb.hal  --  Probe Basic GUI glue for the real machine.
+#  Runs AFTER probe_basic builds its qtpyvcp.* HAL pins. Machine signals live
+#  in ../ned5/ned5_iron.hal (shared with the nedgui config).
+#
+#  The MPG pendant state machine is tools/live/ned_pendant.py (userspace HAL) --
+#  identical behavior to the nedgui handler it replaces: tap=next axis,
+#  double-tap=back, hold+wheel=speed. Its pins stand in 1:1 for nedgui.jog-*.
+#
+#  tools/live/ned_brain.py carries the rest of the developed logic (head A/C
+#  absolute read -> arm -> post-home verify, R4 park, stored homing + resume
+#  arming, teleop recovery, gui.md event log) -- its pins stand in for the
+#  nedgui sen/pso/r4 pins, wired below to the same iron signals.
+#
+#  NOT wired on purpose:
+#    - qtpyvcp_manualtoolchange: iron HAL self-acks the toolchange loop.
+# ============================================================================
+
+# spin permit mode-feed: iron's spinok OR-gate (S1-locked OR manual mode)
+# gets the manual half here -- halui does not exist at iron-load time.
+net sig-mode-manual  halui.mode.is-manual
+
+# --- Probe Basic cycle timer (required by the PB screen) --------------------
+loadrt time
+addf time.0 servo-thread
+net prog-running  time.0.start <= halui.program.is-running
+net prog-paused   time.0.pause <= halui.program.is-paused
+net cycle-seconds qtpyvcp.timerseconds.in <= time.0.seconds
+net cycle-minutes qtpyvcp.timerminutes.in <= time.0.minutes
+net cycle-hours   qtpyvcp.timerhours.in   <= time.0.hours
+
+# --- HEAD READ / HOMING / RESUME BRAIN (ned_brain.py) -----------------------
+# Same pin roles the nedgui handler had (postgui_iron.hal lines 35-46):
+# sen-suppress HIGH -> SEN low (packs BB, primed); sen-force rising edge ->
+# absolute PSO burst; pso enable/reset gate the queued reader; r4-select picks
+# the pack on the single PktUART (1 = A) AND gates the 70 V rotary brick --
+# ned_brain parks it FALSE after every read.
+# -Wn: the component announces itself as 'brain', not 'ned_brain' -- plain -W
+# waits forever for a component named after the executable (halcmd hung here).
+loadusr -Wn brain /home/brains/Documents/ned/tools/live/ned_brain.py
+net sig-sen-suppress  <=  brain.sen-suppress
+net sig-sen-force     <=  brain.sen-force
+net sig-pso-enable    brain.pso-enable  =>  hm2_7i97.0.pktuart.0.enable
+net sig-pso-reset     brain.pso-reset   =>  hm2_7i97.0.pktuart.0.reset
+net sig-r4-select     brain.r4-select   =>  hm2_7i97.0.7i84.0.0.output-05
+# pso_live results feed brain's OWN pins (instance access, no global-mutex
+# hal.get_value -- a leaked mutex hung brain mid-verify 2026-07-31 14:31:39)
+net sig-pso-parsed    brain.parsed-in     <=  hm2_7i97.0.pktuart.0.parsed
+net sig-pso-mt        brain.multiturn-in  <=  hm2_7i97.0.pktuart.0.multiturn
+net sig-pso-within    brain.within-in     <=  hm2_7i97.0.pktuart.0.within
+# REF ALL announcement: the ned_controls tab pulses homeall-out after unhoming
+# A/C; brain arms the fresh head read in parallel with the XYZ switch dance.
+net sig-homeall       brain.homeall-in    <=  ned-tab.homeall-out
+# per-axis REF A / REF C: unhome -> fresh read -> home that joint only
+net sig-refa          brain.ref-a-in      <=  ned-tab.refa-out
+net sig-refc          brain.ref-c-in      <=  ned-tab.refc-out
+
+# --- NED GUI components (created by our user tab + user DRO inside the PB
+# process via qtpyvcp.hal; pins exist once the GUI is up, before postgui).
+# All GUI-side reads are these netted pins -- never hal.get_value.
+# If the tab/DRO modules are ever removed, remove these nets too.
+net sol-ts-force          ned-tab.toolprobe-cmd  =>  sol.ts.in1
+net sig-air-pressure-ok   =>  ned-tab.air-ok-in
+net sig-toolsetter-deploy =>  ned-tab.probe-up-in
+# PB's probe LED (Probing tab) follows the REAL probe contact (input-28 chain);
+# in the sim this was fed by a fake on-screen probe button instead.
+net sig-tool-probe        =>  qtpyvcp.probe-led.on
+# CHIP BLOWER on the MIST control (operator request): PB's Mist toggle (menu)
+# and M7/M9 drive iocontrol coolant-mist -> OR'd into sol.blow alongside the
+# M64 P4 path (sol.blow.in0). Flood is unused (its menu entry is hidden).
+net sig-mist-blow   iocontrol.0.coolant-mist  =>  sol.blow.in1
+# (the pendant-fed nets sig-mpg-inc / sig-mpg-axis are below, AFTER the
+#  pendant loadusr -- its pins must exist first)
+
+# --- MPG PENDANT (ned_pendant.py drives the same signals nedgui did) --------
+loadusr -Wn pendant /home/brains/Documents/ned/tools/live/ned_pendant.py
+net sig-mpg-btn-raw  pendant.button-raw  <=  hm2_7i97.0.inmux.00.input-00
+net sig-mpg-counts   =>  pendant.wheel
+# pendant selections -> the GUI's own netted pins (highlight + increment sync).
+# BOTH pins live on ned-tab: user tabs load synchronously, but PB loads the
+# user DROs DEFERRED (after postgui!) so a DRO-owned pin here kills postgui.
+net sig-mpg-inc      ned-tab.inc-in       <=  pendant.increment
+net sig-mpg-axis     ned-tab.axis-in      <=  pendant.sel-axis
+# LOCK A / LOCK C (DRO buttons): pendant skips locked axes in the cycle
+net sig-lock-a       pendant.lock-a       <=  ned-tab.lock-a-out
+net sig-lock-c       pendant.lock-c       <=  ned-tab.lock-c-out
+net sig-mpg-jogspd   ned-tab.jogspeed-in  <=  pendant.jogspeed-out
+# axis (teleop, homed) jog pins: X/Y/Z enables + jogblock.sel come from
+# ned5_iron.hal section 7b via sig-mpg-sel-*; A/C wired here like postgui_iron.
+net sig-mpg-counts  =>  axis.a.jog-counts  axis.c.jog-counts
+net sig-mpg-sel-x   <=  pendant.jog-en-x
+net sig-mpg-sel-y   <=  pendant.jog-en-y
+net sig-mpg-sel-z   <=  pendant.jog-en-z
+net mpg-sel-a  pendant.jog-en-a  =>  axis.a.jog-enable
+net mpg-sel-c  pendant.jog-en-c  =>  axis.c.jog-enable
+net mpg-scale-lin  pendant.jog-scale-lin =>  axis.x.jog-scale axis.y.jog-scale axis.z.jog-scale
+net mpg-scale-ang  pendant.jog-scale-ang =>  axis.a.jog-scale axis.c.jog-scale
+setp axis.y.jog-vel-mode 0
+setp axis.z.jog-vel-mode 0
+setp axis.a.jog-vel-mode 0
+setp axis.c.jog-vel-mode 0
+# JOINT-mode jog -- works UNHOMED (teleop is hard-gated on homing). Same
+# wheel/select/scale on the joint pins; X selection drives BOTH gantry joints.
+# X/Y/Z/W take the jogblock-GATED counts; A/C (no switches) take the raw wheel.
+net sig-jogc-x      =>  joint.0.jog-counts joint.3.jog-counts
+net sig-jogc-y      =>  joint.1.jog-counts
+net sig-jogc-z      =>  joint.2.jog-counts
+net sig-mpg-counts  =>  joint.4.jog-counts joint.5.jog-counts
+net sig-mpg-sel-x   =>  joint.0.jog-enable joint.3.jog-enable
+net sig-mpg-sel-y   =>  joint.1.jog-enable
+net sig-mpg-sel-z   =>  joint.2.jog-enable
+net mpg-sel-a       =>  joint.4.jog-enable
+net mpg-sel-c       =>  joint.5.jog-enable
+net mpg-scale-lin   =>  joint.0.jog-scale joint.1.jog-scale joint.2.jog-scale joint.3.jog-scale
+net mpg-scale-ang   =>  joint.4.jog-scale joint.5.jog-scale
+setp joint.0.jog-vel-mode 0
+setp joint.1.jog-vel-mode 0
+setp joint.2.jog-vel-mode 0
+setp joint.3.jog-vel-mode 0
+setp joint.4.jog-vel-mode 0
+setp joint.5.jog-vel-mode 0
+# ============================================================================

@@ -1,0 +1,94 @@
+o<find_puck_center> sub
+; ===========================================================================
+;  CP2 -- find_puck_center   (re-runnable after a bump)
+;  N Z-DOWN "shaft-catches-near-edge" touches at headings 360/N apart, then a
+;  least-squares (Kasa) circle fit -> refined centre (Xc,Yc). Uses Z_top (CP1).
+;
+;  Geometry: rim_tilt = asin(TARGET_PROJ / ROD_REACH_L) ~ 3.13 deg. The tip
+;  overshoots the near rim edge into the clear air; the SHAFT catches the near
+;  edge on a straight Z-down probe (a POINT -> touch-Z carries lateral info):
+;     Z_touch = Z_top + s_E*cot(A)   =>   s_E = (Z_touch - Z_top)*tan(A)
+;  C rotates the tilt azimuth, so N touches give N near-edge points on the rim.
+;  NOTE: the spindle sits ~230 mm ABOVE Z_top at contact (small tilt) and the
+;  tip hangs ~50 mm below Z_top -- needs Z travel + clear air. RIM_OFFSET<2.54mm.
+; ===========================================================================
+G21 G90 G94
+o<need> if [#5211 EQ 0]
+    (ABORT, CP2: run CP1 (find_puck_top) first -- Z_top unknown)
+o<need> endif
+#<_ztop> = #5211
+#<_N>    = #<_ini[probe]n_headings>
+#<_L>    = #<_ini[probe]rod_reach_l>
+#<_rho>  = #<_ini[probe]target_proj>
+#<_R>    = [#<_ini[probe]rim_dia> / 2.0]
+#<_off>  = #<_ini[probe]rim_offset>
+#<_phi0> = #<_ini[probe]phi0>
+#<_frim> = #<_ini[probe]feed_rim>
+#<_atilt> = [ASIN[#<_rho> / #<_L>]]
+#<_cotA>  = [COS[#<_atilt>] / SIN[#<_atilt>]]
+#<_tanA>  = [SIN[#<_atilt>] / COS[#<_atilt>]]
+; heights (spindle sits high; floor stays above the tip-clearance limit)
+#<_zhi>  = [#<_ztop> + [#<_R> + #<_off>] * #<_cotA> + 20]
+#<_zlo>  = [#<_ztop> + [#<_R> - #<_off>] * #<_cotA> - 20]
+; go to stored approx centre, high & clear, pause to re-seed if the puck moved
+G0 Z#<_zhi>
+G0 X#5212 Y#5213
+(MSG, CP2 paused: jog rod over the puck centre if it moved, then RESUME)
+M0
+#<_px> = [#5420 + #<_off>]           ; recapture (operator may have jogged), + offset
+#<_py> = #5421
+M64 P3
+G4 P1.0
+; --- N touches, accumulate Kasa least-squares sums ---
+#<_sx>=0  #<_sy>=0  #<_sxx>=0  #<_syy>=0  #<_sxy>=0  #<_su>=0  #<_sxu>=0  #<_syu>=0
+#<_i>=0
+o<hl> while [#<_i> LT #<_N>]
+    #<_cdeg> = [#<_i> * [360.0 / #<_N>]]
+    G0 Z#<_zhi>
+    G0 A#<_atilt> C#<_cdeg>          ; hold tilt, rotate C (up high, clear)
+    G0 X#<_px> Y#<_py>
+    o<probe_down> call [#<_zhi>] [#<_zlo>] [#<_frim>]
+    #<_zt> = #<_probe_z>
+    #<_sE> = [[#<_zt> - #<_ztop>] * #<_tanA>]
+    #<_phi> = [#<_phi0> + #<_cdeg>]
+    #<_ex> = [#<_px> + #<_sE> * COS[#<_phi>]]
+    #<_ey> = [#<_py> + #<_sE> * SIN[#<_phi>]]
+    #<_u>  = [#<_ex>*#<_ex> + #<_ey>*#<_ey>]
+    #<_sx>=[#<_sx>+#<_ex>]   #<_sy>=[#<_sy>+#<_ey>]
+    #<_sxx>=[#<_sxx>+#<_ex>*#<_ex>]   #<_syy>=[#<_syy>+#<_ey>*#<_ey>]   #<_sxy>=[#<_sxy>+#<_ex>*#<_ey>]
+    #<_su>=[#<_su>+#<_u>]   #<_sxu>=[#<_sxu>+#<_ex>*#<_u>]   #<_syu>=[#<_syu>+#<_ey>*#<_u>]
+    (DEBUG, CP2 i=#<_i> C=#<_cdeg> Zt=#<_zt> sE=#<_sE> E=[#<_ex>, #<_ey>])
+    #<_i>=[#<_i>+1]
+o<hl> endwhile
+G0 Z#<_zhi>
+G0 A0 C0
+; --- solve 3x3 normal equations (Cramer) for x^2+y^2+Dx+Ey+F=0 ---
+;   [sxx sxy sx][D] = [-sxu]
+;   [sxy syy sy][E]   [-syu]
+;   [sx  sy  N ][F]   [-su ]
+#<_det> = [#<_sxx>*[#<_syy>*#<_N> - #<_sy>*#<_sy>] - #<_sxy>*[#<_sxy>*#<_N> - #<_sy>*#<_sx>] + #<_sx>*[#<_sxy>*#<_sy> - #<_syy>*#<_sx>]]
+o<ds> if [ABS[#<_det>] LT 0.000001]
+    (ABORT, CP2 circle fit singular -- check PHI0 / tilt / geometry)
+o<ds> endif
+#<_b1> = [0 - #<_sxu>]
+#<_b2> = [0 - #<_syu>]
+#<_b3> = [0 - #<_su>]
+#<_dD> = [#<_b1>*[#<_syy>*#<_N>-#<_sy>*#<_sy>] - #<_sxy>*[#<_b2>*#<_N>-#<_sy>*#<_b3>] + #<_sx>*[#<_b2>*#<_sy>-#<_syy>*#<_b3>]]
+#<_dE> = [#<_sxx>*[#<_b2>*#<_N>-#<_sy>*#<_b3>] - #<_b1>*[#<_sxy>*#<_N>-#<_sy>*#<_sx>] + #<_sx>*[#<_sxy>*#<_b3>-#<_b2>*#<_sx>]]
+#<_dF> = [#<_sxx>*[#<_syy>*#<_b3>-#<_b2>*#<_sy>] - #<_sxy>*[#<_sxy>*#<_b3>-#<_b2>*#<_sx>] + #<_b1>*[#<_sxy>*#<_sy>-#<_syy>*#<_sx>]]
+#<_D> = [#<_dD>/#<_det>]
+#<_E> = [#<_dE>/#<_det>]
+#<_F> = [#<_dF>/#<_det>]
+#5212 = [0 - #<_D>/2.0]              ; refined centre X
+#5213 = [0 - #<_E>/2.0]              ; refined centre Y
+#5214 = [SQRT[#<_D>*#<_D>/4.0 + #<_E>*#<_E>/4.0 - #<_F>]]   ; measured radius (QC)
+(DEBUG, CP2 CENTER=[#5212, #5213]  R_meas=#5214  R_known=#<_R>)
+o<qc> if [ABS[#5214 - #<_R>] GT 1.0]
+    (DEBUG, CP2 WARNING R off > 1mm -- suspect PHI0/tilt/geometry, do NOT trust centre)
+o<qc> endif
+(LOGAPPEND, puck_result.txt)
+(LOG, CENTER_X = #5212)
+(LOG, CENTER_Y = #5213)
+(LOG, R_MEAS = #5214)
+(LOGCLOSE)
+o<find_puck_center> endsub

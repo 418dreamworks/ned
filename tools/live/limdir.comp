@@ -1,0 +1,31 @@
+component limdir """directional hard-limit gate (one instance per joint).
+
+Passes a tripped limit switch through to joint.N.*-lim-sw-in ONLY while the
+joint's commanded velocity moves TOWARD that switch.  Result:
+  - parked ON a depressed switch: no fault -> POWER and homing work;
+  - jogging AWAY from the switch: no fault;
+  - any commanded motion INTO the switch (program, MDI, runaway): the limit
+    asserts and motion trips the machine off exactly as stock LinuxCNC does
+    (control.c check_for_faults) -- the hard-limit backstop is preserved.
+MPG wheel motion toward the switch never even starts: tools/live/jogblock.comp
+swallows those counts first, so the wheel cannot cause this trip.
+Homing onto the shared switch is unaffected: the search moves toward the
+switch, so the assertion appears as before, and homing joints are exempt
+from the fault check (control.c) + HOME_IGNORE_LIMITS=YES.
+home-sw-in must stay wired to the RAW switch signal, not this gate.""";
+
+pin in bit lim_neg_in "raw NC limit signal, negative-direction switch (TRUE = at limit)";
+pin in bit lim_pos_in "raw NC limit signal, positive-direction switch (TRUE = at limit)";
+pin in float vel_cmd "from joint.N.vel-cmd (commanded velocity, units/s)";
+pin out bit lim_neg_out "to joint.N.neg-lim-sw-in";
+pin out bit lim_pos_out "to joint.N.pos-lim-sw-in";
+param rw float eps = 0.01 "units/s dead-band: |vel-cmd| <= eps counts as stationary";
+
+function _;
+license "GPL";
+;;
+
+FUNCTION(_) {
+    lim_neg_out = lim_neg_in && (vel_cmd < -eps);
+    lim_pos_out = lim_pos_in && (vel_cmd > eps);
+}

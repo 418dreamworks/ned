@@ -11,7 +11,7 @@
 
 ## Velocity ceiling
 - Effective top speed = `[JOINT]MAX_OUTPUT` (clamp on PID velocity output, mm/s), **not** `MAX_VELOCITY`. Any commanded speed above `MAX_OUTPUT` → following error.
-- `MAX_OUTPUT` is a hand-set commissioning throttle (raised 5→10→25→50→100 mm/s), well below the drives' capability (`OUTPUT_SCALE` 356.5 mm/s @10 V; Fagor `MAX_VELOCITY` 338.7). Raise further only with PID/velocity-loop tuning.
+- `MAX_OUTPUT` and the linear axes' `MAX_VELOCITY` are BOTH written from `tools/live/ned_params.sh` `MAX_VEL_LIN` by its apply/sync — that variable is the ONLY place the number lives (commissioning throttle ladder 5→10→25→50→100→current). Well below the drives' capability (`OUTPUT_SCALE` 356.5 mm/s @10 V; Fagor ran `MAX_VELOCITY` 338.7). Raise further only with PID/velocity-loop tuning. Z keeps its own 169.3 `MAX_VELOCITY`.
 - `pid.output` is in **mm/s** (feeds `pwmgen.value`, `pwmgen.scale = OUTPUT_SCALE` maps mm/s→10 V). The ned.hal comment "PID output is in VOLTS" is wrong — fix it.
 
 ## PID loop (servo axes) — Fagor heritage & hold-zero

@@ -1,0 +1,30 @@
+# joint_z.inc -- Z vertical. Lifted verbatim from configs/ned/ned.ini [JOINT_2].
+# In the 5-axis config this is JOINT_2 (axis Z). Z homes first and to the TOP.
+TYPE = LINEAR
+MAX_VELOCITY = 169.3
+MAX_ACCELERATION = 200.0
+FERROR = 12.7
+MIN_FERROR = 2.54
+MIN_LIMIT = -620.0
+MAX_LIMIT = 1.0
+P = 17.21
+I = 4.876
+D = 0.0
+FF0 = 0.0
+FF1 = 0.990
+FF2 = 0.0
+BIAS = 0.437
+DEADBAND = 0.005
+# MAX_OUTPUT: WRITTEN by tools/live/ned_params.sh (MAX_VEL_LIN) -- edit THERE, never here.
+MAX_OUTPUT = 200
+INPUT_SCALE  = 787.402
+OUTPUT_SCALE = 178.2
+BACKLASH = 0.0254
+HOME = 0.0
+HOME_OFFSET = 5.0
+HOME_SEARCH_VEL = 80.0
+HOME_LATCH_VEL = 1.666
+HOME_FINAL_VEL = 6.35
+HOME_SEQUENCE = 0
+HOME_USE_INDEX = NO
+HOME_IGNORE_LIMITS = YES

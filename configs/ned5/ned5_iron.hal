@@ -1,0 +1,516 @@
+# ============================================================================
+#  ned5_iron.hal  --  DRIVE-IRON HAL for the 5-axis (XYZAC) case.
+#
+#  Real-Mesa HAL for the nedgui / ned5 config: 7I97T (eth 10.10.10.10) + 7I85S
+#  (DB25 step/dir) + 7I84U (sserial digital I/O). A faithful REMAP of the proven
+#  configs/ned/ned.hal onto the 6-joint ned5 map, with rotary-B dropped:
+#      joint 0 = X (gantry side 1, STARBOARD)   joint 3 = X (gantry side 2 / "W")
+#      joint 1 = Y                              joint 4 = A (head TILT)
+#      joint 2 = Z                              joint 5 = C (head SPIN)
+#  Source lines cited as [ned.hal:NN]. This file loads the Mesa driver and CAN
+#  command the real servos -- the SIM loopback is the separate ned5.hal.
+#
+#  *** SAFETY BLOCKER -- ABSOLUTE HOMING OF THE HEAD ***
+#  A/C have NO home switch (HOME_SEARCH_VEL=0 => immediate home-in-place). The soft
+#  limits (A +/-115, C +/-315) only prevent a crash if the head was homed at its
+#  TRUE zero. There is no realtime absolute feed yet (PSO is an out-of-band capture;
+#  head_zero.inc holds the captured zeros but nothing auto-homes to them). Before
+#  trusting the head under this HAL: home A/C only with the head physically at zero,
+#  then VERIFY a soft limit actually stops the head at a small test angle.
+#
+#  Safe startup: every pwmgen/stepgen enable, /S-ON, SEN and drive-enable is driven
+#  by a motion signal that is FALSE until the machine is enabled -- nothing is
+#  energized at HAL load (same pattern as ned.hal).
+# ============================================================================
+
+
+# ----------------------------------------------------------------------------
+# 1. LOAD REALTIME COMPONENTS  [ned.hal:50-86]
+# ----------------------------------------------------------------------------
+loadrt hostmot2
+loadrt hm2_eth board_ip="10.10.10.10" config="num_encoders=6 num_pwmgens=6 num_stepgens=4 num_inmuxs=1 num_pktuarts=1 sserial_port_0=0xxxxxxx"
+setp hm2_7i97.0.watchdog.timeout_ns 5000000
+
+loadrt [KINS]KINEMATICS
+loadrt [EMCMOT]EMCMOT servo_period_nsec=[EMCMOT]SERVO_PERIOD num_joints=[KINS]JOINTS num_spindles=[TRAJ]SPINDLES num_dio=8
+
+# Per-joint position PID for the 4 analog servo axes (X/Y/Z/W). [ned.hal:83]
+loadrt pid names=pid.x,pid.y,pid.z,pid.w
+# Spindle + drawbar interlock gates, air interlock, and the head-enable gates.
+# (rotary.permit from ned.hal:86 dropped -- no B here.) head.a/c.enable AND the
+# per-axis amp-enable with the 3 s head-ready delay (see section 4).
+loadrt and2 names=spindle.permit,spindle.cw,spindle.ccw,air.permit,head.a.enable,head.c.enable,overtemp,toolrel.permit,sen.gate
+# air-dip debounce (operator 2026-08-02: drawbar release gulps air, the
+# pressure switch dips ~1 s and the interlock killed power MID-TOOL-CHANGE;
+# switch threshold stays as the operator's pressure-quality indicator)
+loadrt timedelay names=air.debounce,head.ready
+# head-ready: SEN goes high on machine-enable; this delays /S-ON ~3 s so the
+# SEN-triggered absolute read completes first (Pn515=8882 -> else pack stays BB).
+# (head.ready instance loaded above with air.debounce -- ONE loadrt per comp.)
+# SEN gating: a GUI-requested LOW window locks A/C (pack drops to BB = cannot move) and
+# primes the pack; the following RISING edge makes it emit the absolute PSO frame.
+loadrt not names=sen.nsup
+# live absolute reader -- QUEUED PktUART reads ONLY (tools/live/pso_live.comp).
+# pso_abs (direct llio->read from the servo thread) is BANNED on this hm2_eth board: at 1 kHz
+# it caused watchdog bites; decimated 1-in-20 it overran the RX count FIFO (RCFIFO Error) --
+# both killed homing. pso_live batches all transfers into the normal servo-cycle TRAM packet
+# (zero extra UDP), and does NOTHING unless its enable pin is TRUE (GUI raises it only while
+# a read is in progress). ifdelay from [PSO]IFDELAY -- see the ini for the measured sweep.
+loadrt pso_live names=hm2_7i97.0.pktuart.0 ifdelay_p=[PSO]IFDELAY
+# limit-hit OR tree (6 hard-limit signals -> one indicator for the GUI LED).
+loadrt or2 names=limhit.0,limhit.1,limhit.2,limhit.3,limhit.4,sol.ts,sol.blow,sol.trel,sen.or,spinok
+# directional limit handling (tools/live/limdir.comp + tools/live/jogblock.comp):
+# limdir.N passes joint N's limit switch to motion ONLY while commanded velocity
+# moves TOWARD it (parked/away = no fault -> POWER + jog work on a depressed
+# switch; motion INTO it still hard-trips). jogblock.<axis> swallows MPG detents
+# toward a depressed switch so the wheel can never command that motion.
+loadrt limdir names=limdir.0,limdir.1,limdir.2,limdir.3
+loadrt jogblock names=jogblock.x,jogblock.y,jogblock.z
+# HQD S3 shaft-stop is a PULSE source, not a level (manual:183-185: PNP prox,
+# "if S3 is not producing pulses the spindle has not stably stopped") -- the
+# parked level is whatever angle the shaft stopped at. Detect ACTIVITY:
+# edge(both) -> retriggerable oneshot(1 s). oneshot.out-not = truly stopped.
+loadrt edge names=shaft.edge
+loadrt oneshot names=shaft.spin
+
+
+# ----------------------------------------------------------------------------
+# 2. REALTIME THREADS (servo thread only)  [ned.hal:92-103]
+# ----------------------------------------------------------------------------
+addf hm2_7i97.0.read          servo-thread
+addf hm2_7i97.0.pktuart.0.pso-live servo-thread   # HYPHEN: halcompile turns pso_live into pso-live
+# gates run AFTER the board read (fresh switch/count inputs), BEFORE motion sees them
+addf jogblock.x               servo-thread
+addf jogblock.y               servo-thread
+addf jogblock.z               servo-thread
+addf limdir.0                 servo-thread
+addf limdir.1                 servo-thread
+addf limdir.2                 servo-thread
+addf limdir.3                 servo-thread
+addf shaft.edge               servo-thread
+addf shaft.spin               servo-thread
+addf motion-command-handler   servo-thread
+addf motion-controller        servo-thread
+addf pid.x.do-pid-calcs       servo-thread
+addf pid.y.do-pid-calcs       servo-thread
+addf pid.z.do-pid-calcs       servo-thread
+addf pid.w.do-pid-calcs       servo-thread
+addf spinok                   servo-thread
+addf spindle.permit           servo-thread
+addf spindle.cw               servo-thread
+addf spindle.ccw              servo-thread
+addf air.debounce             servo-thread
+addf air.permit               servo-thread
+addf overtemp                 servo-thread
+addf toolrel.permit           servo-thread
+addf sol.ts                   servo-thread
+addf sol.blow                 servo-thread
+addf sol.trel                 servo-thread
+addf sen.nsup                 servo-thread
+addf sen.gate                 servo-thread
+addf sen.or                   servo-thread
+addf head.ready               servo-thread
+addf head.a.enable            servo-thread
+addf head.c.enable            servo-thread
+addf limhit.0                 servo-thread
+addf limhit.1                 servo-thread
+addf limhit.2                 servo-thread
+addf limhit.3                 servo-thread
+addf limhit.4                 servo-thread
+addf hm2_7i97.0.write         servo-thread
+
+
+# ============================================================================
+# 3. SERVO JOINTS 0-3 = X / Y / Z / X-gantry("W")  [ned.hal:112-188]
+#    (identical map to ned.hal joints 0-3; motion<->PID<->encoder/pwmgen.)
+# ============================================================================
+setp pid.x.Pgain     [JOINT_0]P
+setp pid.x.Igain     [JOINT_0]I
+setp pid.x.Dgain     [JOINT_0]D
+setp pid.x.bias      [JOINT_0]BIAS
+setp pid.x.FF0       [JOINT_0]FF0
+setp pid.x.FF1       [JOINT_0]FF1
+setp pid.x.FF2       [JOINT_0]FF2
+setp pid.x.deadband  [JOINT_0]DEADBAND
+setp pid.x.maxoutput [JOINT_0]MAX_OUTPUT
+setp pid.x.error-previous-target true
+setp pid.x.maxerrorI 2.0
+net sig-x-amp-enable  joint.0.amp-enable-out => pid.x.enable
+net x-pos-cmd         joint.0.motor-pos-cmd  => pid.x.command
+net sig-x-enc-pos     => pid.x.feedback  joint.0.motor-pos-fb
+net sig-x-vel-volts   <= pid.x.output
+
+setp pid.y.Pgain     [JOINT_1]P
+setp pid.y.Igain     [JOINT_1]I
+setp pid.y.Dgain     [JOINT_1]D
+setp pid.y.bias      [JOINT_1]BIAS
+setp pid.y.FF0       [JOINT_1]FF0
+setp pid.y.FF1       [JOINT_1]FF1
+setp pid.y.FF2       [JOINT_1]FF2
+setp pid.y.deadband  [JOINT_1]DEADBAND
+setp pid.y.maxoutput [JOINT_1]MAX_OUTPUT
+setp pid.y.error-previous-target true
+setp pid.y.maxerrorI 2.0
+net sig-y-amp-enable  joint.1.amp-enable-out => pid.y.enable
+net y-pos-cmd         joint.1.motor-pos-cmd  => pid.y.command
+net sig-y-enc-pos     => pid.y.feedback  joint.1.motor-pos-fb
+net sig-y-vel-volts   <= pid.y.output
+
+setp pid.z.Pgain     [JOINT_2]P
+setp pid.z.Igain     [JOINT_2]I
+setp pid.z.Dgain     [JOINT_2]D
+setp pid.z.bias      [JOINT_2]BIAS
+setp pid.z.FF0       [JOINT_2]FF0
+setp pid.z.FF1       [JOINT_2]FF1
+setp pid.z.FF2       [JOINT_2]FF2
+setp pid.z.deadband  [JOINT_2]DEADBAND
+setp pid.z.maxoutput [JOINT_2]MAX_OUTPUT
+setp pid.z.error-previous-target true
+setp pid.z.maxerrorI 2.0
+net sig-z-amp-enable  joint.2.amp-enable-out => pid.z.enable
+net z-pos-cmd         joint.2.motor-pos-cmd  => pid.z.command
+net sig-z-enc-pos     => pid.z.feedback  joint.2.motor-pos-fb
+net sig-z-vel-volts   <= pid.z.output
+
+setp pid.w.Pgain     [JOINT_3]P
+setp pid.w.Igain     [JOINT_3]I
+setp pid.w.Dgain     [JOINT_3]D
+setp pid.w.bias      [JOINT_3]BIAS
+setp pid.w.FF0       [JOINT_3]FF0
+setp pid.w.FF1       [JOINT_3]FF1
+setp pid.w.FF2       [JOINT_3]FF2
+setp pid.w.deadband  [JOINT_3]DEADBAND
+setp pid.w.maxoutput [JOINT_3]MAX_OUTPUT
+setp pid.w.error-previous-target true
+setp pid.w.maxerrorI 2.0
+net sig-w-amp-enable  joint.3.amp-enable-out => pid.w.enable
+net w-pos-cmd         joint.3.motor-pos-cmd  => pid.w.command
+net sig-w-enc-pos     => pid.w.feedback  joint.3.motor-pos-fb
+net sig-w-vel-volts   <= pid.w.output
+
+
+# ============================================================================
+# 4. HEAD JOINTS 4=A(tilt) 5=C(spin) -- Yaskawa SGDXS step/dir, CROSS-WIRED
+#    [ned.hal:205-217] remapped (A joint5->4, C joint6->5).
+#    A -> stepgen.03 ; /S-ON 7I84 OUTPUT7 (TB3-24).  C -> stepgen.02 ; /S-ON OUTPUT6 (TB3-23).
+#    Open-loop position mode; feedback = the stepgen's own commanded position.
+# ============================================================================
+net a-pos-cmd  joint.4.motor-pos-cmd             => hm2_7i97.0.stepgen.03.position-cmd
+net a-pos-fb   hm2_7i97.0.stepgen.03.position-fb => joint.4.motor-pos-fb
+net c-pos-cmd  joint.5.motor-pos-cmd             => hm2_7i97.0.stepgen.02.position-cmd
+net c-pos-fb   hm2_7i97.0.stepgen.02.position-fb => joint.5.motor-pos-fb
+
+# --- SEN + /S-ON sequencing (realizes mpgjog.sh's arm order in HAL) ----------
+# SEN (7I84 OUTPUT4 -> CN1-42, both packs) MUST be HIGH before /S-ON or the pack
+# refuses /S-ON and sits in BB (Pn515=8882, manual 6.1.9). Holding SEN high is
+# costless (it just streams PSO). So: SEN follows drive-enable (high the moment the
+# machine is enabled); head.ready delays /S-ON by ~3 s so the SEN-triggered
+# absolute read finishes first.  /S-ON = per-axis amp-enable AND head-ready.
+setp head.ready.on-delay  3.0
+setp head.ready.off-delay 0
+net sig-drive-enable   => head.ready.in                       # (drive-enable sourced in section 5)
+net sig-head-ready     head.ready.out => head.a.enable.in1  head.c.enable.in1
+net sig-a-amp-req      joint.4.amp-enable-out => head.a.enable.in0
+net sig-c-amp-req      joint.5.amp-enable-out => head.c.enable.in0
+net sig-a-servo-on     head.a.enable.out => hm2_7i97.0.stepgen.03.enable  hm2_7i97.0.7i84.0.0.output-07
+net sig-c-servo-on     head.c.enable.out => hm2_7i97.0.stepgen.02.enable  hm2_7i97.0.7i84.0.0.output-06
+# SEN request: high whenever the machine is enabled (guaranteed before /S-ON).
+# SEN = drive-enable AND NOT(read-request). Dropping SEN puts BOTH head packs in BB
+# (they cannot move -- this is the interlock that guarantees a read is only ever taken
+# with A/C dead), and primes them; the re-rise emits the absolute frame into pso_abs.
+net sig-sen-suppress   => sen.nsup.in
+net sig-sen-nsup       sen.nsup.out => sen.gate.in1
+net sig-drive-enable   => sen.gate.in0
+# SEN = normal gate OR a GUI read-pulse. The GUI pulse works even with the machine OFF,
+# which is the SAFEST time to read: A/C are dead, so the head cannot move at all.
+net sig-sen            sen.gate.out => sen.or.in0
+net sig-sen-force      => sen.or.in1
+net sig-sen-out        sen.or.out => hm2_7i97.0.7i84.0.0.output-04   # SEN -> CN1-42 both packs
+
+
+# ============================================================================
+# 5. SPINDLE (VFD: +/-10 V magnitude on pwmgen.05, FWD/REV via R6/R7)  [ned.hal:220-236]
+#    Spin permit is MODE-AWARE (operator 2026-08-01): permitted when S1
+#    tool-locked OR the machine is in MANUAL mode.
+#    - AUTO/MDI: S1 gate stands -- "nothing" and "not clamped properly" are
+#      indistinguishable to the sensors, and no operator judgment is in the
+#      loop, so programs may only spin a CLAMPED tool.
+#    - MANUAL: the operator decides (safest spin of all is an EMPTY spindle,
+#      which S1 cannot certify) -- the GUI FWD/REV buttons add a "Check" 3 s
+#      countdown before commanding the spin.
+#    sig-mode-manual is fed by halui.mode.is-manual in postgui_pb.hal (halui
+#    does not exist yet at iron-load time); unconnected it is FALSE and the
+#    permit degrades to the plain S1 gate.
+# ============================================================================
+net spindle-on             spindle.0.on       => spindle.permit.in0
+net sig-tool-locked        => spinok.in0
+net sig-mode-manual        => spinok.in1
+net sig-spin-ok            spinok.out => spindle.permit.in1
+net sig-spindle-vel-enable spindle.permit.out => spindle.cw.in0  spindle.ccw.in0
+net spindle-fwd            spindle.0.forward  => spindle.cw.in1
+net sig-spin-cw            spindle.cw.out
+net spindle-rev            spindle.0.reverse  => spindle.ccw.in1
+net sig-spin-ccw           spindle.ccw.out
+net sig-spindle-vel-volts  spindle.0.speed-out-abs
+
+
+# ============================================================================
+# 6. ESTOP / ENABLE / AIR interlock / LIMITS  [ned.hal:256-285]
+#    Air is a HARD interlock: emc-enable-in = e-stop-released AND air-OK.
+#    A/C have NO limit switches (open-loop absolute; soft limits only).
+# ============================================================================
+net sig-estop-released   => air.permit.in0
+# raw switch -> 2 s off-delay -> interlock (dips shorter than 2 s are
+# ignored; a REAL air loss still kills power, 2 s later). The GUI's
+# ned-tab.air-ok-in stays on the RAW signal: display shows the truth.
+setp air.debounce.off-delay 2.0
+net sig-air-pressure-ok  => air.debounce.in
+net sig-air-ok-debounced air.debounce.out => air.permit.in1
+net sig-emc-enable       air.permit.out => iocontrol.0.emc-enable-in
+net sig-drive-enable     motion.motion-enabled
+
+# NC / fail-safe limits: signal TRUE = AT limit (fed from -not pins in section 7).
+# Joints see a switch ONLY while commanded velocity moves TOWARD it (limdir):
+# a depressed switch no longer blocks POWER/homing or jogging AWAY, but motion
+# INTO it still hard-trips (control.c check_for_faults). Raw signals still feed
+# home-sw-in, the limhit LED tree, and the jogblock MPG gates below.
+# DIRECTION TRUTH (OPERATOR-CONFIRMED 2026-07-31): the homing triggers are
+# physically +X, +Y, +Z(up) -- so x-aft/y-sb/z-top are the POSITIVE-direction
+# switches, x-fore/y-port/z-bottom the negative ones. (Ship frame: ned sails
+# forward powered by the ATC rack; see docs/components.md.) The old neg/pos
+# assignment for X/Y was inverted; harmless pre-limdir, wrong with direction
+# gating.
+net sig-limit-x-aft    => limdir.0.lim-pos-in  limdir.3.lim-pos-in  jogblock.x.lim-pos
+net sig-limit-x-fore   => limdir.0.lim-neg-in  limdir.3.lim-neg-in  jogblock.x.lim-neg
+net sig-limit-y-sb     => limdir.1.lim-pos-in  jogblock.y.lim-pos
+net sig-limit-y-port   => limdir.1.lim-neg-in  jogblock.y.lim-neg
+net sig-limit-z-bottom => limdir.2.lim-neg-in  jogblock.z.lim-neg
+net sig-limit-z-top    => limdir.2.lim-pos-in  jogblock.z.lim-pos
+net sig-jvel-0   joint.0.vel-cmd => limdir.0.vel-cmd
+net sig-jvel-1   joint.1.vel-cmd => limdir.1.vel-cmd
+net sig-jvel-2   joint.2.vel-cmd => limdir.2.vel-cmd
+net sig-jvel-3   joint.3.vel-cmd => limdir.3.vel-cmd
+net sig-jlim0-neg  limdir.0.lim-neg-out => joint.0.neg-lim-sw-in
+net sig-jlim0-pos  limdir.0.lim-pos-out => joint.0.pos-lim-sw-in
+net sig-jlim1-neg  limdir.1.lim-neg-out => joint.1.neg-lim-sw-in
+net sig-jlim1-pos  limdir.1.lim-pos-out => joint.1.pos-lim-sw-in
+net sig-jlim2-neg  limdir.2.lim-neg-out => joint.2.neg-lim-sw-in
+net sig-jlim2-pos  limdir.2.lim-pos-out => joint.2.pos-lim-sw-in
+net sig-jlim3-neg  limdir.3.lim-neg-out => joint.3.neg-lim-sw-in
+net sig-jlim3-pos  limdir.3.lim-pos-out => joint.3.pos-lim-sw-in
+# Home off the limit switches (no separate home switches traced). [ned.hal:283-285]
+net sig-limit-x-aft    => joint.0.home-sw-in  joint.3.home-sw-in
+net sig-limit-y-sb     => joint.1.home-sw-in
+net sig-limit-z-top    => joint.2.home-sw-in
+
+# limit-hit indicator: OR the 6 hard-limit signals -> sig-any-limit (GUI LED in postgui).
+net sig-limit-x-aft    => limhit.0.in0
+net sig-limit-x-fore   => limhit.0.in1
+net sig-limit-y-sb     => limhit.1.in0
+net sig-limit-y-port   => limhit.1.in1
+net sig-limit-z-bottom => limhit.2.in0
+net sig-limit-z-top    => limhit.2.in1
+net lim-hit-01  limhit.0.out => limhit.3.in0
+net lim-hit-12  limhit.1.out => limhit.3.in1
+net lim-hit-2   limhit.2.out => limhit.4.in0
+net lim-hit-3   limhit.3.out => limhit.4.in1
+net sig-any-limit  limhit.4.out
+
+
+# ============================================================================
+# 7. TOOL CHANGE  (drawbar + toolsetter + probe)  [ned.hal:296-329]
+#    HAL exposes the live I/O + acks the iocontrol handshake; a Python M6 REMAP
+#    (ned5.ini [RS274NGC]) drives the sequence via motion.digital-*.
+# ============================================================================
+net tool-prep-loop    iocontrol.0.tool-prepare => iocontrol.0.tool-prepared
+net tool-change-loop  iocontrol.0.tool-change  => iocontrol.0.tool-changed
+
+# TOOL RELEASE IS E-STOP GATED. Neither LinuxCNC (no estop clearing of digital outs --
+# emcmotDioWrite is only called from the M64/M65 path) nor the hardware (7I84U VFIELD must
+# be direct to the DC source, no relay contact -- mesa_7i84u_wiring.md:31-32) would stop a
+# release on e-stop. So gate it here: release requires M64 P0 AND the e-stop chain healthy.
+net sig-toolrel-cmd       motion.digital-out-00 => sol.trel.in0
+net sig-toolrel-any       sol.trel.out => toolrel.permit.in0
+net sig-estop-released    => toolrel.permit.in1
+net sig-hqd-tool-release  <= toolrel.permit.out
+net sig-ts-cmd            motion.digital-out-03 => sol.ts.in0
+net sig-toolsetter-deploy <= sol.ts.out
+net sig-blow-cmd          motion.digital-out-04 => sol.blow.in0
+net sig-chip-blowoff      <= sol.blow.out
+
+net sig-tool-locked   => motion.digital-in-00
+net sig-tool-released => motion.digital-in-01
+net sig-shaft-stopped => motion.digital-in-02
+
+net sig-tool-probe   => motion.probe-input
+
+
+# ============================================================================
+# 7b. PENDANT MPG handwheel + axis-select  [ned.hal:333-360]
+#     STRUCTURE only -- encoder index/PPR/scale + the axis-select input pin are
+#     TODO (confirm live). Safe default: no axis selected -> wheel does nothing.
+# ============================================================================
+# X/Y/Z counts pass through jogblock (directional gate): detents toward a
+# depressed limit switch are swallowed for the SELECTED axis only. A/C have no
+# limit switches -- they take sig-mpg-counts raw (postgui).
+net sig-mpg-counts  => jogblock.x.counts-in  jogblock.y.counts-in  jogblock.z.counts-in
+net sig-jogc-x  jogblock.x.counts-out => axis.x.jog-counts
+net sig-jogc-y  jogblock.y.counts-out => axis.y.jog-counts
+net sig-jogc-z  jogblock.z.counts-out => axis.z.jog-counts
+net sig-mpg-sel-x   => axis.x.jog-enable  jogblock.x.sel
+net sig-mpg-sel-y   => axis.y.jog-enable  jogblock.y.sel
+net sig-mpg-sel-z   => axis.z.jog-enable  jogblock.z.sel
+setp axis.x.jog-vel-mode 0
+setp axis.y.jog-vel-mode 0
+setp axis.z.jog-vel-mode 0
+
+
+# ============================================================================
+# 8. PHYSICAL I/O BINDINGS  <-- confirm EVERY name/index vs `halcmd show pin hm2_7i97.0`
+#    [ned.hal:363-520]
+# ============================================================================
+# --- Encoders 00-03 = X/Y/Z/W feedback (machine units via INPUT_SCALE) [ned.hal:378-396] ---
+setp hm2_7i97.0.encoder.00.counter-mode 0
+setp hm2_7i97.0.encoder.00.filter 1
+setp hm2_7i97.0.encoder.00.index-invert 0
+setp hm2_7i97.0.encoder.00.index-mask 0
+setp hm2_7i97.0.encoder.00.index-mask-invert 0
+setp hm2_7i97.0.encoder.00.scale [JOINT_0]INPUT_SCALE
+setp hm2_7i97.0.encoder.01.counter-mode 0
+setp hm2_7i97.0.encoder.01.filter 1
+setp hm2_7i97.0.encoder.01.scale [JOINT_1]INPUT_SCALE
+setp hm2_7i97.0.encoder.02.counter-mode 0
+setp hm2_7i97.0.encoder.02.filter 1
+setp hm2_7i97.0.encoder.02.scale [JOINT_2]INPUT_SCALE
+setp hm2_7i97.0.encoder.03.counter-mode 0
+setp hm2_7i97.0.encoder.03.filter 1
+setp hm2_7i97.0.encoder.03.scale [JOINT_3]INPUT_SCALE
+net sig-x-enc-pos <= hm2_7i97.0.encoder.00.position
+net sig-y-enc-pos <= hm2_7i97.0.encoder.01.position
+net sig-z-enc-pos <= hm2_7i97.0.encoder.02.position
+net sig-w-enc-pos <= hm2_7i97.0.encoder.03.position
+
+# --- Pendant MPG (encoder.04) --- TODO confirm index + PPR/scale [ned.hal:405-410]
+setp hm2_7i97.0.encoder.04.counter-mode 0
+setp hm2_7i97.0.encoder.04.filter 1
+net sig-mpg-counts <= hm2_7i97.0.encoder.04.count
+
+# --- Analog velocity (pwmgen 00-03 -> +/-10 V axes; 05 -> spindle) [ned.hal:424-465] ---
+setp hm2_7i97.0.pwmgen.00.output-type 1
+setp hm2_7i97.0.pwmgen.01.output-type 1
+setp hm2_7i97.0.pwmgen.02.output-type 1
+setp hm2_7i97.0.pwmgen.03.output-type 1
+setp hm2_7i97.0.pwmgen.05.output-type 1
+setp hm2_7i97.0.pwmgen.00.offset-mode 1
+setp hm2_7i97.0.pwmgen.01.offset-mode 1
+setp hm2_7i97.0.pwmgen.02.offset-mode 1
+setp hm2_7i97.0.pwmgen.03.offset-mode 1
+setp hm2_7i97.0.pwmgen.05.offset-mode 1
+setp hm2_7i97.0.pwmgen.00.dither 1
+setp hm2_7i97.0.pwmgen.01.dither 1
+setp hm2_7i97.0.pwmgen.02.dither 1
+setp hm2_7i97.0.pwmgen.03.dither 1
+setp hm2_7i97.0.pwmgen.05.dither 1
+setp hm2_7i97.0.pwmgen.00.scale [JOINT_0]OUTPUT_SCALE
+setp hm2_7i97.0.pwmgen.01.scale [JOINT_1]OUTPUT_SCALE
+setp hm2_7i97.0.pwmgen.02.scale [JOINT_2]OUTPUT_SCALE
+setp hm2_7i97.0.pwmgen.03.scale [JOINT_3]OUTPUT_SCALE
+setp hm2_7i97.0.pwmgen.pwm_frequency 75000
+net sig-x-vel-volts    => hm2_7i97.0.pwmgen.00.value
+net sig-y-vel-volts    => hm2_7i97.0.pwmgen.01.value
+net sig-z-vel-volts    => hm2_7i97.0.pwmgen.02.value
+net sig-w-vel-volts    => hm2_7i97.0.pwmgen.03.value
+net sig-x-amp-enable   => hm2_7i97.0.pwmgen.00.enable
+net sig-y-amp-enable   => hm2_7i97.0.pwmgen.01.enable
+net sig-z-amp-enable   => hm2_7i97.0.pwmgen.02.enable
+net sig-w-amp-enable   => hm2_7i97.0.pwmgen.03.enable
+
+# Spindle analog (pwmgen.05 = AOUT5; scale = max RPM -> 10 V). [ned.hal:463-465]
+setp hm2_7i97.0.pwmgen.05.scale [SPINDLE_0]MAX_FORWARD_VELOCITY
+net sig-spindle-vel-volts  => hm2_7i97.0.pwmgen.05.value
+net sig-spindle-vel-enable => hm2_7i97.0.pwmgen.05.enable
+
+# --- Digital INPUTS ---------------------------------------------------------
+# Cabinet inputs (X9) -> 7I97T isolated inputs via InMux. NC limits use -not
+# (TRUE only when AT limit). [ned.hal:471-486]
+net sig-estop-released   <= hm2_7i97.0.inmux.00.input-04       # TB4-7  IN4  *6  e-stop chain OK (HIGH=released)
+net sig-limit-x-aft      <= hm2_7i97.0.inmux.00.input-05-not   # TB4-8  IN5  *24 gantry-X aft  (NC)
+net sig-limit-x-fore     <= hm2_7i97.0.inmux.00.input-06-not   # TB4-10 IN6  *25 gantry-X fore (NC)
+net sig-limit-y-sb       <= hm2_7i97.0.inmux.00.input-07-not   # TB4-11 IN7  *26 Y left  (NC)
+net sig-limit-y-port     <= hm2_7i97.0.inmux.00.input-08-not   # TB5-1  IN8  *27 Y right (NC)
+net sig-limit-z-bottom   <= hm2_7i97.0.inmux.00.input-09-not   # TB5-2  IN9  *28 Z bottom (NC)
+net sig-limit-z-top      <= hm2_7i97.0.inmux.00.input-10-not   # TB5-4  IN10 *29 Z top    (NC)
+net sig-spindle-running  <= hm2_7i97.0.inmux.00.input-11       # TB5-5  IN11 *36 VFD running (via R1)
+net sig-air-pressure-ok  <= hm2_7i97.0.inmux.00.input-12       # TB5-7  IN12 *37 air pressure (HIGH=OK)
+net sig-vfd-fault        <= hm2_7i97.0.inmux.00.input-13       # TB5-8  IN13 *38 VFD fault (monitored)
+# TRUE OVERTEMP = chain healthy UPSTREAM of the thermostat, but dropped DOWNSTREAM.
+#   *39 (IN14) taps BEFORE the spindle thermostat, *6 (IN4) taps AFTER it.
+#   e-stop pressed -> BOTH low.   overtemp -> *39 stays HIGH, *6 goes LOW.
+# So: overtemp = input-14 AND NOT input-04. Netting IN14 straight to the signal (as it was)
+# made the "spindle overtemp" LED light whenever the machine was HEALTHY.
+net sig-estop-chain-up   <= hm2_7i97.0.inmux.00.input-14       # TB5-10 IN14 *39 before thermostat
+net sig-estop-chain-up   => overtemp.in0
+net sig-estop-dropped    <= hm2_7i97.0.inmux.00.input-04-not   # TB4-7  IN4  *6  after thermostat (inverted)
+net sig-estop-dropped    => overtemp.in1
+net sig-spindle-overtemp <= overtemp.out
+# Tool-changer inputs (X10) -> 7I84U TB2. [ned.hal:488-491]
+net sig-tool-probe       <= hm2_7i97.0.7i84.0.0.input-28       # TB2-13 *54 toolsetter contact (via R10)
+# S3 pulses while the shaft turns (TB2-14 *68). Level is meaningless parked;
+# stopped = NO edges for 1 s (see the shaft.edge/shaft.spin loadrt comment).
+setp shaft.edge.both true
+setp shaft.edge.out-width-ns 2000000
+setp shaft.spin.width 1.0
+net sig-shaft-pulse      hm2_7i97.0.7i84.0.0.input-29 => shaft.edge.in
+net sig-shaft-edges      shaft.edge.out => shaft.spin.in
+net sig-shaft-stopped    <= shaft.spin.out-not
+net sig-tool-locked      <= hm2_7i97.0.7i84.0.0.input-30       # TB2-15 *69 HQD S1 tool-locked
+net sig-tool-released    <= hm2_7i97.0.7i84.0.0.input-31       # TB2-16 *70 HQD S2 tool-released
+# Head servo alarms (7I84U TB3). ALM normally-conducting -> -not pin TRUE on fault. [ned.hal:495-496]
+net sig-a-alarm          <= hm2_7i97.0.7i84.0.0.input-15-not   # TB3-16 ALM- pack driving A tilt (cross-wired)
+net sig-c-alarm          <= hm2_7i97.0.7i84.0.0.input-14-not   # TB3-15 ALM- pack driving C spin
+
+# --- Digital OUTPUTS (7I84U TB2/TB3) [ned.hal:499-511] ---
+# /S-ON (OUTPUT7/6) and SEN (OUTPUT4) are netted in section 4.
+net sig-drive-enable      => hm2_7i97.0.7i84.0.0.output-08     # TB2-17 *8  drive-enable -> R5 coil
+net sig-spin-cw           => hm2_7i97.0.7i84.0.0.output-09     # TB2-18 *40 SPIN-CW  -> R6
+net sig-spin-ccw          => hm2_7i97.0.7i84.0.0.output-10     # TB2-19 *41 SPIN-CCW -> R7
+net sig-chip-blowoff      => hm2_7i97.0.7i84.0.0.output-11     # TB2-20 *55 chip blow-off -> R9
+net sig-toolsetter-deploy => hm2_7i97.0.7i84.0.0.output-12     # TB2-21 *61 toolsetter deploy
+# HQD tool-release drives THREE INDEPENDENT SOLENOIDS, all energized together.
+# These are three separate physical valves on three separate signals -- NOT one solenoid fed
+# by three wires. All three are required to actually release the tool (operator-confirmed:
+# the release was commissioned using all three signals independently).
+net sig-hqd-tool-release  => hm2_7i97.0.7i84.0.0.output-13     # TB2-22 *63 BIGGREEN pink
+net sig-hqd-tool-release  => hm2_7i97.0.7i84.0.0.output-14     # TB2-23 *64 BIGGREEN yellow
+net sig-hqd-tool-release  => hm2_7i97.0.7i84.0.0.output-15     # TB2-24 *65 BIGGREEN bluered
+# OUTPUT5 (rotary-B brick / PSO mux) intentionally NOT wired -- no rotary B here.
+
+
+# ============================================================================
+# 9. HEAD STEP/DIR CONFIG  (stepgen.03 = A tilt, stepgen.02 = C spin)  [ned.hal:558-575]
+#    Scales remapped to ned5 joints: A=[JOINT_4]SCALE, C=[JOINT_5]SCALE
+#    (SCALE source-of-truth = tools/live/ned_params.sh). Timing UNVERIFIED (copied from ned.hal).
+#    stepgen.00/01 (the two rotary-B steppers) are UNUSED here -- left unconfigured/disabled.
+# ============================================================================
+setp hm2_7i97.0.stepgen.03.control-type   0
+setp hm2_7i97.0.stepgen.03.step_type      0
+setp hm2_7i97.0.stepgen.03.position-scale [JOINT_4]SCALE
+setp hm2_7i97.0.stepgen.03.maxvel         [JOINT_4]STEPGEN_MAXVEL
+setp hm2_7i97.0.stepgen.03.maxaccel       [JOINT_4]STEPGEN_MAXACCEL
+setp hm2_7i97.0.stepgen.03.steplen        2500                 # ns  UNVERIFIED
+setp hm2_7i97.0.stepgen.03.stepspace      2500                 # ns  UNVERIFIED
+setp hm2_7i97.0.stepgen.03.dirsetup       20000                # ns  UNVERIFIED
+setp hm2_7i97.0.stepgen.03.dirhold        20000                # ns  UNVERIFIED
+setp hm2_7i97.0.stepgen.02.control-type   0
+setp hm2_7i97.0.stepgen.02.step_type      0
+setp hm2_7i97.0.stepgen.02.position-scale [JOINT_5]SCALE
+setp hm2_7i97.0.stepgen.02.maxvel         [JOINT_5]STEPGEN_MAXVEL
+setp hm2_7i97.0.stepgen.02.maxaccel       [JOINT_5]STEPGEN_MAXACCEL
+setp hm2_7i97.0.stepgen.02.steplen        2500                 # ns  UNVERIFIED
+setp hm2_7i97.0.stepgen.02.stepspace      2500                 # ns  UNVERIFIED
+setp hm2_7i97.0.stepgen.02.dirsetup       20000                # ns  UNVERIFIED
+setp hm2_7i97.0.stepgen.02.dirhold        20000                # ns  UNVERIFIED
+
+# ============================================================================
+#  END ned5_iron.hal   (companion: ned5_iron.ini + postgui_iron.hal)
+# ============================================================================

@@ -47,12 +47,11 @@ Convention: `*<n>` means cabinet screw terminal n. See `INDEX.md` for full conve
 
 - **Left side**: LHS (left-hand-side machine) e-stop, one NC contact wire (via cable 20)
 - **Right side**: jumpered to `*4`
-- **Notes**: ✓ verified. Polarity not important (daisy-chain link). The LHS e-stop's *other* NC-contact wire was originally on `*6`; **as-built 2026-07-23 that wire moved to `*39`** to insert the spindle thermostat in series at the chain end (see `*39`).
+- **Notes**: ✓ verified. Polarity not important (daisy-chain link). The LHS e-stop's *other* NC-contact wire lands on `*39`, putting the spindle thermostat in series at the chain end (see `*39`; revert: `docs/revert_to_fagor.md`).
 
 ## *6
 
-- **Left side (FAGOR original)**: LHS e-stop, the other NC contact wire (via cable 20) — landed directly on `*6`.
-- **Left side (as-built 2026-07-23)**: that LHS wire is **moved to `*39`**; `*6` left is now fed by a **YELLOW jumper from `*67`** (the spindle thermostat's output). The thermostat is now in series at the chain end: LHS e-stop → `*39` → thermostat NC → `*67` → yellow jumper → `*6`. `*6` still carries chain +24 V when healthy; hot thermostat opens → `*6` drops (same as any e-stop). Right-side wires unchanged.
+- **Left side**: fed by a **YELLOW jumper from `*67`** (the spindle thermostat's output). The thermostat is in series at the chain end: LHS e-stop → `*39` → thermostat NC → `*67` → yellow jumper → `*6`. `*6` carries chain +24 V when healthy; hot thermostat opens → `*6` drops (same as any e-stop). (revert: `docs/revert_to_fagor.md`.)
 - **Right side**: **three wires land here**:
   - Wire #1: connected to Fagor X9/pin 2 (`/EMERINP`). Function: CNC firmware reads this input.
   - Wire #2: connected to R2C2 (R2's coil high side). Function: when chain is intact, R2C2 = +24 V → R2 energizes; chain break → R2C2 = 0 V → R2 drops out → VFD external-fault path closes → spindle stops.
@@ -372,26 +371,21 @@ All three NC contacts must be closed simultaneously (no e-stop pressed) for 24 V
 
 ## *68
 
-- **Left side**: RED wire from cable "92-2" → field-side **rack position** sensor (per user). Cable 92-2 RED is spliced in the top junction box to BIGGREEN grey, which continues to the sensor.
-- **⚙ AS-BUILT = HQD (2026-07-09):** BIGGREEN grey now carries the HQD **shaft-stopped** sensor S3 (new lead blue). Old Fagor rack-position (ITOOLIN) retired. BIGGREEN purple (old +24 V) and green (old ground) now **spare** — reserved for a future PNP sensor.
-- **Right side**: LIGHT BLUE wire → Fagor X10/pin 34 (PIM-named `ITOOLIN I36`, "Tool present in spindle"). **Function mismatch**: PIM symbol is ITOOLIN but the actual sensor on this machine is a rack position sensor — OEM repurposed this PIM I/O.
-- **Notes**: ✓ verified end-to-end. Cable 92-2 is a 4-wire shielded cable carrying a single sensor circuit: +24 V supply (`*74` ↔ WHT), signal (`*68` ↔ RED), ground/return (BLK), shield (GRN). Field-side splices to BIGGREEN: BLK→green, RED→grey, WHT→purple. PIM color for ITOOLIN is BRN 8/10 — neither cable 92-2 RED nor the Fagor-side LIGHT BLUE matches. PIM color is unreliable here.
+- **Left side**: HQD **shaft-stopped** sensor S3 signal — field lead **blue** → BIGGREEN **grey** → cable 92-2 **RED** → `*68`.
+- **Right side**: LIGHT BLUE (X10/pin 34 conductor) → **7I84U TB2 INPUT29** (HQD shaft-stopped).
+- **Notes**: ✓ verified end-to-end 2026-07-09 — hand-rotating the spindle toggles `hm2_7i97.0.7i84.0.0.input-29` TRUE↔FALSE. Cable 92-2 is 4-wire shielded: signal (`*68` ↔ RED), +24 V (`*74` ↔ WHT), ground (BLK), shield (GRN). BIGGREEN **purple**/**green** spare (reserved for a future PNP sensor). Fagor-original: `docs/revert_to_fagor.md`.
 
 ## *69
 
-- **Left side**: RED wire from cable 30-2 → drawbar UP position sensor (signal output)
-- **Right side**: WHITE wire → Fagor X10/pin 35 (PIM-named `IDRAWUP I38`, drawbar UP sensor input)
-- **Notes**: ✓ verified end-to-end. Sensor's +24 V supply is on cable 30 RED wire → `*76`. When drawbar is in the UP (clamped) position, the inductive sensor outputs +24 V → through cable 30-2 red wire → `*69` → white wire → X10/pin 35 → CNC reads "drawbar up." Wire-color change at `*69` (red sensor-side, white Fagor-side). The PIM documents IDRAWUP as RED, which **matches the sensor-side (cable 30-2) wire color, not the Fagor-side**. Working hypothesis: PIM color comments refer to the field-cable wire, not the OEM's internal harness on the Fagor side.
-- **Field-side splice (per user 2026-07-09):** cable 30-2 **RED continues into BIGGREEN as RED** (same color) → drawbar-UP sensor. At the splice box this signal is **BIGGREEN red**.
-- **⚙ AS-BUILT = HQD (2026-07-09):** BIGGREEN red now carries the HQD **tool-locked** sensor S1 (new lead red). Old Fagor drawbar-UP retired.
+- **Left side**: HQD **tool-locked** sensor S1 signal — field lead **red** → BIGGREEN **red** → cable 30-2 **RED** → `*69`.
+- **Right side**: WHITE (X10/pin 35 conductor) → **7I84U TB2 INPUT30** (HQD tool-locked).
+- **Notes**: ✓ continuity verified 2026-07-09 (not yet toggled — no tool/air). Cable 30-2 carries both tool sensors; sensor +24 V on cable 30 RED → `*76`. Wire-color change at `*69` (red field-side, white X10-side). Fagor-original: `docs/revert_to_fagor.md`.
 
 ## *70
 
-- **Left side**: BROWN wire from cable 30-2 → drawbar DOWN position sensor (signal output)
-- **Right side**: BLACK wire → Fagor X10/pin 36 (PIM-named `IDRAWDN I40`, drawbar DOWN sensor input)
-- **Notes**: ✓ verified end-to-end. Wire-color change at `*70` (brown sensor-side, black Fagor-side). Yet another PIM color mismatch: PIM documents IDRAWDN as ORN but the actual Fagor-side wire is black. Cable 30-2 carries both drawbar sensors: `*69` for drawbar UP (cable red → Fagor white), `*70` for drawbar DOWN (cable brown → Fagor black). Sensor +24 V supply for both is on `*76` via cable 30 RED wire.
-- **Field-side splice (per user 2026-07-09):** cable 30-2 **BROWN continues into BIGGREEN as BROWN** (same color) → drawbar-DOWN sensor. At the splice box this signal is **BIGGREEN brown**.
-- **⚙ AS-BUILT = HQD (2026-07-09):** BIGGREEN brown now carries the HQD **tool-released** sensor S2 (new lead yellow). Old Fagor drawbar-DOWN retired.
+- **Left side**: HQD **tool-released** sensor S2 signal — field lead **yellow** → BIGGREEN **brown** → cable 30-2 **BROWN** → `*70`.
+- **Right side**: BLACK (X10/pin 36 conductor) → **7I84U TB2 INPUT31** (HQD tool-released).
+- **Notes**: ✓ continuity verified 2026-07-09 (not yet toggled — no tool/air). Cable 30-2 carries both tool sensors: `*69` tool-locked, `*70` tool-released; sensor +24 V on cable 30 RED → `*76`. Wire-color change at `*70` (brown field-side, black X10-side). Fagor-original: `docs/revert_to_fagor.md`.
 
 ## +24 VDC Bus — `*71` through `*76`
 

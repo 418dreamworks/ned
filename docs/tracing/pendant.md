@@ -77,7 +77,7 @@ The pendant also carries an e-stop button (NC contact, fail-safe, part of the 3-
 - One side → `*3`
 - Other side → `*4`
 
-Polarity not important since this is a daisy-chain link. The chain runs: `*1`→`*2` (on-screen e-stop) → `*2`/`*3` jumper → `*3`/`*4` (pendant e-stop) → `*4`/`*5` jumper → `*5`/`*6` (LHS cabinet e-stop) → out to Fagor X9/pin 2, R2C2, R5A2.
+Polarity not important since this is a daisy-chain link. The chain runs: `*1`→`*2` (on-screen e-stop) → `*2`/`*3` jumper → `*3`/`*4` (pendant e-stop) → `*4`/`*5` jumper → `*5` (LHS cabinet e-stop) → `*39` → spindle thermostat NC → `*67` → `*6` → out to Fagor X9/pin 2, R2C2, R5A2.
 
 The e-stop conductors are NOT part of the X6 cable's 7 used signal conductors (which carry handwheel + buttons). Whether the e-stop runs in a physically separate cable or in additional conductors within the same outer jacket is not yet recorded — to confirm during X6 tracing.
 

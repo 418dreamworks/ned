@@ -1,0 +1,14 @@
+(ned clamptool -- clamp the drawbar, verify the locked sensor)
+; ned I/O map (ned5_iron.hal): M64/M65 P0 = drawbar release ON/OFF
+; (estop-gated via toolrel.permit); digital-in-00 = tool LOCKED sensor;
+; digital-in-01 = tool RELEASED sensor; digital-in-02 = shaft stopped.
+; The sim versions used the SIM's pin numbers (P2/P4/P5) -- on ned P4 is the
+; chip blow-off. Every pin below is ned's.
+o<clamptool> sub
+M65 P0
+M66 P0 L3 Q2
+o100 if [#5399 LT 0]
+    (abort, Failed to clamp tool)
+o100 endif
+o<clamptool> endsub [1]
+M2

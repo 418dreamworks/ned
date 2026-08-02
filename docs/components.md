@@ -19,6 +19,8 @@ manuals are in `docs/<vendor>/` and indexed in `docs/INDEX.md`.
 
 ### Main-axis analog servo drives  ·  Key: `main-servo`
 Drives **X (j0, starboard), Y (j1), Z (j2), W (j3, port)** — the gantry + Y + Z.
+
+> **Orientation:** ned **sails forward powered by the ATC rack** (rack at the stern). Starboard / port / aft / fore follow ship convention from that heading.
 - **Type:** Servo Dynamics **SDSM** analog velocity drives (±10 V command).
 - **Model (exact chassis P/N):** TBD — read off the cabinet (manual lists SDSMB-1/3/4-axis chassis variants).
 - **Bus:** 60–170 VDC (transformer-fed via contactor [cmp:r0-contactor]).
@@ -32,7 +34,7 @@ Drives the swivel head — **A (tilt, j5)** and **C (spin, j6)**. Currently INER
   - **Servopack "A"** → head **TILT** (A axis, about X/W) — joint 5, stepgen.02, 7I85 TB1 STEP2/DIR2.
   - **Servopack "C"** → head **SPIN** (C axis, about Z) — joint 6, stepgen.03, 7I85 TB1 STEP3/DIR3.
 - **Motor:** Yaskawa **SGMXJ-04AUA6SC2** ×2 — 400 W, 200 V, Σ-X medium-inertia.
-- **Drivetrain:** **harmonic drive** (both A tilt & C spin), **not self-locking → back-drivable**; the tilt is gravity-loaded off-axis, so it needs its servo energized to hold position. **Reduction is PER-AXIS and differs** (HQD AC-D90-65, 400 W head — `docs/hqd/text/hq_ac_d90_65_spec_sheet.txt`): **A = 1:128.25, C = 1:203.7471** (NOT 200 for both — verified 2026-07-28: a commanded 90° on A physically moved ~140°). SCALE = 8192 p/rev × ratio ÷ 360 → **A = 2918.40, C = 4636.38** (the old 4551.111-for-both was wrong). Ratios/scales now live in `tools/ned_params.sh` (single source; `sync` regenerates the INI).
+- **Drivetrain:** **harmonic drive** (both A tilt & C spin), **not self-locking → back-drivable**; the tilt is gravity-loaded off-axis, so it needs its servo energized to hold position. **Reduction is PER-AXIS and differs** (HQD AC-D90-65, 400 W head — `docs/hqd/text/hq_ac_d90_65_spec_sheet.txt`): **A = 1:128.25, C = 1:203.7471** (NOT 200 for both — verified 2026-07-28: a commanded 90° on A physically moved ~140°). SCALE = 8192 p/rev × ratio ÷ 360 → **A = 2918.40, C = 4636.38** (the old 4551.111-for-both was wrong). Ratios/scales now live in `tools/live/ned_params.sh` (single source; `sync` regenerates the INI).
 - **Drive:** Yaskawa **SGDXS-2R8A00A** ×2 — Σ-XS SERVOPACK, analog/pulse, 200 V, 2.8 A.
 - **Power:** single- or three-phase 200–240 VAC (single-phase = L1,L2 only, no N; set Pn00B=n.□1□□). Mandatory magnetic contactor [cmp:head-contactor].
 - **Terminals (servopack manual §4.3):** main `L1/L2/L3` (3-phase) or `L1/L2` (1-phase) · control `L1C/L2C` (single-phase 200–240 VAC, both phase modes) · regen `B1/B2/B3` (2R8A: external resistor B1–B2 *only if* internal capacity insufficient; no internal resistor) · motor out `U/V/W` + PE.

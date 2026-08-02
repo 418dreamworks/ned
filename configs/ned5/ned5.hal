@@ -1,0 +1,32 @@
+# ============================================================================
+#  ned5.hal  --  SIM LOOPBACK HAL for GUI / screen development ONLY.
+#
+#  This loads NO Mesa driver (no hm2_eth, no hostmot2): it physically CANNOT
+#  command a servo or step a drive. It exists so ned5.ini + the nedgui screen
+#  can launch on the Pi (or any box) to develop/lay out the GUI.
+#
+#  The REAL machine motion + safety logic lives in ../ned/ned.hal and is NOT
+#  touched by this file. Never point ned5.ini at ned.hal (joint counts differ:
+#  ned.hal wires 8 joints to the Mesa card; ned5 declares 6).
+#
+#  Joint map:  0=X  1=Y  2=Z  3=X(gantry twin)  4=A  5=C
+# ============================================================================
+
+loadrt [KINS]KINEMATICS
+loadrt [EMCMOT]EMCMOT servo_period_nsec=[EMCMOT]SERVO_PERIOD num_joints=[KINS]JOINTS
+
+addf motion-command-handler servo-thread
+addf motion-controller     servo-thread
+
+# --- perfect closed loop: feed each joint's commanded motor pos straight back ---
+net j0-loop joint.0.motor-pos-cmd => joint.0.motor-pos-fb
+net j1-loop joint.1.motor-pos-cmd => joint.1.motor-pos-fb
+net j2-loop joint.2.motor-pos-cmd => joint.2.motor-pos-fb
+net j3-loop joint.3.motor-pos-cmd => joint.3.motor-pos-fb
+net j4-loop joint.4.motor-pos-cmd => joint.4.motor-pos-fb
+net j5-loop joint.5.motor-pos-cmd => joint.5.motor-pos-fb
+
+# --- iocontrol loopbacks so ESTOP resets, machine powers on, tool changes ack ---
+net estop-loop  iocontrol.0.user-enable-out => iocontrol.0.emc-enable-in
+net tool-prep   iocontrol.0.tool-prepare    => iocontrol.0.tool-prepared
+net tool-change iocontrol.0.tool-change     => iocontrol.0.tool-changed
