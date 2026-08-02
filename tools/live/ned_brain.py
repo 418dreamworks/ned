@@ -567,6 +567,32 @@ class Brain(object):
         s = self.stat
         now = time.time()
 
+        # HEAD HOMED EDGES -- TRACKED FIRST, BEFORE ANY EARLY RETURN.
+        # This used to live at the bottom of the tick, below three `return`s.
+        # A single-axis REF unhomes its joint and then the head READ owns the
+        # tick for ~5 s (hr_step branch below), so the joint went unhomed AND
+        # re-homed entirely inside that blind window: prev stayed True, no
+        # rising edge was ever seen, the post-home verify never fired, and
+        # verify_want stayed set FOREVER -- permanently refusing every later
+        # REF A/C with "previous head cycle still completing". Found by the
+        # unattended GUI campaign 2026-08-02: REF A once, then REF C dead for
+        # the rest of the session.
+        try:
+            for _jn, _ax in ((4, 'a'), (5, 'c')):
+                _cur = bool(s.homed[_jn])
+                if _cur and not self.prev_head_homed[_jn]:
+                    if _ax in self.verify_want:
+                        self.head_homed_seen.add(_ax)
+                    if _jn in getattr(self, 'inplace_restore', set()):
+                        os.system('halcmd setp ini.{}.home 0 '
+                                  '>/dev/null 2>&1'.format(_jn))
+                        self.inplace_restore.discard(_jn)
+                        log('IN-PLACE HOME: joint {} homed, ini.home restored '
+                            'to 0'.format(_jn))
+                self.prev_head_homed[_jn] = _cur
+        except Exception as _e:
+            log('head-edge tracking failed: {}'.format(_e))
+
         # head-read state machine has the tick when active
         if self.hr_step:
             self.hr_tick()
@@ -758,18 +784,7 @@ class Brain(object):
         # (per-joint rising edges -- the old A&C-homed edge got masked when a
         # second single-ref unhomed the other joint mid-cycle, and its scope
         # got overwritten: C sat -1.26 deg unflagged, 2026-08-01 13:31)
-        for jn, ax in ((4, 'a'), (5, 'c')):
-            cur = bool(s.homed[jn])
-            if cur and not self.prev_head_homed[jn]:
-                if ax in self.verify_want:
-                    self.head_homed_seen.add(ax)
-                # in-place startup home completed: restore home=0 so any
-                # REQUESTED homing returns the head to zero again
-                if jn in getattr(self, 'inplace_restore', set()):
-                    os.system('halcmd setp ini.{}.home 0 >/dev/null 2>&1'.format(jn))
-                    self.inplace_restore.discard(jn)
-                    log('IN-PLACE HOME: joint {} homed, ini.home restored to 0'.format(jn))
-            self.prev_head_homed[jn] = cur
+        # (homed-edge tracking moved to the TOP of tick -- see the note there)
         if self.verify_want and self.verify_want <= self.head_homed_seen \
            and self.hr_step == 0 and self.hr_cb_delay == 0 and not head_busy:
             if not self.correcting:
