@@ -15,6 +15,7 @@ per vendor/topic; your physical wiring traces are grouped under `tracing/`.
 | [gui_button_spec.md](gui_button_spec.md) | The GUI button behavior CONTRACT — code must match it |
 | [`../configs/ned/ned.hal`](../configs/ned/ned.hal) · [`ned.ini`](../configs/ned/ned.ini) | The live LinuxCNC/Mesa config — as-built control state |
 | [commissioning/calibration_plan.md](commissioning/calibration_plan.md) | Master calibration target list (Fagor-decoded, per axis + spindle) |
+| [commissioning/gui_test_campaign_2026-08-02.md](commissioning/gui_test_campaign_2026-08-02.md) | 4 h unattended GUI test sweep: what passed, 3 bugs fixed, the open task wedge, and how click-tests lie |
 | [servo/yaskawa_params_quickref.md](servo/yaskawa_params_quickref.md) | Yaskawa head-servo drive params (read-first) |
 | [vfd/mollom_parameterization.md](vfd/mollom_parameterization.md) | Mollom spindle VFD params (authoritative) |
 | [`../fagor8055/backup/2026-06-23-windnc/`](../fagor8055/backup/2026-06-23-windnc/) | The Fagor's as-built config (WinDNC backup) — final Fagor state |
