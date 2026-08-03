@@ -18,6 +18,7 @@ o<cal_c_goto> sub
   #<lift> = 25.4
   #<f_tr> = 2500.0
   #<f_ck> = 1000.0
+  #<f_ro> = 1200.0
 
   o5 if [#<_metric> EQ 0]
     (abort, GO TO C REF: switch to MM first)
@@ -37,11 +38,14 @@ o<cal_c_goto> sub
 
   (rise ONLY if low, then travel and rotate together with Z held -- the same)
   (order cc_probe uses, so the button and the probe cannot disagree)
+  (X FIRST, then Y and rotation, then Z -- identical order to cc_probe so the)
+  (button and the probe can never disagree about how they approach.)
   G90
+  G1 X[#<cx> + #3061] Y[#<cy> + #<side> * #3058] F[#<f_tr>]
+  G1 A[#3069 + #<side> * 45] C#3070 F[#<f_ro>]
   o20 if [#5422 LT #<zhigh>]
     G1 Z#<zhigh> F[#<f_tr>]
   o20 endif
-  G1 X[#<cx> + #3061] Y[#<cy> + #<side> * #3058] A[#3069 + #<side> * 45] C#3070 F[#<f_tr>]
 
   (protective descent, 1 in. A trip here means the rod is fouling something)
   (BEFORE any probing -- met during the +X probe instead, the same contact)

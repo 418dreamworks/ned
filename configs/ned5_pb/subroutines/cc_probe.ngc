@@ -16,15 +16,26 @@ o<cc_probe> sub
   (direction". A G38.3 trip on the way down means the rod is fouling)
   (something before probing starts; the same interference met during the +X)
   (probe is indistinguishable from a real touch and would corrupt dX.)
+  #<zref>  = [#<_cc_top> - #<_cc_zoff>]
+  #<zhigh> = [#<zref> + #<_cc_lift>]
+
+  (X FIRST, ALWAYS -- operator 2026-08-03. This line used to be an)
+  (unconditional G1 to the lift height. Entering from the zero pose, which is)
+  (5 mm ABOVE the puck top, that height is ~80 mm BELOW the head: a full-speed)
+  (plain G1 straight down through the puck, with no probe protection. It hit.)
+  (Z must never move until the head is laterally clear, and the head sits)
+  (over the puck at rest, so X is what clears it.)
+  (XY together, THEN the rotation, THEN Z -- operator 2026-08-03.)
   G90
-  G1 Z[#<_cc_top> - #<_cc_zoff> + #<_cc_lift>] F[#<_cc_ftr>]
+  G1 X#<_cc_xr> Y[#<_cc_cy> + #<yoff>] F[#<_cc_ftr>]
+  G1 A#<ang> F[#<_cc_frot>]
 
-  (travel and rotate TOGETHER with Z held -- operator 2026-08-03: keeping Z)
-  (fixed while moving in Y and rotating is safe, even simultaneously.)
-  G1 X#<_cc_xr> Y[#<_cc_cy> + #<yoff>] A#<ang> F[#<_cc_ftr>]
-
-  (protective descent, now 1 in instead of ~107 mm)
-  G38.3 Z[#<_cc_top> - #<_cc_zoff>] F[#<_cc_fck>]
+  (only now is Z free. Rise ONLY if low -- never drive DOWN to reach a)
+  (clearance -- then descend under G38.3 protection.)
+  o20 if [#5422 LT #<zhigh>]
+    G1 Z#<zhigh> F[#<_cc_ftr>]
+  o20 endif
+  G38.3 Z#<zref> F[#<_cc_fck>]
   o205 if [#5070 EQ 1]
     G90
     G1 Z[#<_cc_top> + #<_cc_safe>] F[#<_cc_ftr>]
@@ -58,9 +69,8 @@ o<cc_probe> sub
   G38.5 X-[2 * #<_cc_back>] F[#<_cc_fla>]
   G1 X-[#<_cc_back>] F[#<_cc_ftr>]
   G90
-  (back to the lift height, NOT to puck-top clearance -- the next pass starts)
-  (from here)
-  G1 Z[#<_cc_top> - #<_cc_zoff> + #<_cc_lift>] F[#<_cc_ftr>]
+  (back to the lift height -- a RISE from the probing depth, always safe)
+  G1 Z#<zhigh> F[#<_cc_ftr>]
 o<cc_probe> endsub
 
 M2 (end helper)
