@@ -590,22 +590,52 @@ class UserTab(QWidget):
                               'starts from this result.')
             cstart.clicked.connect(lambda: self._cal_run('puck'))
             cbl.addWidget(cstart)
-            self._cal_fields = {}
-            for key, lab in (('3045', 'Centre X'),
-                             ('3046', 'Centre Y'),
-                             ('3047', 'Top Z')):
-                row = QHBoxLayout()
-                lw = QLabel(lab)
-                lw.setMinimumWidth(70)
-                row.addWidget(lw)
-                e = QLineEdit()
-                e.setReadOnly(True)
-                e.setPlaceholderText('run StartPuck first')
-                e.setMinimumHeight(28)
-                row.addWidget(e)
-                cbl.addLayout(row)
-                self._cal_fields[key] = e
             cl.addWidget(cbox)
+
+            # MEASURED ZERO -- CURRENT beside PREVIOUS so drift between runs
+            # is visible without digging through the log (operator
+            # 2026-08-03: "that way, we can see if numbers change across
+            # runs"). A and C show the POS that corresponds to the latest
+            # measured zero: #3069/#3070 are the accumulated corrections, so
+            # they ARE where true zero now sits on the DRO.
+            zbox = QGroupBox('MEASURED ZERO')
+            zbl = QVBoxLayout(zbox)
+            hdr = QHBoxLayout()
+            h0 = QLabel('')
+            h0.setMinimumWidth(78)
+            hdr.addWidget(h0)
+            for cap in ('CURRENT', 'PREVIOUS'):
+                h = QLabel(cap)
+                h.setStyleSheet('color: rgb(150,150,150); font: bold 8pt;')
+                hdr.addWidget(h)
+            zbl.addLayout(hdr)
+            self._cal_fields = {}
+            for key, lab, unit in (('3045', 'Centre X', 'mm'),
+                                   ('3046', 'Centre Y', 'mm'),
+                                   ('3047', 'Top Z', 'mm'),
+                                   ('3069', 'A zero POS', 'deg'),
+                                   ('3070', 'C zero POS', 'deg')):
+                row = QHBoxLayout()
+                lw = QLabel('%s %s' % (lab, unit))
+                lw.setMinimumWidth(78)
+                row.addWidget(lw)
+                cur = QLineEdit()
+                cur.setReadOnly(True)
+                cur.setMinimumHeight(28)
+                cur.setPlaceholderText('run StartPuck first'
+                                       if key < '3069' else 'not corrected yet')
+                cur.setStyleSheet('font: 10pt "DejaVu Sans Mono";')
+                row.addWidget(cur)
+                prv = QLineEdit()
+                prv.setReadOnly(True)
+                prv.setMinimumHeight(28)
+                prv.setPlaceholderText('--')
+                prv.setStyleSheet('font: 10pt "DejaVu Sans Mono"; '
+                                  'color: rgb(150,150,150);')
+                row.addWidget(prv)
+                zbl.addLayout(row)
+                self._cal_fields[key] = (cur, prv)
+            cl.addWidget(zbox)
 
             nbox = QGroupBox('STEP 2 -- A / C ZERO')
             nbl = QVBoxLayout(nbox)
@@ -944,10 +974,26 @@ class UserTab(QWidget):
                     if len(p) == 2 and p[0].isdigit() and \
                        3040 <= int(p[0]) <= 3070:
                         vals[p[0]] = float(p[1])
-            for key, e in fields.items():
+            seen = getattr(self, '_cal_last', None)
+            if seen is None:
+                seen = self._cal_last = {}
+            for key, (cur, prv) in fields.items():
                 v = vals.get(key)
-                if v is not None and abs(v) > 1e-9:
-                    e.setText('%.4f' % v)
+                if v is None:
+                    continue
+                # A/C are legitimately 0.0 (uncorrected); the puck numbers are
+                # not, so only those treat 0 as "nothing measured yet"
+                if key < '3069' and abs(v) < 1e-9:
+                    continue
+                old_v = seen.get(key)
+                if old_v is None:
+                    cur.setText('%.4f' % v)
+                elif abs(v - old_v) > 1e-9:
+                    prv.setText('%.4f' % old_v)
+                    cur.setText('%.4f' % v)
+                    LOG.info('CAL %s: %.4f -> %.4f (delta %+.4f)',
+                             key, old_v, v, v - old_v)
+                seen[key] = v
             for w, name, bkey, akey, unit in getattr(
                     self, '_cal_delta_rows', []):
                 b, a = vals.get(bkey), vals.get(akey)
@@ -1026,7 +1072,7 @@ class UserTab(QWidget):
             if need_centre:
                 vals = {}
                 for k in ('3045', '3046', '3047'):
-                    t = self._cal_fields[k].text().strip()
+                    t = self._cal_fields[k][0].text().strip()
                     if not t:
                         c.error_msg('%s refused: no puck centre yet -- run '
                                     'StartPuck first' % label)
