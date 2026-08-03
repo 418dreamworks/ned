@@ -1,5 +1,6 @@
 (ned -- C REFERENCE TEACH, operator spec 2026-08-03. TWO PRESSES.)
-(   press 1 -- clears Z if it is low, rotates A to -45, hands control back.)
+(   press 1 -- goes to the ZERO first, steps 1 in in front, rotates A to)
+(              -45 and raises the puck, then hands control back.)
 (   YOU     -- jog the tip to where driving toward the puck centre in +X)
 (              would strike it.)
 (   press 2 -- records that pose: X offset, Y offset at -45, and depth.)
@@ -17,7 +18,8 @@ o<cal_c_ref> sub
   #<cy>  = #2
   #<top> = #3
 
-  #<safe> = 5.0         (operator 2026-08-03: 5 mm for every cal routine)
+  #<safe>  = 5.0        (operator 2026-08-03: 5 mm for every cal routine)
+  #<front> = 25.4       (1 inch in FRONT of centre, X- side)
 
   o5 if [#<_metric> EQ 0]
     (abort, SET C REF: switch to MM first)
@@ -26,14 +28,32 @@ o<cal_c_ref> sub
     (abort, SET C REF: no puck centre - run StartPuck first)
   o6 endif
 
-  (--- PRESS 1: get clear, tilt to -45, hand back to the operator ----------)
+  (--- PRESS 1: assert the zero, step off centre, tilt -45, puck UP ---------)
   o10 if [#3059 NE 1]
     G90
-    (rise ONLY if we are low -- never drive Z down to reach a clearance)
+    (1. START FROM THE ZERO, not from wherever the operator left the head)
+    (   -- operator 2026-08-03. Rise only if we are low; never drive Z down)
+    (   to reach a clearance.)
     o20 if [#5422 LT [#<top> + #<safe>]]
       G1 Z[#<top> + #<safe>] F500
     o20 endif
+    G1 A#3069 C#3070 F600
+    G1 X#<cx> Y#<cy> F500
+    G1 Z[#<top> + #<safe>] F500
+
+    (2. step off centre BEFORE tilting. A 45 deg swing directly over the puck)
+    (   at 5 mm of clearance is not safe -- the tip travels far further than)
+    (   the clearance when the head rolls that far. Tilting in front keeps the)
+    (   puck out from under it, which is where the old version tilted too.)
+    G1 X[#<cx> - #<front>] F500
+
+    (3. tilt)
     G1 A[#3069 - 45] F600
+
+    (4. puck UP and settled BEFORE control returns, so the operator jogs)
+    (   against the surface they will actually probe -- operator 2026-08-03)
+    M64 P3
+    G4 P1.5
     #3059 = 1
     (PRINT, SET C REF press 1: A is at -45 and Z is clear. JOG the tip to where driving toward the puck centre in +X would strike it, then press SET C REF again.)
     (DEBUG, SET C REF: tilted to -45 - jog the tip into position, then press SET C REF again)
@@ -72,7 +92,9 @@ o<cal_c_ref> sub
   (--- every cycle ends on the most up to date zero.)
   G90
   G1 Z[#<top> + #<safe>] F500
-  G1 A#3069 F600
+  M65 P3
+  G4 P1.0
+  G1 A#3069 C#3070 F600
   G1 X#<cx> Y#<cy> F500
   G1 Z[#<top> + #<safe>] F500
 

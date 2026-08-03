@@ -511,7 +511,8 @@ class UserTab(QWidget):
         try:
             from PySide6.QtWidgets import (QTabWidget, QWidget, QVBoxLayout,
                                            QHBoxLayout, QGroupBox, QLabel,
-                                           QPushButton, QLineEdit)
+                                           QPushButton, QLineEdit,
+                                           QScrollArea, QFrame)
             from PySide6.QtWidgets import QWidget as _QW
             root = self.findChild(_QW, 'ned_controls_root') or self
             lay = root.layout()
@@ -574,13 +575,9 @@ class UserTab(QWidget):
             cbox = QGroupBox('STEP 1 -- PUCK CENTRE (3/8 ROD)')
             cbl = QVBoxLayout(cbox)
             steps = QLabel(
-                'Setup, then StartPuck:\n'
-                '  1. 3/8 in rod in a toolholder, in the spindle.\n'
-                '  2. Verify CONTINUITY: touch rod to puck, probe LED/input.\n'
-                '  3. Jog the rod tip ~20 mm ABOVE the puck, roughly centred.\n'
-                'Finds the top, then 8 edges from 1 in out at 10 mm deep.\n'
-                'Probes 200 mm/min, backoff 1 mm, latch 10 mm/min. The puck\n'
-                'is raised by the cycle -- leave it DOWN before pressing.')
+                '3/8 rod in the spindle, continuity verified, tip ~20 mm '
+                'above the puck, roughly centred.\n'
+                'Top, then 4 edges at 0.75 in. Probe 200, latch 10 mm/min.')
             steps.setStyleSheet('color: rgb(180,180,180); font: 9pt;')
             cbl.addWidget(steps)
             cstart = QPushButton('StartPuck')
@@ -613,8 +610,8 @@ class UserTab(QWidget):
             for key, lab, unit in (('3045', 'Centre X', 'mm'),
                                    ('3046', 'Centre Y', 'mm'),
                                    ('3047', 'Top Z', 'mm'),
-                                   ('3069', 'A zero POS', 'deg'),
-                                   ('3070', 'C zero POS', 'deg')):
+                                   ('3069', 'A zero ENC', 'counts'),
+                                   ('3070', 'C zero ENC', 'counts')):
                 row = QHBoxLayout()
                 lw = QLabel('%s %s' % (lab, unit))
                 lw.setMinimumWidth(78)
@@ -640,13 +637,9 @@ class UserTab(QWidget):
             nbox = QGroupBox('STEP 2 -- A / C ZERO')
             nbl = QVBoxLayout(nbox)
             hint = QLabel(
-                'A and C are coupled -- each measurement assumes the other, so\n'
-                'StartAC alternates them 5 times. GOTO ZERO is the common start\n'
-                'pose: puck centre, tip 5 mm up, at the CURRENT A/C zeros.\n'
-                'StartC needs teaching ONCE: press it, it parks at A -45 one\n'
-                'inch in front, you jog the tip into place, press it again.\n'
-                'Nothing here writes a zero -- the deltas are the proof, and\n'
-                'RECORD TO PARAMS is the only write.')
+                'A and C are coupled, so StartAC alternates them 5x.\n'
+                'SET C REF teaches the C pose once (two presses).\n'
+                'A correction that does not improve dY is rolled back.')
             hint.setStyleSheet('color: rgb(180,180,180); font: 9pt;')
             nbl.addWidget(hint)
 
@@ -742,7 +735,14 @@ class UserTab(QWidget):
                             'Re-enable: CAL_REFRESH_ENABLED = True')
 
             cl.addStretch(1)
-            tabs.addTab(cal_page, 'CALIBRATION')
+            # The page outgrew the screen, and a tab you cannot scroll hides
+            # its own buttons -- RECORD was off the bottom. Wrap rather than
+            # shrink, so the content stays readable and reachable.
+            cal_scroll = QScrollArea()
+            cal_scroll.setWidgetResizable(True)
+            cal_scroll.setFrameShape(QFrame.NoFrame)
+            cal_scroll.setWidget(cal_page)
+            tabs.addTab(cal_scroll, 'CALIBRATION')
             self._cal_status = cstat
             lay.addWidget(tabs)
 
@@ -985,14 +985,22 @@ class UserTab(QWidget):
                 # not, so only those treat 0 as "nothing measured yet"
                 if key < '3069' and abs(v) < 1e-9:
                     continue
+                # A and C show the ABSOLUTE ENCODER READING, not degrees:
+                # #3069/#3070 hold the accumulated correction, so the count
+                # at the corrected zero is the stored PS shifted by it --
+                # exactly the number RECORD writes to head_zero.inc.
+                if key in ('3069', '3070'):
+                    txt = self._enc_at_zero('A' if key == '3069' else 'C', v)
+                else:
+                    txt = '%.4f' % v
                 old_v = seen.get(key)
                 if old_v is None:
-                    cur.setText('%.4f' % v)
+                    cur.setText(txt)
                 elif abs(v - old_v) > 1e-9:
-                    prv.setText('%.4f' % old_v)
-                    cur.setText('%.4f' % v)
-                    LOG.info('CAL %s: %.4f -> %.4f (delta %+.4f)',
-                             key, old_v, v, v - old_v)
+                    prv.setText(cur.text())
+                    cur.setText(txt)
+                    LOG.info('CAL %s: %.4f -> %.4f (delta %+.4f) [%s]',
+                             key, old_v, v, v - old_v, txt)
                 seen[key] = v
             for w, name, bkey, akey, unit in getattr(
                     self, '_cal_delta_rows', []):
@@ -1205,6 +1213,43 @@ class UserTab(QWidget):
         except Exception as e:
             LOG.error('StartA post-cycle failed: %s', e)
 
+    def _enc_at_zero_counts(self, ax, deg):
+        """THE number, computed in ONE place.
+
+        head_zero.inc stores PS, the absolute count at the declared zero;
+        machine angle is (PE - PS) scaled by gear and 2^26 (manual 6.12.6).
+        A correction of `deg` puts true zero at PS + SIGN*deg/360*R*GEAR.
+
+        The MEASURED ZERO panel and RECORD TO PARAMS both call this, so the
+        count on screen IS the count written to the parameter file -- the
+        operator asked to be sure of exactly that, and two separate
+        computations would have been free to drift apart.
+
+        Returns (ps_old, ps_new, multiturn, within).
+        """
+        import re as _re
+        txt = open(self.HEAD_ZERO_INC).read()
+        mt = _re.search(r'^%s_MULTITURN\s*=\s*(-?\d+)' % ax, txt, _re.M)
+        wi = _re.search(r'^%s_WITHIN\s*=\s*(-?\d+)' % ax, txt, _re.M)
+        if not (mt and wi):
+            raise RuntimeError('%s_MULTITURN/_WITHIN missing from head_zero.inc'
+                               % ax)
+        ps = int(mt.group(1)) * self.R_COUNTS + int(wi.group(1))
+        gear = self._head_gears()[ax]
+        new = int(round(ps + self.HEAD_SIGN[ax] * deg / 360.0
+                        * self.R_COUNTS * gear))
+        m = new // self.R_COUNTS
+        return ps, new, m, new - m * self.R_COUNTS
+
+    def _enc_at_zero(self, ax, deg):
+        """Display form of _enc_at_zero_counts: multiturn / within."""
+        try:
+            _ps, _new, m, w = self._enc_at_zero_counts(ax, deg)
+            return '%d / %d' % (m, w)
+        except Exception as e:
+            LOG.error('enc-at-zero %s failed: %s', ax, e)
+            return '?'
+
     def _read_vars(self, keys):
         out = {}
         try:
@@ -1278,40 +1323,37 @@ class UserTab(QWidget):
             if s.interp_state != linuxcnc.INTERP_IDLE or not s.inpos:
                 c.error_msg('%s refused: finish the cycle first' % label)
                 return
-            gears = self._head_gears()
-            # X0 Y1 Z2 A3 B4 C5 -- machine frame, which is what the zero means
-            now = {'A': s.actual_position[3], 'C': s.actual_position[5]}
+            # SAME SOURCE as the panel: #3069/#3070, the accumulated
+            # calibration corrections. Reading the DRO instead would let a
+            # manual jog change what gets written, and would no longer match
+            # the number displayed.
+            av = self._read_vars(('3069', '3070'))
+            now = {'A': av.get('3069', 0.0), 'C': av.get('3070', 0.0)}
             if abs(now['A']) < 1e-6 and abs(now['C']) < 1e-6:
                 c.error_msg('%s refused: A and C are both already 0.000 -- '
                             'there is no correction to record' % label)
                 LOG.error('%s refused: nothing to record', label)
                 return
-            txt = open(self.HEAD_ZERO_INC).read()
-            cur = {}
-            for ax in ('A', 'C'):
-                mt = _re.search(r'^%s_MULTITURN\s*=\s*(-?\d+)' % ax, txt, _re.M)
-                wi = _re.search(r'^%s_WITHIN\s*=\s*(-?\d+)' % ax, txt, _re.M)
-                if not (mt and wi):
-                    raise RuntimeError('%s_MULTITURN/_WITHIN missing' % ax)
-                cur[ax] = int(mt.group(1)) * self.R_COUNTS + int(wi.group(1))
+            with open(self.HEAD_ZERO_INC) as f:
+                txt = f.read()
             stamp = time.strftime('%Y%m%d-%H%M%S')
             bak = '%s.bak-%s' % (self.HEAD_ZERO_INC, stamp)
             shutil.copy2(self.HEAD_ZERO_INC, bak)
             out, note = txt, []
             for ax in ('A', 'C'):
-                deg = now[ax]
-                shift = (self.HEAD_SIGN[ax] * deg / 360.0
-                         * self.R_COUNTS * gears[ax])
-                new = int(round(cur[ax] + shift))
-                mt_new = new // self.R_COUNTS
-                wi_new = new - mt_new * self.R_COUNTS
+                ps, new, mt_new, wi_new = self._enc_at_zero_counts(ax, now[ax])
                 out = _re.sub(r'^%s_MULTITURN\s*=.*$' % ax,
-                              '%s_MULTITURN = %d' % (ax, mt_new), out, flags=_re.M)
+                              '%s_MULTITURN = %d' % (ax, mt_new), out,
+                              flags=_re.M)
                 out = _re.sub(r'^%s_WITHIN\s*=.*$' % ax,
-                              '%s_WITHIN    = %d' % (ax, wi_new), out, flags=_re.M)
-                note.append('%s %+.4f deg (%d -> %d counts)'
-                            % (ax, deg, cur[ax], new))
-            open(self.HEAD_ZERO_INC, 'w').write(out)
+                              '%s_WITHIN    = %d' % (ax, wi_new), out,
+                              flags=_re.M)
+                note.append('%s %+.4f deg -> %d / %d  (was %d, now %d counts)'
+                            % (ax, now[ax], mt_new, wi_new, ps, new))
+                LOG.info('RECORD %s: panel shows "%d / %d", writing exactly '
+                         'that', ax, mt_new, wi_new)
+            with open(self.HEAD_ZERO_INC, 'w') as f:
+                f.write(out)
             # the accumulated corrections have been banked into the file, so
             # the running session's #3069/#3070 are spent. Zero them or the
             # next GOTO ZERO would apply the correction twice.
