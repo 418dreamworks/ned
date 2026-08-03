@@ -918,8 +918,13 @@ class UserTab(QWidget):
         except Exception as e:
             LOG.error('ZCLAMP: step lockout failed: %s', e)
 
-    # BISECT SWITCH 2026-08-03. Set True to restore live field updating.
-    CAL_REFRESH_ENABLED = False
+    # BISECT SWITCH 2026-08-03. False stops the 2 s var-file poll that fills
+    # the calibration fields -- it was the suspect for the SIGBUS after a
+    # successful puck cycle. Inconclusive: one success crashed WITH it on,
+    # one survived with it on, one survived with it off. Back on because the
+    # operator needs the numbers; if a crash follows a success again, that is
+    # the evidence that convicts this code.
+    CAL_REFRESH_ENABLED = True
 
     VAR_FILE = '/home/brains/Documents/ned/configs/ned5_pb/ned5_pb.var'
 
