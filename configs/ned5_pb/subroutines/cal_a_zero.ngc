@@ -64,8 +64,10 @@ o<cal_a_zero> sub
   #<_ca_cx>    = #<cx>
   #<_ca_cy>    = #<cy>
   #<_ca_top>   = #<top>
-  (standoff mirrors cal_probe_center's r_out -- same clearance, same trip)
-  #<_ca_stand> = 19.8
+  (1 mm wider than cal_probe_center's r_out -- operator 2026-08-03. Contact)
+  (sits at radius 17.40, so the descent clears the puck by 3.40 mm instead of)
+  (2.40, and the inward probe still trips after 3.4 mm of travel.)
+  #<_ca_stand> = 20.8
   (contact sits at radius 17.40, so 10 mm always trips first, and a)
   (no-contact fault stops 9.8 mm SHORT of centre instead of driving through)
   #<_ca_reach> = 10.0
@@ -103,8 +105,18 @@ o<cal_a_zero> sub
 
   (=== CORRECT ============================================================)
   #<corr> = [0 - #<tilt_b>]
-  (PRINT, CAL A: rotating A by #<corr> deg)
-  #3052 = #<corr>
+
+  (ABORT above 5 deg. A clamp is for a demand that is merely untrusted; past)
+  (5 deg it is not a misalignment at all -- something is genuinely wrong with)
+  (the setup, the sign or the model, and nibbling at it would just waste)
+  (cycles hiding a real fault. Operator 2026-08-03.)
+  o118 if [ABS[#<corr>] GT 5.0]
+    G90
+    G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
+    M65 P3
+    M50 P1
+    (abort, CAL A: computed correction #<corr> deg is over 5 deg. That is a real error, not a misalignment - check the rod, the puck centre and the A sign before running this again.)
+  o118 endif
 
   (CLAMP to 1 deg, do NOT abort -- operator 2026-08-03. A demand bigger than)
   (1 deg is not trusted on one reading, but refusing to move teaches nothing.)
@@ -125,17 +137,19 @@ o<cal_a_zero> sub
     (PRINT, CAL A: computed correction exceeded 1 deg - clamped to #<corr> deg. Applying one bite and re-measuring.)
   o122 endif
 
-  (Rotating in place is what saves the climb. It is only safe while the swing)
-  (at the deepest point stays inside the standoff clearance: at 65 mm depth)
-  (0.5 deg moves the tip 0.57 mm against 2.40 mm of clearance. Bigger)
-  (corrections climb out first, and the next touch then re-approaches.)
-  #<next_app> = 0
-  o125 if [ABS[#<corr>] GT 0.5]
-    G90
-    G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
-    #<next_app> = 1
-    (PRINT, CAL A: correction #<corr> deg exceeds 0.5 - climbing clear before rotating)
-  o125 endif
+  (RECORD WHAT IS ACTUALLY APPLIED. #3052 has to be assigned AFTER the clamp:)
+  (set before it, it would report the demand while the machine moved the)
+  (clamp, and banking would write a number the head never turned through.)
+  #3052 = #<corr>
+  (PRINT, CAL A: rotating A by #<corr> deg)
+
+  (RISE TO SAFE Z BEFORE ROTATING, always -- operator 2026-08-03. Rotating at)
+  (depth saved a climb but put the swing inside the standoff clearance, and)
+  (the margin shrinks with every degree of correction. Above the puck the)
+  (swing has nothing to hit. The next touch therefore re-approaches.)
+  G90
+  G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
+  #<next_app> = 1
   G91
   G1 A#<corr> F600
   G90

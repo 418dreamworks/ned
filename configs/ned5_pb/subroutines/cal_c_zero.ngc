@@ -137,8 +137,16 @@ o<cal_c_zero> sub
     (abort, CAL C: dX exceeds twice the taught offset - the geometry does not fit the model, refusing to rotate C.)
   o220 endif
   #<phi> = ASIN[#<ratio>]
-  #3057 = #<phi>
-  (PRINT, CAL C: rotating C by #<phi> deg)
+
+  (ABORT above 5 deg -- same rule as A: past 5 deg it is a real fault, not a)
+  (misalignment, and nibbling would only hide it.)
+  o228 if [ABS[#<phi>] GT 5.0]
+    G90
+    G1 Z[#<top> + #<safe>] F[#<_cc_ftr>]
+    M65 P3
+    M50 P1
+    (abort, CAL C: computed correction #<phi> deg is over 5 deg. That is a real error, not a misalignment - check the taught reference and the C sign before running this again.)
+  o228 endif
 
   (CLAMP to 1 deg, do NOT abort -- operator 2026-08-03, same rule as A. Take)
   (one 1 deg bite in the computed direction and let the re-probe judge it.)
@@ -154,6 +162,10 @@ o<cal_c_zero> sub
   o232 if [#<cclamp> EQ 1]
     (PRINT, CAL C: computed correction exceeded 1 deg - clamped to #<phi> deg. Applying one bite and re-measuring.)
   o232 endif
+
+  (assigned AFTER the clamp, so it is the angle actually applied)
+  #3057 = #<phi>
+  (PRINT, CAL C: rotating C by #<phi> deg)
 
   G90
   G1 Z[#<top> + #<safe>] F[#<_cc_ftr>]
