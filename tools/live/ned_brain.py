@@ -362,6 +362,22 @@ class Brain(object):
         # later and re-homes A/C to the true absolute offset, so this only
         # fills the gap; it never decides the final head coordinate.
         jns = [j for j in (0, 1, 2, 3, 4, 5) if not self.stat.homed[j]]
+        # DO NOT DECLARE A/C BEFORE THEIR READ EXISTS. Declaring them marks
+        # all six homed, which is what flips the DRO banner to STALE HOME --
+        # and the operator starts clicking the moment it says that. This
+        # declare fires 1.5 s after machine-ON while a head read takes far
+        # longer, so if the startup read has not landed yet the fallback would
+        # declare A/C at joint_actual_position and the banner would promise a
+        # frame that does not exist (operator 2026-08-03: "if it's a timing
+        # thing where banner is not reality, that's part of it").
+        # Leaving them out keeps all6 FALSE, so the banner stays UNHOMED and
+        # tells the truth; do_inplace() then homes them the moment the read
+        # arms, which is the ORIGINAL design and needs no change to it.
+        for _j, _ax in ((4, 'a'), (5, 'c')):
+            if _j in jns and self.hr_deg.get(_ax) is None:
+                jns.remove(_j)
+                log('DECLARE: {} held back -- no absolute read yet, banner '
+                    'stays UNHOMED until it lands'.format(_ax.upper()))
         if not jns:
             return
         SEND = '/home/brains/Documents/ned/tools/live/ned_homing_params'
