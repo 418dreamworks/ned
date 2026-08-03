@@ -9,7 +9,7 @@
 (     recorded Y = constant - depth x tan A)
 (so two depths give the tilt directly, and the constant -- which carries the)
 (puck position, the puck diameter, the rod diameter and the tip centring --)
-(cancels in the difference. The first plunge is 30 mm, deep enough that the)
+(cancels in the difference. The first plunge is 25 mm, deep enough that the)
 (tip is already BELOW the puck, so the tip's own shape and squareness never)
 (enter the measurement -- operator 2026-08-03.)
 (Sequence, operator spec: touch top, touch bottom, CORRECT, touch bottom,)
@@ -36,7 +36,7 @@ o<cal_a_zero> sub
   #<cy>    = #2        (setter centre Y, work frame -- from #3046)
   #<top>   = #3        (setter top Z, work frame -- from #3047)
 
-  #<d_top> = 30.0      (shallow plunge below the top, operator 2026-08-03)
+  #<d_top> = 25.0      (shallow plunge below the top, operator 2026-08-03)
   #<d_bot> = 65.0      (deep plunge below the top, operator 2026-08-03)
 
   o5 if [#<_metric> EQ 0]
@@ -50,8 +50,14 @@ o<cal_a_zero> sub
   #<_ca_cx>    = #<cx>
   #<_ca_cy>    = #<cy>
   #<_ca_top>   = #<top>
-  #<_ca_stand> = 30.0  (Y standoff from centre: outside puck + rod radius)
-  #<_ca_reach> = 28.0  (max inward probe travel from the standoff)
+  (standoff MIRRORS cal_probe_center's r_out -- same clearance, same trip)
+  (distance, and the A cycle stops swinging out further than the puck probe)
+  (does. Operator 2026-08-03: "move out the same amount as probe puck".)
+  #<_ca_stand> = 19.8
+  (max inward travel. Contact sits at radius 17.40, so 10 mm from a 19.8 mm)
+  (standoff always trips first; it also means a no-contact fault stops 9.8 mm)
+  (SHORT of centre instead of driving through where the puck is.)
+  #<_ca_reach> = 10.0
   #<_ca_fpr>   = 100.0 (probe feed, operator spec)
   #<_ca_fla>   = 10.0  (latch feed, operator spec)
   #<_ca_ftr>   = 500.0 (traverse)
@@ -75,7 +81,7 @@ o<cal_a_zero> sub
   #<y_bot_b> = #<_ca_ty>
   #<dy_b> = [#<y_bot_b> - #<y_top_b>]
   #3050 = #<dy_b>
-  (PRINT, CAL A BEFORE: y at -30 = #<y_top_b>, y at -65 = #<y_bot_b>, DELTA Y = #<dy_b>)
+  (PRINT, CAL A BEFORE: y at -25 = #<y_top_b>, y at -65 = #<y_bot_b>, DELTA Y = #<dy_b>)
 
   (=== CORRECT: tilt = atan of dY over dZ, dZ = the depth difference =======)
   #<dz>   = [#<d_bot> - #<d_top>]
@@ -108,7 +114,7 @@ o<cal_a_zero> sub
   #<y_top_a> = #<_ca_ty>
   #<dy_a> = [#<y_bot_a> - #<y_top_a>]
   #3051 = #<dy_a>
-  (PRINT, CAL A AFTER: y at -65 = #<y_bot_a>, y at -30 = #<y_top_a>, DELTA Y = #<dy_a>)
+  (PRINT, CAL A AFTER: y at -65 = #<y_bot_a>, y at -25 = #<y_top_a>, DELTA Y = #<dy_a>)
 
   (=== park at the zero pose, then verdict ================================)
   (clearance FIRST, then sideways -- the clearance height IS the zero pose,)
