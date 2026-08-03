@@ -743,6 +743,13 @@ class UserTab(QWidget):
             cal_scroll.setFrameShape(QFrame.NoFrame)
             cal_scroll.setWidget(cal_page)
             tabs.addTab(cal_scroll, 'CALIBRATION')
+            # LOCK ON ENTRY, not just when a cycle is issued. Being in the
+            # calibration tab IS being in calibration -- the operator jogs
+            # between presses (SET C REF hands the wheel back deliberately),
+            # and an inadvertent A or C detent in that window moves the very
+            # thing being measured. Operator 2026-08-03.
+            self._cal_tab_index = tabs.indexOf(cal_scroll)
+            tabs.currentChanged.connect(self._cal_tab_changed)
             self._cal_status = cstat
             lay.addWidget(tabs)
 
@@ -1033,6 +1040,10 @@ class UserTab(QWidget):
         'ac':   ('cal_ac_iterate',   'StartAC',   True),
         'goto': ('cal_goto_zero',    'GOTO ZERO', True),
     }
+
+    def _cal_tab_changed(self, idx):
+        if idx == getattr(self, '_cal_tab_index', -1):
+            self._cal_lock_ac('CALIBRATION TAB')
 
     def _cal_lock_ac(self, label):
         """Lock A and C for the duration of the calibration.
