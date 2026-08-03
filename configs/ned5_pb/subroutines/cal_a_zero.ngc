@@ -13,24 +13,26 @@
 (WHY DIVE DEEPER -- the resolution argument, and the math must honour it.)
 (   tan of tilt = dY / dZ,  so  tilt = ATAN[dY]/[dZ])
 (A touch repeats to about e, so the angle is uncertain by roughly e / dZ)
-(radians.)
-(Every extra mm of dZ buys resolution LINEARLY, and nothing else in the)
-(expression depends on depth. That is the entire reason for going to -65.)
-(   before  dZ = 35 mm  ->  5 um touch = 0.0082 deg)
-(   after   dZ = 40 mm  ->  5 um touch = 0.0072 deg)
-(CONSEQUENCE, and the reason this is spelled out: the two pairs have)
-(DIFFERENT baselines, so their raw dY are NOT comparable -- a longer baseline)
-(yields a larger dY for the very same tilt. Comparing dY would call a genuine)
-(improvement a regression. The verdict is taken on the ANGLE, which is)
-(baseline-independent, and both are reported.)
+(radians. Every extra mm of dZ buys resolution LINEARLY and nothing else in)
+(the expression depends on depth, which is the whole reason for -65:)
+(   dZ = 40 mm  ->  5 um touch = 0.0072 deg)
+
+(WHY BOTH PASSES USE THE SAME TWO DEPTHS. Measuring the AFTER pair at)
+(different depths than the BEFORE pair buys nothing and costs accuracy: the)
+(two passes would touch different stations along the rod and different points)
+(on the puck, so rod straightness and local puck geometry stop cancelling and)
+(start adding variance to the very comparison used to judge the correction.)
+(Same depths, order REVERSED -- operator's original spec: touch top, touch)
+(bottom, correct, touch bottom, touch top. Now dY and tilt are BOTH directly)
+(comparable, and reversing the order means any drift with time or approach)
+(direction shows up rather than hiding.)
 
 (SEQUENCE, operator spec -- no travelling between touches, it is wasted time.)
-(  BEFORE: probe at -25, back off, plunge to -60 AT THE BACKOFF STANDOFF,)
-(          probe again.          dZ = 35 mm)
+(  BEFORE: probe at -25, back off, plunge to -65 AT THE BACKOFF STANDOFF,)
+(          probe again.          dZ = 40 mm)
 (  CORRECT A.)
-(  AFTER:  probe at -65, back off, rise to -25, probe again.)
-(          dZ = 40 mm -- the deepest touch, so the verification is the)
-(          sharpest measurement of the two.)
+(  AFTER:  probe at -65, back off, rise to -25, probe again. Same depths,)
+(          reversed.             dZ = 40 mm)
 (  Then lower the puck and park on the zero pose with the corrected A.)
 
 (REQUIRES: rod stickout greater than the deep plunge -- 65 mm -- or the shaft)
@@ -47,7 +49,7 @@ o<cal_a_zero> sub
   #<top>   = #3        (setter top Z, work frame -- from #3047)
 
   #<d1> = 25.0         (before: shallow)
-  #<d2> = 60.0         (before: deep)
+  #<d2> = 65.0         (before: deep)
   #<d3> = 65.0         (after: deep first)
   #<d4> = 25.0         (after: shallow)
 
@@ -92,7 +94,7 @@ o<cal_a_zero> sub
   #<tilt_b> = [ATAN [#<dy_b>] / [#<dz_b>]]
   #3050 = #<dy_b>
   #3053 = #<tilt_b>
-  (PRINT, CAL A BEFORE: y at -25 = #<y1>, y at -60 = #<y2>, DELTA Y = #<dy_b> over #<dz_b> mm, tilt #<tilt_b> deg)
+  (PRINT, CAL A BEFORE: y at -25 = #<y1>, y at -65 = #<y2>, DELTA Y = #<dy_b> over #<dz_b> mm, tilt #<tilt_b> deg)
 
   (=== CORRECT ============================================================)
   #<corr> = [0 - #<tilt_b>]
