@@ -2878,6 +2878,8 @@ class UserTab(QWidget):
 
     def _wire_load(self):
         win = self.window()
+        self._load_btns = []
+        self._load_labels = {}
         wired, missing = [], []
         for name in ('load_spindle_button', 'load_spindle_button_2'):
             b = win.findChild(QWidget, name) if win else None
@@ -2889,6 +2891,8 @@ class UserTab(QWidget):
             except Exception:
                 pass
             b.clicked.connect(lambda _=False, btn=b: self._load_click(btn))
+            self._load_btns.append(b)
+            self._load_labels[b] = b.text()
             wired.append(name)
         if wired:
             LOG.info('LOAD SPINDLE: 5 s countdown wired on %d button(s): %s',
@@ -2898,7 +2902,81 @@ class UserTab(QWidget):
                       'stock instant call still live): %s',
                       len(missing), ', '.join(missing))
 
+    DRAWBAR_WINDOW_S = 10
+
+    def _drawbar_window_start(self):
+        """After an unload, give LOAD a 10 s window -- then close the drawbar.
+
+        unload_spindle.ngc ends with the release solenoid ENERGISED and says
+        so: "Open until LOAD SPINDLE / M65 P0". An energised release solenoid
+        bleeds the air supply, which is how the machine lost pressure on
+        2026-08-02 after repeated unloads. If nobody loads a tool, nothing
+        should be holding it open.
+
+        This does NOT load anything -- it only stops holding the drawbar down.
+        """
+        self._drawbar_left = self.DRAWBAR_WINDOW_S
+        t = getattr(self, '_drawbar_timer', None)
+        if t is None:
+            t = self._drawbar_timer = QTimer(self)
+            t.timeout.connect(self._drawbar_window_tick)
+        t.start(1000)
+        LOG.info('DRAWBAR: open, %d s for LOAD SPINDLE before it is released',
+                 self.DRAWBAR_WINDOW_S)
+
+    def _drawbar_window_cancel(self, why):
+        t = getattr(self, '_drawbar_timer', None)
+        if t is not None and t.isActive():
+            t.stop()
+            LOG.info('DRAWBAR: window cancelled (%s)', why)
+        self._drawbar_left = 0
+        for b in getattr(self, '_load_btns', []):
+            try:
+                if b.text().startswith('LOAD?'):
+                    b.setText(self._load_labels.get(b, 'LOAD SPINDLE'))
+            except Exception:
+                pass
+
+    def _drawbar_window_tick(self):
+        self._drawbar_left -= 1
+        for b in getattr(self, '_load_btns', []):
+            try:
+                if self._load_pend.get(b) is None:
+                    b.setText('LOAD?  %d' % max(self._drawbar_left, 0))
+            except Exception:
+                pass
+        if self._drawbar_left > 0:
+            return
+        self._drawbar_timer.stop()
+        self._drawbar_window_cancel('expired')
+        try:
+            import linuxcnc
+            c = linuxcnc.command()
+            st = linuxcnc.stat()
+            st.poll()
+            if st.interp_state != linuxcnc.INTERP_IDLE or not st.inpos:
+                LOG.error('DRAWBAR: window expired but the machine is busy -- '
+                          'NOT touching the solenoid')
+                return
+            c.mode(linuxcnc.MODE_MDI)
+            c.wait_complete()
+            c.mdi('M65 P0')
+            c.wait_complete(5.0)
+            c.mode(linuxcnc.MODE_MANUAL)
+            c.wait_complete()
+            st.poll()
+            if all(st.homed[:6]):
+                c.teleop_enable(1)
+            msg = ('DRAWBAR RELEASED: no LOAD within %d s. Nothing was '
+                   'loaded -- the solenoid is de-energised so it stops '
+                   'bleeding air.' % self.DRAWBAR_WINDOW_S)
+            LOG.info(msg)
+            c.error_msg(msg)
+        except Exception as e:
+            LOG.error('DRAWBAR: could not release: %s', e)
+
     def _load_click(self, b):
+        self._drawbar_window_cancel('LOAD pressed')
         pend = self._load_pend.get(b)
         if pend is not None:                     # second click = cancel
             pend['timer'].stop()
@@ -2987,6 +3065,7 @@ class UserTab(QWidget):
             if all(s.homed[:6]):
                 c.teleop_enable(1)
             LOG.info('UNLOAD SPINDLE executed (drawbar released if sensors agreed)')
+            self._drawbar_window_start()
         except Exception as e:
             LOG.error('UNLOAD SPINDLE failed: %s', e)
 
