@@ -2284,10 +2284,12 @@ class UserTab(QWidget):
                 self.comp.getPin('homeall-out').value = True
                 QTimer.singleShot(1000, self._homeall_pin_off)
             c.home(-1)
-            # PROOF OF A PHYSICAL HOME THIS SESSION (CLAUDE.md rule 17). The
-            # DRO's STALE/SESSION banner and the calibration gate both read
-            # this counter; nothing incremented it before, so the banner could
-            # never turn green and the gate would have refused every cycle.
+            # DISPLAY ONLY: the DRO's STALE/SESSION HOME banner turns green
+            # once this is > 0 and all six joints report homed. It is counted
+            # here rather than at the menu click so it means "a home really
+            # went out", not "a menu item was clicked". NOTHING may gate on
+            # it -- CLAUDE.md rule 17 binds my scripted motion, not the
+            # operator's buttons.
             self._homeall_clicks = getattr(self, '_homeall_clicks', 0) + 1
             LOG.info('REF ALL: physical reset dispatched (sequences are '
                      'static: Z 0, Y 1, X pair -2, A/C 3); homeall_clicks=%d',
