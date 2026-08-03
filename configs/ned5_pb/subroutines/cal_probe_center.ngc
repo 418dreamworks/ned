@@ -50,7 +50,11 @@ o<cal_probe_center> sub
   G38.2 Z-[#<backoff> + 1] F[#<f_latch>]
   G90
   #<top> = #5063
-  (PRINT, CAL step 1: puck top at Z #<top> in the current work frame)
+  (BANK IT NOW. If anything later in this cycle aborts -- a missed edge, a)
+  (probe left tripped -- the top is still a real measurement and must not be)
+  (thrown away with the run. Operator 2026-08-03.)
+  #3047 = #<top>
+  (PRINT, CAL step 1: puck top at Z #<top> STORED to #3047, current work frame)
   G1 Z[#<top> + #<clear>] F[#<f_trav>]
 
   (--- STEP 2: 4 edges ------------------------------------------------------)
@@ -106,10 +110,9 @@ o<cal_probe_center> sub
 
   #3045 = #<cx>
   #3046 = #<cy>
-  #3047 = #<top>
 
   (PRINT, CAL edges X: +X #100  -X #102     edges Y: +Y #111  -Y #113)
-  (PRINT, CAL RESULT: centre X #<cx>  Y #<cy>  top Z #<top>  [work frame, saved to 3045/3046/3047])
+  (PRINT, CAL RESULT: centre X #<cx> Y #<cy> top Z #<top> STORED to 3045/3046/3047, work frame)
   (DEBUG, CAL done: centre X#<cx> Y#<cy>, top Z#<top>)
 
   (--- retract the puck FIRST, then travel to the detected zero -------------)
