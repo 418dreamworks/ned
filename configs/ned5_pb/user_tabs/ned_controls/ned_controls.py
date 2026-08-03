@@ -590,7 +590,7 @@ class UserTab(QWidget):
                 bx = QGroupBox(title)
                 bx.setStyleSheet(self.CAL_QSS_BOX)
                 bl = QVBoxLayout(bx)
-                bl.setContentsMargins(8, 14, 8, 8)
+                bl.setContentsMargins(10, 10, 10, 10)
                 bl.setSpacing(6)
                 return bx, bl
 
@@ -613,19 +613,6 @@ class UserTab(QWidget):
             # Its two-press protocol used to exist only in a tooltip, which a
             # touchscreen never shows -- it is on the face now and the label
             # tracks the state.
-            # No teach button: StartC decides from the params what a press
-            # does (position / capture / measure). CLEAR is how you re-teach.
-            bclr = QPushButton('CLEAR C REF')
-            bclr.setMinimumHeight(62)
-            # NOT 'pose': pose is cyan for things that MOVE the machine, and
-            # this moves nothing -- it changes stored state. It is the only
-            # non-motion control left on the tab now RECORD is gone, so it
-            # takes the commit colour. Miscolouring it cyan put a "this
-            # drives the head" cue on a button that does not.
-            bclr.setStyleSheet(self.CAL_QSS['commit'])
-            bclr.clicked.connect(self._cal_clear_cref)
-            self._cal_btn['clear'] = bclr
-            b2l.addWidget(bclr)
             r = QHBoxLayout(); r.setSpacing(8)
             r.addWidget(_mkbtn('a', 'START A', 'measure'))
             r.addWidget(_mkbtn('c', 'START C', 'measure'))
@@ -710,6 +697,18 @@ class UserTab(QWidget):
             _readout('3061', 'C ref X  mm', prev=False)
             _readout('3058', 'C ref dy  mm', prev=False)
             _readout('3060', 'C ref depth  mm', prev=False)
+            # CLEAR belongs beside the numbers it clears, not among the Start
+            # buttons -- full width next to START A was asking to be hit by
+            # accident. Small, off to the side, and it counts down 5 s before
+            # it acts. Operator 2026-08-03.
+            bclr = QPushButton('CLEAR C REF')
+            bclr.setFixedHeight(34)
+            bclr.setFixedWidth(150)
+            bclr.setStyleSheet(self.CAL_QSS['clear'])
+            bclr.clicked.connect(self._cal_clear_click)
+            self._cal_btn['clear'] = bclr
+            gl.addWidget(bclr, row, 1)
+            row += 1
             _section('DELTAS')
             # built ONCE at final geometry with dash placeholders, so a row
             # appearing mid-run cannot move anything under a finger
@@ -1116,11 +1115,17 @@ class UserTab(QWidget):
     #   MEASURE (amber) -- long automatic probing motion
     #   POSE    (cyan)  -- motion, reversible, writes nothing
     #   COMMIT  (violet)-- writes head_zero.inc; nothing else in PB is violet
-    CAL_QSS_BOX = ('QGroupBox { background: #262B2D; border: 1px solid #3A4244;'
-                   ' border-radius: 3px; margin-top: 8px; color: #E6E6E6;'
-                   ' font: bold 11pt; }'
+    # The title used to sit ON the border line -- half over the dark panel,
+    # half over the grey page, so it was unreadable against both. Giving the
+    # box a 22px top margin and the title its OWN opaque background lifts it
+    # clear of the frame and puts it on one colour. Operator 2026-08-03.
+    CAL_QSS_BOX = ('QGroupBox { background: #262B2D; border: 1px solid #5A6466;'
+                   ' border-radius: 3px; margin-top: 22px; color: #FFD08A;'
+                   ' font: bold 12pt; padding-top: 6px; }'
                    'QGroupBox::title { subcontrol-origin: margin;'
-                   ' left: 10px; padding: 0 4px; color: #E6E6E6; }')
+                   ' subcontrol-position: top left; left: 8px; top: 0px;'
+                   ' padding: 3px 10px; background: #2E3436;'
+                   ' color: #FFD08A; }')
     _BTN = ('QPushButton { background: %s; border: 2px solid %s; color: %s;'
             ' border-radius: 3px; font: bold 12pt; }'
             'QPushButton:hover { background: %s; }'
@@ -1140,6 +1145,17 @@ class UserTab(QWidget):
                     ' background: #16281A; }'
                     'QLabel[verdict="worse"] { color: #F08A6E;'
                     ' background: #2E1A16; }'),
+        # CLEAR is not motion and not a commit -- it discards stored state.
+        # Deliberately quiet so it does not read as a primary action.
+        'clear':   ('QPushButton { background: #2A2320; border: 1px solid'
+                    ' #7A6A55; color: #C8B79A; border-radius: 3px;'
+                    ' font: bold 9pt; }'
+                    'QPushButton:hover { background: #362D28; }'
+                    'QPushButton:disabled { background: #22282A; border: 1px'
+                    ' solid #3A4244; color: #5D6567; }'),
+        'clearArmed': ('QPushButton { background: #5A2318; border: 2px solid'
+                       ' #F08A6E; color: #FFD9CC; border-radius: 3px;'
+                       ' font: bold 9pt; }'),
         'log':     ('QPlainTextEdit { background: #1B1F20; color: #DCE3E0;'
                     ' border: 1px solid #3A4244; border-radius: 2px; }'),
     }
@@ -1164,7 +1180,7 @@ class UserTab(QWidget):
                     b.setStyleSheet(self.CAL_QSS_RUNNING)
                 elif not busy:
                     if k == 'clear':
-                        cls = 'commit'
+                        cls = 'clear'
                     elif k in ('goto', 'cleft', 'cright'):
                         cls = 'pose'
                     else:
@@ -1172,6 +1188,41 @@ class UserTab(QWidget):
                     b.setStyleSheet(self.CAL_QSS[cls])
         except Exception as e:
             LOG.error('CAL button lock failed: %s', e)
+
+    CAL_CLEAR_COUNT = 5
+
+    def _cal_clear_click(self):
+        """Five-second countdown, and a second press cancels.
+
+        Clearing the C reference throws away a teach that took a jog to make,
+        and the button sits among live readouts -- so it must not act on a
+        single stray touch. Same pattern as the spindle load/unload countdown.
+        """
+        b = self._cal_btn.get('clear')
+        if b is None:
+            return
+        if getattr(self, '_cal_clear_n', 0) > 0:      # armed -> cancel
+            self._cal_clear_n = 0
+            b.setText('CLEAR C REF')
+            b.setStyleSheet(self.CAL_QSS['clear'])
+            self.cal_say('.. C ref clear cancelled')
+            return
+        self._cal_clear_n = self.CAL_CLEAR_COUNT
+        b.setStyleSheet(self.CAL_QSS['clearArmed'])
+        self._cal_clear_tick()
+
+    def _cal_clear_tick(self):
+        b = self._cal_btn.get('clear')
+        if b is None or getattr(self, '_cal_clear_n', 0) <= 0:
+            return
+        b.setText('CLEAR in %d  (tap to stop)' % self._cal_clear_n)
+        self._cal_clear_n -= 1
+        if self._cal_clear_n <= 0:
+            b.setText('CLEAR C REF')
+            b.setStyleSheet(self.CAL_QSS['clear'])
+            self._cal_clear_cref()
+            return
+        QTimer.singleShot(1000, self._cal_clear_tick)
 
     def _cal_clear_cref(self):
         """Drop the taught C reference so the next StartC re-teaches.
