@@ -20,6 +20,15 @@
 (FILE-level sub taking its tilt and Y offset positionally, reading the rest)
 (from GLOBAL _cc_ parameters, and returning the touch X in #<_cc_tx>.)
 
+(THE REFERENCE IS XYZ, AND Y IS TIED TO THE TILT SIGN.)
+(  #3061 X offset -- in FRONT of centre, the standoff the probe drives from)
+(  #3058 Y offset -- where the -45 roll puts the tip; the +45 pass MIRRORS it)
+(                    to -#3058, because rolling the other way throws the tip)
+(                    to the other side of centre by the same amount)
+(  #3060 depth     -- below the top, the SAME for both passes)
+(Get the Y mirror wrong and the two passes probe different points on the)
+(puck, which is no longer a C measurement at all.)
+
 (Results: #3055 = dX before, #3056 = dX after, #3057 = C correction applied.)
 (A is tilted +-45 about #3069, the accumulated A correction -- NOT about the)
 (stale DRO zero, or every StartA would be undone on the next StartC. #3070)
@@ -41,8 +50,37 @@ o<cal_c_zero> sub
     (abort, CAL C: no puck centre - run StartPuck first)
   o6 endif
 
-  o10 if [#3058 EQ 0]
-    (abort, CAL C: no C reference taught. Jog A to -45, put the tip where driving toward centre in +X would strike the puck, press SET C REF - then StartC and StartAC run unattended.)
+  (--- capture the reference HERE if SET C REF is waiting on a jog ---------)
+  (One button, one job: SET C REF positions, THIS records. Operator)
+  (2026-08-03. Once stored, every later run -- including StartAC -- replays)
+  (the offsets with no operator input.)
+  o10 if [#3059 EQ 1]
+    #<a_now> = #5423
+    o11 if [ABS[#<a_now> - [#3069 - 45]] GT 5.0]
+      #3059 = 0
+      (abort, CAL C: A is at #<a_now> deg, not 45 below its calibrated zero. Press SET C REF again.)
+    o11 endif
+    #<dx_off> = [#5420 - #<cx>]
+    #<dy_off> = [#5421 - #<cy>]
+    #<depth>  = [#<top> - #5422]
+    o12 if [ABS[#<dy_off>] LT 1.0]
+      (abort, CAL C: the tip is within 1 mm of centre in Y. That offset IS the scale factor of the C measurement so it cannot be near zero - jog sideways as the -45 tilt puts it.)
+    o12 endif
+    o13 if [#<depth> LE 0]
+      (abort, CAL C: the tip is at or above the puck top - jog DOWN so that driving toward centre would strike the puck.)
+    o13 endif
+    o14 if [#<dx_off> GE 0]
+      (abort, CAL C: the tip is not in FRONT of the puck - it must sit at negative X of centre so the probe drives toward centre in +X.)
+    o14 endif
+    #3061 = #<dx_off>
+    #3058 = #<dy_off>
+    #3060 = #<depth>
+    #3059 = 0
+    (PRINT, CAL C: reference captured from your jog - X offset #3061 mm, dy off centre #3058 mm, depth below top #3060 mm.)
+  o10 else
+    o15 if [#3058 EQ 0]
+      (abort, CAL C: no C reference. Press SET C REF, jog the tip into place, then press StartC.)
+    o15 endif
   o10 endif
 
   (--- shared setup, GLOBAL so the file-level helper can read it -----------)

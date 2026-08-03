@@ -1034,6 +1034,58 @@ class UserTab(QWidget):
         'goto': ('cal_goto_zero',    'GOTO ZERO', True),
     }
 
+    def _cal_lock_ac(self, label):
+        """Lock A and C for the duration of the calibration.
+
+        The lock gates the MPG (pendant.lock-a/-c makes the pendant skip the
+        axis in its selection cycle) and the GUI jog path, but NOT the MDI
+        moves the cycles themselves issue -- so the routines still tilt the
+        head while a hand on the wheel cannot (operator 2026-08-03: "lock A
+        and C so that human doesn't move them inadvertently throughout all
+        this").
+
+        Read back, because a set that did not take is worse than no lock at
+        all: it is a lock the operator believes in. Loud on failure, but it
+        does not refuse the cycle -- the lock protects against interference,
+        it is not a machine-safety precondition.
+        """
+        for ax in ('a', 'c'):
+            try:
+                self.set_ac_lock(ax, True)
+                got = bool(self.comp.getPin('lock-%s-out' % ax).value)
+                if got:
+                    LOG.info('%s: %s LOCKED (verified)', label, ax.upper())
+                else:
+                    LOG.error('%s: %s lock did NOT take -- the wheel can '
+                              'still move it', label, ax.upper())
+                    try:
+                        import linuxcnc
+                        linuxcnc.command().error_msg(
+                            '%s: %s LOCK FAILED -- keep off the wheel'
+                            % (label, ax.upper()))
+                    except Exception:
+                        pass
+            except Exception as e:
+                LOG.error('%s: locking %s failed: %s', label, ax.upper(), e)
+        self._cal_lock_buttons(True)
+
+    def _cal_lock_buttons(self, on):
+        """Mirror the lock onto the DRO buttons. A lock the operator cannot
+        SEE is a lock they will fight."""
+        try:
+            from PySide6.QtWidgets import QWidget as _QW
+            win = self.window()
+            if win is None:
+                return
+            for name in ('zero_a_button', 'zero_c_button'):
+                b = win.findChild(_QW, name)
+                if b is not None and hasattr(b, 'setChecked'):
+                    b.blockSignals(True)
+                    b.setChecked(bool(on))
+                    b.blockSignals(False)
+        except Exception as e:
+            LOG.error('lock button mirror failed: %s', e)
+
     def _cal_gate(self, label):
         """Shared refusal gate for every calibration cycle. Returns the
         linuxcnc command/stat pair, or None having ALREADY told the operator
@@ -1094,6 +1146,7 @@ class UserTab(QWidget):
             else:
                 c.mdi('o<%s> call' % sub)
                 LOG.info('%s: %s issued', label, sub)
+            self._cal_lock_ac(label)
             if which == 'a':
                 self._cal_watch_start()
                 self._cal_watch_t0 = os.path.getmtime(self.VAR_FILE)

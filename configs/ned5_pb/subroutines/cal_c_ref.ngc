@@ -1,17 +1,14 @@
-(ned -- C REFERENCE TEACH, operator spec 2026-08-03. TWO PRESSES.)
-(   press 1 -- goes to the ZERO first, steps 1 in in front, rotates A to)
-(              -45 and raises the puck, then hands control back.)
-(   YOU     -- jog the tip to where driving toward the puck centre in +X)
-(              would strike it.)
-(   press 2 -- records that pose: X offset, Y offset at -45, and depth.)
-(The 5x A/C iteration cannot stop to ask for a jog, so the pose is taught)
-(once here and replayed by StartC and StartAC with no operator input.)
+(ned -- SET C REF, operator spec 2026-08-03. ONE PRESS, no recording.)
+(It asserts the zero, steps 1 in in front, tilts A to -45 about the)
+(calibrated A zero, and raises the puck -- then hands control back so the)
+(operator can jog the tip to where driving toward centre in +X would strike)
+(the puck.)
 
-(The sideways offset dy is not just a position, it IS the scale factor of the)
-(C measurement: dX = -2 * dy * sin phi. So it is checked, not assumed.)
+(THE OPERATOR THEN PRESSES StartC, AND THAT captures the jogged pose. There)
+(is no second press of this button: one button, one job.)
 
-(#3059 = teach pending flag. Pressing again at any time restarts the teach.)
-(Stores: #3058 = dy off centre, #3060 = depth below the top, #3061 = X offset.)
+(#3059 = 1 means "positioned, awaiting the jog". cal_c_zero clears it when it)
+(takes the reading.)
 
 o<cal_c_ref> sub
   #<cx>  = #1
@@ -28,78 +25,32 @@ o<cal_c_ref> sub
     (abort, SET C REF: no puck centre - run StartPuck first)
   o6 endif
 
-  (--- PRESS 1: assert the zero, step off centre, tilt -45, puck UP ---------)
-  o10 if [#3059 NE 1]
-    G90
-    (1. START FROM THE ZERO, not from wherever the operator left the head)
-    (   -- operator 2026-08-03. Rise only if we are low; never drive Z down)
-    (   to reach a clearance.)
-    o20 if [#5422 LT [#<top> + #<safe>]]
-      G1 Z[#<top> + #<safe>] F500
-    o20 endif
-    G1 A#3069 C#3070 F600
-    G1 X#<cx> Y#<cy> F500
-    G1 Z[#<top> + #<safe>] F500
-
-    (2. step off centre BEFORE tilting. A 45 deg swing directly over the puck)
-    (   at 5 mm of clearance is not safe -- the tip travels far further than)
-    (   the clearance when the head rolls that far. Tilting in front keeps the)
-    (   puck out from under it, which is where the old version tilted too.)
-    G1 X[#<cx> - #<front>] F500
-
-    (3. tilt)
-    G1 A[#3069 - 45] F600
-
-    (4. puck UP and settled BEFORE control returns, so the operator jogs)
-    (   against the surface they will actually probe -- operator 2026-08-03)
-    M64 P3
-    G4 P1.5
-    #3059 = 1
-    (PRINT, SET C REF press 1: A is at -45 and Z is clear. JOG the tip to where driving toward the puck centre in +X would strike it, then press SET C REF again.)
-    (DEBUG, SET C REF: tilted to -45 - jog the tip into position, then press SET C REF again)
-    o10 return
-  o10 endif
-
-  (--- PRESS 2: record the pose ------------------------------------------)
-  (#5420-#5425 = current X Y Z A B C in the work frame)
-  #<a_now> = #5423
-  o30 if [ABS[#<a_now> - [#3069 - 45]] GT 5.0]
-    #3059 = 0
-    (abort, SET C REF: A is at #<a_now> deg, not 45 below its corrected zero #3069. The teach was restarted - press SET C REF again.)
-  o30 endif
-
-  #<dx_off> = [#5420 - #<cx>]
-  #<dy_off> = [#5421 - #<cy>]
-  #<depth>  = [#<top> - #5422]
-
-  o40 if [ABS[#<dy_off>] LT 1.0]
-    (abort, SET C REF: the tip is within 1 mm of centre in Y. That offset IS the scale factor of the C measurement so it cannot be near zero - jog sideways as the -45 tilt puts it, then press SET C REF again.)
-  o40 endif
-  o50 if [#<depth> LE 0]
-    (abort, SET C REF: the tip is at or above the puck top - jog DOWN so that driving toward centre would strike the puck, then press SET C REF again.)
-  o50 endif
-  o60 if [#<dx_off> GE 0]
-    (abort, SET C REF: the tip is not in FRONT of the puck - it must sit at negative X of centre so the probe drives toward centre in +X. Jog, then press SET C REF again.)
-  o60 endif
-
-  #3061 = #<dx_off>
-  #3058 = #<dy_off>
-  #3060 = #<depth>
-  #3059 = 0
-
-  (--- back to the current zero: raise HERE, in front of the puck, rotate A)
-  (--- upright while clear of it, then travel to centre. Operator 2026-08-03:)
-  (--- every cycle ends on the most up to date zero.)
   G90
-  G1 Z[#<top> + #<safe>] F500
-  M65 P3
-  G4 P1.0
+  (1. START FROM THE ZERO, not from wherever the head was left)
+  (   -- operator 2026-08-03. Rise only if low; never drive Z down to clear.)
+  o20 if [#5422 LT [#<top> + #<safe>]]
+    G1 Z[#<top> + #<safe>] F500
+  o20 endif
   G1 A#3069 C#3070 F600
   G1 X#<cx> Y#<cy> F500
   G1 Z[#<top> + #<safe>] F500
 
-  (PRINT, SET C REF stored: X offset #3061 mm, dy off centre #3058 mm, depth below top #3060 mm. StartC and StartAC now replay this automatically.)
-  (DEBUG, SET C REF: dy #3058, depth #3060, xoff #3061)
+  (2. step off centre BEFORE tilting. A 45 deg roll moves the tip far)
+  (   further than 5 mm, so tilting directly over the puck would drive into)
+  (   it. In front keeps the puck out from under the swing.)
+  G1 X[#<cx> - #<front>] F500
+
+  (3. tilt about the CALIBRATED A zero, not the stale DRO zero)
+  G1 A[#3069 - 45] F600
+
+  (4. puck UP and settled BEFORE control returns, so the operator jogs)
+  (   against the surface they will actually probe)
+  M64 P3
+  G4 P1.5
+
+  #3059 = 1
+  (PRINT, SET C REF: at A -45 one inch in front, puck UP. JOG the tip to where driving toward centre in +X would strike the puck, then press StartC -- it records the pose itself.)
+  (DEBUG, SET C REF ready -- jog the tip, then press StartC)
 
 o<cal_c_ref> endsub
 
