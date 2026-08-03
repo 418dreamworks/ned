@@ -157,10 +157,15 @@
     the TIMING of my write, not its content, which is why it could not be
     reproduced afterwards. The operator lost the run and I burned the next
     twenty minutes hunting a bug that was not in the file.
-    - **BEFORE writing anything under `configs/`, check the machine is idle:**
-      `interp_state == INTERP_IDLE` and `inpos`, or PB not running at all.
-      If a cycle is in flight, WAIT or ask — do not write "just this one small
-      edit".
+    - **BEFORE writing anything under `configs/`, run
+      `tools/machine_idle.sh`** — exit 0 means safe, exit 1 means a cycle is in
+      flight, so WAIT or ask. Do not write "just this one small edit".
+    - **Use that script, not `pgrep`.** Minutes after writing this rule I
+      checked with `pgrep -f 'qt_pb.*probe_basic'`, which matched its OWN
+      command line and reported PB up while it was down — and the check was a
+      bare `echo` that did not stop the write either. Ask the machine through
+      the NML status buffer; the process table lies, exactly as the terminal
+      log did (rule 19).
     - This is not the same as rule 12. Killing PB is covered there; this is
       about editing under a LIVE interpreter, which needs no kill to do damage.
     - It applies to `.ngc`, `.hal`, `.inc` and the var file. Python is the

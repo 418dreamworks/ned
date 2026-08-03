@@ -18,3 +18,4 @@ Everything else belongs in live/ or groundtruth/ — if something new lands
 here, it is staging: finish it and move it, or trash it.
 - `gcode_check.sh` — offline g-code validator: parses ned subroutines with LinuxCNC's own interpreter (rs274), no machine/HAL/motion. `--all` or `<subname> [args]`. REQUIRED before handing any routine to the operator (CLAUDE.md rule 18).
 - `lcnc_session.sh` — prints ONLY the current PB session's slice of lcnc.log (ANSI stripped). Use this for machine evidence; `logs/term-*.log` contains my own terminal output and produces false matches (CLAUDE.md rule 19).
+- `machine_idle.sh` — rule 21 gate: exit 0 if it is safe to write under configs/, 1 if a cycle is in flight. Asks the NML status buffer, never pgrep (which self-matches).
