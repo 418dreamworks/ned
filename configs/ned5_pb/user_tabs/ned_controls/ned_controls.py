@@ -1441,9 +1441,12 @@ class UserTab(QWidget):
                 return
             c, s = gate
             if which == 'shoulder':
-                s2 = linuxcnc.stat()
-                s2.poll()
-                tool = getattr(s2, 'tool_in_spindle', 0)
+                # use the stat the GATE already returned -- `linuxcnc` is
+                # imported inside _cal_gate's scope, not this one, so calling
+                # linuxcnc.stat() here raised NameError and the button did
+                # nothing at all (2026-08-03).
+                s.poll()
+                tool = getattr(s, 'tool_in_spindle', 0)
                 if tool not in (0, -1):
                     msg = ('SHOULDER refused: tool %s is in the spindle. This '
                            'measures the spindle NOSE -- remove the tool by '
