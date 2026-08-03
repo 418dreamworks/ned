@@ -698,7 +698,18 @@ class UserTab(QWidget):
             # so a cycle result appears here right after the cycle ends
             self._cal_var_timer = QTimer(self)
             self._cal_var_timer.timeout.connect(self._cal_fields_refresh)
-            self._cal_var_timer.start(2000)
+            if self.CAL_REFRESH_ENABLED:
+                self._cal_var_timer.start(2000)
+                LOG.info('CAL: var-file refresh timer STARTED (2 s)')
+            else:
+                LOG.warning('CAL: var-file refresh timer DISABLED -- crash '
+                            'bisect 2026-08-03. PB took SIGBUS right after '
+                            'the FIRST successful puck cycle and after every '
+                            'success since, which is exactly when #3045-47 '
+                            'change and this timer rewrites widget text. If '
+                            'the cycle now completes and parks, the fault is '
+                            'mine; if it still dies, this code is cleared. '
+                            'Re-enable: CAL_REFRESH_ENABLED = True')
 
             cl.addStretch(1)
             tabs.addTab(cal_page, 'CALIBRATION')
@@ -906,6 +917,9 @@ class UserTab(QWidget):
                      'LOCKED OUT (0.01 / 0.1 only)' if on else 'available again')
         except Exception as e:
             LOG.error('ZCLAMP: step lockout failed: %s', e)
+
+    # BISECT SWITCH 2026-08-03. Set True to restore live field updating.
+    CAL_REFRESH_ENABLED = False
 
     VAR_FILE = '/home/brains/Documents/ned/configs/ned5_pb/ned5_pb.var'
 
