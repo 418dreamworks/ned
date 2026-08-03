@@ -1469,10 +1469,12 @@ class UserTab(QWidget):
                         return
                     vals[k] = float(t)
                 extra = self.CAL_EXTRA.get(which)
+                if which == 'shoulder':
+                    extra = self._z_min_limit()   # plunge stops 1 mm above it
                 args = '[%.4f] [%.4f] [%.4f]' % (vals['3045'], vals['3046'],
                                                  vals['3047'])
                 if extra is not None:
-                    args += ' [%d]' % extra
+                    args += ' [%.4f]' % extra
                 c.mdi('o<%s> call %s' % (sub, args))
                 LOG.info('%s: %s issued with centre %.4f %.4f top %.4f',
                          label, sub, vals['3045'], vals['3046'], vals['3047'])

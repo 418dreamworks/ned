@@ -26,11 +26,34 @@ o<cal_shoulder> sub
   #<cx>   = #1
   #<cy>   = #2
   #<top>  = #3
+  #<zmin> = #4        (Z soft limit, passed from the INI by the caller)
 
-  #<xoff>    = -20.0      (shoulder probes off the centreline, onto the face)
-  #<zclear>  = 100.0      (tool-probe start height above the puck top)
-  (185 did not reach. Operator 2026-08-03: 30 mm further.)
-  #<plunge>  = 215.0
+  (THE PACKET SENT TO PB, held as saved parameters so it is visible and)
+  (stored where it corresponds to what actually goes across -- operator)
+  (2026-08-03. Seeded on first use so an empty var file still works.)
+  (  #3076 = Z clearance above the rod-measured top -> the G30 height)
+  (  #3077 = the plunge actually used, mirrored for display)
+  (  #3078 = X offset from centre for the nose probe)
+  o1 if [#3076 EQ 0]
+    #3076 = 100.0
+  o1 endif
+  o3 if [#3078 EQ 0]
+    #3078 = -20.0
+  o3 endif
+  #<zclear>  = #3076
+  #<xoff>    = #3078
+
+  (PLUNGE IS DERIVED, not guessed: everything the machine has, stopping 1 mm)
+  (above the Z soft limit. A fixed 215 only covered a rod shorter than 115 mm)
+  (-- with no tool the NOSE must descend BELOW the rod-tip touch Z by the)
+  (rod's protruding length, because the tip sat that far below the nose.)
+  (Operator 2026-08-03: take it to 1 mm before the limit.)
+  #<zstart>  = [#<top> + #<zclear>]
+  #<plunge>  = [#<zstart> - [#<zmin> + 1.0]]
+  #3077 = #<plunge>
+  o4 if [#<plunge> LE 0]
+    (abort, SHOULDER: no room to plunge - the start height is already at the Z soft limit.)
+  o4 endif
   #<f_tr>    = 2000.0
 
   o5 if [#<_metric> EQ 0]
