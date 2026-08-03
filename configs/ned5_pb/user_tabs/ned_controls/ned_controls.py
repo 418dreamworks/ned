@@ -562,6 +562,40 @@ class UserTab(QWidget):
             jl.addWidget(box)
             jl.addStretch(1)
             tabs.addTab(jog_page, 'JOG')
+
+            # CALIBRATION tab (operator 2026-08-03): step 0 of the routine --
+            # find the toolsetter centre with a 3/8 rod, BEFORE any tool
+            # length work. One button; the cycle is cal_probe_center.ngc.
+            cal_page = QWidget()
+            cl = QVBoxLayout(cal_page)
+            cl.setContentsMargins(8, 8, 8, 8)
+            cbox = QGroupBox('TOOLSETTER CENTER (3/8 ROD)')
+            cbl = QVBoxLayout(cbox)
+            steps = QLabel(
+                'Setup, then START:\n'
+                '  1. 3/8 in rod in a toolholder, in the spindle.\n'
+                '  2. Verify CONTINUITY: touch rod to puck, probe LED/input.\n'
+                '  3. Jog the rod tip ~20 mm ABOVE the puck, roughly centred.\n'
+                'Cycle: finds the top, then 8 edges from 1 in out at 10 mm\n'
+                'deep. Probes 100 mm/min, backoff 1 mm, latch 10 mm/min.\n'
+                'Ends centred, tip 5 mm above the surface, puck retracted.\n'
+                'Result -> #3045/#3046 (centre X/Y), #3047 (top Z), work frame.')
+            steps.setStyleSheet('color: rgb(180,180,180); font: 9pt;')
+            cbl.addWidget(steps)
+            cstart = QPushButton('START')
+            cstart.setObjectName('cal_probe_start')
+            cstart.setMinimumHeight(46)
+            cstart.clicked.connect(self._calprobe_start)
+            cbl.addWidget(cstart)
+            cstat = QLabel('')
+            cstat.setObjectName('cal_probe_status')
+            cstat.setWordWrap(True)
+            cbl.addWidget(cstat)
+            cbl.addStretch(1)
+            cl.addWidget(cbox)
+            cl.addStretch(1)
+            tabs.addTab(cal_page, 'CALIBRATION')
+            self._cal_status = cstat
             lay.addWidget(tabs)
 
             self._zclamp_widgets = {'btn': btn, 'edit': edit, 'status': status}
@@ -765,6 +799,46 @@ class UserTab(QWidget):
                      'LOCKED OUT (0.01 / 0.1 only)' if on else 'available again')
         except Exception as e:
             LOG.error('ZCLAMP: step lockout failed: %s', e)
+
+    def _calprobe_start(self):
+        """Fire o<cal_probe_center> -- same LOUD gate family as every ned MDI
+        path: ON, fully homed, interpreter idle. Fire-and-forget; the brain
+        hands MANUAL back when the cycle ends, and the sub itself parks the
+        rod and retracts the puck (also on any abort via on_abort)."""
+        label = 'CAL TOOLSETTER CENTER'
+        try:
+            import linuxcnc
+            c = linuxcnc.command()
+            s = linuxcnc.stat()
+            s.poll()
+            if s.task_state != linuxcnc.STATE_ON:
+                c.error_msg('%s refused: machine is not ON' % label)
+                LOG.error('%s refused: not ON', label)
+                return
+            if not all(s.homed[:6]):
+                c.error_msg('%s refused: machine not fully homed' % label)
+                LOG.error('%s refused: not homed', label)
+                return
+            if s.interp_state != linuxcnc.INTERP_IDLE or not s.inpos:
+                c.error_msg('%s refused: machine is busy' % label)
+                LOG.error('%s refused: busy', label)
+                return
+            c.mode(linuxcnc.MODE_MDI)
+            c.wait_complete()
+            s.poll()
+            if s.task_mode != linuxcnc.MODE_MDI:
+                c.error_msg('%s refused: could not enter MDI' % label)
+                LOG.error('%s refused: MDI never landed', label)
+                return
+            c.mdi('o<cal_probe_center> call')
+            LOG.info('%s: cycle started (o<cal_probe_center> call issued)',
+                     label)
+            if getattr(self, '_cal_status', None) is not None:
+                self._cal_status.setText(
+                    'RUNNING - top probe, then 8 edges (~2-3 min). Results '
+                    'land in #3045/#3046/#3047; watch the print lines.')
+        except Exception as e:
+            LOG.error('%s failed: %s', label, e)
 
     def _zclamp_apply_rate_cap(self):
         """Size the MPG count cap so a spun wheel cannot demand more than

@@ -1,0 +1,119 @@
+(ned -- TOOLSETTER CENTER CALIBRATION, operator spec 2026-08-03)
+(Setup: 3/8in rod in a toolholder, electrically continuous with the spindle,)
+(positioned BY THE OPERATOR roughly over the puck centre, ~20 mm above it.)
+(Step 1: probe down to find the puck top with this rod.)
+(Step 2: from 1 in out in 8 directions, drop 10 mm below the top and probe)
+(inward at 100 mm/min; back off 1 mm; latch at 10 mm/min. Opposing pairs)
+(average to the centre -- the rod radius cancels in the pairing, so the rod)
+(diameter never enters the math.)
+(Ends: rod centred over the detected centre, tip 5 mm above the surface,)
+(puck RETRACTED -- an energised solenoid leaks the air supply down, learned)
+(2026-08-02 the hard way.)
+(Results, CURRENT WORK FRAME: #3045 = centre X, #3046 = centre Y,)
+(#3047 = puck top Z. Persisted -- the 30xx block lives in ned5_pb.var.)
+
+o<cal_probe_center> sub
+
+  #<f_probe>  = 100.0   (probe feed, operator spec)
+  #<f_latch>  = 10.0    (latch feed, operator spec)
+  #<f_trav>   = 500.0   (positioning moves)
+  #<f_check>  = 200.0   (protective descent at the outward points)
+  #<backoff>  = 1.0     (retreat before the latch, operator spec)
+  #<r_out>    = 25.4    (1 in outward, operator spec)
+  #<under>    = 10.0    (probe depth below the detected top, operator spec)
+  #<clear>    = 5.0     (hover height above the top between directions)
+
+  o10 if [#<_metric> EQ 0]
+    (abort, CAL: switch to MM first - this routine is metric)
+  o10 endif
+
+  G90
+  #<sx> = #5420
+  #<sy> = #5421
+
+  (--- puck UP, timed dwell: there is no deployed sensor ------------------)
+  M64 P3
+  G4 P1.5
+
+  (--- STEP 1: locate the top ---------------------------------------------)
+  G91
+  G38.2 Z-30 F[#<f_probe>]
+  G1 Z[#<backoff>] F[#<f_trav>]
+  G38.2 Z-[#<backoff> + 1] F[#<f_latch>]
+  G90
+  #<top> = #5063
+  (PRINT, CAL step 1: puck top at Z #<top> in the current work frame)
+  G1 Z[#<top> + #<clear>] F[#<f_trav>]
+
+  (--- STEP 2: 8 edges ------------------------------------------------------)
+  (direction d: angle = d * 45 deg; dx = cos, dy = sin. Results in #100+d)
+  (for X and #110+d for Y of each latched edge touch.)
+  #<d> = 0
+  o100 while [#<d> LT 8]
+    #<ang> = [#<d> * 45.0]
+    #<dx> = COS[#<ang>]
+    #<dy> = SIN[#<ang>]
+
+    (out to 1 in from the operator centre, at hover height)
+    G90 G1 X[#<sx> + #<r_out> * #<dx>] Y[#<sy> + #<r_out> * #<dy>] F[#<f_trav>]
+
+    (protective descent to 10 mm under the top: if this TRIPS, the puck is)
+    (still underneath us -- the operator centre is too far off, or the puck)
+    (is bigger than 1 in radius. Never plunge blind.)
+    G91
+    G38.3 Z-[#<clear> + #<under>] F[#<f_check>]
+    o110 if [#5070 EQ 1]
+      M65 P3
+      (abort, CAL: contact during descent at direction #<d> - recentre the rod and rerun)
+    o110 endif
+
+    (probe INWARD toward the operator centre: trips on the puck rim)
+    G90
+    G38.2 X#<sx> Y#<sy> F[#<f_probe>]
+
+    (back off 1 mm outward, then latch in at 10 mm/min)
+    G91
+    G1 X[#<dx> * #<backoff>] Y[#<dy> * #<backoff>] F[#<f_trav>]
+    G38.2 X[0 - #<dx> * [#<backoff> + 1]] Y[0 - #<dy> * [#<backoff> + 1]] F[#<f_latch>]
+
+    #[100 + #<d>] = #5061
+    #[110 + #<d>] = #5062
+
+    (clear the rim, then hover)
+    G1 X[#<dx> * 2] Y[#<dy> * 2] F[#<f_trav>]
+    G90
+    G1 Z[#<top> + #<clear>] F[#<f_trav>]
+
+    #<d> = [#<d> + 1]
+  o100 endwhile
+
+  (--- centre: average of the 4 opposing-pair midpoints --------------------)
+  #<cx0> = [[#100 + #104] / 2]
+  #<cx1> = [[#101 + #105] / 2]
+  #<cx2> = [[#102 + #106] / 2]
+  #<cx3> = [[#103 + #107] / 2]
+  #<cy0> = [[#110 + #114] / 2]
+  #<cy1> = [[#111 + #115] / 2]
+  #<cy2> = [[#112 + #116] / 2]
+  #<cy3> = [[#113 + #117] / 2]
+  #<cx> = [[#<cx0> + #<cx1> + #<cx2> + #<cx3>] / 4]
+  #<cy> = [[#<cy0> + #<cy1> + #<cy2> + #<cy3>] / 4]
+
+  #3045 = #<cx>
+  #3046 = #<cy>
+  #3047 = #<top>
+
+  (PRINT, CAL pair centres X: #<cx0> #<cx1> #<cx2> #<cx3>)
+  (PRINT, CAL pair centres Y: #<cy0> #<cy1> #<cy2> #<cy3>)
+  (PRINT, CAL RESULT: centre X #<cx>  Y #<cy>  top Z #<top>  [work frame, saved to 3045/3046/3047])
+  (DEBUG, CAL done: centre X#<cx> Y#<cy>, top Z#<top>)
+
+  (--- park centred, tip 5 mm above the surface, puck DOWN -----------------)
+  G90
+  G1 X#<cx> Y#<cy> F[#<f_trav>]
+  G1 Z[#<top> + #<clear>] F[#<f_trav>]
+  M65 P3
+
+o<cal_probe_center> endsub
+
+M2 (end program)
