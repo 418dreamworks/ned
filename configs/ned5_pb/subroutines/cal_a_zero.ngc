@@ -16,47 +16,6 @@
 (positional argument, and reads the shared setup from GLOBAL _ca_ parameters)
 (set by the caller. It returns the touch Y in the global #<_ca_ty>.)
 
-(======================== helper: ONE wall touch ===========================)
-(#1 = plunge depth below the puck top. Returns #<_ca_ty>.)
-o<ca_touch> sub
-  #<dep> = #1
-
-  (hover, then out to the standoff OUTSIDE the puck)
-  G90
-  G1 Z[#<_ca_top> + #<_ca_safe>] F[#<_ca_ftr>]
-  G1 X#<_ca_cx> Y[#<_ca_cy> + #<_ca_side> * #<_ca_stand>] F[#<_ca_ftr>]
-
-  (protective descent: if this TRIPS, the standoff is still over the puck --)
-  (the puck is wider than the standoff. Never plunge blind.)
-  G91
-  G38.3 Z-[#<_ca_safe> + #<dep>] F[#<_ca_fck>]
-  o105 if [#5070 EQ 1]
-    G90
-    G1 Z[#<_ca_top> + #<_ca_safe>] F[#<_ca_ftr>]
-    M65 P3
-    M50 P1
-    (abort, CAL A: contact while descending at the standoff - the puck is wider than the 30 mm standoff. Increase _ca_stand.)
-  o105 endif
-
-  (probe INWARD toward the axis; the wall stops us)
-  G38.3 Y[0 - #<_ca_side> * #<_ca_reach>] F[#<_ca_fpr>]
-  o110 if [#5070 EQ 0]
-    G90
-    G1 Z[#<_ca_top> + #<_ca_safe>] F[#<_ca_ftr>]
-    M65 P3
-    M50 P1
-    (abort, CAL A: NO WALL at this depth. The puck body must extend this far down and share its diameter - reduce the deep plunge or tell me the real geometry.)
-  o110 endif
-  G1 Y[#<_ca_side> * #<_ca_back>] F[#<_ca_ftr>]
-  G38.2 Y[0 - #<_ca_side> * [#<_ca_back> + 1]] F[#<_ca_fla>]
-  #<_ca_ty> = #5062
-
-  (clear the wall, back to hover)
-  G1 Y[#<_ca_side> * 2] F[#<_ca_ftr>]
-  G90
-  G1 Z[#<_ca_top> + #<_ca_safe>] F[#<_ca_ftr>]
-o<ca_touch> endsub
-
 (============================== main cycle =================================)
 o<cal_a_zero> sub
   #<cx>    = #1        (setter centre X, work frame -- from #3045)

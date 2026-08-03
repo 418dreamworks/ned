@@ -91,3 +91,18 @@
       restart a lot"). I added exactly such a gate to the calibration buttons
       and it was wrong.
 
+18. **NEVER hand over g-code that has not been machine-checked.** Run
+    `tools/gcode_check.sh --all` (or `<subname> [args]`) BEFORE telling the
+    operator a routine is ready. It parses each subroutine with LinuxCNC's own
+    interpreter (`rs274`) — no machine, no HAL, no motion, about a second per
+    sub. On 2026-08-03 the operator pressed StartA three times and got only
+    errors, because I shipped g-code I had merely read: a helper sub defined in
+    the calling file (`EOF in file ... seeking o-word` — LinuxCNC resolves subs
+    ONE PER FILE via SUBROUTINE_PATH) and a comment spanning several lines
+    inside one pair of parens (`Unclosed comment found`). Both are invisible to
+    inspection and both reproduce offline instantly. Also: named parameters are
+    LOCAL to the sub that assigns them (pass `#1..#30` or use a global
+    `#<_name>`), and a comment or `(abort, ...)` message must contain no inner
+    parentheses. rs274 has no probe hardware, so `#5070` stays 0 and a probing
+    cycle SHOULD stop on its own "no contact" abort — that is the guard
+    proving it works, not a failure.

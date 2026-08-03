@@ -26,16 +26,35 @@ def _load_ui(ui_path, parent):
 
 
 class _HomeBanner(QWidget):
-    """STALE HOME / SESSION HOME banner (operator 2026-08-02): sideways
-    readable text, gentle vertical bob, in the strip left of the ZERO
-    buttons. STALE (amber) until the Machine>Homing>Home All click counter
-    is > 0 AND all six joints report homed; then SESSION (green), latched
-    for the rest of the session. Nothing special -- just a banner."""
+    """UNHOMED / STALE HOME / SESSION HOME banner (operator 2026-08-02,
+    three-state 2026-08-03): sideways readable text, gentle vertical bob, in
+    the strip left of the ZERO buttons.
+
+    UNHOMED (red) at launch and until all six joints report homed -- the
+    coordinates mean NOTHING yet, because the brain is still declaring the
+    stored XYZ frame and waiting on the A/C absolute encoder read. That read
+    lands seconds after startup, so the operator needs to see when it is done
+    (operator 2026-08-03: "so i know to wait for that AC reading business").
+
+    STALE HOME (amber) once all six are homed but the frame came from
+    stored_home.json rather than a switch-seeking cycle this session.
+
+    SESSION HOME (green) once Home All has run this session; latched, and
+    still, because there is no danger any more. UNHOMED and STALE bob.
+
+    Display only -- CLAUDE.md rule 17, nothing may gate on this."""
+
+    UNHOMED, STALE, SESSION = 'unhomed', 'stale', 'session'
+    _LOOK = {
+        UNHOMED: ('UNHOMED', (215, 75, 75)),
+        STALE:   ('STALE HOME', (235, 170, 40)),
+        SESSION: ('SESSION HOME', (60, 200, 90)),
+    }
 
     def __init__(self, parent=None):
         super(_HomeBanner, self).__init__(parent)
         self.setFixedWidth(26)
-        self._session = False
+        self._state = self.UNHOMED
         self._phase = 0.0
         from PySide6.QtCore import QTimer
         self._t = QTimer(self)
@@ -49,21 +68,29 @@ class _HomeBanner(QWidget):
             self._phase -= 2 * math.pi
         self.update()
 
-    def set_session(self, on):
-        self._session = bool(on)
-        if self._session:
+    def set_state(self, state):
+        if state == self._state:
+            return
+        self._state = state
+        if state == self.SESSION:
             # operator 2026-08-02 12:28: SESSION HOME is green and STILL
-            # ("no danger any more") -- only STALE bobs
+            # ("no danger any more") -- UNHOMED and STALE bob
             self._t.stop()
+        elif not self._t.isActive():
+            self._t.start(80)
         self.update()
+
+    def set_session(self, on):
+        """Back-compat for the original two-state caller."""
+        self.set_state(self.SESSION if on else self.STALE)
 
     def paintEvent(self, ev):
         import math
         from PySide6.QtGui import QPainter, QColor, QFont
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
-        text = 'SESSION HOME' if self._session else 'STALE HOME'
-        color = QColor(60, 200, 90) if self._session else QColor(235, 170, 40)
+        text, rgb = self._LOOK[self._state]
+        color = QColor(*rgb)
         p.setPen(color)
         f = QFont(self.font())
         f.setBold(True)
@@ -73,7 +100,8 @@ class _HomeBanner(QWidget):
         # glide the text up/down the full column ("a banner going up and
         # down"), never past the edges
         amp = max(0, (self.height() - fm.horizontalAdvance(text)) // 2 - 6)
-        bob = 0 if self._session else int(amp * math.sin(self._phase))
+        bob = (0 if self._state == self.SESSION
+               else int(amp * math.sin(self._phase)))
         p.translate(self.width() - 6, self.height() // 2 + bob)
         p.rotate(-90)
         p.drawText(-fm.horizontalAdvance(text) // 2, 0, text)
@@ -113,6 +141,7 @@ class UserDRO(QWidget):
         # 6 s house delay -- early reparenting spun Qt, 2026-08-02 10:08)
         self._banner = None
         self._banner_latch = False
+        self._banner_state = None
         QTimer.singleShot(6000, self._add_banner)
         # NO REF BUTTONS (operator 2026-08-01: "i really do not need the REF
         # buttons because those things are done very rarely") -- homing lives
@@ -297,8 +326,8 @@ class UserDRO(QWidget):
             hb.addWidget(self._banner)
             hb.addWidget(col)          # reparents col out of outer into wrap
             outer.insertWidget(idx, wrap)
-            LOG.info('HOME banner column added left of %s (STALE HOME until '
-                     'menu Home All completes this session)', col.objectName())
+            LOG.info('HOME banner column added left of %s (UNHOMED until the A/C '
+                     'absolute read lands, then STALE, then SESSION)', col.objectName())
         except Exception as e:
             LOG.error('HOME banner failed: %s', e)
 
@@ -325,12 +354,22 @@ class UserDRO(QWidget):
                 win = self.window()
                 tab = win.findChild(QWidget, 'ned_controls') if win else None
                 clicks = getattr(tab, '_homeall_clicks', 0) if tab else 0
-                if clicks > 0 and self._stat is not None \
-                   and all(self._stat.homed[j] for j in range(6)):
+                homed = (self._stat is not None
+                         and all(self._stat.homed[j] for j in range(6)))
+                if not homed:
+                    # the A/C absolute read has not landed yet -- the DRO
+                    # numbers are not a frame at all until it does
+                    state = _HomeBanner.UNHOMED
+                elif clicks > 0:
+                    state = _HomeBanner.SESSION
+                else:
+                    state = _HomeBanner.STALE
+                if state != self._banner_state:
+                    self._banner_state = state
+                    self._banner.set_state(state)
+                    LOG.info('HOME banner -> %s', state.upper())
+                if state == _HomeBanner.SESSION:
                     self._banner_latch = True
-                    self._banner.set_session(True)
-                    LOG.info('HOME banner -> SESSION HOME (physical home '
-                             'completed this session)')
             except Exception:
                 pass
 

@@ -1,0 +1,48 @@
+(ned -- helper for cal_c_zero. ONE SUB PER FILE: LinuxCNC resolves)
+(subroutines through SUBROUTINE_PATH, and a second sub defined in)
+(the calling file is NOT found -- "EOF in file ... seeking o-word",)
+(reproduced offline with rs274. Shared setup arrives in GLOBAL)
+(parameters; the result goes back the same way.)
+(===================== helper: ONE probe toward centre =====================)
+(#1 = A tilt angle, #2 = Y offset off centre. Returns #<_cc_tx>.)
+o<cc_probe> sub
+  #<ang>  = #1
+  #<yoff> = #2
+
+  (clear BEFORE any A move, then tilt, then line up)
+  G90
+  G1 Z[#<_cc_top> + #<_cc_safe>] F[#<_cc_ftr>]
+  G1 A#<ang> F600
+  G1 X#<_cc_xr> Y[#<_cc_cy> + #<yoff>] F[#<_cc_ftr>]
+
+  (protective descent to the probing height -- never plunge blind)
+  G91
+  G38.3 Z-[#<_cc_safe> + #<_cc_zoff>] F[#<_cc_fck>]
+  o205 if [#5070 EQ 1]
+    G90
+    G1 Z[#<_cc_top> + #<_cc_safe>] F[#<_cc_ftr>]
+    M65 P3
+    M50 P1
+    (abort, CAL C: contact while descending - the standoff is over the puck, not in front of it. Re-teach with SET C REF.)
+  o205 endif
+
+  (drive toward the puck centre in +X)
+  G38.3 X#<_cc_reach> F[#<_cc_fpr>]
+  o210 if [#5070 EQ 0]
+    G90
+    G1 Z[#<_cc_top> + #<_cc_safe>] F[#<_cc_ftr>]
+    M65 P3
+    M50 P1
+    (abort, CAL C: no contact driving toward centre - the tip is not lined up with the puck. Re-teach with SET C REF.)
+  o210 endif
+  G1 X-[#<_cc_back>] F[#<_cc_ftr>]
+  G38.2 X[#<_cc_back> + 1] F[#<_cc_fla>]
+  #<_cc_tx> = #5061
+
+  (clear, back to hover)
+  G1 X-2 F[#<_cc_ftr>]
+  G90
+  G1 Z[#<_cc_top> + #<_cc_safe>] F[#<_cc_ftr>]
+o<cc_probe> endsub
+
+M2 (end helper)
