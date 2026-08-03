@@ -18,7 +18,9 @@ o<cal_probe_center> sub
   #<f_latch>  = 10.0    (latch feed, operator spec)
   #<f_trav>   = 500.0   (positioning moves)
   #<f_check>  = 400.0   (protective descent, kept at 2x the probe feed)
-  #<backoff>  = 1.0     (retreat before the latch, operator spec)
+  (1 mm did not release the probe once the seek feed doubled -- the next)
+  (G38 then refused with "probe is already tripped". Operator 2026-08-03.)
+  #<backoff>  = 2.0
   #<r_out>    = 25.4    (1 in outward, operator spec)
   #<under>    = 10.0    (probe depth below the detected top, operator spec)
   #<clear>    = 5.0     (hover height above the top between directions)
@@ -85,7 +87,7 @@ o<cal_probe_center> sub
     #[110 + #<d>] = #5062
 
     (clear the rim, then hover)
-    G1 X[#<dx> * 2] Y[#<dy> * 2] F[#<f_trav>]
+    G1 X[#<dx> * 2 * #<backoff>] Y[#<dy> * 2 * #<backoff>] F[#<f_trav>]
     G90
     G1 Z[#<top> + #<clear>] F[#<f_trav>]
 
