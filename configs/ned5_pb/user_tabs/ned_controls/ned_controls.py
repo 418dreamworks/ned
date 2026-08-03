@@ -735,6 +735,27 @@ class UserTab(QWidget):
                                           'color: rgb(200,200,200);')
             nbl.addWidget(self._cal_total)
 
+            # STEP 3 -- the handover to Probe Basic. Separate box because it is
+            # the only part that is PB-native and the only one needing an
+            # EMPTY spindle.
+            sbox = QGroupBox('STEP 3 -- SHOULDER (hands over to Probe Basic)')
+            sbl = QVBoxLayout(sbox)
+            shint = QLabel(
+                'Spindle must be EMPTY. Sends the setter position (G30), the '
+                '185 mm plunge\nlimit and then runs PB\'s own spindle-nose '
+                'probe at X-20 from centre.')
+            shint.setStyleSheet('color: rgb(180,180,180); font: 9pt;')
+            sbl.addWidget(shint)
+            bsh = QPushButton('SHOULDER')
+            bsh.setMinimumHeight(40)
+            bsh.setToolTip('Refuses while a tool is in the spindle. Records '
+                           'the tool-setter position into G30 at puck top '
+                           '+100 mm, sets the plunge limit, then probes the '
+                           'shoulder and leaves PB ready for tool probing.')
+            bsh.clicked.connect(lambda: self._cal_run('shoulder'))
+            sbl.addWidget(bsh)
+            cl.addWidget(sbox)
+
             brec = QPushButton('RECORD TO PARAMS')
             brec.setMinimumHeight(40)
             brec.setToolTip('Make the CURRENT head pose the new A/C zero: '
@@ -1152,6 +1173,7 @@ class UserTab(QWidget):
         'cref': ('cal_c_ref',        'SET C REF', True),
         'ac':   ('cal_ac_iterate',   'StartAC',   True),
         'goto': ('cal_goto_zero',    'ZERO',      True),
+        'shoulder': ('cal_shoulder', 'SHOULDER',  True),
         'cleft':  ('cal_c_goto',     'C LEFT',    True),
         'cright': ('cal_c_goto',     'C RIGHT',   True),
     }
@@ -1275,6 +1297,21 @@ class UserTab(QWidget):
             if gate is None:
                 return
             c, s = gate
+            if which == 'shoulder':
+                s2 = linuxcnc.stat()
+                s2.poll()
+                tool = getattr(s2, 'tool_in_spindle', 0)
+                if tool not in (0, -1):
+                    msg = ('SHOULDER refused: tool %s is in the spindle. This '
+                           'measures the spindle NOSE -- remove the tool by '
+                           'hand, then press SHOULDER again.' % tool)
+                    c.error_msg(msg)
+                    LOG.error(msg)
+                    self.cal_say('!! %s' % msg)
+                    if getattr(self, '_cal_status', None) is not None:
+                        self._cal_status.setText(msg)
+                    return
+                self.cal_say('>> SHOULDER: spindle empty, proceeding')
             if need_centre:
                 vals = {}
                 for k in ('3045', '3046', '3047'):
@@ -1669,6 +1706,9 @@ class UserTab(QWidget):
                 're-measured every pass. It aborts loudly the moment a '
                 'correction makes its own delta worse.',
         'goto': 'ZERO: puck centre, tip 5 mm above the top, A and C straight.',
+        'shoulder': 'SHOULDER: recording the setter position into G30 at puck '
+                    'top +100, sending the 185 mm plunge limit, then running '
+                    "PB's spindle-nose probe at X-20. Spindle must be EMPTY.",
         'cleft': 'C LEFT: parking on the A-45 probe pose, puck up. Check the '
                  'tip is in the ballpark.',
         'cright': 'C RIGHT: parking on the A+45 probe pose, puck up. Check the '

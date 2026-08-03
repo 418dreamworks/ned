@@ -1,0 +1,73 @@
+(ned -- SHOULDER FIND, the last step of calibration. Operator 2026-08-03.)
+(Everything up to here is ned's own calibration. This step hands the result)
+(to Probe Basic and then uses PB's OWN stock routine for the shoulder, which)
+(is the only PB-native part of the exercise.)
+
+(WHAT GETS SENT TO PB)
+(  #5181/#5182/#5183 -- the tool-setter position PB drives to. These ARE)
+(     LinuxCNC's G30 position, which is why G30.1 sets them: park on the)
+(     point and record it. No work-to-machine conversion to get wrong.)
+(  #3007 -- max Z plunge, 185 mm: the longest tool the operator uses sits)
+(     180 mm from the shoulder, so 185 is that plus a margin.)
+(  #3010 -- the SHOULDER itself, written by PB's probe_spindle_nose.)
+
+(THE TWO HEIGHTS, which are different and easy to confuse)
+(  tool probing starts at puck top + 100 mm: with a probe rod in and touching)
+(     the setter, there is then 100 mm of clearance above it. That is the Z)
+(     recorded into G30.)
+(  the shoulder is probed at X -20 from the puck centre, because the spindle)
+(     nose is a ring -- probing on the centreline would meet the taper bore,)
+(     not the face.)
+
+(REQUIRES AN EMPTY SPINDLE. The caller checks and refuses; this is the)
+(shoulder, so anything in the taper is what would get measured instead.)
+
+o<cal_shoulder> sub
+  #<cx>   = #1
+  #<cy>   = #2
+  #<top>  = #3
+
+  #<xoff>    = -20.0      (shoulder probes off the centreline, onto the face)
+  #<zclear>  = 100.0      (tool-probe start height above the puck top)
+  #<plunge>  = 185.0      (longest tool is 180 mm from the shoulder)
+  #<f_tr>    = 2000.0
+
+  o5 if [#<_metric> EQ 0]
+    (abort, SHOULDER: switch to MM first)
+  o5 endif
+  o6 if [#<top> EQ 0 AND #<cx> EQ 0 AND #<cy> EQ 0]
+    (abort, SHOULDER: no puck centre - run the calibration first)
+  o6 endif
+
+  M50 P0
+
+  (--- 1. record the tool-setter position into G30 -----------------------)
+  (XY first, then Z, exactly as everywhere else: the head rests over the)
+  (puck and Z must not move until it is laterally clear.)
+  G90
+  G1 X#<cx> Y#<cy> F[#<f_tr>]
+  G1 Z[#<top> + #<zclear>] F[#<f_tr>]
+  G30.1
+  (PRINT, SHOULDER: tool-setter position recorded to G30 - X #5181 Y #5182 Z #5183 machine. That is the puck centre at top plus #<zclear> mm.)
+
+  (--- 2. the plunge allowance PB will use ------------------------------)
+  #3007 = #<plunge>
+  (PRINT, SHOULDER: max plunge #3007 mm sent to PB.)
+
+  (--- 3. over the shoulder probing point -------------------------------)
+  G1 X[#<cx> + #<xoff>] Y#<cy> F[#<f_tr>]
+  (PRINT, SHOULDER: at X #<xoff> from centre, probing down up to #<plunge> mm. Spindle must be EMPTY.)
+
+  (--- 4. PB\'s own routine. Untouched: it probes straight down from where)
+  (--- it stands and writes #3010, the spindle zero height.)
+  M64 P3
+  G4 P1.5
+  o<probe_spindle_nose> call
+  M65 P3
+
+  (PRINT, SHOULDER DONE: spindle zero height #3010 mm. PB now has the setter position, the plunge limit and the shoulder - ready for tool length probing.)
+  (DEBUG, SHOULDER DONE: #3010 mm - PB ready)
+
+o<cal_shoulder> endsub
+
+M2 (end program)
