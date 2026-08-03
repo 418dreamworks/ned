@@ -106,3 +106,24 @@
     parentheses. rs274 has no probe hardware, so `#5070` stays 0 and a probing
     cycle SHOULD stop on its own "no contact" abort — that is the guard
     proving it works, not a failure.
+
+19. **READ THE LOG THE MACHINE WROTE, NOT A TERMINAL LOG.** `~/.bashrc` wraps
+    EVERY interactive shell into `logs/term-<stamp>-<pid>.log`, so those files
+    contain whatever that terminal printed — including MY OWN tool output. On
+    2026-08-03 I grepped a term log for "Bus error", matched the words I had
+    printed myself while investigating, and told the operator there had been
+    four crashes when there had been exactly ONE. Twice in one session I built
+    a conclusion on my own echo.
+    - PB / LinuxCNC evidence comes from **`ned/lcnc.log`** (written by
+      `run5.sh` under `script`, session-stamped) and
+      **`configs/ned5_pb/pb.log`**. Use `tools/lcnc_session.sh` — it slices
+      lcnc.log at the last `==== LinuxCNC start ====` header, so it is the
+      CURRENT session only, and strips ANSI.
+    - NEVER count or quote occurrences from `logs/term-*.log` as machine
+      evidence. If one is genuinely needed (it captures stdout that lcnc.log
+      misses), first confirm the file belongs to the session that launched PB,
+      and exclude my own output before counting.
+    - Counting is where this bites: a bare `grep -c` over the wrong file
+      manufactures a pattern out of nothing. Anchor on a signature only the
+      machine can emit (e.g. `linuxcnc: line NNN: PID Bus error`), never a
+      bare phrase.

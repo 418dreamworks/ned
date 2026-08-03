@@ -17,3 +17,4 @@ Layout (operator, 2026-08-01):
 Everything else belongs in live/ or groundtruth/ — if something new lands
 here, it is staging: finish it and move it, or trash it.
 - `gcode_check.sh` — offline g-code validator: parses ned subroutines with LinuxCNC's own interpreter (rs274), no machine/HAL/motion. `--all` or `<subname> [args]`. REQUIRED before handing any routine to the operator (CLAUDE.md rule 18).
+- `lcnc_session.sh` — prints ONLY the current PB session's slice of lcnc.log (ANSI stripped). Use this for machine evidence; `logs/term-*.log` contains my own terminal output and produces false matches (CLAUDE.md rule 19).
