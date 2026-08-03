@@ -106,12 +106,16 @@ o<cal_a_zero> sub
   #3052 = #<corr>
   (PRINT, CAL A: rotating A by #<corr> deg)
 
-  o120 if [ABS[#<corr>] GT 5.0]
+  (ONE correction, capped at 1 deg -- operator 2026-08-03. A demand bigger)
+  (than this is not a small misalignment: it means the sign is inverted or)
+  (the geometry is not what the model assumes, and swinging the head that far)
+  (on one reading would make it worse, not better.)
+  o120 if [ABS[#<corr>] GT 1.0]
     G90
     G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
     M65 P3
     M50 P1
-    (abort, CAL A: computed correction over 5 deg - refusing to swing the head that far on one measurement)
+    (abort, CAL A: computed correction over 1 deg - that is not a small misalignment. Either the sign is inverted or the geometry is not what the model assumes. Refusing to swing the head that far on one reading.)
   o120 endif
 
   (Rotating in place is what saves the climb. It is only safe while the swing)

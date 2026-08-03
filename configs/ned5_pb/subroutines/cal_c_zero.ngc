@@ -4,9 +4,10 @@
 (SAME X for both tilts. A C error phi rotates the swing and puts an X)
 (component into it that FLIPS sign between -45 and +45, so:)
 (     dX = -2 * dy * sin phi)
-(where dy is the tip's sideways offset off centre -- because putting the tip)
-(on the puck makes that offset exactly the swing. So the SETUP supplies the)
-(scale factor and no arm length is needed:)
+(where dy is the SPINDLE's Y offset from centre. Tilting A swings the tip)
+(through L*sin45, so the jog that brings the tip back beside the puck moves)
+(the spindle by very nearly that swing -- which IS the scale factor, so no)
+(arm length has to be known:)
 (     phi = asin of [-dX / 2dy])
 
 (TEACH ONCE, THEN REPLAY. LinuxCNC cannot be jogged mid-program and the 5x)
@@ -63,14 +64,22 @@ o<cal_c_zero> sub
     #<dx_off> = [#5420 - #<cx>]
     #<dy_off> = [#5421 - #<cy>]
     #<depth>  = [#<top> - #5422]
-    o12 if [ABS[#<dy_off>] LT 1.0]
-      (abort, CAL C: the tip is within 1 mm of centre in Y. That offset IS the scale factor of the C measurement so it cannot be near zero - jog sideways as the -45 tilt puts it.)
+    (dy IS THE DRO OFFSET, NOT THE TIP OFFSET. Tilting A by 45 deg swings the)
+    (tip through L*sin45, so the SPINDLE has to travel that far in Y to bring)
+    (the tip back beside the puck: ~192 mm here, implying L ~ 272 mm from the)
+    (A pivot to the tip. That number is the measurement, not an error.)
+    (Bounding it at the puck radius confused the control point with the tip)
+    (and rejected a valid teach -- 2026-08-03.)
+    (Bounds are therefore generous, only catching a pose taken nowhere near)
+    (the machine's working envelope.)
+    o12 if [ABS[#<dy_off>] LT 1.0 OR ABS[#<dy_off>] GT 400.0]
+      (abort, CAL C: dy is #<dy_off> mm, outside 1 to 400 - that is not a pose anywhere near the puck.)
     o12 endif
-    o13 if [#<depth> LE 0]
-      (abort, CAL C: the tip is at or above the puck top - jog DOWN so that driving toward centre would strike the puck.)
+    o13 if [#<depth> LE 1.0 OR #<depth> GT 400.0]
+      (abort, CAL C: depth below the top is #<depth> mm, outside 1 to 400 - that is not a pose anywhere near the puck.)
     o13 endif
     o14 if [#<dx_off> GE 0]
-      (abort, CAL C: the tip is not in FRONT of the puck - it must sit at negative X of centre so the probe drives toward centre in +X.)
+      (abort, CAL C: the tip is not in FRONT of the puck - X offset must be negative so the probe drives toward centre in +X.)
     o14 endif
     #3061 = #<dx_off>
     #3058 = #<dy_off>
@@ -97,6 +106,9 @@ o<cal_c_zero> sub
   #<_cc_back>  = 1.0     (backoff before the latch, 1 mm is plenty)
 
   #<dy> = #3058
+
+  (#3073 = did C ACTUALLY change - drives whether the puck needs re-finding)
+  #3073 = 0
 
   M50 P0
   M64 P3
@@ -128,11 +140,12 @@ o<cal_c_zero> sub
   #3057 = #<phi>
   (PRINT, CAL C: rotating C by #<phi> deg)
 
-  o230 if [ABS[#<phi>] GT 5.0]
+  (ONE correction, capped at 1 deg -- operator 2026-08-03, same rule as A.)
+  o230 if [ABS[#<phi>] GT 1.0]
     G90
     M65 P3
     M50 P1
-    (abort, CAL C: computed correction over 5 deg - refusing to swing the head that far on one measurement)
+    (abort, CAL C: computed correction over 1 deg - that is not a small misalignment. Either the sign is inverted or the geometry is not what the model assumes. Refusing to swing the head that far on one reading.)
   o230 endif
 
   G90
@@ -160,12 +173,21 @@ o<cal_c_zero> sub
   M65 P3
   M50 P1
 
+  (Symmetric with A: keep whichever is better, and if the new one is not,)
+  (DISCARD it and put C back exactly where it started -- operator 2026-08-03.)
   o240 if [ABS[#<dx_a>] LT ABS[#<dx_b>]]
-    (PRINT, CAL C OK: DELTA X #<dx_b> -> #<dx_a> mm, C moved #<phi> deg. Sign is correct.)
-    (DEBUG, CAL C: dX before #<dx_b>, after #<dx_a>, C corrected #<phi> deg)
+    #3073 = 1
+    (PRINT, CAL C OK: dX #<dx_b> -> #<dx_a> mm, C moved #<phi> deg. KEPT.)
+    (DEBUG, CAL C: dX #<dx_b> to #<dx_a> mm, C corrected #<phi> deg - KEPT)
   o240 else
-    (DEBUG, CAL C FAILED: dX before #<dx_b>, after #<dx_a> - got WORSE. Flip the phi sign.)
-    (abort, CAL C: correction made it WORSE - dX #<dx_b> then #<dx_a>. The math or the sign is wrong. Failing loudly by design.)
+    G91
+    G1 C[0 - #<phi>] F600
+    G90
+    #3070 = [#3070 - #<phi>]
+    #3057 = 0
+    #3073 = 0
+    (PRINT, CAL C DISCARDED: dX #<dx_b> -> #<dx_a> mm is not better, so the correction was reverted. C is exactly where it started and NOTHING changed, so the puck does not need re-finding. If it got much worse, the sign is inverted.)
+    (DEBUG, CAL C DISCARDED: dX #<dx_b> to #<dx_a> mm - reverted, C unchanged, puck re-find skipped)
   o240 endif
 
 o<cal_c_zero> endsub

@@ -25,8 +25,14 @@ o<cal_c_cycle> sub
 
   o<cal_c_zero> call [#<cx>] [#<cy>] [#<top>]
 
-  (PRINT, StartC: C corrected by #3057 deg, dX #3055 -> #3056. Re-finding the puck so the zero matches the new C.)
-  o<cal_probe_center> call
+  (re-find the puck ONLY if C actually moved -- a discarded correction leaves)
+  (the geometry untouched, so the stored centre is still the centre)
+  o20 if [#3073 EQ 1]
+    (PRINT, StartC: C corrected by #3057 deg, dX #3055 -> #3056. Re-finding the puck so the zero matches the new C.)
+    o<cal_probe_center> call
+  o20 else
+    (PRINT, StartC: correction discarded, C unchanged - skipping the puck re-find, the stored centre is still valid.)
+  o20 endif
 
   (PRINT, StartC DONE: dX #3055 -> #3056, C total #3070 deg, new centre #3045 #3046 top #3047)
   (DEBUG, StartC done: dX #3055 to #3056, new centre #3045 #3046 top #3047)
