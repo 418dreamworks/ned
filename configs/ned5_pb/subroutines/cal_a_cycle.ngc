@@ -23,6 +23,13 @@ o<cal_a_cycle> sub
     (abort, StartA: no puck centre - run StartPuck first)
   o6 endif
 
+  (#3071 is the COMPLETION MARKER. The GUI must not decide "finished" from)
+  (interp going idle -- that reads true momentarily BETWEEN the queued calls)
+  (inside this cycle, and on 2026-08-03 it fired mid-run and auto-wrote)
+  (head_zero.inc off a measurement that had not been taken. Only the last)
+  (line of this file sets it.)
+  #3071 = 0
+
   (--- 1: measure and correct A ---)
   o<cal_a_zero> call [#<cx>] [#<cy>] [#<top>]
 
@@ -30,6 +37,7 @@ o<cal_a_cycle> sub
   (PRINT, StartA: A corrected by #3052 deg, dY #3050 -> #3051. Re-finding the puck so the zero matches the new A.)
   o<cal_probe_center> call
 
+  #3071 = 1
   (PRINT, StartA DONE: dY #3050 -> #3051, A total #3069 deg, new centre #3045 #3046 top #3047)
   (DEBUG, StartA done: dY #3050 to #3051, new centre #3045 #3046 top #3047)
 

@@ -1088,6 +1088,7 @@ class UserTab(QWidget):
                 LOG.info('%s: %s issued', label, sub)
             if which == 'a':
                 self._cal_watch_start()
+                self._cal_watch_t0 = os.path.getmtime(self.VAR_FILE)
             if getattr(self, '_cal_status', None) is not None:
                 self._cal_status.setText(self.CAL_MSG.get(which, ''))
         except Exception as e:
@@ -1140,6 +1141,19 @@ class UserTab(QWidget):
                 return
             if not self._cal_watch_seen_busy or busy:
                 return
+            # idle is NOT proof of completion -- it reads true between the
+            # queued calls inside the cycle. Require the g-code's own marker,
+            # written to the var file only by the last line of cal_a_cycle,
+            # and require the file to have been rewritten since we issued it
+            # so a stale marker from a previous run cannot fire.
+            try:
+                if os.path.getmtime(self.VAR_FILE) <= getattr(
+                        self, '_cal_watch_t0', 0):
+                    return
+            except Exception:
+                return
+            if self._read_vars(('3071',)).get('3071', 0.0) < 0.5:
+                return
             self._cal_watch_stop('cycle finished after %.0f s'
                                  % self._cal_watch_elapsed)
             self._cal_after_a()
@@ -1154,21 +1168,36 @@ class UserTab(QWidget):
         try:
             import linuxcnc
             c = linuxcnc.command()
-            v = self._read_vars(('3050', '3051', '3052'))
-            before, after = v.get('3050'), v.get('3051')
-            if before is None or after is None:
-                LOG.error('StartA: no dY pair in the var file -- not recording')
+            v = self._read_vars(('3050', '3051', '3052', '3053', '3054'))
+            dy_b, dy_a = v.get('3050'), v.get('3051')
+            tb, ta = v.get('3053'), v.get('3054')
+            if tb is None or ta is None:
+                LOG.error('StartA: no tilt pair in the var file -- not '
+                          'recording')
                 return
-            if abs(after) >= abs(before):
-                msg = ('StartA: dY %+.4f -> %+.4f did NOT improve -- parameter '
-                       'file NOT written' % (before, after))
+            # An unwritten result reads 0.0, which would sail through any
+            # "smaller is better" test. A measurement that never happened is
+            # not an improvement -- 2026-08-03, that is exactly how a bogus
+            # value reached head_zero.inc.
+            if abs(ta) < 1e-9 and abs(dy_a or 0.0) < 1e-9:
+                LOG.error('StartA: the AFTER pair is 0.0 -- it was never '
+                          'measured. NOT recording.')
+                c.error_msg('StartA: after-pair never measured -- parameter '
+                            'file NOT written')
+                return
+            # the two pairs use DIFFERENT baselines (25 mm vs 40 mm), so raw
+            # dY is not comparable; the angle is
+            if abs(ta) >= abs(tb):
+                msg = ('StartA: tilt %+.4f -> %+.4f deg did NOT improve -- '
+                       'parameter file NOT written' % (tb, ta))
                 LOG.error(msg)
                 c.error_msg(msg)
                 if getattr(self, '_cal_status', None) is not None:
                     self._cal_status.setText(msg)
                 return
-            LOG.info('StartA: dY %+.4f -> %+.4f improved by %.4f mm -- '
-                     'recording', before, after, abs(before) - abs(after))
+            LOG.info('StartA: tilt %+.4f -> %+.4f deg (dY %+.4f/25mm -> '
+                     '%+.4f/40mm) improved by %.4f deg -- recording',
+                     tb, ta, dy_b or 0.0, dy_a or 0.0, abs(tb) - abs(ta))
             self._cal_record(auto=True)
         except Exception as e:
             LOG.error('StartA post-cycle failed: %s', e)

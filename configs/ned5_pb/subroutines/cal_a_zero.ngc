@@ -1,62 +1,71 @@
-(ned -- A ZERO DETECTION against the puck, operator spec 2026-08-03)
+(ned -- A PERPENDICULARITY, operator spec 2026-08-03.)
 (MODEL. The rod slides DOWN PAST the puck at a standoff, then drives inward.)
 (The puck does NOT need to extend downward: whatever station along the rod's)
-(SHAFT happens to be level with the puck is what makes contact, so every)
-(depth touches the SAME feature of the puck with a DIFFERENT part of the rod.)
-(A vertical rod therefore contacts at the same Y at every depth. A rod tilted)
-(by A does not -- the station that reaches the puck sits further off the)
-(centreline the deeper the tip goes:)
+(SHAFT is level with the puck makes contact, so every depth touches the SAME)
+(feature with a DIFFERENT part of the rod. A vertical rod contacts at the)
+(same Y at every depth; a rod tilted by A does not:)
 (     recorded Y = constant - depth x tan A)
-(so two depths give the tilt directly, and the constant -- which carries the)
-(puck position, the puck diameter, the rod diameter and the tip centring --)
-(cancels in the difference. The first plunge is 25 mm, deep enough that the)
-(tip is already BELOW the puck, so the tip's own shape and squareness never)
-(enter the measurement -- operator 2026-08-03.)
-(Sequence, operator spec: touch top, touch bottom, CORRECT, touch bottom,)
-(touch top -- if the spread did not shrink the math/sign is wrong, so ABORT)
-(LOUDLY rather than iterate on a bad correction.)
-(REQUIRES: rod stickout greater than the deep plunge -- 65 mm -- or the)
-(shaft no longer spans the puck and nothing is touched.)
-(Reports DELTA Y BEFORE and DELTA Y AFTER. Applies the A rotation; writes NO)
-(zero and NO offsets -- setting A's zero is a separate, explicit step.)
-(Results: #3050 = dY before, #3051 = dY after, #3052 = A correction applied.)
-(#3069 accumulates every A correction -- it IS where A's true zero now sits on)
-(the DRO, so cal_c_zero tilts +-45 about it instead of about the stale zero,)
-(and every routine parks there. RECORD TO PARAMS is what finally banks it.)
+(The constant carries puck position, puck diameter, rod diameter and tip)
+(centring, and it CANCELS in the difference. Both plunges are far below the)
+(top, so the tip is clear of it and neither the tip's shape nor the puck)
+(surface being out of perpendicular enters the measurement.)
 
-(SCOPE NOTE: named parameters are LOCAL to the subroutine that assigns them,)
-(so the wall-touch helper cannot see the caller's values. It is defined at)
-(FILE level -- subroutine definitions do not nest -- takes its depth as a)
-(positional argument, and reads the shared setup from GLOBAL _ca_ parameters)
-(set by the caller. It returns the touch Y in the global #<_ca_ty>.)
+(WHY DIVE DEEPER -- the resolution argument, and the math must honour it.)
+(   tan of tilt = dY / dZ,  so  tilt = ATAN[dY]/[dZ])
+(A touch repeats to about e, so the angle is uncertain by roughly e / dZ)
+(radians.)
+(Every extra mm of dZ buys resolution LINEARLY, and nothing else in the)
+(expression depends on depth. That is the entire reason for going to -65.)
+(   before  dZ = 25 mm  ->  5 um touch = 0.0115 deg)
+(   after   dZ = 40 mm  ->  5 um touch = 0.0072 deg)
+(CONSEQUENCE, and the reason this is spelled out: the two pairs have)
+(DIFFERENT baselines, so their raw dY are NOT comparable -- a longer baseline)
+(yields a larger dY for the very same tilt. Comparing dY would call a genuine)
+(improvement a regression. The verdict is taken on the ANGLE, which is)
+(baseline-independent, and both are reported.)
 
-(============================== main cycle =================================)
+(SEQUENCE, operator spec -- no travelling between touches, it is wasted time.)
+(  BEFORE: probe at -35, back off, plunge to -60 AT THE BACKOFF STANDOFF,)
+(          probe again.          dZ = 25 mm)
+(  CORRECT A.)
+(  AFTER:  probe at -65, back off, rise to -25, probe again.)
+(          dZ = 40 mm -- the deepest touch, so the verification is the)
+(          sharpest measurement of the two.)
+(  Then lower the puck and park on the zero pose with the corrected A.)
+
+(REQUIRES: rod stickout greater than the deep plunge -- 65 mm -- or the shaft)
+(no longer spans the puck and nothing is touched.)
+
+(Results: #3050 = dY before, #3051 = dY after, #3052 = A correction applied,)
+(         #3053 = tilt before deg, #3054 = tilt after deg.)
+(#3069 accumulates every A correction: it IS where A's true zero now sits on)
+(the DRO, so cal_c_zero tilts about it and every routine parks there.)
+
 o<cal_a_zero> sub
   #<cx>    = #1        (setter centre X, work frame -- from #3045)
   #<cy>    = #2        (setter centre Y, work frame -- from #3046)
   #<top>   = #3        (setter top Z, work frame -- from #3047)
 
-  #<d_top> = 25.0      (shallow plunge below the top, operator 2026-08-03)
-  #<d_bot> = 65.0      (deep plunge below the top, operator 2026-08-03)
+  #<d1> = 35.0         (before: shallow)
+  #<d2> = 60.0         (before: deep)
+  #<d3> = 65.0         (after: deep first)
+  #<d4> = 25.0         (after: shallow)
 
   o5 if [#<_metric> EQ 0]
     (abort, CAL A: switch to MM first)
   o5 endif
   o6 if [#<top> EQ 0 AND #<cx> EQ 0 AND #<cy> EQ 0]
-    (abort, CAL A: no setter centre - run the centre calibration first)
+    (abort, CAL A: no setter centre - run StartPuck first)
   o6 endif
 
   (--- shared setup, GLOBAL so the file-level helper can read it -----------)
   #<_ca_cx>    = #<cx>
   #<_ca_cy>    = #<cy>
   #<_ca_top>   = #<top>
-  (standoff MIRRORS cal_probe_center's r_out -- same clearance, same trip)
-  (distance, and the A cycle stops swinging out further than the puck probe)
-  (does. Operator 2026-08-03: "move out the same amount as probe puck".)
+  (standoff mirrors cal_probe_center's r_out -- same clearance, same trip)
   #<_ca_stand> = 19.8
-  (max inward travel. Contact sits at radius 17.40, so 10 mm from a 19.8 mm)
-  (standoff always trips first; it also means a no-contact fault stops 9.8 mm)
-  (SHORT of centre instead of driving through where the puck is.)
+  (contact sits at radius 17.40, so 10 mm always trips first, and a)
+  (no-contact fault stops 9.8 mm SHORT of centre instead of driving through)
   #<_ca_reach> = 10.0
   #<_ca_fpr>   = 100.0 (probe feed, operator spec)
   #<_ca_fla>   = 10.0  (latch feed, operator spec)
@@ -65,8 +74,7 @@ o<cal_a_zero> sub
   (1 mm is plenty. A probe that will not release inside it is an ELECTRICAL)
   (contact fault -- fix the contact, not the distance. Operator 2026-08-03.)
   #<_ca_back>  = 1.0
-  (clearance is 5 mm for every cal routine and IS the zero pose, so there is)
-  (no rise needed before moving sideways -- operator 2026-08-03)
+  (clearance is 5 mm for every cal routine and IS the zero pose)
   #<_ca_safe>  = 5.0
   #<_ca_side>  = -1    (approach from -Y, probe toward +Y; +1 mirrors it)
 
@@ -74,22 +82,22 @@ o<cal_a_zero> sub
   M64 P3               (puck UP)
   G4 P1.5
 
-  (=== BEFORE: touch top, then bottom =====================================)
-  o<ca_touch> call [#<d_top>] [1] [0]
-  #<y_top_b> = #<_ca_ty>
-  o<ca_touch> call [#<d_bot>] [0] [1]
-  #<y_bot_b> = #<_ca_ty>
-  #<dy_b> = [#<y_bot_b> - #<y_top_b>]
+  (=== BEFORE: -35, then -60 without leaving the standoff ==================)
+  o<ca_touch> call [#<d1>] [1] [0]
+  #<y1> = #<_ca_ty>
+  o<ca_touch> call [#<d2>] [0] [0]
+  #<y2> = #<_ca_ty>
+  #<dy_b>   = [#<y2> - #<y1>]
+  #<dz_b>   = [#<d2> - #<d1>]
+  #<tilt_b> = [ATAN [#<dy_b>] / [#<dz_b>]]
   #3050 = #<dy_b>
-  (PRINT, CAL A BEFORE: y at -25 = #<y_top_b>, y at -65 = #<y_bot_b>, DELTA Y = #<dy_b>)
+  #3053 = #<tilt_b>
+  (PRINT, CAL A BEFORE: y at -35 = #<y1>, y at -60 = #<y2>, DELTA Y = #<dy_b> over #<dz_b> mm, tilt #<tilt_b> deg)
 
-  (=== CORRECT: tilt = atan of dY over dZ, dZ = the depth difference =======)
-  #<dz>   = [#<d_bot> - #<d_top>]
-  (ATAN form copied from stock probe_corner_x_plus_edge_angle.ngc)
-  #<tilt> = [ATAN [#<dy_b>] / [#<dz>]]
-  #<corr> = [0 - #<tilt>]        (one sign; the recheck below proves it)
+  (=== CORRECT ============================================================)
+  #<corr> = [0 - #<tilt_b>]
   #3052 = #<corr>
-  (PRINT, CAL A: tilt #<tilt> deg over #<dz> mm - rotating A by #<corr> deg)
+  (PRINT, CAL A: rotating A by #<corr> deg)
 
   o120 if [ABS[#<corr>] GT 5.0]
     G90
@@ -99,40 +107,52 @@ o<cal_a_zero> sub
     (abort, CAL A: computed correction over 5 deg - refusing to swing the head that far on one measurement)
   o120 endif
 
-  (rotate ONLY with the rod clear above the puck)
-  G90
-  G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
+  (Rotating in place is what saves the climb. It is only safe while the swing)
+  (at the deepest point stays inside the standoff clearance: at 65 mm depth)
+  (0.5 deg moves the tip 0.57 mm against 2.40 mm of clearance. Bigger)
+  (corrections climb out first, and the next touch then re-approaches.)
+  #<next_app> = 0
+  o125 if [ABS[#<corr>] GT 0.5]
+    G90
+    G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
+    #<next_app> = 1
+    (PRINT, CAL A: correction #<corr> deg exceeds 0.5 - climbing clear before rotating)
+  o125 endif
   G91
   G1 A#<corr> F600
   G90
   #3069 = [#3069 + #<corr>]
 
-  (=== AFTER: bottom first, then top -- operator spec order ================)
-  o<ca_touch> call [#<d_bot>] [1] [0]
-  #<y_bot_a> = #<_ca_ty>
-  o<ca_touch> call [#<d_top>] [0] [1]
-  #<y_top_a> = #<_ca_ty>
-  #<dy_a> = [#<y_bot_a> - #<y_top_a>]
+  (=== AFTER: -65, then rise to -25, same standoff ========================)
+  o<ca_touch> call [#<d3>] [#<next_app>] [0]
+  #<y3> = #<_ca_ty>
+  o<ca_touch> call [#<d4>] [0] [1]
+  #<y4> = #<_ca_ty>
+  (deeper minus shallower, so the sign convention matches the BEFORE pair)
+  #<dy_a>   = [#<y3> - #<y4>]
+  #<dz_a>   = [#<d3> - #<d4>]
+  #<tilt_a> = [ATAN [#<dy_a>] / [#<dz_a>]]
   #3051 = #<dy_a>
-  (PRINT, CAL A AFTER: y at -65 = #<y_bot_a>, y at -25 = #<y_top_a>, DELTA Y = #<dy_a>)
+  #3054 = #<tilt_a>
+  (PRINT, CAL A AFTER: y at -65 = #<y3>, y at -25 = #<y4>, DELTA Y = #<dy_a> over #<dz_a> mm, tilt #<tilt_a> deg)
 
-  (=== park at the zero pose, then verdict ================================)
-  (clearance FIRST, then sideways -- the clearance height IS the zero pose,)
-  (so arriving over centre at 5 mm up is the whole return.)
+  (=== puck DOWN, park on the zero pose with the corrected A ==============)
   G90
   G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
+  M65 P3
+  G4 P1.0
   G1 A#3069 C#3070 F600
   G1 X#<cx> Y#<cy> F[#<_ca_ftr>]
   G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
-  M65 P3
   M50 P1
 
-  o130 if [ABS[#<dy_a>] LT ABS[#<dy_b>]]
-    (PRINT, CAL A OK: DELTA Y #<dy_b> -> #<dy_a> mm, A moved #<corr> deg. Sign is correct.)
-    (DEBUG, CAL A: dY before #<dy_b>, after #<dy_a>, A corrected #<corr> deg)
+  (=== verdict on the ANGLE, not on raw dY ================================)
+  o130 if [ABS[#<tilt_a>] LT ABS[#<tilt_b>]]
+    (PRINT, CAL A OK: tilt #<tilt_b> -> #<tilt_a> deg, A moved #<corr> deg. Sign is correct.)
+    (DEBUG, CAL A: tilt #<tilt_b> to #<tilt_a> deg, A corrected #<corr> deg)
   o130 else
-    (DEBUG, CAL A FAILED: dY before #<dy_b>, after #<dy_a> - got WORSE. Flip side or the correction sign.)
-    (abort, CAL A: correction made it WORSE - dY #<dy_b> then #<dy_a>. The math or the sign is wrong, flip the corr sign. Failing loudly by design.)
+    (DEBUG, CAL A FAILED: tilt #<tilt_b> to #<tilt_a> deg - got WORSE. Flip side or the correction sign.)
+    (abort, CAL A: correction made it WORSE - tilt #<tilt_b> then #<tilt_a> deg. The math or the sign is wrong. Failing loudly by design.)
   o130 endif
 
 o<cal_a_zero> endsub
