@@ -229,35 +229,68 @@ o<cal_c_zero> sub
   #3056 = #<dx_a>
   (PRINT, CAL C AFTER: x at -45 = #<x_neg_a>, x at +45 = #<x_pos_a>, DELTA X = #<dx_a>)
 
-  (=== park + verdict =====================================================)
-  G90
-  G1 Z[#<top> + #<safe>] F[#<_cc_ftr>]
-  G1 A#3069 C#3070 F[#<_cc_frot>]
-  G1 X#<cx> Y#<cy> F[#<_cc_ftr>]
-  G1 Z[#<top> + #<safe>] F[#<_cc_ftr>]
-  M65 P3
-  (start AND end of every button is the ZERO -- operator 2026-08-03. That)
-  (covers the ABORT paths too: a cycle dying at a standoff is exactly what)
-  (made the next button's assumptions wrong.)
-  o<cal_goto_zero> call [#<cx>] [#<cy>] [#<top>]
-  M50 P1
+  (=== VERDICT + ANNEAL, at the standoff and clear of the puck ===========)
+  (ORDER MATTERS AND WAS WRONG HERE: this block used to park and call)
+  (cal_goto_zero BEFORE judging, so the revert rotation happened after the)
+  (machine had already returned to zero -- swinging C at 5 mm above the puck,)
+  (and leaving the routine NOT at the zero it had just gone to. A had it the)
+  (right way round. Judge and adjust at the standoff, park once, afterwards.)
 
-  (Symmetric with A: keep whichever is better, and if the new one is not,)
-  (DISCARD it and put C back exactly where it started -- operator 2026-08-03.)
+  (Operator 2026-08-03: if the full correction does not improve, RESET first,)
+  (then try a quarter and re-measure. If both fail, nothing is banked.)
   o240 if [ABS[#<dx_a>] LT ABS[#<dx_b>]]
     #3073 = 1
     (PRINT, CAL C OK: dX #<dx_b> -> #<dx_a> mm, C moved #<phi> deg. KEPT.)
     (DEBUG, CAL C: dX #<dx_b> to #<dx_a> mm, C corrected #<phi> deg - KEPT)
   o240 else
+    (RESET to the starting angle FIRST -- a quarter measured from the overshot)
+    (position is not a quarter of the original correction.)
     G91
     G1 C[0 - #<phi>] F[#<_cc_frot>]
     G90
     #3070 = [#3070 - #<phi>]
-    #3057 = 0
-    #3073 = 0
-    (PRINT, CAL C DISCARDED: dX #<dx_b> -> #<dx_a> mm is not better, so the correction was reverted. C is exactly where it started and NOTHING changed, so the puck does not need re-finding. If it got much worse, the sign is inverted.)
-    (DEBUG, CAL C DISCARDED: dX #<dx_b> to #<dx_a> mm - reverted, C unchanged, puck re-find skipped)
+
+    #<qtr> = [#<phi> / 4]
+    G91
+    G1 C#<qtr> F[#<_cc_frot>]
+    G90
+    #3070 = [#3070 + #<qtr>]
+    (PRINT, CAL C: #<phi> deg did not improve dX #<dx_b> -> #<dx_a>. Reset, and trying a quarter: #<qtr> deg.)
+
+    (re-measure the SAME pair, same tilts, same Y mirror, so the numbers stay)
+    (comparable to dx_b)
+    o<cc_probe> call [[#3069 - 45]] [#<dy>]
+    #<x_neg_q> = #<_cc_tx>
+    o<cc_probe> call [[#3069 + 45]] [0 - #<dy>]
+    #<x_pos_q> = #<_cc_tx>
+    #<dx_q> = [#<x_pos_q> - #<x_neg_q>]
+    #3056 = #<dx_q>
+    (PRINT, CAL C QUARTER: x at -45 = #<x_neg_q>, x at +45 = #<x_pos_q>, DELTA X = #<dx_q>)
+
+    o250 if [ABS[#<dx_q>] LT ABS[#<dx_b>]]
+      #3057 = #<qtr>
+      #3073 = 1
+      (PRINT, CAL C OK on the quarter: dX #<dx_b> -> #<dx_q> mm, C moved #<qtr> deg. KEPT.)
+      (DEBUG, CAL C: quarter kept - dX #<dx_b> to #<dx_q> mm, C corrected #<qtr> deg)
+    o250 else
+      G91
+      G1 C[0 - #<qtr>] F[#<_cc_frot>]
+      G90
+      #3070 = [#3070 - #<qtr>]
+      #3057 = 0
+      #3073 = 0
+      (PRINT, CAL C DISCARDED: neither #<phi> deg [dX #<dx_a>] nor a quarter #<qtr> deg [dX #<dx_q>] beat #<dx_b> mm. C is exactly where it started, nothing banked, puck re-find skipped.)
+      (DEBUG, CAL C DISCARDED: full and quarter both failed - C unchanged)
+    o250 endif
   o240 endif
+
+  (=== park: puck down, end on the ZERO -- start AND end of every button ===)
+  G90
+  G1 Z[#<top> + #<safe>] F[#<_cc_ftr>]
+  M65 P3
+  G4 P1.0
+  o<cal_goto_zero> call [#<cx>] [#<cy>] [#<top>]
+  M50 P1
 
 o<cal_c_zero> endsub
 

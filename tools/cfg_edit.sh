@@ -17,7 +17,11 @@ if ! "$NED/tools/machine_idle.sh"; then
     echo "REFUSED: not writing under configs/ -- see above." >&2
     exit 1
 fi
-BEFORE=$(cd "$NED" && git status --porcelain configs/ | md5sum)
+# hash the CONTENT, not `git status` -- porcelain output does not change when
+# a file was already modified, so it reported "no files changed" after a real
+# edit (2026-08-03). A verification that can say "nothing happened" when
+# something did is worse than none.
+BEFORE=$(cd "$NED" && git diff --stat configs/ | md5sum)
 python3 -
 RC=$?
 [ $RC -ne 0 ] && { echo "edit script failed (rc=$RC) -- check the tree" >&2; exit $RC; }
@@ -30,5 +34,5 @@ if ! "$NED/tools/gcode_check.sh" --all >/tmp/cfg_edit_check.$$ 2>&1; then
     exit 1
 fi
 rm -f /tmp/cfg_edit_check.$$
-AFTER=$(cd "$NED" && git status --porcelain configs/ | md5sum)
+AFTER=$(cd "$NED" && git diff --stat configs/ | md5sum)
 [ "$BEFORE" = "$AFTER" ] && echo "(no files changed)" || echo "OK: gate passed, edit applied, scanner green"

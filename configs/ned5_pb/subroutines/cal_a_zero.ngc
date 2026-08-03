@@ -235,39 +235,68 @@ o<cal_a_zero> sub
   #3054 = #<tilt_a>
   (PRINT, CAL A AFTER: y at -65 = #<y3>, y at -25 = #<y4>, DELTA Y = #<dy_a> over #<dz_a> mm, tilt #<tilt_a> deg)
 
-  (=== VERDICT, taken HERE while still at the standoff and clear of the puck)
-  (Operator 2026-08-03: a correction that does not improve the ABSOLUTE)
-  (distance is NOT applied. Both passes now share the same 40 mm baseline, so)
-  (dY is directly comparable and is the test. A failed correction is ROLLED)
-  (BACK -- leaving the head rotated by a move that made things worse would)
-  (quietly corrupt the zero every later routine tilts about.)
+  (=== VERDICT + ANNEAL, at the standoff and clear of the puck ===========)
+  (Operator 2026-08-03: if the full correction does not improve the distance,)
+  (do not just give up -- RESET first, then move a QUARTER of it and re-test.)
+  (An annealing step: the sign may be right while the magnitude overshoots,)
+  (and a quarter lands inside where a full bite flew past. If BOTH the full)
+  (distance and the quarter fail, nothing is banked and A is left exactly)
+  (where it started.)
   o130 if [ABS[#<dy_a>] LT ABS[#<dy_b>]]
     #3072 = 1
     (PRINT, CAL A OK: dY #<dy_b> -> #<dy_a> mm, tilt #<tilt_b> -> #<tilt_a> deg, A moved #<corr> deg. KEPT.)
     (DEBUG, CAL A: dY #<dy_b> to #<dy_a> mm, A corrected #<corr> deg - KEPT)
   o130 else
-    (roll the rotation back, here at the standoff where the puck is clear)
+    (RESET to where we started, then take a quarter -- the reset matters: a)
+    (quarter measured from the overshot position is not a quarter of the)
+    (original correction.)
     G91
     G1 A[0 - #<corr>] F1200
     G90
     #3069 = [#3069 - #<corr>]
-    #3052 = 0
-    (park and drop the puck BEFORE aborting -- an abort stops everything after)
-    G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
-    M65 P3
-    G4 P1.0
-    G1 A#3069 C#3070 F1200
-    G1 X#<cx> Y#<cy> F[#<_ca_ftr>]
-    G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
-  (start AND end of every button is the ZERO -- operator 2026-08-03. That)
-  (covers the ABORT paths too: a cycle dying at a standoff is exactly what)
-  (made the next button's assumptions wrong.)
-  o<cal_goto_zero> call [#<cx>] [#<cy>] [#<top>]
-    M50 P1
-    #3072 = 0
-    (PRINT, CAL A DISCARDED: dY #<dy_b> -> #<dy_a> mm is not better, so the correction was reverted. A is exactly where it started and NOTHING changed, so the puck does not need re-finding.)
-    (DEBUG, CAL A DISCARDED: dY #<dy_b> to #<dy_a> mm - reverted, A unchanged, puck re-find skipped)
+
+    #<qtr> = [#<corr> / 4]
+    G91
+    G1 A#<qtr> F1200
+    G90
+    #3069 = [#3069 + #<qtr>]
+    (PRINT, CAL A: #<corr> deg did not improve dY #<dy_b> -> #<dy_a>. Reset, and trying a quarter: #<qtr> deg.)
+
+    (re-measure with the SAME pair, same depths, same order, so the numbers)
+    (stay comparable to dy_b)
+    o<ca_touch> call [#<d3>] [1] [0]
+    #<y3q> = #<_ca_ty>
+    o<ca_touch> call [#<d4>] [0] [1]
+    #<y4q> = #<_ca_ty>
+    #<dy_q> = [#<y3q> - #<y4q>]
+    #3051 = #<dy_q>
+    #3054 = [ATAN [#<dy_q>] / [#<dz_a>]]
+    (PRINT, CAL A QUARTER: y at -65 = #<y3q>, y at -25 = #<y4q>, DELTA Y = #<dy_q>)
+
+    o140 if [ABS[#<dy_q>] LT ABS[#<dy_b>]]
+      #3052 = #<qtr>
+      #3072 = 1
+      (PRINT, CAL A OK on the quarter: dY #<dy_b> -> #<dy_q> mm, A moved #<qtr> deg. KEPT.)
+      (DEBUG, CAL A: quarter kept - dY #<dy_b> to #<dy_q> mm, A corrected #<qtr> deg)
+    o140 else
+      G91
+      G1 A[0 - #<qtr>] F1200
+      G90
+      #3069 = [#3069 - #<qtr>]
+      #3052 = 0
+      #3072 = 0
+      (PRINT, CAL A DISCARDED: neither #<corr> deg [dY #<dy_a>] nor a quarter #<qtr> deg [dY #<dy_q>] beat #<dy_b> mm. A is exactly where it started, nothing banked, puck re-find skipped.)
+      (DEBUG, CAL A DISCARDED: full and quarter both failed - A unchanged)
+    o140 endif
   o130 endif
+
+  (=== park: puck down, end on the ZERO -- start AND end of every button ===)
+  G90
+  G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
+  M65 P3
+  G4 P1.0
+  o<cal_goto_zero> call [#<cx>] [#<cy>] [#<top>]
+  M50 P1
 
   (=== puck DOWN, park on the zero pose with the corrected A ==============)
   G90

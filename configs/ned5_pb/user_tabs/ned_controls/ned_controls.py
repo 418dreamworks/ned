@@ -22,6 +22,7 @@ Pins (nets in postgui_pb.hal):
   ned-tab.inc-in         float in  <- pendant.increment
 """
 import os
+import time
 
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QWidget
@@ -749,6 +750,28 @@ class UserTab(QWidget):
             cstat.setWordWrap(True)
             cl.addWidget(cstat)
 
+            # RUNNING COMMENTARY. The routines already narrate themselves --
+            # every (PRINT,...) lands in lcnc.log -- but the operator had to
+            # read a terminal to see any of it. Tail that file and show the
+            # calibration lines here, so the page says what the machine is
+            # doing while it does it (operator 2026-08-03).
+            from PySide6.QtWidgets import QPlainTextEdit
+            self._cal_log = QPlainTextEdit()
+            self._cal_log.setReadOnly(True)
+            self._cal_log.setMaximumBlockCount(400)
+            self._cal_log.setMinimumHeight(150)
+            self._cal_log.setStyleSheet(
+                'font: 9pt "DejaVu Sans Mono"; color: rgb(200,220,200); '
+                'background: rgb(24,26,24);')
+            self._cal_log.setPlaceholderText(
+                'Running commentary appears here once a cycle starts.')
+            cl.addWidget(self._cal_log)
+            self._cal_log_pos = None
+            t2 = QTimer(self)
+            t2.timeout.connect(self._cal_log_poll)
+            t2.start(500)
+            self._cal_log_timer = t2
+
             # the interpreter flushes numbered params to the var file at M2,
             # so a cycle result appears here right after the cycle ends
             self._cal_var_timer = QTimer(self)
@@ -997,6 +1020,58 @@ class UserTab(QWidget):
 
     VAR_FILE = '/home/brains/Documents/ned/configs/ned5_pb/ned5_pb.var'
 
+    LCNC_LOG = '/home/brains/Documents/ned/lcnc.log'
+    # only the calibration's own narration -- not the whole machine log
+    CAL_LOG_KEYS = ('CAL A', 'CAL C', 'CAL AC', 'StartA', 'StartC',
+                    'StartPuck', 'SET C REF', 'GO TO C REF', 'GOTO ZERO',
+                    'CAL step', 'CAL RESULT', 'CAL edges', 'CAL pair')
+
+    def cal_say(self, text):
+        """Append one line to the commentary, from anywhere in this file."""
+        w = getattr(self, '_cal_log', None)
+        if w is None:
+            return
+        try:
+            w.appendPlainText(text)
+            w.verticalScrollBar().setValue(w.verticalScrollBar().maximum())
+        except Exception:
+            pass
+
+    def _cal_log_poll(self):
+        """Tail lcnc.log and surface the calibration narration.
+
+        Start from the END of the file the first time: the log carries
+        previous sessions, and replaying those as if they were happening now
+        is exactly the confusion the stale delta rows caused.
+        """
+        w = getattr(self, '_cal_log', None)
+        if w is None:
+            return
+        try:
+            import re as _re
+            sz = os.path.getsize(self.LCNC_LOG)
+            if self._cal_log_pos is None:
+                self._cal_log_pos = sz
+                return
+            if sz < self._cal_log_pos:      # truncated by a relaunch
+                self._cal_log_pos = 0
+            if sz == self._cal_log_pos:
+                return
+            with open(self.LCNC_LOG, 'rb') as f:
+                f.seek(self._cal_log_pos)
+                chunk = f.read(sz - self._cal_log_pos)
+                self._cal_log_pos = f.tell()
+            for raw in chunk.decode('utf-8', 'replace').split('\n'):
+                line = _re.sub(r'\x1b\[[0-9;?]*[a-zA-Z]', '', raw).strip()
+                if not line or not any(k in line for k in self.CAL_LOG_KEYS):
+                    continue
+                if '[qtpyvcp' in line or 'ned_controls.py' in line:
+                    continue
+                self.cal_say(line)
+        except Exception as e:
+            LOG.error('CAL commentary poll failed: %s', e)
+            self._cal_log_timer.stop()
+
     def _cal_fields_refresh(self):
         try:
             fields = getattr(self, '_cal_fields', None)
@@ -1191,6 +1266,9 @@ class UserTab(QWidget):
     def _cal_run(self, which):
         """Every calibration cycle goes through here: same gate, same centre
         arguments, same loud failure. The g-code owns the geometry."""
+        if which == 'ac':
+            self._ac_start()
+            return
         sub, label, need_centre = self.CAL_SUBS[which]
         try:
             gate = self._cal_gate(label)
@@ -1215,6 +1293,7 @@ class UserTab(QWidget):
                 c.mdi('o<%s> call %s' % (sub, args))
                 LOG.info('%s: %s issued with centre %.4f %.4f top %.4f',
                          label, sub, vals['3045'], vals['3046'], vals['3047'])
+                self.cal_say('>> %s' % label)
             else:
                 c.mdi('o<%s> call' % sub)
                 LOG.info('%s: %s issued', label, sub)
@@ -1301,6 +1380,108 @@ class UserTab(QWidget):
         'c': ('3055', '3056', '3073', '3070', 'C', 'refc-out'),
     }
 
+    # ---- StartAC: the loop lives HERE, not in g-code ------------------
+    # Operator 2026-08-03: "corrections are banked as they arrive, not at the
+    # end of an AC cycle. that would defeat the entire purpose". The old
+    # cal_ac_iterate.ngc ran all five A+C pairs inside ONE program and set the
+    # completion marker only at the end, so banking happened once, off
+    # #3069/#3070 accumulated over ten cycles. Every iteration after the first
+    # measured against a stale zero, so the residuals converged on nothing.
+    #
+    # Banking is a Python action -- it writes head_zero.inc and pulses REF to
+    # re-home the axis -- and g-code can neither do that nor pause to let it
+    # happen. So the loop moves to where the banking is.
+    AC_MAX_ITER = 5
+    AC_CONVERGED = 4          # A, C, A, C all discarded -- operator's criterion
+    AC_READY_DEADLINE_S = 120
+
+    def _ac_start(self):
+        self._ac_active = True
+        self._ac_iter = 1
+        self._ac_step = 'a'
+        self._ac_discards = 0
+        self._ac_banked = 0
+        LOG.info('StartAC: %d iterations max, each correction banked as it '
+                 'arrives; converged after %d consecutive discards (A,C,A,C)',
+                 self.AC_MAX_ITER, self.AC_CONVERGED)
+        if getattr(self, '_cal_status', None) is not None:
+            self._cal_status.setText(
+                'StartAC: iteration 1, A. Each correction banks immediately, '
+                'so the next measurement starts from a real zero.')
+        self._ac_next()
+
+    def _ac_stop(self, why):
+        self._ac_active = False
+        msg = ('StartAC finished after %d iteration(s): %s. Banked %d '
+               'correction(s).' % (self._ac_iter, why, self._ac_banked))
+        LOG.info(msg)
+        try:
+            import linuxcnc
+            linuxcnc.command().error_msg(msg)
+        except Exception:
+            pass
+        if getattr(self, '_cal_status', None) is not None:
+            self._cal_status.setText(msg)
+
+    def _ac_next(self):
+        if not getattr(self, '_ac_active', False):
+            return
+        if self._ac_discards >= self.AC_CONVERGED:
+            self._ac_stop('CONVERGED -- %d consecutive discards, the residual '
+                          'is below what the probe can measure'
+                          % self._ac_discards)
+            return
+        if self._ac_iter > self.AC_MAX_ITER:
+            self._ac_stop('reached the %d-iteration limit' % self.AC_MAX_ITER)
+            return
+        # banking pulses REF, which UNHOMES that axis for ~15 s. Issuing the
+        # next cycle then would just be refused by the gate, so wait for the
+        # machine to come back rather than firing into the window.
+        self._ac_wait_t0 = time.time()
+        self._ac_try_issue()
+
+    def _ac_try_issue(self):
+        if not getattr(self, '_ac_active', False):
+            return
+        try:
+            import linuxcnc
+            st = linuxcnc.stat()
+            st.poll()
+            ready = (st.task_state == linuxcnc.STATE_ON
+                     and all(st.homed[:6])
+                     and st.interp_state == linuxcnc.INTERP_IDLE
+                     and st.inpos)
+            if not ready:
+                if time.time() - self._ac_wait_t0 > self.AC_READY_DEADLINE_S:
+                    self._ac_stop('machine never came back ready after a bank '
+                                  '(%.0f s) -- stopping rather than firing '
+                                  'blind' % self.AC_READY_DEADLINE_S)
+                    return
+                QTimer.singleShot(1000, self._ac_try_issue)
+                return
+            LOG.info('StartAC: iteration %d/%d, %s cycle (%d consecutive '
+                     'discards so far)', self._ac_iter, self.AC_MAX_ITER,
+                     self._ac_step.upper(), self._ac_discards)
+            self._cal_run(self._ac_step)
+        except Exception as e:
+            self._ac_stop('sequencer error: %s' % e)
+
+    def _ac_advance(self, banked):
+        """Called once a cycle has banked or discarded."""
+        if not getattr(self, '_ac_active', False):
+            return
+        if banked:
+            self._ac_discards = 0
+            self._ac_banked += 1
+        else:
+            self._ac_discards += 1
+        if self._ac_step == 'a':
+            self._ac_step = 'c'
+        else:
+            self._ac_step = 'a'
+            self._ac_iter += 1
+        self._ac_next()
+
     def _cal_after_cycle(self, which):
         """Cycle finished. BANK an improvement without asking.
 
@@ -1327,6 +1508,7 @@ class UserTab(QWidget):
             corr = v.get(ckey, 0.0)
             if before is None or after is None:
                 LOG.error('Start%s: no before/after pair -- nothing banked', ax)
+                self._ac_advance(False)
                 return
             if not moved:
                 msg = ('Start%s: %+.4f -> %+.4f mm, correction discarded, %s '
@@ -1334,16 +1516,20 @@ class UserTab(QWidget):
                 LOG.info(msg)
                 if getattr(self, '_cal_status', None) is not None:
                     self._cal_status.setText(msg)
+                self._ac_advance(False)
                 return
             if abs(after) >= abs(before):
                 # the g-code should already have reverted; belt and braces
                 LOG.error('Start%s: %+.4f -> %+.4f mm is not better -- NOT '
                           'banking', ax, before, after)
+                self._ac_advance(False)
                 return
             if abs(corr) < 1e-9:
                 LOG.info('Start%s: correction is zero -- nothing to bank', ax)
+                self._ac_advance(False)
                 return
             self._cal_bank(ax, corr, pin, ckey, before, after)
+            self._ac_advance(True)
         except Exception as e:
             LOG.error('post-cycle banking failed: %s', e)
 
