@@ -1,0 +1,36 @@
+(ned -- StartC, the whole C step. Mirrors cal_a_cycle.)
+(  1. cal_c_zero -- probe toward centre at A-45 and A+45 about the corrected)
+(                   A zero, rotate C, probe the pair again. ABORTS if its own)
+(                   delta got worse.)
+(  2. cal_probe_center -- re-find the puck. Rotating C SWINGS THE TOOL TIP,)
+(                   so the stored centre must be re-measured or the next)
+(                   cycle works against a frame that no longer describes)
+(                   this tip. This is also what leaves the machine sitting)
+(                   on the MOST UP TO DATE zero at the end.)
+
+o<cal_c_cycle> sub
+  #<cx>  = #1
+  #<cy>  = #2
+  #<top> = #3
+
+  o5 if [#<_metric> EQ 0]
+    (abort, StartC: switch to MM first)
+  o5 endif
+  o6 if [#<top> EQ 0 AND #<cx> EQ 0 AND #<cy> EQ 0]
+    (abort, StartC: no puck centre - run StartPuck first)
+  o6 endif
+  o7 if [#3058 EQ 0]
+    (abort, StartC: no C reference taught. Press SET C REF, jog the tip into place, press SET C REF again.)
+  o7 endif
+
+  o<cal_c_zero> call [#<cx>] [#<cy>] [#<top>]
+
+  (PRINT, StartC: C corrected by #3057 deg, dX #3055 -> #3056. Re-finding the puck so the zero matches the new C.)
+  o<cal_probe_center> call
+
+  (PRINT, StartC DONE: dX #3055 -> #3056, C total #3070 deg, new centre #3045 #3046 top #3047)
+  (DEBUG, StartC done: dX #3055 to #3056, new centre #3045 #3046 top #3047)
+
+o<cal_c_cycle> endsub
+
+M2 (end program)

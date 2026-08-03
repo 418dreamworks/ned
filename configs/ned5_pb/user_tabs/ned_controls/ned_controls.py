@@ -973,8 +973,8 @@ class UserTab(QWidget):
 
     CAL_SUBS = {
         'puck': ('cal_probe_center', 'StartPuck', False),
-        'a':    ('cal_a_zero',       'StartA',    True),
-        'c':    ('cal_c_zero',       'StartC',    True),
+        'a':    ('cal_a_cycle',      'StartA',    True),
+        'c':    ('cal_c_cycle',      'StartC',    True),
         'cref': ('cal_c_ref',        'SET C REF', True),
         'ac':   ('cal_ac_iterate',   'StartAC',   True),
         'goto': ('cal_goto_zero',    'GOTO ZERO', True),
@@ -1040,18 +1040,115 @@ class UserTab(QWidget):
             else:
                 c.mdi('o<%s> call' % sub)
                 LOG.info('%s: %s issued', label, sub)
+            if which == 'a':
+                self._cal_watch_start()
             if getattr(self, '_cal_status', None) is not None:
                 self._cal_status.setText(self.CAL_MSG.get(which, ''))
         except Exception as e:
             LOG.error('%s failed: %s', label, e)
 
+    # --- StartA completion watcher -------------------------------------
+    # The operator's spec: probe, re-find the puck, and "if its an
+    # improvement, update the parameter file". The decision needs the cycle
+    # to have FINISHED, so this polls rather than guessing at issue time.
+    CAL_WATCH_MS = 500
+    CAL_WATCH_DEADLINE_S = 900      # 4 wall touches + a puck find
+
+    def _cal_watch_start(self):
+        self._cal_watch_seen_busy = False
+        self._cal_watch_elapsed = 0.0
+        self._cal_watch_said = 0.0
+        t = getattr(self, '_cal_watch_timer', None)
+        if t is None:
+            t = self._cal_watch_timer = QTimer(self)
+            t.timeout.connect(self._cal_watch_tick)
+        t.start(self.CAL_WATCH_MS)
+        LOG.info('StartA: watching for completion (auto-record on improvement)')
+
+    def _cal_watch_stop(self, why):
+        t = getattr(self, '_cal_watch_timer', None)
+        if t is not None:
+            t.stop()
+        LOG.info('StartA watcher stopped: %s', why)
+
+    def _cal_watch_tick(self):
+        try:
+            import linuxcnc
+            s = linuxcnc.stat()
+            s.poll()
+            self._cal_watch_elapsed += self.CAL_WATCH_MS / 1000.0
+            busy = (s.interp_state != linuxcnc.INTERP_IDLE) or (not s.inpos)
+            if busy:
+                self._cal_watch_seen_busy = True
+            # never sit silent: say something at least every 10 s
+            if self._cal_watch_elapsed - self._cal_watch_said >= 10.0:
+                self._cal_watch_said = self._cal_watch_elapsed
+                LOG.info('StartA: %.0f s elapsed, interp=%s inpos=%s',
+                         self._cal_watch_elapsed, s.interp_state, s.inpos)
+            if self._cal_watch_elapsed > self.CAL_WATCH_DEADLINE_S:
+                self._cal_watch_stop('deadline %.0f s reached -- NOT recording'
+                                     % self.CAL_WATCH_DEADLINE_S)
+                linuxcnc.command().error_msg(
+                    'StartA: %d s with no completion -- not recording. Check '
+                    'the log.' % self.CAL_WATCH_DEADLINE_S)
+                return
+            if not self._cal_watch_seen_busy or busy:
+                return
+            self._cal_watch_stop('cycle finished after %.0f s'
+                                 % self._cal_watch_elapsed)
+            self._cal_after_a()
+        except Exception as e:
+            self._cal_watch_stop('watcher error: %s' % e)
+
+    def _cal_after_a(self):
+        """Cycle done. cal_a_zero already aborts when its own delta gets
+        worse, so arriving here is itself the improvement -- but read the
+        numbers and check, because a silent auto-write to a parameter file
+        must never rest on an assumption."""
+        try:
+            import linuxcnc
+            c = linuxcnc.command()
+            v = self._read_vars(('3050', '3051', '3052'))
+            before, after = v.get('3050'), v.get('3051')
+            if before is None or after is None:
+                LOG.error('StartA: no dY pair in the var file -- not recording')
+                return
+            if abs(after) >= abs(before):
+                msg = ('StartA: dY %+.4f -> %+.4f did NOT improve -- parameter '
+                       'file NOT written' % (before, after))
+                LOG.error(msg)
+                c.error_msg(msg)
+                if getattr(self, '_cal_status', None) is not None:
+                    self._cal_status.setText(msg)
+                return
+            LOG.info('StartA: dY %+.4f -> %+.4f improved by %.4f mm -- '
+                     'recording', before, after, abs(before) - abs(after))
+            self._cal_record(auto=True)
+        except Exception as e:
+            LOG.error('StartA post-cycle failed: %s', e)
+
+    def _read_vars(self, keys):
+        out = {}
+        try:
+            with open(self.VAR_FILE) as f:
+                for line in f:
+                    p = line.split()
+                    if len(p) == 2 and p[0] in keys:
+                        out[p[0]] = float(p[1])
+        except Exception as e:
+            LOG.error('var read failed: %s', e)
+        return out
+
     CAL_MSG = {
         'puck': 'StartPuck running: top, then 8 edges. Result lands in the '
                 'three boxes above when the cycle ends.',
-        'a':    'StartA running: wall touches at -20 and -50, an A rotation, '
-                'then the same pair again. Watch dY before/after.',
+        'a':    'StartA running: 4 wall touches at -30 and -65 with an A '
+                'correction between them, then a fresh puck find so the zero '
+                'matches the corrected A. If dY improved it writes '
+                'head_zero.inc by itself.',
         'c':    'StartC running: probes toward centre at A -45 and +45, '
-                'corrects C, re-probes. Watch dX before/after.',
+                'corrects C, re-probes, then re-finds the puck so the zero '
+                'matches the corrected C. Watch dX before/after.',
         'cref': 'SET C REF -- TWO PRESSES. The first clears Z and rotates A '
                 'to -45, then hands control back: jog the tip to where '
                 'driving toward the puck centre in +X would strike it. The '
@@ -1085,7 +1182,7 @@ class UserTab(QWidget):
             raise RuntimeError('GEAR_A/GEAR_C not found in ned_params.sh')
         return g
 
-    def _cal_record(self):
+    def _cal_record(self, auto=False):
         """Make the CURRENT head pose the new A/C zero.
 
         The stored zero PS is an absolute-encoder count; machine angle is
@@ -1094,7 +1191,7 @@ class UserTab(QWidget):
         counts that `deg` represents -- no live encoder read needed, and the
         DRO is the measurement. Backs the file up first so the pre-calibration
         zero is always recoverable."""
-        label = 'CAL RECORD'
+        label = 'CAL RECORD (auto)' if auto else 'CAL RECORD'
         try:
             import linuxcnc, shutil, time, re as _re
             c = linuxcnc.command()

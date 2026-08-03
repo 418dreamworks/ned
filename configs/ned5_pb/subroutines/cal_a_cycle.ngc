@@ -1,0 +1,38 @@
+(ned -- StartA, the whole A step, operator spec 2026-08-03.)
+(  1. cal_a_zero  -- wall touches at -30 and -65, correct A, touch again.)
+(                    It ABORTS if its own delta got worse, so reaching)
+(                    step 2 already means the correction improved things.)
+(  2. cal_probe_center -- re-find the puck. Rotating A SWINGS THE TOOL TIP,)
+(                    so the centre and top measured before the correction no)
+(                    longer describe where this tip touches. Re-finding makes)
+(                    the stored zero correspond to the CORRECTED A.)
+(The GUI then reads #3050 vs #3051 and writes head_zero.inc if it improved.)
+
+(cal_a_zero parks at the puck centre, tip 5 mm up, which is exactly where)
+(cal_probe_center wants to start its down-probe -- no repositioning needed.)
+
+o<cal_a_cycle> sub
+  #<cx>  = #1
+  #<cy>  = #2
+  #<top> = #3
+
+  o5 if [#<_metric> EQ 0]
+    (abort, StartA: switch to MM first)
+  o5 endif
+  o6 if [#<top> EQ 0 AND #<cx> EQ 0 AND #<cy> EQ 0]
+    (abort, StartA: no puck centre - run StartPuck first)
+  o6 endif
+
+  (--- 1: measure and correct A ---)
+  o<cal_a_zero> call [#<cx>] [#<cy>] [#<top>]
+
+  (--- 2: re-find the puck against the corrected A ---)
+  (PRINT, StartA: A corrected by #3052 deg, dY #3050 -> #3051. Re-finding the puck so the zero matches the new A.)
+  o<cal_probe_center> call
+
+  (PRINT, StartA DONE: dY #3050 -> #3051, A total #3069 deg, new centre #3045 #3046 top #3047)
+  (DEBUG, StartA done: dY #3050 to #3051, new centre #3045 #3046 top #3047)
+
+o<cal_a_cycle> endsub
+
+M2 (end program)
