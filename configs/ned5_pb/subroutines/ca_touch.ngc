@@ -65,8 +65,17 @@ o<ca_touch> sub
   G38.2 Y[0 - #<_ca_side> * [#<_ca_back> + 1]] F[#<_ca_fla>]
   #<_ca_ty> = #5062
 
-  (clear the wall -- this IS the backoff standoff the next touch reuses)
-  G1 Y[#<_ca_side> * 2 * #<_ca_back>] F[#<_ca_ftr>]
+  (RELEASE PROVEN, NOT GUESSED. G38.5 backs off until the probe OPENS and)
+  (stops there -- "probe until no contact away from work, no error", the form)
+  (used by stock rectangle_probe.ngc. A blind G1 of a guessed distance can)
+  (leave the rod still touching, and then the FIRST non-probe move of the)
+  (NEXT cycle dies with "probe tripped during non-probe move" -- one abort)
+  (poisoning every run after it, which is what happened 2026-08-03. This is)
+  (not a contact-quality question: it is about never issuing an ordinary move)
+  (while the probe is made.)
+  (this standoff is what the next touch reuses)
+  G38.5 Y[#<_ca_side> * 2 * #<_ca_back>] F[#<_ca_fla>]
+  G1 Y[#<_ca_side> * #<_ca_back>] F[#<_ca_ftr>]
   G90
 
   o120 if [#<retract> NE 0]

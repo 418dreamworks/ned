@@ -52,8 +52,10 @@ o<cal_probe_center> sub
   G38.2 Z-30 F[#<f_probe>]
   G1 Z[#<backoff>] F[#<f_trav>]
   G38.2 Z-[#<backoff> + 1] F[#<f_latch>]
-  G90
   #<top> = #5063
+  (release proven before ANY ordinary move -- see ca_touch.ngc)
+  G38.5 Z[#<backoff> + 1] F[#<f_latch>]
+  G90
   (BANK IT NOW. If anything later in this cycle aborts -- a missed edge, a)
   (probe left tripped -- the top is still a real measurement and must not be)
   (thrown away with the run. Operator 2026-08-03.)
@@ -98,8 +100,11 @@ o<cal_probe_center> sub
     #[100 + #<d>] = #5061
     #[110 + #<d>] = #5062
 
-    (clear the rim, then hover)
-    G1 X[#<dx> * 2 * #<backoff>] Y[#<dy> * 2 * #<backoff>] F[#<f_trav>]
+    (clear the rim with the release PROVEN -- see ca_touch.ngc: a blind)
+    (retract that does not release leaves the next cycle unable to make its)
+    (first ordinary move.)
+    G38.5 X[#<dx> * 2 * #<backoff>] Y[#<dy> * 2 * #<backoff>] F[#<f_latch>]
+    G1 X[#<dx> * #<backoff>] Y[#<dy> * #<backoff>] F[#<f_trav>]
     G90
     G1 Z[#<top> + #<clear>] F[#<f_trav>]
 

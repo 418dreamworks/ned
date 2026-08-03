@@ -48,13 +48,6 @@ o<cal_a_zero> sub
   #<cy>    = #2        (setter centre Y, work frame -- from #3046)
   #<top>   = #3        (setter top Z, work frame -- from #3047)
 
-  (MEASUREMENT FLOOR. Touches repeat to about 4 um, seen directly on)
-  (2026-08-03: a BEFORE pair read 0.000 and the AFTER pair -0.004 over the)
-  (same 40 mm. Below this, dY is noise and not tilt -- demanding an)
-  (improvement there would reject a perfect result forever, which is exactly)
-  (what happened. 0.010 mm over 40 mm is 0.014 deg.)
-  #<tol> = 0.010
-
   #<d1> = 25.0         (before: shallow)
   #<d2> = 65.0         (before: deep)
   #<d3> = 65.0         (after: deep first)
@@ -87,6 +80,11 @@ o<cal_a_zero> sub
   #<_ca_safe>  = 5.0
   #<_ca_side>  = -1    (approach from -Y, probe toward +Y; +1 mirrors it)
 
+  (#3072 = did A ACTUALLY change. If the correction is discarded, nothing)
+  (moved, so the puck centre measured before is still the puck centre and)
+  (re-finding it is wasted time -- operator 2026-08-03.)
+  #3072 = 0
+
   M50 P0               (pin the feed override -- probes run at programmed feed)
   M64 P3               (puck UP)
   G4 P1.5
@@ -102,24 +100,6 @@ o<cal_a_zero> sub
   #3050 = #<dy_b>
   #3053 = #<tilt_b>
   (PRINT, CAL A BEFORE: y at -25 = #<y1>, y at -65 = #<y2>, DELTA Y = #<dy_b> over #<dz_b> mm, tilt #<tilt_b> deg)
-
-  (=== ALREADY PERPENDICULAR? then there is nothing to correct ============)
-  o115 if [ABS[#<dy_b>] LE #<tol>]
-    #3051 = #<dy_b>
-    #3054 = #<tilt_b>
-    #3052 = 0
-    G90
-    G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
-    M65 P3
-    G4 P1.0
-    G1 A#3069 C#3070 F600
-    G1 X#<cx> Y#<cy> F[#<_ca_ftr>]
-    G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
-    M50 P1
-    (PRINT, CAL A: dY #<dy_b> mm is within the #<tol> mm measurement floor - A is ALREADY perpendicular. Nothing applied, nothing to fix.)
-    (DEBUG, CAL A ALREADY PERPENDICULAR: dY #<dy_b> mm, tilt #<tilt_b> deg - within the measurement floor)
-    o115 return
-  o115 endif
 
   (=== CORRECT ============================================================)
   #<corr> = [0 - #<tilt_b>]
@@ -169,12 +149,9 @@ o<cal_a_zero> sub
   (dY is directly comparable and is the test. A failed correction is ROLLED)
   (BACK -- leaving the head rotated by a move that made things worse would)
   (quietly corrupt the zero every later routine tilts about.)
-  (Landing inside the measurement floor IS success, even if the number did)
-  (not shrink -- at 4 um repeatability 0.006 -> 0.008 mm is the same reading)
-  (twice, not a regression. Only a result that is BOTH outside the floor AND)
-  (no better than before gets rolled back.)
-  o130 if [ABS[#<dy_a>] LE #<tol> OR ABS[#<dy_a>] LT ABS[#<dy_b>]]
-    (PRINT, CAL A OK: dY #<dy_b> -> #<dy_a> mm, tilt #<tilt_b> -> #<tilt_a> deg, A moved #<corr> deg. Kept.)
+  o130 if [ABS[#<dy_a>] LT ABS[#<dy_b>]]
+    #3072 = 1
+    (PRINT, CAL A OK: dY #<dy_b> -> #<dy_a> mm, tilt #<tilt_b> -> #<tilt_a> deg, A moved #<corr> deg. KEPT.)
     (DEBUG, CAL A: dY #<dy_b> to #<dy_a> mm, A corrected #<corr> deg - KEPT)
   o130 else
     (roll the rotation back, here at the standoff where the puck is clear)
@@ -191,8 +168,9 @@ o<cal_a_zero> sub
     G1 X#<cx> Y#<cy> F[#<_ca_ftr>]
     G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
     M50 P1
-    (DEBUG, CAL A REVERTED: dY #<dy_b> to #<dy_a> mm - no improvement, A put back)
-    (abort, CAL A: dY #<dy_b> then #<dy_a> mm - the correction did NOT improve the absolute distance, so it was ROLLED BACK and nothing was applied. A is where it started.)
+    #3072 = 0
+    (PRINT, CAL A DISCARDED: dY #<dy_b> -> #<dy_a> mm is not better, so the correction was reverted. A is exactly where it started and NOTHING changed, so the puck does not need re-finding.)
+    (DEBUG, CAL A DISCARDED: dY #<dy_b> to #<dy_a> mm - reverted, A unchanged, puck re-find skipped)
   o130 endif
 
   (=== puck DOWN, park on the zero pose with the corrected A ==============)

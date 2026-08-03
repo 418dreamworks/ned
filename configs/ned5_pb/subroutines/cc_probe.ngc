@@ -39,8 +39,16 @@ o<cc_probe> sub
   G38.2 X[#<_cc_back> + 1] F[#<_cc_fla>]
   #<_cc_tx> = #5061
 
-  (clear, back to hover)
-  G1 X-[2 * #<_cc_back>] F[#<_cc_ftr>]
+  (RELEASE PROVEN, NOT GUESSED. G38.5 backs off until the probe OPENS and)
+  (stops there -- "probe until no contact away from work, no error", the form)
+  (used by stock rectangle_probe.ngc. A blind G1 of a guessed distance can)
+  (leave the rod still touching, and then the FIRST non-probe move of the)
+  (NEXT cycle dies with "probe tripped during non-probe move" -- one abort)
+  (poisoning every run after it, which is what happened 2026-08-03. This is)
+  (not a contact-quality question: it is about never issuing an ordinary move)
+  (while the probe is made.)
+  G38.5 X-[2 * #<_cc_back>] F[#<_cc_fla>]
+  G1 X-[#<_cc_back>] F[#<_cc_ftr>]
   G90
   G1 Z[#<_cc_top> + #<_cc_safe>] F[#<_cc_ftr>]
 o<cc_probe> endsub

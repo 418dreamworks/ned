@@ -33,9 +33,17 @@ o<cal_a_cycle> sub
   (--- 1: measure and correct A ---)
   o<cal_a_zero> call [#<cx>] [#<cy>] [#<top>]
 
-  (--- 2: re-find the puck against the corrected A ---)
-  (PRINT, StartA: A corrected by #3052 deg, dY #3050 -> #3051. Re-finding the puck so the zero matches the new A.)
-  o<cal_probe_center> call
+  (--- 2: re-find the puck ONLY if A actually moved --------------------)
+  (Rotating A swings the tool tip, so a KEPT correction invalidates the)
+  (stored centre. A DISCARDED one does not: A is back where it started and)
+  (nothing about the geometry changed, so re-probing would only cost time)
+  (and put another set of touches on the puck -- operator 2026-08-03.)
+  o20 if [#3072 EQ 1]
+    (PRINT, StartA: A corrected by #3052 deg, dY #3050 -> #3051. Re-finding the puck so the zero matches the new A.)
+    o<cal_probe_center> call
+  o20 else
+    (PRINT, StartA: correction discarded, A unchanged - skipping the puck re-find, the stored centre is still valid.)
+  o20 endif
 
   #3071 = 1
   (PRINT, StartA DONE: dY #3050 -> #3051, A total #3069 deg, new centre #3045 #3046 top #3047)
