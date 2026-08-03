@@ -93,7 +93,20 @@ o<cal_a_zero> sub
   (re-finding it is wasted time -- operator 2026-08-03.)
   #3072 = 0
 
+
+  M50 P0               (pin the feed override -- probes run at programmed feed)
+
+  (FORCE THE START POSE. Operator 2026-08-03: "there was no force that the)
+  (start position of every button was the zero". Every routine ASSUMED where)
+  (the head was and moved accordingly; entered from anywhere else those moves)
+  (are wrong, which is how a plunge went through the puck. Establish the pose)
+  (instead of assuming it -- from the zero, every move below is known-safe.)
+  o<cal_goto_zero> call [#<cx>] [#<cy>] [#<top>]
+
   (UNBANKED CORRECTION FROM A DIED CYCLE -- UNDO IT BEFORE MEASURING.)
+  (MOVED to AFTER the start pose is forced. It used to run FIRST, so its)
+  (Z move was a ~350 mm descent from an unknown entry pose -- the exact)
+  (thing the doctrine ten lines below forbids. Audit 2026-08-03.)
   (Banking makes the parameter file the zero and clears #3069, so #3069 is 0 at)
   (the start of every healthy cycle. A non-zero value means the previous run)
   (applied a rotation and then died before banking it -- an abort stops)
@@ -110,15 +123,6 @@ o<cal_a_zero> sub
     (PRINT, CAL A: #3069 was #3069 deg - an unbanked correction from a cycle that died. Rotated back before measuring.)
     #3069 = 0
   o8 endif
-
-  M50 P0               (pin the feed override -- probes run at programmed feed)
-
-  (FORCE THE START POSE. Operator 2026-08-03: "there was no force that the)
-  (start position of every button was the zero". Every routine ASSUMED where)
-  (the head was and moved accordingly; entered from anywhere else those moves)
-  (are wrong, which is how a plunge went through the puck. Establish the pose)
-  (instead of assuming it -- from the zero, every move below is known-safe.)
-  o<cal_goto_zero> call [#<cx>] [#<cy>] [#<top>]
 
   (CLEAR LATERALLY BEFORE THE PUCK COMES UP. The zero pose sits over the puck)
   (centre with the tip 5 mm above the top, so deploying there drives the puck)
@@ -195,32 +199,15 @@ o<cal_a_zero> sub
   G90
   #3069 = [#3069 + #<corr>]
 
-  (=== A CLAMPED BITE ENDS HERE ===========================================)
-  (Operator 2026-08-03: if the change is larger than 1 deg, cap it at 1 deg,)
-  (RE-PROBE THE PUCK, and redo the A bit -- repeat until the demand is under)
-  (1 deg or stops improving. That is one cycle.)
-  (So a clamped bite does NOT run the AFTER pair: the head has moved a full)
-  (degree, which swings the tip and makes the stored centre stale, so any)
-  (measurement taken now would be against a frame that no longer describes)
-  (this tip. cal_a_cycle re-finds the puck and calls this again; the NEXT)
-  (iteration's BEFORE pair is the verification of this bite.)
-  o128 if [#<clamped> EQ 1]
-    #3072 = 1
-    G90
-    G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
-    M65 P3
-    G4 P1.0
-    G1 A#3069 C#3070 F1200
-    G1 X#<cx> Y#<cy> F[#<_ca_ftr>]
-    G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
-  (start AND end of every button is the ZERO -- operator 2026-08-03. That)
-  (covers the ABORT paths too: a cycle dying at a standoff is exactly what)
-  (made the next button's assumptions wrong.)
-  o<cal_goto_zero> call [#<cx>] [#<cy>] [#<top>]
-    M50 P1
-    (PRINT, CAL A: took a 1 deg bite of a #<tilt_b> deg tilt. Re-finding the puck, then measuring again.)
-    o128 return
-  o128 endif
+  (A CLAMPED BITE USED TO RETURN HERE WITHOUT MEASURING, and that was a bug)
+  (that could write an unverified degree into head_zero.inc: #3051 still held)
+  (the PREVIOUS cycle's number, so the GUI compared this run's dy_b against)
+  (last run's dy_a and banked on the answer. Audit 2026-08-03.)
+  (It now falls through and measures like any other correction. That is valid)
+  (without re-finding the puck first: both touches of a pair shift together)
+  (with the tip, and dY is their DIFFERENCE, so a stale centre cancels. The)
+  (puck is still re-found afterwards by cal_a_cycle when #3072 is 1.)
+
 
   (=== AFTER: -65, then rise to -25, same standoff ========================)
   o<ca_touch> call [#<d3>] [#<next_app>] [0]
@@ -296,20 +283,6 @@ o<cal_a_zero> sub
   M65 P3
   G4 P1.0
   o<cal_goto_zero> call [#<cx>] [#<cy>] [#<top>]
-  M50 P1
-
-  (=== puck DOWN, park on the zero pose with the corrected A ==============)
-  G90
-  G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
-  M65 P3
-  G4 P1.0
-  (END AT THE ZERO TOO -- operator 2026-08-03: start AND end of every button)
-  (is the zero. Leaving the head wherever the last touch finished is what)
-  (made the next button's assumptions wrong in the first place.)
-  o<cal_goto_zero> call [#<cx>] [#<cy>] [#<top>]
-  G1 A#3069 C#3070 F1200
-  G1 X#<cx> Y#<cy> F[#<_ca_ftr>]
-  G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
   M50 P1
 
 o<cal_a_zero> endsub

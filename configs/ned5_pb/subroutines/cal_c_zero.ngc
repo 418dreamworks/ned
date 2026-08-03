@@ -119,7 +119,17 @@ o<cal_c_zero> sub
   (#3073 = did C ACTUALLY change - drives whether the puck needs re-finding)
   #3073 = 0
 
+
+  M50 P0
+
+  (FORCE THE START POSE -- see cal_a_zero. Every button now begins from the)
+  (zero instead of assuming it is already there.)
+  o<cal_goto_zero> call [#<cx>] [#<cy>] [#<top>]
+
   (UNBANKED CORRECTION FROM A DIED CYCLE -- UNDO IT BEFORE MEASURING.)
+  (MOVED to AFTER the start pose is forced. It used to run FIRST, so its)
+  (Z move was a ~350 mm descent from an unknown entry pose -- the exact)
+  (thing the doctrine ten lines below forbids. Audit 2026-08-03.)
   (Banking makes the parameter file the zero and clears #3070, so #3070 is 0 at)
   (the start of every healthy cycle. A non-zero value means the previous run)
   (applied a rotation and then died before banking it -- an abort stops)
@@ -136,12 +146,6 @@ o<cal_c_zero> sub
     (PRINT, CAL C: #3070 was #3070 deg - an unbanked correction from a cycle that died. Rotated back before measuring.)
     #3070 = 0
   o8 endif
-
-  M50 P0
-
-  (FORCE THE START POSE -- see cal_a_zero. Every button now begins from the)
-  (zero instead of assuming it is already there.)
-  o<cal_goto_zero> call [#<cx>] [#<cy>] [#<top>]
 
   (X FIRST, THEN Y. Combined they move diagonally, which crosses the puck.)
   (X alone steps in front of it; only then is the big Y swing off the puck.)
@@ -245,6 +249,14 @@ o<cal_c_zero> sub
   o240 else
     (RESET to the starting angle FIRST -- a quarter measured from the overshot)
     (position is not a quarter of the original correction.)
+    (RISE CLEAR BEFORE ROTATING. cc_probe leaves the tip 1.0 mm off the puck)
+    (face, and a C rotation moves it tangentially by dy times sin phi --)
+    (3.4 mm per degree, essentially straight at the puck. The full)
+    (correction rises first for this reason; these did not, and were safe)
+    (only by an arithmetic coincidence a deeper re-teach would break.)
+    (Audit 2026-08-03.)
+    G90
+    G1 Z[#<top> + #<safe>] F[#<_cc_ftr>]
     G91
     G1 C[0 - #<phi>] F[#<_cc_frot>]
     G90
@@ -273,6 +285,8 @@ o<cal_c_zero> sub
       (PRINT, CAL C OK on the quarter: dX #<dx_b> -> #<dx_q> mm, C moved #<qtr> deg. KEPT.)
       (DEBUG, CAL C: quarter kept - dX #<dx_b> to #<dx_q> mm, C corrected #<qtr> deg)
     o250 else
+      G90
+      G1 Z[#<top> + #<safe>] F[#<_cc_ftr>]
       G91
       G1 C[0 - #<qtr>] F[#<_cc_frot>]
       G90
