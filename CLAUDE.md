@@ -127,3 +127,22 @@
       manufactures a pattern out of nothing. Anchor on a signature only the
       machine can emit (e.g. `linuxcnc: line NNN: PID Bus error`), never a
       bare phrase.
+
+20. **READ THE HISTORY BEFORE EVERY FIX — GO BACK 5 EDITS.** Before changing
+    any file to fix something, run `git log --oneline -5 -- <file>` and read
+    what those commits DID and WHY. The code you are about to "fix" usually
+    got that way on purpose, and the guard you are about to remove is usually
+    load-bearing.
+    - 2026-08-03 I removed the `inplace_pending` gate in `ned_brain.py` so a
+      later absolute read could correct A/C. That gate was also the only thing
+      stopping `do_inplace` from firing during a homing cycle. A head read
+      landed mid Home All, `do_inplace` switched to MANUAL and issued
+      unhome/home, and Z froze before its search move — `HOMING WEDGED`. I
+      then patched the fallout instead of reverting, twice.
+    - **Layered patches are the signal to STOP AND REVERT.** If a fix needs a
+      second fix to contain its own damage, revert to the last known-good
+      commit and start from there. `git checkout <good-sha> -- <file>` is
+      cheaper than the operator's afternoon.
+    - Working machine behaviour outranks the bug being chased. Homing worked;
+      the A/C read problem was real but NOT worth trading a working homing
+      cycle for. Fix it from the good base, not on top of the wreckage.
