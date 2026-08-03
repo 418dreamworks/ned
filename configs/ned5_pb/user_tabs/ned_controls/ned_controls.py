@@ -612,10 +612,18 @@ class UserTab(QWidget):
                 row.addWidget(e)
                 nbl.addLayout(row)
                 self._cal_fields[key] = e
+            nrow = QHBoxLayout()
+            npos = QPushButton('GO TO START POS')
+            npos.setMinimumHeight(40)
+            npos.setToolTip('Move to the section-1 result: centre X/Y, '
+                            'tip 5 mm above the detected surface')
+            npos.clicked.connect(self._cal_goto_start)
+            nrow.addWidget(npos)
             ngo = QPushButton('GO (not built yet)')
             ngo.setMinimumHeight(40)
             ngo.clicked.connect(self._cal_ac_stub)
-            nbl.addWidget(ngo)
+            nrow.addWidget(ngo)
+            nbl.addLayout(nrow)
             cl.addWidget(nbox)
 
             # the interpreter flushes numbered params to the var file at M2,
@@ -854,6 +862,50 @@ class UserTab(QWidget):
                     e.setText('%.4f' % v)
         except Exception as e:
             LOG.error('CAL fields refresh failed: %s', e)
+
+    def _cal_goto_start(self):
+        """Move to section 1's result: centre X/Y, tip 5 mm above the top.
+        Values come from the GUI fields (var-file backed, work frame). Safe
+        order: Z to clearance FIRST if below it, then XY, then Z down."""
+        label = 'CAL GO TO START POS'
+        try:
+            import linuxcnc
+            c = linuxcnc.command()
+            s = linuxcnc.stat()
+            vals = {}
+            for k in ('3045', '3046', '3047'):
+                t = self._cal_fields[k].text().strip()
+                if not t:
+                    c.error_msg('%s refused: no section-1 result yet -- run '
+                                'the centre calibration first' % label)
+                    LOG.error('%s refused: field %s empty', label, k)
+                    return
+                vals[k] = float(t)
+            cx, cy = vals['3045'], vals['3046']
+            zt = vals['3047'] + 5.0
+            s.poll()
+            if s.task_state != linuxcnc.STATE_ON or not all(s.homed[:6]) \
+               or s.interp_state != linuxcnc.INTERP_IDLE or not s.inpos:
+                c.error_msg('%s refused: machine must be ON, homed and idle'
+                            % label)
+                LOG.error('%s refused: not ON/homed/idle', label)
+                return
+            c.mode(linuxcnc.MODE_MDI)
+            c.wait_complete()
+            s.poll()
+            if s.task_mode != linuxcnc.MODE_MDI:
+                c.error_msg('%s refused: could not enter MDI' % label)
+                return
+            # current work Z (house offset math)
+            zw = (s.actual_position[2] - s.g5x_offset[2] - s.g92_offset[2]
+                  - s.tool_offset[2])
+            if zw < zt:
+                c.mdi('G90 G1 Z%.4f F500' % zt)      # rise first, never drag low
+            c.mdi('G90 G1 X%.4f Y%.4f F500' % (cx, cy))
+            c.mdi('G90 G1 Z%.4f F500' % zt)
+            LOG.info('%s: -> X%.4f Y%.4f Z%.4f (centre, +5 mm)', label, cx, cy, zt)
+        except Exception as e:
+            LOG.error('%s failed: %s', label, e)
 
     def _cal_ac_stub(self):
         LOG.info('A/C CALIBRATION GO pressed: program not designed yet '
