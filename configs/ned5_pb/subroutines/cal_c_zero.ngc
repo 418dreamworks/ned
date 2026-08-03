@@ -140,13 +140,20 @@ o<cal_c_zero> sub
   #3057 = #<phi>
   (PRINT, CAL C: rotating C by #<phi> deg)
 
-  (ONE correction, capped at 1 deg -- operator 2026-08-03, same rule as A.)
-  o230 if [ABS[#<phi>] GT 1.0]
-    G90
-    M65 P3
-    M50 P1
-    (abort, CAL C: computed correction over 1 deg - that is not a small misalignment. Either the sign is inverted or the geometry is not what the model assumes. Refusing to swing the head that far on one reading.)
+  (CLAMP to 1 deg, do NOT abort -- operator 2026-08-03, same rule as A. Take)
+  (one 1 deg bite in the computed direction and let the re-probe judge it.)
+  #<cclamp> = 0
+  o230 if [#<phi> GT 1.0]
+    #<phi> = 1.0
+    #<cclamp> = 1
   o230 endif
+  o231 if [#<phi> LT -1.0]
+    #<phi> = -1.0
+    #<cclamp> = 1
+  o231 endif
+  o232 if [#<cclamp> EQ 1]
+    (PRINT, CAL C: computed correction exceeded 1 deg - clamped to #<phi> deg. Applying one bite and re-measuring.)
+  o232 endif
 
   G90
   G1 Z[#<top> + #<safe>] F[#<_cc_ftr>]

@@ -103,20 +103,27 @@ o<cal_a_zero> sub
 
   (=== CORRECT ============================================================)
   #<corr> = [0 - #<tilt_b>]
-  #3052 = #<corr>
   (PRINT, CAL A: rotating A by #<corr> deg)
+  #3052 = #<corr>
 
-  (ONE correction, capped at 1 deg -- operator 2026-08-03. A demand bigger)
-  (than this is not a small misalignment: it means the sign is inverted or)
-  (the geometry is not what the model assumes, and swinging the head that far)
-  (on one reading would make it worse, not better.)
-  o120 if [ABS[#<corr>] GT 1.0]
-    G90
-    G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
-    M65 P3
-    M50 P1
-    (abort, CAL A: computed correction over 1 deg - that is not a small misalignment. Either the sign is inverted or the geometry is not what the model assumes. Refusing to swing the head that far on one reading.)
+  (CLAMP to 1 deg, do NOT abort -- operator 2026-08-03. A demand bigger than)
+  (1 deg is not trusted on one reading, but refusing to move teaches nothing.)
+  (Move 1 deg in the computed direction and let the AFTER pair judge it: if it)
+  (improves, the direction was right and the next cycle takes another bite; if)
+  (it does not, the verdict below reverts it and the sign is shown to be)
+  (inverted. Either way a measurement is gained instead of an abort.)
+  #<clamped> = 0
+  o120 if [#<corr> GT 1.0]
+    #<corr> = 1.0
+    #<clamped> = 1
   o120 endif
+  o121 if [#<corr> LT -1.0]
+    #<corr> = -1.0
+    #<clamped> = 1
+  o121 endif
+  o122 if [#<clamped> EQ 1]
+    (PRINT, CAL A: computed correction exceeded 1 deg - clamped to #<corr> deg. Applying one bite and re-measuring.)
+  o122 endif
 
   (Rotating in place is what saves the climb. It is only safe while the swing)
   (at the deepest point stays inside the standoff clearance: at 65 mm depth)
