@@ -1056,7 +1056,16 @@ class UserTab(QWidget):
                 # at the corrected zero is the stored PS shifted by it --
                 # exactly the number RECORD writes to head_zero.inc.
                 if key in ('3069', '3070'):
-                    txt = self._enc_at_zero('A' if key == '3069' else 'C', v)
+                    # THE BANKED VALUE ONLY -- read head_zero.inc with NO
+                    # pending correction added. Showing file+#3069 meant the
+                    # row moved the moment a correction was applied and moved
+                    # back when it was discarded, so a cycle that banked
+                    # NOTHING still rewrote the display and left PREVIOUS
+                    # holding a mid-cycle number that was never a zero
+                    # (operator 2026-08-03: "C had no improvement, but somehow
+                    # updated the POS Zero"). These rows are labelled BANKED;
+                    # they now change only when a bank actually happens.
+                    txt = self._enc_at_zero('A' if key == '3069' else 'C', 0.0)
                 elif key in ('3058', '3060', '3061') and abs(v) < 1e-9:
                     # A DASH, NOT ZERO. These offsets drive motion, and 0.0000
                     # is a perfectly valid coordinate meaning "go there, right
@@ -1371,14 +1380,48 @@ class UserTab(QWidget):
             c.error_msg('%s refused: machine must be ON, homed and idle' % label)
             LOG.error('%s refused: not ON/homed/idle', label)
             return None
-        c.mode(linuxcnc.MODE_MDI)
-        c.wait_complete()
-        s.poll()
-        if s.task_mode != linuxcnc.MODE_MDI:
-            c.error_msg('%s refused: could not enter MDI' % label)
-            LOG.error('%s refused: task_mode never reached MDI', label)
-            return None
-        return c, s
+        # RE-ASSERT, DO NOT GIVE UP ON THE FIRST TRY. ned_brain restores
+        # MANUAL + teleop the instant a program ends, so a cycle issued right
+        # after the previous one lands in that transition and a single
+        # mode(MDI) loses the race -- StartAC died on exactly this 80 ms after
+        # StartC finished (2026-08-03). Retry briefly and name the cause if it
+        # still will not take.
+        for attempt in range(1, 6):
+            c.mode(linuxcnc.MODE_MDI)
+            c.wait_complete()
+            s.poll()
+            if s.task_mode == linuxcnc.MODE_MDI:
+                if attempt > 1:
+                    LOG.info('%s: MDI took %d attempts (brain was restoring '
+                             'MANUAL)', label, attempt)
+                return c, s
+            time.sleep(0.2)
+        why = ('not homed' if not all(s.homed[:6]) else
+               'task is not accepting commands')
+        c.error_msg('%s refused: could not enter MDI after 5 tries (%s)'
+                    % (label, why))
+        LOG.error('%s refused: task_mode never reached MDI after 5 re-asserts '
+                  '-- %s', label, why)
+        return None
+
+    def _cal_issue_failed(self, which):
+        """A cycle could not be issued. Release the lock, and if the AC
+        sequence is driving, retry rather than stalling: the gate fails on
+        transient states (brain restoring MANUAL, a REF still landing) and a
+        silent stall leaves the operator watching a machine that will never
+        move again."""
+        self._cal_buttons_busy(False)
+        if getattr(self, '_ac_active', False):
+            n = getattr(self, '_ac_retry', 0) + 1
+            self._ac_retry = n
+            if n > 10:
+                self._ac_stop('could not issue the %s cycle after %d tries'
+                              % (which.upper(), n))
+                return
+            LOG.info('StartAC: %s issue refused, retry %d in 2 s',
+                     which.upper(), n)
+            self.cal_say('.. %s refused, retrying (%d)' % (which.upper(), n))
+            QTimer.singleShot(2000, self._ac_try_issue)
 
     def _cal_run(self, which):
         """Every calibration cycle goes through here: same gate, same centre
@@ -1390,6 +1433,7 @@ class UserTab(QWidget):
         try:
             gate = self._cal_gate(label)
             if gate is None:
+                self._cal_issue_failed(which)
                 return
             c, s = gate
             if which == 'shoulder':
@@ -1638,6 +1682,7 @@ class UserTab(QWidget):
                     return
                 QTimer.singleShot(1000, self._ac_try_issue)
                 return
+            self._ac_retry = 0
             LOG.info('StartAC: iteration %d, %s cycle (%d/%d consecutive '
                      'discards)', self._ac_iter, self._ac_step.upper(),
                      self._ac_discards, self.AC_CONVERGED)
