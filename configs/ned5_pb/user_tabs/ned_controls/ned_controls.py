@@ -593,6 +593,37 @@ class UserTab(QWidget):
             cbl.addWidget(cstat)
             cbl.addStretch(1)
             cl.addWidget(cbox)
+
+            # NEXT SECTION placeholder (operator 2026-08-03): A/C calibration,
+            # prefilled with the three numbers section 1 produces. The GO is a
+            # stub until that program is designed -- it says so loudly.
+            nbox = QGroupBox('NEXT: A / C CALIBRATION (placeholder)')
+            nbl = QVBoxLayout(nbox)
+            self._cal_fields = {}
+            for key, lab in (('3045', 'Setter centre X'),
+                             ('3046', 'Setter centre Y'),
+                             ('3047', 'Setter top Z')):
+                row = QHBoxLayout()
+                row.addWidget(QLabel(lab))
+                e = QLineEdit()
+                e.setReadOnly(True)
+                e.setPlaceholderText('run section 1 first')
+                e.setMinimumHeight(30)
+                row.addWidget(e)
+                nbl.addLayout(row)
+                self._cal_fields[key] = e
+            ngo = QPushButton('GO (not built yet)')
+            ngo.setMinimumHeight(40)
+            ngo.clicked.connect(self._cal_ac_stub)
+            nbl.addWidget(ngo)
+            cl.addWidget(nbox)
+
+            # the interpreter flushes numbered params to the var file at M2,
+            # so section 1's results appear here right after its cycle ends
+            self._cal_var_timer = QTimer(self)
+            self._cal_var_timer.timeout.connect(self._cal_fields_refresh)
+            self._cal_var_timer.start(2000)
+
             cl.addStretch(1)
             tabs.addTab(cal_page, 'CALIBRATION')
             self._cal_status = cstat
@@ -799,6 +830,41 @@ class UserTab(QWidget):
                      'LOCKED OUT (0.01 / 0.1 only)' if on else 'available again')
         except Exception as e:
             LOG.error('ZCLAMP: step lockout failed: %s', e)
+
+    VAR_FILE = '/home/brains/Documents/ned/configs/ned5_pb/ned5_pb.var'
+
+    def _cal_fields_refresh(self):
+        try:
+            fields = getattr(self, '_cal_fields', None)
+            if not fields:
+                return
+            mt = os.path.getmtime(self.VAR_FILE)
+            if getattr(self, '_cal_var_mtime', None) == mt:
+                return
+            self._cal_var_mtime = mt
+            vals = {}
+            with open(self.VAR_FILE) as f:
+                for line in f:
+                    p = line.split()
+                    if len(p) == 2 and p[0] in ('3045', '3046', '3047'):
+                        vals[p[0]] = float(p[1])
+            for key, e in fields.items():
+                v = vals.get(key)
+                if v is not None and abs(v) > 1e-9:
+                    e.setText('%.4f' % v)
+        except Exception as e:
+            LOG.error('CAL fields refresh failed: %s', e)
+
+    def _cal_ac_stub(self):
+        LOG.info('A/C CALIBRATION GO pressed: program not designed yet '
+                 '(placeholder). Section-1 numbers: 3045=%s 3046=%s 3047=%s',
+                 *(self._cal_fields[k].text() or '?' for k in
+                   ('3045', '3046', '3047')))
+        if getattr(self, '_cal_status', None) is not None:
+            self._cal_status.setText('A/C calibration is a PLACEHOLDER -- the '
+                                     'program is not designed yet (operator '
+                                     'sketch pending, see calibration_routine'
+                                     '_sketch.md).')
 
     def _calprobe_start(self):
         """Fire o<cal_probe_center> -- same LOUD gate family as every ned MDI
