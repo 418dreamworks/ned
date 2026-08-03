@@ -9,15 +9,22 @@ o<cc_probe> sub
   #<ang>  = #1
   #<yoff> = #2
 
-  (clear BEFORE any A move, then tilt, then line up)
+  (LIFT 1 INCH ABOVE THE TAUGHT DEPTH, not to puck-top clearance. Climbing)
+  (the full ~107 mm and plunging back was most of the cycle time. 1 in is)
+  (enough for what the lift is FOR -- operator 2026-08-03: "raising it lets)
+  (you detect if the probe hits the rod on the way down instead of in the +X)
+  (direction". A G38.3 trip on the way down means the rod is fouling)
+  (something before probing starts; the same interference met during the +X)
+  (probe is indistinguishable from a real touch and would corrupt dX.)
   G90
-  G1 Z[#<_cc_top> + #<_cc_safe>] F[#<_cc_ftr>]
-  G1 A#<ang> F[#<_cc_frot>]
-  G1 X#<_cc_xr> Y[#<_cc_cy> + #<yoff>] F[#<_cc_ftr>]
+  G1 Z[#<_cc_top> - #<_cc_zoff> + #<_cc_lift>] F[#<_cc_ftr>]
 
-  (protective descent to the probing height -- never plunge blind)
-  G91
-  G38.3 Z-[#<_cc_safe> + #<_cc_zoff>] F[#<_cc_fck>]
+  (travel and rotate TOGETHER with Z held -- operator 2026-08-03: keeping Z)
+  (fixed while moving in Y and rotating is safe, even simultaneously.)
+  G1 X#<_cc_xr> Y[#<_cc_cy> + #<yoff>] A#<ang> F[#<_cc_ftr>]
+
+  (protective descent, now 1 in instead of ~107 mm)
+  G38.3 Z[#<_cc_top> - #<_cc_zoff>] F[#<_cc_fck>]
   o205 if [#5070 EQ 1]
     G90
     G1 Z[#<_cc_top> + #<_cc_safe>] F[#<_cc_ftr>]
@@ -27,6 +34,7 @@ o<cc_probe> sub
   o205 endif
 
   (drive toward the puck centre in +X)
+  G91
   G38.3 X#<_cc_reach> F[#<_cc_fpr>]
   o210 if [#5070 EQ 0]
     G90
@@ -50,7 +58,9 @@ o<cc_probe> sub
   G38.5 X-[2 * #<_cc_back>] F[#<_cc_fla>]
   G1 X-[#<_cc_back>] F[#<_cc_ftr>]
   G90
-  G1 Z[#<_cc_top> + #<_cc_safe>] F[#<_cc_ftr>]
+  (back to the lift height, NOT to puck-top clearance -- the next pass starts)
+  (from here)
+  G1 Z[#<_cc_top> - #<_cc_zoff> + #<_cc_lift>] F[#<_cc_ftr>]
 o<cc_probe> endsub
 
 M2 (end helper)

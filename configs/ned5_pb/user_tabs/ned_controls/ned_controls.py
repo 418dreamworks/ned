@@ -687,6 +687,17 @@ class UserTab(QWidget):
 
             # deltas: the whole point is watching these go toward zero
             self._cal_delta_rows = []
+            # Snapshot the delta params at launch. They live in the var file,
+            # so on a restart they still hold the PREVIOUS session's numbers --
+            # history that means nothing against a machine since re-homed and
+            # re-zeroed, yet reads as if this session measured it (operator
+            # 2026-08-03). A row stays blank until its value MOVES off this
+            # baseline, which only a run happening NOW can do.
+            self._cal_delta_base = self._read_vars(
+                ('3050', '3051', '3055', '3056',
+                 '3062', '3063', '3064', '3065'))
+            LOG.info('CAL: previous-session delta history hidden '
+                     '(baseline %s)', self._cal_delta_base)
             for name, bkey, akey, unit in (
                     ('StartA   dY', '3050', '3051', 'mm'),
                     ('StartC   dX', '3055', '3056', 'mm'),
@@ -1013,6 +1024,10 @@ class UserTab(QWidget):
                     self, '_cal_delta_rows', []):
                 b, a = vals.get(bkey), vals.get(akey)
                 if b is None or a is None or (abs(b) < 1e-9 and abs(a) < 1e-9):
+                    continue
+                base = getattr(self, '_cal_delta_base', {})
+                if abs(b - base.get(bkey, 1e9)) < 1e-9 \
+                   and abs(a - base.get(akey, 1e9)) < 1e-9:
                     continue
                 better = abs(a) < abs(b)
                 w.setText('%-14s before %+9.4f   after %+9.4f %s   %s'
@@ -1346,11 +1361,13 @@ class UserTab(QWidget):
             # Say the lockout too: the REF unhomes A/C while it reads, so for
             # ~15 s every homed-gated button refuses. Unexplained, that reads
             # as a fault.
-            msg = ('Start%s BANKED: this cycle %+.4f -> %+.4f mm; banking '
-                   '%+.6f deg total. %s zero = %d / %d counts. Re-homing %s '
-                   '-- A/C are UNHOMED for ~15 s, so buttons will refuse '
-                   'until it finishes.'
-                   % (ax, before, after, corr, ax, mt_new, wi_new, ax))
+            # ANGLE FIRST. The toast clips a long message, and with the mm
+            # delta leading, the banked DEGREES fell off the end -- which is
+            # how a -0.318 deg C bank got read back as "2.145" (that was dX in
+            # mm). The number that matters cannot be the one that gets cut.
+            msg = ('%s BANKED %+.4f deg | %s zero %d / %d | this cycle '
+                   '%+.4f -> %+.4f mm | re-homing %s, ~15 s unhomed'
+                   % (ax, corr, ax, mt_new, wi_new, before, after, ax))
             c.error_msg(msg)
             if getattr(self, '_cal_status', None) is not None:
                 self._cal_status.setText(msg)
