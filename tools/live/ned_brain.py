@@ -258,7 +258,17 @@ class Brain(object):
         if p == self.hr_p0:
             log('HEADREAD {} NO NEW FRAME (parsed still {})'.format(ax.upper(), p))
             return
-        m0, w0 = HEAD_M0W0[ax]
+        # RE-PARSE, do not use the startup cache. A calibration that banks a
+        # new zero writes head_zero.inc while this process is running; with
+        # the cached values the brain would keep computing angles against the
+        # OLD zero and silently undo the calibration on its next read
+        # (2026-08-03).
+        try:
+            m0, w0 = parse_head_zero()[ax]
+        except Exception as e:
+            log('HEADREAD: re-parse of head_zero.inc failed ({}) -- using the '
+                'startup values'.format(e))
+            m0, w0 = HEAD_M0W0[ax]
         deg = SIGN[ax] * ((mt - m0) * R_COUNTS + (w - w0)) / (R_COUNTS * GEAR[ax]) * 360.0
         # GUARD 1 -- stale-read detection: identical raw counts = other axis's data.
         if self.hr_lastraw is not None and self.hr_lastraw == (mt, w):

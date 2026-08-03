@@ -1147,7 +1147,8 @@ class UserTab(QWidget):
                 c.mdi('o<%s> call' % sub)
                 LOG.info('%s: %s issued', label, sub)
             self._cal_lock_ac(label)
-            if which == 'a':
+            if which in ('a', 'c'):
+                self._cal_watch_which = which
                 self._cal_watch_start()
                 self._cal_watch_t0 = os.path.getmtime(self.VAR_FILE)
             if getattr(self, '_cal_status', None) is not None:
@@ -1217,91 +1218,115 @@ class UserTab(QWidget):
                 return
             self._cal_watch_stop('cycle finished after %.0f s'
                                  % self._cal_watch_elapsed)
-            self._cal_after_a()
+            self._cal_after_cycle(getattr(self, '_cal_watch_which', 'a'))
         except Exception as e:
             self._cal_watch_stop('watcher error: %s' % e)
 
-    def _cal_after_a(self):
-        """Cycle done. cal_a_zero already aborts when its own delta gets
-        worse, so arriving here is itself the improvement -- but read the
-        numbers and check, because a silent auto-write to a parameter file
-        must never rest on an assumption."""
+    # (before key, after key, "did it move" key, accumulated-correction key,
+    #  axis letter, the pin whose rising edge makes the brain re-home it)
+    CAL_AXIS = {
+        'a': ('3050', '3051', '3072', '3069', 'A', 'refa-out'),
+        'c': ('3055', '3056', '3073', '3070', 'C', 'refc-out'),
+    }
+
+    def _cal_after_cycle(self, which):
+        """Cycle finished. BANK an improvement without asking.
+
+        Operator 2026-08-03: whenever a routine ends with an improvement --
+        probe back at zero, puck re-probed if A or C actually moved -- bank
+        it. There is no RECORD button in the path: head_zero.inc holds
+        EYEBALLED numbers, so replacing them with measured ones is the whole
+        point of running this.
+
+        Banking is two halves and both are required:
+          1. write the measured count into head_zero.inc, so it survives
+          2. re-zero the axis IN THIS SESSION, so the DRO reads 0 at true
+             perpendicular and the next +-45 pair is genuinely symmetric
+        Doing only the first would leave the running session tilting about a
+        stale zero until the next launch.
+        """
         try:
             import linuxcnc
             c = linuxcnc.command()
-            v = self._read_vars(('3050', '3051', '3052', '3053', '3054'))
-            dy_b, dy_a = v.get('3050'), v.get('3051')
-            tb, ta = v.get('3053'), v.get('3054')
-            if tb is None or ta is None:
-                LOG.error('StartA: no tilt pair in the var file -- not '
-                          'recording')
+            bkey, akey, mkey, ckey, ax, pin = self.CAL_AXIS[which]
+            v = self._read_vars((bkey, akey, mkey, ckey))
+            before, after = v.get(bkey), v.get(akey)
+            moved = v.get(mkey, 0.0) > 0.5
+            corr = v.get(ckey, 0.0)
+            if before is None or after is None:
+                LOG.error('Start%s: no before/after pair -- nothing banked', ax)
                 return
-            # An unwritten result reads 0.0, which would sail through any
-            # "smaller is better" test. A measurement that never happened is
-            # not an improvement -- 2026-08-03, that is exactly how a bogus
-            # value reached head_zero.inc.
-            if abs(ta) < 1e-9 and abs(dy_a or 0.0) < 1e-9:
-                LOG.error('StartA: the AFTER pair is 0.0 -- it was never '
-                          'measured. NOT recording.')
-                c.error_msg('StartA: after-pair never measured -- parameter '
-                            'file NOT written')
-                return
-            # Both passes share the 40 mm baseline now, so the ABSOLUTE
-            # distance is the test the operator asked for. The g-code already
-            # rolls a failed correction back and aborts, so this should never
-            # be reached -- it is the second lock on the parameter file.
-            if abs(dy_a) >= abs(dy_b):
-                msg = ('StartA: dY %+.4f -> %+.4f mm is not better -- the '
-                       'correction was DISCARDED, A is unchanged and the '
-                       'parameter file was NOT written' % (dy_b, dy_a))
-                LOG.error(msg)
-                c.error_msg(msg)
+            if not moved:
+                msg = ('Start%s: %+.4f -> %+.4f mm, correction discarded, %s '
+                       'unchanged -- nothing to bank' % (ax, before, after, ax))
+                LOG.info(msg)
                 if getattr(self, '_cal_status', None) is not None:
                     self._cal_status.setText(msg)
                 return
-            LOG.info('StartA: dY %+.4f -> %+.4f mm (tilt %+.4f -> %+.4f '
-                     'deg, both over 40 mm) improved by %.4f mm -- recording',
-                     dy_b, dy_a, tb, ta, abs(dy_b) - abs(dy_a))
-            self._cal_record(auto=True)
+            if abs(after) >= abs(before):
+                # the g-code should already have reverted; belt and braces
+                LOG.error('Start%s: %+.4f -> %+.4f mm is not better -- NOT '
+                          'banking', ax, before, after)
+                return
+            if abs(corr) < 1e-9:
+                LOG.info('Start%s: correction is zero -- nothing to bank', ax)
+                return
+            self._cal_bank(ax, corr, pin, ckey, before, after)
         except Exception as e:
-            LOG.error('StartA post-cycle failed: %s', e)
+            LOG.error('post-cycle banking failed: %s', e)
 
-    def _enc_at_zero_counts(self, ax, deg):
-        """THE number, computed in ONE place.
-
-        head_zero.inc stores PS, the absolute count at the declared zero;
-        machine angle is (PE - PS) scaled by gear and 2^26 (manual 6.12.6).
-        A correction of `deg` puts true zero at PS + SIGN*deg/360*R*GEAR.
-
-        The MEASURED ZERO panel and RECORD TO PARAMS both call this, so the
-        count on screen IS the count written to the parameter file -- the
-        operator asked to be sure of exactly that, and two separate
-        computations would have been free to drift apart.
-
-        Returns (ps_old, ps_new, multiturn, within).
-        """
-        import re as _re
-        txt = open(self.HEAD_ZERO_INC).read()
-        mt = _re.search(r'^%s_MULTITURN\s*=\s*(-?\d+)' % ax, txt, _re.M)
-        wi = _re.search(r'^%s_WITHIN\s*=\s*(-?\d+)' % ax, txt, _re.M)
-        if not (mt and wi):
-            raise RuntimeError('%s_MULTITURN/_WITHIN missing from head_zero.inc'
-                               % ax)
-        ps = int(mt.group(1)) * self.R_COUNTS + int(wi.group(1))
-        gear = self._head_gears()[ax]
-        new = int(round(ps + self.HEAD_SIGN[ax] * deg / 360.0
-                        * self.R_COUNTS * gear))
-        m = new // self.R_COUNTS
-        return ps, new, m, new - m * self.R_COUNTS
-
-    def _enc_at_zero(self, ax, deg):
-        """Display form of _enc_at_zero_counts: multiturn / within."""
+    def _cal_bank(self, ax, corr, pin, ckey, before, after):
+        """Write the measured zero and make the machine adopt it now."""
+        label = 'BANK %s' % ax
         try:
-            _ps, _new, m, w = self._enc_at_zero_counts(ax, deg)
-            return '%d / %d' % (m, w)
+            import linuxcnc, shutil, time, re as _re
+            c = linuxcnc.command()
+            ps, new, mt_new, wi_new = self._enc_at_zero_counts(ax, corr)
+            stamp = time.strftime('%Y%m%d-%H%M%S')
+            shutil.copy2(self.HEAD_ZERO_INC,
+                         '%s.bak-%s' % (self.HEAD_ZERO_INC, stamp))
+            with open(self.HEAD_ZERO_INC) as f:
+                txt = f.read()
+            txt = _re.sub(r'^%s_MULTITURN\s*=.*$' % ax,
+                          '%s_MULTITURN = %d' % (ax, mt_new), txt, flags=_re.M)
+            txt = _re.sub(r'^%s_WITHIN\s*=.*$' % ax,
+                          '%s_WITHIN    = %d' % (ax, wi_new), txt, flags=_re.M)
+            with open(self.HEAD_ZERO_INC, 'w') as f:
+                f.write(txt)
+            LOG.info('%s: %+.4f mm -> %+.4f mm, %s corrected %+.6f deg, '
+                     'head_zero.inc %s = %d / %d (was %d counts, now %d)',
+                     label, before, after, ax, corr, ax, mt_new, wi_new,
+                     ps, new)
+
+            # clear the accumulator FIRST: from here on the machine's own zero
+            # carries the correction, so leaving it set would double-count
+            c.mode(linuxcnc.MODE_MDI)
+            c.wait_complete()
+            c.mdi('%s = 0' % ('#3069' if ax == 'A' else '#3070'))
+
+            # re-zero the axis in this session. The brain re-reads the
+            # absolute encoder against the file we just wrote, sets
+            # ini.N.home_offset and re-homes the joint IN PLACE -- the same
+            # path REF A/REF C uses every launch, no switch seeking.
+            self.comp.getPin(pin).value = True
+            QTimer.singleShot(1000, lambda p=pin: self._cal_ref_off(p))
+            LOG.info('%s: REF %s pulsed -- brain will re-read and re-home %s '
+                     'in place so the DRO reads 0 at true perpendicular',
+                     label, ax, ax)
+            msg = ('Start%s BANKED: %+.4f -> %+.4f mm. %s zero = %d / %d '
+                   'counts, re-homing %s so the DRO reads 0 there.'
+                   % (ax, before, after, ax, mt_new, wi_new, ax))
+            c.error_msg(msg)
+            if getattr(self, '_cal_status', None) is not None:
+                self._cal_status.setText(msg)
         except Exception as e:
-            LOG.error('enc-at-zero %s failed: %s', ax, e)
-            return '?'
+            LOG.error('%s failed: %s', label, e)
+
+    def _cal_ref_off(self, pin):
+        try:
+            self.comp.getPin(pin).value = False
+        except Exception:
+            pass
 
     def _read_vars(self, keys):
         out = {}
