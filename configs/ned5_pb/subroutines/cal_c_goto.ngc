@@ -1,6 +1,7 @@
 (ned -- GO TO THE C REFERENCE POSE, operator spec 2026-08-03.)
-(#4 = side: -1 puts the head at A zero -45 with the taught +dy, +1 mirrors)
-(both. These are exactly the two poses cal_c_zero probes from, so what the)
+(#4 = side: -1 puts the head at A zero -45 with the taught +dy, +1 gives)
+(A zero +45 with -dy. Y is opposite the tilt sign -- see below.)
+(These are exactly the two poses cal_c_zero probes from, so what the)
 (operator eyeballs is what the measurement will use -- "user just needs to)
 (verify and if its in the right ballpark, we are good".)
 
@@ -42,7 +43,13 @@ o<cal_c_goto> sub
   (button and the probe can never disagree about how they approach.)
   G90
   G1 X[#<cx> + #3061] F[#<f_tr>]
-  G1 Y[#<cy> + #<side> * #3058] F[#<f_tr>]
+  (Y IS OPPOSITE THE TILT SIGN. cc_probe pairs A zero-45 with +dy and)
+  (A zero+45 with -dy: rolling one way throws the tip to one side of centre,)
+  (the other way to the other. Using +side for both put A zero-45 with -dy --)
+  (the wrong half of the pair -- so the button parked on a pose the probe)
+  (never uses, mirrored in Y. Operator 2026-08-03: "your c left and c right)
+  (are flipped. the A and Y are mismatched".)
+  G1 Y[#<cy> - #<side> * #3058] F[#<f_tr>]
   G1 A[#3069 + #<side> * 45] C#3070 F[#<f_ro>]
 
   M64 P3
