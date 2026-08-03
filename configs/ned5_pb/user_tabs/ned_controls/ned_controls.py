@@ -565,267 +565,201 @@ class UserTab(QWidget):
             jl.addStretch(1)
             tabs.addTab(jog_page, 'JOG')
 
-            # CALIBRATION tab (operator 2026-08-03). Four cycles, each
-            # reporting its own delta before/after, and ONE explicit RECORD
-            # press that is the only thing here that ever writes a parameter
-            # file. Every cycle starts and ends at the step-1 pose.
+            # CALIBRATION tab. THREE COLUMNS, no scroll area: the page is
+            # landscape and the content was portrait, so ~1150 px of stack sat
+            # in an ~880 px viewport with ~900 px of width unused. On a touch
+            # panel a scroll area is hostile -- a 5 mm finger drift turns a
+            # press into a scroll and the widget under button-up is not the
+            # one under button-down. Every column and box is FIXED size, so
+            # nothing reflows under a finger. Design review 2026-08-03.
+            from PySide6.QtWidgets import QGridLayout, QPlainTextEdit
+            from PySide6.QtGui import QFont
             cal_page = QWidget()
-            cl = QVBoxLayout(cal_page)
-            cl.setContentsMargins(8, 8, 8, 8)
+            cg = QGridLayout(cal_page)
+            cg.setContentsMargins(8, 8, 8, 8)
+            cg.setSpacing(8)
 
-            cbox = QGroupBox('STEP 1 -- PUCK CENTRE (3/8 ROD)')
-            cbl = QVBoxLayout(cbox)
-            steps = QLabel(
-                '3/8 rod in the spindle, continuity verified, tip ~20 mm '
-                'above the puck, roughly centred.\n'
-                'Top, then 4 edges at 0.75 in. Probe 200, latch 10 mm/min.')
-            steps.setStyleSheet('color: rgb(180,180,180); font: 9pt;')
-            cbl.addWidget(steps)
-            cstart = QPushButton('StartPuck')
-            cstart.setObjectName('cal_probe_start')
-            cstart.setMinimumHeight(44)
-            cstart.setToolTip('Find the puck centre and top. Everything else '
-                              'starts from this result.')
-            cstart.clicked.connect(lambda: self._cal_run('puck'))
-            cbl.addWidget(cstart)
-            cl.addWidget(cbox)
+            # ---- column 0: ACTIONS, in step order -----------------------
+            col0 = QWidget()
+            col0.setFixedWidth(408)
+            c0 = QVBoxLayout(col0)
+            c0.setContentsMargins(0, 0, 0, 0)
+            c0.setSpacing(8)
 
-            # MEASURED ZERO -- CURRENT beside PREVIOUS so drift between runs
-            # is visible without digging through the log (operator
-            # 2026-08-03: "that way, we can see if numbers change across
-            # runs"). A and C show the POS that corresponds to the latest
-            # measured zero: #3069/#3070 are the accumulated corrections, so
-            # they ARE where true zero now sits on the DRO.
-            zbox = QGroupBox('MEASURED ZERO')
-            zbl = QVBoxLayout(zbox)
-            hdr = QHBoxLayout()
-            h0 = QLabel('')
-            h0.setMinimumWidth(78)
-            hdr.addWidget(h0)
-            for cap in ('CURRENT', 'PREVIOUS'):
-                h = QLabel(cap)
-                h.setStyleSheet('color: rgb(150,150,150); font: bold 8pt;')
-                hdr.addWidget(h)
-            zbl.addLayout(hdr)
-            self._cal_fields = {}
-            for key, lab, unit in (('3045', 'Centre X', 'mm'),
-                                   ('3046', 'Centre Y', 'mm'),
-                                   ('3047', 'Top Z', 'mm'),
-                                   ('3069', 'A zero ENC', 'counts'),
-                                   ('3070', 'C zero ENC', 'counts'),
-                                   ('3061', 'C ref X', 'mm'),
-                                   ('3058', 'C ref dy', 'mm'),
-                                   ('3060', 'C ref depth', 'mm')):
-                row = QHBoxLayout()
-                lw = QLabel('%s %s' % (lab, unit))
-                lw.setMinimumWidth(78)
-                row.addWidget(lw)
-                cur = QLineEdit()
-                cur.setReadOnly(True)
-                cur.setMinimumHeight(28)
-                cur.setPlaceholderText(
-                    'run StartPuck first' if key < '3058'
-                    else 'press SET C REF' if key in ('3058', '3060', '3061')
-                    else 'not corrected yet')
-                cur.setStyleSheet('font: 10pt "DejaVu Sans Mono";')
-                row.addWidget(cur)
-                prv = QLineEdit()
-                prv.setReadOnly(True)
-                prv.setMinimumHeight(28)
-                prv.setPlaceholderText('--')
-                prv.setStyleSheet('font: 10pt "DejaVu Sans Mono"; '
-                                  'color: rgb(150,150,150);')
-                row.addWidget(prv)
-                zbl.addLayout(row)
-                self._cal_fields[key] = (cur, prv)
-            cl.addWidget(zbox)
+            def _mkbox(title):
+                bx = QGroupBox(title)
+                bx.setStyleSheet(self.CAL_QSS_BOX)
+                bl = QVBoxLayout(bx)
+                bl.setContentsMargins(8, 14, 8, 8)
+                bl.setSpacing(6)
+                return bx, bl
 
-            nbox = QGroupBox('STEP 2 -- A / C ZERO')
-            nbl = QVBoxLayout(nbox)
-            hint = QLabel(
-                'A and C are coupled, so StartAC alternates them 5x.\n'
-                'SET C REF teaches the C pose once (two presses).\n'
-                'A correction that does not improve dY is rolled back.')
-            hint.setStyleSheet('color: rgb(180,180,180); font: 9pt;')
-            nbl.addWidget(hint)
-
-            r1 = QHBoxLayout()
-            bA = QPushButton('StartA')
-            bA.setMinimumHeight(40)
-            bA.setToolTip('Tilt off the puck wall at -20 and -50 deep, correct '
-                          'A, re-measure. Reports dY before/after.')
-            bA.clicked.connect(lambda: self._cal_run('a'))
-            r1.addWidget(bA)
-            bC = QPushButton('StartC')
-            bC.setMinimumHeight(40)
-            bC.setToolTip('Probe toward centre at A -45 and +45, correct C, '
-                          're-probe. Reports dX before/after. First press '
-                          'parks for the teach jog.')
-            bC.clicked.connect(lambda: self._cal_run('c'))
-            r1.addWidget(bC)
-            nbl.addLayout(r1)
-
-            r0 = QHBoxLayout()
-            bR = QPushButton('SET C REF')
-            bR.setMinimumHeight(40)
-            bR.setToolTip('Teach the C reference in TWO presses: the first '
-                          'clears Z and rotates A to -45, you jog the tip to '
-                          'where driving toward centre in +X would strike the '
-                          'puck, the second records X, Y and depth.')
-            bR.clicked.connect(lambda: self._cal_run('cref'))
-            r0.addWidget(bR)
-            r0.addStretch(1)
-            nbl.addLayout(r0)
-
-            r2 = QHBoxLayout()
-            bAC = QPushButton('StartAC')
-            bAC.setMinimumHeight(40)
-            bAC.setToolTip('5 iterations of A then C. Needs C taught first.')
-            bAC.clicked.connect(lambda: self._cal_run('ac'))
-            r2.addWidget(bAC)
-            r2.addStretch(1)
-            nbl.addLayout(r2)
-
-            # GOTO splits three ways (operator 2026-08-03). LEFT and RIGHT are
-            # the exact poses cal_c_zero probes from, so eyeballing them IS
-            # verifying the measurement setup -- "user just needs to verify and
-            # if its in the right ballpark, we are good".
-            r3 = QHBoxLayout()
-            for cap, which, tip in (
-                    ('ZERO', 'goto',
-                     'Puck centre, tip 5 mm above the top, A and C straight.'),
-                    ('C LEFT', 'cleft',
-                     'A zero -45 with the taught +dy, at the taught depth -- '
-                     'the first pose StartC probes from.'),
-                    ('C RIGHT', 'cright',
-                     'A zero +45 with the Y mirrored, same depth -- the '
-                     'second pose StartC probes from.')):
+            b1, b1l = _mkbox('1   PUCK CENTRE')
+            self._cal_btn = {}
+            def _mkbtn(key, cap, cls, w=None):
                 b = QPushButton(cap)
-                b.setMinimumHeight(40)
-                b.setToolTip(tip)
-                b.clicked.connect(lambda _=False, w=which: self._cal_run(w))
-                r3.addWidget(b)
-            nbl.addLayout(r3)
+                b.setMinimumHeight(56)      # 15 mm at 3.71 px/mm -- gloved
+                b.setStyleSheet(self.CAL_QSS[cls])
+                b.clicked.connect(lambda _=False, k=key: self._cal_run(k))
+                self._cal_btn[key] = b
+                if w:
+                    b.setFixedWidth(w)
+                return b
+            b1l.addWidget(_mkbtn('puck', 'START PUCK', 'measure'))
+            c0.addWidget(b1)
 
-            # deltas: the whole point is watching these go toward zero
+            b2, b2l = _mkbox('2   A / C ZERO')
+            # SET C REF is a PREREQUISITE for StartC, so it goes above them.
+            # Its two-press protocol used to exist only in a tooltip, which a
+            # touchscreen never shows -- it is on the face now and the label
+            # tracks the state.
+            # No teach button: StartC decides from the params what a press
+            # does (position / capture / measure). CLEAR is how you re-teach.
+            bclr = QPushButton('CLEAR C REF')
+            bclr.setMinimumHeight(56)
+            bclr.setStyleSheet(self.CAL_QSS['pose'])
+            bclr.clicked.connect(self._cal_clear_cref)
+            self._cal_btn['clear'] = bclr
+            b2l.addWidget(bclr)
+            r = QHBoxLayout(); r.setSpacing(8)
+            r.addWidget(_mkbtn('a', 'START A', 'measure'))
+            r.addWidget(_mkbtn('c', 'START C', 'measure'))
+            b2l.addLayout(r)
+            b2l.addWidget(_mkbtn('ac', 'START AC', 'measure'))
+            r = QHBoxLayout(); r.setSpacing(8)
+            for k, cap in (('goto', 'ZERO'), ('cleft', 'C LEFT'),
+                           ('cright', 'C RIGHT')):
+                r.addWidget(_mkbtn(k, cap, 'pose'))
+            b2l.addLayout(r)
+            rule = QFrame(); rule.setFrameShape(QFrame.HLine)
+            rule.setStyleSheet('color: #3A4244;')
+            b2l.addSpacing(6); b2l.addWidget(rule); b2l.addSpacing(6)
+            # the ONLY control that writes a file states its payload on its
+            # face, and greys out when there is nothing to bank
+            brec = QPushButton('RECORD   nothing to bank')
+            brec.setMinimumHeight(72)
+            brec.setFont(QFont('DejaVu Sans Mono', 10))
+            brec.setStyleSheet(self.CAL_QSS['commit'])
+            brec.clicked.connect(self._cal_record)
+            self._cal_btn['record'] = brec
+            b2l.addWidget(brec)
+            c0.addWidget(b2)
+
+            b3, b3l = _mkbox('3   SHOULDER')
+            b3l.addWidget(_mkbtn('shoulder', 'SHOULDER   spindle empty',
+                                 'measure'))
+            c0.addWidget(b3)
+            c0.addStretch(1)
+            cg.addWidget(col0, 0, 0)
+
+            # ---- column 1: NUMBERS, one grid so columns stay aligned -----
+            col1 = QWidget()
+            col1.setFixedWidth(500)
+            gl = QGridLayout(col1)
+            gl.setContentsMargins(0, 0, 0, 0)
+            gl.setHorizontalSpacing(6)
+            gl.setVerticalSpacing(3)
+            row = 0
+            self._cal_lockchip = QLabel('A ---   C ---')
+            self._cal_lockchip.setStyleSheet(
+                'color: #9AA0A0; font: bold 8pt;')
+            gl.addWidget(self._cal_lockchip, row, 0)
+            for cc, cap in ((1, 'CURRENT'), (2, 'PREVIOUS')):
+                h = QLabel(cap)
+                h.setStyleSheet('color: #9AA0A0; font: bold 8pt;')
+                gl.addWidget(h, row, cc)
+            row += 1
+            self._cal_fields = {}
+
+            def _section(txt):
+                nonlocal row
+                lb = QLabel(txt)
+                lb.setStyleSheet('color: #9AA0A0; font: bold 8pt; '
+                                 'border-top: 1px solid #3A4244; '
+                                 'padding-top: 4px; margin-top: 4px;')
+                gl.addWidget(lb, row, 0, 1, 3)
+                row += 1
+
+            def _readout(key, lab, prev=True):
+                nonlocal row
+                lw = QLabel(lab)
+                lw.setStyleSheet('color: #E6E6E6; font: 9pt;')
+                gl.addWidget(lw, row, 0)
+                cur = QLineEdit(); prv = QLineEdit()
+                for e in (cur, prv):
+                    e.setReadOnly(True)
+                    e.setFixedHeight(26)
+                    e.setFont(QFont('DejaVu Sans Mono', 9))
+                e.setPlaceholderText('')
+                cur.setStyleSheet(self.CAL_QSS['read'])
+                prv.setStyleSheet(self.CAL_QSS['readprev'])
+                cur.setPlaceholderText('--')
+                prv.setPlaceholderText('--')
+                gl.addWidget(cur, row, 1)
+                if prev:
+                    gl.addWidget(prv, row, 2)
+                self._cal_fields[key] = (cur, prv)
+                row += 1
+
+            _section('MEASURED THIS RUN')
+            _readout('3045', 'Centre X  mm')
+            _readout('3046', 'Centre Y  mm')
+            _readout('3047', 'Top Z  mm')
+            _section('BANKED  --  RECORD WRITES THESE')
+            _readout('3069', 'A zero  ENC')
+            _readout('3070', 'C zero  ENC')
+            _section('TAUGHT C REF  (sticky across runs)')
+            _readout('3061', 'C ref X  mm', prev=False)
+            _readout('3058', 'C ref dy  mm', prev=False)
+            _readout('3060', 'C ref depth  mm', prev=False)
+            _section('DELTAS')
+            # built ONCE at final geometry with dash placeholders, so a row
+            # appearing mid-run cannot move anything under a finger
             self._cal_delta_rows = []
-            # Snapshot the delta params at launch. They live in the var file,
-            # so on a restart they still hold the PREVIOUS session's numbers --
-            # history that means nothing against a machine since re-homed and
-            # re-zeroed, yet reads as if this session measured it (operator
-            # 2026-08-03). A row stays blank until its value MOVES off this
-            # baseline, which only a run happening NOW can do.
-            self._cal_delta_base = self._read_vars(
-                ('3050', '3051', '3055', '3056',
-                 '3062', '3063', '3064', '3065'))
-            LOG.info('CAL: previous-session delta history hidden '
-                     '(baseline %s)', self._cal_delta_base)
             for name, bkey, akey, unit in (
                     ('StartA   dY', '3050', '3051', 'mm'),
                     ('StartC   dX', '3055', '3056', 'mm'),
                     ('StartAC  A dY', '3062', '3063', 'mm'),
                     ('StartAC  C dX', '3064', '3065', 'mm')):
-                w = QLabel('%s:   --' % name)
-                w.setStyleSheet('font: 10pt "DejaVu Sans Mono"; '
-                                'color: rgb(200,200,200);')
-                nbl.addWidget(w)
+                w = QLabel('%-14s      --          --' % name)
+                w.setFont(QFont('DejaVu Sans Mono', 9))
+                w.setFixedHeight(26)
+                w.setProperty('verdict', 'none')
+                w.setStyleSheet(self.CAL_QSS['delta'])
+                gl.addWidget(w, row, 0, 1, 3)
+                row += 1
                 self._cal_delta_rows.append((w, name, bkey, akey, unit))
-            self._cal_total = QLabel('pending A/C correction:   --')
-            self._cal_total.setStyleSheet('font: 10pt "DejaVu Sans Mono"; '
-                                          'color: rgb(200,200,200);')
-            nbl.addWidget(self._cal_total)
+            gl.setRowStretch(row, 1)
+            cg.addWidget(col1, 0, 1)
 
-            # STEP 3 -- the handover to Probe Basic. Separate box because it is
-            # the only part that is PB-native and the only one needing an
-            # EMPTY spindle.
-            sbox = QGroupBox('STEP 3 -- SHOULDER (hands over to Probe Basic)')
-            sbl = QVBoxLayout(sbox)
-            shint = QLabel(
-                'Spindle must be EMPTY. Sends the setter position (G30), the '
-                '185 mm plunge\nlimit and then runs PB\'s own spindle-nose '
-                'probe at X-20 from centre.')
-            shint.setStyleSheet('color: rgb(180,180,180); font: 9pt;')
-            sbl.addWidget(shint)
-            bsh = QPushButton('SHOULDER')
-            bsh.setMinimumHeight(40)
-            bsh.setToolTip('Refuses while a tool is in the spindle. Records '
-                           'the tool-setter position into G30 at puck top '
-                           '+100 mm, sets the plunge limit, then probes the '
-                           'shoulder and leaves PB ready for tool probing.')
-            bsh.clicked.connect(lambda: self._cal_run('shoulder'))
-            sbl.addWidget(bsh)
-            cl.addWidget(sbox)
-
-            brec = QPushButton('RECORD TO PARAMS')
-            brec.setMinimumHeight(40)
-            brec.setToolTip('Make the CURRENT head pose the new A/C zero: '
-                            'backs up head_zero.inc, then shifts the stored '
-                            'encoder zero by the angle now on the DRO. Press '
-                            'only when the deltas got better.')
-            brec.clicked.connect(self._cal_record)
-            nbl.addWidget(brec)
-            cl.addWidget(nbox)
-
-            cstat = QLabel('')
-            cstat.setObjectName('cal_probe_status')
-            cstat.setWordWrap(True)
-            cl.addWidget(cstat)
-
-            # RUNNING COMMENTARY. The routines already narrate themselves --
-            # every (PRINT,...) lands in lcnc.log -- but the operator had to
-            # read a terminal to see any of it. Tail that file and show the
-            # calibration lines here, so the page says what the machine is
-            # doing while it does it (operator 2026-08-03).
-            from PySide6.QtWidgets import QPlainTextEdit
+            # ---- column 2: LIVE commentary ------------------------------
             self._cal_log = QPlainTextEdit()
             self._cal_log.setReadOnly(True)
             self._cal_log.setMaximumBlockCount(400)
-            self._cal_log.setMinimumHeight(150)
-            self._cal_log.setStyleSheet(
-                'font: 9pt "DejaVu Sans Mono"; color: rgb(200,220,200); '
-                'background: rgb(24,26,24);')
+            self._cal_log.setFont(QFont('DejaVu Sans Mono', 9))
+            self._cal_log.setStyleSheet(self.CAL_QSS['log'])
             self._cal_log.setPlaceholderText(
                 'Running commentary appears here once a cycle starts.')
-            cl.addWidget(self._cal_log)
+            cg.addWidget(self._cal_log, 0, 2)
+            cg.setColumnStretch(2, 1)
             self._cal_log_pos = None
             t2 = QTimer(self)
             t2.timeout.connect(self._cal_log_poll)
             t2.start(500)
             self._cal_log_timer = t2
 
-            # the interpreter flushes numbered params to the var file at M2,
-            # so a cycle result appears here right after the cycle ends
             self._cal_var_timer = QTimer(self)
             self._cal_var_timer.timeout.connect(self._cal_fields_refresh)
             if self.CAL_REFRESH_ENABLED:
                 self._cal_var_timer.start(2000)
                 LOG.info('CAL: var-file refresh timer STARTED (2 s)')
-            else:
-                LOG.warning('CAL: var-file refresh timer DISABLED -- crash '
-                            'bisect 2026-08-03. PB took SIGBUS right after '
-                            'the FIRST successful puck cycle and after every '
-                            'success since, which is exactly when #3045-47 '
-                            'change and this timer rewrites widget text. If '
-                            'the cycle now completes and parks, the fault is '
-                            'mine; if it still dies, this code is cleared. '
-                            'Re-enable: CAL_REFRESH_ENABLED = True')
-
-            cl.addStretch(1)
-            # The page outgrew the screen, and a tab you cannot scroll hides
-            # its own buttons -- RECORD was off the bottom. Wrap rather than
-            # shrink, so the content stays readable and reachable.
-            cal_scroll = QScrollArea()
-            cal_scroll.setWidgetResizable(True)
-            cal_scroll.setFrameShape(QFrame.NoFrame)
-            cal_scroll.setWidget(cal_page)
-            tabs.addTab(cal_scroll, 'CALIBRATION')
-            # LOCK ON ENTRY, not just when a cycle is issued. Being in the
-            # calibration tab IS being in calibration -- the operator jogs
-            # between presses (SET C REF hands the wheel back deliberately),
-            # and an inadvertent A or C detent in that window moves the very
-            # thing being measured. Operator 2026-08-03.
-            self._cal_tab_index = tabs.indexOf(cal_scroll)
+            self._cal_delta_base = self._read_vars(
+                ('3050', '3051', '3055', '3056',
+                 '3062', '3063', '3064', '3065'))
+            tabs.addTab(cal_page, 'CALIBRATION')
+            self._cal_tab_index = tabs.indexOf(cal_page)
             tabs.currentChanged.connect(self._cal_tab_changed)
+            cstat = QLabel('')
             self._cal_status = cstat
             lay.addWidget(tabs)
 
@@ -1155,6 +1089,13 @@ class UserTab(QWidget):
                 w.setStyleSheet('font: 10pt "DejaVu Sans Mono"; color: %s;'
                                 % ('rgb(120,220,120)' if better
                                    else 'rgb(230,140,140)'))
+            self._cal_record_face()
+            chip = getattr(self, '_cal_lockchip', None)
+            if chip is not None:
+                lk = getattr(self, '_ac_locked', {}) or {}
+                chip.setText('A %s   C %s'
+                             % ('LOCKED' if lk.get('a') else '---',
+                                'LOCKED' if lk.get('c') else '---'))
             tw = getattr(self, '_cal_total', None)
             if tw is not None:
                 ca, cc = vals.get('3066', 0.0), vals.get('3067', 0.0)
@@ -1166,11 +1107,116 @@ class UserTab(QWidget):
         except Exception as e:
             LOG.error('CAL fields refresh failed: %s', e)
 
+    # Colour classes, anchored to PB's own base rgb(46,52,54) = #2E3436.
+    # Outline + tinted fill, never saturated flat: flat red/green already mean
+    # ESTOP and PB's own STYLE_UP/STYLE_DOWN, and a calibration button must not
+    # compete with the estop. Design review 2026-08-03.
+    #   MEASURE (amber) -- long automatic probing motion
+    #   POSE    (cyan)  -- motion, reversible, writes nothing
+    #   COMMIT  (violet)-- writes head_zero.inc; nothing else in PB is violet
+    CAL_QSS_BOX = ('QGroupBox { background: #262B2D; border: 1px solid #3A4244;'
+                   ' border-radius: 3px; margin-top: 8px; color: #E6E6E6;'
+                   ' font: bold 9pt; }'
+                   'QGroupBox::title { subcontrol-origin: margin;'
+                   ' left: 10px; padding: 0 4px; color: #E6E6E6; }')
+    _BTN = ('QPushButton { background: %s; border: 2px solid %s; color: %s;'
+            ' border-radius: 3px; font: bold 10pt; }'
+            'QPushButton:hover { background: %s; }'
+            'QPushButton:pressed { background: %s; }'
+            'QPushButton:disabled { background: #22282A; border: 1px solid'
+            ' #3A4244; color: #5D6567; }')
+    CAL_QSS = {
+        'measure': _BTN % ('#3B2E12', '#E8A33D', '#FFD08A', '#4A3A18', '#5C4718'),
+        'pose':    _BTN % ('#16323A', '#4FB3C9', '#A8DEE9', '#1C4049', '#235058'),
+        'commit':  _BTN % ('#3A1F3F', '#C86BE0', '#EBB8F5', '#4A2851', '#5A3163'),
+        'read':    ('QLineEdit { background: #1B1F20; border: 1px solid #3A4244;'
+                    ' color: #DCE3E0; border-radius: 2px; padding: 2px 4px; }'),
+        'readprev': ('QLineEdit { background: #1B1F20; border: 1px solid #3A4244;'
+                     ' color: #7C8482; border-radius: 2px; padding: 2px 4px; }'),
+        'delta':   ('QLabel { color: #7C8482; padding: 2px 4px; }'
+                    'QLabel[verdict="better"] { color: #78DC78;'
+                    ' background: #16281A; }'
+                    'QLabel[verdict="worse"] { color: #F08A6E;'
+                    ' background: #2E1A16; }'),
+        'log':     ('QPlainTextEdit { background: #1B1F20; color: #DCE3E0;'
+                    ' border: 1px solid #3A4244; border-radius: 2px; }'),
+    }
+    # the running cycle is outlined white; every other motion button greys out
+    CAL_QSS_RUNNING = ('QPushButton { background: #4A3A18; border: 2px solid'
+                       ' #FFFFFF; color: #FFD08A; border-radius: 3px;'
+                       ' font: bold 10pt; }')
+
+    def _cal_buttons_busy(self, busy, running=None):
+        """Lock the motion set while a cycle runs.
+
+        A 900 s StartAC used to leave eleven live-looking motion buttons, with
+        a toast AFTER the press as the only feedback. Design review
+        2026-08-03: disable on issue, re-enable on completion, and outline the
+        one that is actually running.
+        """
+        try:
+            for k, b in getattr(self, '_cal_btn', {}).items():
+                if k == 'record':
+                    continue
+                b.setEnabled(not busy)
+                if busy and k == running:
+                    b.setEnabled(False)
+                    b.setStyleSheet(self.CAL_QSS_RUNNING)
+                elif not busy:
+                    cls = 'pose' if k in ('goto', 'cleft', 'cright') else 'measure'
+                    b.setStyleSheet(self.CAL_QSS[cls])
+        except Exception as e:
+            LOG.error('CAL button lock failed: %s', e)
+
+    def _cal_clear_cref(self):
+        """Drop the taught C reference so the next StartC re-teaches.
+
+        Operator 2026-08-03: overload StartC and clear the params to redo it,
+        rather than carry a second button whose meaning changes between
+        presses. The params ARE the state.
+        """
+        label = 'CLEAR C REF'
+        try:
+            import linuxcnc
+            c = linuxcnc.command()
+            st = linuxcnc.stat()
+            st.poll()
+            if st.interp_state != linuxcnc.INTERP_IDLE or not st.inpos:
+                c.error_msg('%s refused: machine is busy' % label)
+                return
+            c.mode(linuxcnc.MODE_MDI)
+            c.wait_complete()
+            for p in ('3058', '3060', '3061', '3059'):
+                c.mdi('#%s = 0' % p)
+            LOG.info('%s: dy, depth, X offset and the pending flag zeroed -- '
+                     'the next StartC will position for a fresh jog', label)
+            self.cal_say('>> C reference cleared -- next StartC re-teaches')
+            c.error_msg('C reference cleared. Press StartC to position for a '
+                        'fresh teach.')
+        except Exception as e:
+            LOG.error('%s failed: %s', label, e)
+
+    def _cal_record_face(self):
+        """Put the payload on the commit button and grey it when empty."""
+        b = getattr(self, '_cal_btn', {}).get('record')
+        if b is None:
+            return
+        try:
+            v = self._read_vars(('3069', '3070'))
+            a, c = v.get('3069', 0.0), v.get('3070', 0.0)
+            if abs(a) < 1e-9 and abs(c) < 1e-9:
+                b.setText('RECORD   nothing to bank')
+                b.setEnabled(False)
+            else:
+                b.setText('RECORD   A %+8.4f   C %+8.4f' % (a, c))
+                b.setEnabled(True)
+        except Exception:
+            pass
+
     CAL_SUBS = {
         'puck': ('cal_probe_center', 'StartPuck', False),
         'a':    ('cal_a_cycle',      'StartA',    True),
         'c':    ('cal_c_cycle',      'StartC',    True),
-        'cref': ('cal_c_ref',        'SET C REF', True),
         # no 'ac' entry: StartAC is driven from Python (_ac_start), not by a
         # g-code sub. cal_ac_iterate.ngc is retired to trash/ -- it ran all
         # five A+C pairs in ONE program, which meant one bank at the end off
@@ -1338,6 +1384,7 @@ class UserTab(QWidget):
                 c.mdi('o<%s> call' % sub)
                 LOG.info('%s: %s issued', label, sub)
             self._cal_lock_ac(label)
+            self._cal_buttons_busy(True, running=which)
             if which in ('a', 'c'):
                 self._cal_watch_which = which
                 self._cal_watch_start()
@@ -1462,6 +1509,7 @@ class UserTab(QWidget):
 
     def _ac_stop(self, why):
         self._ac_active = False
+        self._cal_buttons_busy(False)
         msg = ('StartAC finished after %d iteration(s): %s. Banked %d '
                'correction(s).' % (self._ac_iter, why, self._ac_banked))
         LOG.info(msg)
@@ -1535,6 +1583,9 @@ class UserTab(QWidget):
         self._ac_next()
 
     def _cal_after_cycle(self, which):
+        if not getattr(self, '_ac_active', False):
+            self._cal_buttons_busy(False)
+        self._cal_record_face()
         """Cycle finished. BANK an improvement without asking.
 
         Operator 2026-08-03: whenever a routine ends with an improvement --
@@ -1706,16 +1757,9 @@ class UserTab(QWidget):
                 'correction between them, then a fresh puck find so the zero '
                 'matches the corrected A. If dY improved it writes '
                 'head_zero.inc by itself.',
-        'c':    'StartC running: probes toward centre at A -45 and +45, '
-                'corrects C, re-probes, then re-finds the puck so the zero '
-                'matches the corrected C. Watch dX before/after.',
-        'cref': 'SET C REF -- TWO PRESSES. The first clears Z and rotates A '
-                'to -45, then hands control back: jog the tip to where '
-                'driving toward the puck centre in +X would strike it. The '
-                'second press records X, Y and depth. It refuses unless the '
-                'tip is in front of centre, below the top, and off centre '
-                'sideways -- that sideways offset IS the scale factor of the '
-                'C measurement.',
+        'c':    'StartC: with no reference it parks at A-45 for you to jog; '
+                'with a jog pending it captures and measures; otherwise it '
+                'just measures. CLEAR C REF to re-teach.',
         'ac':   'StartAC running: A, then C, then a fresh puck find, banking '
                 'each correction as it arrives so the next measurement starts '
                 'from a real zero. Stops on 4 consecutive discards.',

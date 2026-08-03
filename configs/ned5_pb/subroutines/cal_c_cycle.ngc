@@ -19,8 +19,19 @@ o<cal_c_cycle> sub
   o6 if [#<top> EQ 0 AND #<cx> EQ 0 AND #<cy> EQ 0]
     (abort, StartC: no puck centre - run StartPuck first)
   o6 endif
-  o7 if [#3058 EQ 0]
-    (abort, StartC: no C reference taught. Press SET C REF, jog the tip into place, press SET C REF again.)
+  (NO SEPARATE TEACH BUTTON -- operator 2026-08-03: overload StartC. The)
+  (reference lives in the params, so the params decide what a press does:)
+  (   no reference  -> position for the jog and hand back)
+  (   jog pending   -> capture what was jogged, then measure)
+  (   reference set -> just measure)
+  (To re-teach, CLEAR C REF then press StartC. One button, and the state)
+  (lives in the data rather than in the operator's head.)
+  o7 if [#3058 EQ 0 AND #3059 NE 1]
+    o<cal_c_ref> call [#<cx>] [#<cy>] [#<top>]
+    #3071 = 1
+    (PRINT, StartC: no C reference yet - positioned at A -45 one inch in front with the puck up. JOG the tip into place, then press StartC again.)
+    (DEBUG, StartC: jog the tip into place, then press StartC again)
+    o7 return
   o7 endif
 
   #3071 = 0
