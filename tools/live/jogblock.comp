@@ -35,7 +35,10 @@ param rw float max_cps = 0 "MPG rate cap in counts/sec; 0 = no cap. Counts arriv
 param r   s32 dropped = 0 "counts discarded by the rate cap since start (diagnostic)";
 param rw float taper_mm = 2.0 "mm above the floor where the slowdown starts. Outside this the wheel reads at full rate; inside it the readable rate ramps down linearly to crawl_mmps.";
 param rw s32 cpd = 4 "MPG counts per detent (ned: 4, tools/groundtruth/mpgjog.sh:37)";
-param rw float downshift_detents = 5.0 "drop to the next smaller step once the remaining distance is fewer than this many detents of the current step. The operator's own selection is never overwritten -- it is restored rung by rung as they back away.";
+param rw float sw_1mm = 75.0 "room (mm) below which the 1 mm rung drops to 0.5 (operator)";
+param rw float sw_05mm = 18.18 "equal-time geometry: each zone = 113.6 detents";
+param rw float sw_01mm = 6.82 "equal-time geometry";
+param rw float sw_005mm = 1.14 "equal-time geometry";
 param rw float crawl_mmps = 0.5 "the FAILPROOF final approach speed in mm/s -- the rate the wheel is read at right on the floor. Slow enough that the servo settles within about a micron, so the axis stops on the nose.";
 param rw float burst_counts = 8 "max counts the rate cap may BANK while idle (8 = 2 detents). Bigger values let a pause turn into a lunge when the wheel moves again.";
 
@@ -120,24 +123,22 @@ FUNCTION(_) {
        away restores it rung by rung on its own. */
     {
         /* must mirror [DISPLAY]INCREMENTS in the INI */
-        static const double ladder[4] = {2.0, 1.0, 0.1, 0.01};
+        static const double ladder[5] = {1.0, 0.5, 0.1, 0.05, 0.01};
         double user_mm = clamp_scale * (cpd > 0 ? cpd : 4);
         double eff_mm = user_mm;
-        int i, rung = 3;
+        int i, rung = 4;
         if (clamp_enable) {
             double room2 = clamp_pos - clamp_floor;
+            double sw[4];
+            sw[0] = sw_1mm; sw[1] = sw_05mm; sw[2] = sw_01mm; sw[3] = sw_005mm;
             if (room2 < 0.0) room2 = 0.0;
-            /* start on the finest rung that is not coarser than the operator
-               asked for */
-            for (i = 0; i < 4; i++) {
+            for (i = 0; i < 5; i++) {
                 if (ladder[i] <= user_mm * 1.0001) { rung = i; break; }
             }
             eff_mm = ladder[rung];
-            /* CASCADE: keep dropping while the room left is under N detents of
-               the step we are NOW on -- re-judged against each new rung, not
-               once against the starting one (operator: "iteratively adjust ...
-               based on the current detent"). */
-            while (rung < 3 && room2 < downshift_detents * ladder[rung]) {
+            /* cascade: drop while the room is under the switch point of the
+               rung we are ON, re-judged after every drop */
+            while (rung < 4 && room2 < sw[rung]) {
                 rung++;
                 eff_mm = ladder[rung];
             }

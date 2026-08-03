@@ -120,6 +120,15 @@ def _death(signum, frame):
 
 for _s in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT):
     signal.signal(_s, _death)
+def _exit_save():
+    try:
+        brain.sh_save(time.time() + 1e9, force=True)
+        log('stored_home.json final save at exit')
+    except Exception:
+        pass
+
+
+atexit.register(_exit_save)
 atexit.register(lambda: log('ned_brain exited (atexit; normal interpreter exit)'))
 
 
@@ -269,8 +278,14 @@ class Brain(object):
         log('HEADREAD -> ini.{}.home_offset = {:+.4f}'.format(jn, deg))
 
     # ---- stored homing (port of _sh_save / _resume_prep, consent in run5.sh) --
-    def sh_save(self, now):
-        if now < self.sh_next:
+    def sh_save(self, now, force=False):
+        # EVENT-DRIVEN, not just timed (operator 2026-08-02 23:5x: "machine
+        # absolutely did not remember its told position"). The 10 s timer plus
+        # the while-moving skip meant a jog followed by a quick shutdown was
+        # never saved. Now: the tick calls with force=True on the falling edge
+        # of motion (just stopped), and exit_save() writes once more at brain
+        # shutdown, so the last position always lands on disk.
+        if not force and now < self.sh_next:
             return
         self.sh_next = now + 10.0
         try:
@@ -282,7 +297,8 @@ class Brain(object):
             if any(abs(s.joint[jn]['velocity']) > 1e-4 for jn in (0, 1, 2, 3)):
                 return
             pos = [round(s.joint_actual_position[jn], 4) for jn in (0, 1, 2, 3)]
-            if self.sh_last is not None and now - self.sh_last_t < 600 \
+            if not force and self.sh_last is not None \
+               and now - self.sh_last_t < 600 \
                and max(abs(a - b) for a, b in zip(pos, self.sh_last)) < 0.005:
                 return
             tmp = SH_FILE + '.tmp'
@@ -361,8 +377,30 @@ class Brain(object):
                           % (SEND, jn, home, offset, final, search, latch, seq))
 
             self.stat.poll()
+            # STALE frame = the PREVIOUS session's coordinates, NOT zero
+            # (operator 2026-08-02: "it must always use previous values and
+            # declare stale home. not zero"). The brain refreshes
+            # stored_home.json every 10 s while homed, so unless the machine
+            # was pushed while off these are its true coordinates -- and the
+            # STALE HOME banner is exactly this trust level. A/C never use
+            # the store: their PSO absolute read follows seconds later.
+            stored = {}
+            try:
+                import json
+                with open(SH_FILE) as f:
+                    d = json.load(f)
+                stored = dict((int(k), float(v))
+                              for k, v in d['joints'].items())
+                log('DECLARE: STALE frame from stored_home.json '
+                    '(saved {}): {}'.format(d.get('saved', '?'), stored))
+            except Exception as e:
+                log('DECLARE: stored_home.json unusable ({}) -- falling '
+                    'back to declare-at-current-position'.format(e))
             for jn in jns:
-                pos = '%.4f' % self.stat.joint_actual_position[jn]
+                if jn in stored and jn not in (4, 5):
+                    pos = '%.4f' % stored[jn]
+                else:
+                    pos = '%.4f' % self.stat.joint_actual_position[jn]
                 send(jn, pos, pos, '0', '0', '0')
             time.sleep(0.3)      # let task/motion consume the four settings
             self.cmd.mode(linuxcnc.MODE_MANUAL)
@@ -889,8 +927,20 @@ class Brain(object):
             self.wedge_ref = None
 
 
-        # stored-home saver
-        self.sh_save(now)
+        # stored-home saver: forced on the just-stopped edge so the LAST jog
+        # is always captured -- the 10 s timer alone lost a jog followed by a
+        # quick shutdown (operator 23:5x)
+        try:
+            moving_now = (self.stat.current_vel > 1e-6 or
+                          any(abs(self.stat.joint[j]['velocity']) > 1e-4
+                              for j in (0, 1, 2, 3)))
+        except Exception:
+            moving_now = False
+        if getattr(self, 'sh_was_moving', False) and not moving_now:
+            self.sh_save(now, force=True)     # motion just ENDED
+        else:
+            self.sh_save(now)
+        self.sh_was_moving = moving_now
 
 
 brain = Brain()

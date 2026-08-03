@@ -97,6 +97,21 @@ setp jogblock.y.max-cps 400
 # counts = 400 counts per revolution, so 400 counts/s IS one turn per second.
 # Anything faster is DISCARDED, never queued -- rage-spinning buys nothing.
 setp jogblock.z.max-cps 400
+# ladder switch points, mm of room: 1mm rung drops at 150, 0.5 at 50,
+# 0.1 at 2, 0.05 at 0.5 (operator 2026-08-02 23:2x)
+setp jogblock.x.sw-1mm 75
+setp jogblock.y.sw-1mm 75
+setp jogblock.z.sw-1mm 75
+setp jogblock.x.sw-05mm 18.18
+setp jogblock.y.sw-05mm 18.18
+setp jogblock.z.sw-05mm 18.18
+setp jogblock.x.sw-01mm 6.82
+setp jogblock.y.sw-01mm 6.82
+setp jogblock.z.sw-01mm 6.82
+setp jogblock.x.sw-005mm 1.14
+setp jogblock.y.sw-005mm 1.14
+setp jogblock.z.sw-005mm 1.14
+# step-ladder thresholds: 2 mm rung drops 50 detents out (100 mm), the rest 20
 # approach profile -- aggressive: start slowing 10 mm out, crawl at 0.15 mm/s
 setp jogblock.x.taper-mm 0    # rate taper OFF
 setp jogblock.y.taper-mm 0
@@ -312,7 +327,12 @@ net sig-limit-z-bottom => limdir.2.lim-neg-in  jogblock.z.lim-neg
 # nose"). Far out the wheel reads at full rate; inside taper_mm the readable
 # rate ramps down to crawl_mmps; at the floor downward detents stop. UP is
 # always full rate, so you can always jog back off -- no disarm-and-rejog.
-net sig-z-enc-pos  => jogblock.z.clamp-pos
+# clamp-pos must be the MACHINE-frame position -- the floor the operator
+# types is a machine coordinate. sig-z-enc-pos is MOTOR position, offset from
+# machine by the homing offset: near zero on a declared home (which is why
+# bench tests held to microns) but real after physical homing -- the comp
+# misjudged the room and Z reached the -151 backstop (operator, 23:04).
+net sig-z-mach-pos joint.2.pos-fb => jogblock.z.clamp-pos
 net mpg-scale-lin  => jogblock.z.clamp-scale
 net sig-limit-z-top    => limdir.2.lim-pos-in  jogblock.z.lim-pos
 net sig-jvel-0   joint.0.vel-cmd => limdir.0.vel-cmd

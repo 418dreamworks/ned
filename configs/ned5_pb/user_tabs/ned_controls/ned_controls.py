@@ -389,12 +389,15 @@ class UserTab(QWidget):
             # in BOTH directions. jogblock only swallows DOWN detents.
             self.comp.addPin('zclamp-enable', 'bit', 'out')
             self.comp.addPin('zclamp-low', 'float', 'out')
+            # the step ACTUALLY in force (jogblock's ladder output, mm/detent)
+            self.comp.addPin('stepmm-in', 'float', 'in')
             self.comp.ready()
             self.comp.addListener('air-ok-in', self._on_air)
             self.comp.addListener('probe-up-in', self._on_up)
             self.comp.addListener('inc-in', self._on_inc)
             self.comp.addListener('axis-in', self._on_axis)
             self.comp.addListener('jogspeed-in', self._on_jogspeed)
+            self.comp.addListener('stepmm-in', self._on_stepmm)
             LOG.info('ned-tab HAL component ready')
         except Exception as e:
             self.comp = None
@@ -1948,6 +1951,37 @@ class UserTab(QWidget):
 
 
     # ---- pendant jump size -> on-screen increment button -----------------
+    # RED DOT = the step the ladder is ACTUALLY using right now (operator
+    # 2026-08-02: "as you change the interpretation, highlight the one that is
+    # used with a red dot or something so you can see the original scale, but
+    # also the one in effect"). The operator's own selection keeps the stock
+    # checked look; the in-force rung gets a red ring. Same button = both.
+    STEP_LIVE_QSS = 'border: 3px solid rgb(230,60,60); border-radius: 6px;'
+
+    def _on_stepmm(self, val):
+        try:
+            self._step_live_mm = float(val)
+        except (TypeError, ValueError):
+            return
+        win = self.window()
+        if win is None:
+            return
+        jw = win.findChild(QWidget, 'jogincrement')
+        pairs = getattr(jw, '_buttons_by_value', []) if jw is not None else []
+        if not pairs and not getattr(self, '_stepdot_warned', False):
+            self._stepdot_warned = True
+            LOG.error('STEP DOT: jogincrement buttons not found -- live-step '
+                      'indicator dead')
+            return
+        for btn, v in pairs:
+            try:
+                live = abs(float(v) - self._step_live_mm) < 1e-9
+            except (TypeError, ValueError):
+                continue
+            want = self.STEP_LIVE_QSS if live else ''
+            if btn.styleSheet() != want:
+                btn.setStyleSheet(want)
+
     def _on_inc(self, val):
         try:
             self._jog_inc_mm = float(val)

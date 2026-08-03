@@ -40,3 +40,45 @@
     the log line on the next launch. GUI widget references: use the badge
     numbers in `ned/gui_map.txt` (regenerated every launch).
 15. **Never post to GitHub on the user's behalf.** No PR/issue comments, no review replies, no PR titles or bodies published or edited under their name. Draft the text, show it in chat, and the USER posts it. Pushing a branch or opening/updating a PR happens only when the user asks for that specific action in their current message.
+16. **MOTION PRECONDITIONS — the most serious rule here. A violation of this
+    is a crash, not a bug.** On 2026-08-02 21:15 I commanded a continuous
+    full-speed Z jog "into a clamp" that was NOT ARMED, with the box guard
+    NOT RUNNING. Z ran 310 mm down to −325 uncontrolled. My own console had
+    printed `LinuxCNC floor -620.000` — proof the clamp was off — and I did
+    not read it. Nothing was damaged; that was luck, not design.
+    BEFORE ANY command that can move the machine:
+    (a) **ASSERT the precondition, in code, and abort if it is false.** If a
+        test depends on a guard/clamp/limit being active, READ IT BACK and
+        stop if it is not. Never infer it from "I just clicked enable" — the
+        click may have missed (it did).
+    (b) **The box guard must be RUNNING.** If it was stopped for any reason
+        (operator took over, a move had to leave the box), restart it before
+        the next motion command. Never leave it off "for a moment".
+    (c) **NEVER issue a continuous/unbounded jog** in a script. Increment
+        jogs only, with a known distance, and a target computed to stay
+        inside the box.
+    (d) **Print the precondition and the target BEFORE moving**, and make the
+        script refuse when they disagree — a printed warning nobody reads is
+        worth nothing.
+    (e) If the machine must leave the box (recovery), stop the guard, make
+        ONE bounded move, and re-arm the guard immediately afterwards.
+17. **PHYSICALLY HOMED, EVERY SINGLE TIME, NO EXCEPTIONS.** Before ANY command
+    that can move the machine, the machine MUST have been PHYSICALLY homed in
+    THIS LinuxCNC session — a real switch-seeking cycle that MOVED, verified.
+    `stat.homed == 1` IS NOT ENOUGH AND NEVER WAS: every launch DECLARES home
+    wherever the machine happens to be sitting, so the flag is true while the
+    coordinates mean nothing. That is exactly what the STALE HOME banner is
+    telling you.
+    - **Every relaunch invalidates homing.** PB restarted = re-home before you
+      move. I violated this repeatedly on 2026-08-02 (relaunched four times,
+      kept testing, then set a "Z floor -90" that was 90 mm below an arbitrary
+      boot position instead of true zero), and was about to do it again minutes
+      after writing rule 16.
+    - **Verify the home ACTUALLY RAN:** the joint must be seen UNHOMED, then
+      `homing` TRUE, then a non-zero joint velocity. A home that returns in 0 s
+      having moved nothing is a NO-OP that reports success — and for a gantry
+      pair BOTH joints (0 and 3) must be unhomed first or `home(0)` completes
+      instantly without moving.
+    - **No "it was homed earlier".** Earlier was a different session.
+    - If homing cannot be completed, DO NOT MOVE THE MACHINE. Say so and stop.
+
