@@ -579,7 +579,7 @@ class UserTab(QWidget):
                 '  2. Verify CONTINUITY: touch rod to puck, probe LED/input.\n'
                 '  3. Jog the rod tip ~20 mm ABOVE the puck, roughly centred.\n'
                 'Finds the top, then 8 edges from 1 in out at 10 mm deep.\n'
-                'Probes 200 mm/min, backoff 2 mm, latch 10 mm/min. The puck\n'
+                'Probes 200 mm/min, backoff 1 mm, latch 10 mm/min. The puck\n'
                 'is raised by the cycle -- leave it DOWN before pressing.')
             steps.setStyleSheet('color: rgb(180,180,180); font: 9pt;')
             cbl.addWidget(steps)
