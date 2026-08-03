@@ -185,6 +185,22 @@ contract) — buttons, locks, homing menu, zeros, countdowns.
 4. A/C rehome probe (A4.4) — brain verify machinery unchanged by PB
    updates but confirm gui.md shows the cycle.
 
+### A6. Raspberry Pi Connect = the screen-blanking culprit (killed 2026-08-02)
+
+`rpi-connect-wayvnc.service` (user unit) crash-looped every 5 s -- 24,593
+restarts -- probing for a Wayland socket that does not exist on this X11
+desktop, and each attempt disturbed the display: the operator saw the screen
+"blanking a whole lot", in PB and in plain terminals alike.
+
+Both user units are now stopped, disabled and **masked** (symlinked to
+/dev/null): `rpi-connect.service`, `rpi-connect-wayvnc.service`. The operator
+never uses Pi Connect.
+
+- **Detect a comeback:** screen blanks with machine off; `journalctl --user -u
+  rpi-connect-wayvnc | tail` shows restart spam.
+- **An OS update may reinstall/re-enable it.** Re-mask:
+  `systemctl --user mask rpi-connect.service rpi-connect-wayvnc.service`
+
 ### A5. Rack ATC + MASTER.params (added 2026-08-02)
 - The M6 remap chain lives in `configs/ned5_pb/` (subroutines/, python/,
   ini REMAP + [PYTHON] + [ATC]) — config-side, SAFE from PB package

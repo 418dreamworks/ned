@@ -144,6 +144,12 @@ pgrep -f 'tools/live/logclean.sh' >/dev/null 2>&1 || ( "$NED/tools/live/logclean
 if [ -f "$LOG" ]; then tail -n 2000 "$LOG" > "$LOG.tmp" 2>/dev/null && mv "$LOG.tmp" "$LOG"; fi
 { echo; echo "==================== LinuxCNC start (PROBE BASIC)  $(date '+%F %T') ===================="; } >> "$LOG"
 
+# 3b. WORKSPACE MOVE -- REMOVED 2026-08-02. Putting PB on its own workspace
+# stopped operator clicks and harness clicks colliding, but it also meant any
+# stray workspace switch showed a bare desktop, which reads as the screen
+# "blanking a whole lot". Not worth it: the harness now verifies PB is the
+# active window before every click instead (gt/harness.py focus()).
+
 # 4. launch under `script` so LinuxCNC sees a TTY. Without one, /usr/bin/linuxcnc:203
 # pops a modal wish dialog on error and BLOCKS; with a pty the error is printed
 # and captured here instead.

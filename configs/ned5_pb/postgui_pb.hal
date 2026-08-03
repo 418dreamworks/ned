@@ -97,7 +97,12 @@ net sig-mpg-sel-y   <=  pendant.jog-en-y
 net sig-mpg-sel-z   <=  pendant.jog-en-z
 net mpg-sel-a  pendant.jog-en-a  =>  axis.a.jog-enable
 net mpg-sel-c  pendant.jog-en-c  =>  axis.c.jog-enable
-net mpg-scale-lin  pendant.jog-scale-lin =>  axis.x.jog-scale axis.y.jog-scale axis.z.jog-scale
+net mpg-scale-lin  pendant.jog-scale-lin =>  axis.x.jog-scale axis.y.jog-scale
+# Z's jog scale comes from jogblock, NOT straight from the selector: inside
+# 5 detents of the clamp floor jogblock reinterprets each incoming detent at
+# the next step down the 5 / 1 / 0.1 / 0.01 ladder, and hands the operator's
+# own choice back rung by rung as they back away.
+net sig-zjog-scale jogblock.z.step-out => axis.z.jog-scale
 net mpg-scale-ang  pendant.jog-scale-ang =>  axis.a.jog-scale axis.c.jog-scale
 setp axis.y.jog-vel-mode 0
 setp axis.z.jog-vel-mode 0
@@ -124,3 +129,7 @@ setp joint.3.jog-vel-mode 0
 setp joint.4.jog-vel-mode 0
 setp joint.5.jog-vel-mode 0
 # ============================================================================
+
+# --- Z JOG CLAMP: GUI supplies arm state and the floor --------------------
+net sig-zclamp-en   ned-tab.zclamp-enable => jogblock.z.clamp-enable
+net sig-zclamp-low  ned-tab.zclamp-low    => jogblock.z.clamp-floor

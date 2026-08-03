@@ -21,14 +21,30 @@ pin out s32 counts_out "gated counts -> axis.L.jog-counts + its joint.N.jog-coun
 pin in bit sel "this axis is MPG-selected (sig-mpg-sel-*)";
 pin in bit lim_neg "raw limit signal, negative direction (TRUE = at limit)";
 pin in bit lim_pos "raw limit signal, positive direction (TRUE = at limit)";
+pin in bit clamp_enable = 0 "Z jog clamp armed";
+pin in float clamp_pos = 0 "current axis position (machine coords)";
+pin in float clamp_floor = 0 "clamp floor (machine coords) -- the number the operator typed as Zlow";
+pin in float clamp_scale = 0.025 "mm of travel per MPG count (= axis.N.jog-scale); lets the crawl be specified in mm/s";
+pin out float step_out = 0.025 "EFFECTIVE mm per count -> drive axis.N.jog-scale from this. Equals the operator's selection when far from the floor, and downshifts one rung at a time as the floor is approached.";
+pin out float step_mm_out = 0.1 "the same thing expressed as mm per DETENT -- what the GUI should display so the operator can see the step it is actually using.";
+pin out float clamp_frac = 1.0 "fraction of downward detents currently passing (1 = free, 0 = at the floor)";
 pin out bit blocked_neg "a negative-direction detent was just swallowed";
 pin out bit blocked_pos "a positive-direction detent was just swallowed";
 param rw s32 hold_cycles = 1000 "servo cycles a blocked-* flag stays up (1000 = 1 s at 1 kHz)";
+param rw float max_cps = 0 "MPG rate cap in counts/sec; 0 = no cap. Counts arriving faster than this are DISCARDED, not queued -- spinning the wheel harder must not buy extra travel, it just stops being read (operator 2026-08-02: nothing above 2 full turns/sec is read as movement; MPG is 4 counts/detent, 100 detents/rev -> 800 counts/sec).";
+param r   s32 dropped = 0 "counts discarded by the rate cap since start (diagnostic)";
+param rw float taper_mm = 2.0 "mm above the floor where the slowdown starts. Outside this the wheel reads at full rate; inside it the readable rate ramps down linearly to crawl_mmps.";
+param rw s32 cpd = 4 "MPG counts per detent (ned: 4, tools/groundtruth/mpgjog.sh:37)";
+param rw float downshift_detents = 5.0 "drop to the next smaller step once the remaining distance is fewer than this many detents of the current step. The operator's own selection is never overwritten -- it is restored rung by rung as they back away.";
+param rw float crawl_mmps = 0.5 "the FAILPROOF final approach speed in mm/s -- the rate the wheel is read at right on the floor. Slow enough that the servo settles within about a micron, so the axis stops on the nose.";
+param rw float burst_counts = 8 "max counts the rate cap may BANK while idle (8 = 2 detents). Bigger values let a pause turn into a lunge when the wheel moves again.";
 
 variable int last_c = 0;
 variable int started = 0;
 variable int hn = 0;
 variable int hp = 0;
+variable double budget = 0.0;
+variable double eff_cps = 0.0;
 
 function _;
 license "GPL";
@@ -40,6 +56,97 @@ FUNCTION(_) {
     if (!started) { last_c = c; started = 1; }
     d = c - last_c;
     last_c = c;
+    /* MPG RATE CAP -- discard counts above max_cps. A budget refilled every
+       servo cycle lets normal wheel use through untouched and simply stops
+       reading a violent spin. Excess is DROPPED (never queued), so the wheel
+       can never bank travel that arrives later. */
+    if (max_cps > 0.0) {
+        int ad, allow;
+        budget += eff_cps * fperiod;
+        /* BURST CAP: idle time must not BANK counts. 250 ms of banking was
+           200 counts at the 800 cap = 20 mm of instantaneous demand at
+           0.1 mm/detent -- the axis lunged and overshot the clamp by 70 um
+           on a real hand spin (operator, 2026-08-02 22:2x) even though a
+           steady injected stream held to 2 um. Cap the bank at a couple of
+           detents so the wheel is followed, never replayed. */
+        if (budget > burst_counts) budget = burst_counts;
+        ad = (d < 0) ? -d : d;
+        if (ad > 0) {
+            allow = (int)budget;
+            if (ad > allow) {
+                dropped += (ad - allow);
+                ad = allow;
+            }
+            budget -= ad;
+            d = (d < 0) ? -ad : ad;
+        }
+    }
+    /* Z CLAMP APPROACH PROFILE -- decelerate onto the floor, do not hit a wall.
+       Far from the floor the wheel is read at the full rate. Inside taper_mm
+       the readable rate falls off linearly until, at the floor, it is the
+       crawl rate: slow enough that the servo stops within ~1 um. At/below the
+       floor downward detents are dropped entirely. UPWARD detents are never
+       touched, so the operator is never stranded and never has to disarm the
+       clamp to jog back off it. */
+    eff_cps = max_cps;
+    if (clamp_enable) {
+        double room = clamp_pos - clamp_floor;
+        double crawl = (clamp_scale > 1e-9) ? (crawl_mmps / clamp_scale) : 30.0;
+        if (crawl < 1.0) crawl = 1.0;
+        if (crawl > max_cps) crawl = max_cps;
+        if (room <= 0.0) {
+            clamp_frac = 0.0;
+            if (d < 0) d = 0;                 /* on the floor: no further down */
+        } else if (taper_mm > 0.0 && room < taper_mm) {
+            double f = room / taper_mm;       /* 1 at taper edge -> 0 at floor */
+            eff_cps = crawl + (max_cps - crawl) * f;
+            clamp_frac = eff_cps / max_cps;
+        } else {
+            clamp_frac = 1.0;
+        }
+        if (d > 0) eff_cps = max_cps;         /* going UP is always full rate */
+    } else {
+        clamp_frac = 1.0;
+    }
+
+    /* AUTOMATIC STEP DOWNSHIFT (operator 2026-08-02: "switch the step size to
+       one down if the distance remaining is less than 5 detents of that step
+       size ... remember the user's choice, and switch back as you back off").
+       Throttling the ARRIVAL RATE alone cannot help a coarse step: one lone
+       5 mm detent still moves 5 mm. So near the floor we also shrink the step
+       itself, one rung at a time down the 5 / 1 / 0.1 / 0.01 ladder, and
+       publish it so the display shows what is really in force. The operator's
+       selection is read fresh every cycle and never written to, so backing
+       away restores it rung by rung on its own. */
+    {
+        /* must mirror [DISPLAY]INCREMENTS in the INI */
+        static const double ladder[4] = {2.0, 1.0, 0.1, 0.01};
+        double user_mm = clamp_scale * (cpd > 0 ? cpd : 4);
+        double eff_mm = user_mm;
+        int i, rung = 3;
+        if (clamp_enable) {
+            double room2 = clamp_pos - clamp_floor;
+            if (room2 < 0.0) room2 = 0.0;
+            /* start on the finest rung that is not coarser than the operator
+               asked for */
+            for (i = 0; i < 4; i++) {
+                if (ladder[i] <= user_mm * 1.0001) { rung = i; break; }
+            }
+            eff_mm = ladder[rung];
+            /* CASCADE: keep dropping while the room left is under N detents of
+               the step we are NOW on -- re-judged against each new rung, not
+               once against the starting one (operator: "iteratively adjust ...
+               based on the current detent"). */
+            while (rung < 3 && room2 < downshift_detents * ladder[rung]) {
+                rung++;
+                eff_mm = ladder[rung];
+            }
+            if (eff_mm > user_mm) eff_mm = user_mm;
+        }
+        step_mm_out = eff_mm;
+        step_out = eff_mm / (cpd > 0 ? cpd : 4);
+    }
+
     if (sel && d > 0 && lim_pos) {
         hp = hold_cycles;
     } else if (sel && d < 0 && lim_neg) {

@@ -83,6 +83,27 @@ addf hm2_7i97.0.pktuart.0.pso-live servo-thread   # HYPHEN: halcompile turns pso
 addf jogblock.x               servo-thread
 addf jogblock.y               servo-thread
 addf jogblock.z               servo-thread
+
+# MPG RATE CAP (operator 2026-08-02): "clamp the max RPM read from MPG so that
+# nothing above 2 full turns of the wheel a second is read as movement".
+# The MPG is 4 counts/detent (tools/groundtruth/mpgjog.sh:37) and 100
+# detents/rev, so 2 rev/s = 800 counts/sec. Counts above that are DISCARDED,
+# not queued -- spinning harder simply stops being read, so a violent spin
+# can never outrun a Z clamp or a limit.
+setp jogblock.x.max-cps 400
+setp jogblock.y.max-cps 400
+# HARD MPG CEILING (operator 2026-08-02: "cap the MPG reading at 1rps no
+# matter what. i don't want people rage spining it"). 100 detents/rev x 4
+# counts = 400 counts per revolution, so 400 counts/s IS one turn per second.
+# Anything faster is DISCARDED, never queued -- rage-spinning buys nothing.
+setp jogblock.z.max-cps 400
+# approach profile -- aggressive: start slowing 10 mm out, crawl at 0.15 mm/s
+setp jogblock.x.taper-mm 0    # rate taper OFF
+setp jogblock.y.taper-mm 0
+setp jogblock.z.taper-mm 0
+setp jogblock.x.crawl-mmps 0.15
+setp jogblock.y.crawl-mmps 0.15
+setp jogblock.z.crawl-mmps 0.15
 addf limdir.0                 servo-thread
 addf limdir.1                 servo-thread
 addf limdir.2                 servo-thread
@@ -285,6 +306,14 @@ net sig-limit-x-fore   => limdir.0.lim-neg-in  limdir.3.lim-neg-in  jogblock.x.l
 net sig-limit-y-sb     => limdir.1.lim-pos-in  jogblock.y.lim-pos
 net sig-limit-y-port   => limdir.1.lim-neg-in  jogblock.y.lim-neg
 net sig-limit-z-bottom => limdir.2.lim-neg-in  jogblock.z.lim-neg
+# Z JOG CLAMP -- APPROACH PROFILE inside jogblock (operator 2026-08-02: "do a
+# PID so that the detent arrival dramatically slows down as you arrive the
+# limit to hit a failproof speed so that we gradually stop at the limit on the
+# nose"). Far out the wheel reads at full rate; inside taper_mm the readable
+# rate ramps down to crawl_mmps; at the floor downward detents stop. UP is
+# always full rate, so you can always jog back off -- no disarm-and-rejog.
+net sig-z-enc-pos  => jogblock.z.clamp-pos
+net mpg-scale-lin  => jogblock.z.clamp-scale
 net sig-limit-z-top    => limdir.2.lim-pos-in  jogblock.z.lim-pos
 net sig-jvel-0   joint.0.vel-cmd => limdir.0.vel-cmd
 net sig-jvel-1   joint.1.vel-cmd => limdir.1.vel-cmd

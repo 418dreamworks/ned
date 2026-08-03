@@ -383,6 +383,12 @@ class UserTab(QWidget):
             # runs unhome -> fresh read -> home THAT joint only
             self.comp.addPin('refa-out', 'bit', 'out')
             self.comp.addPin('refc-out', 'bit', 'out')
+            # Z JOG CLAMP: the DIRECTIONAL gate (jogblock.z.lim-neg) reads
+            # these. Soft-limit-only stranded the machine when Z landed a few
+            # tens of um past the floor -- LinuxCNC then refuses teleop jogs
+            # in BOTH directions. jogblock only swallows DOWN detents.
+            self.comp.addPin('zclamp-enable', 'bit', 'out')
+            self.comp.addPin('zclamp-low', 'float', 'out')
             self.comp.ready()
             self.comp.addListener('air-ok-in', self._on_air)
             self.comp.addListener('probe-up-in', self._on_up)
@@ -461,6 +467,14 @@ class UserTab(QWidget):
         # do here but say so, loudly.
         LOG.info('NED tab page kept: JOG & PRESETS panel is its content')
 
+        # NED CONTROLS sub-tabs (operator 2026-08-02). The jog panel reparents
+        # into the stock JOG page at +6 s, leaving this page empty -- so the
+        # sub-tab notebook goes here. First tab: JOG, holding the Z CLAMP.
+        self._zclamp_on = False
+        self._zclamp_low = None
+        self._zclamp_widgets = {}
+        QTimer.singleShot(6500, self._build_subtabs)
+
         # GUI NUMBERING: OFF by default (operator 2026-08-02: "i need all
         # the numbers gone. cos they hide shit i need" -- badges covered
         # the ATC RACK SETUP fields). To regenerate gui_map.txt for a GUI
@@ -475,6 +489,386 @@ class UserTab(QWidget):
         self._timer = QTimer(self)
         self._timer.timeout.connect(self._tick)
         self._timer.start(500)
+
+    # ---- NED CONTROLS sub-tabs: JOG / CLAMP ------------------------------
+
+    ZCLAMP_ON_QSS = ('background-color: rgb(40,170,70); color: white; '
+                     'font-weight: bold; border: 2px solid rgb(20,90,40); '
+                     'border-radius: 5px;')
+    # "nothing if Disabled" per the operator -- no colour, but the label has
+    # to be legible on PB's dark panel, so plain light text on the default bar
+    ZCLAMP_OFF_QSS = 'color: rgb(220,220,220); border-radius: 5px;'
+
+    def _build_subtabs(self):
+        """JOG sub-tab with the Z CLAMP section (operator spec 2026-08-02):
+        enable/disable button (GREEN when enabled, plain when disabled) and
+        one machine-coordinate number, Zlow. While enabled the MPG cannot jog
+        Z below Zlow. If Z is ever outside the clamp while enabled that is an
+        estop-class fault: loud error and the clamp reverts to DISABLED."""
+        try:
+            from PySide6.QtWidgets import (QTabWidget, QWidget, QVBoxLayout,
+                                           QHBoxLayout, QGroupBox, QLabel,
+                                           QPushButton, QLineEdit)
+            from PySide6.QtWidgets import QWidget as _QW
+            root = self.findChild(_QW, 'ned_controls_root') or self
+            lay = root.layout()
+            if lay is None:
+                LOG.error('SUBTABS: ned_controls_root has no layout -- not built')
+                return
+            tabs = QTabWidget()
+            tabs.setObjectName('ned_subtabs')
+            jog_page = QWidget()
+            jl = QVBoxLayout(jog_page)
+            jl.setContentsMargins(8, 8, 8, 8)
+
+            box = QGroupBox('CLAMP')
+            box.setObjectName('zclamp_box')
+            bl = QVBoxLayout(box)
+
+            btn = QPushButton('DISABLED')
+            btn.setObjectName('zclamp_enable_btn')
+            btn.setCheckable(True)
+            btn.setMinimumHeight(46)
+            btn.setStyleSheet(self.ZCLAMP_OFF_QSS)
+            btn.clicked.connect(self._zclamp_toggle)
+            bl.addWidget(btn)
+
+            row = QHBoxLayout()
+            lbl = QLabel('Zlow (machine)')
+            edit = QLineEdit()
+            edit.setObjectName('zclamp_low_input')
+            edit.setPlaceholderText('e.g. -300.0')
+            edit.setMinimumHeight(34)
+            edit.editingFinished.connect(self._zclamp_low_changed)
+            row.addWidget(lbl)
+            row.addWidget(edit)
+            bl.addLayout(row)
+
+            note = QLabel('MPG jogging of Z is held between Zlow and the\n'
+                          'machine Z ceiling. Jogging back UP always works.\n'
+                          'Affects JOG only -- g-code is untouched.')
+            note.setStyleSheet('color: rgb(160,160,160); font: 9pt;')
+            bl.addWidget(note)
+
+            status = QLabel('')
+            status.setObjectName('zclamp_status')
+            status.setWordWrap(True)
+            bl.addWidget(status)
+            bl.addStretch(1)
+
+            jl.addWidget(box)
+            jl.addStretch(1)
+            tabs.addTab(jog_page, 'JOG')
+            lay.addWidget(tabs)
+
+            self._zclamp_widgets = {'btn': btn, 'edit': edit, 'status': status}
+            # the machine ceiling is the existing Z max soft limit -- the
+            # operator gives ONE number (the floor); the top is what the
+            # machine already enforces.
+            self._zclamp_high = self._z_max_limit()
+            self._zclamp_floor_default = self._z_min_limit()
+            LOG.info('SUBTABS: NED CONTROLS > JOG > CLAMP built '
+                     '(Z travel from INI = %s .. %s; the clamp raises the '
+                     'FLOOR via ini.2.min_limit and restores it on disable)',
+                     self._zclamp_floor_default, self._zclamp_high)
+            t = QTimer(self)
+            t.timeout.connect(self._zclamp_tick)
+            t.start(300)
+            self._zclamp_timer = t
+        except Exception as e:
+            LOG.error('SUBTABS build FAILED: %s', e)
+
+    def _z_min_limit(self):
+        try:
+            import linuxcnc, os
+            ini = linuxcnc.ini(os.environ['INI_FILE_NAME'])
+            return float(ini.find('JOINT_2', 'MIN_LIMIT') or -620.0)
+        except Exception:
+            return -620.0
+
+    def _z_max_limit(self):
+        try:
+            import linuxcnc, os
+            ini = linuxcnc.ini(os.environ['INI_FILE_NAME'])
+            return float(ini.find('JOINT_2', 'MAX_LIMIT') or 0.0)
+        except Exception:
+            return 0.0
+
+    def _zclamp_z(self):
+        try:
+            import linuxcnc
+            if getattr(self, '_zclamp_stat', None) is None:
+                self._zclamp_stat = linuxcnc.stat()
+            self._zclamp_stat.poll()
+            return self._zclamp_stat.actual_position[2]
+        except Exception:
+            return None
+
+    def _zclamp_say(self, msg, err=False):
+        w = self._zclamp_widgets.get('status')
+        if w is not None:
+            w.setStyleSheet('color: rgb(235,90,90); font: 10pt; font-weight: bold;'
+                            if err else 'color: rgb(160,160,160); font: 9pt;')
+            w.setText(msg)
+
+    def _zclamp_low_changed(self):
+        edit = self._zclamp_widgets.get('edit')
+        if edit is None:
+            return
+        txt = edit.text().strip()
+        if not txt:
+            self._zclamp_low = None
+            return
+        try:
+            self._zclamp_low = float(txt)
+        except ValueError:
+            self._zclamp_low = None
+            self._zclamp_say('Zlow "%s" is not a number' % txt, err=True)
+            return
+        # (no HAL pin: an ARMED clamp writes ini.2.min_limit directly, and the
+        #  field is read-only while armed, so nothing to push here)
+        if self._zclamp_on:
+            os.system('timeout 3 halcmd setp ini.2.min_limit %.4f '
+                      '>/dev/null 2>&1' % self._zclamp_low)
+        LOG.info('ZCLAMP: Zlow set to %.4f (machine)', self._zclamp_low)
+        self._zclamp_say('Zlow = %.3f, ceiling %.3f' %
+                         (self._zclamp_low, self._zclamp_high))
+
+    def _zclamp_disable(self, why, err=True):
+        """Revert to DISABLED. Estop-class: the message is loud and goes to the
+        error channel, not just the log."""
+        try:
+            self.comp.getPin('zclamp-enable').value = False
+        except Exception:
+            pass
+        # RESTORE THE REAL FLOOR FIRST -- operator 2026-08-02: "when disabled
+        # is clicked, it reverts back to default soft limits, this must happen
+        # instantly". Before any UI work, and timeout-wrapped so a contended
+        # HAL can never leave the machine clamped (the boot-lottery lesson:
+        # every scripted halcmd gets a timeout).
+        try:
+            rc = os.system('timeout 3 halcmd setp ini.2.min_limit %.4f '
+                           '>/dev/null 2>&1' % self._zclamp_floor_default)
+            import linuxcnc as _l, time as _t
+            _s = _l.stat()
+            # setp lands via the ini-hal poll, not instantly -- give it up to
+            # 500 ms before calling it a failure (an earlier check raced it and
+            # cried "NOT RESTORED" about a floor that restored fine 20 ms later)
+            back = None
+            _t0 = _t.time()
+            while _t.time() - _t0 < 0.5:
+                _s.poll()
+                back = _s.joint[2]['min_position_limit']
+                if abs(back - self._zclamp_floor_default) <= 0.001:
+                    break
+                _t.sleep(0.02)
+            if abs(back - self._zclamp_floor_default) > 0.001:
+                LOG.error('ZCLAMP: FLOOR NOT RESTORED -- min_position_limit is '
+                          '%.3f, wanted %.3f (rc=%s)', back,
+                          self._zclamp_floor_default, rc)
+                try:
+                    _l.command().error_msg(
+                        'Z CLAMP: soft limit NOT restored (still %.3f) -- '
+                        'restart before trusting Z travel' % back)
+                except Exception:
+                    pass
+            else:
+                LOG.info('ZCLAMP: Z floor restored to %.3f', back)
+        except Exception as e:
+            LOG.error('ZCLAMP: floor restore failed: %s', e)
+
+        self._zclamp_on = False
+        btn = self._zclamp_widgets.get('btn')
+        if btn is not None:
+            btn.setChecked(False)
+            btn.setText('DISABLED')
+            btn.setStyleSheet(self.ZCLAMP_OFF_QSS)
+        edit = self._zclamp_widgets.get('edit')
+        if edit is not None:
+            edit.setReadOnly(False)     # editable again once disarmed
+            edit.setStyleSheet('')
+        self._zclamp_say(why, err=err)
+        if err:
+            LOG.error('ZCLAMP DISABLED: %s', why)
+            try:
+                import linuxcnc
+                linuxcnc.command().error_msg('Z CLAMP DISABLED: %s' % why)
+            except Exception:
+                pass
+        else:
+            LOG.info('ZCLAMP disabled: %s', why)
+
+    # MPG wheel jogging travels at (detent rate x step size), NOT at the
+    # percent slider -- so the ONLY way to bound the speed into the clamp is
+    # to bound how many counts per second are read. Measured overshoot into an
+    # armed floor: 5 mm/s -> 20 um, 10 mm/s -> 32 um, 20 mm/s -> 56 um.
+    # We hold the demand at ZCLAMP_MAX_MMPS, which at 0.1 mm/detent means
+    # 50 detents/s = 200 counts/s = half a wheel turn per second.
+    # MEASURED 2026-08-02 (sweep from -25 into a -50 clamp, 0.1 mm/detent,
+    # violent spin injected, only the truncation varied):
+    #    800 counts/s (2 turns/s, 20 mm/s demand) -> stopped 2 um SHORT  OK
+    #   1600 counts/s (4 turns/s, 40 mm/s)        -> 22 um past
+    #   3200 counts/s                             -> 24 um past
+    #   6400 counts/s                             -> 45 um past
+    # So 20 mm/s of demand is the proven ceiling: at 0.1 mm/detent that is
+    # exactly the operator's 2 turns/s. Coarser steps get scaled down to the
+    # same demand so they cannot outrun the floor.
+    ZCLAMP_MAX_MMPS = 20.0       # mm/s of wheel demand while armed (measured)
+    MPG_CPD = 4                  # counts per detent (tools/groundtruth/mpgjog.sh:37)
+    MPG_CPS_NORMAL = 800         # 2 wheel turns/s (operator-specified cap)
+
+    ZCLAMP_MAX_STEP = 0.1        # mm/detent -- coarser steps are locked out
+    ZCLAMP_MARGIN = 0.02         # mm: engage the gate this far ABOVE Zlow so
+                                 # the servo settle lands AT Zlow, never under
+                                 # (operator: "it shouldn't go under at all")
+    ZCLAMP_BACKSTOP = 1.0        # mm BELOW Zlow where the soft limit parks;
+                                 # the gate stops you at Zlow, this only
+                                 # catches a runaway, and keeps a small
+                                 # overshoot from stranding the machine
+
+    def _zclamp_limit_steps(self, on):
+        """While armed, only 0.01 and 0.1 mm/detent may be selected (operator
+        2026-08-02: "i was able to select 5mm per detent after enabling. this
+        should not have been allowed"). Coarse steps are what let a spun wheel
+        demand speed the floor cannot absorb, so they are greyed out and a
+        coarse selection already in force is pulled back to 0.1."""
+        try:
+            from PySide6.QtWidgets import QWidget as _QW
+            win = self.window()
+            jw = win.findChild(_QW, 'jogincrement') if win else None
+            pairs = getattr(jw, '_buttons_by_value', []) if jw is not None else []
+            if not pairs:
+                LOG.error('ZCLAMP: jogincrement buttons not found -- coarse '
+                          'steps NOT locked out')
+                return
+            fallback = None
+            current_coarse = False
+            for btn, v in pairs:
+                try:
+                    val = float(v)
+                except (TypeError, ValueError):
+                    continue
+                allowed = (not on) or (val <= self.ZCLAMP_MAX_STEP + 1e-9)
+                btn.setEnabled(allowed)
+                if on and abs(val - self.ZCLAMP_MAX_STEP) < 1e-9:
+                    fallback = btn
+                if on and btn.isChecked() and val > self.ZCLAMP_MAX_STEP + 1e-9:
+                    current_coarse = True
+            if on and current_coarse and fallback is not None:
+                fallback.click()          # pull the selection back to 0.1
+                LOG.info('ZCLAMP: step was coarser than %.2f mm -- forced to '
+                         '%.2f mm', self.ZCLAMP_MAX_STEP, self.ZCLAMP_MAX_STEP)
+            LOG.info('ZCLAMP: coarse jog steps %s',
+                     'LOCKED OUT (0.01 / 0.1 only)' if on else 'available again')
+        except Exception as e:
+            LOG.error('ZCLAMP: step lockout failed: %s', e)
+
+    def _zclamp_apply_rate_cap(self):
+        """Size the MPG count cap so a spun wheel cannot demand more than
+        ZCLAMP_MAX_MMPS with the step size currently selected."""
+        step = getattr(self, '_jog_inc_mm', 0.1) or 0.1
+        cps = int(self.ZCLAMP_MAX_MMPS / step * self.MPG_CPD)
+        cps = max(20, min(cps, self.MPG_CPS_NORMAL))
+        for ax in 'xyz':
+            os.system('timeout 3 halcmd setp jogblock.%s.max-cps %d '
+                      '>/dev/null 2>&1' % (ax, cps))
+        LOG.info('ZCLAMP: MPG rate cap %d counts/s for a %.3f mm step '
+                 '(<= %.1f mm/s demand)', cps, step, self.ZCLAMP_MAX_MMPS)
+        return cps
+
+    def _zclamp_release_rate_cap(self):
+        for ax in 'xyz':
+            os.system('timeout 3 halcmd setp jogblock.%s.max-cps %d '
+                      '>/dev/null 2>&1' % (ax, self.MPG_CPS_NORMAL))
+        LOG.info('ZCLAMP: MPG rate cap back to %d counts/s (2 turns/s)',
+                 self.MPG_CPS_NORMAL)
+
+    def _zclamp_toggle(self, checked):
+        btn = self._zclamp_widgets.get('btn')
+        if not checked:
+            self._zclamp_disable('clamp off', err=False)
+            return
+        self._zclamp_low_changed()
+        if self._zclamp_low is None:
+            self._zclamp_disable('cannot enable: Zlow is not set', err=True)
+            return
+        z = self._zclamp_z()
+        if z is None:
+            self._zclamp_disable('cannot enable: Z position unreadable', err=True)
+            return
+        if z < self._zclamp_low or z > self._zclamp_high:
+            self._zclamp_disable(
+                'cannot enable: Z is at %.3f, OUTSIDE the clamp [%.3f .. %.3f]. '
+                'Jog Z back inside first.' % (z, self._zclamp_low,
+                                              self._zclamp_high), err=True)
+            return
+        # ENFORCEMENT: hand the floor to LinuxCNC (operator 2026-08-02: "bring
+        # the soft limit to the clamp so that lcnc takes over"). ini.2.min_limit
+        # is writable at runtime and lands straight in joint 2's
+        # min_position_limit, so LinuxCNC itself refuses jogs past it -- MPG
+        # wheel, increment buttons and g-code alike -- with its own error. No
+        # custom HAL gate to keep in step.
+        backstop = self._zclamp_low - self.ZCLAMP_BACKSTOP
+        if backstop < self._zclamp_floor_default:
+            backstop = self._zclamp_floor_default
+        if os.system('timeout 3 halcmd setp ini.2.min_limit %.4f '
+                     '>/dev/null 2>&1' % backstop) != 0:
+            self._zclamp_disable('could not write ini.2.min_limit', err=True)
+            return
+        try:
+            # feed the comparator Zlow + margin: blocking starts just above
+            # the floor so the few um of servo settle still lands at or above
+            # the number the operator typed
+            # the profile decelerates onto this number, so send it raw
+            self.comp.getPin('zclamp-low').value = self._zclamp_low
+            self.comp.getPin('zclamp-enable').value = True
+        except Exception as e:
+            os.system('timeout 3 halcmd setp ini.2.min_limit %.4f '
+                      '>/dev/null 2>&1' % self._zclamp_floor_default)
+            self._zclamp_disable('clamp HAL pins unavailable: %s' % e, err=True)
+            return
+        self._zclamp_on = True
+        edit = self._zclamp_widgets.get('edit')
+        if edit is not None:
+            # the floor must not move under an armed clamp
+            edit.setReadOnly(True)
+            edit.setStyleSheet('background: rgb(60,60,60); color: rgb(150,150,150);')
+        if btn is not None:
+            btn.setText('ENABLED')
+            btn.setStyleSheet(self.ZCLAMP_ON_QSS)
+        self._zclamp_say('ENABLED: Z down-jog decelerates onto %.3f. Up and '
+                         'all other axes stay free.' % self._zclamp_low)
+        LOG.info('ZCLAMP ENABLED: Z held in [%.4f .. %.4f], Z now %.4f',
+                 self._zclamp_low, self._zclamp_high, z)
+
+    def _zclamp_tick(self):
+        """STATUS ONLY -- it must NEVER disarm itself.
+
+        Operator correction 2026-08-02: "I DIDN'T SAY DISABLE IF Z LEAVES. I
+        SAID REVERT TO DISABLE IF Z starts OUTSIDE THE CLAMP AND SOMEONE
+        CLICKS ENABLE ... WHEN IT IS NOT VIOLATED AT THE START, THE CLAMP HAS
+        one job. TO PREVENT IT FROM LEAVING."
+
+        The outside-the-range test belongs at ARM time and nowhere else. An
+        armed clamp that disarms at the boundary would drop the guard at the
+        exact moment it is doing its job. So while armed this only reports:
+        the HAL gate (jogblock.z.lim-neg) does the work, and if Z ends up
+        below the floor by some other means (MDI, which is deliberately not
+        clamped) the gate keeps blocking DOWN jogs while UP jogs still pass,
+        which is how the operator gets back out.
+        """
+        if not self._zclamp_on:
+            return
+        z = self._zclamp_z()
+        if z is None:
+            return
+        if z < self._zclamp_low:
+            self._zclamp_say('ARMED - Z %.3f is below the floor %.3f: DOWN '
+                             'jogs blocked, jog UP to get back inside'
+                             % (z, self._zclamp_low))
+        else:
+            self._zclamp_say('ARMED - Z %.3f held in [%.3f .. %.3f]'
+                             % (z, self._zclamp_low, self._zclamp_high))
 
     def _number_badges(self):
         win = self.window()
@@ -1555,6 +1949,12 @@ class UserTab(QWidget):
 
     # ---- pendant jump size -> on-screen increment button -----------------
     def _on_inc(self, val):
+        try:
+            self._jog_inc_mm = float(val)
+            # the jogblock approach profile handles speed at any step size;
+            # nothing here may touch the increment or the rate cap
+        except Exception:
+            pass
         win = self.window()
         if win is None:
             return
