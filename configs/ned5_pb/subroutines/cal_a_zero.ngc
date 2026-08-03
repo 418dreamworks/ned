@@ -138,6 +138,34 @@ o<cal_a_zero> sub
   #3054 = #<tilt_a>
   (PRINT, CAL A AFTER: y at -65 = #<y3>, y at -25 = #<y4>, DELTA Y = #<dy_a> over #<dz_a> mm, tilt #<tilt_a> deg)
 
+  (=== VERDICT, taken HERE while still at the standoff and clear of the puck)
+  (Operator 2026-08-03: a correction that does not improve the ABSOLUTE)
+  (distance is NOT applied. Both passes now share the same 40 mm baseline, so)
+  (dY is directly comparable and is the test. A failed correction is ROLLED)
+  (BACK -- leaving the head rotated by a move that made things worse would)
+  (quietly corrupt the zero every later routine tilts about.)
+  o130 if [ABS[#<dy_a>] LT ABS[#<dy_b>]]
+    (PRINT, CAL A OK: dY #<dy_b> -> #<dy_a> mm, tilt #<tilt_b> -> #<tilt_a> deg, A moved #<corr> deg. Kept.)
+    (DEBUG, CAL A: dY #<dy_b> to #<dy_a> mm, A corrected #<corr> deg - KEPT)
+  o130 else
+    (roll the rotation back, here at the standoff where the puck is clear)
+    G91
+    G1 A[0 - #<corr>] F600
+    G90
+    #3069 = [#3069 - #<corr>]
+    #3052 = 0
+    (park and drop the puck BEFORE aborting -- an abort stops everything after)
+    G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
+    M65 P3
+    G4 P1.0
+    G1 A#3069 C#3070 F600
+    G1 X#<cx> Y#<cy> F[#<_ca_ftr>]
+    G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
+    M50 P1
+    (DEBUG, CAL A REVERTED: dY #<dy_b> to #<dy_a> mm - no improvement, A put back)
+    (abort, CAL A: dY #<dy_b> then #<dy_a> mm - the correction did NOT improve the absolute distance, so it was ROLLED BACK and nothing was applied. A is where it started.)
+  o130 endif
+
   (=== puck DOWN, park on the zero pose with the corrected A ==============)
   G90
   G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
@@ -147,15 +175,6 @@ o<cal_a_zero> sub
   G1 X#<cx> Y#<cy> F[#<_ca_ftr>]
   G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
   M50 P1
-
-  (=== verdict on the ANGLE, not on raw dY ================================)
-  o130 if [ABS[#<tilt_a>] LT ABS[#<tilt_b>]]
-    (PRINT, CAL A OK: tilt #<tilt_b> -> #<tilt_a> deg, A moved #<corr> deg. Sign is correct.)
-    (DEBUG, CAL A: tilt #<tilt_b> to #<tilt_a> deg, A corrected #<corr> deg)
-  o130 else
-    (DEBUG, CAL A FAILED: tilt #<tilt_b> to #<tilt_a> deg - got WORSE. Flip side or the correction sign.)
-    (abort, CAL A: correction made it WORSE - tilt #<tilt_b> then #<tilt_a> deg. The math or the sign is wrong. Failing loudly by design.)
-  o130 endif
 
 o<cal_a_zero> endsub
 

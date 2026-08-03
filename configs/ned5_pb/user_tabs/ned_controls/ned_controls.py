@@ -1185,19 +1185,22 @@ class UserTab(QWidget):
                 c.error_msg('StartA: after-pair never measured -- parameter '
                             'file NOT written')
                 return
-            # the two pairs use DIFFERENT baselines (25 mm vs 40 mm), so raw
-            # dY is not comparable; the angle is
-            if abs(ta) >= abs(tb):
-                msg = ('StartA: tilt %+.4f -> %+.4f deg did NOT improve -- '
-                       'parameter file NOT written' % (tb, ta))
+            # Both passes share the 40 mm baseline now, so the ABSOLUTE
+            # distance is the test the operator asked for. The g-code already
+            # rolls a failed correction back and aborts, so this should never
+            # be reached -- it is the second lock on the parameter file.
+            if abs(dy_a) >= abs(dy_b):
+                msg = ('StartA: dY %+.4f -> %+.4f mm did NOT improve -- '
+                       'correction rolled back, parameter file NOT written'
+                       % (dy_b, dy_a))
                 LOG.error(msg)
                 c.error_msg(msg)
                 if getattr(self, '_cal_status', None) is not None:
                     self._cal_status.setText(msg)
                 return
-            LOG.info('StartA: tilt %+.4f -> %+.4f deg (dY %+.4f/25mm -> '
-                     '%+.4f/40mm) improved by %.4f deg -- recording',
-                     tb, ta, dy_b or 0.0, dy_a or 0.0, abs(tb) - abs(ta))
+            LOG.info('StartA: dY %+.4f -> %+.4f mm (tilt %+.4f -> %+.4f '
+                     'deg, both over 40 mm) improved by %.4f mm -- recording',
+                     dy_b, dy_a, tb, ta, abs(dy_b) - abs(dy_a))
             self._cal_record(auto=True)
         except Exception as e:
             LOG.error('StartA post-cycle failed: %s', e)
