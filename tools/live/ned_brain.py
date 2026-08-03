@@ -458,6 +458,25 @@ class Brain(object):
         # A real cycle in flight still wins -- never cut under REF A/REF C.
         if self.pending_ref or self.verify_want:
             return
+        # NEVER CUT INTO A HOMING CYCLE. This routine switches to MANUAL,
+        # drops teleop and issues unhome/home -- do that while Home All is
+        # running and the sequencer loses its joint mid-move. On 2026-08-03 a
+        # head read landed during a Home All, this fired, and Z froze before
+        # its search move: "HOMING WEDGED: joint(s) [2]". Dropping the
+        # inplace_pending gate (so later reads could correct A/C) removed the
+        # accidental protection that gate had been providing, so the guard is
+        # now explicit -- and it also refuses while a program or MDI is live.
+        try:
+            self.stat.poll()
+            if any(self.stat.joint[j]['homing'] for j in range(6)):
+                log('IN-PLACE HOME: deferred -- a homing cycle is running')
+                return
+            if self.stat.interp_state != linuxcnc.INTERP_IDLE \
+               or not self.stat.inpos:
+                log('IN-PLACE HOME: deferred -- machine is executing/moving')
+                return
+        except Exception:
+            return
         # NOTE: no longer gated on inplace_pending. That flag is consumed by
         # the FIRST read of a session, so the second read -- the one that
         # lands after declare_xyzw() has marked A/C homed at 0 -- could never
