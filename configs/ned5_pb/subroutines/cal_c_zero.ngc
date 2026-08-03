@@ -1,0 +1,177 @@
+(ned -- C ZERO DETECTION, operator spec 2026-08-03. A is taken AS GIVEN.)
+(
+(GEOMETRY. Tilting A by +-45 swings the tool tip in the horizontal plane by)
+(L*sin45, in a DIRECTION set by C. At true C zero that swing is pure Y, so a)
+(probe driven toward the puck in +X contacts at the SAME X for both tilts. A)
+(C error phi rotates the swing and puts an X component into it that FLIPS)
+(sign between -45 and +45, so:)
+(     dX = -2 * dy * sin(phi))
+(where dy is the operator's sideways jog off centre -- because jogging the)
+(tip onto the puck makes that offset exactly L*sin45. So the operator's own)
+(setup supplies the scale factor and no arm length is needed:)
+(     phi = asin(-dX / (2*dy)))
+(
+(Two entry points, because LinuxCNC cannot be jogged mid-program:)
+(   o<cal_c_ref>  -- park 1 in in front, A to -45, STOP for the operator to)
+(                    jog down and sideways until the tip would strike the)
+(                    puck when driven toward centre in +X.)
+(   o<cal_c_zero> -- takes the operator position as reference, probes at -45)
+(                    and at +45 (mirrored Y, same Z), corrects C, re-probes,)
+(                    and ABORTS LOUDLY if the spread did not shrink.)
+(
+(Results: #3055 = dX before, #3056 = dX after, #3057 = C correction applied.)
+
+(=========================== positioning entry =============================)
+o<cal_c_ref> sub
+  #<cx>  = #1
+  #<cy>  = #2
+  #<top> = #3
+  #<safe> = 30.0
+  #<front> = 25.4        (1 inch in FRONT of centre, X- side)
+
+  o5 if [#<_metric> EQ 0]
+    (abort, CAL C: switch to MM first)
+  o5 endif
+
+  M64 P3
+  G4 P1.5
+  G90
+  G1 Z[#<top> + #<safe>] F500
+  G1 X[#<cx> - #<front>] Y#<cy> F500
+  G1 A-45 F600
+  (PRINT, CAL C REF: parked 1 in in front at A -45. JOG down and sideways so the tip would strike the puck when driven toward centre in +X, then press GO.)
+  (DEBUG, CAL C REF ready -- jog the tip into position, then GO)
+o<cal_c_ref> endsub
+
+(=========================== measurement entry =============================)
+o<cal_c_zero> sub
+  #<cx>  = #1
+  #<cy>  = #2
+  #<top> = #3
+
+  #<safe>  = 30.0
+  #<reach> = 30.0        (max +X probe travel from the operator standoff)
+  #<f_pr>  = 100.0
+  #<f_la>  = 10.0
+  #<f_tr>  = 500.0
+  #<back>  = 1.0
+
+  o5 if [#<_metric> EQ 0]
+    (abort, CAL C: switch to MM first)
+  o5 endif
+
+  (the operator's jogged position IS the reference)
+  #<x_ref> = #5420
+  #<y_ref> = #5421
+  #<z_ref> = #5422
+  #<dy>    = [#<y_ref> - #<cy>]
+
+  o6 if [ABS[#<dy>] LT 1.0]
+    (abort, CAL C: the jogged Y is within 1 mm of centre - that offset IS the scale factor, so it cannot be ~0. Jog sideways as the tilt requires.)
+  o6 endif
+  o7 if [#<z_ref> GT #<top>]
+    (abort, CAL C: the tip is still above the puck top - jog DOWN so a move toward centre would strike the puck.)
+  o7 endif
+  (PRINT, CAL C: reference X #<x_ref> Y #<y_ref> Z #<z_ref>, dy off centre = #<dy>)
+
+  M50 P0
+  M64 P3
+  G4 P1.5
+
+  (=== one probe at tilt #<ang> with Y offset #<yoff> -> #<tx> =============)
+  o200 sub
+    G90
+    G1 Z[#<top> + #<safe>] F[#<f_tr>]          (clear BEFORE any A move)
+    G1 A#<ang> F600
+    G1 X#<x_ref> Y[#<cy> + #<yoff>] F[#<f_tr>]
+    G1 Z#<z_ref> F[#<f_tr>]
+    G91
+    G38.2 X#<reach> F[#<f_pr>]
+    o210 if [#5070 EQ 0]
+      G90
+      G1 Z[#<top> + #<safe>] F[#<f_tr>]
+      M65 P3
+      M50 P1
+      (abort, CAL C: no contact driving toward centre - the tip is not lined up with the puck. Re-run SET C REF and jog again.)
+    o210 endif
+    G1 X-[#<back>] F[#<f_tr>]
+    G38.2 X[#<back> + 1] F[#<f_la>]
+    #<tx> = #5061
+    G1 X-2 F[#<f_tr>]
+    G90
+    G1 Z[#<top> + #<safe>] F[#<f_tr>]
+  o200 endsub
+
+  (=== BEFORE: -45 at the jogged Y, then +45 at the mirrored Y ============)
+  #<ang> = -45
+  #<yoff> = #<dy>
+  o200 call
+  #<x_neg_b> = #<tx>
+
+  #<ang> = 45
+  #<yoff> = [0 - #<dy>]
+  o200 call
+  #<x_pos_b> = #<tx>
+
+  #<dx_b> = [#<x_pos_b> - #<x_neg_b>]
+  #3055 = #<dx_b>
+  (PRINT, CAL C BEFORE: x at -45 = #<x_neg_b>, x at +45 = #<x_pos_b>, DELTA X = #<dx_b>)
+
+  (=== correct: phi = asin(-dX / (2*dy)) ==================================)
+  #<ratio> = [[0 - #<dx_b>] / [2 * ABS[#<dy>]]]
+  o220 if [ABS[#<ratio>] GE 1.0]
+    G90
+    M65 P3
+    M50 P1
+    (abort, CAL C: |dX| exceeds twice the jog offset - geometry does not fit the model, refusing to rotate C.)
+  o220 endif
+  #<phi> = ASIN[#<ratio>]
+  #3057 = #<phi>
+  (PRINT, CAL C: rotating C by #<phi> deg)
+
+  o230 if [ABS[#<phi>] GT 5.0]
+    G90
+    M65 P3
+    M50 P1
+    (abort, CAL C: computed correction over 5 deg - refusing to swing the head that far on one measurement)
+  o230 endif
+
+  G90
+  G1 Z[#<top> + #<safe>] F[#<f_tr>]
+  G91
+  G1 C#<phi> F600
+  G90
+
+  (=== AFTER: same pair again ============================================)
+  #<ang> = -45
+  #<yoff> = #<dy>
+  o200 call
+  #<x_neg_a> = #<tx>
+
+  #<ang> = 45
+  #<yoff> = [0 - #<dy>]
+  o200 call
+  #<x_pos_a> = #<tx>
+
+  #<dx_a> = [#<x_pos_a> - #<x_neg_a>]
+  #3056 = #<dx_a>
+  (PRINT, CAL C AFTER: x at -45 = #<x_neg_a>, x at +45 = #<x_pos_a>, DELTA X = #<dx_a>)
+
+  (=== park + verdict =====================================================)
+  G90
+  G1 Z[#<top> + #<safe>] F[#<f_tr>]
+  G1 A0 F600
+  M65 P3
+  M50 P1
+
+  o240 if [ABS[#<dx_a>] LT ABS[#<dx_b>]]
+    (PRINT, CAL C OK: DELTA X #<dx_b> -> #<dx_a> mm, C moved #<phi> deg. Sign is correct.)
+    (DEBUG, CAL C: dX before #<dx_b>, after #<dx_a>, C corrected #<phi> deg)
+  o240 else
+    (DEBUG, CAL C FAILED: dX before #<dx_b>, after #<dx_a> - got WORSE. Flip the phi sign.)
+    (abort, CAL C: correction made it WORSE (dX #<dx_b> -> #<dx_a>). Math or sign is wrong -- failing loudly by design.)
+  o240 endif
+
+o<cal_c_zero> endsub
+
+M2 (end program)

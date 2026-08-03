@@ -626,6 +626,22 @@ class UserTab(QWidget):
             ngo.clicked.connect(self._cal_a_start)
             nrow.addWidget(ngo)
             nbl.addLayout(nrow)
+            crow = QHBoxLayout()
+            cref = QPushButton('SET C REF (A-45)')
+            cref.setMinimumHeight(40)
+            cref.setToolTip('Park 1 in in front at A -45, then YOU jog down '
+                            'and sideways so the tip would strike the puck '
+                            'driven toward centre in +X')
+            cref.clicked.connect(lambda: self._cal_c_run('ref'))
+            crow.addWidget(cref)
+            cgo = QPushButton('GO (C ZERO)')
+            cgo.setMinimumHeight(40)
+            cgo.setToolTip('Takes your jogged position as reference; probes '
+                           'at -45 and +45, corrects C, re-probes. Reports '
+                           'dX before/after.')
+            cgo.clicked.connect(lambda: self._cal_c_run('zero'))
+            crow.addWidget(cgo)
+            nbl.addLayout(crow)
             cl.addWidget(nbox)
 
             # the interpreter flushes numbered params to the var file at M2,
@@ -949,6 +965,50 @@ class UserTab(QWidget):
                     'A ZERO running: 4 wall touches at -20/-50 with an A '
                     'correction between. Watch for "CAL A BEFORE/AFTER" -- '
                     'dY before/after land in #3050/#3051, correction #3052.')
+        except Exception as e:
+            LOG.error('%s failed: %s', label, e)
+
+    def _cal_c_run(self, which):
+        """which='ref' parks for the operator jog; which='zero' measures.
+        Same LOUD gate family as every ned MDI path."""
+        label = 'CAL C %s' % which.upper()
+        sub = 'cal_c_ref' if which == 'ref' else 'cal_c_zero'
+        try:
+            import linuxcnc
+            c = linuxcnc.command()
+            s = linuxcnc.stat()
+            vals = {}
+            for k in ('3045', '3046', '3047'):
+                t = self._cal_fields[k].text().strip()
+                if not t:
+                    c.error_msg('%s refused: run the centre calibration first'
+                                % label)
+                    return
+                vals[k] = float(t)
+            s.poll()
+            if s.task_state != linuxcnc.STATE_ON or not all(s.homed[:6]) \
+               or s.interp_state != linuxcnc.INTERP_IDLE or not s.inpos:
+                c.error_msg('%s refused: machine must be ON, homed and idle'
+                            % label)
+                LOG.error('%s refused: not ON/homed/idle', label)
+                return
+            c.mode(linuxcnc.MODE_MDI)
+            c.wait_complete()
+            s.poll()
+            if s.task_mode != linuxcnc.MODE_MDI:
+                c.error_msg('%s refused: could not enter MDI' % label)
+                return
+            c.mdi('o<%s> call [%.4f] [%.4f] [%.4f]'
+                  % (sub, vals['3045'], vals['3046'], vals['3047']))
+            LOG.info('%s: %s issued', label, sub)
+            if getattr(self, '_cal_status', None) is not None:
+                self._cal_status.setText(
+                    'C REF: parking 1 in in front at A -45 -- then JOG the '
+                    'tip into position and press GO (C ZERO).'
+                    if which == 'ref' else
+                    'C ZERO running: probes at -45 and +45 with a C '
+                    'correction between. dX before/after -> #3055/#3056, '
+                    'correction #3057.')
         except Exception as e:
             LOG.error('%s failed: %s', label, e)
 
