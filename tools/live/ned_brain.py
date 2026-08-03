@@ -496,6 +496,28 @@ class Brain(object):
         if not getattr(self, 'inplace_pending', False) or self.pending_ref \
            or self.verify_want:
             return
+        # NEVER CUT INTO A RUNNING HOMING CYCLE. This routine switches to
+        # MANUAL, drops teleop and issues unhome/home; doing that under Home
+        # All takes the sequencer's joint out from under it. On 2026-08-03 the
+        # menu went live the instant the declare finished -- while the
+        # machine-ON head read was still in flight -- the operator clicked
+        # Home All in that window, this fired into it, and Z froze before its
+        # search move: "HOMING WEDGED: joint(s) [2]".
+        # DEFER, do not consume: the flag is left set so a later call can
+        # still do the work. Nothing is lost by waiting -- declare_xyzw() has
+        # already applied the absolute read to A/C, so the offsets are correct
+        # meanwhile; this only re-asserts them.
+        # NOTE the earlier mistake: last time I ALSO removed the
+        # inplace_pending gate above, which had been keeping this out of
+        # homing cycles by accident, and that broke homing outright. This adds
+        # the explicit guard and changes nothing else.
+        try:
+            self.stat.poll()
+            if any(self.stat.joint[j]['homing'] for j in range(6)):
+                log('IN-PLACE HOME: deferred -- a homing cycle is running')
+                return
+        except Exception:
+            return
         self.inplace_pending = False
         try:
             self.stat.poll()

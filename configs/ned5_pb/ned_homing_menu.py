@@ -69,8 +69,18 @@ class NedHomingMenu(QMenu):
                         self._nml = linuxcnc.stat()
                     self._nml.poll()
                     st = self._nml
+                    # Not just "A/C are homed": that goes true the instant
+                    # declare_xyzw() finishes, while the machine-ON head read
+                    # is still in flight. Clicking Home All in that window let
+                    # do_inplace fire into the running cycle and wedge Z
+                    # (2026-08-03). Also require the machine to be idle and no
+                    # joint mid-homing, so the menu cannot invite a click into
+                    # a window where the answer is "not yet".
                     ready = (st.task_state == linuxcnc.STATE_ON
-                             and st.homed[4] and st.homed[5])
+                             and st.homed[4] and st.homed[5]
+                             and st.interp_state == linuxcnc.INTERP_IDLE
+                             and not any(st.joint[j]['homing']
+                                         for j in range(6)))
                     if ready != self.isEnabled():
                         self.setEnabled(ready)
                         LOG.info('NED Homing menu %s (ON=%s, A/C in-place=%s)',
