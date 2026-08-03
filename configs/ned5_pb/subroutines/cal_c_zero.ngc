@@ -112,7 +112,12 @@ o<cal_c_zero> sub
   (PRINT, CAL C BEFORE: x at -45 = #<x_neg_b>, x at +45 = #<x_pos_b>, DELTA X = #<dx_b>)
 
   (=== correct: phi = asin of [-dX / 2dy] =================================)
-  #<ratio> = [[0 - #<dx_b>] / [2 * ABS[#<dy>]]]
+  (dy KEEPS ITS SIGN. dX = -2 * dy * sin phi, so dy must enter signed:)
+  (with ABS, a jog to NEGATIVE dy flipped phi and C rotated the wrong way by)
+  (the full amount, doubling the error instead of removing it. The recheck)
+  (would have caught it, but only after swinging the head the wrong way.)
+  (Found by inspection 2026-08-03, never run on the machine.)
+  #<ratio> = [[0 - #<dx_b>] / [2 * #<dy>]]
   o220 if [ABS[#<ratio>] GE 1.0]
     G90
     M65 P3
