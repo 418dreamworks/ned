@@ -1066,14 +1066,23 @@ class UserTab(QWidget):
                     txt = '--'
                 else:
                     txt = '%.4f' % v
-                old_v = seen.get(key)
-                if old_v is None:
+                # SHIFT ON THE DISPLAYED VALUE, NOT THE RAW PARAM. The A/C
+                # rows show where true zero SITS -- file value plus any
+                # pending correction -- so applying a correction and then
+                # banking it produce the SAME count: banking just moves the
+                # amount from #3069 into head_zero.inc. Keying the shift on
+                # the raw param meant the bank shifted a second time and
+                # overwrote PREVIOUS with a number identical to CURRENT,
+                # destroying the pre-correction zero -- the one value worth
+                # comparing against. Operator 2026-08-03: "if a distance
+                # improves, the zero has changed".
+                if not cur.text():
                     cur.setText(txt)
-                elif abs(v - old_v) > 1e-9:
+                elif txt != cur.text():
                     prv.setText(cur.text())
+                    LOG.info('CAL %s: %s -> %s  (param %.4f -> %.4f)',
+                             key, cur.text(), txt, seen.get(key, 0.0), v)
                     cur.setText(txt)
-                    LOG.info('CAL %s: %.4f -> %.4f (delta %+.4f) [%s]',
-                             key, old_v, v, v - old_v, txt)
                 seen[key] = v
             for w, name, bkey, akey, unit in getattr(
                     self, '_cal_delta_rows', []):
@@ -1575,6 +1584,15 @@ class UserTab(QWidget):
         # next cycle then would just be refused by the gate, so wait for the
         # machine to come back rather than firing into the window.
         self._ac_wait_t0 = time.time()
+        # If the last cycle BANKED, a REF was pulsed and it has not landed
+        # yet: the pin is set asynchronously and the brain reacts a beat
+        # later. Checking "homed and idle" right now sees the machine BEFORE
+        # the re-home starts, issues the next cycle, and the REF then unhomes
+        # A/C underneath it -- "StartC refused: task_mode never reached MDI"
+        # (2026-08-03). So after a bank we must WATCH THE REF HAPPEN: wait to
+        # see A/C go unhomed, and only then wait for them to come back.
+        # Same shape as rule 17's "verify the home actually ran".
+        self._ac_saw_unhomed = not getattr(self, '_ac_last_banked', False)
         self._ac_try_issue()
 
     def _ac_try_issue(self):
@@ -1584,8 +1602,18 @@ class UserTab(QWidget):
             import linuxcnc
             st = linuxcnc.stat()
             st.poll()
+            homed_all = all(st.homed[:6])
+            if not homed_all:
+                # the REF has started -- from here, waiting for homed again
+                # is waiting for it to FINISH, not for a stale "still ready"
+                if not self._ac_saw_unhomed:
+                    LOG.info('StartAC: REF in progress after the bank, '
+                             'waiting for %s to come back',
+                             self._ac_step.upper())
+                self._ac_saw_unhomed = True
             ready = (st.task_state == linuxcnc.STATE_ON
-                     and all(st.homed[:6])
+                     and homed_all
+                     and self._ac_saw_unhomed
                      and st.interp_state == linuxcnc.INTERP_IDLE
                      and st.inpos)
             if not ready:
@@ -1607,6 +1635,7 @@ class UserTab(QWidget):
         """Called once a cycle has banked or discarded."""
         if not getattr(self, '_ac_active', False):
             return
+        self._ac_last_banked = bool(banked)
         if banked:
             self._ac_discards = 0
             self._ac_banked += 1
