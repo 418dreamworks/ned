@@ -1,18 +1,23 @@
-(ned -- C REFERENCE TEACH, operator spec 2026-08-03.)
-(NO MOTION. The operator jogs A to -45 and puts the tool tip where driving)
-(toward the puck centre in +X would strike it; this button records that pose)
-(as offsets from the puck centre so StartC and StartAC can replay it with no)
-(operator input -- the 5x iteration cannot stop to ask.)
+(ned -- C REFERENCE TEACH, operator spec 2026-08-03. TWO PRESSES.)
+(   press 1 -- clears Z if it is low, rotates A to -45, hands control back.)
+(   YOU     -- jog the tip to where driving toward the puck centre in +X)
+(              would strike it.)
+(   press 2 -- records that pose: X offset, Y offset at -45, and depth.)
+(The 5x A/C iteration cannot stop to ask for a jog, so the pose is taught)
+(once here and replayed by StartC and StartAC with no operator input.)
 
 (The sideways offset dy is not just a position, it IS the scale factor of the)
 (C measurement: dX = -2 * dy * sin phi. So it is checked, not assumed.)
 
+(#3059 = teach pending flag. Pressing again at any time restarts the teach.)
 (Stores: #3058 = dy off centre, #3060 = depth below the top, #3061 = X offset.)
 
 o<cal_c_ref> sub
   #<cx>  = #1
   #<cy>  = #2
   #<top> = #3
+
+  #<safe> = 30.0
 
   o5 if [#<_metric> EQ 0]
     (abort, SET C REF: switch to MM first)
@@ -21,25 +26,41 @@ o<cal_c_ref> sub
     (abort, SET C REF: no puck centre - run StartPuck first)
   o6 endif
 
+  (--- PRESS 1: get clear, tilt to -45, hand back to the operator ----------)
+  o10 if [#3059 NE 1]
+    G90
+    (rise ONLY if we are low -- never drive Z down to reach a clearance)
+    o20 if [#5422 LT [#<top> + #<safe>]]
+      G1 Z[#<top> + #<safe>] F500
+    o20 endif
+    G1 A-45 F600
+    #3059 = 1
+    (PRINT, SET C REF press 1: A is at -45 and Z is clear. JOG the tip to where driving toward the puck centre in +X would strike it, then press SET C REF again.)
+    (DEBUG, SET C REF: tilted to -45 - jog the tip into position, then press SET C REF again)
+    o10 return
+  o10 endif
+
+  (--- PRESS 2: record the pose ------------------------------------------)
   (#5420-#5425 = current X Y Z A B C in the work frame)
   #<a_now> = #5423
-  o10 if [ABS[#<a_now> + 45] GT 5.0]
-    (abort, SET C REF: A is at #<a_now> deg - jog A to -45 first, then press SET C REF.)
-  o10 endif
+  o30 if [ABS[#<a_now> + 45] GT 5.0]
+    #3059 = 0
+    (abort, SET C REF: A is at #<a_now> deg, not -45. The teach was restarted - press SET C REF again.)
+  o30 endif
 
   #<dx_off> = [#5420 - #<cx>]
   #<dy_off> = [#5421 - #<cy>]
   #<depth>  = [#<top> - #5422]
 
-  o20 if [ABS[#<dy_off>] LT 1.0]
-    (abort, SET C REF: the tip is within 1 mm of centre in Y. That offset IS the scale factor of the C measurement so it cannot be near zero - jog sideways as the -45 tilt puts it.)
-  o20 endif
-  o30 if [#<depth> LE 0]
-    (abort, SET C REF: the tip is at or above the puck top - jog DOWN so that driving toward centre would strike the puck.)
-  o30 endif
-  o40 if [#<dx_off> GE 0]
-    (abort, SET C REF: the tip is not in FRONT of the puck - it must sit at negative X of centre so the probe drives toward centre in +X.)
+  o40 if [ABS[#<dy_off>] LT 1.0]
+    (abort, SET C REF: the tip is within 1 mm of centre in Y. That offset IS the scale factor of the C measurement so it cannot be near zero - jog sideways as the -45 tilt puts it, then press SET C REF again.)
   o40 endif
+  o50 if [#<depth> LE 0]
+    (abort, SET C REF: the tip is at or above the puck top - jog DOWN so that driving toward centre would strike the puck, then press SET C REF again.)
+  o50 endif
+  o60 if [#<dx_off> GE 0]
+    (abort, SET C REF: the tip is not in FRONT of the puck - it must sit at negative X of centre so the probe drives toward centre in +X. Jog, then press SET C REF again.)
+  o60 endif
 
   #3061 = #<dx_off>
   #3058 = #<dy_off>

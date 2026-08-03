@@ -639,10 +639,10 @@ class UserTab(QWidget):
             r0 = QHBoxLayout()
             bR = QPushButton('SET C REF')
             bR.setMinimumHeight(40)
-            bR.setToolTip('Teach the C reference: FIRST jog A to -45 and put '
-                          'the tip where driving toward centre in +X would '
-                          'strike the puck, THEN press this. No motion -- it '
-                          'only records the pose.')
+            bR.setToolTip('Teach the C reference in TWO presses: the first '
+                          'clears Z and rotates A to -45, you jog the tip to '
+                          'where driving toward centre in +X would strike the '
+                          'puck, the second records X, Y and depth.')
             bR.clicked.connect(lambda: self._cal_run('cref'))
             r0.addWidget(bR)
             r0.addStretch(1)
@@ -1032,10 +1032,13 @@ class UserTab(QWidget):
                 'then the same pair again. Watch dY before/after.',
         'c':    'StartC running: probes toward centre at A -45 and +45, '
                 'corrects C, re-probes. Watch dX before/after.',
-        'cref': 'SET C REF: recording the pose. It refuses unless A is within '
-                '5 deg of -45, the tip is in front of centre, below the top, '
-                'and off centre sideways -- that sideways offset IS the scale '
-                'factor of the C measurement.',
+        'cref': 'SET C REF -- TWO PRESSES. The first clears Z and rotates A '
+                'to -45, then hands control back: jog the tip to where '
+                'driving toward the puck centre in +X would strike it. The '
+                'second press records X, Y and depth. It refuses unless the '
+                'tip is in front of centre, below the top, and off centre '
+                'sideways -- that sideways offset IS the scale factor of the '
+                'C measurement.',
         'ac':   'StartAC running: 5 iterations of A then C. It aborts loudly '
                 'the moment a correction makes its own delta worse.',
         'goto': 'GOTO ZERO: puck centre, tip 5 mm above the top, A0 C0.',
