@@ -713,6 +713,19 @@ class UserTab(QWidget):
             self._cal_btn['clear'] = bclr
             gl.addWidget(bclr, row, 1)
             row += 1
+            # THE PACKET THAT CROSSES TO PROBE BASIC. Stored as parameters
+            # and shown here so it is visible and verifiable in one place,
+            # rather than being literals buried in the subroutine (operator
+            # 2026-08-03). The first three are inputs the operator can reason
+            # about; the last four are what PB actually ends up holding.
+            _section('SENT TO PROBE BASIC')
+            _readout('3076', 'Z clearance  mm', prev=False)
+            _readout('3078', 'X offset  mm', prev=False)
+            _readout('3077', 'plunge used  mm', prev=False)
+            _readout('5181', 'G30 X  mm', prev=False)
+            _readout('5182', 'G30 Y  mm', prev=False)
+            _readout('5183', 'G30 Z  mm', prev=False)
+            _readout('3010', 'SHOULDER  mm', prev=False)
             _section('DELTAS')
             # built ONCE at final geometry with dash placeholders, so a row
             # appearing mid-run cannot move anything under a finger
@@ -1041,8 +1054,10 @@ class UserTab(QWidget):
             with open(self.VAR_FILE) as f:
                 for line in f:
                     p = line.split()
-                    if len(p) == 2 and p[0].isdigit() and \
-                       3040 <= int(p[0]) <= 3070:
+                    if len(p) == 2 and p[0].isdigit() and (
+                            3040 <= int(p[0]) <= 3078
+                            or int(p[0]) == 3010
+                            or 5181 <= int(p[0]) <= 5183):
                         vals[p[0]] = float(p[1])
             seen = getattr(self, '_cal_last', None)
             if seen is None:
@@ -1053,7 +1068,8 @@ class UserTab(QWidget):
                     continue
                 # A/C are legitimately 0.0 (uncorrected); the puck numbers are
                 # not, so only those treat 0 as "nothing measured yet"
-                if key in ('3045', '3046', '3047') and abs(v) < 1e-9:
+                if key in ('3045', '3046', '3047', '3010',
+                           '5181', '5182', '5183') and abs(v) < 1e-9:
                     continue
                 # A and C show the ABSOLUTE ENCODER READING, not degrees:
                 # #3069/#3070 hold the accumulated correction, so the count
