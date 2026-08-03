@@ -94,7 +94,8 @@ rc=0
 if ! lint; then echo "LINT FAILED"; rc=1; fi
 if [ "${1:-}" = "--all" ]; then
   C="-73.0519 -1429.3940 -462.0033"   # a plausible puck centre; geometry is not the point
-  for n in cal_probe_center cal_a_zero cal_c_ref cal_c_zero cal_ac_iterate cal_goto_zero; do
+  for n in cal_probe_center cal_a_zero cal_c_ref cal_c_zero cal_c_goto \
+           cal_goto_zero cal_shoulder cal_a_cycle cal_c_cycle; do
     if [ "$n" = cal_probe_center ]; then check "$n" || rc=1; else check "$n" $C || rc=1; fi
   done
 else

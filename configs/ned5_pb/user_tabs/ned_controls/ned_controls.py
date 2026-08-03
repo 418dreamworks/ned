@@ -1171,7 +1171,10 @@ class UserTab(QWidget):
         'a':    ('cal_a_cycle',      'StartA',    True),
         'c':    ('cal_c_cycle',      'StartC',    True),
         'cref': ('cal_c_ref',        'SET C REF', True),
-        'ac':   ('cal_ac_iterate',   'StartAC',   True),
+        # no 'ac' entry: StartAC is driven from Python (_ac_start), not by a
+        # g-code sub. cal_ac_iterate.ngc is retired to trash/ -- it ran all
+        # five A+C pairs in ONE program, which meant one bank at the end off
+        # accumulated corrections, and that defeats the whole exercise.
         'goto': ('cal_goto_zero',    'ZERO',      True),
         'shoulder': ('cal_shoulder', 'SHOULDER',  True),
         'cleft':  ('cal_c_goto',     'C LEFT',    True),
@@ -1428,8 +1431,16 @@ class UserTab(QWidget):
     # Banking is a Python action -- it writes head_zero.inc and pulses REF to
     # re-home the axis -- and g-code can neither do that nor pause to let it
     # happen. So the loop moves to where the banking is.
-    AC_MAX_ITER = 5
-    AC_CONVERGED = 4          # A, C, A, C all discarded -- operator's criterion
+    # TERMINATION IS CONVERGENCE, not a cycle count -- operator 2026-08-03:
+    # the 5-iteration limit is REPLACED by the 2-cycle condition. Four
+    # consecutive discards (A, C, A, C) means two full iterations changed
+    # nothing, so the residual is below what the probe can resolve. Any bank
+    # resets the counter to zero.
+    AC_CONVERGED = 4
+    # A runaway guard ONLY, deliberately far above any real run: if the loop
+    # somehow keeps banking forever, stop and say so rather than grind. It is
+    # not the termination condition and reaching it means something is wrong.
+    AC_RUNAWAY = 25
     AC_READY_DEADLINE_S = 120
 
     def _ac_start(self):
@@ -1438,13 +1449,15 @@ class UserTab(QWidget):
         self._ac_step = 'a'
         self._ac_discards = 0
         self._ac_banked = 0
-        LOG.info('StartAC: %d iterations max, each correction banked as it '
-                 'arrives; converged after %d consecutive discards (A,C,A,C)',
-                 self.AC_MAX_ITER, self.AC_CONVERGED)
+        LOG.info('StartAC: runs until CONVERGED -- %d consecutive discards '
+                 '(A,C,A,C) -- banking each correction as it arrives. '
+                 'Runaway guard at %d iterations.',
+                 self.AC_CONVERGED, self.AC_RUNAWAY)
         if getattr(self, '_cal_status', None) is not None:
             self._cal_status.setText(
-                'StartAC: iteration 1, A. Each correction banks immediately, '
-                'so the next measurement starts from a real zero.')
+                'StartAC: runs until converged (4 consecutive discards). '
+                'Each correction banks immediately, so the next measurement '
+                'starts from a real zero.')
         self._ac_next()
 
     def _ac_stop(self, why):
@@ -1468,8 +1481,10 @@ class UserTab(QWidget):
                           'is below what the probe can measure'
                           % self._ac_discards)
             return
-        if self._ac_iter > self.AC_MAX_ITER:
-            self._ac_stop('reached the %d-iteration limit' % self.AC_MAX_ITER)
+        if self._ac_iter > self.AC_RUNAWAY:
+            self._ac_stop('RUNAWAY GUARD: %d iterations without converging. '
+                          'That is not a calibration settling -- check the '
+                          'sign and the geometry.' % self.AC_RUNAWAY)
             return
         # banking pulses REF, which UNHOMES that axis for ~15 s. Issuing the
         # next cycle then would just be refused by the gate, so wait for the
@@ -1496,9 +1511,9 @@ class UserTab(QWidget):
                     return
                 QTimer.singleShot(1000, self._ac_try_issue)
                 return
-            LOG.info('StartAC: iteration %d/%d, %s cycle (%d consecutive '
-                     'discards so far)', self._ac_iter, self.AC_MAX_ITER,
-                     self._ac_step.upper(), self._ac_discards)
+            LOG.info('StartAC: iteration %d, %s cycle (%d/%d consecutive '
+                     'discards)', self._ac_iter, self._ac_step.upper(),
+                     self._ac_discards, self.AC_CONVERGED)
             self._cal_run(self._ac_step)
         except Exception as e:
             self._ac_stop('sequencer error: %s' % e)
@@ -1701,10 +1716,9 @@ class UserTab(QWidget):
                 'tip is in front of centre, below the top, and off centre '
                 'sideways -- that sideways offset IS the scale factor of the '
                 'C measurement.',
-        'ac':   'StartAC running: 5 iterations of A, then C, then a fresh '
-                'puck find -- rotating A/C swings the tip, so the centre is '
-                're-measured every pass. It aborts loudly the moment a '
-                'correction makes its own delta worse.',
+        'ac':   'StartAC running: A, then C, then a fresh puck find, banking '
+                'each correction as it arrives so the next measurement starts '
+                'from a real zero. Stops on 4 consecutive discards.',
         'goto': 'ZERO: puck centre, tip 5 mm above the top, A and C straight.',
         'shoulder': 'SHOULDER: recording the setter position into G30 at puck '
                     'top +100, sending the 185 mm plunge limit, then running '
