@@ -2,13 +2,14 @@
 (Setup: 3/8in rod in a toolholder, electrically continuous with the spindle,)
 (positioned BY THE OPERATOR roughly over the puck centre, ~20 mm above it.)
 (Step 1: probe down to find the puck top with this rod.)
-(Step 2: from 1 in out in 8 directions, drop 10 mm below the top and probe)
-(inward at 100 mm/min; back off 1 mm; latch at 10 mm/min. Opposing pairs)
-(average to the centre -- the rod radius cancels in the pairing, so the rod)
-(diameter never enters the math.)
-(Ends: rod centred over the detected centre, tip 5 mm above the surface,)
-(puck RETRACTED -- an energised solenoid leaks the air supply down, learned)
-(2026-08-02 the hard way.)
+(Step 2: from 0.75 in out in the 4 axis directions, drop 10 mm below the top)
+(and probe inward; back off, then latch slowly. Each axis is centred by its)
+(OWN opposing pair, so the rod radius cancels and the rod diameter never)
+(enters the math.)
+(Ends: puck RETRACTED first -- an energised solenoid leaks the air supply)
+(down, learned 2026-08-02 the hard way -- and THEN the rod travels to the)
+(centre it just detected, tip 5 mm above the surface. That is the zero)
+(every later section starts from.)
 (Results, CURRENT WORK FRAME: #3045 = centre X, #3046 = centre Y,)
 (#3047 = puck top Z. Persisted -- the 30xx block lives in ned5_pb.var.)
 
@@ -21,7 +22,7 @@ o<cal_probe_center> sub
   (1 mm did not release the probe once the seek feed doubled -- the next)
   (G38 then refused with "probe is already tripped". Operator 2026-08-03.)
   #<backoff>  = 2.0
-  #<r_out>    = 25.4    (1 in outward, operator spec)
+  #<r_out>    = 19.05   (0.75 in outward, operator 2026-08-03)
   #<under>    = 10.0    (probe depth below the detected top, operator spec)
   #<clear>    = 5.0     (hover height above the top between directions)
 
@@ -52,12 +53,15 @@ o<cal_probe_center> sub
   (PRINT, CAL step 1: puck top at Z #<top> in the current work frame)
   G1 Z[#<top> + #<clear>] F[#<f_trav>]
 
-  (--- STEP 2: 8 edges ------------------------------------------------------)
-  (direction d: angle = d * 45 deg; dx = cos, dy = sin. Results in #100+d)
-  (for X and #110+d for Y of each latched edge touch.)
+  (--- STEP 2: 4 edges ------------------------------------------------------)
+  (direction d: angle = d * 90 deg, so +X +Y -X -Y. dx = cos, dy = sin.)
+  (Results in #100+d for X and #110+d for Y of each latched edge touch.)
+  (Operator 2026-08-03: four axis-aligned touches instead of eight -- the)
+  (diagonals cost time and add nothing, because each axis is already pinned)
+  (by its own opposing pair.)
   #<d> = 0
-  o100 while [#<d> LT 8]
-    #<ang> = [#<d> * 45.0]
+  o100 while [#<d> LT 4]
+    #<ang> = [#<d> * 90.0]
     #<dx> = COS[#<ang>]
     #<dy> = SIN[#<ang>]
 
@@ -94,33 +98,31 @@ o<cal_probe_center> sub
     #<d> = [#<d> + 1]
   o100 endwhile
 
-  (--- centre: average of the 4 opposing-pair midpoints --------------------)
-  #<cx0> = [[#100 + #104] / 2]
-  #<cx1> = [[#101 + #105] / 2]
-  #<cx2> = [[#102 + #106] / 2]
-  #<cx3> = [[#103 + #107] / 2]
-  #<cy0> = [[#110 + #114] / 2]
-  #<cy1> = [[#111 + #115] / 2]
-  #<cy2> = [[#112 + #116] / 2]
-  #<cy3> = [[#113 + #117] / 2]
-  #<cx> = [[#<cx0> + #<cx1> + #<cx2> + #<cx3>] / 4]
-  #<cy> = [[#<cy0> + #<cy1> + #<cy2> + #<cy3>] / 4]
+  (--- centre: each axis from its OWN opposing pair -------------------------)
+  (+X touch is #100, -X touch is #102: their midpoint is the centre X, and)
+  (the rod radius cancels in the pairing. Likewise +Y #111 against -Y #113.)
+  #<cx> = [[#100 + #102] / 2]
+  #<cy> = [[#111 + #113] / 2]
 
   #3045 = #<cx>
   #3046 = #<cy>
   #3047 = #<top>
 
-  (PRINT, CAL pair centres X: #<cx0> #<cx1> #<cx2> #<cx3>)
-  (PRINT, CAL pair centres Y: #<cy0> #<cy1> #<cy2> #<cy3>)
+  (PRINT, CAL edges X: +X #100  -X #102     edges Y: +Y #111  -Y #113)
   (PRINT, CAL RESULT: centre X #<cx>  Y #<cy>  top Z #<top>  [work frame, saved to 3045/3046/3047])
   (DEBUG, CAL done: centre X#<cx> Y#<cy>, top Z#<top>)
 
-  (--- park centred, tip 5 mm above the surface, puck DOWN -----------------)
+  (--- retract the puck FIRST, then travel to the detected zero -------------)
+  (Operator 2026-08-03: the cycle must END sitting on the zero it just)
+  (found, with the puck already down -- so the next section starts from the)
+  (measured centre and nothing traverses over a raised puck.)
   G90
-  G1 X#<cx> Y#<cy> F[#<f_trav>]
   G1 Z[#<top> + #<clear>] F[#<f_trav>]
   M65 P3
-  M50 P1 (feed override back to the operator)
+  G4 P1.5
+  G1 X#<cx> Y#<cy> F[#<f_trav>]
+  G1 Z[#<top> + #<clear>] F[#<f_trav>]
+  M50 P1
 
 o<cal_probe_center> endsub
 
