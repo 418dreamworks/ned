@@ -11,7 +11,8 @@ o<cal_goto_zero> sub
 
   #<safe>  = 5.0        (operator 2026-08-03: 5 mm for every cal routine)
   #<clear> = 5.0        (tip height above the top, operator spec)
-  #<f_tr>  = 500.0
+  (non-probing traverse, 5x -- matches the rest of the C path)
+  #<f_tr>  = 2500.0
 
   o5 if [#<_metric> EQ 0]
     (abort, GOTO ZERO: switch to MM first)
@@ -21,9 +22,12 @@ o<cal_goto_zero> sub
   o6 endif
 
   G90
+  (Rise to clearance FIRST, then travel and straighten in ONE move with Z)
+  (held fixed. Operator 2026-08-03: "its completely safe to keep Z fixed,)
+  (move in Y and rotate (even simultaneously)". Z never descends until the)
+  (head is upright and over centre, so the swing has nothing under it.)
   G1 Z[#<top> + #<safe>] F[#<f_tr>]
-  G1 A#3069 C#3070 F600
-  G1 X#<cx> Y#<cy> F[#<f_tr>]
+  G1 X#<cx> Y#<cy> A#3069 C#3070 F[#<f_tr>]
   G1 Z[#<top> + #<clear>] F[#<f_tr>]
   (PRINT, GOTO ZERO: at puck centre #<cx> #<cy>, tip #<clear> mm above the top, A0 C0.)
 

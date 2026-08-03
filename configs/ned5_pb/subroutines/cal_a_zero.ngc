@@ -39,6 +39,8 @@
 (no longer spans the puck and nothing is touched.)
 
 (Results: #3050 = dY before, #3051 = dY after, #3052 = A correction applied,)
+(         #3075 = 1 when the correction was CLAMPED, so the caller knows)
+(         to re-find the puck and call again.)
 (         #3053 = tilt before deg, #3054 = tilt after deg.)
 (#3069 accumulates every A correction: it IS where A's true zero now sits on)
 (the DRO, so cal_c_zero tilts about it and every routine parks there.)
@@ -151,9 +153,7 @@ o<cal_a_zero> sub
     #<corr> = -1.0
     #<clamped> = 1
   o121 endif
-  o122 if [#<clamped> EQ 1]
-    (PRINT, CAL A: computed correction exceeded 1 deg - clamped to #<corr> deg. Applying one bite and re-measuring.)
-  o122 endif
+  #3075 = #<clamped>
 
   (RECORD WHAT IS ACTUALLY APPLIED. #3052 has to be assigned AFTER the clamp:)
   (set before it, it would report the demand while the machine moved the)
@@ -172,6 +172,29 @@ o<cal_a_zero> sub
   G1 A#<corr> F600
   G90
   #3069 = [#3069 + #<corr>]
+
+  (=== A CLAMPED BITE ENDS HERE ===========================================)
+  (Operator 2026-08-03: if the change is larger than 1 deg, cap it at 1 deg,)
+  (RE-PROBE THE PUCK, and redo the A bit -- repeat until the demand is under)
+  (1 deg or stops improving. That is one cycle.)
+  (So a clamped bite does NOT run the AFTER pair: the head has moved a full)
+  (degree, which swings the tip and makes the stored centre stale, so any)
+  (measurement taken now would be against a frame that no longer describes)
+  (this tip. cal_a_cycle re-finds the puck and calls this again; the NEXT)
+  (iteration's BEFORE pair is the verification of this bite.)
+  o128 if [#<clamped> EQ 1]
+    #3072 = 1
+    G90
+    G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
+    M65 P3
+    G4 P1.0
+    G1 A#3069 C#3070 F600
+    G1 X#<cx> Y#<cy> F[#<_ca_ftr>]
+    G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
+    M50 P1
+    (PRINT, CAL A: took a 1 deg bite of a #<tilt_b> deg tilt. Re-finding the puck, then measuring again.)
+    o128 return
+  o128 endif
 
   (=== AFTER: -65, then rise to -25, same standoff ========================)
   o<ca_touch> call [#<d3>] [#<next_app>] [0]
