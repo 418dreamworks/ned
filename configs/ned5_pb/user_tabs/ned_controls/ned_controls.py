@@ -1431,10 +1431,15 @@ class UserTab(QWidget):
                 LOG.info('%s: %s issued', label, sub)
             self._cal_lock_ac(label)
             self._cal_buttons_busy(True, running=which)
-            if which in ('a', 'c'):
-                self._cal_watch_which = which
-                self._cal_watch_start()
-                self._cal_watch_t0 = os.path.getmtime(self.VAR_FILE)
+            # EVERY cycle arms the watcher, not just a/c. The watcher is the
+            # only thing that re-enables the buttons, so arming it only for
+            # a/c meant pressing ZERO, StartPuck, C LEFT, C RIGHT or SHOULDER
+            # disabled the whole tab FOREVER -- one ZERO press and nothing
+            # could be clicked again (2026-08-03). a/c additionally bank;
+            # the others just need the lock released.
+            self._cal_watch_which = which
+            self._cal_watch_start()
+            self._cal_watch_t0 = os.path.getmtime(self.VAR_FILE)
             if getattr(self, '_cal_status', None) is not None:
                 self._cal_status.setText(self.CAL_MSG.get(which, ''))
         except Exception as e:
@@ -1481,6 +1486,7 @@ class UserTab(QWidget):
             if self._cal_watch_elapsed > self.CAL_WATCH_DEADLINE_S:
                 self._cal_watch_stop('deadline %.0f s reached -- NOT recording'
                                      % self.CAL_WATCH_DEADLINE_S)
+                self._cal_buttons_busy(False)
                 linuxcnc.command().error_msg(
                     'StartA: %d s with no completion -- not recording. Check '
                     'the log.' % self.CAL_WATCH_DEADLINE_S)
@@ -1498,13 +1504,21 @@ class UserTab(QWidget):
                     return
             except Exception:
                 return
-            if self._read_vars(('3071',)).get('3071', 0.0) < 0.5:
-                return
+            which = getattr(self, '_cal_watch_which', 'a')
+            if which in ('a', 'c'):
+                # these set a completion marker; the rest have no bank step
+                if self._read_vars(('3071',)).get('3071', 0.0) < 0.5:
+                    return
             self._cal_watch_stop('cycle finished after %.0f s'
                                  % self._cal_watch_elapsed)
-            self._cal_after_cycle(getattr(self, '_cal_watch_which', 'a'))
+            if which in ('a', 'c'):
+                self._cal_after_cycle(which)
+            else:
+                self._cal_buttons_busy(False)
+                self.cal_say('.. %s finished' % which.upper())
         except Exception as e:
             self._cal_watch_stop('watcher error: %s' % e)
+            self._cal_buttons_busy(False)
 
     # (before key, after key, "did it move" key, accumulated-correction key,
     #  axis letter, the pin whose rising edge makes the brain re-home it)
