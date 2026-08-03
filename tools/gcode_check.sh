@@ -54,7 +54,44 @@ check() {
   return 0
 }
 
+# --- static lint: the three comment/scope faults rs274 reports late or not
+# --- at all, per CLAUDE.md rule 18. Cheap, so it runs over EVERY cal file.
+lint() {
+  python3 - "$SUBS" <<'PY'
+import glob, os, sys
+subs = sys.argv[1]
+
+def scan(line):
+    """Walk the line the way the interpreter does: ( opens a comment, the
+    first ) closes it, and a ; is a line comment only OUTSIDE parens."""
+    depth = 0
+    for c in line:
+        if depth == 0 and c == ';':
+            return None
+        if c == '(':
+            if depth:
+                return 'inner "(" inside a comment -- the first ")" ends it, the rest parses as code'
+            depth = 1
+        elif c == ')':
+            if not depth:
+                return 'stray ")"'
+            depth = 0
+    return 'unclosed comment -- a ( ... ) must open and close on ONE line' if depth else None
+
+bad = 0
+for f in sorted(glob.glob(os.path.join(subs, 'ca[l_]*.ngc'))
+                + glob.glob(os.path.join(subs, 'cc_*.ngc'))):
+    n = os.path.basename(f)
+    for i, l in enumerate(open(f).read().split('\n'), 1):
+        why = scan(l)
+        if why:
+            print('  LINT %s:%d %s' % (n, i, why)); bad = 1
+sys.exit(bad)
+PY
+}
+
 rc=0
+if ! lint; then echo "LINT FAILED"; rc=1; fi
 if [ "${1:-}" = "--all" ]; then
   C="-73.0519 -1429.3940 -462.0033"   # a plausible puck centre; geometry is not the point
   for n in cal_probe_center cal_a_zero cal_c_ref cal_c_zero cal_ac_iterate cal_goto_zero; do

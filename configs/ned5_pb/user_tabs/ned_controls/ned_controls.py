@@ -1116,6 +1116,16 @@ class UserTab(QWidget):
                 note.append('%s %+.4f deg (%d -> %d counts)'
                             % (ax, deg, cur[ax], new))
             open(self.HEAD_ZERO_INC, 'w').write(out)
+            # the accumulated corrections have been banked into the file, so
+            # the running session's #3069/#3070 are spent. Zero them or the
+            # next GOTO ZERO would apply the correction twice.
+            try:
+                c.mode(linuxcnc.MODE_MDI)
+                c.wait_complete()
+                c.mdi('#3069 = 0')
+                c.mdi('#3070 = 0')
+            except Exception as ze:
+                LOG.error('%s: could not clear #3069/#3070: %s', label, ze)
             LOG.info('%s: head_zero.inc updated -- %s; backup %s',
                      label, '; '.join(note), bak)
             with open(self.HEAD_ZERO_INC + '.history', 'a') as f:

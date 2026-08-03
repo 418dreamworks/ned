@@ -21,6 +21,10 @@
 (from GLOBAL _cc_ parameters, and returning the touch X in #<_cc_tx>.)
 
 (Results: #3055 = dX before, #3056 = dX after, #3057 = C correction applied.)
+(A is tilted +-45 about #3069, the accumulated A correction -- NOT about the)
+(stale DRO zero, or every StartA would be undone on the next StartC. #3070)
+(accumulates C the same way. Both routines park at that pose so switching)
+(between A and C always starts from the same place.)
 
 (============================== main cycle =================================)
 o<cal_c_zero> sub
@@ -61,9 +65,9 @@ o<cal_c_zero> sub
   G4 P1.5
 
   (=== BEFORE: -45 at the taught Y, then +45 at the mirrored Y ============)
-  o<cc_probe> call [-45] [#<dy>]
+  o<cc_probe> call [[#3069 - 45]] [#<dy>]
   #<x_neg_b> = #<_cc_tx>
-  o<cc_probe> call [45] [0 - #<dy>]
+  o<cc_probe> call [[#3069 + 45]] [0 - #<dy>]
   #<x_pos_b> = #<_cc_tx>
   #<dx_b> = [#<x_pos_b> - #<x_neg_b>]
   #3055 = #<dx_b>
@@ -93,11 +97,12 @@ o<cal_c_zero> sub
   G91
   G1 C#<phi> F600
   G90
+  #3070 = [#3070 + #<phi>]
 
   (=== AFTER: the same pair again =========================================)
-  o<cc_probe> call [-45] [#<dy>]
+  o<cc_probe> call [[#3069 - 45]] [#<dy>]
   #<x_neg_a> = #<_cc_tx>
-  o<cc_probe> call [45] [0 - #<dy>]
+  o<cc_probe> call [[#3069 + 45]] [0 - #<dy>]
   #<x_pos_a> = #<_cc_tx>
   #<dx_a> = [#<x_pos_a> - #<x_neg_a>]
   #3056 = #<dx_a>
@@ -106,7 +111,7 @@ o<cal_c_zero> sub
   (=== park + verdict =====================================================)
   G90
   G1 Z[#<top> + #<safe>] F[#<_cc_ftr>]
-  G1 A0 F600
+  G1 A#3069 C#3070 F600
   G1 X#<cx> Y#<cy> F[#<_cc_ftr>]
   G1 Z[#<top> + #<safe>] F[#<_cc_ftr>]
   M65 P3

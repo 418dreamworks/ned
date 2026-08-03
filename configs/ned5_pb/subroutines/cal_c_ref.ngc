@@ -33,7 +33,7 @@ o<cal_c_ref> sub
     o20 if [#5422 LT [#<top> + #<safe>]]
       G1 Z[#<top> + #<safe>] F500
     o20 endif
-    G1 A-45 F600
+    G1 A[#3069 - 45] F600
     #3059 = 1
     (PRINT, SET C REF press 1: A is at -45 and Z is clear. JOG the tip to where driving toward the puck centre in +X would strike it, then press SET C REF again.)
     (DEBUG, SET C REF: tilted to -45 - jog the tip into position, then press SET C REF again)
@@ -43,9 +43,9 @@ o<cal_c_ref> sub
   (--- PRESS 2: record the pose ------------------------------------------)
   (#5420-#5425 = current X Y Z A B C in the work frame)
   #<a_now> = #5423
-  o30 if [ABS[#<a_now> + 45] GT 5.0]
+  o30 if [ABS[#<a_now> - [#3069 - 45]] GT 5.0]
     #3059 = 0
-    (abort, SET C REF: A is at #<a_now> deg, not -45. The teach was restarted - press SET C REF again.)
+    (abort, SET C REF: A is at #<a_now> deg, not 45 below its corrected zero #3069. The teach was restarted - press SET C REF again.)
   o30 endif
 
   #<dx_off> = [#5420 - #<cx>]

@@ -1,14 +1,28 @@
-(ned -- A ZERO DETECTION against the puck side wall, operator spec 2026-08-03)
-(Model: puck = vertical cylinder, axis through the measured centre, top face)
-(at the measured Z. A vertical rod touches the wall at the SAME Y no matter)
-(how deep it probes. A TILTED rod does not: the touch Y shifts by)
-(depth x tan A. So two plunge depths give the tilt directly.)
+(ned -- A ZERO DETECTION against the puck, operator spec 2026-08-03)
+(MODEL. The rod slides DOWN PAST the puck at a standoff, then drives inward.)
+(The puck does NOT need to extend downward: whatever station along the rod's)
+(SHAFT happens to be level with the puck is what makes contact, so every)
+(depth touches the SAME feature of the puck with a DIFFERENT part of the rod.)
+(A vertical rod therefore contacts at the same Y at every depth. A rod tilted)
+(by A does not -- the station that reaches the puck sits further off the)
+(centreline the deeper the tip goes:)
+(     recorded Y = constant - depth x tan A)
+(so two depths give the tilt directly, and the constant -- which carries the)
+(puck position, the puck diameter, the rod diameter and the tip centring --)
+(cancels in the difference. The first plunge is 30 mm, deep enough that the)
+(tip is already BELOW the puck, so the tip's own shape and squareness never)
+(enter the measurement -- operator 2026-08-03.)
 (Sequence, operator spec: touch top, touch bottom, CORRECT, touch bottom,)
 (touch top -- if the spread did not shrink the math/sign is wrong, so ABORT)
 (LOUDLY rather than iterate on a bad correction.)
+(REQUIRES: rod stickout greater than the deep plunge -- 65 mm -- or the)
+(shaft no longer spans the puck and nothing is touched.)
 (Reports DELTA Y BEFORE and DELTA Y AFTER. Applies the A rotation; writes NO)
 (zero and NO offsets -- setting A's zero is a separate, explicit step.)
 (Results: #3050 = dY before, #3051 = dY after, #3052 = A correction applied.)
+(#3069 accumulates every A correction -- it IS where A's true zero now sits on)
+(the DRO, so cal_c_zero tilts +-45 about it instead of about the stale zero,)
+(and every routine parks there. RECORD TO PARAMS is what finally banks it.)
 
 (SCOPE NOTE: named parameters are LOCAL to the subroutine that assigns them,)
 (so the wall-touch helper cannot see the caller's values. It is defined at)
@@ -83,6 +97,7 @@ o<cal_a_zero> sub
   G91
   G1 A#<corr> F600
   G90
+  #3069 = [#3069 + #<corr>]
 
   (=== AFTER: bottom first, then top -- operator spec order ================)
   o<ca_touch> call [#<d_bot>] [1] [0]
@@ -98,6 +113,7 @@ o<cal_a_zero> sub
   (so arriving over centre at 5 mm up is the whole return.)
   G90
   G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
+  G1 A#3069 C#3070 F600
   G1 X#<cx> Y#<cy> F[#<_ca_ftr>]
   G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
   M65 P3
