@@ -99,9 +99,14 @@ o<cal_c_zero> sub
   #<_cc_zoff>  = #3060
   #<_cc_safe>  = #<safe>
   #<_cc_reach> = 30.0    (max +X probe travel from the taught standoff)
+  (rotary traverse: A and C cap at 30 deg/s = 1800 deg/min, so 5x on 600)
+  (would only be clamped. 1500 is the fastest that stays inside the limit.)
+  #<_cc_frot>  = 1500.0
   #<_cc_fpr>   = 100.0
   #<_cc_fla>   = 10.0
-  #<_cc_ftr>   = 500.0
+  (non-probing traverse 5x faster -- operator 2026-08-03. X/Y allow 12000)
+  (mm/min and Z 10158, so 2500 is well inside the axis limits.)
+  #<_cc_ftr>   = 2500.0
   #<_cc_fck>   = 200.0
   #<_cc_back>  = 1.0     (backoff before the latch, 1 mm is plenty)
 
@@ -122,7 +127,7 @@ o<cal_c_zero> sub
     G90
     G1 Z[#<top> + #<safe>] F[#<_cc_ftr>]
     G91
-    G1 C[0 - #3070] F600
+    G1 C[0 - #3070] F[#<_cc_frot>]
     G90
     (PRINT, CAL C: #3070 was #3070 deg - an unbanked correction from a cycle that died. Rotated back before measuring.)
     #3070 = 0
@@ -188,7 +193,7 @@ o<cal_c_zero> sub
   G90
   G1 Z[#<top> + #<safe>] F[#<_cc_ftr>]
   G91
-  G1 C#<phi> F600
+  G1 C#<phi> F[#<_cc_frot>]
   G90
   #3070 = [#3070 + #<phi>]
 
@@ -204,7 +209,7 @@ o<cal_c_zero> sub
   (=== park + verdict =====================================================)
   G90
   G1 Z[#<top> + #<safe>] F[#<_cc_ftr>]
-  G1 A#3069 C#3070 F600
+  G1 A#3069 C#3070 F[#<_cc_frot>]
   G1 X#<cx> Y#<cy> F[#<_cc_ftr>]
   G1 Z[#<top> + #<safe>] F[#<_cc_ftr>]
   M65 P3
@@ -218,7 +223,7 @@ o<cal_c_zero> sub
     (DEBUG, CAL C: dX #<dx_b> to #<dx_a> mm, C corrected #<phi> deg - KEPT)
   o240 else
     G91
-    G1 C[0 - #<phi>] F600
+    G1 C[0 - #<phi>] F[#<_cc_frot>]
     G90
     #3070 = [#3070 - #<phi>]
     #3057 = 0
