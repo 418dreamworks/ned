@@ -1,0 +1,60 @@
+(ned -- GO TO THE C REFERENCE POSE, operator spec 2026-08-03.)
+(#4 = side: -1 puts the head at A zero -45 with the taught +dy, +1 mirrors)
+(both. These are exactly the two poses cal_c_zero probes from, so what the)
+(operator eyeballs is what the measurement will use -- "user just needs to)
+(verify and if its in the right ballpark, we are good".)
+
+(The reference is stored as OFFSETS FROM THE PUCK CENTRE -- #3061 in X,)
+(#3058 in Y, #3060 below the top -- so it tracks the puck as calibration)
+(moves it. Nothing here is absolute: cx, cy and top come from the newest)
+(cal_probe_center and the taught numbers hang off them.)
+
+o<cal_c_goto> sub
+  #<cx>   = #1
+  #<cy>   = #2
+  #<top>  = #3
+  #<side> = #4
+
+  #<lift> = 25.4
+  #<f_tr> = 2500.0
+  #<f_ck> = 1000.0
+
+  o5 if [#<_metric> EQ 0]
+    (abort, GO TO C REF: switch to MM first)
+  o5 endif
+  o6 if [#<top> EQ 0 AND #<cx> EQ 0 AND #<cy> EQ 0]
+    (abort, GO TO C REF: no puck centre - run StartPuck first)
+  o6 endif
+  o7 if [#3058 EQ 0]
+    (abort, GO TO C REF: no C reference taught. Press SET C REF, jog the tip into place, then press StartC.)
+  o7 endif
+
+  #<zref>  = [#<top> - #3060]
+  #<zhigh> = [#<zref> + #<lift>]
+
+  M64 P3
+  G4 P1.5
+
+  (rise ONLY if low, then travel and rotate together with Z held -- the same)
+  (order cc_probe uses, so the button and the probe cannot disagree)
+  G90
+  o20 if [#5422 LT #<zhigh>]
+    G1 Z#<zhigh> F[#<f_tr>]
+  o20 endif
+  G1 X[#<cx> + #3061] Y[#<cy> + #<side> * #3058] A[#3069 + #<side> * 45] C#3070 F[#<f_tr>]
+
+  (protective descent, 1 in. A trip here means the rod is fouling something)
+  (BEFORE any probing -- met during the +X probe instead, the same contact)
+  (would be indistinguishable from a real touch.)
+  G38.3 Z#<zref> F[#<f_ck>]
+  o30 if [#5070 EQ 1]
+    G90
+    G1 Z#<zhigh> F[#<f_tr>]
+    M65 P3
+    (abort, GO TO C REF: contact on the way down - the rod is fouling something. Nothing was probed.)
+  o30 endif
+
+  (PRINT, GO TO C REF: side #<side>, X offset #3061, Y offset side x #3058, depth #3060 below top. Puck is UP - verify the tip is in the ballpark.)
+o<cal_c_goto> endsub
+
+M2 (end program)

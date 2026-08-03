@@ -611,7 +611,10 @@ class UserTab(QWidget):
                                    ('3046', 'Centre Y', 'mm'),
                                    ('3047', 'Top Z', 'mm'),
                                    ('3069', 'A zero ENC', 'counts'),
-                                   ('3070', 'C zero ENC', 'counts')):
+                                   ('3070', 'C zero ENC', 'counts'),
+                                   ('3061', 'C ref X', 'mm'),
+                                   ('3058', 'C ref dy', 'mm'),
+                                   ('3060', 'C ref depth', 'mm')):
                 row = QHBoxLayout()
                 lw = QLabel('%s %s' % (lab, unit))
                 lw.setMinimumWidth(78)
@@ -619,8 +622,10 @@ class UserTab(QWidget):
                 cur = QLineEdit()
                 cur.setReadOnly(True)
                 cur.setMinimumHeight(28)
-                cur.setPlaceholderText('run StartPuck first'
-                                       if key < '3069' else 'not corrected yet')
+                cur.setPlaceholderText(
+                    'run StartPuck first' if key < '3058'
+                    else 'press SET C REF' if key in ('3058', '3060', '3061')
+                    else 'not corrected yet')
                 cur.setStyleSheet('font: 10pt "DejaVu Sans Mono";')
                 row.addWidget(cur)
                 prv = QLineEdit()
@@ -677,13 +682,29 @@ class UserTab(QWidget):
             bAC.setToolTip('5 iterations of A then C. Needs C taught first.')
             bAC.clicked.connect(lambda: self._cal_run('ac'))
             r2.addWidget(bAC)
-            bG = QPushButton('GOTO ZERO')
-            bG.setMinimumHeight(40)
-            bG.setToolTip('Puck centre, tip 5 mm above the top, at the current '
-                          'A and C zeros.')
-            bG.clicked.connect(lambda: self._cal_run('goto'))
-            r2.addWidget(bG)
+            r2.addStretch(1)
             nbl.addLayout(r2)
+
+            # GOTO splits three ways (operator 2026-08-03). LEFT and RIGHT are
+            # the exact poses cal_c_zero probes from, so eyeballing them IS
+            # verifying the measurement setup -- "user just needs to verify and
+            # if its in the right ballpark, we are good".
+            r3 = QHBoxLayout()
+            for cap, which, tip in (
+                    ('ZERO', 'goto',
+                     'Puck centre, tip 5 mm above the top, A and C straight.'),
+                    ('C LEFT', 'cleft',
+                     'A zero -45 with the taught +dy, at the taught depth -- '
+                     'the first pose StartC probes from.'),
+                    ('C RIGHT', 'cright',
+                     'A zero +45 with the Y mirrored, same depth -- the '
+                     'second pose StartC probes from.')):
+                b = QPushButton(cap)
+                b.setMinimumHeight(40)
+                b.setToolTip(tip)
+                b.clicked.connect(lambda _=False, w=which: self._cal_run(w))
+                r3.addWidget(b)
+            nbl.addLayout(r3)
 
             # deltas: the whole point is watching these go toward zero
             self._cal_delta_rows = []
@@ -1001,7 +1022,7 @@ class UserTab(QWidget):
                     continue
                 # A/C are legitimately 0.0 (uncorrected); the puck numbers are
                 # not, so only those treat 0 as "nothing measured yet"
-                if key < '3069' and abs(v) < 1e-9:
+                if key in ('3045', '3046', '3047') and abs(v) < 1e-9:
                     continue
                 # A and C show the ABSOLUTE ENCODER READING, not degrees:
                 # #3069/#3070 hold the accumulated correction, so the count
@@ -1009,6 +1030,8 @@ class UserTab(QWidget):
                 # exactly the number RECORD writes to head_zero.inc.
                 if key in ('3069', '3070'):
                     txt = self._enc_at_zero('A' if key == '3069' else 'C', v)
+                elif key in ('3058', '3060', '3061') and abs(v) < 1e-9:
+                    txt = 'not taught'
                 else:
                     txt = '%.4f' % v
                 old_v = seen.get(key)
@@ -1053,7 +1076,9 @@ class UserTab(QWidget):
         'c':    ('cal_c_cycle',      'StartC',    True),
         'cref': ('cal_c_ref',        'SET C REF', True),
         'ac':   ('cal_ac_iterate',   'StartAC',   True),
-        'goto': ('cal_goto_zero',    'GOTO ZERO', True),
+        'goto': ('cal_goto_zero',    'ZERO',      True),
+        'cleft':  ('cal_c_goto',     'C LEFT',    True),
+        'cright': ('cal_c_goto',     'C RIGHT',   True),
     }
 
     def _cal_tab_changed(self, idx):
@@ -1126,6 +1151,9 @@ class UserTab(QWidget):
         except Exception as e:
             LOG.error('lock button mirror failed: %s', e)
 
+    # cal_c_goto takes a 4th argument: which side of the puck to park on
+    CAL_EXTRA = {'cleft': -1, 'cright': 1}
+
     def _cal_gate(self, label):
         """Shared refusal gate for every calibration cycle. Returns the
         linuxcnc command/stat pair, or None having ALREADY told the operator
@@ -1179,8 +1207,12 @@ class UserTab(QWidget):
                         LOG.error('%s refused: field %s empty', label, k)
                         return
                     vals[k] = float(t)
-                c.mdi('o<%s> call [%.4f] [%.4f] [%.4f]'
-                      % (sub, vals['3045'], vals['3046'], vals['3047']))
+                extra = self.CAL_EXTRA.get(which)
+                args = '[%.4f] [%.4f] [%.4f]' % (vals['3045'], vals['3046'],
+                                                 vals['3047'])
+                if extra is not None:
+                    args += ' [%d]' % extra
+                c.mdi('o<%s> call %s' % (sub, args))
                 LOG.info('%s: %s issued with centre %.4f %.4f top %.4f',
                          label, sub, vals['3045'], vals['3046'], vals['3047'])
             else:
@@ -1450,7 +1482,11 @@ class UserTab(QWidget):
                 'puck find -- rotating A/C swings the tip, so the centre is '
                 're-measured every pass. It aborts loudly the moment a '
                 'correction makes its own delta worse.',
-        'goto': 'GOTO ZERO: puck centre, tip 5 mm above the top, A0 C0.',
+        'goto': 'ZERO: puck centre, tip 5 mm above the top, A and C straight.',
+        'cleft': 'C LEFT: parking on the A-45 probe pose, puck up. Check the '
+                 'tip is in the ballpark.',
+        'cright': 'C RIGHT: parking on the A+45 probe pose, puck up. Check the '
+                  'tip is in the ballpark.',
     }
 
     HEAD_ZERO_INC = '/home/brains/Documents/ned/configs/params/head_zero.inc'
