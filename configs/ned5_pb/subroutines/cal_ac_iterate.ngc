@@ -4,6 +4,11 @@
 (the pair settle. Operator spec: 5 iterations of "given C calibrate A, given)
 (A calibrate C".)
 
+(After each A/C pair the puck is RE-FOUND: rotating A or C swings the tool)
+(tip, so the centre and top measured at the old angles no longer describe)
+(where this tip touches. Skipping that would measure iteration 2 against a)
+(stale frame -- operator 2026-08-03.)
+
 (Each inner cycle applies its own rotation and ABORTS LOUDLY if its delta got)
 (worse, so a bad sign stops the loop instead of walking the head away.)
 (This routine writes NO zeros -- it leaves the head sitting at the corrected)
@@ -58,8 +63,16 @@ o<cal_ac_iterate> sub
     #3065 = #3056
     #3067 = [#3067 + #3057]
 
+    (--- the tip has SWUNG: correcting A and C moves the tool tip, so the)
+    (--- centre and top measured with the old angles are stale. Re-find them)
+    (--- before the next iteration measures against them.)
+    o<cal_probe_center> call
+    #<cx>  = #3045
+    #<cy>  = #3046
+    #<top> = #3047
+
     #3068 = #<i>
-    (PRINT, CAL AC iteration #<i>: A dY #3051 mm, C dX #3056 mm, running A #3066 deg, C #3067 deg)
+    (PRINT, CAL AC iteration #<i>: A dY #3051 mm, C dX #3056 mm, running A #3066 deg, C #3067 deg, puck re-found at #<cx> #<cy> #<top>)
 
     #<i> = [#<i> + 1]
   o100 endwhile
