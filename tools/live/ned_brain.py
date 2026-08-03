@@ -258,7 +258,17 @@ class Brain(object):
         if p == self.hr_p0:
             log('HEADREAD {} NO NEW FRAME (parsed still {})'.format(ax.upper(), p))
             return
-        m0, w0 = HEAD_M0W0[ax]
+        # RE-PARSE, never the startup cache. Banking rewrites head_zero.inc
+        # while this process runs; with the cached zero the REF re-home that
+        # follows converts the encoder against the OLD zero and the DRO ends
+        # up reading the correction instead of 0 (2026-08-03: banked, then
+        # A read +1.218). Conversion only -- no homing logic here.
+        try:
+            m0, w0 = parse_head_zero()[ax]
+        except Exception as e:
+            log('HEADREAD: head_zero.inc re-parse failed ({}) -- using the '
+                'startup values'.format(e))
+            m0, w0 = HEAD_M0W0[ax]
         deg = SIGN[ax] * ((mt - m0) * R_COUNTS + (w - w0)) / (R_COUNTS * GEAR[ax]) * 360.0
         # GUARD 1 -- stale-read detection: identical raw counts = other axis's data.
         if self.hr_lastraw is not None and self.hr_lastraw == (mt, w):

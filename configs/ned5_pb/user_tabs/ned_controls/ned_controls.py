@@ -1338,9 +1338,19 @@ class UserTab(QWidget):
             LOG.info('%s: REF %s pulsed -- brain will re-read and re-home %s '
                      'in place so the DRO reads 0 at true perpendicular',
                      label, ax, ax)
-            msg = ('Start%s BANKED: %+.4f -> %+.4f mm. %s zero = %d / %d '
-                   'counts, re-homing %s so the DRO reads 0 there.'
-                   % (ax, before, after, ax, mt_new, wi_new, ax))
+            # Say BOTH numbers. The cycle delta and the angle being banked are
+            # different quantities -- the bank carries every bite applied
+            # since the last bank -- and printing only the delta made a
+            # correct 1.22 deg bank look like it had invented 1 deg from a
+            # 0.156 mm measurement.
+            # Say the lockout too: the REF unhomes A/C while it reads, so for
+            # ~15 s every homed-gated button refuses. Unexplained, that reads
+            # as a fault.
+            msg = ('Start%s BANKED: this cycle %+.4f -> %+.4f mm; banking '
+                   '%+.6f deg total. %s zero = %d / %d counts. Re-homing %s '
+                   '-- A/C are UNHOMED for ~15 s, so buttons will refuse '
+                   'until it finishes.'
+                   % (ax, before, after, corr, ax, mt_new, wi_new, ax))
             c.error_msg(msg)
             if getattr(self, '_cal_status', None) is not None:
                 self._cal_status.setText(msg)
