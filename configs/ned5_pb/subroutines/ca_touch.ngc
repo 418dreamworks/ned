@@ -3,27 +3,54 @@
 (the calling file is NOT found -- "EOF in file ... seeking o-word",)
 (reproduced offline with rs274. Shared setup arrives in GLOBAL)
 (parameters; the result goes back the same way.)
+
 (======================== helper: ONE wall touch ===========================)
-(#1 = plunge depth below the puck top. Returns #<_ca_ty>.)
+(  #1 = plunge depth below the puck top)
+(  #2 = approach: 1 = come from hover and go out to the standoff first,)
+(                 0 = ALREADY at the backoff standoff, just change depth)
+(  #3 = retract:  1 = finish back at hover, 0 = stay at the backoff standoff)
+(Returns the touch Y in #<_ca_ty>.)
+
+(Operator 2026-08-03: travelling between the two plunge depths at the backoff)
+(standoff is safe enough -- no climbing back over the puck between touches.)
+(That Z move is still a G38.3, so a surprise contact stops the machine rather)
+(than driving through it.)
+
 o<ca_touch> sub
-  #<dep> = #1
+  #<dep>      = #1
+  #<approach> = #2
+  #<retract>  = #3
 
-  (hover, then out to the standoff OUTSIDE the puck)
-  G90
-  G1 Z[#<_ca_top> + #<_ca_safe>] F[#<_ca_ftr>]
-  G1 X#<_ca_cx> Y[#<_ca_cy> + #<_ca_side> * #<_ca_stand>] F[#<_ca_ftr>]
-
-  (protective descent: if this TRIPS, the standoff is still over the puck --)
-  (the puck is wider than the standoff. Never plunge blind.)
-  G91
-  G38.3 Z-[#<_ca_safe> + #<dep>] F[#<_ca_fck>]
-  o105 if [#5070 EQ 1]
+  o100 if [#<approach> NE 0]
+    (hover, then out to the standoff OUTSIDE the puck)
     G90
     G1 Z[#<_ca_top> + #<_ca_safe>] F[#<_ca_ftr>]
-    M65 P3
-    M50 P1
-    (abort, CAL A: contact while descending at the standoff - the puck is wider than the 30 mm standoff. Increase _ca_stand.)
-  o105 endif
+    G1 X#<_ca_cx> Y[#<_ca_cy> + #<_ca_side> * #<_ca_stand>] F[#<_ca_ftr>]
+
+    (protective descent: if this TRIPS, the standoff is still over the puck --)
+    (the puck is wider than the standoff. Never plunge blind.)
+    G91
+    G38.3 Z-[#<_ca_safe> + #<dep>] F[#<_ca_fck>]
+    o105 if [#5070 EQ 1]
+      G90
+      G1 Z[#<_ca_top> + #<_ca_safe>] F[#<_ca_ftr>]
+      M65 P3
+      M50 P1
+      (abort, CAL A: contact while descending at the standoff - the puck is wider than the standoff. Increase _ca_stand.)
+    o105 endif
+  o100 else
+    (already alongside the puck: change depth right here, protected)
+    G90
+    G38.3 Z[#<_ca_top> - #<dep>] F[#<_ca_fck>]
+    o106 if [#5070 EQ 1]
+      G90
+      G1 Z[#<_ca_top> + #<_ca_safe>] F[#<_ca_ftr>]
+      M65 P3
+      M50 P1
+      (abort, CAL A: contact while changing depth at the backoff standoff - something is beside the puck that should not be.)
+    o106 endif
+    G91
+  o100 endif
 
   (probe INWARD toward the axis; the wall stops us)
   G38.3 Y[0 - #<_ca_side> * #<_ca_reach>] F[#<_ca_fpr>]
@@ -38,10 +65,13 @@ o<ca_touch> sub
   G38.2 Y[0 - #<_ca_side> * [#<_ca_back> + 1]] F[#<_ca_fla>]
   #<_ca_ty> = #5062
 
-  (clear the wall, back to hover)
+  (clear the wall -- this IS the backoff standoff the next touch reuses)
   G1 Y[#<_ca_side> * 2] F[#<_ca_ftr>]
   G90
-  G1 Z[#<_ca_top> + #<_ca_safe>] F[#<_ca_ftr>]
+
+  o120 if [#<retract> NE 0]
+    G1 Z[#<_ca_top> + #<_ca_safe>] F[#<_ca_ftr>]
+  o120 endif
 o<ca_touch> endsub
 
 M2 (end helper)

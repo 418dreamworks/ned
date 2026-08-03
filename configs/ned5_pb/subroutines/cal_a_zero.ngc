@@ -22,8 +22,8 @@ o<cal_a_zero> sub
   #<cy>    = #2        (setter centre Y, work frame -- from #3046)
   #<top>   = #3        (setter top Z, work frame -- from #3047)
 
-  #<d_top> = 20.0      (shallow plunge below the top, operator spec)
-  #<d_bot> = 50.0      (deep plunge below the top, operator spec)
+  #<d_top> = 30.0      (shallow plunge below the top, operator 2026-08-03)
+  #<d_bot> = 65.0      (deep plunge below the top, operator 2026-08-03)
 
   o5 if [#<_metric> EQ 0]
     (abort, CAL A: switch to MM first)
@@ -43,7 +43,9 @@ o<cal_a_zero> sub
   #<_ca_ftr>   = 500.0 (traverse)
   #<_ca_fck>   = 200.0 (protective descent)
   #<_ca_back>  = 1.0   (backoff before the latch, operator spec)
-  #<_ca_safe>  = 30.0  (Z clearance above the top for ANY A rotation)
+  (clearance is 5 mm for every cal routine and IS the zero pose, so there is)
+  (no rise needed before moving sideways -- operator 2026-08-03)
+  #<_ca_safe>  = 5.0
   #<_ca_side>  = -1    (approach from -Y, probe toward +Y; +1 mirrors it)
 
   M50 P0               (pin the feed override -- probes run at programmed feed)
@@ -51,13 +53,13 @@ o<cal_a_zero> sub
   G4 P1.5
 
   (=== BEFORE: touch top, then bottom =====================================)
-  o<ca_touch> call [#<d_top>]
+  o<ca_touch> call [#<d_top>] [1] [0]
   #<y_top_b> = #<_ca_ty>
-  o<ca_touch> call [#<d_bot>]
+  o<ca_touch> call [#<d_bot>] [0] [1]
   #<y_bot_b> = #<_ca_ty>
   #<dy_b> = [#<y_bot_b> - #<y_top_b>]
   #3050 = #<dy_b>
-  (PRINT, CAL A BEFORE: y at -20 = #<y_top_b>, y at -50 = #<y_bot_b>, DELTA Y = #<dy_b>)
+  (PRINT, CAL A BEFORE: y at -30 = #<y_top_b>, y at -65 = #<y_bot_b>, DELTA Y = #<dy_b>)
 
   (=== CORRECT: tilt = atan of dY over dZ, dZ = the depth difference =======)
   #<dz>   = [#<d_bot> - #<d_top>]
@@ -83,18 +85,21 @@ o<cal_a_zero> sub
   G90
 
   (=== AFTER: bottom first, then top -- operator spec order ================)
-  o<ca_touch> call [#<d_bot>]
+  o<ca_touch> call [#<d_bot>] [1] [0]
   #<y_bot_a> = #<_ca_ty>
-  o<ca_touch> call [#<d_top>]
+  o<ca_touch> call [#<d_top>] [0] [1]
   #<y_top_a> = #<_ca_ty>
   #<dy_a> = [#<y_bot_a> - #<y_top_a>]
   #3051 = #<dy_a>
-  (PRINT, CAL A AFTER: y at -50 = #<y_bot_a>, y at -20 = #<y_top_a>, DELTA Y = #<dy_a>)
+  (PRINT, CAL A AFTER: y at -65 = #<y_bot_a>, y at -30 = #<y_top_a>, DELTA Y = #<dy_a>)
 
-  (=== verdict ============================================================)
+  (=== park at the zero pose, then verdict ================================)
+  (clearance FIRST, then sideways -- the clearance height IS the zero pose,)
+  (so arriving over centre at 5 mm up is the whole return.)
   G90
   G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
   G1 X#<cx> Y#<cy> F[#<_ca_ftr>]
+  G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
   M65 P3
   M50 P1
 
