@@ -213,3 +213,23 @@ never uses Pi Connect.
 - `timedelay` in ned5_iron.hal loads TWO instances in ONE loadrt
   (`air.debounce,head.ready`) — adding another loadrt of the same comp
   anywhere kills the launch at insmod.
+
+## Bx. qtpyvcp notification popup -- ned patch 2026-08-03
+
+`~/qt_pb/qtpyvcp/src/qtpyvcp/lib/native_notification.py`
+Stock copy kept beside it as `native_notification.py.stock-20260803`.
+**A PB update wipes ~/qt_pb -- re-apply after every update.**
+
+Two changes, both in `setNotify()`:
+
+1. **info/debug self-dismiss after 1 s.** `captureMessage()` already tags every
+   message `error` / `debug` / `info` and passes it as the title, but the
+   widget discarded that and gave everything the same permanent lifetime --
+   messages stayed until clicked or until a sixth evicted them. Only real
+   faults should demand a hand. Adds `nedAutoDismiss()`, guarded so a message
+   the operator already closed is not double-freed.
+2. **Fixed anchor.** X was recomputed from the widget own width after
+   `adjustSize()`, so the box jumped sideways whenever a message arrived or
+   left -- moving under the operator hand. Pinned to `NED_FIXED_W = 520`.
+
+Also needs `QTimer` added to the `PySide6.QtCore` import line.

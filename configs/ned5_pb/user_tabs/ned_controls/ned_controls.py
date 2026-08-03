@@ -631,8 +631,12 @@ class UserTab(QWidget):
             c0.addWidget(b2)
 
             b3, b3l = _mkbox('3   SHOULDER')
-            b3l.addWidget(_mkbtn('shoulder', 'SHOULDER   spindle empty',
-                                 'measure'))
+            # "SHOULDER   spindle empty" read as one garbled phrase. The
+            # requirement belongs in the box, not jammed into the label.
+            shint = QLabel('Last step. Take the tool out by hand first.')
+            shint.setStyleSheet('color: #C8CFCC; font: 10pt;')
+            b3l.addWidget(shint)
+            b3l.addWidget(_mkbtn('shoulder', 'FIND SHOULDER', 'measure'))
             c0.addWidget(b3)
             c0.addStretch(1)
             cg.addWidget(col0, 0, 0)
