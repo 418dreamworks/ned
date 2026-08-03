@@ -146,3 +146,27 @@
     - Working machine behaviour outranks the bug being chased. Homing worked;
       the A/C read problem was real but NOT worth trading a working homing
       cycle for. Fix it from the good base, not on top of the wreckage.
+
+21. **NEVER WRITE A FILE THE MACHINE IS RUNNING.** `.ngc` subroutines are
+    re-read from disk on EVERY call, so overwriting one mid-cycle hands the
+    interpreter a file that no longer matches what it already read. On
+    2026-08-03 StartC began at 14:43:15; I rewrote `cal_c_zero.ngc`,
+    `cc_probe.ngc` and `cal_c_ref.ngc` at 14:45:26 while it was executing
+    them, and at 14:46:05 it died with `Unknown word where unary operation
+    could be expected` — in code that parses perfectly clean. The fault was
+    the TIMING of my write, not its content, which is why it could not be
+    reproduced afterwards. The operator lost the run and I burned the next
+    twenty minutes hunting a bug that was not in the file.
+    - **BEFORE writing anything under `configs/`, check the machine is idle:**
+      `interp_state == INTERP_IDLE` and `inpos`, or PB not running at all.
+      If a cycle is in flight, WAIT or ask — do not write "just this one small
+      edit".
+    - This is not the same as rule 12. Killing PB is covered there; this is
+      about editing under a LIVE interpreter, which needs no kill to do damage.
+    - It applies to `.ngc`, `.hal`, `.inc` and the var file. Python is the
+      only partial exception — it is read at launch — and even then a running
+      session keeps the old code, so an edit that "did nothing" usually means
+      exactly this.
+    - Symptom to recognise: a parse or runtime error in a file that is clean
+      when you test it afterwards. Check the file mtime against the error
+      timestamp BEFORE theorising about the code.
