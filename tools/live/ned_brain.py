@@ -258,17 +258,7 @@ class Brain(object):
         if p == self.hr_p0:
             log('HEADREAD {} NO NEW FRAME (parsed still {})'.format(ax.upper(), p))
             return
-        # RE-PARSE, do not use the startup cache. A calibration that banks a
-        # new zero writes head_zero.inc while this process is running; with
-        # the cached values the brain would keep computing angles against the
-        # OLD zero and silently undo the calibration on its next read
-        # (2026-08-03).
-        try:
-            m0, w0 = parse_head_zero()[ax]
-        except Exception as e:
-            log('HEADREAD: re-parse of head_zero.inc failed ({}) -- using the '
-                'startup values'.format(e))
-            m0, w0 = HEAD_M0W0[ax]
+        m0, w0 = HEAD_M0W0[ax]
         deg = SIGN[ax] * ((mt - m0) * R_COUNTS + (w - w0)) / (R_COUNTS * GEAR[ax]) * 360.0
         # GUARD 1 -- stale-read detection: identical raw counts = other axis's data.
         if self.hr_lastraw is not None and self.hr_lastraw == (mt, w):
@@ -455,66 +445,18 @@ class Brain(object):
     def do_inplace(self):
         # home unhomed A/C where they stand using the armed read; no motion.
         # Skipped if a real cycle is in flight.
-        # A real cycle in flight still wins -- never cut under REF A/REF C.
-        if self.pending_ref or self.verify_want:
-            return
-        # NEVER CUT INTO A HOMING CYCLE. This routine switches to MANUAL,
-        # drops teleop and issues unhome/home -- do that while Home All is
-        # running and the sequencer loses its joint mid-move. On 2026-08-03 a
-        # head read landed during a Home All, this fired, and Z froze before
-        # its search move: "HOMING WEDGED: joint(s) [2]". Dropping the
-        # inplace_pending gate (so later reads could correct A/C) removed the
-        # accidental protection that gate had been providing, so the guard is
-        # now explicit -- and it also refuses while a program or MDI is live.
-        try:
-            self.stat.poll()
-            if any(self.stat.joint[j]['homing'] for j in range(6)):
-                log('IN-PLACE HOME: deferred -- a homing cycle is running')
-                return
-            if self.stat.interp_state != linuxcnc.INTERP_IDLE \
-               or not self.stat.inpos:
-                log('IN-PLACE HOME: deferred -- machine is executing/moving')
-                return
-        except Exception:
-            return
-        # NOTE: no longer gated on inplace_pending. That flag is consumed by
-        # the FIRST read of a session, so the second read -- the one that
-        # lands after declare_xyzw() has marked A/C homed at 0 -- could never
-        # correct them. Any armed read that disagrees with the declared
-        # position now gets applied, whenever it arrives.
-        try:
-            self.stat.poll()
-        except Exception:
-            return
-        # ALREADY-HOMED A/C MUST STILL BE RE-HOMED. declare_xyzw() marks 4 and
-        # 5 homed at joint_actual_position (0) on purpose, to close the window
-        # where every homed-gated button refuses. Its comment promises "the
-        # read still lands seconds later and re-homes A/C to the true absolute
-        # offset" -- but the old filter here skipped any joint that was
-        # already homed, which after the declare is BOTH of them. So the
-        # absolute read was performed, logged, written to ini.N.home_offset,
-        # and then never applied: the operator left A at -45, restarted, and
-        # the DRO read 0 (2026-08-03).
-        # Re-home whenever the declared position disagrees with the armed
-        # read; skip only when it already matches, so this stays idempotent.
-        jns = []
-        for jn, ax in ((4, 'a'), (5, 'c')):
-            if self.hr_deg.get(ax) is None:
-                continue
-            if not self.stat.homed[jn]:
-                jns.append((jn, ax))
-                continue
-            off = abs(self.stat.joint_actual_position[jn] - self.hr_deg[ax])
-            if off > 0.001:
-                log('IN-PLACE HOME: {} reads {:+.4f} but the absolute read '
-                    'says {:+.4f} ({:.4f} deg out) -- re-homing'
-                    .format(ax.upper(), self.stat.joint_actual_position[jn],
-                            self.hr_deg[ax], off))
-                jns.append((jn, ax))
-        if not jns:
-            self.inplace_pending = False
+        if not getattr(self, 'inplace_pending', False) or self.pending_ref \
+           or self.verify_want:
             return
         self.inplace_pending = False
+        try:
+            self.stat.poll()
+        except Exception:
+            return
+        jns = [(jn, ax) for jn, ax in ((4, 'a'), (5, 'c'))
+               if not self.stat.homed[jn] and self.hr_deg.get(ax) is not None]
+        if not jns:
+            return
         try:
             self.cmd.mode(linuxcnc.MODE_MANUAL)
             self.cmd.wait_complete()
@@ -522,15 +464,7 @@ class Brain(object):
             self.cmd.wait_complete()
             self.inplace_restore = set()
             for jn, ax in jns:
-                # an already-homed joint must be UNHOMED first or home() is a
-                # no-op that reports success -- the same trap CLAUDE.md rule 17
-                # records for the gantry pair
-                if self.stat.homed[jn]:
-                    self.cmd.unhome(jn)
-                    self.cmd.wait_complete()
                 os.system('halcmd setp ini.{}.home {:.4f} >/dev/null 2>&1'
-                          .format(jn, self.hr_deg[ax]))
-                os.system('halcmd setp ini.{}.home_offset {:.4f} >/dev/null 2>&1'
                           .format(jn, self.hr_deg[ax]))
                 self.cmd.home(jn)
                 self.inplace_restore.add(jn)
