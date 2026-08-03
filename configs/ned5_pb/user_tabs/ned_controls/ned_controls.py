@@ -1042,8 +1042,57 @@ class UserTab(QWidget):
     }
 
     def _cal_tab_changed(self, idx):
-        if idx == getattr(self, '_cal_tab_index', -1):
-            self._cal_lock_ac('CALIBRATION TAB')
+        """Entering CALIBRATION puts the head into a known state: LOCKED and
+        ZEROED. Operator 2026-08-03 -- "if ned calibration is clicked, just
+        lock it and zero it. that's what happens".
+
+        Zeroing means the brain's REF cycle: read the absolute encoder against
+        head_zero.inc, set ini.N.home_offset, re-home the joint in place. So
+        the DRO reads 0 at the banked zero before any measuring starts, and
+        the +-45 pairs are symmetric about it.
+
+        Once per session. Re-homing A and C on every tab click would be slow
+        and pointless -- nothing moves them once they are locked.
+        """
+        if idx != getattr(self, '_cal_tab_index', -1):
+            return
+        self._cal_lock_ac('CALIBRATION TAB')
+        if getattr(self, '_cal_tab_zeroed', False):
+            return
+        try:
+            import linuxcnc
+            st = linuxcnc.stat()
+            st.poll()
+            if st.task_state != linuxcnc.STATE_ON or not all(st.homed[:6]) \
+               or st.interp_state != linuxcnc.INTERP_IDLE or not st.inpos:
+                LOG.info('CALIBRATION TAB: not ON/homed/idle yet -- A/C zero '
+                         'deferred to the next time the tab is opened')
+                return
+            self._cal_tab_zeroed = True
+            LOG.info('CALIBRATION TAB: zeroing A then C (REF cycle: absolute '
+                     'read, home_offset, in-place re-home)')
+            self.comp.getPin('refa-out').value = True
+            QTimer.singleShot(1000, lambda: self._cal_ref_off('refa-out'))
+            # the brain SERIALIZES head cycles and refuses a second request
+            # while one is completing, so C waits for A's read+verify
+            QTimer.singleShot(25000, self._cal_zero_c)
+        except Exception as e:
+            LOG.error('CALIBRATION TAB zeroing failed: %s', e)
+
+    def _cal_zero_c(self):
+        try:
+            import linuxcnc
+            st = linuxcnc.stat()
+            st.poll()
+            if st.interp_state != linuxcnc.INTERP_IDLE or not st.inpos:
+                LOG.error('CALIBRATION TAB: C zero skipped -- machine busy. '
+                          'Use REF C from the Homing menu.')
+                return
+            LOG.info('CALIBRATION TAB: zeroing C')
+            self.comp.getPin('refc-out').value = True
+            QTimer.singleShot(1000, lambda: self._cal_ref_off('refc-out'))
+        except Exception as e:
+            LOG.error('CALIBRATION TAB: C zero failed: %s', e)
 
     def _cal_lock_ac(self, label):
         """Lock A and C for the duration of the calibration.
