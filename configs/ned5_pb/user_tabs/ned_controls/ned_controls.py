@@ -581,7 +581,7 @@ class UserTab(QWidget):
 
             # ---- column 0: ACTIONS, in step order -----------------------
             col0 = QWidget()
-            col0.setFixedWidth(408)
+            col0.setFixedWidth(470)
             c0 = QVBoxLayout(col0)
             c0.setContentsMargins(0, 0, 0, 0)
             c0.setSpacing(8)
@@ -598,7 +598,7 @@ class UserTab(QWidget):
             self._cal_btn = {}
             def _mkbtn(key, cap, cls, w=None):
                 b = QPushButton(cap)
-                b.setMinimumHeight(56)      # 15 mm at 3.71 px/mm -- gloved
+                b.setMinimumHeight(62)      # 15 mm at 3.71 px/mm -- gloved
                 b.setStyleSheet(self.CAL_QSS[cls])
                 b.clicked.connect(lambda _=False, k=key: self._cal_run(k))
                 self._cal_btn[key] = b
@@ -616,8 +616,13 @@ class UserTab(QWidget):
             # No teach button: StartC decides from the params what a press
             # does (position / capture / measure). CLEAR is how you re-teach.
             bclr = QPushButton('CLEAR C REF')
-            bclr.setMinimumHeight(56)
-            bclr.setStyleSheet(self.CAL_QSS['pose'])
+            bclr.setMinimumHeight(62)
+            # NOT 'pose': pose is cyan for things that MOVE the machine, and
+            # this moves nothing -- it changes stored state. It is the only
+            # non-motion control left on the tab now RECORD is gone, so it
+            # takes the commit colour. Miscolouring it cyan put a "this
+            # drives the head" cue on a button that does not.
+            bclr.setStyleSheet(self.CAL_QSS['commit'])
             bclr.clicked.connect(self._cal_clear_cref)
             self._cal_btn['clear'] = bclr
             b2l.addWidget(bclr)
@@ -631,18 +636,11 @@ class UserTab(QWidget):
                            ('cright', 'C RIGHT')):
                 r.addWidget(_mkbtn(k, cap, 'pose'))
             b2l.addLayout(r)
-            rule = QFrame(); rule.setFrameShape(QFrame.HLine)
-            rule.setStyleSheet('color: #3A4244;')
-            b2l.addSpacing(6); b2l.addWidget(rule); b2l.addSpacing(6)
-            # the ONLY control that writes a file states its payload on its
-            # face, and greys out when there is nothing to bank
-            brec = QPushButton('RECORD   nothing to bank')
-            brec.setMinimumHeight(72)
-            brec.setFont(QFont('DejaVu Sans Mono', 10))
-            brec.setStyleSheet(self.CAL_QSS['commit'])
-            brec.clicked.connect(self._cal_record)
-            self._cal_btn['record'] = brec
-            b2l.addWidget(brec)
+            # NO RECORD BUTTON. Banking is automatic and immediate -- an
+            # improvement is banked on the spot, not held for a later press.
+            # That IS the point of the exercise (operator 2026-08-03), and a
+            # button reading "nothing to bank" was advertising a step that
+            # does not exist.
             c0.addWidget(b2)
 
             b3, b3l = _mkbox('3   SHOULDER')
@@ -654,7 +652,7 @@ class UserTab(QWidget):
 
             # ---- column 1: NUMBERS, one grid so columns stay aligned -----
             col1 = QWidget()
-            col1.setFixedWidth(500)
+            col1.setFixedWidth(560)
             gl = QGridLayout(col1)
             gl.setContentsMargins(0, 0, 0, 0)
             gl.setHorizontalSpacing(6)
@@ -662,11 +660,11 @@ class UserTab(QWidget):
             row = 0
             self._cal_lockchip = QLabel('A ---   C ---')
             self._cal_lockchip.setStyleSheet(
-                'color: #9AA0A0; font: bold 8pt;')
+                'color: #E6E6E6; font: bold 10pt;')
             gl.addWidget(self._cal_lockchip, row, 0)
             for cc, cap in ((1, 'CURRENT'), (2, 'PREVIOUS')):
                 h = QLabel(cap)
-                h.setStyleSheet('color: #9AA0A0; font: bold 8pt;')
+                h.setStyleSheet('color: #E6E6E6; font: bold 10pt;')
                 gl.addWidget(h, row, cc)
             row += 1
             self._cal_fields = {}
@@ -674,22 +672,22 @@ class UserTab(QWidget):
             def _section(txt):
                 nonlocal row
                 lb = QLabel(txt)
-                lb.setStyleSheet('color: #9AA0A0; font: bold 8pt; '
-                                 'border-top: 1px solid #3A4244; '
-                                 'padding-top: 4px; margin-top: 4px;')
+                lb.setStyleSheet('color: #FFD08A; font: bold 10pt; '
+                                 'border-top: 1px solid #5A6466; '
+                                 'padding-top: 5px; margin-top: 5px;')
                 gl.addWidget(lb, row, 0, 1, 3)
                 row += 1
 
             def _readout(key, lab, prev=True):
                 nonlocal row
                 lw = QLabel(lab)
-                lw.setStyleSheet('color: #E6E6E6; font: 9pt;')
+                lw.setStyleSheet('color: #E6E6E6; font: 10pt;')
                 gl.addWidget(lw, row, 0)
                 cur = QLineEdit(); prv = QLineEdit()
                 for e in (cur, prv):
                     e.setReadOnly(True)
-                    e.setFixedHeight(26)
-                    e.setFont(QFont('DejaVu Sans Mono', 9))
+                    e.setFont(QFont('DejaVu Sans Mono', 11))
+                    e.setFixedHeight(30)
                 e.setPlaceholderText('')
                 cur.setStyleSheet(self.CAL_QSS['read'])
                 prv.setStyleSheet(self.CAL_QSS['readprev'])
@@ -722,8 +720,8 @@ class UserTab(QWidget):
                     ('StartAC  A dY', '3062', '3063', 'mm'),
                     ('StartAC  C dX', '3064', '3065', 'mm')):
                 w = QLabel('%-14s      --          --' % name)
-                w.setFont(QFont('DejaVu Sans Mono', 9))
-                w.setFixedHeight(26)
+                w.setFont(QFont('DejaVu Sans Mono', 10))
+                w.setFixedHeight(30)
                 w.setProperty('verdict', 'none')
                 w.setStyleSheet(self.CAL_QSS['delta'])
                 gl.addWidget(w, row, 0, 1, 3)
@@ -736,7 +734,7 @@ class UserTab(QWidget):
             self._cal_log = QPlainTextEdit()
             self._cal_log.setReadOnly(True)
             self._cal_log.setMaximumBlockCount(400)
-            self._cal_log.setFont(QFont('DejaVu Sans Mono', 9))
+            self._cal_log.setFont(QFont('DejaVu Sans Mono', 10))
             self._cal_log.setStyleSheet(self.CAL_QSS['log'])
             self._cal_log.setPlaceholderText(
                 'Running commentary appears here once a cycle starts.')
@@ -1061,7 +1059,12 @@ class UserTab(QWidget):
                 if key in ('3069', '3070'):
                     txt = self._enc_at_zero('A' if key == '3069' else 'C', v)
                 elif key in ('3058', '3060', '3061') and abs(v) < 1e-9:
-                    txt = 'not taught'
+                    # A DASH, NOT ZERO. These offsets drive motion, and 0.0000
+                    # is a perfectly valid coordinate meaning "go there, right
+                    # over the probe". An unset reference must read as a
+                    # number that means nothing at all, or a cleared teach
+                    # looks like an instruction. Operator 2026-08-03.
+                    txt = '--'
                 else:
                     txt = '%.4f' % v
                 old_v = seen.get(key)
@@ -1089,7 +1092,6 @@ class UserTab(QWidget):
                 w.setStyleSheet('font: 10pt "DejaVu Sans Mono"; color: %s;'
                                 % ('rgb(120,220,120)' if better
                                    else 'rgb(230,140,140)'))
-            self._cal_record_face()
             chip = getattr(self, '_cal_lockchip', None)
             if chip is not None:
                 lk = getattr(self, '_ac_locked', {}) or {}
@@ -1116,11 +1118,11 @@ class UserTab(QWidget):
     #   COMMIT  (violet)-- writes head_zero.inc; nothing else in PB is violet
     CAL_QSS_BOX = ('QGroupBox { background: #262B2D; border: 1px solid #3A4244;'
                    ' border-radius: 3px; margin-top: 8px; color: #E6E6E6;'
-                   ' font: bold 9pt; }'
+                   ' font: bold 11pt; }'
                    'QGroupBox::title { subcontrol-origin: margin;'
                    ' left: 10px; padding: 0 4px; color: #E6E6E6; }')
     _BTN = ('QPushButton { background: %s; border: 2px solid %s; color: %s;'
-            ' border-radius: 3px; font: bold 10pt; }'
+            ' border-radius: 3px; font: bold 12pt; }'
             'QPushButton:hover { background: %s; }'
             'QPushButton:pressed { background: %s; }'
             'QPushButton:disabled { background: #22282A; border: 1px solid'
@@ -1133,7 +1135,7 @@ class UserTab(QWidget):
                     ' color: #DCE3E0; border-radius: 2px; padding: 2px 4px; }'),
         'readprev': ('QLineEdit { background: #1B1F20; border: 1px solid #3A4244;'
                      ' color: #7C8482; border-radius: 2px; padding: 2px 4px; }'),
-        'delta':   ('QLabel { color: #7C8482; padding: 2px 4px; }'
+        'delta':   ('QLabel { color: #C8CFCC; padding: 2px 4px; }'
                     'QLabel[verdict="better"] { color: #78DC78;'
                     ' background: #16281A; }'
                     'QLabel[verdict="worse"] { color: #F08A6E;'
@@ -1144,7 +1146,7 @@ class UserTab(QWidget):
     # the running cycle is outlined white; every other motion button greys out
     CAL_QSS_RUNNING = ('QPushButton { background: #4A3A18; border: 2px solid'
                        ' #FFFFFF; color: #FFD08A; border-radius: 3px;'
-                       ' font: bold 10pt; }')
+                       ' font: bold 12pt; }')
 
     def _cal_buttons_busy(self, busy, running=None):
         """Lock the motion set while a cycle runs.
@@ -1156,14 +1158,17 @@ class UserTab(QWidget):
         """
         try:
             for k, b in getattr(self, '_cal_btn', {}).items():
-                if k == 'record':
-                    continue
                 b.setEnabled(not busy)
                 if busy and k == running:
                     b.setEnabled(False)
                     b.setStyleSheet(self.CAL_QSS_RUNNING)
                 elif not busy:
-                    cls = 'pose' if k in ('goto', 'cleft', 'cright') else 'measure'
+                    if k == 'clear':
+                        cls = 'commit'
+                    elif k in ('goto', 'cleft', 'cright'):
+                        cls = 'pose'
+                    else:
+                        cls = 'measure'
                     b.setStyleSheet(self.CAL_QSS[cls])
         except Exception as e:
             LOG.error('CAL button lock failed: %s', e)
@@ -1195,37 +1200,6 @@ class UserTab(QWidget):
                         'fresh teach.')
         except Exception as e:
             LOG.error('%s failed: %s', label, e)
-
-    def _cal_record_face(self):
-        """Put the payload on the commit button and grey it when empty."""
-        b = getattr(self, '_cal_btn', {}).get('record')
-        if b is None:
-            return
-        try:
-            v = self._read_vars(('3069', '3070'))
-            a, c = v.get('3069', 0.0), v.get('3070', 0.0)
-            if abs(a) < 1e-9 and abs(c) < 1e-9:
-                b.setText('RECORD   nothing to bank')
-                b.setEnabled(False)
-            else:
-                b.setText('RECORD   A %+8.4f   C %+8.4f' % (a, c))
-                b.setEnabled(True)
-        except Exception:
-            pass
-
-    CAL_SUBS = {
-        'puck': ('cal_probe_center', 'StartPuck', False),
-        'a':    ('cal_a_cycle',      'StartA',    True),
-        'c':    ('cal_c_cycle',      'StartC',    True),
-        # no 'ac' entry: StartAC is driven from Python (_ac_start), not by a
-        # g-code sub. cal_ac_iterate.ngc is retired to trash/ -- it ran all
-        # five A+C pairs in ONE program, which meant one bank at the end off
-        # accumulated corrections, and that defeats the whole exercise.
-        'goto': ('cal_goto_zero',    'ZERO',      True),
-        'shoulder': ('cal_shoulder', 'SHOULDER',  True),
-        'cleft':  ('cal_c_goto',     'C LEFT',    True),
-        'cright': ('cal_c_goto',     'C RIGHT',   True),
-    }
 
     def _cal_tab_changed(self, idx):
         """Entering CALIBRATION locks A and C. It does NOT re-zero them.
@@ -1585,7 +1559,6 @@ class UserTab(QWidget):
     def _cal_after_cycle(self, which):
         if not getattr(self, '_ac_active', False):
             self._cal_buttons_busy(False)
-        self._cal_record_face()
         """Cycle finished. BANK an improvement without asking.
 
         Operator 2026-08-03: whenever a routine ends with an improvement --
@@ -1791,85 +1764,6 @@ class UserTab(QWidget):
         if set(g) != {'A', 'C'}:
             raise RuntimeError('GEAR_A/GEAR_C not found in ned_params.sh')
         return g
-
-    def _cal_record(self, auto=False):
-        """Make the CURRENT head pose the new A/C zero.
-
-        The stored zero PS is an absolute-encoder count; machine angle is
-        (PE - PS) scaled by gear and 2^26 (head_zero.inc, manual 6.12.6). To
-        make the pose that now reads `deg` read zero instead, PS moves by the
-        counts that `deg` represents -- no live encoder read needed, and the
-        DRO is the measurement. Backs the file up first so the pre-calibration
-        zero is always recoverable."""
-        label = 'CAL RECORD (auto)' if auto else 'CAL RECORD'
-        try:
-            import linuxcnc, shutil, time, re as _re
-            c = linuxcnc.command()
-            s = linuxcnc.stat()
-            s.poll()
-            if s.interp_state != linuxcnc.INTERP_IDLE or not s.inpos:
-                c.error_msg('%s refused: finish the cycle first' % label)
-                return
-            # SAME SOURCE as the panel: #3069/#3070, the accumulated
-            # calibration corrections. Reading the DRO instead would let a
-            # manual jog change what gets written, and would no longer match
-            # the number displayed.
-            av = self._read_vars(('3069', '3070'))
-            now = {'A': av.get('3069', 0.0), 'C': av.get('3070', 0.0)}
-            if abs(now['A']) < 1e-6 and abs(now['C']) < 1e-6:
-                c.error_msg('%s refused: A and C are both already 0.000 -- '
-                            'there is no correction to record' % label)
-                LOG.error('%s refused: nothing to record', label)
-                return
-            with open(self.HEAD_ZERO_INC) as f:
-                txt = f.read()
-            stamp = time.strftime('%Y%m%d-%H%M%S')
-            bak = '%s.bak-%s' % (self.HEAD_ZERO_INC, stamp)
-            shutil.copy2(self.HEAD_ZERO_INC, bak)
-            out, note = txt, []
-            for ax in ('A', 'C'):
-                ps, new, mt_new, wi_new = self._enc_at_zero_counts(ax, now[ax])
-                out = _re.sub(r'^%s_MULTITURN\s*=.*$' % ax,
-                              '%s_MULTITURN = %d' % (ax, mt_new), out,
-                              flags=_re.M)
-                out = _re.sub(r'^%s_WITHIN\s*=.*$' % ax,
-                              '%s_WITHIN    = %d' % (ax, wi_new), out,
-                              flags=_re.M)
-                note.append('%s %+.4f deg -> %d / %d  (was %d, now %d counts)'
-                            % (ax, now[ax], mt_new, wi_new, ps, new))
-                LOG.info('RECORD %s: panel shows "%d / %d", writing exactly '
-                         'that', ax, mt_new, wi_new)
-            with open(self.HEAD_ZERO_INC, 'w') as f:
-                f.write(out)
-            # the accumulated corrections have been banked into the file, so
-            # the running session's #3069/#3070 are spent. Zero them or the
-            # next GOTO ZERO would apply the correction twice.
-            try:
-                c.mode(linuxcnc.MODE_MDI)
-                c.wait_complete()
-                c.mdi('#3069 = 0')
-                c.mdi('#3070 = 0')
-            except Exception as ze:
-                LOG.error('%s: could not clear #3069/#3070: %s', label, ze)
-            LOG.info('%s: head_zero.inc updated -- %s; backup %s',
-                     label, '; '.join(note), bak)
-            with open(self.HEAD_ZERO_INC + '.history', 'a') as f:
-                f.write('%s  %s  backup=%s\n' % (stamp, '; '.join(note), bak))
-            c.error_msg('RECORDED: %s. Backup %s. The new zero takes effect on '
-                        'the NEXT launch -- joint_a/joint_c home offsets are '
-                        'built from head_zero.inc at startup.'
-                        % (', '.join(note), os.path.basename(bak)))
-            if getattr(self, '_cal_status', None) is not None:
-                self._cal_status.setText(
-                    'RECORDED to head_zero.inc: %s. Backup: %s. Takes effect '
-                    'next launch.' % (', '.join(note), os.path.basename(bak)))
-        except Exception as e:
-            LOG.error('%s failed: %s', label, e)
-            try:
-                import linuxcnc
-                linuxcnc.command().error_msg('%s failed: %s' % (label, e))
-            except Exception:
-                pass
 
     def _zclamp_apply_rate_cap(self):
         """Size the MPG count cap so a spun wheel cannot demand more than
@@ -2343,7 +2237,7 @@ class UserTab(QWidget):
             for key, txt in (('in', 'IN'), ('mm', 'MM')):
                 b = QPushButton(txt)
                 b.setObjectName('ned_units_' + key)
-                b.setMinimumHeight(56)
+                b.setMinimumHeight(62)
                 b.clicked.connect(lambda _=False, k=key: self._units_click(k))
                 row.addWidget(b)
                 self._units_btns[key] = b
