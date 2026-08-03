@@ -157,9 +157,22 @@
     the TIMING of my write, not its content, which is why it could not be
     reproduced afterwards. The operator lost the run and I burned the next
     twenty minutes hunting a bug that was not in the file.
-    - **BEFORE writing anything under `configs/`, run
-      `tools/machine_idle.sh`** — exit 0 means safe, exit 1 means a cycle is in
-      flight, so WAIT or ask. Do not write "just this one small edit".
+    - **ALL edits under `configs/` go through `tools/cfg_edit.sh`.** It gates,
+      applies and re-verifies as ONE command:
+      `tools/cfg_edit.sh <<'PY' … python that edits the files … PY`.
+      It refuses when a cycle is in flight and fails the whole edit if the
+      scanner does not pass afterwards. Do NOT use Write/Edit directly on
+      anything under `configs/` — that is what bypassed the gate.
+    - **A separate check I have to remember is not a check.** I hardened this
+      rule and then, within minutes, made two writes without running the gate
+      at all. The gate must be part of the write, not a step before it.
+    - **Backstop: `.git/hooks/pre-commit` refuses to commit staged `configs/`
+      changes while the machine is live.** It runs automatically, so it holds
+      even when I bypass everything else. If it fires, the edits may already
+      have been read mid-cycle — stop, check the machine, re-verify the files.
+    - `tools/machine_idle.sh` remains the single source of truth for "is it
+      safe": it asks the NML status buffer, never `pgrep` (which self-matches
+      — see rule 19).
     - **Use that script, not `pgrep`.** Minutes after writing this rule I
       checked with `pgrep -f 'qt_pb.*probe_basic'`, which matched its OWN
       command line and reported PB up while it was down — and the check was a
