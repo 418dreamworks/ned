@@ -396,8 +396,24 @@ class Brain(object):
             except Exception as e:
                 log('DECLARE: stored_home.json unusable ({}) -- falling '
                     'back to declare-at-current-position'.format(e))
+            # A/C DECLARE AT THE ABSOLUTE READ, not at joint_actual_position.
+            # The comment above calls this declare a gap-filler because "the
+            # read still lands seconds later and re-homes A/C". It does not:
+            # do_inplace() only homes joints that are NOT already homed, and
+            # this declare has just made them homed. So the absolute read was
+            # taken, converted, written to ini.N.home_offset -- and thrown
+            # away. Operator left A at -45, restarted, DRO read 0 (2026-08-03).
+            # Fixed HERE and not in do_inplace: making that routine correct an
+            # already-homed joint means unhome/home calls that can land inside
+            # a running Home All, which wedged the cycle. This touches only the
+            # value the declare hands to send() -- no extra homing, no change
+            # to sequencing. If the read has not landed the old behaviour
+            # stands, so nothing regresses.
             for jn in jns:
-                if jn in stored and jn not in (4, 5):
+                ax = {4: 'a', 5: 'c'}.get(jn)
+                if ax is not None and self.hr_deg.get(ax) is not None:
+                    pos = '%.4f' % self.hr_deg[ax]
+                elif jn in stored and jn not in (4, 5):
                     pos = '%.4f' % stored[jn]
                 else:
                     pos = '%.4f' % self.stat.joint_actual_position[jn]
@@ -434,6 +450,12 @@ class Brain(object):
                      jini(jn, 'HOME_SEARCH_VEL', '0'),
                      jini(jn, 'HOME_LATCH_VEL', '0'))
             self.stat.poll()
+            log('DECLARE: A/C from the absolute read: {}'.format(
+                '  '.join('{}={}'.format(
+                    a.upper(),
+                    '{:+.4f}'.format(self.hr_deg[a])
+                    if self.hr_deg.get(a) is not None else 'NOT READ YET')
+                    for a in ('a', 'c'))))
             log('DECLARED HOME (zero-motion, NML 112): joints {} where '
                 'they stand; homed={} all6={} (STALE HOME until menu Home All)'
                 .format(jns, self.stat.homed[:6],
