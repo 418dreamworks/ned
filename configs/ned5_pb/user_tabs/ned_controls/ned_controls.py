@@ -619,9 +619,11 @@ class UserTab(QWidget):
                             'tip 5 mm above the detected surface')
             npos.clicked.connect(self._cal_goto_start)
             nrow.addWidget(npos)
-            ngo = QPushButton('GO (not built yet)')
+            ngo = QPushButton('GO (A ZERO)')
             ngo.setMinimumHeight(40)
-            ngo.clicked.connect(self._cal_ac_stub)
+            ngo.setToolTip('Detect A tilt off the puck wall at -20 and -50, '
+                           'correct A, re-measure. Reports dY before/after.')
+            ngo.clicked.connect(self._cal_a_start)
             nrow.addWidget(ngo)
             nbl.addLayout(nrow)
             cl.addWidget(nbox)
@@ -904,6 +906,49 @@ class UserTab(QWidget):
             c.mdi('G90 G1 X%.4f Y%.4f F500' % (cx, cy))
             c.mdi('G90 G1 Z%.4f F500' % zt)
             LOG.info('%s: -> X%.4f Y%.4f Z%.4f (centre, +5 mm)', label, cx, cy, zt)
+        except Exception as e:
+            LOG.error('%s failed: %s', label, e)
+
+    def _cal_a_start(self):
+        """A-zero detection cycle (operator spec 2026-08-03). Same LOUD gate
+        family as every ned MDI path. The sub aborts by design if its own
+        correction does not shrink the spread -- that is the sign check."""
+        label = 'CAL A ZERO'
+        try:
+            import linuxcnc
+            c = linuxcnc.command()
+            s = linuxcnc.stat()
+            vals = {}
+            for k in ('3045', '3046', '3047'):
+                t = self._cal_fields[k].text().strip()
+                if not t:
+                    c.error_msg('%s refused: run the centre calibration first'
+                                % label)
+                    LOG.error('%s refused: %s empty', label, k)
+                    return
+                vals[k] = float(t)
+            s.poll()
+            if s.task_state != linuxcnc.STATE_ON or not all(s.homed[:6]) \
+               or s.interp_state != linuxcnc.INTERP_IDLE or not s.inpos:
+                c.error_msg('%s refused: machine must be ON, homed and idle'
+                            % label)
+                LOG.error('%s refused: not ON/homed/idle', label)
+                return
+            c.mode(linuxcnc.MODE_MDI)
+            c.wait_complete()
+            s.poll()
+            if s.task_mode != linuxcnc.MODE_MDI:
+                c.error_msg('%s refused: could not enter MDI' % label)
+                return
+            c.mdi('o<cal_a_zero> call [%.4f] [%.4f] [%.4f]'
+                  % (vals['3045'], vals['3046'], vals['3047']))
+            LOG.info('%s: started with centre %.4f,%.4f top %.4f',
+                     label, vals['3045'], vals['3046'], vals['3047'])
+            if getattr(self, '_cal_status', None) is not None:
+                self._cal_status.setText(
+                    'A ZERO running: 4 wall touches at -20/-50 with an A '
+                    'correction between. Watch for "CAL A BEFORE/AFTER" -- '
+                    'dY before/after land in #3050/#3051, correction #3052.')
         except Exception as e:
             LOG.error('%s failed: %s', label, e)
 
