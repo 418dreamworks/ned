@@ -1535,7 +1535,22 @@ class UserTab(QWidget):
                     'StartA: %d s with no completion -- not recording. Check '
                     'the log.' % self.CAL_WATCH_DEADLINE_S)
                 return
-            if not self._cal_watch_seen_busy or busy:
+            # A SHORT CYCLE CAN FINISH BETWEEN TICKS. Waiting for
+            # seen_busy meant a cycle that started and ended inside one 500 ms
+            # window never satisfied it, so the watcher sat there and the
+            # button lock NEVER released -- the operator pressed ZERO and was
+            # locked out of the whole tab (2026-08-03). After 3 s of an idle,
+            # in-position machine, it is finished whether or not we caught it
+            # moving.
+            if not self._cal_watch_seen_busy:
+                if self._cal_watch_elapsed >= 3.0:
+                    LOG.info('%s: never seen busy but idle for 3 s -- '
+                             'treating as finished',
+                             getattr(self, '_cal_watch_which', '?').upper())
+                    self._cal_watch_seen_busy = True
+                else:
+                    return
+            if busy:
                 return
             # idle is NOT proof of completion -- it reads true between the
             # queued calls inside the cycle. Require the g-code's own marker,
