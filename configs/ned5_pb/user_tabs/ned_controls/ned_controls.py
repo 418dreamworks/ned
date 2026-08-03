@@ -1388,6 +1388,43 @@ class UserTab(QWidget):
         except Exception:
             pass
 
+    def _enc_at_zero_counts(self, ax, deg):
+        """THE number, computed in ONE place.
+
+        head_zero.inc stores PS, the absolute count at the declared zero;
+        machine angle is (PE - PS) scaled by gear and 2^26 (manual 6.12.6).
+        A correction of `deg` puts true zero at PS + SIGN*deg/360*R*GEAR.
+
+        The MEASURED ZERO panel and the banker both call this, so the count on
+        screen IS the count written to the parameter file. Two separate
+        computations would have been free to drift apart.
+
+        Returns (ps_old, ps_new, multiturn, within).
+        """
+        import re as _re
+        with open(self.HEAD_ZERO_INC) as f:
+            txt = f.read()
+        mt = _re.search(r'^%s_MULTITURN\s*=\s*(-?\d+)' % ax, txt, _re.M)
+        wi = _re.search(r'^%s_WITHIN\s*=\s*(-?\d+)' % ax, txt, _re.M)
+        if not (mt and wi):
+            raise RuntimeError('%s_MULTITURN/_WITHIN missing from head_zero.inc'
+                               % ax)
+        ps = int(mt.group(1)) * self.R_COUNTS + int(wi.group(1))
+        gear = self._head_gears()[ax]
+        new = int(round(ps + self.HEAD_SIGN[ax] * deg / 360.0
+                        * self.R_COUNTS * gear))
+        m = new // self.R_COUNTS
+        return ps, new, m, new - m * self.R_COUNTS
+
+    def _enc_at_zero(self, ax, deg):
+        """Display form of _enc_at_zero_counts: multiturn / within."""
+        try:
+            _ps, _new, m, w = self._enc_at_zero_counts(ax, deg)
+            return '%d / %d' % (m, w)
+        except Exception as e:
+            LOG.error('enc-at-zero %s failed: %s', ax, e)
+            return '?'
+
     def _read_vars(self, keys):
         out = {}
         try:
