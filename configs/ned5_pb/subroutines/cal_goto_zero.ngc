@@ -1,0 +1,31 @@
+(ned -- GO TO ZERO: the common start pose for every calibration section.)
+(Puck centre from StartPuck, tip 5 mm above the measured top, head at the)
+(CURRENT A and C zeros -- so as the zeros are corrected this pose follows.)
+(Rotations happen ONLY with the tool clear above the puck.)
+
+o<cal_goto_zero> sub
+  #<cx>  = #1
+  #<cy>  = #2
+  #<top> = #3
+
+  #<safe>  = 30.0
+  #<clear> = 5.0        (tip height above the top, operator spec)
+  #<f_tr>  = 500.0
+
+  o5 if [#<_metric> EQ 0]
+    (abort, GOTO ZERO: switch to MM first)
+  o5 endif
+  o6 if [#<top> EQ 0 AND #<cx> EQ 0 AND #<cy> EQ 0]
+    (abort, GOTO ZERO: no puck centre - run StartPuck first)
+  o6 endif
+
+  G90
+  G1 Z[#<top> + #<safe>] F[#<f_tr>]
+  G1 A0 C0 F600
+  G1 X#<cx> Y#<cy> F[#<f_tr>]
+  G1 Z[#<top> + #<clear>] F[#<f_tr>]
+  (PRINT, GOTO ZERO: at puck centre #<cx> #<cy>, tip #<clear> mm above the top, A0 C0.)
+
+o<cal_goto_zero> endsub
+
+M2 (end program)

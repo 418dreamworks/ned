@@ -1,7 +1,7 @@
 (ned -- A ZERO DETECTION against the puck side wall, operator spec 2026-08-03)
 (Model: puck = vertical cylinder, axis through the measured centre, top face)
-(at the measured Z, 1 inch tall. A vertical rod touches the wall at the SAME)
-(Y no matter how deep it probes. A TILTED rod does not: the touch Y shifts by)
+(at the measured Z. A vertical rod touches the wall at the SAME Y no matter)
+(how deep it probes. A TILTED rod does not: the touch Y shifts by)
 (depth x tan A. So two plunge depths give the tilt directly.)
 (Sequence, operator spec: touch top, touch bottom, CORRECT, touch bottom,)
 (touch top -- if the spread did not shrink the math/sign is wrong, so ABORT)
@@ -10,6 +10,54 @@
 (zero and NO offsets -- setting A's zero is a separate, explicit step.)
 (Results: #3050 = dY before, #3051 = dY after, #3052 = A correction applied.)
 
+(SCOPE NOTE: named parameters are LOCAL to the subroutine that assigns them,)
+(so the wall-touch helper cannot see the caller's values. It is defined at)
+(FILE level -- subroutine definitions do not nest -- takes its depth as a)
+(positional argument, and reads the shared setup from GLOBAL _ca_ parameters)
+(set by the caller. It returns the touch Y in the global #<_ca_ty>.)
+
+(======================== helper: ONE wall touch ===========================)
+(#1 = plunge depth below the puck top. Returns #<_ca_ty>.)
+o<ca_touch> sub
+  #<dep> = #1
+
+  (hover, then out to the standoff OUTSIDE the puck)
+  G90
+  G1 Z[#<_ca_top> + #<_ca_safe>] F[#<_ca_ftr>]
+  G1 X#<_ca_cx> Y[#<_ca_cy> + #<_ca_side> * #<_ca_stand>] F[#<_ca_ftr>]
+
+  (protective descent: if this TRIPS, the standoff is still over the puck --)
+  (the puck is wider than the standoff. Never plunge blind.)
+  G91
+  G38.3 Z-[#<_ca_safe> + #<dep>] F[#<_ca_fck>]
+  o105 if [#5070 EQ 1]
+    G90
+    G1 Z[#<_ca_top> + #<_ca_safe>] F[#<_ca_ftr>]
+    M65 P3
+    M50 P1
+    (abort, CAL A: contact while descending at the standoff - the puck is wider than the 30 mm standoff. Increase _ca_stand.)
+  o105 endif
+
+  (probe INWARD toward the axis; the wall stops us)
+  G38.3 Y[0 - #<_ca_side> * #<_ca_reach>] F[#<_ca_fpr>]
+  o110 if [#5070 EQ 0]
+    G90
+    G1 Z[#<_ca_top> + #<_ca_safe>] F[#<_ca_ftr>]
+    M65 P3
+    M50 P1
+    (abort, CAL A: NO WALL at this depth. The puck body must extend this far down and share its diameter - reduce the deep plunge or tell me the real geometry.)
+  o110 endif
+  G1 Y[#<_ca_side> * #<_ca_back>] F[#<_ca_ftr>]
+  G38.2 Y[0 - #<_ca_side> * [#<_ca_back> + 1]] F[#<_ca_fla>]
+  #<_ca_ty> = #5062
+
+  (clear the wall, back to hover)
+  G1 Y[#<_ca_side> * 2] F[#<_ca_ftr>]
+  G90
+  G1 Z[#<_ca_top> + #<_ca_safe>] F[#<_ca_ftr>]
+o<ca_touch> endsub
+
+(============================== main cycle =================================)
 o<cal_a_zero> sub
   #<cx>    = #1        (setter centre X, work frame -- from #3045)
   #<cy>    = #2        (setter centre Y, work frame -- from #3046)
@@ -17,14 +65,6 @@ o<cal_a_zero> sub
 
   #<d_top> = 20.0      (shallow plunge below the top, operator spec)
   #<d_bot> = 50.0      (deep plunge below the top, operator spec)
-  #<stand> = 30.0      (Y standoff from centre: outside puck + rod radius)
-  #<reach> = 28.0      (max inward probe travel from the standoff)
-  #<f_pr>  = 100.0     (probe feed)
-  #<f_la>  = 10.0      (latch feed)
-  #<f_tr>  = 500.0     (traverse)
-  #<back>  = 1.0       (backoff before the latch)
-  #<safe>  = 30.0      (Z clearance above the top for ANY A rotation)
-  #<side>  = -1        (approach from -Y, probe toward +Y; flip to +1 to mirror)
 
   o5 if [#<_metric> EQ 0]
     (abort, CAL A: switch to MM first)
@@ -33,61 +73,44 @@ o<cal_a_zero> sub
     (abort, CAL A: no setter centre - run the centre calibration first)
   o6 endif
 
+  (--- shared setup, GLOBAL so the file-level helper can read it -----------)
+  #<_ca_cx>    = #<cx>
+  #<_ca_cy>    = #<cy>
+  #<_ca_top>   = #<top>
+  #<_ca_stand> = 30.0  (Y standoff from centre: outside puck + rod radius)
+  #<_ca_reach> = 28.0  (max inward probe travel from the standoff)
+  #<_ca_fpr>   = 100.0 (probe feed, operator spec)
+  #<_ca_fla>   = 10.0  (latch feed, operator spec)
+  #<_ca_ftr>   = 500.0 (traverse)
+  #<_ca_fck>   = 200.0 (protective descent)
+  #<_ca_back>  = 1.0   (backoff before the latch, operator spec)
+  #<_ca_safe>  = 30.0  (Z clearance above the top for ANY A rotation)
+  #<_ca_side>  = -1    (approach from -Y, probe toward +Y; +1 mirrors it)
+
   M50 P0               (pin the feed override -- probes run at programmed feed)
   M64 P3               (puck UP)
   G4 P1.5
 
-  (=== one wall touch at depth #<dep> -> #<ty> ==============================)
-  (a call-free inline block: set #<dep>, then o<probe_wall> via the loop below)
-  (implemented as a subroutine-in-file so both phases share EXACTLY one path)
-  o100 sub
-    (retract to hover, go to the standoff OUTSIDE the puck, then plunge)
-    G90
-    G1 Z[#<top> + #<safe>] F[#<f_tr>]
-    G1 X#<cx> Y[#<cy> + #<side> * #<stand>] F[#<f_tr>]
-    G1 Z[#<top> - #<dep>] F[#<f_tr>]
-
-    (probe INWARD toward the axis; the wall stops us)
-    G91
-    G38.2 Y[0 - #<side> * #<reach>] F[#<f_pr>]
-    o110 if [#5070 EQ 0]
-      G90
-      G1 Z[#<top> + #<safe>] F[#<f_tr>]
-      M65 P3
-      M50 P1
-      (abort, CAL A: NO WALL at this depth - the modelled cylinder is only 25.4 mm tall, so a 50 mm plunge needs the body below the puck to share its diameter. Reduce d_bot or tell me the real geometry.)
-    o110 endif
-    G1 Y[#<side> * #<back>] F[#<f_tr>]
-    G38.2 Y[0 - #<side> * [#<back> + 1]] F[#<f_la>]
-    #<ty> = #5062
-
-    (clear the wall)
-    G1 Y[#<side> * 2] F[#<f_tr>]
-    G90
-    G1 Z[#<top> + #<safe>] F[#<f_tr>]
-  o100 endsub
-
   (=== BEFORE: touch top, then bottom =====================================)
-  #<dep> = #<d_top>
-  o100 call
-  #<y_top_b> = #<ty>
-  #<dep> = #<d_bot>
-  o100 call
-  #<y_bot_b> = #<ty>
+  o<ca_touch> call [#<d_top>]
+  #<y_top_b> = #<_ca_ty>
+  o<ca_touch> call [#<d_bot>]
+  #<y_bot_b> = #<_ca_ty>
   #<dy_b> = [#<y_bot_b> - #<y_top_b>]
   #3050 = #<dy_b>
   (PRINT, CAL A BEFORE: y at -20 = #<y_top_b>, y at -50 = #<y_bot_b>, DELTA Y = #<dy_b>)
 
-  (=== CORRECT: tilt = atan(dY / dZ), dZ = the depth difference ============)
+  (=== CORRECT: tilt = atan of dY over dZ, dZ = the depth difference =======)
   #<dz>   = [#<d_bot> - #<d_top>]
-  #<tilt> = [ATAN[#<dy_b>] / [#<dz>]]
+  (ATAN form copied from stock probe_corner_x_plus_edge_angle.ngc)
+  #<tilt> = [ATAN [#<dy_b>] / [#<dz>]]
   #<corr> = [0 - #<tilt>]        (one sign; the recheck below proves it)
   #3052 = #<corr>
-  (PRINT, CAL A: tilt #<tilt> deg over #<dz> mm -> rotating A by #<corr> deg)
+  (PRINT, CAL A: tilt #<tilt> deg over #<dz> mm - rotating A by #<corr> deg)
 
   o120 if [ABS[#<corr>] GT 5.0]
     G90
-    G1 Z[#<top> + #<safe>] F[#<f_tr>]
+    G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
     M65 P3
     M50 P1
     (abort, CAL A: computed correction over 5 deg - refusing to swing the head that far on one measurement)
@@ -95,26 +118,24 @@ o<cal_a_zero> sub
 
   (rotate ONLY with the rod clear above the puck)
   G90
-  G1 Z[#<top> + #<safe>] F[#<f_tr>]
+  G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
   G91
   G1 A#<corr> F600
   G90
 
-  (=== AFTER: bottom first, then top (operator spec order) ================)
-  #<dep> = #<d_bot>
-  o100 call
-  #<y_bot_a> = #<ty>
-  #<dep> = #<d_top>
-  o100 call
-  #<y_top_a> = #<ty>
+  (=== AFTER: bottom first, then top -- operator spec order ================)
+  o<ca_touch> call [#<d_bot>]
+  #<y_bot_a> = #<_ca_ty>
+  o<ca_touch> call [#<d_top>]
+  #<y_top_a> = #<_ca_ty>
   #<dy_a> = [#<y_bot_a> - #<y_top_a>]
   #3051 = #<dy_a>
   (PRINT, CAL A AFTER: y at -50 = #<y_bot_a>, y at -20 = #<y_top_a>, DELTA Y = #<dy_a>)
 
   (=== verdict ============================================================)
   G90
-  G1 Z[#<top> + #<safe>] F[#<f_tr>]
-  G1 X#<cx> Y#<cy> F[#<f_tr>]
+  G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
+  G1 X#<cx> Y#<cy> F[#<_ca_ftr>]
   M65 P3
   M50 P1
 
@@ -123,7 +144,7 @@ o<cal_a_zero> sub
     (DEBUG, CAL A: dY before #<dy_b>, after #<dy_a>, A corrected #<corr> deg)
   o130 else
     (DEBUG, CAL A FAILED: dY before #<dy_b>, after #<dy_a> - got WORSE. Flip side or the correction sign.)
-    (abort, CAL A: correction made it WORSE (dY #<dy_b> -> #<dy_a>). The math or the sign is wrong -- flip #<corr> sign. Failing loudly by design.)
+    (abort, CAL A: correction made it WORSE - dY #<dy_b> then #<dy_a>. The math or the sign is wrong, flip the corr sign. Failing loudly by design.)
   o130 endif
 
 o<cal_a_zero> endsub

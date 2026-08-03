@@ -1,0 +1,81 @@
+(ned -- A/C ZERO ITERATION, operator spec 2026-08-03.)
+(A and C are coupled: the A measurement assumes C, and the C measurement)
+(assumes A. So neither converges on its own -- run them alternately and let)
+(the pair settle. Operator spec: 5 iterations of "given C calibrate A, given)
+(A calibrate C".)
+
+(Each inner cycle applies its own rotation and ABORTS LOUDLY if its delta got)
+(worse, so a bad sign stops the loop instead of walking the head away.)
+(This routine writes NO zeros -- it leaves the head sitting at the corrected)
+(pose, and the accumulated correction IS the offset. RECORD TO PARAMS is a)
+(separate, explicit press.)
+
+(Requires C to have been taught once - press StartC twice before StartAC.)
+
+(Results: #3062 = A dY first before, #3063 = A dY last after)
+(          #3064 = C dX first before, #3065 = C dX last after)
+(          #3066 = total A correction deg, #3067 = total C correction deg)
+(          #3068 = iterations completed)
+
+o<cal_ac_iterate> sub
+  #<cx>  = #1
+  #<cy>  = #2
+  #<top> = #3
+
+  #<n> = 5             (operator spec: 5 iterations)
+
+  o5 if [#<_metric> EQ 0]
+    (abort, CAL AC: switch to MM first)
+  o5 endif
+  o6 if [#<top> EQ 0 AND #<cx> EQ 0 AND #<cy> EQ 0]
+    (abort, CAL AC: no puck centre - run StartPuck first)
+  o6 endif
+  o7 if [#3058 EQ 0]
+    (abort, CAL AC: C has never been taught. Press StartC once to park, jog the tip into place, press StartC again - then StartAC can run unattended.)
+  o7 endif
+
+  #3066 = 0
+  #3067 = 0
+  #3068 = 0
+
+  #<i> = 1
+  o100 while [#<i> LE #<n>]
+    (PRINT, CAL AC: ---- iteration #<i> of #<n> ----)
+
+    (--- A, taking C as given ---)
+    o<cal_a_zero> call [#<cx>] [#<cy>] [#<top>]
+    o110 if [#<i> EQ 1]
+      #3062 = #3050
+    o110 endif
+    #3063 = #3051
+    #3066 = [#3066 + #3052]
+
+    (--- C, taking the A we just set as given ---)
+    o<cal_c_zero> call [#<cx>] [#<cy>] [#<top>]
+    o120 if [#<i> EQ 1]
+      #3064 = #3055
+    o120 endif
+    #3065 = #3056
+    #3067 = [#3067 + #3057]
+
+    #3068 = #<i>
+    (PRINT, CAL AC iteration #<i>: A dY #3051 mm, C dX #3056 mm, running A #3066 deg, C #3067 deg)
+
+    #<i> = [#<i> + 1]
+  o100 endwhile
+
+  (--- park at the puck centre, tip clear ---------------------------------)
+  G90
+  G1 Z[#<top> + 30.0] F500
+  G1 A0 C0 F600
+  G1 X#<cx> Y#<cy> F500
+  G1 Z[#<top> + 5.0] F500
+  M65 P3
+  M50 P1
+
+  (PRINT, CAL AC DONE: A dY #3062 -> #3063 mm, C dX #3064 -> #3065 mm over #3068 iterations. Total A #3066 deg, C #3067 deg. If the deltas improved, press RECORD TO PARAMS.)
+  (DEBUG, CAL AC: A dY #3062 to #3063, C dX #3064 to #3065, A corr #3066, C corr #3067)
+
+o<cal_ac_iterate> endsub
+
+M2 (end program)

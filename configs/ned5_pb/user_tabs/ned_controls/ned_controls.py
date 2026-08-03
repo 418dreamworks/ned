@@ -563,89 +563,139 @@ class UserTab(QWidget):
             jl.addStretch(1)
             tabs.addTab(jog_page, 'JOG')
 
-            # CALIBRATION tab (operator 2026-08-03): step 0 of the routine --
-            # find the toolsetter centre with a 3/8 rod, BEFORE any tool
-            # length work. One button; the cycle is cal_probe_center.ngc.
+            # CALIBRATION tab (operator 2026-08-03). Four cycles, each
+            # reporting its own delta before/after, and ONE explicit RECORD
+            # press that is the only thing here that ever writes a parameter
+            # file. Every cycle starts and ends at the step-1 pose.
             cal_page = QWidget()
             cl = QVBoxLayout(cal_page)
             cl.setContentsMargins(8, 8, 8, 8)
-            cbox = QGroupBox('TOOLSETTER CENTER (3/8 ROD)')
+
+            cbox = QGroupBox('STEP 1 -- PUCK CENTRE (3/8 ROD)')
             cbl = QVBoxLayout(cbox)
             steps = QLabel(
-                'Setup, then START:\n'
+                'Setup, then StartPuck:\n'
                 '  1. 3/8 in rod in a toolholder, in the spindle.\n'
                 '  2. Verify CONTINUITY: touch rod to puck, probe LED/input.\n'
                 '  3. Jog the rod tip ~20 mm ABOVE the puck, roughly centred.\n'
-                'Cycle: finds the top, then 8 edges from 1 in out at 10 mm\n'
-                'deep. Probes 100 mm/min, backoff 1 mm, latch 10 mm/min.\n'
-                'Ends centred, tip 5 mm above the surface, puck retracted.\n'
-                'Result -> #3045/#3046 (centre X/Y), #3047 (top Z), work frame.')
+                'Finds the top, then 8 edges from 1 in out at 10 mm deep.\n'
+                'Probes 100 mm/min, backoff 1 mm, latch 10 mm/min. The puck\n'
+                'is raised by the cycle -- leave it DOWN before pressing.')
             steps.setStyleSheet('color: rgb(180,180,180); font: 9pt;')
             cbl.addWidget(steps)
-            cstart = QPushButton('START')
+            cstart = QPushButton('StartPuck')
             cstart.setObjectName('cal_probe_start')
-            cstart.setMinimumHeight(46)
-            cstart.clicked.connect(self._calprobe_start)
+            cstart.setMinimumHeight(44)
+            cstart.setToolTip('Find the puck centre and top. Everything else '
+                              'starts from this result.')
+            cstart.clicked.connect(lambda: self._cal_run('puck'))
             cbl.addWidget(cstart)
+            self._cal_fields = {}
+            for key, lab in (('3045', 'Centre X'),
+                             ('3046', 'Centre Y'),
+                             ('3047', 'Top Z')):
+                row = QHBoxLayout()
+                lw = QLabel(lab)
+                lw.setMinimumWidth(70)
+                row.addWidget(lw)
+                e = QLineEdit()
+                e.setReadOnly(True)
+                e.setPlaceholderText('run StartPuck first')
+                e.setMinimumHeight(28)
+                row.addWidget(e)
+                cbl.addLayout(row)
+                self._cal_fields[key] = e
+            cl.addWidget(cbox)
+
+            nbox = QGroupBox('STEP 2 -- A / C ZERO')
+            nbl = QVBoxLayout(nbox)
+            hint = QLabel(
+                'A and C are coupled -- each measurement assumes the other, so\n'
+                'StartAC alternates them 5 times. GOTO ZERO is the common start\n'
+                'pose: puck centre, tip 5 mm up, at the CURRENT A/C zeros.\n'
+                'StartC needs teaching ONCE: press it, it parks at A -45 one\n'
+                'inch in front, you jog the tip into place, press it again.\n'
+                'Nothing here writes a zero -- the deltas are the proof, and\n'
+                'RECORD TO PARAMS is the only write.')
+            hint.setStyleSheet('color: rgb(180,180,180); font: 9pt;')
+            nbl.addWidget(hint)
+
+            r1 = QHBoxLayout()
+            bA = QPushButton('StartA')
+            bA.setMinimumHeight(40)
+            bA.setToolTip('Tilt off the puck wall at -20 and -50 deep, correct '
+                          'A, re-measure. Reports dY before/after.')
+            bA.clicked.connect(lambda: self._cal_run('a'))
+            r1.addWidget(bA)
+            bC = QPushButton('StartC')
+            bC.setMinimumHeight(40)
+            bC.setToolTip('Probe toward centre at A -45 and +45, correct C, '
+                          're-probe. Reports dX before/after. First press '
+                          'parks for the teach jog.')
+            bC.clicked.connect(lambda: self._cal_run('c'))
+            r1.addWidget(bC)
+            nbl.addLayout(r1)
+
+            r0 = QHBoxLayout()
+            bR = QPushButton('SET C REF')
+            bR.setMinimumHeight(40)
+            bR.setToolTip('Teach the C reference: FIRST jog A to -45 and put '
+                          'the tip where driving toward centre in +X would '
+                          'strike the puck, THEN press this. No motion -- it '
+                          'only records the pose.')
+            bR.clicked.connect(lambda: self._cal_run('cref'))
+            r0.addWidget(bR)
+            r0.addStretch(1)
+            nbl.addLayout(r0)
+
+            r2 = QHBoxLayout()
+            bAC = QPushButton('StartAC')
+            bAC.setMinimumHeight(40)
+            bAC.setToolTip('5 iterations of A then C. Needs C taught first.')
+            bAC.clicked.connect(lambda: self._cal_run('ac'))
+            r2.addWidget(bAC)
+            bG = QPushButton('GOTO ZERO')
+            bG.setMinimumHeight(40)
+            bG.setToolTip('Puck centre, tip 5 mm above the top, at the current '
+                          'A and C zeros.')
+            bG.clicked.connect(lambda: self._cal_run('goto'))
+            r2.addWidget(bG)
+            nbl.addLayout(r2)
+
+            # deltas: the whole point is watching these go toward zero
+            self._cal_delta_rows = []
+            for name, bkey, akey, unit in (
+                    ('StartA   dY', '3050', '3051', 'mm'),
+                    ('StartC   dX', '3055', '3056', 'mm'),
+                    ('StartAC  A dY', '3062', '3063', 'mm'),
+                    ('StartAC  C dX', '3064', '3065', 'mm')):
+                w = QLabel('%s:   --' % name)
+                w.setStyleSheet('font: 10pt "DejaVu Sans Mono"; '
+                                'color: rgb(200,200,200);')
+                nbl.addWidget(w)
+                self._cal_delta_rows.append((w, name, bkey, akey, unit))
+            self._cal_total = QLabel('pending A/C correction:   --')
+            self._cal_total.setStyleSheet('font: 10pt "DejaVu Sans Mono"; '
+                                          'color: rgb(200,200,200);')
+            nbl.addWidget(self._cal_total)
+
+            brec = QPushButton('RECORD TO PARAMS')
+            brec.setMinimumHeight(40)
+            brec.setToolTip('Make the CURRENT head pose the new A/C zero: '
+                            'backs up head_zero.inc, then shifts the stored '
+                            'encoder zero by the angle now on the DRO. Press '
+                            'only when the deltas got better.')
+            brec.clicked.connect(self._cal_record)
+            nbl.addWidget(brec)
+            cl.addWidget(nbox)
+
             cstat = QLabel('')
             cstat.setObjectName('cal_probe_status')
             cstat.setWordWrap(True)
-            cbl.addWidget(cstat)
-            cbl.addStretch(1)
-            cl.addWidget(cbox)
-
-            # NEXT SECTION placeholder (operator 2026-08-03): A/C calibration,
-            # prefilled with the three numbers section 1 produces. The GO is a
-            # stub until that program is designed -- it says so loudly.
-            nbox = QGroupBox('NEXT: A / C CALIBRATION (placeholder)')
-            nbl = QVBoxLayout(nbox)
-            self._cal_fields = {}
-            for key, lab in (('3045', 'Setter centre X'),
-                             ('3046', 'Setter centre Y'),
-                             ('3047', 'Setter top Z')):
-                row = QHBoxLayout()
-                row.addWidget(QLabel(lab))
-                e = QLineEdit()
-                e.setReadOnly(True)
-                e.setPlaceholderText('run section 1 first')
-                e.setMinimumHeight(30)
-                row.addWidget(e)
-                nbl.addLayout(row)
-                self._cal_fields[key] = e
-            nrow = QHBoxLayout()
-            npos = QPushButton('GO TO START POS')
-            npos.setMinimumHeight(40)
-            npos.setToolTip('Move to the section-1 result: centre X/Y, '
-                            'tip 5 mm above the detected surface')
-            npos.clicked.connect(self._cal_goto_start)
-            nrow.addWidget(npos)
-            ngo = QPushButton('GO (A ZERO)')
-            ngo.setMinimumHeight(40)
-            ngo.setToolTip('Detect A tilt off the puck wall at -20 and -50, '
-                           'correct A, re-measure. Reports dY before/after.')
-            ngo.clicked.connect(self._cal_a_start)
-            nrow.addWidget(ngo)
-            nbl.addLayout(nrow)
-            crow = QHBoxLayout()
-            cref = QPushButton('SET C REF (A-45)')
-            cref.setMinimumHeight(40)
-            cref.setToolTip('Park 1 in in front at A -45, then YOU jog down '
-                            'and sideways so the tip would strike the puck '
-                            'driven toward centre in +X')
-            cref.clicked.connect(lambda: self._cal_c_run('ref'))
-            crow.addWidget(cref)
-            cgo = QPushButton('GO (C ZERO)')
-            cgo.setMinimumHeight(40)
-            cgo.setToolTip('Takes your jogged position as reference; probes '
-                           'at -45 and +45, corrects C, re-probes. Reports '
-                           'dX before/after.')
-            cgo.clicked.connect(lambda: self._cal_c_run('zero'))
-            crow.addWidget(cgo)
-            nbl.addLayout(crow)
-            cl.addWidget(nbox)
+            cl.addWidget(cstat)
 
             # the interpreter flushes numbered params to the var file at M2,
-            # so section 1's results appear here right after its cycle ends
+            # so a cycle result appears here right after the cycle ends
             self._cal_var_timer = QTimer(self)
             self._cal_var_timer.timeout.connect(self._cal_fields_refresh)
             self._cal_var_timer.start(2000)
@@ -872,196 +922,215 @@ class UserTab(QWidget):
             with open(self.VAR_FILE) as f:
                 for line in f:
                     p = line.split()
-                    if len(p) == 2 and p[0] in ('3045', '3046', '3047'):
+                    if len(p) == 2 and p[0].isdigit() and \
+                       3040 <= int(p[0]) <= 3070:
                         vals[p[0]] = float(p[1])
             for key, e in fields.items():
                 v = vals.get(key)
                 if v is not None and abs(v) > 1e-9:
                     e.setText('%.4f' % v)
+            for w, name, bkey, akey, unit in getattr(
+                    self, '_cal_delta_rows', []):
+                b, a = vals.get(bkey), vals.get(akey)
+                if b is None or a is None or (abs(b) < 1e-9 and abs(a) < 1e-9):
+                    continue
+                better = abs(a) < abs(b)
+                w.setText('%-14s before %+9.4f   after %+9.4f %s   %s'
+                          % (name, b, a, unit,
+                             'BETTER' if better else 'WORSE'))
+                w.setStyleSheet('font: 10pt "DejaVu Sans Mono"; color: %s;'
+                                % ('rgb(120,220,120)' if better
+                                   else 'rgb(230,140,140)'))
+            tw = getattr(self, '_cal_total', None)
+            if tw is not None:
+                ca, cc = vals.get('3066', 0.0), vals.get('3067', 0.0)
+                it = vals.get('3068', 0.0)
+                if abs(ca) > 1e-9 or abs(cc) > 1e-9:
+                    tw.setText('pending correction:   A %+.4f deg   '
+                               'C %+.4f deg   (%d iterations)'
+                               % (ca, cc, int(it)))
         except Exception as e:
             LOG.error('CAL fields refresh failed: %s', e)
 
-    def _cal_goto_start(self):
-        """Move to section 1's result: centre X/Y, tip 5 mm above the top.
-        Values come from the GUI fields (var-file backed, work frame). Safe
-        order: Z to clearance FIRST if below it, then XY, then Z down."""
-        label = 'CAL GO TO START POS'
-        try:
-            import linuxcnc
-            c = linuxcnc.command()
-            s = linuxcnc.stat()
-            vals = {}
-            for k in ('3045', '3046', '3047'):
-                t = self._cal_fields[k].text().strip()
-                if not t:
-                    c.error_msg('%s refused: no section-1 result yet -- run '
-                                'the centre calibration first' % label)
-                    LOG.error('%s refused: field %s empty', label, k)
-                    return
-                vals[k] = float(t)
-            cx, cy = vals['3045'], vals['3046']
-            zt = vals['3047'] + 5.0
-            s.poll()
-            if s.task_state != linuxcnc.STATE_ON or not all(s.homed[:6]) \
-               or s.interp_state != linuxcnc.INTERP_IDLE or not s.inpos:
-                c.error_msg('%s refused: machine must be ON, homed and idle'
-                            % label)
-                LOG.error('%s refused: not ON/homed/idle', label)
-                return
-            c.mode(linuxcnc.MODE_MDI)
-            c.wait_complete()
-            s.poll()
-            if s.task_mode != linuxcnc.MODE_MDI:
-                c.error_msg('%s refused: could not enter MDI' % label)
-                return
-            # current work Z (house offset math)
-            zw = (s.actual_position[2] - s.g5x_offset[2] - s.g92_offset[2]
-                  - s.tool_offset[2])
-            if zw < zt:
-                c.mdi('G90 G1 Z%.4f F500' % zt)      # rise first, never drag low
-            c.mdi('G90 G1 X%.4f Y%.4f F500' % (cx, cy))
-            c.mdi('G90 G1 Z%.4f F500' % zt)
-            LOG.info('%s: -> X%.4f Y%.4f Z%.4f (centre, +5 mm)', label, cx, cy, zt)
-        except Exception as e:
-            LOG.error('%s failed: %s', label, e)
+    CAL_SUBS = {
+        'puck': ('cal_probe_center', 'StartPuck', False),
+        'a':    ('cal_a_zero',       'StartA',    True),
+        'c':    ('cal_c_zero',       'StartC',    True),
+        'cref': ('cal_c_ref',        'SET C REF', True),
+        'ac':   ('cal_ac_iterate',   'StartAC',   True),
+        'goto': ('cal_goto_zero',    'GOTO ZERO', True),
+    }
 
-    def _cal_a_start(self):
-        """A-zero detection cycle (operator spec 2026-08-03). Same LOUD gate
-        family as every ned MDI path. The sub aborts by design if its own
-        correction does not shrink the spread -- that is the sign check."""
-        label = 'CAL A ZERO'
+    def _cal_gate(self, label):
+        """Shared refusal gate for every calibration cycle. Returns the
+        linuxcnc command/stat pair, or None having ALREADY told the operator
+        why. CLAUDE.md rule 17: stat.homed is not proof -- a launch declares
+        home wherever the machine sits, so require the Home All click this
+        session (the same fact the STALE HOME banner latches on)."""
         try:
             import linuxcnc
-            c = linuxcnc.command()
-            s = linuxcnc.stat()
-            vals = {}
-            for k in ('3045', '3046', '3047'):
-                t = self._cal_fields[k].text().strip()
-                if not t:
-                    c.error_msg('%s refused: run the centre calibration first'
-                                % label)
-                    LOG.error('%s refused: %s empty', label, k)
-                    return
-                vals[k] = float(t)
-            s.poll()
-            if s.task_state != linuxcnc.STATE_ON or not all(s.homed[:6]) \
-               or s.interp_state != linuxcnc.INTERP_IDLE or not s.inpos:
-                c.error_msg('%s refused: machine must be ON, homed and idle'
-                            % label)
-                LOG.error('%s refused: not ON/homed/idle', label)
+        except Exception as e:
+            LOG.error('%s refused: linuxcnc import failed: %s', label, e)
+            return None
+        c = linuxcnc.command()
+        s = linuxcnc.stat()
+        s.poll()
+        if s.task_state != linuxcnc.STATE_ON or not all(s.homed[:6]) \
+           or s.interp_state != linuxcnc.INTERP_IDLE or not s.inpos:
+            c.error_msg('%s refused: machine must be ON, homed and idle' % label)
+            LOG.error('%s refused: not ON/homed/idle', label)
+            return None
+        if getattr(self, '_homeall_clicks', 0) <= 0:
+            c.error_msg('%s refused: STALE HOME -- no physical Home All in '
+                        'this session. Home the machine, then retry.' % label)
+            LOG.error('%s refused: no physical home this session', label)
+            return None
+        c.mode(linuxcnc.MODE_MDI)
+        c.wait_complete()
+        s.poll()
+        if s.task_mode != linuxcnc.MODE_MDI:
+            c.error_msg('%s refused: could not enter MDI' % label)
+            LOG.error('%s refused: task_mode never reached MDI', label)
+            return None
+        return c, s
+
+    def _cal_run(self, which):
+        """Every calibration cycle goes through here: same gate, same centre
+        arguments, same loud failure. The g-code owns the geometry."""
+        sub, label, need_centre = self.CAL_SUBS[which]
+        try:
+            gate = self._cal_gate(label)
+            if gate is None:
                 return
-            c.mode(linuxcnc.MODE_MDI)
-            c.wait_complete()
-            s.poll()
-            if s.task_mode != linuxcnc.MODE_MDI:
-                c.error_msg('%s refused: could not enter MDI' % label)
-                return
-            c.mdi('o<cal_a_zero> call [%.4f] [%.4f] [%.4f]'
-                  % (vals['3045'], vals['3046'], vals['3047']))
-            LOG.info('%s: started with centre %.4f,%.4f top %.4f',
-                     label, vals['3045'], vals['3046'], vals['3047'])
+            c, s = gate
+            if need_centre:
+                vals = {}
+                for k in ('3045', '3046', '3047'):
+                    t = self._cal_fields[k].text().strip()
+                    if not t:
+                        c.error_msg('%s refused: no puck centre yet -- run '
+                                    'StartPuck first' % label)
+                        LOG.error('%s refused: field %s empty', label, k)
+                        return
+                    vals[k] = float(t)
+                c.mdi('o<%s> call [%.4f] [%.4f] [%.4f]'
+                      % (sub, vals['3045'], vals['3046'], vals['3047']))
+                LOG.info('%s: %s issued with centre %.4f %.4f top %.4f',
+                         label, sub, vals['3045'], vals['3046'], vals['3047'])
+            else:
+                c.mdi('o<%s> call' % sub)
+                LOG.info('%s: %s issued', label, sub)
             if getattr(self, '_cal_status', None) is not None:
-                self._cal_status.setText(
-                    'A ZERO running: 4 wall touches at -20/-50 with an A '
-                    'correction between. Watch for "CAL A BEFORE/AFTER" -- '
-                    'dY before/after land in #3050/#3051, correction #3052.')
+                self._cal_status.setText(self.CAL_MSG.get(which, ''))
         except Exception as e:
             LOG.error('%s failed: %s', label, e)
 
-    def _cal_c_run(self, which):
-        """which='ref' parks for the operator jog; which='zero' measures.
-        Same LOUD gate family as every ned MDI path."""
-        label = 'CAL C %s' % which.upper()
-        sub = 'cal_c_ref' if which == 'ref' else 'cal_c_zero'
-        try:
-            import linuxcnc
-            c = linuxcnc.command()
-            s = linuxcnc.stat()
-            vals = {}
-            for k in ('3045', '3046', '3047'):
-                t = self._cal_fields[k].text().strip()
-                if not t:
-                    c.error_msg('%s refused: run the centre calibration first'
-                                % label)
-                    return
-                vals[k] = float(t)
-            s.poll()
-            if s.task_state != linuxcnc.STATE_ON or not all(s.homed[:6]) \
-               or s.interp_state != linuxcnc.INTERP_IDLE or not s.inpos:
-                c.error_msg('%s refused: machine must be ON, homed and idle'
-                            % label)
-                LOG.error('%s refused: not ON/homed/idle', label)
-                return
-            c.mode(linuxcnc.MODE_MDI)
-            c.wait_complete()
-            s.poll()
-            if s.task_mode != linuxcnc.MODE_MDI:
-                c.error_msg('%s refused: could not enter MDI' % label)
-                return
-            c.mdi('o<%s> call [%.4f] [%.4f] [%.4f]'
-                  % (sub, vals['3045'], vals['3046'], vals['3047']))
-            LOG.info('%s: %s issued', label, sub)
-            if getattr(self, '_cal_status', None) is not None:
-                self._cal_status.setText(
-                    'C REF: parking 1 in in front at A -45 -- then JOG the '
-                    'tip into position and press GO (C ZERO).'
-                    if which == 'ref' else
-                    'C ZERO running: probes at -45 and +45 with a C '
-                    'correction between. dX before/after -> #3055/#3056, '
-                    'correction #3057.')
-        except Exception as e:
-            LOG.error('%s failed: %s', label, e)
+    CAL_MSG = {
+        'puck': 'StartPuck running: top, then 8 edges. Result lands in the '
+                'three boxes above when the cycle ends.',
+        'a':    'StartA running: wall touches at -20 and -50, an A rotation, '
+                'then the same pair again. Watch dY before/after.',
+        'c':    'StartC running: probes toward centre at A -45 and +45, '
+                'corrects C, re-probes. Watch dX before/after.',
+        'cref': 'SET C REF: recording the pose. It refuses unless A is within '
+                '5 deg of -45, the tip is in front of centre, below the top, '
+                'and off centre sideways -- that sideways offset IS the scale '
+                'factor of the C measurement.',
+        'ac':   'StartAC running: 5 iterations of A then C. It aborts loudly '
+                'the moment a correction makes its own delta worse.',
+        'goto': 'GOTO ZERO: puck centre, tip 5 mm above the top, A0 C0.',
+    }
 
-    def _cal_ac_stub(self):
-        LOG.info('A/C CALIBRATION GO pressed: program not designed yet '
-                 '(placeholder). Section-1 numbers: 3045=%s 3046=%s 3047=%s',
-                 *(self._cal_fields[k].text() or '?' for k in
-                   ('3045', '3046', '3047')))
-        if getattr(self, '_cal_status', None) is not None:
-            self._cal_status.setText('A/C calibration is a PLACEHOLDER -- the '
-                                     'program is not designed yet (operator '
-                                     'sketch pending, see calibration_routine'
-                                     '_sketch.md).')
+    HEAD_ZERO_INC = '/home/brains/Documents/ned/configs/params/head_zero.inc'
+    NED_PARAMS_SH = '/home/brains/Documents/ned/tools/live/ned_params.sh'
+    R_COUNTS = 67108864          # 2^26 counts per motor rev (drive absolute)
+    HEAD_SIGN = {'A': -1, 'C': 1}
 
-    def _calprobe_start(self):
-        """Fire o<cal_probe_center> -- same LOUD gate family as every ned MDI
-        path: ON, fully homed, interpreter idle. Fire-and-forget; the brain
-        hands MANUAL back when the cycle ends, and the sub itself parks the
-        rod and retracts the puck (also on any abort via on_abort)."""
-        label = 'CAL TOOLSETTER CENTER'
+    def _head_gears(self):
+        """Gear ratios come from ned_params.sh, the SSOT (CLAUDE.md rule 11) --
+        read, never copied."""
+        g = {}
+        import re as _re
+        with open(self.NED_PARAMS_SH) as f:
+            for line in f:
+                m = _re.match(r'\s*GEAR_([AC])\s*=\s*([0-9.]+)', line)
+                if m:
+                    g[m.group(1)] = float(m.group(2))
+        if set(g) != {'A', 'C'}:
+            raise RuntimeError('GEAR_A/GEAR_C not found in ned_params.sh')
+        return g
+
+    def _cal_record(self):
+        """Make the CURRENT head pose the new A/C zero.
+
+        The stored zero PS is an absolute-encoder count; machine angle is
+        (PE - PS) scaled by gear and 2^26 (head_zero.inc, manual 6.12.6). To
+        make the pose that now reads `deg` read zero instead, PS moves by the
+        counts that `deg` represents -- no live encoder read needed, and the
+        DRO is the measurement. Backs the file up first so the pre-calibration
+        zero is always recoverable."""
+        label = 'CAL RECORD'
         try:
-            import linuxcnc
+            import linuxcnc, shutil, time, re as _re
             c = linuxcnc.command()
             s = linuxcnc.stat()
             s.poll()
-            if s.task_state != linuxcnc.STATE_ON:
-                c.error_msg('%s refused: machine is not ON' % label)
-                LOG.error('%s refused: not ON', label)
-                return
-            if not all(s.homed[:6]):
-                c.error_msg('%s refused: machine not fully homed' % label)
-                LOG.error('%s refused: not homed', label)
-                return
             if s.interp_state != linuxcnc.INTERP_IDLE or not s.inpos:
-                c.error_msg('%s refused: machine is busy' % label)
-                LOG.error('%s refused: busy', label)
+                c.error_msg('%s refused: finish the cycle first' % label)
                 return
-            c.mode(linuxcnc.MODE_MDI)
-            c.wait_complete()
-            s.poll()
-            if s.task_mode != linuxcnc.MODE_MDI:
-                c.error_msg('%s refused: could not enter MDI' % label)
-                LOG.error('%s refused: MDI never landed', label)
+            gears = self._head_gears()
+            # X0 Y1 Z2 A3 B4 C5 -- machine frame, which is what the zero means
+            now = {'A': s.actual_position[3], 'C': s.actual_position[5]}
+            if abs(now['A']) < 1e-6 and abs(now['C']) < 1e-6:
+                c.error_msg('%s refused: A and C are both already 0.000 -- '
+                            'there is no correction to record' % label)
+                LOG.error('%s refused: nothing to record', label)
                 return
-            c.mdi('o<cal_probe_center> call')
-            LOG.info('%s: cycle started (o<cal_probe_center> call issued)',
-                     label)
+            txt = open(self.HEAD_ZERO_INC).read()
+            cur = {}
+            for ax in ('A', 'C'):
+                mt = _re.search(r'^%s_MULTITURN\s*=\s*(-?\d+)' % ax, txt, _re.M)
+                wi = _re.search(r'^%s_WITHIN\s*=\s*(-?\d+)' % ax, txt, _re.M)
+                if not (mt and wi):
+                    raise RuntimeError('%s_MULTITURN/_WITHIN missing' % ax)
+                cur[ax] = int(mt.group(1)) * self.R_COUNTS + int(wi.group(1))
+            stamp = time.strftime('%Y%m%d-%H%M%S')
+            bak = '%s.bak-%s' % (self.HEAD_ZERO_INC, stamp)
+            shutil.copy2(self.HEAD_ZERO_INC, bak)
+            out, note = txt, []
+            for ax in ('A', 'C'):
+                deg = now[ax]
+                shift = (self.HEAD_SIGN[ax] * deg / 360.0
+                         * self.R_COUNTS * gears[ax])
+                new = int(round(cur[ax] + shift))
+                mt_new = new // self.R_COUNTS
+                wi_new = new - mt_new * self.R_COUNTS
+                out = _re.sub(r'^%s_MULTITURN\s*=.*$' % ax,
+                              '%s_MULTITURN = %d' % (ax, mt_new), out, flags=_re.M)
+                out = _re.sub(r'^%s_WITHIN\s*=.*$' % ax,
+                              '%s_WITHIN    = %d' % (ax, wi_new), out, flags=_re.M)
+                note.append('%s %+.4f deg (%d -> %d counts)'
+                            % (ax, deg, cur[ax], new))
+            open(self.HEAD_ZERO_INC, 'w').write(out)
+            LOG.info('%s: head_zero.inc updated -- %s; backup %s',
+                     label, '; '.join(note), bak)
+            with open(self.HEAD_ZERO_INC + '.history', 'a') as f:
+                f.write('%s  %s  backup=%s\n' % (stamp, '; '.join(note), bak))
+            c.error_msg('RECORDED: %s. Backup %s. The new zero takes effect on '
+                        'the NEXT launch -- joint_a/joint_c home offsets are '
+                        'built from head_zero.inc at startup.'
+                        % (', '.join(note), os.path.basename(bak)))
             if getattr(self, '_cal_status', None) is not None:
                 self._cal_status.setText(
-                    'RUNNING - top probe, then 8 edges (~2-3 min). Results '
-                    'land in #3045/#3046/#3047; watch the print lines.')
+                    'RECORDED to head_zero.inc: %s. Backup: %s. Takes effect '
+                    'next launch.' % (', '.join(note), os.path.basename(bak)))
         except Exception as e:
             LOG.error('%s failed: %s', label, e)
+            try:
+                import linuxcnc
+                linuxcnc.command().error_msg('%s failed: %s' % (label, e))
+            except Exception:
+                pass
 
     def _zclamp_apply_rate_cap(self):
         """Size the MPG count cap so a spun wheel cannot demand more than
@@ -2211,8 +2280,14 @@ class UserTab(QWidget):
                 self.comp.getPin('homeall-out').value = True
                 QTimer.singleShot(1000, self._homeall_pin_off)
             c.home(-1)
+            # PROOF OF A PHYSICAL HOME THIS SESSION (CLAUDE.md rule 17). The
+            # DRO's STALE/SESSION banner and the calibration gate both read
+            # this counter; nothing incremented it before, so the banner could
+            # never turn green and the gate would have refused every cycle.
+            self._homeall_clicks = getattr(self, '_homeall_clicks', 0) + 1
             LOG.info('REF ALL: physical reset dispatched (sequences are '
-                     'static: Z 0, Y 1, X pair -2, A/C 3)')
+                     'static: Z 0, Y 1, X pair -2, A/C 3); homeall_clicks=%d',
+                     self._homeall_clicks)
         except Exception as e:
             LOG.error('REF ALL failed: %s', e)
 
