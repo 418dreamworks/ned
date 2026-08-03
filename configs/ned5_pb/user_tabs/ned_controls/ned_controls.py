@@ -1159,6 +1159,7 @@ class UserTab(QWidget):
     # The operator's spec: probe, re-find the puck, and "if its an
     # improvement, update the parameter file". The decision needs the cycle
     # to have FINISHED, so this polls rather than guessing at issue time.
+    CAL_DY_TOL = 0.010          # mm -- the measurement floor, see cal_a_zero
     CAL_WATCH_MS = 500
     CAL_WATCH_DEADLINE_S = 900      # 4 wall touches + a puck find
 
@@ -1250,7 +1251,9 @@ class UserTab(QWidget):
             # distance is the test the operator asked for. The g-code already
             # rolls a failed correction back and aborts, so this should never
             # be reached -- it is the second lock on the parameter file.
-            if abs(dy_a) >= abs(dy_b):
+            # same measurement floor the g-code uses: 4 um touch repeatability
+            # means a pair inside 0.010 mm is noise, not tilt
+            if abs(dy_a) > self.CAL_DY_TOL and abs(dy_a) >= abs(dy_b):
                 msg = ('StartA: dY %+.4f -> %+.4f mm did NOT improve -- '
                        'correction rolled back, parameter file NOT written'
                        % (dy_b, dy_a))
