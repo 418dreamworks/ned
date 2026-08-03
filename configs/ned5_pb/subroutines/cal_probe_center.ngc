@@ -27,6 +27,11 @@ o<cal_probe_center> sub
     (abort, CAL: switch to MM first - this routine is metric)
   o10 endif
 
+  (pin the feed override: the operator saw 300 and 750 in the GUI because)
+  (the F slider was at 150% - probes must run at their programmed feeds.)
+  (on_abort restores M50 P1 if this cycle dies.)
+  M50 P0
+
   G90
   #<sx> = #5420
   #<sy> = #5421
@@ -113,6 +118,7 @@ o<cal_probe_center> sub
   G1 X#<cx> Y#<cy> F[#<f_trav>]
   G1 Z[#<top> + #<clear>] F[#<f_trav>]
   M65 P3
+  M50 P1 (feed override back to the operator)
 
 o<cal_probe_center> endsub
 
