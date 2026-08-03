@@ -1323,6 +1323,18 @@ class UserTab(QWidget):
             LOG.error('lock button mirror failed: %s', e)
 
     # cal_c_goto takes a 4th argument: which side of the puck to park on
+    CAL_SUBS = {
+        'puck': ('cal_probe_center', 'StartPuck', False),
+        'a':    ('cal_a_cycle',      'StartA',    True),
+        'c':    ('cal_c_cycle',      'StartC',    True),
+        # no 'ac' entry: StartAC is driven from Python (_ac_start), not by a
+        # g-code sub.
+        'goto': ('cal_goto_zero',    'ZERO',      True),
+        'shoulder': ('cal_shoulder', 'SHOULDER',  True),
+        'cleft':  ('cal_c_goto',     'C LEFT',    True),
+        'cright': ('cal_c_goto',     'C RIGHT',   True),
+    }
+
     CAL_EXTRA = {'cleft': -1, 'cright': 1}
 
     def _cal_gate(self, label):

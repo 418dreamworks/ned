@@ -26,6 +26,34 @@ python3 -
 RC=$?
 [ $RC -ne 0 ] && { echo "edit script failed (rc=$RC) -- check the tree" >&2; exit $RC; }
 
+# CLASS-ATTRIBUTE / METHOD CHECK. py_compile cannot see a deleted class
+# attribute -- it is an AttributeError at runtime. On 2026-08-03 a regex that
+# removed one method also swallowed CAL_SUBS, which sat between it and the
+# next def, and StartAC died instantly with "no attribute 'CAL_SUBS'". The
+# scanner said green because the g-code was fine.
+python3 - <<'ATTRCHK'
+import re, sys, glob
+bad = 0
+for f in glob.glob('/home/brains/Documents/ned/configs/ned5_pb/**/*.py',
+                   recursive=True):
+    src = open(f).read()
+    defined = set()
+    for lhs in re.findall(r'^\s{4}([A-Z][A-Z0-9_, ]+?)\s*=[^=]', src, re.M):
+        defined.update(n.strip() for n in lhs.split(','))
+    used = set(re.findall(r'self\.([A-Z][A-Z0-9_]+)\b', src))
+    defs = set(re.findall(r'^\s*def (\w+)\(', src, re.M))
+    calls = set(re.findall(r'self\.(_\w+)\(', src))
+    for n in sorted(used - defined):
+        print('  MISSING class attr %s in %s' % (n, f.split('/')[-1])); bad = 1
+    for n in sorted(c for c in calls if c not in defs):
+        print('  MISSING method %s in %s' % (n, f.split('/')[-1])); bad = 1
+sys.exit(bad)
+ATTRCHK
+if [ $? -ne 0 ]; then
+    echo "=== SELF-REFERENCE CHECK FAILED AFTER THE EDIT ===" >&2
+    exit 1
+fi
+
 # a write is only finished when it still parses
 if ! "$NED/tools/gcode_check.sh" --all >/tmp/cfg_edit_check.$$ 2>&1; then
     echo "=== SCANNER FAILED AFTER THE EDIT ===" >&2
