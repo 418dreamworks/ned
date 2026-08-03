@@ -115,11 +115,11 @@ class NedHomingMenu(QMenu):
                 pass
             return
         try:
-            if meth == 'request_homeall':
-                # STALE/SESSION HOME banner state: a plain click counter
-                # (operator 2026-08-02); the DRO banner flips to SESSION
-                # HOME once clicks > 0 AND all joints report homed.
-                tab._homeall_clicks = getattr(tab, '_homeall_clicks', 0) + 1
+            # _homeall_clicks is counted inside request_homeall itself, at
+            # the point c.home(-1) is actually dispatched -- counting the
+            # menu CLICK here as well double-counted, and credited a home
+            # that request_homeall may have refused ("homing already in
+            # progress"). One owner, and it means "a home really went out".
             getattr(tab, meth)(*args)
         except Exception as e:
             LOG.error('NED Homing menu: %s failed: %s', label, e)

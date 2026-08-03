@@ -964,9 +964,15 @@ class UserTab(QWidget):
     def _cal_gate(self, label):
         """Shared refusal gate for every calibration cycle. Returns the
         linuxcnc command/stat pair, or None having ALREADY told the operator
-        why. CLAUDE.md rule 17: stat.homed is not proof -- a launch declares
-        home wherever the machine sits, so require the Home All click this
-        session (the same fact the STALE HOME banner latches on)."""
+        why.
+
+        Checks LinuxCNC state only -- ON, homed, idle, in position. It does
+        NOT check whether home was physically re-run this session. Declaring
+        home from the stored coordinates and flying the STALE HOME banner is
+        exactly so the operator can work through many restarts without
+        re-homing; that is their risk to take, and a GUI gate must never
+        overrule it (operator 2026-08-03). CLAUDE.md rule 17 binds MY scripted
+        motion, not their button."""
         try:
             import linuxcnc
         except Exception as e:
@@ -979,11 +985,6 @@ class UserTab(QWidget):
            or s.interp_state != linuxcnc.INTERP_IDLE or not s.inpos:
             c.error_msg('%s refused: machine must be ON, homed and idle' % label)
             LOG.error('%s refused: not ON/homed/idle', label)
-            return None
-        if getattr(self, '_homeall_clicks', 0) <= 0:
-            c.error_msg('%s refused: STALE HOME -- no physical Home All in '
-                        'this session. Home the machine, then retry.' % label)
-            LOG.error('%s refused: no physical home this session', label)
             return None
         c.mode(linuxcnc.MODE_MDI)
         c.wait_complete()

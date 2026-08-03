@@ -81,4 +81,13 @@
       instantly without moving.
     - **No "it was homed earlier".** Earlier was a different session.
     - If homing cannot be completed, DO NOT MOVE THE MACHINE. Say so and stop.
+    - **THIS RULE BINDS ME, NOT THE OPERATOR.** It governs motion I command
+      from a script or test. NEVER turn it into a GUI gate: no button, cycle
+      or panel may refuse the operator because home was not physically re-run
+      this session. Declaring home from stored coordinates and flying the
+      STALE HOME banner is deliberate -- it exists so the operator can work
+      through many restarts without re-homing, and that is their risk to take
+      (operator 2026-08-03: "it should NEVER gate anything ... we are going to
+      restart a lot"). I added exactly such a gate to the calibration buttons
+      and it was wrong.
 
