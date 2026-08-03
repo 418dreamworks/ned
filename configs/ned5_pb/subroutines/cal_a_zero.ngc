@@ -112,7 +112,21 @@ o<cal_a_zero> sub
   o8 endif
 
   M50 P0               (pin the feed override -- probes run at programmed feed)
-  M64 P3               (puck UP)
+
+  (FORCE THE START POSE. Operator 2026-08-03: "there was no force that the)
+  (start position of every button was the zero". Every routine ASSUMED where)
+  (the head was and moved accordingly; entered from anywhere else those moves)
+  (are wrong, which is how a plunge went through the puck. Establish the pose)
+  (instead of assuming it -- from the zero, every move below is known-safe.)
+  o<cal_goto_zero> call [#<cx>] [#<cy>] [#<top>]
+
+  (CLEAR LATERALLY BEFORE THE PUCK COMES UP. The zero pose sits over the puck)
+  (centre with the tip 5 mm above the top, so deploying there drives the puck)
+  (into the rod -- "the puck came up, there was an electrical reading".)
+  G90
+  G1 X#<cx> Y[#<cy> + #<_ca_side> * #<_ca_stand>] F[#<_ca_ftr>]
+
+  M64 P3               (puck UP -- now with nothing under it)
   G4 P1.5
 
   (=== BEFORE: -35, then -60 without leaving the standoff ==================)
@@ -138,6 +152,10 @@ o<cal_a_zero> sub
     G90
     G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
     M65 P3
+  (start AND end of every button is the ZERO -- operator 2026-08-03. That)
+  (covers the ABORT paths too: a cycle dying at a standoff is exactly what)
+  (made the next button's assumptions wrong.)
+  o<cal_goto_zero> call [#<cx>] [#<cy>] [#<top>]
     M50 P1
     (abort, CAL A: computed correction #<corr> deg is over 5 deg. That is a real error, not a misalignment - check the rod, the puck centre and the A sign before running this again.)
   o118 endif
@@ -195,6 +213,10 @@ o<cal_a_zero> sub
     G1 A#3069 C#3070 F1200
     G1 X#<cx> Y#<cy> F[#<_ca_ftr>]
     G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
+  (start AND end of every button is the ZERO -- operator 2026-08-03. That)
+  (covers the ABORT paths too: a cycle dying at a standoff is exactly what)
+  (made the next button's assumptions wrong.)
+  o<cal_goto_zero> call [#<cx>] [#<cy>] [#<top>]
     M50 P1
     (PRINT, CAL A: took a 1 deg bite of a #<tilt_b> deg tilt. Re-finding the puck, then measuring again.)
     o128 return
@@ -237,6 +259,10 @@ o<cal_a_zero> sub
     G1 A#3069 C#3070 F1200
     G1 X#<cx> Y#<cy> F[#<_ca_ftr>]
     G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
+  (start AND end of every button is the ZERO -- operator 2026-08-03. That)
+  (covers the ABORT paths too: a cycle dying at a standoff is exactly what)
+  (made the next button's assumptions wrong.)
+  o<cal_goto_zero> call [#<cx>] [#<cy>] [#<top>]
     M50 P1
     #3072 = 0
     (PRINT, CAL A DISCARDED: dY #<dy_b> -> #<dy_a> mm is not better, so the correction was reverted. A is exactly where it started and NOTHING changed, so the puck does not need re-finding.)
@@ -248,6 +274,10 @@ o<cal_a_zero> sub
   G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
   M65 P3
   G4 P1.0
+  (END AT THE ZERO TOO -- operator 2026-08-03: start AND end of every button)
+  (is the zero. Leaving the head wherever the last touch finished is what)
+  (made the next button's assumptions wrong in the first place.)
+  o<cal_goto_zero> call [#<cx>] [#<cy>] [#<top>]
   G1 A#3069 C#3070 F1200
   G1 X#<cx> Y#<cy> F[#<_ca_ftr>]
   G1 Z[#<top> + #<_ca_safe>] F[#<_ca_ftr>]
