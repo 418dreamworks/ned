@@ -338,7 +338,10 @@ net sig-limit-y-port   => limdir.1.lim-neg-in  jogblock.y.lim-neg
 setp zferr.z.in0 [JOINT_2]MIN_FERROR   # switch clear -> the INI value
 setp zferr.z.in1 25.0                 # switch made  -> 0.5 s of breakaway
 net sig-limit-z-bottom => zferr.z.sel
-net sig-z-minferror zferr.z.out => ini.2.min_ferror
+# zferr.z.out is netted to ini.2.min_ferror in postgui_pb.hal, NOT here:
+# the ini.N.* pins are created once task is up, so at THIS point in the load
+# they do not exist yet -- "Pin 'ini.2.min_ferror' does not exist",
+# 2026-08-03. setp on the running machine works, which is what misled me.
 
 net sig-limit-z-bottom => limdir.2.lim-neg-in  jogblock.z.lim-neg
 # Z JOG CLAMP -- APPROACH PROFILE inside jogblock (operator 2026-08-02: "do a

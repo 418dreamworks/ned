@@ -211,3 +211,15 @@
       says this for g-code; it applies to HAL, INI and var files too. "It
       looks right" is not a check — a launch failure costs the operator a
       whole cycle and their attention, which is the expensive part.
+    - **LOAD ORDER: `ini.N.*` pins do not exist in a base HALFILE.** They are
+      created when task comes up, after every `[HAL]HALFILE` has loaded, so
+      netting one there fails the WHOLE load with `Pin 'ini.2.min_ferror'
+      does not exist`. They belong in `POSTGUI_HALFILE` (`postgui_pb.hal`).
+      What misled me: `halcmd setp ini.2.min_ferror 25` works perfectly on a
+      RUNNING machine, so the pin looked available. Proving a pin exists at
+      runtime says nothing about whether it exists at load time. `cfg_edit.sh`
+      now refuses this too.
+    - **Two launch cycles in a row, 2026-08-03**, on the same feature: first
+      the `;`, then this. Each time I handed over a relaunch without the file
+      having been parsed once. When a config edit cannot be verified offline,
+      say so plainly instead of presenting it as ready.

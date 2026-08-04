@@ -137,3 +137,19 @@ net sig-zclamp-low  ned-tab.zclamp-low    => jogblock.z.clamp-floor
 # live ladder step -> GUI red-dot indicator (mm per detent)
 net sig-zstep-mm jogblock.z.step-mm-out => ned-tab.stepmm-in
 
+
+# --- Z BREAKAWAY WINDOW: the half second Z gets to come unstuck -----------
+# Wired HERE and not in ned5_iron.hal because ini.N.* pins do not exist until
+# task is up; netting it earlier fails the whole load.
+# zferr.z (mux2, loaded in ned5_iron.hal) selects on the bottom limit switch:
+#   switch clear -> [JOINT_2]MIN_FERROR (2.54 mm, the normal guard)
+#   switch made  -> 25 mm, which is 0.5 s of stall at MAX_ACCELERATION 200
+# Why: homing Z up out of the stiff bottom of the leadscrew kept dying with
+# "joint 2 following error". Nothing gated the move -- HOME_IGNORE_LIMITS is
+# YES and limdir.2 asserts downward only. Allowed lag at the start of a move
+# is the MIN_FERROR floor, and a stalled axis eats 2.54 mm in
+# sqrt(2*2.54/200) = 0.16 s. The axis was not under-driven, it was
+# under-waited (operator 2026-08-03: "if lower limit is tripped, wait .5
+# seconds"). Relaxed ONLY while sitting on the bottom switch, where Z cannot
+# run away downward anyway; it snaps back the instant the switch releases.
+net sig-z-minferror zferr.z.out => ini.2.min_ferror

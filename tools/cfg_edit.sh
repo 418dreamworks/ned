@@ -63,7 +63,7 @@ fi
 # every other check here, so it belongs in the scanner rather than in my
 # memory.
 python3 - <<'HALCHK'
-import glob, sys
+import glob, re, sys
 ARGS = {'setp': 2, 'sets': 2, 'addf': 2}
 bad = []
 for f in glob.glob('/home/brains/Documents/ned/configs/**/*.hal', recursive=True):
@@ -88,6 +88,16 @@ for f in glob.glob('/home/brains/Documents/ned/configs/**/*.hal', recursive=True
                        % (f, n, cmd, want, len(w) - 1, code))
         if cmd == 'net' and len(w) < 3:
             bad.append('%s:%d  net needs a signal plus at least one pin  ->  %s'
+                       % (f, n, code))
+        # ini.N.* pins are created when TASK comes up, which is after every
+        # base HALFILE has loaded. Referencing one there fails the whole load
+        # with "Pin 'ini.2.min_ferror' does not exist" -- 2026-08-03, and it
+        # cost a second launch cycle right after the ';' one. setp works on a
+        # RUNNING machine, which is exactly what made it look fine.
+        # These belong in POSTGUI_HALFILE (postgui_pb.hal).
+        if 'postgui' not in f and re.search(r'\bini\.\d+\.', code):
+            bad.append('%s:%d  ini.N.* does not exist yet in a base HALFILE '
+                       '-- move this line to postgui_pb.hal  ->  %s'
                        % (f, n, code))
 if bad:
     print('=== HAL SYNTAX FAILED AFTER THE EDIT ===', file=sys.stderr)
