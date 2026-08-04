@@ -459,6 +459,7 @@ class UserTab(QWidget):
         # after the UI settles -- it inserts into a core layout it must find
         QTimer.singleShot(1500, self._build_declaration)
         QTimer.singleShot(1600, self._hide_spare_mdi)
+        QTimer.singleShot(1700, self._start_homing_gate)
 
         # SPINDLE SECTION (operator 2026-08-01): spindle load meter ->
         # chip-load-per-flute PLACEHOLDER; left RPM readout -> live
@@ -2974,127 +2975,109 @@ class UserTab(QWidget):
                       len(missing), 'y' if len(missing) == 1 else 'ies',
                       ', '.join(missing))
 
-    def _build_declaration(self):
-        """One more row inside TOOL CHANGE PANEL: [number] [DECLARE].
+    # Buttons that command MOTION or issue MDI. LinuxCNC silently refuses an
+    # MDI command on non-identity kinematics until every joint is homed, so
+    # on an unhomed machine these cannot work -- they just emit "Must be in
+    # MDI mode", which is what happened all evening. DISABLED until homed
+    # (operator 2026-08-03: "ALL BUTTONS THAT NEED HOMING SHOULD NOT BE
+    # CLICKABLE until we get STALE HOME").
+    #
+    # NOT gated, deliberately: POWER, E-STOP, the Homing menu and the jog
+    # controls. Those are how you GET homed; disabling them is a trap.
+    HOMING_GATED = (
+        'm6_tool_call_button_main_panel',
+        'm6_tool_call_button_tool_page',
+        'm6_tool_call_button_atc_page',
+        'ned_declare_btn',
+        'remove_tool_2', 'remove_tool_button',
+        'tool_touch_off_button', 'tool_touch_off_button_atc',
+        'go_to_zero_button_2', 'go_to_g30_button', 'go_to_home_button',
+    )
 
-        The panel frame carries a QVBoxLayout of rows, so this is a plain
-        insert after the M6 G43 row -- no geometry, no new box, and it
-        inherits the panel's own styling by copying the widgets beside it.
-        Earlier attempts put a separate box below the column, which needed
-        fixed geometry because that column has no layout at all; a row inside
-        the panel avoids the whole problem (operator 2026-08-03: "just put it
-        in tool change panel under the M6 g43 row ... another line, DECLARE").
+    def _sync_load_enabled(self):
+        """LOAD needs BOTH: a homed machine and an open drawbar.
+
+        Unhomed, the load sub cannot run at all (MDI refused); with the
+        drawbar shut there is nothing to load into. Never disabled
+        mid-countdown -- that would strand a pending LOAD with no way to
+        cancel it.
         """
-        from PySide6.QtCore import Qt
-        from PySide6.QtWidgets import (QHBoxLayout, QLineEdit, QPushButton,
-                                       QBoxLayout)
-        try:
-            win = self.window()
-            btn6 = win.findChild(QWidget, 'm6_tool_call_button_tool_page') if win else None
-            if btn6 is None:
-                LOG.error('DECLARATION: m6_tool_call_button_tool_page not '
-                          'found -- not built. Nothing else is affected.')
-                return
-            panel = btn6.parent()
-            lay = panel.layout() if panel is not None else None
-            if not isinstance(lay, QBoxLayout):
-                LOG.error('DECLARATION: TOOL CHANGE PANEL layout is %s, not a '
-                          'box layout -- not built',
-                          type(lay).__name__ if lay else None)
-                return
-            # which row holds the M6 button
-            at = -1
-            for i in range(lay.count()):
-                it = lay.itemAt(i)
-                if it is None:
+        ok = (bool(getattr(self, '_drawbar_released', False))
+              and bool(getattr(self, '_homed_now', False)))
+        for b in getattr(self, '_load_btns', []):
+            try:
+                if self._load_pend.get(b) is not None:
                     continue
-                if it.widget() is btn6:
-                    at = i
-                    break
-                sub = it.layout()
-                if sub is not None:
-                    for j in range(sub.count()):
-                        if sub.itemAt(j) and sub.itemAt(j).widget() is btn6:
-                            at = i
-                            break
-                if at >= 0:
-                    break
-            if at < 0:
-                LOG.error('DECLARATION: M6 row not found in the panel layout '
-                          '-- not built')
-                return
+                b.setEnabled(ok)
+            except Exception:
+                pass
 
-            num6 = win.findChild(QWidget, 'tool_number_entry_tool_page')
-            row = QHBoxLayout()
-            try:
-                src = lay.itemAt(at).layout()
-                if src is not None:
-                    row.setSpacing(src.spacing())
-            except Exception:
-                pass
-            # SAME CLASS as the field above, not a plain QLineEdit: the
-            # panel's styling comes from class-based QSS rules, so a
-            # QLineEdit renders WHITE next to grey siblings no matter what
-            # stylesheet is copied onto it (2026-08-03).
-            try:
-                edit = type(num6)(panel) if num6 is not None else QLineEdit(panel)
-            except Exception:
-                edit = QLineEdit(panel)
-            try:
-                edit.setText('0')
-            except Exception:
-                pass
-            edit.setObjectName('ned_declare_input')
-            try:
-                btn = type(btn6)(panel)
-                btn.setText('DECLARE')
-            except Exception:
-                btn = QPushButton('DECLARE', panel)
-            btn.setObjectName('ned_declare_btn')
-            # match the row above, widget for widget
-            # The sibling's grey comes from an objectName-keyed rule in the
-            # global QSS, which a new widget cannot inherit however it is
-            # constructed -- copying its styleSheet() and its class both left
-            # it rendering WHITE beside grey neighbours (2026-08-03). State
-            # it explicitly, using the same values the panel's own header
-            # carries.
-            NED_FIELD_QSS = (
-                'background: rgb(90, 90, 90);'
-                ' color: white;'
-                ' border-style: solid;'
-                ' border-color: rgb(176, 179, 172);'
-                ' border-width: 2px;'
-                ' border-radius: 5px;'
-                ' font: 17pt "Probe Basic Bebas Mono";')
-            if num6 is not None:
-                try:
-                    edit.setStyleSheet(NED_FIELD_QSS)
-                    edit.setMinimumSize(num6.minimumSize())
-                    edit.setMaximumSize(num6.maximumSize())
-                    edit.setAlignment(num6.alignment())
-                except Exception:
-                    pass
-            else:
-                edit.setMaximumWidth(80)
-                edit.setAlignment(Qt.AlignCenter)
-            try:
-                btn.setStyleSheet(btn6.styleSheet())
-                btn.setMinimumSize(btn6.minimumSize())
-                btn.setMaximumSize(btn6.maximumSize())
-                btn.setSizePolicy(btn6.sizePolicy())
-            except Exception:
-                pass
-            btn.clicked.connect(self._spindle_holds_declare)
-            row.addWidget(edit)
-            row.addWidget(btn)
-            lay.insertLayout(at + 1, row)
-            edit.show()
-            btn.show()
-            self._sh_widgets = {'edit': edit}
-            LOG.info('DECLARATION: row added inside TOOL CHANGE PANEL after '
-                     'the M6 row (index %d)', at + 1)
+    def _start_homing_gate(self):
+        self._homed_now = None
+        self._homing_gate_tick()
+        t = self._homing_gate_timer = QTimer(self)
+        t.timeout.connect(self._homing_gate_tick)
+        t.start(500)
+
+    def _homing_gate_tick(self):
+        try:
+            import linuxcnc
+            st = linuxcnc.stat()
+            st.poll()
+            homed = all(st.homed[:6])
         except Exception:
-            LOG.exception('DECLARATION: not built')
+            homed = False            # unreadable -> assume NOT homed, refuse
+        if homed == getattr(self, '_homed_now', None):
+            return
+        self._homed_now = homed
+        win = self.window()
+        hit, missing = [], []
+        for name in self.HOMING_GATED:
+            w = win.findChild(QWidget, name) if win else None
+            if w is None:
+                missing.append(name)
+                continue
+            try:
+                w.setEnabled(homed)
+                hit.append(name)
+            except Exception:
+                missing.append(name)
+        LOG.info('HOMING GATE: machine %s -> %d motion button(s) %s',
+                 'HOMED' if homed else 'NOT homed', len(hit),
+                 'ENABLED' if homed else 'DISABLED')
+        if missing:
+            LOG.error('HOMING GATE: %d button(s) NOT found, still live on an '
+                      'unhomed machine: %s', len(missing), ', '.join(missing))
+        self._sync_load_enabled()
+
+    def _build_declaration(self):
+        """Wire the DECLARE row. It is built in probe_basic.ui, not here.
+
+        The row is a verbatim copy of the M6 G43 row in that file -- same
+        VCPLineEdit, same button geometry and palette -- with the names
+        changed to ned_declare_input / ned_declare_btn, the class changed to
+        QPushButton and the SubCallButton `filename` dropped so it calls
+        nothing on its own. Building widgets from Python instead cost three
+        placements and still rendered wrong, because the panel's styling
+        comes from rules a new widget cannot inherit. Copy the row that
+        already works; wire the button.
+        """
+        win = self.window()
+        edit = win.findChild(QWidget, 'ned_declare_input') if win else None
+        btn = win.findChild(QWidget, 'ned_declare_btn') if win else None
+        if edit is None or btn is None:
+            LOG.error('DECLARATION: row not found in the .ui '
+                      '(ned_declare_input=%s ned_declare_btn=%s) -- NOT '
+                      'wired. The button, if present, does nothing.',
+                      edit is not None, btn is not None)
+            return
+        try:
+            btn.clicked.disconnect()
+        except Exception:
+            pass
+        btn.clicked.connect(self._spindle_holds_declare)
+        self._sh_widgets = {'edit': edit}
+        LOG.info('DECLARATION: DECLARE row wired from the .ui')
 
     def _relabel_buttons(self):
         """Retext core buttons at RUNTIME, never by editing probe_basic.ui.
@@ -3510,8 +3493,35 @@ class UserTab(QWidget):
             if st.interp_state != linuxcnc.INTERP_IDLE:
                 self._declare_say(w, 'DECLARE refused: interpreter is busy')
                 return
+            # NOT FULLY HOMED = MDI IS REFUSED, SILENTLY. LinuxCNC will
+            # not accept an MDI command on non-identity kinematics until
+            # every joint is homed -- see _jog_issue's note. On 2026-08-03
+            # A/C were blocked by a failed head read, so DECLARE fired into
+            # "Must be in MDI mode" and still reported success. Say the real
+            # reason instead of retrying something that cannot work.
+            if not all(st.homed[:6]):
+                self._declare_say(w, 'DECLARE refused: the machine is not '
+                                     'fully homed, so LinuxCNC will not '
+                                     'accept an MDI command. A/C must home '
+                                     'first.')
+                return
+            # RE-ASSERT the mode, do not just wait for it: ned_brain hands
+            # MANUAL back on its own edge, and a request landing in that
+            # window is overwritten. Same loop _jog_issue uses.
+            import time
             c.mode(linuxcnc.MODE_MDI)
-            c.wait_complete()
+            deadline = time.time() + 4.0
+            while True:
+                st.poll()
+                if st.task_mode == linuxcnc.MODE_MDI:
+                    break
+                if time.time() >= deadline:
+                    self._declare_say(w, 'DECLARE refused: task never '
+                                         'reached MDI mode. Nothing was '
+                                         'changed.')
+                    return
+                c.mode(linuxcnc.MODE_MDI)
+                time.sleep(0.1)
             # One sub, not three MDI lines: it also takes the tool out of
             # whatever fork claimed it, and doing that as one call means the
             # record can never end up half-updated.
@@ -3523,8 +3533,16 @@ class UserTab(QWidget):
             if all(st.homed[:6]):
                 c.teleop_enable(1)
             st.poll()
-            msg = ('DECLARED T%d. LinuxCNC now reports tool %d, offset '
-                   '%.4f' % (n, st.tool_in_spindle, st.tool_offset[2]))
+            # VERIFY. The previous version printed "DECLARED T1" beside
+            # "reports tool 0" on a run whose MDI had been refused. A claim
+            # of success has to be checked against the machine.
+            if int(st.tool_in_spindle) != n:
+                self._declare_say(w, 'DECLARE FAILED: asked for T%d, LinuxCNC '
+                                     'still reports tool %d. Nothing was '
+                                     'changed.' % (n, st.tool_in_spindle))
+                return
+            msg = ('DECLARED T%d. LinuxCNC reports tool %d, offset %.4f'
+                   % (n, st.tool_in_spindle, st.tool_offset[2]))
             LOG.info(msg)
             # Back to 0, so pressing DECLARE again declares the spindle EMPTY
             # -- operator 2026-08-03. Anything removed from the rack or the
@@ -3536,6 +3554,7 @@ class UserTab(QWidget):
 
     def _on_drawbar(self, val):
         self._drawbar_released = bool(val)
+        self._sync_load_enabled()
 
     def _on_air(self, val):
         self._air = bool(val)
