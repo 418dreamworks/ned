@@ -456,6 +456,8 @@ class UserTab(QWidget):
         self._btn_labels = {}
         QTimer.singleShot(0, self._wire_load)
         QTimer.singleShot(0, self._relabel_buttons)
+        # after the UI settles -- it inserts into a core layout it must find
+        QTimer.singleShot(1500, self._build_declaration)
 
         # SPINDLE SECTION (operator 2026-08-01): spindle load meter ->
         # chip-load-per-flute PLACEHOLDER; left RPM readout -> live
@@ -593,47 +595,6 @@ class UserTab(QWidget):
 
             jl.addWidget(box)
 
-            # ---- SPINDLE HOLDS: declare the state, touch nothing ---------
-            # LinuxCNC's tool number resets to 0 (or -1) on every launch
-            # while #3991 persists, so after a restart the machine holds a
-            # tool it does not know about -- and there was no way to say so
-            # without an UNLOAD/LOAD cycle that DROPS the tool to do it.
-            # Worse, the drawbar gate correctly disables LOAD when the
-            # drawbar is shut, which is exactly the state you are in after a
-            # restart with a tool clamped. This is the way out: it declares,
-            # and moves nothing (operator 2026-08-03: "quickly tell lcnc in
-            # gui about the state of the machine ... no reload, unload etc").
-            sbox = QGroupBox('SPINDLE HOLDS')
-            sbox.setObjectName('spindle_holds_box')
-            sl = QVBoxLayout(sbox)
-            srow = QHBoxLayout()
-            slbl = QLabel('TOOL')
-            sedit = QLineEdit()
-            sedit.setObjectName('spindle_holds_input')
-            sedit.setPlaceholderText('0 = empty')
-            sedit.setMinimumHeight(34)
-            sedit.setMaximumWidth(90)
-            sset = QPushButton('DECLARE')
-            sset.setObjectName('spindle_holds_set')
-            sset.setMinimumHeight(34)
-            sset.clicked.connect(self._spindle_holds_declare)
-            srow.addWidget(slbl)
-            srow.addWidget(sedit)
-            srow.addWidget(sset)
-            srow.addStretch(1)
-            sl.addLayout(srow)
-            snote = QLabel('Tells LinuxCNC what is already in the spindle.\n'
-                           'Sets the tool number, its offset and #3991, and\n'
-                           'takes that tool OUT of the rack map.\n'
-                           'No drawbar, no motion, no tool change.')
-            snote.setStyleSheet('color: rgb(160,160,160); font: 9pt;')
-            sl.addWidget(snote)
-            sstat = QLabel('')
-            sstat.setObjectName('spindle_holds_status')
-            sstat.setWordWrap(True)
-            sl.addWidget(sstat)
-            self._sh_widgets = {'edit': sedit, 'status': sstat}
-            jl.addWidget(sbox)
             jl.addStretch(1)
             tabs.addTab(jog_page, 'JOG')
 
@@ -2986,6 +2947,93 @@ class UserTab(QWidget):
         'go_to_home_button':   'MCS HOME',
     }
 
+    def _build_declaration(self):
+        """DECLARATION box on the TOOL tab, directly under TOOL CHANGE PANEL.
+
+        Inserted at RUNTIME into the core layout rather than by editing
+        probe_basic.ui, so a PB update cannot silently drop it. Found by
+        walking up from the 'TOOL CHANGE PANEL' label to its enclosing frame
+        and asking that frame's parent layout to insert after it -- no
+        hardcoded object names, which is what makes it survive a re-layout.
+        """
+        from PySide6.QtWidgets import (QWidget as _QW, QGroupBox, QHBoxLayout,
+                                       QLabel, QLineEdit, QPushButton,
+                                       QVBoxLayout, QFrame)
+        try:
+            win = self.window()
+            if win is None:
+                LOG.error('DECLARATION: no window -- not built')
+                return
+            lbl = None
+            for w in win.findChildren(QLabel):
+                try:
+                    if (w.text() or '').strip().upper() == 'TOOL CHANGE PANEL':
+                        lbl = w
+                        break
+                except Exception:
+                    continue
+            if lbl is None:
+                LOG.error('DECLARATION: TOOL CHANGE PANEL label not found -- '
+                          'not built. Nothing else is affected.')
+                return
+            # walk up to the frame that IS the panel
+            frame = lbl.parent()
+            while frame is not None and not isinstance(frame, QFrame):
+                frame = frame.parent()
+            if frame is None:
+                LOG.error('DECLARATION: no enclosing QFrame above the label '
+                          '-- not built')
+                return
+            host = frame.parent()
+            lay = host.layout() if host is not None else None
+            if lay is None or not hasattr(lay, 'insertWidget'):
+                LOG.error('DECLARATION: parent layout is %s, which has no '
+                          'insertWidget -- not built',
+                          type(lay).__name__ if lay else None)
+                return
+            idx = lay.indexOf(frame)
+            if idx < 0:
+                LOG.error('DECLARATION: panel frame not in its parent layout '
+                          '-- not built')
+                return
+
+            box = QGroupBox('DECLARATION')
+            box.setObjectName('ned_declaration_box')
+            try:
+                box.setStyleSheet(frame.styleSheet())   # match the panel
+            except Exception:
+                pass
+            v = QVBoxLayout(box)
+            row = QHBoxLayout()
+            edit = QLineEdit('0')
+            edit.setObjectName('ned_declare_input')
+            edit.setMinimumHeight(34)
+            edit.setMaximumWidth(90)
+            btn = QPushButton('DECLARE')
+            btn.setObjectName('ned_declare_btn')
+            btn.setMinimumHeight(34)
+            btn.clicked.connect(self._spindle_holds_declare)
+            row.addWidget(edit)
+            row.addStretch(1)
+            row.addWidget(btn)
+            v.addLayout(row)
+            note = QLabel('Declares what is ALREADY in the spindle.\n'
+                          '0 = spindle empty. Removes that tool from the\n'
+                          'rack map. No drawbar, no motion.')
+            note.setStyleSheet('color: rgb(160,160,160); font: 9pt;')
+            v.addWidget(note)
+            stat = QLabel('')
+            stat.setObjectName('ned_declare_status')
+            stat.setWordWrap(True)
+            v.addWidget(stat)
+
+            lay.insertWidget(idx + 1, box)
+            self._sh_widgets = {'edit': edit, 'status': stat}
+            LOG.info('DECLARATION: built under TOOL CHANGE PANEL '
+                     '(layout %s, index %d)', type(lay).__name__, idx + 1)
+        except Exception:
+            LOG.exception('DECLARATION: not built')
+
     def _relabel_buttons(self):
         """Retext core buttons at RUNTIME, never by editing probe_basic.ui.
 
@@ -3405,10 +3453,15 @@ class UserTab(QWidget):
             if all(st.homed[:6]):
                 c.teleop_enable(1)
             st.poll()
-            msg = ('SPINDLE HOLDS: declared T%d. LinuxCNC now reports tool %d, '
-                   'offset %.4f' % (n, st.tool_in_spindle, st.tool_offset[2]))
+            msg = ('DECLARED T%d. LinuxCNC now reports tool %d, offset '
+                   '%.4f' % (n, st.tool_in_spindle, st.tool_offset[2]))
             LOG.info(msg)
             w['status'].setText(msg)
+            # Back to 0, so pressing DECLARE again declares the spindle EMPTY
+            # -- operator 2026-08-03. Anything removed from the rack or the
+            # spindle is assumed to have gone back to the table; nothing tries
+            # to guess a new home for it.
+            w['edit'].setText('0')
         except Exception as e:
             msg = 'SPINDLE HOLDS failed: %s' % e
             LOG.error(msg)
