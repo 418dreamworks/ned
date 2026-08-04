@@ -1,73 +1,88 @@
 o<m21> sub
 
-; ============================ PER-POCKET TABLE =============================
-; staging/rack_map rework 2026-08-02: the linear-interpolation rack model
-; (#3979 rack_id + #3983-#3988 pocket-1/pocket-2/clearance line) is REPLACED
-; by a per-pocket table. Pocket N (N = 1..15, params 4104..4163):
-;   #[4100+N*4]  seat X          (MACHINE coords, used under G53)
-;   #[4101+N*4]  seat Y          (MACHINE coords)
-;   #[4102+N*4]  clearance coord (ONE scalar: the entry-axis coordinate of
-;                                 the clearance point; the other axis holds
-;                                 the seat value)
-;   #[4103+N*4]  flags = entry_axis + 2*seat_taught + 4*clear_taught
-;                entry_axis: 0 = X entry (clearance coord is an X value),
-;                            1 = Y entry (clearance coord is a Y value)
-;                fully taught = 6 (X entry) or 7 (Y entry); < 6 aborts.
-; Entry DIRECTION needs no rack_id cases: the move INTO the pocket simply
-; travels clearance -> seat on the entry axis (sign implicit in the
-; seat-vs-clearance comparison); the retreat travels seat -> clearance.
-; Teach the table with o<rack_teach> call [N] [1|2] (rack_teach.ngc).
-; Shared params UNCHANGED: #3980 rack traverse F, #3981 Z load height,
-; #3982 safe Z. #3979/#3983-#3988 are NOT read here any more.
-; ===========================================================================
-
-; Use P-word / positional arg as target pocket (o<m21> call [N])
+; Use P-word as target pocket (if called as M21 Pn)
 #<target_pocket> = #1
 
-o101 if [[#<target_pocket> LT 1] OR [#<target_pocket> GT 15]]
-    (abort, m21: pocket #<target_pocket> outside 1..15)
-o101 endif
+; --- Parameter assignments for clarity ---
+#<rack_id>                = #3979
+#<rack_traverse_speed>    = #3980
+#<rack_z_load_height>     = #3981
+#<rack_safe_z_height>     = #3982
+#<rack_pocket_1_x>        = #3983
+#<rack_pocket_1_y>        = #3984
+#<rack_pocket_2_x>        = #3985
+#<rack_pocket_2_y>        = #3986
+#<pocket_1_x_clearance>   = #3987
+#<pocket_1_y_clearance>   = #3988
 
-; --- Per-pocket table read ---
-#<base>   = [4100 + [#<target_pocket> * 4]]
-#<seat_x> = #[#<base>]
-#<seat_y> = #[#<base> + 1]
-#<clr>    = #[#<base> + 2]
-#<flags>  = #[#<base> + 3]
+; --- Calculate pocket position ---
+#<dx> = [#<rack_pocket_2_x> - #<rack_pocket_1_x>]
+#<dy> = [#<rack_pocket_2_y> - #<rack_pocket_1_y>]
+#<pocket_index> = [#<target_pocket> - 1]
+#<pocket_x> = [#<rack_pocket_1_x> + #<pocket_index> * #<dx>]
+#<pocket_y> = [#<rack_pocket_1_y> + #<pocket_index> * #<dy>]
 
-o102 if [#<flags> LT 6]
-    (abort, m21: pocket #<target_pocket> not taught [flags #<flags>] - run rack_teach seat+clearance first)
-o102 endif
+; --- Determine clearance position, axis, and direction ---
+#<clearance_x> = #<pocket_x>
+#<clearance_y> = #<pocket_y>
+#<store_axis> = 0
+#<store_sign> = 1
 
-#<entry_axis> = [#<flags> MOD 2]   ; 0 = X entry, 1 = Y entry
+o100 if [#<rack_id> EQ 1] ; -Y to +Y, clearance +X, store -X
+    #<clearance_x> = #<pocket_1_x_clearance>
+    #<store_axis> = 1
+    #<store_sign> = -1
+o100 elseif [#<rack_id> EQ 2] ; -Y to +Y, clearance -X, store +X
+    #<clearance_x> = #<pocket_1_x_clearance>
+    #<store_axis> = 1
+    #<store_sign> = 1
+o100 elseif [#<rack_id> EQ 3] ; +Y to -Y, clearance +X, store -X
+    #<clearance_x> = #<pocket_1_x_clearance>
+    #<store_axis> = 1
+    #<store_sign> = -1
+o100 elseif [#<rack_id> EQ 4] ; +Y to -Y, clearance -X, store +X
+    #<clearance_x> = #<pocket_1_x_clearance>
+    #<store_axis> = 1
+    #<store_sign> = 1
+o100 elseif [#<rack_id> EQ 5] ; -X to +X, clearance +Y, store -Y
+    #<clearance_y> = #<pocket_1_y_clearance>
+    #<store_axis> = 2
+    #<store_sign> = -1
+o100 elseif [#<rack_id> EQ 6] ; -X to +X, clearance -Y, store +Y
+    #<clearance_y> = #<pocket_1_y_clearance>
+    #<store_axis> = 2
+    #<store_sign> = 1
+o100 elseif [#<rack_id> EQ 7] ; +X to -X, clearance +Y, store -Y
+    #<clearance_y> = #<pocket_1_y_clearance>
+    #<store_axis> = 2
+    #<store_sign> = -1
+o100 elseif [#<rack_id> EQ 8] ; +X to -X, clearance -Y, store +Y
+    #<clearance_y> = #<pocket_1_y_clearance>
+    #<store_axis> = 2
+    #<store_sign> = 1
+o100 else
+    (PRINT, "Error: Invalid rack_id!")
+    o<m21> return
+o100 endif
 
-; --- Clearance point: seat with the entry-axis coordinate replaced ---
-#<clearance_x> = #<seat_x>
-#<clearance_y> = #<seat_y>
-o110 if [#<entry_axis> EQ 0]
-    #<clearance_x> = #<clr>
-o110 else
-    #<clearance_y> = #<clr>
-o110 endif
-
-; --- Motions (same choreography as the rack_id version) ---
+; --- Motions ---
 G90
-G0 G53 Z[#3982]
+G0 G53 Z[#<rack_safe_z_height>]
 G0 G53 X[#<clearance_x>] Y[#<clearance_y>]
-G1 G53 F[#3980] Z[#3981]
-; M19 removed for ned: no spindle orient hardware (Mollom relays are CW/CCW
-; only); the rack forks accept any rotation (proven by daily hand-loading)
+G1 G53 F[#<rack_traverse_speed>] Z[#<rack_z_load_height>]
+; M19 removed for ned: no spindle orient hardware (Mollom relays are CW/CCW only); the forks accept any
+; rotation -- proven by daily hand-loading.
 G4 P1
 
-; Move into pocket - single entry axis, direction = clearance -> seat
-o200 if [#<entry_axis> EQ 0]
-    G1 G53 F[#3980] X[#<seat_x>]
+; Move into pocket - single axis, correct direction
+o200 if [#<store_axis> EQ 1]
+    G1 G53 F[#<rack_traverse_speed>] X[#<pocket_x>]
 o200 else
-    G1 G53 F[#3980] Y[#<seat_y>]
+    G1 G53 F[#<rack_traverse_speed>] Y[#<pocket_y>]
 o200 endif
 
 M24
-G0 G53 Z[#3982]
+G0 G53 Z[#<rack_safe_z_height>]
 
 o<m21> endsub
 

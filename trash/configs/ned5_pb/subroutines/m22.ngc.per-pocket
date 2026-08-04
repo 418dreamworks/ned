@@ -1,0 +1,63 @@
+o<m22> sub
+
+; ============================ PER-POCKET TABLE =============================
+; staging/rack_map rework 2026-08-02 -- same table as m21.ngc (read the
+; header there). Pocket N (N = 1..15, params 4104..4163):
+;   #[4100+N*4] seat X, #[4101+N*4] seat Y   (MACHINE coords, G53)
+;   #[4102+N*4] clearance coord (entry-axis scalar)
+;   #[4103+N*4] flags = entry_axis (0=X,1=Y) + 2*seat_taught + 4*clear_taught
+; Retrieve: drop onto the SEAT from above, clamp, then retreat seat ->
+; clearance on the entry axis (direction implicit, no rack_id cases).
+; Shared params UNCHANGED: #3980 traverse F, #3981 Z load, #3982 safe Z.
+; ===========================================================================
+
+; Use P-word / positional arg as target pocket (o<m22> call [N])
+#<target_pocket> = #1
+
+o101 if [[#<target_pocket> LT 1] OR [#<target_pocket> GT 15]]
+    (abort, m22: pocket #<target_pocket> outside 1..15)
+o101 endif
+
+; --- Per-pocket table read ---
+#<base>   = [4100 + [#<target_pocket> * 4]]
+#<seat_x> = #[#<base>]
+#<seat_y> = #[#<base> + 1]
+#<clr>    = #[#<base> + 2]
+#<flags>  = #[#<base> + 3]
+
+o102 if [#<flags> LT 6]
+    (abort, m22: pocket #<target_pocket> not taught [flags #<flags>] - run rack_teach seat+clearance first)
+o102 endif
+
+#<entry_axis> = [#<flags> MOD 2]   ; 0 = X entry, 1 = Y entry
+
+; --- Clearance point: seat with the entry-axis coordinate replaced ---
+#<clearance_x> = #<seat_x>
+#<clearance_y> = #<seat_y>
+o110 if [#<entry_axis> EQ 0]
+    #<clearance_x> = #<clr>
+o110 else
+    #<clearance_y> = #<clr>
+o110 endif
+
+; --- Motions (same choreography as the rack_id version) ---
+G90
+G0 G53 Z[#3982]
+G0 G53 X[#<seat_x>] Y[#<seat_y>]
+; M19 removed for ned: no spindle orient hardware; forks accept any rotation
+M24 ; unclamp drawbar to receive tool
+G1 G53 F[#3980] Z[#3981]
+M25 ; clamp tool in spindle
+
+; Move tool out of pocket - single entry axis, direction = seat -> clearance
+o200 if [#<entry_axis> EQ 0]
+    G1 G53 F[#3980] X[#<clearance_x>]
+o200 else
+    G1 G53 F[#3980] Y[#<clearance_y>]
+o200 endif
+
+G0 G53 Z[#3982]
+
+o<m22> endsub
+
+M2

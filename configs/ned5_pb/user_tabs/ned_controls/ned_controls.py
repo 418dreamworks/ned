@@ -440,6 +440,7 @@ class UserTab(QWidget):
         # resolves the .ngc and pulls the tool number from the paired
         # load_spindle_tool_number[_2] field, so none of that is duplicated.
         self._load_pend = {}
+        self._btn_labels = {}
         QTimer.singleShot(0, self._wire_load)
 
         # SPINDLE SECTION (operator 2026-08-01): spindle load meter ->
@@ -2988,7 +2989,14 @@ class UserTab(QWidget):
                 return
             c.mode(linuxcnc.MODE_MDI)
             c.wait_complete()
-            c.mdi('M65 P0')
+            # o<clamptool> = M65 P0 PLUS M66 P0 L3 Q2, which waits up to 2 s
+            # for the tool-LOCKED sensor and aborts if it never confirms. A
+            # bare M65 P0 de-energises the solenoid and assumes it worked.
+            # No tool bookkeeping here: unload_spindle.ngc already did
+            # M61 Q0 / G49 / #3991 = 0, so the spindle is on record as empty
+            # from the moment it was unloaded (operator 2026-08-03: "if user
+            # doesn't reload after unloading, quite simply, spindle is empty").
+            c.mdi('o<clamptool> call')
             c.wait_complete(5.0)
             c.mode(linuxcnc.MODE_MANUAL)
             c.wait_complete()
@@ -3003,16 +3011,84 @@ class UserTab(QWidget):
         except Exception as e:
             LOG.error('DRAWBAR: could not release: %s', e)
 
+    # Faces a countdown writes, which must NEVER be adopted as a base label.
+    _TRANSIENT_FACES = ('CANCEL', 'LOAD?')
+
+    def _load_tool_ok(self, b):
+        """Is the number in this button's field actually a loadable tool?
+
+        load_spindle_safety_2.ngc runs o<clamptool> FIRST and only reaches
+        M61/G43 afterwards, with "#3991 = <n>" on the line AFTER the G43. So
+        a tool that is not in the table aborts at G43 with the drawbar
+        already clamped and NOTHING recorded -- which is exactly what
+        happened on 2026-08-03 ("Requested tool 1 not found in the tool
+        table"). Checking here means a doomed call is never issued at all.
+
+        Reads stat().tool_table, not tool.tbl, because the interpreter's
+        LOADED table is what G43 consults -- rows added in the GUI but never
+        saved are present, and a saved-but-not-reloaded file is not.
+        """
+        try:
+            import linuxcnc
+            name = b.objectName().replace('button', 'tool_number')
+            w = self.window().findChild(QWidget, name)
+            if w is None or not hasattr(w, 'text'):
+                LOG.error('LOAD SPINDLE: field %s not found -- cannot verify '
+                          'the tool; refusing rather than clamping blind', name)
+                return False
+            raw = (w.text() or '').strip()
+            n = int(float(raw))
+            if n <= 0:
+                LOG.error('LOAD SPINDLE refused: tool number %r is not valid. '
+                          'To record an EMPTY spindle just let the drawbar '
+                          'window run out.', raw)
+                return False
+            st = linuxcnc.stat(); st.poll()
+            if any(getattr(t, 'id', -1) == n for t in st.tool_table):
+                return True
+            msg = ('LOAD SPINDLE refused: T%d is not in the loaded tool table. '
+                   'Add it and press SAVE TABLE, then RELOAD TABLE. Nothing '
+                   'was clamped.' % n)
+            LOG.error(msg)
+            try:
+                linuxcnc.command().error_msg(msg)
+            except Exception:
+                pass
+            return False
+        except Exception as e:
+            LOG.error('LOAD SPINDLE: could not verify the tool (%s) -- '
+                      'refusing rather than clamping blind', e)
+            return False
+
+    def _btn_base_label(self, b, default):
+        """The button's REAL name, remembered once and never re-read live.
+
+        2026-08-03: both countdowns recorded b.text() as the label to restore.
+        A click landing while the face said "CANCEL  1" adopted that string,
+        so every later restore wrote "CANCEL  1" back -- and because a click
+        on a pending button is the CANCEL path, LOAD SPINDLE became
+        unreachable until relaunch. Self-perpetuating: the corrupt label
+        survived every cycle. Refusing transient faces here means the label
+        cannot be poisoned no matter when a click lands.
+        """
+        lbl = self._btn_labels.get(b)
+        if lbl is None:
+            t = (b.text() or '').strip()
+            lbl = default if t.startswith(self._TRANSIENT_FACES) or not t else t
+            self._btn_labels[b] = lbl
+        return lbl
+
     def _load_click(self, b):
         self._drawbar_window_cancel('LOAD pressed')
         pend = self._load_pend.get(b)
         if pend is not None:                     # second click = cancel
             pend['timer'].stop()
-            b.setText(pend['text'])
+            b.setText(self._btn_base_label(b, 'LOAD SPINDLE'))
             self._load_pend.pop(b, None)
             LOG.info('LOAD SPINDLE cancelled')
             return
-        pend = {'text': b.text(), 'left': 5}
+        base = self._btn_base_label(b, 'LOAD SPINDLE')
+        pend = {'text': base, 'left': 5}
         timer = QTimer(self)
         pend['timer'] = timer
         self._load_pend[b] = pend
@@ -3029,10 +3105,17 @@ class UserTab(QWidget):
             b.setText(pend['text'])
             self._load_pend.pop(b, None)
             try:
+                if not self._load_tool_ok(b):
+                    return                      # refused, loudly, above
                 b.callSub()          # PB's own sub call (tool no. from field)
-                LOG.info('LOAD SPINDLE executed (countdown elapsed)')
+                # NOT proof of success -- callSub is fire-and-forget, so the
+                # sub can still abort ("Requested tool 1 not found in the
+                # tool table") long after this returns. The old wording said
+                # "executed" on a run that aborted, 2026-08-03.
+                LOG.info('LOAD SPINDLE: sub call ISSUED (countdown elapsed) '
+                         '-- not a success; watch for an abort')
             except Exception as e:
-                LOG.error('LOAD SPINDLE failed: %s', e)
+                LOG.error('LOAD SPINDLE failed to issue: %s', e)
 
         timer.timeout.connect(tick)
         b.setText('CANCEL  5')
@@ -3041,11 +3124,12 @@ class UserTab(QWidget):
     def _unload_click(self, b):
         if self._unload_pend is not None:          # second click = cancel
             self._unload_pend['timer'].stop()
-            b.setText(self._unload_pend['text'])
+            b.setText(self._btn_base_label(b, 'UNLOAD SPINDLE'))
             self._unload_pend = None
             LOG.info('UNLOAD SPINDLE cancelled')
             return
-        pend = {'text': b.text(), 'left': 5}
+        base = self._btn_base_label(b, 'UNLOAD SPINDLE')
+        pend = {'text': base, 'left': 5}
         timer = QTimer(self)
         pend['timer'] = timer
         self._unload_pend = pend

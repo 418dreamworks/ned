@@ -64,6 +64,20 @@ loadrt or2 names=limhit.0,limhit.1,limhit.2,limhit.3,limhit.4,sol.ts,sol.blow,so
 # moves TOWARD it (parked/away = no fault -> POWER + jog work on a depressed
 # switch; motion INTO it still hard-trips). jogblock.<axis> swallows MPG detents
 # toward a depressed switch so the wheel can never command that motion.
+# Z BREAKAWAY WINDOW (operator 2026-08-03: "if lower limit is tripped,
+# wait .5 seconds"). The bottom of the Z leadscrew is stiff, and homing up
+# out of it kept dying with "joint 2 following error". Nothing was gating the
+# move -- HOME_IGNORE_LIMITS is YES, limdir.2 only asserts downward -- the
+# axis simply was not given time to break free. Allowed lag is
+# max(MIN_FERROR, FERROR*v/vmax), and at the start of a move the velocity is
+# still ramping, so the floor applies: 2.54 mm. At MAX_ACCELERATION 200
+# mm/s^2 a stalled axis reaches that in sqrt(2*2.54/200) = 0.16 s.
+# 0.5 s needs 0.5*200*0.5^2 = 25 mm of tolerated lag, so while the bottom
+# switch is made ini.2.min_ferror becomes 25 and Z gets its half second.
+# Scoped to the switch on purpose: it is only relaxed at the very bottom of
+# travel, where Z cannot run away downward anyway, and it snaps back to the
+# INI value the moment the switch releases.
+loadrt mux2 names=zferr.z
 loadrt limdir names=limdir.0,limdir.1,limdir.2,limdir.3
 loadrt jogblock names=jogblock.x,jogblock.y,jogblock.z
 # HQD S3 shaft-stop is a PULSE source, not a level (manual:183-185: PNP prox,
@@ -121,6 +135,7 @@ setp jogblock.y.crawl-mmps 0.15
 setp jogblock.z.crawl-mmps 0.15
 addf limdir.0                 servo-thread
 addf limdir.1                 servo-thread
+addf zferr.z                  servo-thread
 addf limdir.2                 servo-thread
 addf limdir.3                 servo-thread
 addf shaft.edge               servo-thread
@@ -320,6 +335,11 @@ net sig-limit-x-aft    => limdir.0.lim-pos-in  limdir.3.lim-pos-in  jogblock.x.l
 net sig-limit-x-fore   => limdir.0.lim-neg-in  limdir.3.lim-neg-in  jogblock.x.lim-neg
 net sig-limit-y-sb     => limdir.1.lim-pos-in  jogblock.y.lim-pos
 net sig-limit-y-port   => limdir.1.lim-neg-in  jogblock.y.lim-neg
+setp zferr.z.in0 [JOINT_2]MIN_FERROR   ; switch clear -> the INI value
+setp zferr.z.in1 25.0                 ; switch made  -> 0.5 s of breakaway
+net sig-limit-z-bottom => zferr.z.sel
+net sig-z-minferror zferr.z.out => ini.2.min_ferror
+
 net sig-limit-z-bottom => limdir.2.lim-neg-in  jogblock.z.lim-neg
 # Z JOG CLAMP -- APPROACH PROFILE inside jogblock (operator 2026-08-02: "do a
 # PID so that the detent arrival dramatically slows down as you arrive the
