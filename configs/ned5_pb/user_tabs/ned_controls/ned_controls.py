@@ -2987,7 +2987,10 @@ class UserTab(QWidget):
     SPARE_M6 = ('m6_tool_call_button_tool_page',
                 'tool_number_entry_tool_page',
                 'm6_tool_call_button_atc_page',
-                'tool_number_entry_atc_page')
+                'tool_number_entry_atc_page',
+                # TOUCH OFF CURRENT TOOL: the TOOL tab keeps the only one;
+                # the rack widget carried a full copy (operator 2026-08-04)
+                'tool_touch_off_button_atc')
 
     def _hide_spare_mdi(self):
         win = self.window()
