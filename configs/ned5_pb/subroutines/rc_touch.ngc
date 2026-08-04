@@ -15,23 +15,24 @@ o<rc_touch> sub
   o20 if [#5070 EQ 0]
     (abort, RACK CAL: no contact inside the bore - fork empty, not energized, or the Y step is wrong)
   o20 endif
+  (2 mm backoff around the slow latch - operator 2026-08-04)
   G91
   o30 if [#<ax> EQ 0]
     G38.5 X[0 - #<side> * #<_rc_reach>] F[#<_rc_fla>]
-    G90
-    G38.2 X[#<_rc_cx> + #<side> * #<_rc_reach>] F[#<_rc_fla>]
+    G1 X[0 - #<side> * 2.0] F[#<_rc_ftr>]
+    G38.2 X[#<side> * 3.0] F[#<_rc_fla>]
     #<_rc_val> = #5061
-    G91
-    G38.5 X[0 - #<side> * #<_rc_reach>] F[#<_rc_fla>]
+    G38.5 X[0 - #<side> * 3.0] F[#<_rc_fla>]
+    G1 X[0 - #<side> * 2.0] F[#<_rc_ftr>]
     G90
     G1 X[#<_rc_cx>] F[#<_rc_ftr>]
   o30 else
     G38.5 Y[0 - #<side> * #<_rc_reach>] F[#<_rc_fla>]
-    G90
-    G38.2 Y[#<_rc_cy> + #<side> * #<_rc_reach>] F[#<_rc_fla>]
+    G1 Y[0 - #<side> * 2.0] F[#<_rc_ftr>]
+    G38.2 Y[#<side> * 3.0] F[#<_rc_fla>]
     #<_rc_val> = #5062
-    G91
-    G38.5 Y[0 - #<side> * #<_rc_reach>] F[#<_rc_fla>]
+    G38.5 Y[0 - #<side> * 3.0] F[#<_rc_fla>]
+    G1 Y[0 - #<side> * 2.0] F[#<_rc_ftr>]
     G90
     G1 Y[#<_rc_cy>] F[#<_rc_ftr>]
   o30 endif
