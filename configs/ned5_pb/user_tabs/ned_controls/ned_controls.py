@@ -479,6 +479,7 @@ class UserTab(QWidget):
         QTimer.singleShot(1500, self._build_declaration)
         QTimer.singleShot(1600, self._hide_spare_mdi)
         QTimer.singleShot(1700, self._start_homing_gate)
+        QTimer.singleShot(1800, self._build_rack_table)
 
         # SPINDLE SECTION (operator 2026-08-01): spindle load meter ->
         # chip-load-per-flute PLACEHOLDER; left RPM readout -> live
@@ -3117,6 +3118,94 @@ class UserTab(QWidget):
             LOG.error('HOMING GATE: %d button(s) NOT found, still live on an '
                       'unhomed machine: %s', len(missing), ', '.join(missing))
         self._sync_load_enabled()
+
+    RACK_TABLE_FORKS = 14
+
+    def _build_rack_table(self):
+        """RACK TABLE page on the ATC tab: per-fork PosX / PosY (PosZ later).
+
+        Lives as a page of rack_tab_widget (beside RACK ATC / RACK SETUP) and
+        shows the 4100 block the RACK CALIBRATION cycle writes -- the same
+        params a per-fork changer would read. Read-only: the LOCATOR is the
+        writer; a hand-editable copy is how the map starts lying. Styled by
+        the app-wide QSS the tool table already wears (class-based, so a
+        plain QTableWidget picks it up). Var file only saves on program end/
+        abort/exit, so values can lag a running cycle -- the PRINT lines are
+        the live confirmation, this table is the record.
+        """
+        from PySide6.QtWidgets import (QTabWidget, QTableWidget,
+                                       QTableWidgetItem, QVBoxLayout,
+                                       QAbstractItemView)
+        from PySide6.QtCore import Qt
+        try:
+            win = self.window()
+            host = win.findChild(QTabWidget, 'rack_tab_widget') if win else None
+            if host is None:
+                LOG.error('RACK TABLE: rack_tab_widget not found -- not '
+                          'built. Nothing else is affected.')
+                return
+            page = QWidget()
+            lay = QVBoxLayout(page)
+            lay.setContentsMargins(8, 8, 8, 8)
+            t = QTableWidget(self.RACK_TABLE_FORKS, 4)
+            t.setObjectName('ned_rack_table')
+            t.setHorizontalHeaderLabels(['P', 'POS X', 'POS Y', 'POS Z'])
+            t.verticalHeader().setVisible(False)
+            t.setEditTriggers(QAbstractItemView.NoEditTriggers)
+            t.setSelectionMode(QAbstractItemView.NoSelection)
+            for r in range(self.RACK_TABLE_FORKS):
+                it = QTableWidgetItem(str(r + 1))
+                it.setTextAlignment(Qt.AlignCenter)
+                t.setItem(r, 0, it)
+                for ccol in (1, 2, 3):
+                    v = QTableWidgetItem('\u2014')
+                    v.setTextAlignment(Qt.AlignVCenter | Qt.AlignRight)
+                    t.setItem(r, ccol, v)
+            t.setColumnWidth(0, 60)
+            for ccol in (1, 2, 3):
+                t.setColumnWidth(ccol, 150)
+            lay.addWidget(t)
+            host.addTab(page, 'RACK TABLE')
+            self._rack_table = t
+            self._rack_table_mtime = None
+            self._rack_table_timer = QTimer(self)
+            self._rack_table_timer.timeout.connect(self._rack_table_poll)
+            self._rack_table_timer.start(2000)
+            self._rack_table_poll()
+            LOG.info('RACK TABLE: page added to rack_tab_widget '
+                     '(%d forks, PosZ placeholder)', self.RACK_TABLE_FORKS)
+        except Exception:
+            LOG.exception('RACK TABLE: not built')
+
+    def _rack_table_poll(self):
+        """mtime-gated re-read of the 4100 block into the table."""
+        t = getattr(self, '_rack_table', None)
+        if t is None:
+            return
+        try:
+            mt = os.path.getmtime(self.VAR_FILE)
+            if mt == self._rack_table_mtime:
+                return
+            self._rack_table_mtime = mt
+            vals = {}
+            with open(self.VAR_FILE) as fh:
+                for line in fh:
+                    b = line.split()
+                    if len(b) >= 2:
+                        try:
+                            vals[int(b[0])] = float(b[1])
+                        except ValueError:
+                            pass
+            for r in range(self.RACK_TABLE_FORKS):
+                base = 4100 + 4 * (r + 1)
+                ok = vals.get(base + 3, 0.0) > 0
+                x = ('%.3f' % vals.get(base, 0.0)) if ok else '\u2014'
+                y = ('%.3f' % vals.get(base + 1, 0.0)) if ok else '\u2014'
+                t.item(r, 1).setText(x)
+                t.item(r, 2).setText(y)
+                # PosZ stays a placeholder until the Z pass exists
+        except Exception:
+            LOG.exception('RACK TABLE: poll failed')
 
     def _build_declaration(self):
         """Wire the DECLARE row. It is built in probe_basic.ui, not here.
