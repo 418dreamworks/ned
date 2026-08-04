@@ -3214,7 +3214,11 @@ class UserTab(QWidget):
                 y = ('%.3f' % vals.get(base + 1, 0.0)) if ok else '\u2014'
                 t.item(r, 1).setText(x)
                 t.item(r, 2).setText(y)
-                # PosZ stays a placeholder until the Z pass exists
+                # PosZ: the shoulder-touch ends + linear interpolation fill
+                # +2 once a full cycle completes; 0.0 means never written
+                zv = vals.get(base + 2, 0.0)
+                t.item(r, 3).setText(('%.3f' % zv) if (ok and zv != 0.0)
+                                     else '\u2014')
         except Exception:
             LOG.exception('RACK TABLE: poll failed')
 

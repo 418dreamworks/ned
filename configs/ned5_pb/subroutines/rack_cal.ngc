@@ -42,9 +42,20 @@ o<rack_cal> sub
     (abort, RACK CAL: probe feeds 3004-3006 are not set - set them on the probe screen first)
   o8 endif
 
+  #<z1> = 0
+  #<zn> = 0
   #<i> = 1
   o10 while [#<i> LE #<n>]
     o<rc_locate> call [#<i>]
+    (Z pass at the two ends only: shoulder touch at X-20 - P1 and Pn)
+    o11 if [#<i> EQ 1]
+      o<rc_ztouch> call
+      #<z1> = #<_rc_ztop>
+    o11 endif
+    o12 if [#<i> EQ #<n>]
+      o<rc_ztouch> call
+      #<zn> = #<_rc_ztop>
+    o12 endif
     (next fork: predicted from the centre just FOUND, one step over in Y-)
     #<_rc_cy> = [#<_rc_cy> - #<step>]
     #<i> = [#<i> + 1]
@@ -52,6 +63,19 @@ o<rack_cal> sub
 
   G90
   G1 Z[#<_rc_safe>] F[#<_rc_ftr>]
+
+  (PosZ for every fork: linear interpolation P1 -> Pn, stored MACHINE coords)
+  #<offz> = [#<_abs_z> - #<_z>]
+  #<k> = 1
+  o20 while [#<k> LE #<n>]
+    o21 if [#<n> GT 1]
+      #<zi> = [#<z1> + [[#<zn> - #<z1>] * [#<k> - 1] / [#<n> - 1]]]
+    o21 else
+      #<zi> = #<z1>
+    o21 endif
+    #[4100 + [#<k> * 4] + 2] = [#<zi> + #<offz>]
+    #<k> = [#<k> + 1]
+  o20 endwhile
   #3071 = 1
   (PRINT, RACK CAL DONE: #<n> forks located and stored in the 4100 block)
   (DEBUG, RACK CAL done: #<n> forks located - see the log for each centre)

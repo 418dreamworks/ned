@@ -1,0 +1,24 @@
+(ned RACK CAL -- Z touch: spindle SHOULDER onto the holder at X-20)
+(From the found centre at safety Z: offset X by -20 so the nose FACE, not)
+(the bore mouth, is what lands - it meets the stud tip / holder top, which)
+(is the same top the datum references. Probe down, latch slow, record the)
+(work Z in #<_rc_ztop>, release, return to the centre at safety.)
+o<rc_ztouch> sub
+  G90
+  G1 X[#<_rc_cx> - 20.0] F[#<_rc_ftr>]
+  G38.2 Z-25.0 F[#<_rc_fpr>]
+  o10 if [#5070 EQ 0]
+    G1 Z[#<_rc_safe>] F[#<_rc_ftr>]
+    (abort, RACK CAL Z: no contact by -25 - is this holder energized?)
+  o10 endif
+  G91
+  G1 Z1.0 F[#<_rc_ftr>]
+  G38.2 Z-2.0 F[#<_rc_fla>]
+  #<_rc_ztop> = #5063
+  G38.5 Z2.0 F[#<_rc_fla>]
+  G90
+  G1 Z[#<_rc_safe>] F[#<_rc_ftr>]
+  G1 X[#<_rc_cx>] F[#<_rc_ftr>]
+  (PRINT, RACK CAL Z: holder top at work Z#<_rc_ztop>)
+o<rc_ztouch> endsub
+M2
