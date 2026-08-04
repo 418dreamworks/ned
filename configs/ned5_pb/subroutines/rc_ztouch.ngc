@@ -4,7 +4,11 @@
 (is the same top the datum references. Probe down, latch slow, record the)
 (work Z in #<_rc_ztop>, release, return to the centre at safety.)
 o<rc_ztouch> sub
+  (position independently: on a RESUMED run the end fork may have been)
+  (skipped, so the spindle is not already sitting at its centre)
   G90
+  G1 Z[#<_rc_safe>] F[#<_rc_ftr>]
+  G1 X[#<_rc_cx>] Y[#<_rc_cy>] F[#<_rc_ftr>]
   G1 X[#<_rc_cx> - 20.0] F[#<_rc_ftr>]
   G38.2 Z-25.0 F[#<_rc_fpr>]
   o10 if [#5070 EQ 0]

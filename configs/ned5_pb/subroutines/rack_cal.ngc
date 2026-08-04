@@ -48,7 +48,19 @@ o<rack_cal> sub
   #<zn> = 0
   #<i> = 1
   o10 while [#<i> LE #<n>]
-    o<rc_locate> call [#<i>]
+    (RESUME: a fork with data is SKIPPED, its stored centre reused for the)
+    (prediction chain -- an aborted run keeps everything already located and)
+    (a restart from the datum only probes the holders without data)
+    #<base> = [4100 + [#<i> * 4]]
+    o13 if [#[#<base> + 3] EQ 1]
+      #<offx> = [#<_abs_x> - #<_x>]
+      #<offy> = [#<_abs_y> - #<_y>]
+      #<_rc_cx> = [#[#<base>] - #<offx>]
+      #<_rc_cy> = [#[#<base> + 1] - #<offy>]
+      (PRINT, RACK CAL fork #<i>: already located - skipped)
+    o13 else
+      o<rc_locate> call [#<i>]
+    o13 endif
     (Z pass at the two ends only: shoulder touch at X-20 - P1 and Pn)
     o11 if [#<i> EQ 1]
       o<rc_ztouch> call
