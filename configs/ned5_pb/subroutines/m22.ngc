@@ -127,9 +127,21 @@ M24 ; unclamp drawbar to receive tool
 ; already waits, so repeating it here would double it
 G1 G53 F[#<rack_traverse_speed>] Z[#<rack_z_load_height>]
 M25 ; clamp tool in spindle
-; fully GRIPPED before pulling it out of the fork
-; dwell now lives in clamptool/unclamptool -- every M24/M25
-; already waits, so repeating it here would double it
+; dwell lives in clamptool/unclamptool -- every M24/M25 already waits.
+;
+; DO NOT MOVE UNLESS THE TOOL IS IN THE SPINDLE (operator 2026-08-04).
+; Sliding out of the fork without a grip leaves the tool behind while the
+; record says we carried it away -- the worst possible disagreement, because
+; the next put-away then drives an empty spindle at an occupied fork.
+; Require BOTH: locked asserted AND released gone.
+M66 P0 L0
+o81 if [#5399 LT 1]
+    (abort, m22: tool-LOCKED never asserted after M25 - NOT pulling out of the fork)
+o81 endif
+M66 P1 L0
+o82 if [#5399 GT 0]
+    (abort, m22: tool-RELEASED still asserted - drawbar is not shut, NOT pulling out of the fork)
+o82 endif
 
 ; Move tool out of pocket - single axis, correct direction
 o200 if [#<retrieve_axis> EQ 1]

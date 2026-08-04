@@ -131,9 +131,22 @@ o200 else
 o200 endif
 
 M24
-; let it FULLY release before the spindle lifts away from the fork
-; dwell now lives in clamptool/unclamptool -- every M24/M25
-; already waits, so repeating it here would double it
+; dwell lives in clamptool/unclamptool -- every M24/M25 already waits.
+;
+; DO NOT MOVE UNTIL THE TOOL IS OUT OF THE SPINDLE (operator 2026-08-04).
+; The sensors exist, so use them rather than trusting that M24 did what it
+; was told: digital-in-00 = S1 tool-LOCKED, digital-in-01 = S2 tool-RELEASED.
+; Lifting while still gripped drags the tool straight back out of the fork.
+; Require BOTH: released asserted AND locked gone -- one sensor alone cannot
+; tell "let go" from "sensor failed low". L0 = read now, no wait.
+M66 P1 L0
+o81 if [#5399 LT 1]
+    (abort, m21: tool-RELEASED never asserted - NOT lifting, the tool is still in the spindle)
+o81 endif
+M66 P0 L0
+o82 if [#5399 GT 0]
+    (abort, m21: tool-LOCKED still asserted after release - NOT lifting, the spindle is still gripping)
+o82 endif
 ; leave at the top, not the approach height -- whatever runs next inherits a
 ; clear machine instead of one parked 81 mm above the forks.
 G1 G53 F[#<rack_rapid_f>] Z[#<rack_traverse_z>]
