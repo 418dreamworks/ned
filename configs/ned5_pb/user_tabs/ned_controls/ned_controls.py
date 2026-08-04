@@ -3601,6 +3601,18 @@ class UserTab(QWidget):
     # did not home the swivel head"), pulse homeall-out so ned_brain arms the
     # fresh read, then start the normal HOME ALL sequence (A/C are seq 2,
     # last; brain's guard aborts them if the read hasn't landed in time).
+    def get_ac_lock(self, ax):
+        """The REAL lock state: the HAL pin the pendant obeys.
+
+        Not the remembered dict -- if the two ever disagree the pin is what
+        actually gates the wheel, and the display must show that rather than
+        what the GUI believes.
+        """
+        try:
+            return bool(self.comp.getPin('lock-' + ax + '-out').value)
+        except Exception:
+            return bool(getattr(self, '_ac_locked', {}).get(ax, False))
+
     def set_ac_lock(self, ax, on):
         # LOCK A / LOCK C (DRO buttons, repurposed A/C zeros): the pendant
         # skips locked axes in the MPG selection cycle (pendant.lock-a/-c

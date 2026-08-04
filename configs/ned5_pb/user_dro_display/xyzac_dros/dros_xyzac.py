@@ -181,6 +181,7 @@ class UserDRO(QWidget):
         # LOCK A / LOCK C -- the A/C ZERO buttons repurposed as checkable
         # toggles. Locked = skipped entirely in the MPG selection cycle
         # (ned_controls tab -> ned-tab.lock-*-out -> pendant.lock-*).
+        self._lock_btns = {}
         for name, ax in (('zero_a_button', 'a'), ('zero_c_button', 'c')):
             b = self.findChild(QWidget, name)
             if b is None:
@@ -200,6 +201,35 @@ class UserDRO(QWidget):
             b.setStyleSheet(b.styleSheet() +
                             '\nMDIButton:checked { background: rgb(25,120,45); }')
             b.toggled.connect(lambda on, btn=b, a=ax: self._ac_lock(btn, a, on))
+            self._lock_btns[ax] = b
+        # COLOUR TRACKS STATE, NOT CLICKS (operator 2026-08-04). The green
+        # came from :checked, and checked only moved when a finger moved it
+        # -- so a calibration cycle locking A/C, or the startup clear, left
+        # the button showing the opposite of the truth. Poll the pin the
+        # pendant actually obeys and follow it. Signals blocked while
+        # setting, or setChecked would call _ac_lock and write the pin back.
+        from PySide6.QtCore import QTimer
+        self._lock_sync_timer = QTimer(self)
+        self._lock_sync_timer.timeout.connect(self._sync_lock_buttons)
+        self._lock_sync_timer.start(400)
+        self._sync_lock_buttons()
+
+    def _sync_lock_buttons(self):
+        win = self.window()
+        tab = win.findChild(QWidget, 'ned_controls') if win else None
+        if tab is None or not hasattr(tab, 'get_ac_lock'):
+            return
+        for ax, b in getattr(self, '_lock_btns', {}).items():
+            try:
+                state = bool(tab.get_ac_lock(ax))
+                if b.isChecked() != state:
+                    b.blockSignals(True)
+                    b.setChecked(state)
+                    b.blockSignals(False)
+                    LOG.info('LOCK %s button -> %s (following the pin)',
+                             ax.upper(), 'LOCKED' if state else 'unlocked')
+            except Exception:
+                LOG.exception('LOCK %s button sync failed', ax.upper())
     def _ac_lock(self, btn, ax, on):
         win = self.window()
         tab = win.findChild(QWidget, 'ned_controls') if win else None
