@@ -480,6 +480,7 @@ class UserTab(QWidget):
         QTimer.singleShot(1600, self._hide_spare_mdi)
         QTimer.singleShot(1700, self._start_homing_gate)
         QTimer.singleShot(1800, self._build_rack_table)
+        QTimer.singleShot(2000, self._init_tool_safety)
 
         # SPINDLE SECTION (operator 2026-08-01): spindle load meter ->
         # chip-load-per-flute PLACEHOLDER; left RPM readout -> live
@@ -3123,6 +3124,86 @@ class UserTab(QWidget):
         self._sync_load_enabled()
 
     RACK_TABLE_FORKS = 14
+
+    # ---- per-tool SAFETY X/Y (operator 2026-08-04) -----------------------
+    # Stored as DB custom fields (columns appear in the tool table editor
+    # automatically); mirrored into params #[4200 + 2*T] (X) / +1 (Y) so the
+    # rack subs can read them for ANY tool, not just the loaded one. The
+    # mirror flushes via MDI only when ON + homed + idle -- the same gate
+    # every param write on this machine respects.
+    TOOL_SAFETY_BASE = 4200
+
+    def _init_tool_safety(self):
+        try:
+            from qtpyvcp.plugins import getPlugin
+            tt = getPlugin('tooltable')
+            for name, label in (('safety_x', 'SAFETY X'),
+                                ('safety_y', 'SAFETY Y')):
+                try:
+                    tt.addCustomField(name, label, 'float', 'mm')
+                    LOG.info('TOOL SAFETY: column %s created', label)
+                except ValueError:
+                    pass            # already exists
+                except Exception:
+                    LOG.exception('TOOL SAFETY: could not create %s', label)
+            self._tool_safety_sent = {}
+            self._tool_safety_timer = QTimer(self)
+            self._tool_safety_timer.timeout.connect(self._sync_tool_safety)
+            self._tool_safety_timer.start(3000)
+            LOG.info('TOOL SAFETY: sync armed (params %d+)',
+                     self.TOOL_SAFETY_BASE)
+        except Exception:
+            LOG.exception('TOOL SAFETY: init failed -- columns/params absent')
+
+    def _sync_tool_safety(self):
+        """Mirror safety_x/safety_y into the 4200 block, changed values only."""
+        try:
+            import sqlite3, linuxcnc
+            st = linuxcnc.stat()
+            st.poll()
+            if (st.task_state != linuxcnc.STATE_ON
+                    or st.interp_state != linuxcnc.INTERP_IDLE
+                    or not all(st.homed[:6])):
+                return
+            con = sqlite3.connect(
+                'file:/home/brains/Documents/ned/configs/ned5_pb/'
+                'tool_table.db?mode=ro', uri=True)
+            rows = con.execute(
+                "SELECT t.tool_no, d.name, v.value FROM custom_field_value v"
+                " JOIN custom_field_def d ON d.id = v.field_id"
+                " JOIN tool t ON t.id = v.tool_id"
+                " WHERE d.name IN ('safety_x','safety_y')").fetchall()
+            con.close()
+            pend = []
+            for tno, name, val in rows:
+                if not (1 <= int(tno) <= 14):
+                    continue
+                try:
+                    f = float(val)
+                except (TypeError, ValueError):
+                    continue
+                p = self.TOOL_SAFETY_BASE + 2 * int(tno)                     + (0 if name == 'safety_x' else 1)
+                if self._tool_safety_sent.get(p) != f:
+                    pend.append((p, f))
+            if not pend:
+                return
+            c = linuxcnc.command()
+            c.mode(linuxcnc.MODE_MDI)
+            deadline = time.time() + 2.0
+            while True:
+                st.poll()
+                if st.task_mode == linuxcnc.MODE_MDI:
+                    break
+                if time.time() >= deadline:
+                    return              # busy; retry next tick
+                c.mode(linuxcnc.MODE_MDI)
+                time.sleep(0.05)
+            for p, f in pend:
+                c.mdi('#%d=%.4f' % (p, f))
+                self._tool_safety_sent[p] = f
+            LOG.info('TOOL SAFETY: %d value(s) mirrored to params', len(pend))
+        except Exception:
+            LOG.exception('TOOL SAFETY: sync failed')
 
     def _build_rack_table(self):
         """RACK TABLE page on the ATC tab: per-fork PosX / PosY (PosZ later).

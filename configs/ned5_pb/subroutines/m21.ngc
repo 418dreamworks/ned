@@ -20,7 +20,21 @@ o103 endif
 #<dz>  = [#[#<base> + 2] - #[4106]]
 #<zload> = [#3981 + #<dz>]
 #<zappr> = [#3982 + #<dz>]
-#<cx>  = [#<sx> + [#3987 - #3983]]
+(entry clearance: the stowed tool's SAFETY X when set - big tools need a)
+(wider berth - else the global clearance offset. #[4200+2T] mirrored from)
+(the tool table's SAFETY X column. SAFETY Y is stored and mirrored but not)
+(yet consumed: entry on this rack is X-only, and inventing a Y move without)
+(an operator-specified direction would guess at which neighbour to avoid.)
+#<tnow> = #3991
+#<tsx> = 0
+o106 if [[#<tnow> GE 1] AND [#<tnow> LE 14]]
+  #<tsx> = #[4200 + [2 * #<tnow>]]
+o106 endif
+o107 if [#<tsx> GT 0.01]
+  #<cx> = [#<sx> - #<tsx>]
+o107 else
+  #<cx> = [#<sx> + [#3987 - #3983]]
+o107 endif
 #<ztrav> = #3974
 #<ftrav> = #3976
 o104 if [#<ftrav> LE 0]
