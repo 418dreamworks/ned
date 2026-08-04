@@ -458,6 +458,7 @@ class UserTab(QWidget):
         QTimer.singleShot(0, self._relabel_buttons)
         # after the UI settles -- it inserts into a core layout it must find
         QTimer.singleShot(1500, self._build_declaration)
+        QTimer.singleShot(1600, self._hide_spare_mdi)
 
         # SPINDLE SECTION (operator 2026-08-01): spindle load meter ->
         # chip-load-per-flute PLACEHOLDER; left RPM readout -> live
@@ -2947,90 +2948,140 @@ class UserTab(QWidget):
         'go_to_home_button':   'MCS HOME',
     }
 
-    def _build_declaration(self):
-        """DECLARATION box on the TOOL tab, directly under TOOL CHANGE PANEL.
+    # Every MDI entry EXCEPT the one on MAIN. Four copies of the same input
+    # scattered across tabs is four places to fat-finger a command from
+    # (operator 2026-08-03: "there are too many MDIs all over the god damn
+    # place"). main_tab keeps mdiEntry + mdihistory; these go.
+    SPARE_MDI = ('mdi_entry_box_4', 'mdi_entry_box_5',
+                 'mdi_entry_box_6', 'mdi_entry_box_7')
 
-        Inserted at RUNTIME into the core layout rather than by editing
-        probe_basic.ui, so a PB update cannot silently drop it. Found by
-        walking up from the 'TOOL CHANGE PANEL' label to its enclosing frame
-        and asking that frame's parent layout to insert after it -- no
-        hardcoded object names, which is what makes it survive a re-layout.
+    def _hide_spare_mdi(self):
+        win = self.window()
+        gone, missing = [], []
+        for name in self.SPARE_MDI:
+            w = win.findChild(QWidget, name) if win else None
+            if w is None:
+                missing.append(name)
+                continue
+            w.hide()
+            gone.append(name)
+        if gone:
+            LOG.info('MDI: hid %d spare entr%s (MAIN keeps the only one): %s',
+                     len(gone), 'y' if len(gone) == 1 else 'ies',
+                     ', '.join(gone))
+        if missing:
+            LOG.error('MDI: %d spare entr%s NOT found, still visible: %s',
+                      len(missing), 'y' if len(missing) == 1 else 'ies',
+                      ', '.join(missing))
+
+    def _build_declaration(self):
+        """DECLARATION box in the empty space under ELECTRONIC TOOL SETTER.
+
+        That column (widget_spacer_sb_2 on the TOOL tab) has NO layout -- its
+        two frames are fixed-geometry, which is why the space below them is
+        blank and why every layout insert failed: frame.parent().layout() is
+        None, and walking further up reached the tab QStackedLayout, where
+        "inserting" added an invisible new PAGE (2026-08-03).
+        So: same parent, same x and width as the box above, positioned
+        directly beneath it. Anchored on the ELECTRONIC TOOL SETTER frame
+        found by its label, not by object name, so a re-layout moves us with
+        it rather than orphaning us.
         """
-        from PySide6.QtWidgets import (QWidget as _QW, QGroupBox, QHBoxLayout,
-                                       QLabel, QLineEdit, QPushButton,
-                                       QVBoxLayout, QFrame)
+        from PySide6.QtCore import Qt
+        from PySide6.QtWidgets import (QHBoxLayout, QLabel, QLineEdit,
+                                       QPushButton, QVBoxLayout, QFrame)
         try:
             win = self.window()
-            if win is None:
-                LOG.error('DECLARATION: no window -- not built')
-                return
-            lbl = None
-            for w in win.findChildren(QLabel):
+            anchor = None
+            for w in (win.findChildren(QLabel) if win else []):
                 try:
-                    if (w.text() or '').strip().upper() == 'TOOL CHANGE PANEL':
-                        lbl = w
+                    if (w.text() or '').strip().upper() == 'ELECTRONIC TOOL SETTER':
+                        anchor = w
                         break
                 except Exception:
                     continue
-            if lbl is None:
-                LOG.error('DECLARATION: TOOL CHANGE PANEL label not found -- '
-                          'not built. Nothing else is affected.')
+            if anchor is None:
+                LOG.error('DECLARATION: ELECTRONIC TOOL SETTER label not '
+                          'found -- not built. Nothing else is affected.')
                 return
-            # walk up to the frame that IS the panel
-            frame = lbl.parent()
+            frame = anchor.parent()
             while frame is not None and not isinstance(frame, QFrame):
                 frame = frame.parent()
             if frame is None:
-                LOG.error('DECLARATION: no enclosing QFrame above the label '
-                          '-- not built')
+                LOG.error('DECLARATION: no QFrame above the tool-setter '
+                          'label -- not built')
                 return
             host = frame.parent()
-            lay = host.layout() if host is not None else None
-            if lay is None or not hasattr(lay, 'insertWidget'):
-                LOG.error('DECLARATION: parent layout is %s, which has no '
-                          'insertWidget -- not built',
-                          type(lay).__name__ if lay else None)
-                return
-            idx = lay.indexOf(frame)
-            if idx < 0:
-                LOG.error('DECLARATION: panel frame not in its parent layout '
-                          '-- not built')
+            if host is None:
+                LOG.error('DECLARATION: tool-setter frame has no parent -- '
+                          'not built')
                 return
 
-            box = QGroupBox('DECLARATION')
+            # Same construction as the boxes above it: a QFrame carrying
+            # their stylesheet, a header QLabel carrying theirs, then the
+            # controls. A QGroupBox title does not render like those headers,
+            # and the operator asked for the same formatting and no
+            # instruction text.
+            box = QFrame(host)
             box.setObjectName('ned_declaration_box')
             try:
-                box.setStyleSheet(frame.styleSheet())   # match the panel
+                box.setStyleSheet(frame.styleSheet())
             except Exception:
                 pass
             v = QVBoxLayout(box)
+            v.setContentsMargins(9, 9, 9, 9)
+            v.setSpacing(9)
+
+            hdr = QLabel('DECLARATION')
+            hdr.setObjectName('ned_declaration_header')
+            try:
+                hdr.setStyleSheet(anchor.styleSheet())   # the sibling header
+                hdr.setAlignment(anchor.alignment())
+                hdr.setMinimumHeight(anchor.height() or 34)
+            except Exception:
+                pass
+            v.addWidget(hdr)
+
+            sib = None
+            for b in frame.findChildren(QPushButton):
+                sib = b
+                break
             row = QHBoxLayout()
+            row.setSpacing(9)
             edit = QLineEdit('0')
             edit.setObjectName('ned_declare_input')
-            edit.setMinimumHeight(34)
-            edit.setMaximumWidth(90)
             btn = QPushButton('DECLARE')
             btn.setObjectName('ned_declare_btn')
-            btn.setMinimumHeight(34)
+            if sib is not None:
+                try:
+                    edit.setStyleSheet(sib.styleSheet())
+                    btn.setStyleSheet(sib.styleSheet())
+                    h = sib.height() or 45
+                    edit.setMinimumHeight(h)
+                    btn.setMinimumHeight(h)
+                except Exception:
+                    pass
+            edit.setMaximumWidth(80)
+            edit.setAlignment(Qt.AlignCenter)
             btn.clicked.connect(self._spindle_holds_declare)
             row.addWidget(edit)
-            row.addStretch(1)
-            row.addWidget(btn)
+            row.addWidget(btn, 1)
             v.addLayout(row)
-            note = QLabel('Declares what is ALREADY in the spindle.\n'
-                          '0 = spindle empty. Removes that tool from the\n'
-                          'rack map. No drawbar, no motion.')
-            note.setStyleSheet('color: rgb(160,160,160); font: 9pt;')
-            v.addWidget(note)
+
             stat = QLabel('')
             stat.setObjectName('ned_declare_status')
             stat.setWordWrap(True)
+            stat.setStyleSheet('color: rgb(160,160,160); font: 9pt;')
             v.addWidget(stat)
 
-            lay.insertWidget(idx + 1, box)
+            g = frame.geometry()
+            box.setGeometry(g.x(), g.y() + g.height() + 12, g.width(), 132)
+            box.show()
             self._sh_widgets = {'edit': edit, 'status': stat}
-            LOG.info('DECLARATION: built under TOOL CHANGE PANEL '
-                     '(layout %s, index %d)', type(lay).__name__, idx + 1)
+            LOG.info('DECLARATION: built at x=%d y=%d w=%d under the tool '
+                     'setter box (parent %s)', g.x(),
+                     g.y() + g.height() + 12, g.width(),
+                     host.objectName() or type(host).__name__)
         except Exception:
             LOG.exception('DECLARATION: not built')
 
