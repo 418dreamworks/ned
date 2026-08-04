@@ -23,6 +23,19 @@
 # (a plain `linuxcnc ned5_pb.ini` from a non-login shell will NOT find them).
 
 NED="/home/brains/Documents/ned"
+
+# AUTO-POWER is the DEFAULT (operator 2026-08-04): "power button is to
+# enable motion, nothing else" -- waiting for a human click only delayed the
+# ON-edge stale-home declare. `-nopower` restores the wait-for-the-button
+# behaviour. Flags scan so `resume` and `-nopower` combine in any order.
+NOPOWER=0
+RESUME=0
+for _a in "$@"; do
+  case "$_a" in
+    -nopower) NOPOWER=1 ;;
+    resume)   RESUME=1 ;;
+  esac
+done
 INI="$NED/configs/ned5_pb/ned5_pb.ini"
 LOG="$NED/lcnc.log"
 VENV="$HOME/qt_pb/qtpyvcp/venv"
@@ -92,7 +105,7 @@ fi
 # section header and the #INCLUDE line (IniFile::Find returns the FIRST match).
 # The nedgui confirmation dialog is gone -- consent is THIS prompt; ned_brain
 # refuses to arm without NED_RESUME_OK=1 and aborts any un-armed homing attempt.
-if [ "${1:-}" = "resume" ]; then
+if [ "$RESUME" = "1" ]; then
   SH="$NED/configs/ned5/stored_home.json"
   if [ ! -r "$SH" ]; then echo "run5: resume refused -- $SH missing"; exit 1; fi
   echo "run5: RESUME -- joints 0-3 will be declared homed AT (no motion):"
@@ -160,4 +173,45 @@ if [ -f "$LOG" ]; then tail -n 2000 "$LOG" > "$LOG.tmp" 2>/dev/null && mv "$LOG.
 # 4. launch under `script` so LinuxCNC sees a TTY. Without one, /usr/bin/linuxcnc:203
 # pops a modal wish dialog on error and BLOCKS; with a pty the error is printed
 # and captured here instead.
+# AUTO-POWER helper: backgrounded BEFORE the blocking launch below. Waits
+# for the NML status buffer, then ESTOP_RESET -> ON, and REPORTS the result
+# either way -- if the hardware e-stop chain or air permit holds emc-enable
+# low, STATE_ON is refused and the log says so instead of pretending.
+if [ "$NOPOWER" != "1" ]; then
+  (
+    for _i in $(seq 1 60); do
+      sleep 1
+      python3 - <<'AUTOPOWER' && break
+import sys
+import linuxcnc
+try:
+    s = linuxcnc.stat(); s.poll()
+except Exception:
+    sys.exit(1)
+if s.task_state == linuxcnc.STATE_ON:
+    sys.exit(0)
+c = linuxcnc.command()
+c.state(linuxcnc.STATE_ESTOP_RESET); c.wait_complete(2.0)
+c.state(linuxcnc.STATE_ON); c.wait_complete(2.0)
+s.poll()
+if s.task_state == linuxcnc.STATE_ON:
+    print('run5: AUTO-POWER: machine ON (stale-home declare follows)', flush=True)
+    sys.exit(0)
+sys.exit(1)
+AUTOPOWER
+    done
+    python3 - <<'AUTOPOWER2'
+import linuxcnc
+try:
+    s = linuxcnc.stat(); s.poll()
+    if s.task_state != linuxcnc.STATE_ON:
+        print('run5: AUTO-POWER FAILED: task_state=%d (2=estop-reset). '
+              'E-stop chain or air permit is holding power off -- clear it '
+              'and press POWER yourself.' % s.task_state, flush=True)
+except Exception as e:
+    print('run5: AUTO-POWER: no status buffer (%s)' % e, flush=True)
+AUTOPOWER2
+  ) >> "$LOG" 2>&1 &
+fi
+
 script -q -a -c "linuxcnc '$INI'" "$LOG"
