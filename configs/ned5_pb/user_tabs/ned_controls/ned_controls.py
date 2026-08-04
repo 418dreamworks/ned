@@ -401,20 +401,25 @@ class UserTab(QWidget):
             self.comp.addPin('tool-unrecorded-in', 'bit', 'in')
             self.comp.addPin('tool-phantom-in', 'bit', 'in')
             self.comp.ready()
-            # LOCKS OFF, EXPLICITLY. addPin creates the pin but does not
-            # define its value, and nothing else wrote it at startup -- so
-            # _ac_locked said {'a': False, 'c': False} while the HAL pin read
-            # TRUE, and the pendant obeys the PIN. Result: A and C silently
-            # missing from the MPG cycle on every launch (operator
-            # 2026-08-04), with the GUI insisting they were unlocked.
-            # set_ac_lock() writes both the pin and the dict, so they start
-            # agreeing rather than merely looking like they do.
+            # A AND C START LOCKED, ALWAYS (operator 2026-08-04). A head
+            # axis is the one thing a stray wheel nudge can wreck silently --
+            # it moves the tool without moving a coordinate anyone is
+            # watching -- so the safe default is OFF THE WHEEL, and the
+            # operator unlocks deliberately when they want to turn it.
+            #
+            # addPin creates the pin but does not define its value, and
+            # nothing wrote it at startup, so _ac_locked said unlocked while
+            # the HAL pin read TRUE and the pendant obeys the PIN. That
+            # disagreement -- not the lock itself -- was the original bug;
+            # first fix set both to UNLOCKED, which was the wrong default.
+            # set_ac_lock() writes the pin AND the dict, so they start in
+            # agreement either way.
             for _ax in ('a', 'c'):
                 try:
-                    self.set_ac_lock(_ax, False)
+                    self.set_ac_lock(_ax, True)
                 except Exception:
-                    LOG.exception('startup: could not clear the %s lock -- '
-                                  'the MPG may skip that axis', _ax.upper())
+                    LOG.exception('startup: could not LOCK %s -- the wheel '
+                                  'can still move it', _ax.upper())
             self.comp.addListener('air-ok-in', self._on_air)
             self.comp.addListener('drawbar-released-in', self._on_drawbar)
             self.comp.addListener('tool-unrecorded-in', self._on_tool_unrecorded)
