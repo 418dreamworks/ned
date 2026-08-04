@@ -316,16 +316,52 @@ class UserDRO(QWidget):
                 c.error_msg('ZERO needs a HOMED machine: with gantry (non-identity) kinematics, LinuxCNC refuses MDI unhomed (motion command.c:584). Home All (Homing menu) first, or launch with run5.sh resume.')
                 return
             words = ' '.join(a + '0.0' for a in axes.split())
+
+            # NEVER wait_complete() ON THE UI THREAD.
+            # 2026-08-04: py-spy caught MainThread parked in wait_complete()
+            # at the line after the G10 -- the zero had already been ISSUED
+            # and the code then asked task "are you done?" and task never
+            # answered, so Qt could not process another event and the whole
+            # GUI froze. Not a crash and not a refusal: a question asked on
+            # the wrong thread.
+            #
+            # Why task did not answer: ned_brain runs its head read on its
+            # own schedule and juggles MANUAL/MDI itself, so a mode request
+            # landing in that window is overwritten. _jog_issue solved this
+            # on 2026-08-02 by RE-ASSERTING the mode in a poll loop and
+            # never waiting on task; the fix was never carried across to the
+            # zero buttons. Same race, same cure.
+            import time
             c.mode(linuxcnc.MODE_MDI)
-            c.wait_complete()
+            deadline = time.time() + 4.0
+            reasserts = 0
+            while True:
+                s.poll()
+                if s.task_mode == linuxcnc.MODE_MDI:
+                    break
+                if time.time() >= deadline:
+                    msg = ('ZERO %s REFUSED: task never reached MDI mode '
+                           '(after %d re-asserts). NOTHING was changed.'
+                           % (axes, reasserts))
+                    LOG.error(msg)
+                    try:
+                        c.error_msg(msg)
+                    except Exception:
+                        pass
+                    return
+                c.mode(linuxcnc.MODE_MDI)     # brain may have taken it back
+                reasserts += 1
+                time.sleep(0.1)
+            if reasserts:
+                LOG.info('ZERO %s: MDI mode took %d re-assert(s) '
+                         '(brain restore race)', axes, reasserts)
+
+            # FIRE AND FORGET. The interpreter queues it; ned_brain restores
+            # MANUAL/teleop on its own edge, which is why the old explicit
+            # mode-back-and-wait was both redundant and the thing that hung.
             c.mdi('G10 L20 P0 ' + words)
-            c.wait_complete()
-            c.mode(linuxcnc.MODE_MANUAL)
-            c.wait_complete()
-            s.poll()
-            if all(s.homed[:6]):
-                c.teleop_enable(1)
-            LOG.info('ZERO %s done (G10 L20 P0)', axes)
+            LOG.info('ZERO %s ISSUED (G10 L20 P0 %s) -- queued, not waited on',
+                     axes, words)
         except Exception as e:
             LOG.error('ZERO %s failed: %s', axes, e)
 

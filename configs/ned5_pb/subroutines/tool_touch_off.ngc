@@ -98,6 +98,14 @@ G10 L1 P #5400 Z [#<new_tool_length_offset>]  (5400 = tool number)
 
 T #5400 G43  H #5400    (enable tool length offset)
 
+; PUCK DOWN. Stock raises it with M64 P3 and never lowers it, so it stayed
+; up after every touch-off until an abort or a calibration routine happened
+; to drop it (on_abort.ngc and the cal_* subs all pair up with down; these
+; two did not). Operator caught it 2026-08-04: "the puck stayed up long after
+; the last time we used it". Same class as a solenoid left energised.
+; Placed AFTER the retract to G53 Z0, so the tool is clear before it moves.
+M65 P3
+
 M50 P1  (reinstate feedrate override)
 
 o<tool_touch_off> endsub
