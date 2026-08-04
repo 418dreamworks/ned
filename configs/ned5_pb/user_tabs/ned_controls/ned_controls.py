@@ -2975,113 +2975,124 @@ class UserTab(QWidget):
                       ', '.join(missing))
 
     def _build_declaration(self):
-        """DECLARATION box in the empty space under ELECTRONIC TOOL SETTER.
+        """One more row inside TOOL CHANGE PANEL: [number] [DECLARE].
 
-        That column (widget_spacer_sb_2 on the TOOL tab) has NO layout -- its
-        two frames are fixed-geometry, which is why the space below them is
-        blank and why every layout insert failed: frame.parent().layout() is
-        None, and walking further up reached the tab QStackedLayout, where
-        "inserting" added an invisible new PAGE (2026-08-03).
-        So: same parent, same x and width as the box above, positioned
-        directly beneath it. Anchored on the ELECTRONIC TOOL SETTER frame
-        found by its label, not by object name, so a re-layout moves us with
-        it rather than orphaning us.
+        The panel frame carries a QVBoxLayout of rows, so this is a plain
+        insert after the M6 G43 row -- no geometry, no new box, and it
+        inherits the panel's own styling by copying the widgets beside it.
+        Earlier attempts put a separate box below the column, which needed
+        fixed geometry because that column has no layout at all; a row inside
+        the panel avoids the whole problem (operator 2026-08-03: "just put it
+        in tool change panel under the M6 g43 row ... another line, DECLARE").
         """
         from PySide6.QtCore import Qt
-        from PySide6.QtWidgets import (QHBoxLayout, QLabel, QLineEdit,
-                                       QPushButton, QVBoxLayout, QFrame)
+        from PySide6.QtWidgets import (QHBoxLayout, QLineEdit, QPushButton,
+                                       QBoxLayout)
         try:
             win = self.window()
-            anchor = None
-            for w in (win.findChildren(QLabel) if win else []):
-                try:
-                    if (w.text() or '').strip().upper() == 'ELECTRONIC TOOL SETTER':
-                        anchor = w
-                        break
-                except Exception:
-                    continue
-            if anchor is None:
-                LOG.error('DECLARATION: ELECTRONIC TOOL SETTER label not '
+            btn6 = win.findChild(QWidget, 'm6_tool_call_button_tool_page') if win else None
+            if btn6 is None:
+                LOG.error('DECLARATION: m6_tool_call_button_tool_page not '
                           'found -- not built. Nothing else is affected.')
                 return
-            frame = anchor.parent()
-            while frame is not None and not isinstance(frame, QFrame):
-                frame = frame.parent()
-            if frame is None:
-                LOG.error('DECLARATION: no QFrame above the tool-setter '
-                          'label -- not built')
+            panel = btn6.parent()
+            lay = panel.layout() if panel is not None else None
+            if not isinstance(lay, QBoxLayout):
+                LOG.error('DECLARATION: TOOL CHANGE PANEL layout is %s, not a '
+                          'box layout -- not built',
+                          type(lay).__name__ if lay else None)
                 return
-            host = frame.parent()
-            if host is None:
-                LOG.error('DECLARATION: tool-setter frame has no parent -- '
-                          'not built')
+            # which row holds the M6 button
+            at = -1
+            for i in range(lay.count()):
+                it = lay.itemAt(i)
+                if it is None:
+                    continue
+                if it.widget() is btn6:
+                    at = i
+                    break
+                sub = it.layout()
+                if sub is not None:
+                    for j in range(sub.count()):
+                        if sub.itemAt(j) and sub.itemAt(j).widget() is btn6:
+                            at = i
+                            break
+                if at >= 0:
+                    break
+            if at < 0:
+                LOG.error('DECLARATION: M6 row not found in the panel layout '
+                          '-- not built')
                 return
 
-            # Same construction as the boxes above it: a QFrame carrying
-            # their stylesheet, a header QLabel carrying theirs, then the
-            # controls. A QGroupBox title does not render like those headers,
-            # and the operator asked for the same formatting and no
-            # instruction text.
-            box = QFrame(host)
-            box.setObjectName('ned_declaration_box')
-            try:
-                box.setStyleSheet(frame.styleSheet())
-            except Exception:
-                pass
-            v = QVBoxLayout(box)
-            v.setContentsMargins(9, 9, 9, 9)
-            v.setSpacing(9)
-
-            hdr = QLabel('DECLARATION')
-            hdr.setObjectName('ned_declaration_header')
-            try:
-                hdr.setStyleSheet(anchor.styleSheet())   # the sibling header
-                hdr.setAlignment(anchor.alignment())
-                hdr.setMinimumHeight(anchor.height() or 34)
-            except Exception:
-                pass
-            v.addWidget(hdr)
-
-            sib = None
-            for b in frame.findChildren(QPushButton):
-                sib = b
-                break
+            num6 = win.findChild(QWidget, 'tool_number_entry_tool_page')
             row = QHBoxLayout()
-            row.setSpacing(9)
-            edit = QLineEdit('0')
+            try:
+                src = lay.itemAt(at).layout()
+                if src is not None:
+                    row.setSpacing(src.spacing())
+            except Exception:
+                pass
+            # SAME CLASS as the field above, not a plain QLineEdit: the
+            # panel's styling comes from class-based QSS rules, so a
+            # QLineEdit renders WHITE next to grey siblings no matter what
+            # stylesheet is copied onto it (2026-08-03).
+            try:
+                edit = type(num6)(panel) if num6 is not None else QLineEdit(panel)
+            except Exception:
+                edit = QLineEdit(panel)
+            try:
+                edit.setText('0')
+            except Exception:
+                pass
             edit.setObjectName('ned_declare_input')
-            btn = QPushButton('DECLARE')
+            try:
+                btn = type(btn6)(panel)
+                btn.setText('DECLARE')
+            except Exception:
+                btn = QPushButton('DECLARE', panel)
             btn.setObjectName('ned_declare_btn')
-            if sib is not None:
+            # match the row above, widget for widget
+            # The sibling's grey comes from an objectName-keyed rule in the
+            # global QSS, which a new widget cannot inherit however it is
+            # constructed -- copying its styleSheet() and its class both left
+            # it rendering WHITE beside grey neighbours (2026-08-03). State
+            # it explicitly, using the same values the panel's own header
+            # carries.
+            NED_FIELD_QSS = (
+                'background: rgb(90, 90, 90);'
+                ' color: white;'
+                ' border-style: solid;'
+                ' border-color: rgb(176, 179, 172);'
+                ' border-width: 2px;'
+                ' border-radius: 5px;'
+                ' font: 17pt "Probe Basic Bebas Mono";')
+            if num6 is not None:
                 try:
-                    edit.setStyleSheet(sib.styleSheet())
-                    btn.setStyleSheet(sib.styleSheet())
-                    h = sib.height() or 45
-                    edit.setMinimumHeight(h)
-                    btn.setMinimumHeight(h)
+                    edit.setStyleSheet(NED_FIELD_QSS)
+                    edit.setMinimumSize(num6.minimumSize())
+                    edit.setMaximumSize(num6.maximumSize())
+                    edit.setAlignment(num6.alignment())
                 except Exception:
                     pass
-            edit.setMaximumWidth(80)
-            edit.setAlignment(Qt.AlignCenter)
+            else:
+                edit.setMaximumWidth(80)
+                edit.setAlignment(Qt.AlignCenter)
+            try:
+                btn.setStyleSheet(btn6.styleSheet())
+                btn.setMinimumSize(btn6.minimumSize())
+                btn.setMaximumSize(btn6.maximumSize())
+                btn.setSizePolicy(btn6.sizePolicy())
+            except Exception:
+                pass
             btn.clicked.connect(self._spindle_holds_declare)
             row.addWidget(edit)
-            row.addWidget(btn, 1)
-            v.addLayout(row)
-
-            stat = QLabel('')
-            stat.setObjectName('ned_declare_status')
-            stat.setWordWrap(True)
-            stat.setStyleSheet('color: rgb(160,160,160); font: 9pt;')
-            v.addWidget(stat)
-
-            g = frame.geometry()
-            box.setGeometry(g.x(), g.y() + g.height() + 12, g.width(), 132)
-            box.show()
-            self._sh_widgets = {'edit': edit, 'status': stat}
-            LOG.info('DECLARATION: built at x=%d y=%d w=%d under the tool '
-                     'setter box (parent %s)', g.x(),
-                     g.y() + g.height() + 12, g.width(),
-                     host.objectName() or type(host).__name__)
+            row.addWidget(btn)
+            lay.insertLayout(at + 1, row)
+            edit.show()
+            btn.show()
+            self._sh_widgets = {'edit': edit}
+            LOG.info('DECLARATION: row added inside TOOL CHANGE PANEL after '
+                     'the M6 row (index %d)', at + 1)
         except Exception:
             LOG.exception('DECLARATION: not built')
 
@@ -3457,6 +3468,19 @@ class UserTab(QWidget):
         else:
             LOG.info('tool record agrees with the spindle again (was phantom)')
 
+    def _declare_say(self, w, msg):
+        """Loud where it counts: the log, and error_msg so STATUS goes red.
+
+        The box carries no status label -- it matches the header+button boxes
+        above it (operator 2026-08-03).
+        """
+        LOG.error(msg)
+        try:
+            import linuxcnc
+            linuxcnc.command().error_msg(msg)
+        except Exception:
+            pass
+
     def _spindle_holds_declare(self):
         """M61 + G43/G49 + #3991, and nothing else.
 
@@ -3472,9 +3496,8 @@ class UserTab(QWidget):
             if n < 0:
                 raise ValueError
         except ValueError:
-            msg = 'SPINDLE HOLDS: %r is not a tool number (0 = empty)' % raw
-            LOG.error(msg)
-            w['status'].setText(msg)
+            self._declare_say(w, 'DECLARE: %r is not a tool number '
+                                 '(0 = empty)' % raw)
             return
         try:
             import linuxcnc
@@ -3482,14 +3505,10 @@ class UserTab(QWidget):
             st = linuxcnc.stat()
             st.poll()
             if st.task_state != linuxcnc.STATE_ON:
-                msg = 'SPINDLE HOLDS refused: machine is not ON'
-                LOG.error(msg)
-                w['status'].setText(msg)
+                self._declare_say(w, 'DECLARE refused: machine is not ON')
                 return
             if st.interp_state != linuxcnc.INTERP_IDLE:
-                msg = 'SPINDLE HOLDS refused: interpreter is busy'
-                LOG.error(msg)
-                w['status'].setText(msg)
+                self._declare_say(w, 'DECLARE refused: interpreter is busy')
                 return
             c.mode(linuxcnc.MODE_MDI)
             c.wait_complete()
@@ -3507,16 +3526,13 @@ class UserTab(QWidget):
             msg = ('DECLARED T%d. LinuxCNC now reports tool %d, offset '
                    '%.4f' % (n, st.tool_in_spindle, st.tool_offset[2]))
             LOG.info(msg)
-            w['status'].setText(msg)
             # Back to 0, so pressing DECLARE again declares the spindle EMPTY
             # -- operator 2026-08-03. Anything removed from the rack or the
             # spindle is assumed to have gone back to the table; nothing tries
             # to guess a new home for it.
             w['edit'].setText('0')
         except Exception as e:
-            msg = 'SPINDLE HOLDS failed: %s' % e
-            LOG.error(msg)
-            w['status'].setText(msg)
+            self._declare_say(w, 'DECLARE failed: %s' % e)
 
     def _on_drawbar(self, val):
         self._drawbar_released = bool(val)
