@@ -39,17 +39,17 @@ loadrt pid names=pid.x,pid.y,pid.z,pid.w
 # Spindle + drawbar interlock gates, air interlock, and the head-enable gates.
 # (rotary.permit from ned.hal:86 dropped -- no B here.) head.a/c.enable AND the
 # per-axis amp-enable with the 3 s head-ready delay (see section 4).
-loadrt and2 names=spindle.permit,spindle.cw,spindle.ccw,air.permit,head.a.enable,head.c.enable,overtemp,toolrel.permit,sen.gate
+loadrt and2 names=spindle.permit,spindle.cw,spindle.ccw,air.permit,head.a.enable,head.c.enable,overtemp,toolrel.permit,sen.gate,tool.mm.unrecR,tool.mm.phanR,tool.mm.unrec,tool.mm.phan
 # air-dip debounce (operator 2026-08-02: drawbar release gulps air, the
 # pressure switch dips ~1 s and the interlock killed power MID-TOOL-CHANGE;
 # switch threshold stays as the operator's pressure-quality indicator)
-loadrt timedelay names=air.debounce,head.ready
+loadrt timedelay names=air.debounce,head.ready,tool.mm.unrecdb,tool.mm.phandb
 # head-ready: SEN goes high on machine-enable; this delays /S-ON ~3 s so the
 # SEN-triggered absolute read completes first (Pn515=8882 -> else pack stays BB).
 # (head.ready instance loaded above with air.debounce -- ONE loadrt per comp.)
 # SEN gating: a GUI-requested LOW window locks A/C (pack drops to BB = cannot move) and
 # primes the pack; the following RISING edge makes it emit the absolute PSO frame.
-loadrt not names=sen.nsup
+loadrt not names=sen.nsup,tool.mm.nexcuse,tool.mm.nrec,tool.mm.nlock
 # live absolute reader -- QUEUED PktUART reads ONLY (tools/live/pso_live.comp).
 # pso_abs (direct llio->read from the servo thread) is BANNED on this hm2_eth board: at 1 kHz
 # it caused watchdog bites; decimated 1-in-20 it overran the RX count FIFO (RCFIFO Error) --
@@ -58,7 +58,7 @@ loadrt not names=sen.nsup
 # a read is in progress). ifdelay from [PSO]IFDELAY -- see the ini for the measured sweep.
 loadrt pso_live names=hm2_7i97.0.pktuart.0 ifdelay_p=[PSO]IFDELAY
 # limit-hit OR tree (6 hard-limit signals -> one indicator for the GUI LED).
-loadrt or2 names=limhit.0,limhit.1,limhit.2,limhit.3,limhit.4,sol.ts,sol.blow,sol.trel,sen.or,spinok
+loadrt or2 names=limhit.0,limhit.1,limhit.2,limhit.3,limhit.4,sol.ts,sol.blow,sol.trel,sen.or,spinok,tool.mm.excuse
 # directional limit handling (tools/live/limdir.comp + tools/live/jogblock.comp):
 # limdir.N passes joint N's limit switch to motion ONLY while commanded velocity
 # moves TOWARD it (parked/away = no fault -> POWER + jog work on a depressed
@@ -77,6 +77,19 @@ loadrt or2 names=limhit.0,limhit.1,limhit.2,limhit.3,limhit.4,sol.ts,sol.blow,so
 # Scoped to the switch on purpose: it is only relaxed at the very bottom of
 # travel, where Z cannot run away downward anyway, and it snaps back to the
 # INI value the moment the switch releases.
+# TOOL RECORD vs IRON -- always-on guard (operator 2026-08-03: "it should be
+# a guard that is active all the time"). #3991 and the tool table are BELIEF;
+# HQD S1 tool-locked is the only physical evidence. Nothing compared them:
+# toolchange.ngc and load_spindle_safety_2.ngc contain zero M66 reads, so the
+# machine could hold a tool it thought it did not have, and did exactly that.
+# The record is reachable in HAL as iocontrol.0.tool-number.
+#   mismatch = (tool-number > 0) XOR tool-locked
+# suppressed while a change is legitimately in flight or the drawbar is open
+# (both are transient disagreements by design), then debounced.
+# NOTE: this REPORTS, it does not inhibit. Interlocking motion on a sensor
+# disagreement can lock the machine out, and that is the operator's call.
+loadrt conv_s32_float names=tool.mm.n2f
+loadrt comp names=tool.mm.have
 loadrt mux2 names=zferr.z
 loadrt limdir names=limdir.0,limdir.1,limdir.2,limdir.3
 loadrt jogblock names=jogblock.x,jogblock.y,jogblock.z
@@ -135,6 +148,18 @@ setp jogblock.y.crawl-mmps 0.15
 setp jogblock.z.crawl-mmps 0.15
 addf limdir.0                 servo-thread
 addf limdir.1                 servo-thread
+addf tool.mm.n2f              servo-thread
+addf tool.mm.have             servo-thread
+addf tool.mm.nrec             servo-thread
+addf tool.mm.nlock            servo-thread
+addf tool.mm.unrecR           servo-thread
+addf tool.mm.phanR            servo-thread
+addf tool.mm.excuse           servo-thread
+addf tool.mm.nexcuse          servo-thread
+addf tool.mm.unrec            servo-thread
+addf tool.mm.phan             servo-thread
+addf tool.mm.unrecdb          servo-thread
+addf tool.mm.phandb           servo-thread
 addf zferr.z                  servo-thread
 addf limdir.2                 servo-thread
 addf limdir.3                 servo-thread
@@ -294,6 +319,36 @@ net sig-sen-out        sen.or.out => hm2_7i97.0.7i84.0.0.output-04   # SEN -> CN
 #    permit degrades to the plain S1 gate.
 # ============================================================================
 net spindle-on             spindle.0.on       => spindle.permit.in0
+# --- tool record vs iron, always on ---------------------------------------
+# TWO faults, not one -- they mean different things (operator 2026-08-03):
+#   UNRECORDED  iron holds a tool, logic thinks empty  -> DISPLAY it
+#   PHANTOM     logic claims a tool, iron holds none   -> must be FIXED
+# Agreement carries no information, so it shows nothing.
+net sig-tool-number    iocontrol.0.tool-number => tool.mm.n2f.in
+net sig-tool-num-f     tool.mm.n2f.out => tool.mm.have.in1
+setp tool.mm.have.in0  0.5                  # .out TRUE when tool-number >= 1
+net sig-rec-has-tool   tool.mm.have.out => tool.mm.nrec.in  tool.mm.phanR.in0
+net sig-rec-no-tool    tool.mm.nrec.out => tool.mm.unrecR.in1
+net sig-tool-locked    => tool.mm.nlock.in  tool.mm.unrecR.in0
+net sig-no-tool-locked tool.mm.nlock.out => tool.mm.phanR.in1
+
+# Both are legitimately transient mid-change or with the drawbar open.
+net sig-tc-active      => tool.mm.excuse.in0
+net sig-tool-released  => tool.mm.excuse.in1
+net sig-tool-mm-excuse tool.mm.excuse.out => tool.mm.nexcuse.in
+net sig-tool-mm-ok     tool.mm.nexcuse.out => tool.mm.unrec.in1  tool.mm.phan.in1
+
+net sig-unrec-raw      tool.mm.unrecR.out => tool.mm.unrec.in0
+net sig-phantom-raw    tool.mm.phanR.out  => tool.mm.phan.in0
+net sig-unrec-gated    tool.mm.unrec.out => tool.mm.unrecdb.in
+net sig-phantom-gated  tool.mm.phan.out  => tool.mm.phandb.in
+setp tool.mm.unrecdb.on-delay  1.0
+setp tool.mm.unrecdb.off-delay 0.2
+setp tool.mm.phandb.on-delay   1.0
+setp tool.mm.phandb.off-delay  0.2
+net sig-tool-unrecorded tool.mm.unrecdb.out
+net sig-tool-phantom    tool.mm.phandb.out
+
 net sig-tool-locked        => spinok.in0
 net sig-mode-manual        => spinok.in1
 net sig-spin-ok            spinok.out => spindle.permit.in1

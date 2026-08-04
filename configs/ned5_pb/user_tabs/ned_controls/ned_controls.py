@@ -395,9 +395,16 @@ class UserTab(QWidget):
             # HQD S2 tool-released sensor (7I84 TB2-16 *70 -> sig-tool-released).
             # LOAD SPINDLE is meaningless unless the drawbar is actually OPEN.
             self.comp.addPin('drawbar-released-in', 'bit', 'in')
+            # Tool record vs iron, computed in HAL every servo cycle.
+            #   unrecorded = iron holds a tool, logic thinks empty
+            #   phantom    = logic claims a tool, iron holds none
+            self.comp.addPin('tool-unrecorded-in', 'bit', 'in')
+            self.comp.addPin('tool-phantom-in', 'bit', 'in')
             self.comp.ready()
             self.comp.addListener('air-ok-in', self._on_air)
             self.comp.addListener('drawbar-released-in', self._on_drawbar)
+            self.comp.addListener('tool-unrecorded-in', self._on_tool_unrecorded)
+            self.comp.addListener('tool-phantom-in', self._on_tool_phantom)
             self.comp.addListener('probe-up-in', self._on_up)
             self.comp.addListener('inc-in', self._on_inc)
             self.comp.addListener('axis-in', self._on_axis)
@@ -3233,6 +3240,49 @@ class UserTab(QWidget):
     # False until the pin says otherwise: an unwired or unread sensor must
     # refuse the load, never permit it.
     _drawbar_released = False
+
+    def _tool_alarm(self, msg):
+        """Say it once, loudly, and leave a mark that outlives the popup.
+
+        Popups self-dismiss after 1 s, so error_msg is what matters here: it
+        turns the STATUS tab title red and it STAYS red until the operator
+        opens that tab (probe_basic.py ned patch).
+        """
+        LOG.error(msg)
+        try:
+            import linuxcnc
+            linuxcnc.command().error_msg(msg)
+        except Exception:
+            pass
+
+    def _on_tool_unrecorded(self, val):
+        # Iron holds a tool the logic does not know about. Informational --
+        # the geometry is simply unknown, so nothing downstream is wrong yet.
+        if bool(val) == getattr(self, '_tool_unrecorded', False):
+            return
+        self._tool_unrecorded = bool(val)
+        if self._tool_unrecorded:
+            self._tool_alarm('TOOL IN SPINDLE, NOT IN LOGIC: something is '
+                             'clamped but the machine has no record of it. '
+                             'Set the tool number via LOAD SPINDLE.')
+        else:
+            LOG.info('tool record agrees with the spindle again (was '
+                     'unrecorded)')
+
+    def _on_tool_phantom(self, val):
+        # Logic claims a tool the iron does not hold. This one is ACTIONABLE:
+        # offsets are being applied for a tool that is not there, and a change
+        # would try to park a tool that does not exist.
+        if bool(val) == getattr(self, '_tool_phantom', False):
+            return
+        self._tool_phantom = bool(val)
+        if self._tool_phantom:
+            self._tool_alarm('PHANTOM TOOL -- NEEDS FIXING: the machine '
+                             'believes a tool is loaded but the spindle is '
+                             'empty. Its length offset is being applied to '
+                             'nothing. Clear it with UNLOAD SPINDLE.')
+        else:
+            LOG.info('tool record agrees with the spindle again (was phantom)')
 
     def _on_drawbar(self, val):
         self._drawbar_released = bool(val)
