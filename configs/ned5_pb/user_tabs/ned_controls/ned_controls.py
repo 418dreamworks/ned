@@ -592,6 +592,47 @@ class UserTab(QWidget):
             bl.addStretch(1)
 
             jl.addWidget(box)
+
+            # ---- SPINDLE HOLDS: declare the state, touch nothing ---------
+            # LinuxCNC's tool number resets to 0 (or -1) on every launch
+            # while #3991 persists, so after a restart the machine holds a
+            # tool it does not know about -- and there was no way to say so
+            # without an UNLOAD/LOAD cycle that DROPS the tool to do it.
+            # Worse, the drawbar gate correctly disables LOAD when the
+            # drawbar is shut, which is exactly the state you are in after a
+            # restart with a tool clamped. This is the way out: it declares,
+            # and moves nothing (operator 2026-08-03: "quickly tell lcnc in
+            # gui about the state of the machine ... no reload, unload etc").
+            sbox = QGroupBox('SPINDLE HOLDS')
+            sbox.setObjectName('spindle_holds_box')
+            sl = QVBoxLayout(sbox)
+            srow = QHBoxLayout()
+            slbl = QLabel('TOOL')
+            sedit = QLineEdit()
+            sedit.setObjectName('spindle_holds_input')
+            sedit.setPlaceholderText('0 = empty')
+            sedit.setMinimumHeight(34)
+            sedit.setMaximumWidth(90)
+            sset = QPushButton('DECLARE')
+            sset.setObjectName('spindle_holds_set')
+            sset.setMinimumHeight(34)
+            sset.clicked.connect(self._spindle_holds_declare)
+            srow.addWidget(slbl)
+            srow.addWidget(sedit)
+            srow.addWidget(sset)
+            srow.addStretch(1)
+            sl.addLayout(srow)
+            snote = QLabel('Tells LinuxCNC what is already in the spindle:\n'
+                           'M61 Q<n>, G43 H<n> (G49 for 0), #3991 = <n>.\n'
+                           'No drawbar, no motion, no tool change.')
+            snote.setStyleSheet('color: rgb(160,160,160); font: 9pt;')
+            sl.addWidget(snote)
+            sstat = QLabel('')
+            sstat.setObjectName('spindle_holds_status')
+            sstat.setWordWrap(True)
+            sl.addWidget(sstat)
+            self._sh_widgets = {'edit': sedit, 'status': sstat}
+            jl.addWidget(sbox)
             jl.addStretch(1)
             tabs.addTab(jog_page, 'JOG')
 
@@ -3315,6 +3356,63 @@ class UserTab(QWidget):
                              'nothing. Clear it with UNLOAD SPINDLE.')
         else:
             LOG.info('tool record agrees with the spindle again (was phantom)')
+
+    def _spindle_holds_declare(self):
+        """M61 + G43/G49 + #3991, and nothing else.
+
+        Deliberately does NOT call clamptool/unclamptool: the tool is already
+        physically where it is, and the only thing wrong is the record.
+        """
+        w = getattr(self, '_sh_widgets', None)
+        if not w:
+            return
+        raw = (w['edit'].text() or '').strip()
+        try:
+            n = int(float(raw))
+            if n < 0:
+                raise ValueError
+        except ValueError:
+            msg = 'SPINDLE HOLDS: %r is not a tool number (0 = empty)' % raw
+            LOG.error(msg)
+            w['status'].setText(msg)
+            return
+        try:
+            import linuxcnc
+            c = linuxcnc.command()
+            st = linuxcnc.stat()
+            st.poll()
+            if st.task_state != linuxcnc.STATE_ON:
+                msg = 'SPINDLE HOLDS refused: machine is not ON'
+                LOG.error(msg)
+                w['status'].setText(msg)
+                return
+            if st.interp_state != linuxcnc.INTERP_IDLE:
+                msg = 'SPINDLE HOLDS refused: interpreter is busy'
+                LOG.error(msg)
+                w['status'].setText(msg)
+                return
+            c.mode(linuxcnc.MODE_MDI)
+            c.wait_complete()
+            c.mdi('M61 Q%d' % n)
+            c.wait_complete(5.0)
+            c.mdi('G43 H%d' % n if n > 0 else 'G49')
+            c.wait_complete(5.0)
+            c.mdi('#3991=%d' % n)
+            c.wait_complete(5.0)
+            c.mode(linuxcnc.MODE_MANUAL)
+            c.wait_complete()
+            st.poll()
+            if all(st.homed[:6]):
+                c.teleop_enable(1)
+            st.poll()
+            msg = ('SPINDLE HOLDS: declared T%d. LinuxCNC now reports tool %d, '
+                   'offset %.4f' % (n, st.tool_in_spindle, st.tool_offset[2]))
+            LOG.info(msg)
+            w['status'].setText(msg)
+        except Exception as e:
+            msg = 'SPINDLE HOLDS failed: %s' % e
+            LOG.error(msg)
+            w['status'].setText(msg)
 
     def _on_drawbar(self, val):
         self._drawbar_released = bool(val)
