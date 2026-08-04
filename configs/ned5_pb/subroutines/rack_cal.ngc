@@ -1,10 +1,9 @@
 (ned RACK CALIBRATION -- P1..Pn fork centres by probing the energized)
 (holders with the empty spindle. Operator spec 2026-08-04: start with the)
 (spindle CENTERED 10 mm above the P1 holder top - THAT pose is the datum.)
-(  #1 = fork count, 0 -> 14        #2 = Y step to the next fork, 0 -> 45)
-(NOTE the step: the operator specified 45; the rack's own pocket params)
-(step 90.75 and the jig doc says 92. If 45 is wrong the P2 descent trips)
-(on the flanges between forks and aborts by name - every move is a probe.)
+(  #1 = fork count, 0 -> 14        #2 = Y step to the next fork, 0 -> 92)
+(Step default 92.0 = the jig pitch. The first run used 45 from a misread)
+(spec and landed between forks; every move is a probe, so it aborted clean.)
 (Requires: EMPTY spindle, holders energized onto the toolsetter input,)
 (machine homed, started AT the P1 datum pose.)
 o<rack_cal> sub
@@ -14,11 +13,17 @@ o<rack_cal> sub
     #<n> = 14
   o5 endif
   o6 if [#<step> LE 0]
-    #<step> = 45.0
+    #<step> = 92.0
   o6 endif
   o7 if [#<_metric> EQ 0]
     (abort, RACK CAL: switch to MM first)
   o7 endif
+  (the datum pose IS work zero: the operator zeroes X Y Z centred 10 mm)
+  (above the P1 top, THEN starts. Anything else is a dirty reference and)
+  (the cycle refuses rather than probing from an unknown frame.)
+  o9 if [[ABS[#<_x>] GT 0.001] OR [ABS[#<_y>] GT 0.001] OR [ABS[#<_z>] GT 0.001]]
+    (abort, RACK CAL: work XYZ is not zero here - zero all three at the datum pose first, centred 10 mm above P1 - NOT starting)
+  o9 endif
 
   #3071 = 0
 

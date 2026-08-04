@@ -156,6 +156,12 @@ class Brain(object):
         self.sh_last = None
         self.sh_last_t = 0.0
         self.sh_next = 0.0
+        # PRE-POWER DECLARE (operator 2026-08-04: "stale home BEFORE power
+        # button is even clicked. power button is to enable motion, nothing
+        # else"). One canary home decides whether LinuxCNC's task layer
+        # accepts homing before STATE_ON; success -> full declare pre-power,
+        # refusal -> one log line and the ON-edge path unchanged.
+        self.prepower_at = time.time() + 4.0
         # transitions
         self.prev_on = False
         self.prev_interp_busy = False
@@ -352,7 +358,7 @@ class Brain(object):
             saved, '  '.join('J{}={:+.3f}'.format(jn, vals[jn]) for jn in (0, 1, 2, 3))))
         return True
 
-    def declare_xyzw(self):
+    def declare_xyzw(self, only=None):
         # TRUE home-in-place via EMC_JOINT_SET_HOMING_PARAMS (NML 112,
         # tools/live/ned_homing_params -- runtime homing override, operator
         # 2026-08-02): search/latch velocities zeroed -> the home command
@@ -372,6 +378,8 @@ class Brain(object):
         # later and re-homes A/C to the true absolute offset, so this only
         # fills the gap; it never decides the final head coordinate.
         jns = [j for j in (0, 1, 2, 3, 4, 5) if not self.stat.homed[j]]
+        if only is not None:
+            jns = [j for j in jns if j in only]
         # DO NOT DECLARE A/C BEFORE THEIR READ EXISTS. Declaring them marks
         # all six homed, which is what flips the DRO banner to STALE HOME --
         # and the operator starts clicking the moment it says that. This
@@ -767,6 +775,37 @@ class Brain(object):
             else:
                 self.want_read = True
                 log('MACHINE ON -> head read (A/C will home IN PLACE, no motion)')
+        if getattr(self, 'prepower_at', None) and now >= self.prepower_at:
+            self.prepower_at = None
+            try:
+                self.stat.poll()
+                off = self.stat.task_state != linuxcnc.STATE_ON
+                unhomed = not all(self.stat.homed[:4])
+            except Exception:
+                off = unhomed = False
+            if off and unhomed:
+                # head read first -- the PSO read does not need machine ON
+                # (pso_read.sh proves it with LinuxCNC closed entirely), so
+                # A/C can land pre-power too once it completes.
+                if not self.read_armed and not self.want_read:
+                    self.want_read = True
+                    log('PRE-POWER: head read requested (machine OFF)')
+                log('PRE-POWER DECLARE: canary home, joint 0, machine OFF')
+                self.declare_xyzw(only=[0])
+                try:
+                    time.sleep(1.0)
+                    self.stat.poll()
+                    took = bool(self.stat.homed[0])
+                except Exception:
+                    took = False
+                if took:
+                    log('PRE-POWER DECLARE: canary TOOK -- declaring the '
+                        'rest before power')
+                    self.declare_xyzw()
+                else:
+                    log('PRE-POWER DECLARE: LinuxCNC refuses homing before '
+                        'POWER (task gate) -- declare stays on the ON edge; '
+                        'the one refusal toast above is the canary')
         if getattr(self, 'declare_at', None) and now >= self.declare_at:
             self.declare_at = None
             self.declare_xyzw()

@@ -5,6 +5,17 @@ windows:
       confirm_exit: false
 
 data_plugins:
+  # DRO TRUTH: report the ENCODER (actual) position, never the commanded one.
+  # The plugin DEFAULT is report_actual_pos: False, and nothing set it -- so
+  # every DRO showed where motion INTENDED the axis to be. A stalled axis
+  # (Z stuck at the bottom of its screw, 2026-08-03) reads as moving on a
+  # commanded DRO. INI POSITION_FEEDBACK=ACTUAL only governs LinuxCNC's own
+  # display, not qtpyvcp's. Operator 2026-08-04: "always report DRO
+  # positions from encoder reads".
+  position:
+    kwargs:
+      report_actual_pos: true
+
   notifications:
     kwargs:
       # do NOT resurrect old toasts across sessions ("THEY SIMPLY SHOULD NOT
