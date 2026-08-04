@@ -2973,12 +2973,26 @@ class UserTab(QWidget):
     # (operator 2026-08-03: "there are too many MDIs all over the god damn
     # place"). main_tab keeps mdiEntry + mdihistory; these go.
     SPARE_MDI = ('mdi_entry_box_4', 'mdi_entry_box_5',
-                 'mdi_entry_box_6', 'mdi_entry_box_7')
+                 'mdi_entry_box_6', 'mdi_entry_box_7',
+                 # ATC tab had its own pair too, missed by the first sweep
+                 # (they live in template_rack_atc.ui, not probe_basic.ui)
+                 'mdi_entry_box_rack_tab', 'rack_mdi_2')
+
+    # ONE M6 G43: the main panel's. The TOOL and ATC tabs each carried a
+    # full copy (button + tool-number field) of the same control -- three
+    # places to start a tool change from, all identical (operator
+    # 2026-08-04: "i hate redundancy"). Copies hidden, never unwired: the
+    # main-panel control is the same SubCallButton mechanism, so behaviour
+    # is unchanged, there is just exactly one of it.
+    SPARE_M6 = ('m6_tool_call_button_tool_page',
+                'tool_number_entry_tool_page',
+                'm6_tool_call_button_atc_page',
+                'tool_number_entry_atc_page')
 
     def _hide_spare_mdi(self):
         win = self.window()
         gone, missing = [], []
-        for name in self.SPARE_MDI:
+        for name in self.SPARE_MDI + self.SPARE_M6:
             w = win.findChild(QWidget, name) if win else None
             if w is None:
                 missing.append(name)
@@ -2986,13 +3000,12 @@ class UserTab(QWidget):
             w.hide()
             gone.append(name)
         if gone:
-            LOG.info('MDI: hid %d spare entr%s (MAIN keeps the only one): %s',
-                     len(gone), 'y' if len(gone) == 1 else 'ies',
-                     ', '.join(gone))
+            LOG.info('REDUNDANCY: hid %d control(s) (MAIN keeps the only '
+                     'MDI and the only M6 G43): %s',
+                     len(gone), ', '.join(gone))
         if missing:
-            LOG.error('MDI: %d spare entr%s NOT found, still visible: %s',
-                      len(missing), 'y' if len(missing) == 1 else 'ies',
-                      ', '.join(missing))
+            LOG.error('REDUNDANCY: %d control(s) NOT found, still '
+                      'visible: %s', len(missing), ', '.join(missing))
 
     # Buttons that command MOTION or issue MDI. LinuxCNC silently refuses an
     # MDI command on non-identity kinematics until every joint is homed, so
