@@ -1,0 +1,52 @@
+(ned RACK DECLARE -- say which tool is in which fork, move nothing.)
+; The changer is not the way to teach the rack its own contents: driving
+; untested geometry just to record a fact is slow and risky. Put the tools in
+; by hand and declare where they are -- operator 2026-08-03: "its much faster
+; for me to do it by hand, and just tell lncnc and gui which tool is where".
+;
+; Sets #[4000+fork], the SAME parameters toolchange.ngc scans to find a tool
+; and the FORK column reads. Tool 0 means the fork is empty.
+;
+; A tool lives in exactly ONE place, so declaring it into a fork also removes
+; it from any other fork and from the spindle record if it was claimed there.
+
+o<rack_declare> sub
+  #<fork> = #1
+  #<tool> = #2
+
+  o10 if [[#<fork> LT 1] OR [#<fork> GT 24]]
+    (abort, rack_declare: fork must be 1 to 24)
+  o10 endif
+  o20 if [#<tool> LT 0]
+    (abort, rack_declare: tool must be 0 or more - 0 empties the fork)
+  o20 endif
+  o30 if [[#3973 GT 0] AND [#<fork> GT #3973]]
+    (abort, rack_declare: fork is beyond the configured pocket count)
+  o30 endif
+
+  o40 if [#<tool> GT 0]
+    ; take it out of any OTHER fork -- one tool, one place
+    #<i> = 1
+    o50 while [#<i> LE 24]
+      o60 if [[#[4000 + #<i>] EQ #<tool>] AND [#<i> NE #<fork>]]
+        #[4000 + #<i>] = 0
+        (PRINT, rack_declare: T#<tool> also taken out of fork #<i>)
+      o60 endif
+      #<i> = [#<i> + 1]
+    o50 endwhile
+
+    ; if the spindle claimed it, it does not any more
+    o70 if [#3991 EQ #<tool>]
+      #3991 = 0
+      M61 Q0
+      G49
+      (PRINT, rack_declare: T#<tool> was declared in the spindle - spindle now empty)
+    o70 endif
+  o40 endif
+
+  #[4000 + #<fork>] = #<tool>
+  (PRINT, rack_declare: fork #<fork> now holds T#<tool>)
+
+o<rack_declare> endsub
+
+M2 (end program)
