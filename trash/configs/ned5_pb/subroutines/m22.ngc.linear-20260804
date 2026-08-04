@@ -1,0 +1,158 @@
+o<m22> sub
+
+; Use P-word as target pocket (if called as M22 Pn)
+#<target_pocket> = #1
+
+; --- Parameter assignments for clarity ---
+#<rack_id>                = #3979
+#<rack_traverse_speed>    = #3980
+#<rack_z_load_height>     = #3981
+#<rack_safe_z_height>     = #3982
+#<rack_pocket_1_x>        = #3983
+#<rack_pocket_1_y>        = #3984
+#<rack_pocket_2_x>        = #3985
+#<rack_pocket_2_y>        = #3986
+#<pocket_1_x_clearance>   = #3987
+#<pocket_1_y_clearance>   = #3988
+
+; --- Calculate pocket position ---
+#<dx> = [#<rack_pocket_2_x> - #<rack_pocket_1_x>]
+#<dy> = [#<rack_pocket_2_y> - #<rack_pocket_1_y>]
+#<pocket_index> = [#<target_pocket> - 1]
+#<pocket_x> = [#<rack_pocket_1_x> + #<pocket_index> * #<dx>]
+#<pocket_y> = [#<rack_pocket_1_y> + #<pocket_index> * #<dy>]
+
+; --- Determine clearance position, axis, and direction ---
+#<clearance_x> = #<pocket_x>
+#<clearance_y> = #<pocket_y>
+#<retrieve_axis> = 0
+#<retrieve_sign> = 1
+
+o100 if [#<rack_id> EQ 1] ; -Y to +Y, clearance +X, retrieve +X
+    #<clearance_x> = #<pocket_1_x_clearance>
+    #<retrieve_axis> = 1
+    #<retrieve_sign> = 1
+o100 elseif [#<rack_id> EQ 2] ; -Y to +Y, clearance -X, retrieve -X
+    #<clearance_x> = #<pocket_1_x_clearance>
+    #<retrieve_axis> = 1
+    #<retrieve_sign> = -1
+o100 elseif [#<rack_id> EQ 3] ; +Y to -Y, clearance +X, retrieve +X
+    #<clearance_x> = #<pocket_1_x_clearance>
+    #<retrieve_axis> = 1
+    #<retrieve_sign> = 1
+o100 elseif [#<rack_id> EQ 4] ; +Y to -Y, clearance -X, retrieve -X
+    #<clearance_x> = #<pocket_1_x_clearance>
+    #<retrieve_axis> = 1
+    #<retrieve_sign> = -1
+o100 elseif [#<rack_id> EQ 5] ; -X to +X, clearance +Y, retrieve +Y
+    #<clearance_y> = #<pocket_1_y_clearance>
+    #<retrieve_axis> = 2
+    #<retrieve_sign> = 1
+o100 elseif [#<rack_id> EQ 6] ; -X to +X, clearance -Y, retrieve -Y
+    #<clearance_y> = #<pocket_1_y_clearance>
+    #<retrieve_axis> = 2
+    #<retrieve_sign> = -1
+o100 elseif [#<rack_id> EQ 7] ; +X to -X, clearance +Y, retrieve +Y
+    #<clearance_y> = #<pocket_1_y_clearance>
+    #<retrieve_axis> = 2
+    #<retrieve_sign> = 1
+o100 elseif [#<rack_id> EQ 8] ; +X to -X, clearance -Y, retrieve -Y
+    #<clearance_y> = #<pocket_1_y_clearance>
+    #<retrieve_axis> = 2
+    #<retrieve_sign> = -1
+o100 else
+    (PRINT, "Error: Invalid rack_id!")
+    o<m22> return
+o100 endif
+
+; --- Motions ---
+G90
+; ned 2026-08-03: TRAVERSE AT THE TOP, approach at #3982.
+; Upstream (rack_atc_sim) does Z[safe] -> XY -> Z[load], i.e. it drops to the
+; APPROACH height first and then crosses the machine at it. That is right for
+; a carousel -- the platter comes to a stationary spindle, so clearing the
+; tools in the platter is the only clearance that exists. On ned the forks are
+; ~1.3 m away in Y, so the same line drives the whole table at 81 mm above
+; load height. From the toolsetter at Z-362 the first move was a 146 mm DIVE
+; to Z-508 followed by 1342 mm of Y at that depth, with a 3in facemill in the
+; spindle. #3982 is not wrong -- it is the approach gap, and 81 mm is correct
+; for that -- it was being asked to be a cross-table clearance as well.
+; Now: G53 Z0 for every traverse (the only height the machine guarantees, and
+; what tool_touch_off/go_to_zero/go_to_g30/go_to_home all already use), drop
+; to #3982 only once XY is over the fork, and leave at Z0.
+; RACK TRAVERSE HEIGHT = #3974 (rack-atc-setup.user-1-param, an existing
+; persistent PB setting). 0 = machine top, which is both the default and the
+; safest value, so an unconfigured machine traverses at Z0 rather than at some
+; number nobody chose. Set it if you want to cross lower than the very top.
+; Guarded: a traverse height BELOW the approach height would put the whole
+; point back, so it aborts instead.
+#<rack_traverse_z> = #3974
+; DRAWBAR DWELL = #3975 (rack-atc-setup.user-2-param). Seconds to wait after
+; a drawbar command before moving, so the cylinder has actually finished
+; before the spindle does anything (operator 2026-08-04: "give the drawbar a
+; bit more time to release and actuate"). M24/M25 return as soon as the
+; solenoid is commanded, not when the tool is free or gripped -- moving in
+; that gap drags a half-released tool. 0 or unset falls back to 0.5 s rather
+; than to no dwell at all: no wait is never the safe default here.
+; RACK RAPID FEED = #3976 (rack-atc-setup.user-3-param), units/min. The rack
+; approach used G0, which runs at each axis's full MAX_VELOCITY and is only
+; scaled by the rapid-override slider -- an override that resets every
+; restart, so it cannot be the safety story (operator 2026-08-04: "rapid is
+; too fast. 80pct of what it is"). These are now feed moves at an explicit
+; rate. Unset defaults to 80% of the Z axis max (the slowest linear axis, so
+; the figure holds for any of them): MAX_VELOCITY is units/SEC in the ini,
+; hence x60. Derived, not hardcoded, so it tracks the machine -- the
+; #<_ini[...]> form is the same one rack_id_calc.ngc already uses.
+#<rack_rapid_f> = #3976
+o96 if [#<rack_rapid_f> LE 0]
+    #<rack_rapid_f> = [0.8 * #<_ini[axis_z]max_velocity> * 60]
+o96 endif
+#<drawbar_dwell> = #3975
+o95 if [#<drawbar_dwell> LE 0]
+    #<drawbar_dwell> = 0.5
+o95 endif
+
+o90 if [#<rack_traverse_z> LT #<rack_safe_z_height>]
+    (abort, rack traverse Z is BELOW the approach height - set ATC user param 1 above the safe Z)
+o90 endif
+G1 G53 F[#<rack_rapid_f>] Z[#<rack_traverse_z>]
+G1 G53 F[#<rack_rapid_f>] X[#<pocket_x>] Y[#<pocket_y>]
+G1 G53 F[#<rack_rapid_f>] Z[#<rack_safe_z_height>]
+; M19 removed for ned: no spindle orient hardware (Mollom relays are CW/CCW only); the forks accept any
+; rotation -- proven by daily hand-loading.
+M24 ; unclamp drawbar to receive tool
+; fully OPEN before descending onto the tool -- a part-open drawbar will not
+; accept the taper and the descent just pushes the tool down in the fork
+; dwell now lives in clamptool/unclamptool -- every M24/M25
+; already waits, so repeating it here would double it
+G1 G53 F[#<rack_traverse_speed>] Z[#<rack_z_load_height>]
+M25 ; clamp tool in spindle
+; dwell lives in clamptool/unclamptool -- every M24/M25 already waits.
+;
+; DO NOT MOVE UNLESS THE TOOL IS IN THE SPINDLE (operator 2026-08-04).
+; Sliding out of the fork without a grip leaves the tool behind while the
+; record says we carried it away -- the worst possible disagreement, because
+; the next put-away then drives an empty spindle at an occupied fork.
+; Require BOTH: locked asserted AND released gone.
+M66 P0 L0
+o81 if [#5399 LT 1]
+    (abort, m22: tool-LOCKED never asserted after M25 - NOT pulling out of the fork)
+o81 endif
+M66 P1 L0
+o82 if [#5399 GT 0]
+    (abort, m22: tool-RELEASED still asserted - drawbar is not shut, NOT pulling out of the fork)
+o82 endif
+
+; Move tool out of pocket - single axis, correct direction
+o200 if [#<retrieve_axis> EQ 1]
+    G1 G53 F[#<rack_traverse_speed>] X[#<clearance_x>]
+o200 else
+    G1 G53 F[#<rack_traverse_speed>] Y[#<clearance_y>]
+o200 endif
+
+; leave at the top -- see the header note above.
+G1 G53 F[#<rack_rapid_f>] Z[#<rack_traverse_z>]
+
+o<m22> endsub
+
+M2
