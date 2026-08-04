@@ -1,0 +1,50 @@
+(ned RACK CAL -- locate ONE fork: plunge over the taper, 4-side centre,)
+(re-centre, verify deeper, retract. #1 = fork number for storage + prints)
+(Globals in: _rc_cx _rc_cy predicted centre, _rc_safe / _rc_p45 / _rc_p60)
+(work-Z levels, _rc_reach, feeds. Out: _rc_cx _rc_cy = FOUND centre)
+o<rc_locate> sub
+  #<i> = #1
+
+  G90
+  G1 Z[#<_rc_safe>] F[#<_rc_ftr>]
+  G1 X[#<_rc_cx>] Y[#<_rc_cy>] F[#<_rc_ftr>]
+
+  (plunge 45 over the taper as a PROBE - early contact means off-centre)
+  G38.3 Z[#<_rc_p45>] F[#<_rc_fck>]
+  o10 if [#5070 EQ 1]
+    G1 Z[#<_rc_safe>] F[#<_rc_ftr>]
+    (abort, RACK CAL: contact while descending over the taper at fork #<i> - centre prediction is off, re-eyeball and restart from this fork)
+  o10 endif
+
+  (4-sided find: X pair first, then Y pair from the corrected X)
+  o<rc_touch> call [0] [1]
+  #<xp> = #<_rc_val>
+  o<rc_touch> call [0] [-1]
+  #<xm> = #<_rc_val>
+  #<_rc_cx> = [[#<xp> + #<xm>] / 2]
+  G1 X[#<_rc_cx>] F[#<_rc_ftr>]
+  o<rc_touch> call [1] [1]
+  #<yp> = #<_rc_val>
+  o<rc_touch> call [1] [-1]
+  #<ym> = #<_rc_val>
+  #<_rc_cy> = [[#<yp> + #<ym>] / 2]
+  G1 X[#<_rc_cx>] Y[#<_rc_cy>] F[#<_rc_ftr>]
+
+  (verify: 15 more mm of engagement must fit with NO touch)
+  G38.3 Z[#<_rc_p60>] F[#<_rc_fck>]
+  o30 if [#5070 EQ 1]
+    G1 Z[#<_rc_safe>] F[#<_rc_ftr>]
+    (abort, RACK CAL: touched during the 60 mm verify at fork #<i> - centre not trusted, nothing stored for it)
+  o30 endif
+  G1 Z[#<_rc_p45>] F[#<_rc_ftr>]
+  G1 Z[#<_rc_safe>] F[#<_rc_ftr>]
+
+  (store MACHINE coords: work + the g5x et al offset, taken right here)
+  #<offx> = [#<_abs_x> - #<_x>]
+  #<offy> = [#<_abs_y> - #<_y>]
+  #[4100 + [#<i> * 4]]     = [#<_rc_cx> + #<offx>]
+  #[4100 + [#<i> * 4] + 1] = [#<_rc_cy> + #<offy>]
+  #[4100 + [#<i> * 4] + 3] = 1
+  (PRINT, RACK CAL fork #<i>: centre X#<_rc_cx> Y#<_rc_cy> work - stored machine in 4100 block)
+o<rc_locate> endsub
+M2

@@ -824,7 +824,32 @@ class UserTab(QWidget):
             self._cal_delta_base = self._read_vars(
                 ('3050', '3051', '3055', '3056',
                  '3062', '3063', '3064', '3065'))
-            tabs.addTab(cal_page, 'CALIBRATION')
+            tabs.addTab(cal_page, 'AC CALIBRATION')
+
+            # ---- RACK CALIBRATION: its own page beside AC CALIBRATION ----
+            rack_page = QWidget()
+            rl = QVBoxLayout(rack_page)
+            rl.setContentsMargins(8, 8, 8, 8)
+            rbox, rbl = _mkbox('RACK CALIBRATION  --  P1..P14 fork centres')
+            rbtn = QPushButton('START RACK CAL')
+            rbtn.setObjectName('cal_rack_btn')
+            rbtn.setMinimumHeight(62)
+            rbtn.setStyleSheet(self.CAL_QSS.get('go', ''))
+            rbtn.clicked.connect(lambda _=False: self._cal_run('rack'))
+            self._cal_btn['rack'] = rbtn
+            rbl.addWidget(rbtn)
+            rnote = QLabel('Empty spindle, holders energized. Park the '
+                           'spindle CENTRED 10 mm above the P1 holder top -- '
+                           'that pose is the datum. Plunges 45 over the '
+                           'taper, 4-side centres, verifies at 60, then '
+                           'steps Y- to the next fork. Every descent is a '
+                           'probe move; wrong anything = loud abort.')
+            rnote.setWordWrap(True)
+            rnote.setStyleSheet('color: rgb(160,160,160); font: 10pt;')
+            rbl.addWidget(rnote)
+            rl.addWidget(rbox)
+            rl.addStretch(1)
+            tabs.addTab(rack_page, 'RACK CALIBRATION')
             self._cal_tab_index = tabs.indexOf(cal_page)
             tabs.currentChanged.connect(self._cal_tab_changed)
             cstat = QLabel('')
@@ -1438,6 +1463,9 @@ class UserTab(QWidget):
         'shoulder': ('cal_shoulder', 'SHOULDER',  True),
         'cleft':  ('cal_c_goto',     'C LEFT',    True),
         'cright': ('cal_c_goto',     'C RIGHT',   True),
+        # RACK CAL takes no centre args -- the operator's start pose IS the
+        # datum (spindle centred 10 mm above the P1 holder top, by eye).
+        'rack':   ('rack_cal',       'RACK CAL',  False),
     }
 
     CAL_EXTRA = {'cleft': -1, 'cright': 1}
@@ -2990,7 +3018,12 @@ class UserTab(QWidget):
                 'tool_number_entry_atc_page',
                 # TOUCH OFF CURRENT TOOL: the TOOL tab keeps the only one;
                 # the rack widget carried a full copy (operator 2026-08-04)
-                'tool_touch_off_button_atc')
+                'tool_touch_off_button_atc',
+                # the operator then called the WHOLE ATC loading panel
+                # redundant -- hiding its frame takes the header, LOAD +
+                # field, UNLOAD and STORE TOOL IN RACK in one go, no empty
+                # box left behind. Per-widget hides above stay as defence.
+                'rack_atc_load_frame')
 
     def _hide_spare_mdi(self):
         win = self.window()

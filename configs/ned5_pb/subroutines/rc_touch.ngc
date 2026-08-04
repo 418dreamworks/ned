@@ -1,0 +1,39 @@
+(ned RACK CAL -- one bore-to-taper touch, INSIDE the spindle bore)
+(  #1 = axis: 0 = X, 1 = Y     #2 = side: +1 / -1)
+(The spindle nose surrounds the energized holder taper. Moving +X presses)
+(the bore's far wall against the taper's +X face - contact trips the same)
+(probe input as the toolsetter. Globals: _rc_cx _rc_cy centre, _rc_reach,)
+(_rc_fpr fast, _rc_fla latch, _rc_ftr traverse. Out: #<_rc_val> work coord)
+o<rc_touch> sub
+  #<ax>   = #1
+  #<side> = #2
+  o10 if [#<ax> EQ 0]
+    G38.2 X[#<_rc_cx> + #<side> * #<_rc_reach>] F[#<_rc_fpr>]
+  o10 else
+    G38.2 Y[#<_rc_cy> + #<side> * #<_rc_reach>] F[#<_rc_fpr>]
+  o10 endif
+  o20 if [#5070 EQ 0]
+    (abort, RACK CAL: no contact inside the bore - fork empty, not energized, or the Y step is wrong)
+  o20 endif
+  G91
+  o30 if [#<ax> EQ 0]
+    G38.5 X[0 - #<side> * #<_rc_reach>] F[#<_rc_fla>]
+    G90
+    G38.2 X[#<_rc_cx> + #<side> * #<_rc_reach>] F[#<_rc_fla>]
+    #<_rc_val> = #5061
+    G91
+    G38.5 X[0 - #<side> * #<_rc_reach>] F[#<_rc_fla>]
+    G90
+    G1 X[#<_rc_cx>] F[#<_rc_ftr>]
+  o30 else
+    G38.5 Y[0 - #<side> * #<_rc_reach>] F[#<_rc_fla>]
+    G90
+    G38.2 Y[#<_rc_cy> + #<side> * #<_rc_reach>] F[#<_rc_fla>]
+    #<_rc_val> = #5062
+    G91
+    G38.5 Y[0 - #<side> * #<_rc_reach>] F[#<_rc_fla>]
+    G90
+    G1 Y[#<_rc_cy>] F[#<_rc_ftr>]
+  o30 endif
+o<rc_touch> endsub
+M2

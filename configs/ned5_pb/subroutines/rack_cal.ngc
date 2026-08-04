@@ -1,0 +1,54 @@
+(ned RACK CALIBRATION -- P1..Pn fork centres by probing the energized)
+(holders with the empty spindle. Operator spec 2026-08-04: start with the)
+(spindle CENTERED 10 mm above the P1 holder top - THAT pose is the datum.)
+(  #1 = fork count, 0 -> 14        #2 = Y step to the next fork, 0 -> 45)
+(NOTE the step: the operator specified 45; the rack's own pocket params)
+(step 90.75 and the jig doc says 92. If 45 is wrong the P2 descent trips)
+(on the flanges between forks and aborts by name - every move is a probe.)
+(Requires: EMPTY spindle, holders energized onto the toolsetter input,)
+(machine homed, started AT the P1 datum pose.)
+o<rack_cal> sub
+  #<n>    = #1
+  #<step> = #2
+  o5 if [#<n> LE 0]
+    #<n> = 14
+  o5 endif
+  o6 if [#<step> LE 0]
+    #<step> = 45.0
+  o6 endif
+  o7 if [#<_metric> EQ 0]
+    (abort, RACK CAL: switch to MM first)
+  o7 endif
+
+  #3071 = 0
+
+  (datum = wherever the operator parked us: centred, 10 mm above the top)
+  #<_rc_cx>   = #<_x>
+  #<_rc_cy>   = #<_y>
+  #<_rc_safe> = #<_z>
+  #<_rc_p45>  = [#<_z> - 45.0]
+  #<_rc_p60>  = [#<_z> - 60.0]
+  #<_rc_reach> = 8.0
+  #<_rc_ftr>  = #3006
+  #<_rc_fpr>  = #3004
+  #<_rc_fla>  = #3005
+  #<_rc_fck>  = #3004
+  o8 if [[#<_rc_ftr> LE 0] OR [#<_rc_fpr> LE 0] OR [#<_rc_fla> LE 0]]
+    (abort, RACK CAL: probe feeds 3004-3006 are not set - set them on the probe screen first)
+  o8 endif
+
+  #<i> = 1
+  o10 while [#<i> LE #<n>]
+    o<rc_locate> call [#<i>]
+    (next fork: predicted from the centre just FOUND, one step over in Y-)
+    #<_rc_cy> = [#<_rc_cy> - #<step>]
+    #<i> = [#<i> + 1]
+  o10 endwhile
+
+  G90
+  G1 Z[#<_rc_safe>] F[#<_rc_ftr>]
+  #3071 = 1
+  (PRINT, RACK CAL DONE: #<n> forks located and stored in the 4100 block)
+  (DEBUG, RACK CAL done: #<n> forks located - see the log for each centre)
+o<rack_cal> endsub
+M2
