@@ -17,6 +17,20 @@ o<usp2> if [#5399 LT 0]
     M65 P0
     (ABORT, unload_spindle: tool-released sensor never confirmed -- re-clamped)
 o<usp2> endif
+; DRAWBAR DWELL. The sensor confirms the cylinder REACHED its end state; it
+; does not mean the air has settled or the taper has stopped moving. Wait
+; before anything else happens (operator 2026-08-04: "i need that dwell for
+; all drawbar actions. .5 second dwell"). Every drawbar action on the machine
+; funnels through here -- M24 -> unclamptool, M25 -> clamptool -- so this one
+; place covers m21/m22, toolchange, load/unload and the GUI buttons alike.
+; #3975 (rack-atc-setup.user-2-param) tunes it; 0 or unset means 0.5 s, never
+; no wait.
+#<db_dwell> = #3975
+o90 if [#<db_dwell> LE 0]
+    #<db_dwell> = 0.5
+o90 endif
+G4 P#<db_dwell>
+
 ; PB software unload (spindle now empty)
 M61 Q0
 G49

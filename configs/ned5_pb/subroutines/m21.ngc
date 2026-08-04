@@ -94,6 +94,19 @@ G90
 ; solenoid is commanded, not when the tool is free or gripped -- moving in
 ; that gap drags a half-released tool. 0 or unset falls back to 0.5 s rather
 ; than to no dwell at all: no wait is never the safe default here.
+; RACK RAPID FEED = #3976 (rack-atc-setup.user-3-param), units/min. The rack
+; approach used G0, which runs at each axis's full MAX_VELOCITY and is only
+; scaled by the rapid-override slider -- an override that resets every
+; restart, so it cannot be the safety story (operator 2026-08-04: "rapid is
+; too fast. 80pct of what it is"). These are now feed moves at an explicit
+; rate. Unset defaults to 80% of the Z axis max (the slowest linear axis, so
+; the figure holds for any of them): MAX_VELOCITY is units/SEC in the ini,
+; hence x60. Derived, not hardcoded, so it tracks the machine -- the
+; #<_ini[...]> form is the same one rack_id_calc.ngc already uses.
+#<rack_rapid_f> = #3976
+o96 if [#<rack_rapid_f> LE 0]
+    #<rack_rapid_f> = [0.8 * #<_ini[axis_z]max_velocity> * 60]
+o96 endif
 #<drawbar_dwell> = #3975
 o95 if [#<drawbar_dwell> LE 0]
     #<drawbar_dwell> = 0.5
@@ -102,9 +115,9 @@ o95 endif
 o90 if [#<rack_traverse_z> LT #<rack_safe_z_height>]
     (abort, rack traverse Z is BELOW the approach height - set ATC user param 1 above the safe Z)
 o90 endif
-G0 G53 Z[#<rack_traverse_z>]
-G0 G53 X[#<clearance_x>] Y[#<clearance_y>]
-G0 G53 Z[#<rack_safe_z_height>]
+G1 G53 F[#<rack_rapid_f>] Z[#<rack_traverse_z>]
+G1 G53 F[#<rack_rapid_f>] X[#<clearance_x>] Y[#<clearance_y>]
+G1 G53 F[#<rack_rapid_f>] Z[#<rack_safe_z_height>]
 G1 G53 F[#<rack_traverse_speed>] Z[#<rack_z_load_height>]
 ; M19 removed for ned: no spindle orient hardware (Mollom relays are CW/CCW only); the forks accept any
 ; rotation -- proven by daily hand-loading.
@@ -119,10 +132,11 @@ o200 endif
 
 M24
 ; let it FULLY release before the spindle lifts away from the fork
-G4 P#<drawbar_dwell>
+; dwell now lives in clamptool/unclamptool -- every M24/M25
+; already waits, so repeating it here would double it
 ; leave at the top, not the approach height -- whatever runs next inherits a
 ; clear machine instead of one parked 81 mm above the forks.
-G0 G53 Z[#<rack_traverse_z>]
+G1 G53 F[#<rack_rapid_f>] Z[#<rack_traverse_z>]
 
 o<m21> endsub
 
