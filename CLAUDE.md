@@ -188,3 +188,26 @@
     - Symptom to recognise: a parse or runtime error in a file that is clean
       when you test it afterwards. Check the file mtime against the error
       timestamp BEFORE theorising about the code.
+
+22. **COMMENT SYNTAX IS PER-LANGUAGE, AND I KEEP GETTING IT WRONG.** This is
+    now the most repeated mistake in this project. Every occurrence has been
+    the same shape: I write a comment in the wrong dialect, every other check
+    passes, and the failure only appears when the operator tries to run it.
+    - **HAL: `#` ONLY.** `;` is NOT a comment character. Text after it is
+      parsed as arguments. 2026-08-03:
+      `setp zferr.z.in0 [JOINT_2]MIN_FERROR   ; switch clear` returned
+      `setp requires 2 arguments, 9 given` and LinuxCNC refused to start —
+      after I had already told the operator to relaunch.
+    - **G-code: `(...)` must open AND close on ONE line**, with no inner
+      parens, including inside `(abort, ...)`. Recurred several times.
+    - **`.ngc` uses `;` for line comments; `.hal` does not.** Adjacent files,
+      opposite rules — which is exactly why this keeps happening.
+    - **The checks live in `tools/cfg_edit.sh`, not in my memory.** It now
+      refuses HAL with a `;` in live code, wrong `setp`/`sets`/`addf` argument
+      counts, and malformed `net`, as ONE unit with the g-code scanner. When a
+      new config language enters the repo, it gets a checker there BEFORE the
+      first edit ships.
+    - **A config that has not been parsed has not been finished.** Rule 18
+      says this for g-code; it applies to HAL, INI and var files too. "It
+      looks right" is not a check — a launch failure costs the operator a
+      whole cycle and their attention, which is the expensive part.

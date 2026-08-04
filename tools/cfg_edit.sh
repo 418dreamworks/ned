@@ -54,6 +54,49 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# HAL SYNTAX CHECK. HAL takes '#' comments ONLY -- ';' is NOT a comment
+# character, so everything after it is parsed as arguments. On 2026-08-03
+# `setp zferr.z.in0 [JOINT_2]MIN_FERROR   ; switch clear -> the INI value`
+# came back as "setp requires 2 arguments, 9 given" and LinuxCNC refused to
+# start at all. The operator had already been handed a relaunch. This class
+# of error costs a whole launch cycle every time, and it is invisible to
+# every other check here, so it belongs in the scanner rather than in my
+# memory.
+python3 - <<'HALCHK'
+import glob, sys
+ARGS = {'setp': 2, 'sets': 2, 'addf': 2}
+bad = []
+for f in glob.glob('/home/brains/Documents/ned/configs/**/*.hal', recursive=True):
+    if '/trash/' in f:
+        continue
+    for n, line in enumerate(open(f), 1):
+        raw = line.rstrip('\n')
+        code = raw.split('#')[0].strip()
+        if not code:
+            continue
+        w = code.split()
+        cmd = w[0]
+        # ';' anywhere in live code is the tell -- flag it before arg counts
+        # so the message names the actual mistake, not its symptom.
+        if ';' in code:
+            bad.append('%s:%d  \';\' IS NOT A HAL COMMENT -- use \'#\'  ->  %s'
+                       % (f, n, raw.strip()))
+            continue
+        want = ARGS.get(cmd)
+        if want is not None and len(w) - 1 != want:
+            bad.append('%s:%d  %s needs %d args, got %d  ->  %s'
+                       % (f, n, cmd, want, len(w) - 1, code))
+        if cmd == 'net' and len(w) < 3:
+            bad.append('%s:%d  net needs a signal plus at least one pin  ->  %s'
+                       % (f, n, code))
+if bad:
+    print('=== HAL SYNTAX FAILED AFTER THE EDIT ===', file=sys.stderr)
+    for b in bad:
+        print('  ' + b, file=sys.stderr)
+    sys.exit(1)
+HALCHK
+[ $? -ne 0 ] && { echo "HAL would not load -- edit REFUSED as a unit" >&2; exit 1; }
+
 # a write is only finished when it still parses
 if ! "$NED/tools/gcode_check.sh" --all >/tmp/cfg_edit_check.$$ 2>&1; then
     echo "=== SCANNER FAILED AFTER THE EDIT ===" >&2
