@@ -233,3 +233,41 @@ Two changes, both in `setNotify()`:
    left -- moving under the operator hand. Pinned to `NED_FIXED_W = 520`.
 
 Also needs `QTimer` added to the `PySide6.QtCore` import line.
+
+## By. PATCHED Probe Basic core file: probe_basic.py (STATUS error flag, 2026-08-03)
+
+`~/qt_pb/probe_basic/src/probe_basic/probe_basic.py`
+Stock copy kept beside it as `probe_basic.py.stock-20260803`.
+
+**A PB update OVERWRITES this file and the flag silently disappears.**
+Nothing errors; the STATUS tab simply stops turning red and an operator who
+relies on it to catch a message that has already self-dismissed will believe
+the machine reported nothing.
+
+**What the patch does.** Popups now clear themselves after 1 s (see Bx), so a
+message that scrolls past has to leave a mark somewhere. On any error the
+STATUS tab TITLE turns red and stays red until the operator opens that tab.
+Only `setTabTextColor` on the tab bar is used — the STATUS widget itself is
+never touched, restyled or replaced (operator instruction).
+
+Two pieces, both in `probe_basic.py`:
+- in `ProbeBasic.__init__`: finds the `QTabWidget` whose page is named
+  `status_tab`, stores the stock tab colour, connects `currentChanged`, and
+  subscribes to `getPlugin('notifications').error_message`.
+- methods `_ned_err_flag` / `_ned_err_tab_changed` beside
+  `_on_tool_table_dirty_changed`.
+
+**This is a CORE edit, made at the operator's explicit direction 2026-08-03**
+("let's just edit PB core"), overriding the usual user-sections-only rule. It
+is the only PB-core patch in the file; everything else ned adds lives in
+`configs/ned5_pb/user_tabs/`.
+
+**Re-verify after any PB update** — the log lines are the proof, per B3:
+- `ned: STATUS tab error flag armed (tab index N)` on startup.
+- `ned: STATUS opened -- error flag cleared` when the tab is opened after an
+  error.
+- `ned: STATUS tab NOT FOUND -- error flagging is OFF` means PB renamed or
+  restructured the tab and the patch needs reworking, not just re-applying.
+
+If the tab is not found the patch logs loudly and does nothing else — it can
+never block startup.
