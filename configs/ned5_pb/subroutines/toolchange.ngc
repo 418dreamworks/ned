@@ -75,26 +75,19 @@ o150 if [#<tool_in_spindle> GT 0] ; checks if there is a valid tool in the spind
     o152 if [#[4000 + #<tool_in_spindle>] NE 0]
         (abort, fork #<tool_in_spindle> is not empty -- rack map out of sync, fix #40xx params)
     o152 endif
-    o<m21> call [#<tool_in_spindle>]; put the tool away in ITS OWN fork
-    (DEBUG, EVAL[vcp.getWidget{"rackatc"}.store_tool{#<tool_in_spindle>, #<tool_in_spindle>}])
-    #140 = #<tool_in_spindle>
-    #[4000 + #140] = #<tool_in_spindle> ; save tool number in its own pocket
-    #3991 = 0 ; empty tool in the spindle
-    M61 Q0
-    G49
+    (m21 does its own bookkeeping the moment release is proven -- a stop)
+    (anywhere after leaves every record true; nothing to write here)
+    o<m21> call [#<tool_in_spindle>]
 o150 endif
 
 o160 if [#<selected_tool> GT 0] ; selected tool is not tool 0
-    o<m22> call [#<next_pocket>] ; set the spindle to move to the right pocket for the selected tool
-    (DEBUG, EVAL[vcp.getWidget{"rackatc"}.store_tool{#<next_pocket>, 0}])
-    #150 = #<next_pocket>
-    #[4000 + #150] = 0 ; empty the pocket
-    #3991 = #<selected_tool> ; Set persistent variable to remember tool in spindle after power cycle
+    (m22 books its own result once the grip is proven)
+    o<m22> call [#<next_pocket>]
 o160 else
     M25 ; deactive drawbar
 o160 endif
 
-M61 Q#<selected_tool>
+(M61 now issued inside m22 at the proven-grip point; only the offset here)
 
 o170 if [1 EQ 1]
     G43 H#<selected_tool>
