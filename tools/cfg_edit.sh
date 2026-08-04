@@ -99,6 +99,28 @@ for f in glob.glob('/home/brains/Documents/ned/configs/**/*.hal', recursive=True
             bad.append('%s:%d  ini.N.* does not exist yet in a base HALFILE '
                        '-- move this line to postgui_pb.hal  ->  %s'
                        % (f, n, code))
+# GUI COMPONENT PINS. postgui nets ned-tab.<pin>, and those pins exist only
+# because ned_controls.py called addPin(). A net naming a pin that was never
+# declared kills postgui -- the failure mode already seen once as
+# "Pin 'ned-dro.axis-in' does not exist". Cross-check the two files.
+try:
+    py = open('/home/brains/Documents/ned/configs/ned5_pb/user_tabs/'
+              'ned_controls/ned_controls.py').read()
+    declared = set(re.findall(r"addPin\('([\w-]+)'", py))
+    for f in glob.glob('/home/brains/Documents/ned/configs/**/*.hal',
+                       recursive=True):
+        if '/trash/' in f:
+            continue
+        for n, line in enumerate(open(f), 1):
+            code = line.split('#')[0]
+            for pin in re.findall(r'ned-tab\.([\w-]+)', code):
+                if pin not in declared:
+                    bad.append('%s:%d  ned-tab.%s is netted but never '
+                               'addPin()ed in ned_controls.py  ->  %s'
+                               % (f, n, pin, code.strip()))
+except OSError:
+    pass
+
 if bad:
     print('=== HAL SYNTAX FAILED AFTER THE EDIT ===', file=sys.stderr)
     for b in bad:

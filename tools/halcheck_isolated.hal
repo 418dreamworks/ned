@@ -1,0 +1,42 @@
+# Isolated pin-name check for the tool-record guard. NO hm2_eth, NO board,
+# NO motion -- only the comps I added, wired exactly as ned5_iron.hal wires
+# them, minus the external signals that only exist under LinuxCNC.
+loadrt threads name1=t1 period1=1000000
+loadrt conv_s32_float names=tool.mm.n2f
+loadrt comp names=tool.mm.have
+loadrt and2 names=tool.mm.unrecR,tool.mm.phanR,tool.mm.unrec,tool.mm.phan
+loadrt not names=tool.mm.nexcuse,tool.mm.nrec,tool.mm.nlock
+loadrt or2 names=tool.mm.excuse
+loadrt timedelay names=tool.mm.unrecdb,tool.mm.phandb
+
+addf tool.mm.n2f t1
+addf tool.mm.have t1
+addf tool.mm.nrec t1
+addf tool.mm.nlock t1
+addf tool.mm.unrecR t1
+addf tool.mm.phanR t1
+addf tool.mm.excuse t1
+addf tool.mm.nexcuse t1
+addf tool.mm.unrec t1
+addf tool.mm.phan t1
+addf tool.mm.unrecdb t1
+addf tool.mm.phandb t1
+
+net t-num-f     tool.mm.n2f.out => tool.mm.have.in1
+setp tool.mm.have.in0 0.5
+net rec-has     tool.mm.have.out => tool.mm.nrec.in  tool.mm.phanR.in0
+net rec-no      tool.mm.nrec.out => tool.mm.unrecR.in1
+net locked      tool.mm.nlock.in  tool.mm.unrecR.in0
+net no-locked   tool.mm.nlock.out => tool.mm.phanR.in1
+net mm-excuse   tool.mm.excuse.out => tool.mm.nexcuse.in
+net mm-ok       tool.mm.nexcuse.out => tool.mm.unrec.in1  tool.mm.phan.in1
+net unrec-raw   tool.mm.unrecR.out => tool.mm.unrec.in0
+net phan-raw    tool.mm.phanR.out  => tool.mm.phan.in0
+net unrec-g     tool.mm.unrec.out => tool.mm.unrecdb.in
+net phan-g      tool.mm.phan.out  => tool.mm.phandb.in
+setp tool.mm.unrecdb.on-delay  1.0
+setp tool.mm.unrecdb.off-delay 0.2
+setp tool.mm.phandb.on-delay   1.0
+setp tool.mm.phandb.off-delay  0.2
+net tool-unrecorded tool.mm.unrecdb.out
+net tool-phantom    tool.mm.phandb.out
