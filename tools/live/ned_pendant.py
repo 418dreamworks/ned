@@ -22,6 +22,20 @@ import hal
 import linuxcnc
 
 AXES = ['x', 'y', 'z', 'a', 'c']
+
+# PER-AXIS jump ladders (operator 2026-08-04): the SELECTED SLOT is shared
+# across axes -- "keep the setting the same, just number depends on the
+# axis". Fastest per axis: X 2 mm, Y/Z 1 mm, A/C 0.5 deg with the top three
+# rotary slots 0.1 / 0.25 / 0.5. Replaces the single [DISPLAY]INCREMENTS
+# list, which could not differ per axis.
+INC_TABLE = {
+    'x': [0.01, 0.05, 0.1, 0.5, 2.0],
+    'y': [0.01, 0.05, 0.1, 0.5, 1.0],
+    'z': [0.01, 0.05, 0.1, 0.5, 1.0],
+    'a': [0.01, 0.05, 0.1, 0.25, 0.5],
+    'c': [0.01, 0.05, 0.1, 0.25, 0.5],
+}
+N_INC = 5
 CPD = 4                  # counts per detent (tools/groundtruth/mpgjog.sh)
 DETENT = 4               # wheel counts in one detent
 INC_DETENTS = 10         # detents per JUMP-SIZE step (operator: 25 too much, 10 will do)
@@ -50,7 +64,7 @@ def ini_increments():
     return vals or [0.01, 0.1, 1.0, 10.0]
 
 
-INCREMENTS = ini_increments()
+INCREMENTS = ini_increments()   # kept only for the startup banner
 
 # 3 JOG SPEEDS (operator 2026-08-01, replaces the 0-100% number): SLOW =
 # 1 ft/min, MED = 12 ft/min, MAX = the machine ceiling ([TRAJ]
@@ -161,7 +175,10 @@ def adv(i, step):
     return i
 
 ax_i = 0
-inc_i = 0                       # start at the SMALLEST increment (safe)
+# start at the MIDDLE slot (0.1), not the micron setting -- operator
+# 2026-08-04: waking up in 0.01 meant every session began with the wheel
+# doing nearly nothing
+inc_i = 2
 spd_i = 2                       # start at MAX = the machine's boot reality
 jcmd = linuxcnc.command()       # NML maxvel = the V slider = the wheel cap
 btn_prev = False
@@ -175,7 +192,7 @@ spd_i0 = 2
 
 
 def apply(gate_off):
-    inc = INCREMENTS[inc_i]
+    inc = INC_TABLE[AXES[ax_i]][inc_i]
     for i, ax in enumerate(AXES):
         # locked() covers the homing interlock too: the enable pin itself
         # drops for EVERY axis the moment any homing cycle starts
@@ -235,11 +252,12 @@ try:
             else:
                 # jump size: step through the on-screen increment list,
                 # 25 detents per step (1/detent was too abrupt)
-                new_i = max(0, min(len(INCREMENTS) - 1, inc_i0 + detents // INC_DETENTS))
+                new_i = max(0, min(N_INC - 1, inc_i0 + detents // INC_DETENTS))
                 if new_i != inc_i:
                     inc_i = new_i
-                    print('ned_pendant: jump -> {} mm/detent'.format(
-                        INCREMENTS[inc_i]), flush=True)
+                    print('ned_pendant: jump slot {} -> {}/detent on {}'.format(
+                        inc_i, INC_TABLE[AXES[ax_i]][inc_i],
+                        AXES[ax_i].upper()), flush=True)
 
         if (not pressed) and btn_prev:                    # button released
             # rotated or long-held presses select things; only CLEAN quick taps

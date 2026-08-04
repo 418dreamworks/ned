@@ -3024,7 +3024,10 @@ class UserTab(QWidget):
                 # redundant -- hiding its frame takes the header, LOAD +
                 # field, UNLOAD and STORE TOOL IN RACK in one go, no empty
                 # box left behind. Per-widget hides above stay as defence.
-                'rack_atc_load_frame')
+                'rack_atc_load_frame',
+                # REF RACK DATA: carousel position reference -- no carousel
+                # on ned, ever (operator 2026-08-04: "delete that button")
+                'reference_carousel_2')
 
     def _hide_spare_mdi(self):
         win = self.window()
@@ -3149,6 +3152,14 @@ class UserTab(QWidget):
             lay.setContentsMargins(8, 8, 8, 8)
             t = QTableWidget(self.RACK_TABLE_FORKS, 4)
             t.setObjectName('ned_rack_table')
+            # match the TOOL tab table: grey cells, white figures, dark grid
+            # (the app QSS styles the headers but leaves a plain
+            # QTableWidget's body light)
+            t.setStyleSheet(
+                'QTableWidget { background: rgb(60,63,65);'
+                ' gridline-color: rgb(40,42,44); }'
+                ' QTableWidget::item { background: rgb(128,128,128);'
+                ' color: white; font: 12pt "Probe Basic Bebas Mono"; }')
             t.setHorizontalHeaderLabels(['P', 'POS X', 'POS Y', 'POS Z'])
             t.verticalHeader().setVisible(False)
             t.setEditTriggers(QAbstractItemView.NoEditTriggers)
