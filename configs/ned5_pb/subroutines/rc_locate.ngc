@@ -39,12 +39,19 @@ o<rc_locate> sub
   (straight back to safety - no stop at 45 on the way out)
   G1 Z[#<_rc_safe>] F[#<_rc_ftr>]
 
-  (store MACHINE coords: work + the g5x et al offset, taken right here)
+  (Z: shoulder touch at THIS fork - every fork gets its own XYZ, no)
+  (interpolation, no hardcoded end forks - operator 2026-08-04)
+  o<rc_ztouch> call
+
+  (store MACHINE coords, all three together with the flag LAST: a fork is)
+  (complete only if X Y AND Z landed)
   #<offx> = [#<_abs_x> - #<_x>]
   #<offy> = [#<_abs_y> - #<_y>]
+  #<offz> = [#<_abs_z> - #<_z>]
   #[4100 + [#<i> * 4]]     = [#<_rc_cx> + #<offx>]
   #[4100 + [#<i> * 4] + 1] = [#<_rc_cy> + #<offy>]
+  #[4100 + [#<i> * 4] + 2] = [#<_rc_ztop> + #<offz>]
   #[4100 + [#<i> * 4] + 3] = 1
-  (PRINT, RACK CAL fork #<i>: centre X#<_rc_cx> Y#<_rc_cy> work - stored machine in 4100 block)
+  (PRINT, RACK CAL fork #<i>: X#<_rc_cx> Y#<_rc_cy> Ztop#<_rc_ztop> work - stored machine)
 o<rc_locate> endsub
 M2
