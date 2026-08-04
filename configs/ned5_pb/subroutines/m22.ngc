@@ -87,6 +87,18 @@ G90
 ; Guarded: a traverse height BELOW the approach height would put the whole
 ; point back, so it aborts instead.
 #<rack_traverse_z> = #3974
+; DRAWBAR DWELL = #3975 (rack-atc-setup.user-2-param). Seconds to wait after
+; a drawbar command before moving, so the cylinder has actually finished
+; before the spindle does anything (operator 2026-08-04: "give the drawbar a
+; bit more time to release and actuate"). M24/M25 return as soon as the
+; solenoid is commanded, not when the tool is free or gripped -- moving in
+; that gap drags a half-released tool. 0 or unset falls back to 0.5 s rather
+; than to no dwell at all: no wait is never the safe default here.
+#<drawbar_dwell> = #3975
+o95 if [#<drawbar_dwell> LE 0]
+    #<drawbar_dwell> = 0.5
+o95 endif
+
 o90 if [#<rack_traverse_z> LT #<rack_safe_z_height>]
     (abort, rack traverse Z is BELOW the approach height - set ATC user param 1 above the safe Z)
 o90 endif
@@ -96,8 +108,13 @@ G0 G53 Z[#<rack_safe_z_height>]
 ; M19 removed for ned: no spindle orient hardware (Mollom relays are CW/CCW only); the forks accept any
 ; rotation -- proven by daily hand-loading.
 M24 ; unclamp drawbar to receive tool
+; fully OPEN before descending onto the tool -- a part-open drawbar will not
+; accept the taper and the descent just pushes the tool down in the fork
+G4 P#<drawbar_dwell>
 G1 G53 F[#<rack_traverse_speed>] Z[#<rack_z_load_height>]
 M25 ; clamp tool in spindle
+; fully GRIPPED before pulling it out of the fork
+G4 P#<drawbar_dwell>
 
 ; Move tool out of pocket - single axis, correct direction
 o200 if [#<retrieve_axis> EQ 1]

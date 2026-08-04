@@ -17,3 +17,5 @@
 2026-08-03 23:58:57  HEADREAD A: +0.004 deg  (mt=36 w=14839199)
 2026-08-03 23:58:57  HEADREAD -> ini.4.home_offset = +0.0038
 2026-08-03 23:58:58  HEAD READ armed: C=-0.000 A=+0.004
+2026-08-04 00:00:42  program/MDI done (motion complete) -> MANUAL + teleop (MPG live)
+2026-08-04 00:00:42  TELEOP re-entered (machine ON + homed) -> MPG live
