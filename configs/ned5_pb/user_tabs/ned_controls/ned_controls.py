@@ -622,8 +622,9 @@ class UserTab(QWidget):
             srow.addWidget(sset)
             srow.addStretch(1)
             sl.addLayout(srow)
-            snote = QLabel('Tells LinuxCNC what is already in the spindle:\n'
-                           'M61 Q<n>, G43 H<n> (G49 for 0), #3991 = <n>.\n'
+            snote = QLabel('Tells LinuxCNC what is already in the spindle.\n'
+                           'Sets the tool number, its offset and #3991, and\n'
+                           'takes that tool OUT of the rack map.\n'
                            'No drawbar, no motion, no tool change.')
             snote.setStyleSheet('color: rgb(160,160,160); font: 9pt;')
             sl.addWidget(snote)
@@ -3393,12 +3394,11 @@ class UserTab(QWidget):
                 return
             c.mode(linuxcnc.MODE_MDI)
             c.wait_complete()
-            c.mdi('M61 Q%d' % n)
-            c.wait_complete(5.0)
-            c.mdi('G43 H%d' % n if n > 0 else 'G49')
-            c.wait_complete(5.0)
-            c.mdi('#3991=%d' % n)
-            c.wait_complete(5.0)
+            # One sub, not three MDI lines: it also takes the tool out of
+            # whatever fork claimed it, and doing that as one call means the
+            # record can never end up half-updated.
+            c.mdi('o<spindle_declare> call [%d]' % n)
+            c.wait_complete(10.0)
             c.mode(linuxcnc.MODE_MANUAL)
             c.wait_complete()
             st.poll()

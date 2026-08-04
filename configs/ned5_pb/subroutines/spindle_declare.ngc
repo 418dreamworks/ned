@@ -1,0 +1,51 @@
+(ned SPINDLE DECLARE -- say what is already in the spindle, move nothing.)
+; After a restart LinuxCNC reports tool 0 or -1 while #3991 persists, so the
+; machine can hold a tool it has no record of. LOAD SPINDLE is the only stock
+; way to set the tool number and it runs clamptool, which is useless when the
+; tool is already clamped -- correcting the record used to mean dropping the
+; tool first. This declares instead: no drawbar, no motion, no tool change.
+;
+; A tool cannot be in the spindle AND in a fork, so declaring it here also
+; takes it out of the rack map -- operator 2026-08-03: "if that tool is in the
+; rack, its gone from rack, and is now in spindle".
+;
+; DELIBERATE: whatever was previously declared in the spindle simply VANISHES
+; from the record. It is NOT written back to a fork, because nobody knows
+; where it physically went -- inventing a fork for it would be a guess the
+; changer would later act on. Declaring is a statement about the spindle
+; only; declaring what is in the RACK is a separate job, still to come
+; (operator: "we will later sort out a way of declaring what is in the rack").
+
+o<spindle_declare> sub
+  #<n> = #1
+
+  o10 if [#<n> LT 0]
+    (abort, spindle_declare: tool number must be 0 or more)
+  o10 endif
+
+  M61 Q#<n>
+  o20 if [#<n> GT 0]
+    G43 H#<n>
+  o20 else
+    G49
+  o20 endif
+  #3991 = #<n>
+
+  ; Clear this tool out of whatever fork claimed it. Guarded on n GT 0: with
+  ; n = 0 the comparison would match every EMPTY fork and wipe the rack map.
+  o30 if [#<n> GT 0]
+    #<i> = 1
+    o40 while [#<i> LE 24]
+      o50 if [#[4000 + #<i>] EQ #<n>]
+        #[4000 + #<i>] = 0
+        (PRINT, spindle_declare: T#<n> taken out of fork #<i>)
+      o50 endif
+      #<i> = [#<i> + 1]
+    o40 endwhile
+  o30 endif
+
+  (PRINT, spindle_declare: spindle now holds T#<n>)
+
+o<spindle_declare> endsub
+
+M2 (end program)
