@@ -455,6 +455,7 @@ class UserTab(QWidget):
         self._load_pend = {}
         self._btn_labels = {}
         QTimer.singleShot(0, self._wire_load)
+        QTimer.singleShot(0, self._relabel_buttons)
 
         # SPINDLE SECTION (operator 2026-08-01): spindle load meter ->
         # chip-load-per-flute PLACEHOLDER; left RPM readout -> live
@@ -2934,6 +2935,37 @@ class UserTab(QWidget):
             LOG.error('UNLOAD SPINDLE: %d button(s) NOT wired (no countdown, '
                       'no drawbar window, stock instant call still live): %s',
                       len(missing), ', '.join(missing))
+
+    # Stock labels that say WHERE they go, not what they are called. The pair
+    # GO TO ZERO / GO TO HOME is the easy mix-up: one is the active work
+    # system, the other is machine zero (operator 2026-08-03).
+    RELABEL = {
+        'go_to_zero_button_2': 'WCS X0Y0',
+        'go_to_home_button':   'MCS HOME',
+    }
+
+    def _relabel_buttons(self):
+        """Retext core buttons at RUNTIME, never by editing probe_basic.ui.
+
+        A .ui edit is wiped by the next PB update and has to be re-applied
+        from update_survival; this does not, and it is reversible by deleting
+        one dict entry. Only the visible text changes -- no binding, no
+        geometry, no behaviour.
+        """
+        win = self.window()
+        done, missing = [], []
+        for name, text in self.RELABEL.items():
+            b = win.findChild(QWidget, name) if win else None
+            if b is None or not hasattr(b, 'setText'):
+                missing.append(name)
+                continue
+            b.setText(text)
+            done.append('%s -> %r' % (name, text))
+        if done:
+            LOG.info('RELABEL: %d button(s): %s', len(done), '; '.join(done))
+        if missing:
+            LOG.error('RELABEL: %d button(s) NOT found, stock label still '
+                      'showing: %s', len(missing), ', '.join(missing))
 
     def _wire_load(self):
         win = self.window()
