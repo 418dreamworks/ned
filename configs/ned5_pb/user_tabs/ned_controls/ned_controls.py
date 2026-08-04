@@ -392,8 +392,12 @@ class UserTab(QWidget):
             self.comp.addPin('zclamp-low', 'float', 'out')
             # the step ACTUALLY in force (jogblock's ladder output, mm/detent)
             self.comp.addPin('stepmm-in', 'float', 'in')
+            # HQD S2 tool-released sensor (7I84 TB2-16 *70 -> sig-tool-released).
+            # LOAD SPINDLE is meaningless unless the drawbar is actually OPEN.
+            self.comp.addPin('drawbar-released-in', 'bit', 'in')
             self.comp.ready()
             self.comp.addListener('air-ok-in', self._on_air)
+            self.comp.addListener('drawbar-released-in', self._on_drawbar)
             self.comp.addListener('probe-up-in', self._on_up)
             self.comp.addListener('inc-in', self._on_inc)
             self.comp.addListener('axis-in', self._on_axis)
@@ -430,7 +434,9 @@ class UserTab(QWidget):
         # UNLOAD SPINDLE (core button remove_tool_2): 5 s countdown, second
         # click cancels; then the ned unload_spindle sub (real drawbar release
         # + PB software unload). Deterministic MDI like the zero buttons.
-        self._unload_pend = None
+        # Per-button: there are TWO unload buttons (TOOL tab + ATC tab) and
+        # one slot cannot track both.
+        self._unload_pend = {}
         QTimer.singleShot(0, self._wire_unload)
 
         # LOAD SPINDLE (core SubCallButtons load_spindle_button[_2]): same
@@ -2893,17 +2899,34 @@ class UserTab(QWidget):
         timer.start(1000)
 
     def _wire_unload(self):
+        # TWO unload buttons exist, same label, different tabs:
+        #   remove_tool_2      TOOL tab  (probe_basic.ui)
+        #   remove_tool_button ATC  tab  (template_rack_atc.ui)
+        # Only remove_tool_2 was ever wired, so the ATC tab's UNLOAD SPINDLE
+        # had no countdown and no drawbar auto-release -- it called the stock
+        # sub instantly. Found 2026-08-03 when the operator pointed out the
+        # ATC tab has its own copy. Same shape as _wire_load's pair.
         win = self.window()
-        b = win.findChild(QWidget, 'remove_tool_2') if win else None
-        if b is None:
-            LOG.error('UNLOAD: remove_tool_2 button not found')
-            return
-        for sig in (b.pressed, b.released, b.clicked):
-            try:
-                sig.disconnect()
-            except Exception:
-                pass
-        b.clicked.connect(lambda _=False: self._unload_click(b))
+        wired, missing = [], []
+        for name in ('remove_tool_2', 'remove_tool_button'):
+            b = win.findChild(QWidget, name) if win else None
+            if b is None:
+                missing.append(name)
+                continue
+            for sig in (b.pressed, b.released, b.clicked):
+                try:
+                    sig.disconnect()
+                except Exception:
+                    pass
+            b.clicked.connect(lambda _=False, btn=b: self._unload_click(btn))
+            wired.append(name)
+        if wired:
+            LOG.info('UNLOAD SPINDLE: 5 s countdown wired on %d button(s): %s',
+                     len(wired), ', '.join(wired))
+        if missing:
+            LOG.error('UNLOAD SPINDLE: %d button(s) NOT wired (no countdown, '
+                      'no drawbar window, stock instant call still live): %s',
+                      len(missing), ', '.join(missing))
 
     def _wire_load(self):
         win = self.window()
@@ -3079,6 +3102,22 @@ class UserTab(QWidget):
         return lbl
 
     def _load_click(self, b):
+        # GATE FIRST. Loading is only meaningful while the drawbar is OPEN.
+        # Until 2026-08-03 the button accepted the click and ran the whole 5 s
+        # countdown with the drawbar shut, then fired a load that could not
+        # mean anything -- operator: "right now it can be clicked, and the
+        # countdown starts". Refuse before any timer exists, and only when no
+        # countdown is already pending, so a CANCEL press always gets through.
+        if self._load_pend.get(b) is None and not self._drawbar_released:
+            msg = ('LOAD SPINDLE refused: the drawbar is closed. Press UNLOAD '
+                   'SPINDLE first -- there is nothing to load into.')
+            LOG.error(msg)
+            try:
+                import linuxcnc
+                linuxcnc.command().error_msg(msg)
+            except Exception:
+                pass
+            return
         self._drawbar_window_cancel('LOAD pressed')
         pend = self._load_pend.get(b)
         if pend is not None:                     # second click = cancel
@@ -3122,20 +3161,20 @@ class UserTab(QWidget):
         timer.start(1000)
 
     def _unload_click(self, b):
-        if self._unload_pend is not None:          # second click = cancel
-            self._unload_pend['timer'].stop()
+        if self._unload_pend.get(b) is not None:   # second click = cancel
+            self._unload_pend[b]['timer'].stop()
             b.setText(self._btn_base_label(b, 'UNLOAD SPINDLE'))
-            self._unload_pend = None
+            self._unload_pend.pop(b, None)
             LOG.info('UNLOAD SPINDLE cancelled')
             return
         base = self._btn_base_label(b, 'UNLOAD SPINDLE')
         pend = {'text': base, 'left': 5}
         timer = QTimer(self)
         pend['timer'] = timer
-        self._unload_pend = pend
+        self._unload_pend[b] = pend
 
         def tick():
-            if self._unload_pend is not pend:
+            if self._unload_pend.get(b) is not pend:
                 timer.stop()
                 return
             pend['left'] -= 1
@@ -3144,7 +3183,7 @@ class UserTab(QWidget):
                 return
             timer.stop()
             b.setText(pend['text'])
-            self._unload_pend = None
+            self._unload_pend.pop(b, None)
             self._unload_run()
 
         timer.timeout.connect(tick)
@@ -3190,6 +3229,13 @@ class UserTab(QWidget):
             pin.value = not pin.value
         except Exception as e:
             LOG.error('toolprobe click failed: %s', e)
+
+    # False until the pin says otherwise: an unwired or unread sensor must
+    # refuse the load, never permit it.
+    _drawbar_released = False
+
+    def _on_drawbar(self, val):
+        self._drawbar_released = bool(val)
 
     def _on_air(self, val):
         self._air = bool(val)

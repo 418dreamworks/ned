@@ -153,3 +153,10 @@ net sig-zstep-mm jogblock.z.step-mm-out => ned-tab.stepmm-in
 # seconds"). Relaxed ONLY while sitting on the bottom switch, where Z cannot
 # run away downward anyway; it snaps back the instant the switch releases.
 net sig-z-minferror zferr.z.out => ini.2.min_ferror
+
+# --- LOAD SPINDLE gate: the tab needs to see the drawbar sensor -----------
+# HQD S2 tool-released (7I84 TB2-16 *70). LOAD SPINDLE is only meaningful
+# while the drawbar is OPEN; before this the button took the click and ran
+# its whole 5 s countdown with the drawbar shut. Netted in postgui because
+# ned-tab is a GUI component and does not exist when the base HAL loads.
+net sig-tool-released => ned-tab.drawbar-released-in
