@@ -401,6 +401,20 @@ class UserTab(QWidget):
             self.comp.addPin('tool-unrecorded-in', 'bit', 'in')
             self.comp.addPin('tool-phantom-in', 'bit', 'in')
             self.comp.ready()
+            # LOCKS OFF, EXPLICITLY. addPin creates the pin but does not
+            # define its value, and nothing else wrote it at startup -- so
+            # _ac_locked said {'a': False, 'c': False} while the HAL pin read
+            # TRUE, and the pendant obeys the PIN. Result: A and C silently
+            # missing from the MPG cycle on every launch (operator
+            # 2026-08-04), with the GUI insisting they were unlocked.
+            # set_ac_lock() writes both the pin and the dict, so they start
+            # agreeing rather than merely looking like they do.
+            for _ax in ('a', 'c'):
+                try:
+                    self.set_ac_lock(_ax, False)
+                except Exception:
+                    LOG.exception('startup: could not clear the %s lock -- '
+                                  'the MPG may skip that axis', _ax.upper())
             self.comp.addListener('air-ok-in', self._on_air)
             self.comp.addListener('drawbar-released-in', self._on_drawbar)
             self.comp.addListener('tool-unrecorded-in', self._on_tool_unrecorded)
