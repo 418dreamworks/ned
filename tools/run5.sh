@@ -150,6 +150,13 @@ if [ -f "$LOG" ]; then tail -n 2000 "$LOG" > "$LOG.tmp" 2>/dev/null && mv "$LOG.
 # "blanking a whole lot". Not worth it: the harness now verifies PB is the
 # active window before every click instead (gt/harness.py focus()).
 
+# 3c. GUI FIT WATCHDOG. On 2026-08-03 PB came up the right size and then grew
+# past the monitor a few seconds later, with the top-level window still
+# reporting a correct 1920x1200 -- it was the CHILD widgets that overflowed.
+# This samples the real extents for ~100 s after launch and writes FAIL lines
+# into lcnc.log. Background, never blocks, report-only.
+( "$NED/tools/live/pb_fit_check.sh" >/dev/null 2>&1 & )
+
 # 4. launch under `script` so LinuxCNC sees a TTY. Without one, /usr/bin/linuxcnc:203
 # pops a modal wish dialog on error and BLOCKS; with a pty the error is printed
 # and captured here instead.

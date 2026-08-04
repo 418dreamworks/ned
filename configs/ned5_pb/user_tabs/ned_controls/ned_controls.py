@@ -513,7 +513,7 @@ class UserTab(QWidget):
             from PySide6.QtWidgets import (QTabWidget, QWidget, QVBoxLayout,
                                            QHBoxLayout, QGroupBox, QLabel,
                                            QPushButton, QLineEdit,
-                                           QScrollArea, QFrame)
+                                           QScrollArea, QFrame, QSizePolicy)
             from PySide6.QtWidgets import QWidget as _QW
             root = self.findChild(_QW, 'ned_controls_root') or self
             lay = root.layout()
@@ -522,6 +522,21 @@ class UserTab(QWidget):
                 return
             tabs = QTabWidget()
             tabs.setObjectName('ned_subtabs')
+            # HARD CAP -- a user tab must never resize the main window.
+            # 2026-08-03: this method runs on a 6.5 s singleShot, so PB came
+            # up at the correct 1920x1200 and then GREW past the monitor the
+            # moment the CALIBRATION grid was inserted: its fixed 470+560
+            # columns and ~1150 px stack became a minimumSizeHint that
+            # propagated root -> stacked page -> QMainWindow, shoving PB's own
+            # bottom strip (MAIN/FILE/ATC + the DRO row) off the bottom edge.
+            # Qt honours a child's minimum over the screen; nothing clips it.
+            # PB's core pages never do this because they are .ui pages sized
+            # in Designer. Ignored policy + a zero minimum is the equivalent
+            # for a Python-built tab: the page gets whatever the stack gives
+            # it, and the content adapts.
+            for _w in (tabs, root, self):
+                _w.setMinimumSize(0, 0)
+                _w.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
             jog_page = QWidget()
             jl = QVBoxLayout(jog_page)
             jl.setContentsMargins(8, 8, 8, 8)
@@ -775,7 +790,20 @@ class UserTab(QWidget):
             tabs.currentChanged.connect(self._cal_tab_changed)
             cstat = QLabel('')
             self._cal_status = cstat
-            lay.addWidget(tabs)
+            # The columns are fixed by design (touch panel: nothing may
+            # reflow under a finger -- design review 2026-08-03), so when the
+            # page is smaller than the content something has to give. It
+            # scrolls INSIDE this viewport instead of growing the window.
+            # When the page is big enough no scrollbar appears at all, so the
+            # touch behaviour is unchanged in the normal case.
+            scroll = QScrollArea()
+            scroll.setObjectName('ned_subtabs_scroll')
+            scroll.setWidgetResizable(True)
+            scroll.setFrameShape(QFrame.NoFrame)
+            scroll.setMinimumSize(0, 0)
+            scroll.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+            scroll.setWidget(tabs)
+            lay.addWidget(scroll)
 
             self._zclamp_widgets = {'btn': btn, 'edit': edit, 'status': status}
             # the machine ceiling is the existing Z max soft limit -- the
