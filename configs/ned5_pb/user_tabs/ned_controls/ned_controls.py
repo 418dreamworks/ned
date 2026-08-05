@@ -3358,10 +3358,11 @@ class UserTab(QWidget):
         try:
             from qtpyvcp.plugins import getPlugin
             tt = getPlugin('tooltable')
-            # (flute/geometry columns tried and retracted 2026-08-05:
-            # "that is CAM, not lcnc")
+            # FLUTES is back (operator 2026-08-05 00:3x): chipload =
+            # feed / (rpm * flutes) needs the count machine-side after all
             for name, label in (('safety_x', 'SAFETY X'),
-                                ('safety_y', 'SAFETY Y')):
+                                ('safety_y', 'SAFETY Y'),
+                                ('flutes', 'FLUTES')):
                 try:
                     tt.addCustomField(name, label, 'float', 'mm')
                     LOG.info('TOOL SAFETY: column %s created', label)
