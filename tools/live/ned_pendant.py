@@ -92,6 +92,11 @@ h.newpin('button-raw', hal.HAL_BIT, hal.HAL_IN)   # TRUE = released, FALSE = pre
 h.newpin('wheel', hal.HAL_S32, hal.HAL_IN)
 h.newpin('sel-axis', hal.HAL_S32, hal.HAL_OUT)    # 0..4 = X Y Z A C
 h.newpin('increment', hal.HAL_FLOAT, hal.HAL_OUT)  # mm per DETENT (jump size)
+# GUI <-> WHEEL SYNC (operator 2026-08-05, asked repeatedly): the on-screen
+# increment row writes this index; the pendant adopts it, so clicking a
+# speed on screen moves the highlight AND the applied jump size, and the
+# wheel and GUI can never disagree. -1 = GUI has not spoken.
+h.newpin('inc-set', hal.HAL_S32, hal.HAL_IN)
 h.newpin('jogspeed-out', hal.HAL_FLOAT, hal.HAL_OUT)  # 0..100 % -> linear_jog_slider
 h.newpin('lock-a', hal.HAL_BIT, hal.HAL_IN)  # LOCK A/C (DRO buttons via ned-tab):
 h.newpin('lock-c', hal.HAL_BIT, hal.HAL_IN)  # locked axes are SKIPPED in the cycle
@@ -192,6 +197,13 @@ spd_i0 = 2
 
 
 def apply(gate_off):
+    global inc_i
+    try:
+        _g = int(h['inc-set'])
+        if 0 <= _g < N_INC and _g != inc_i:
+            inc_i = _g
+    except Exception:
+        pass
     inc = INC_TABLE[AXES[ax_i]][inc_i]
     for i, ax in enumerate(AXES):
         # locked() covers the homing interlock too: the enable pin itself

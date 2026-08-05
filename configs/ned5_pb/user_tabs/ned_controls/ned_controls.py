@@ -368,6 +368,16 @@ class UserTab(QWidget):
             self.comp = qhal.getComponent('ned-tab')
             self.comp.addPin('toolprobe-cmd', 'bit', 'out')
             self.comp.addPin('anon-load-out', 'bit', 'out')
+            self.comp.addPin('boot-grace-out', 'bit', 'out')
+            self.comp.addPin('inc-set-out', 's32', 'out')
+            # RAISE IT HERE, not on the first tick: the guard is live from
+            # the first servo cycle, and the record is empty until the
+            # brain's restore lands -- the alarm fired before the grace
+            # even switched on (2026-08-05).
+            try:
+                self.comp.getPin('boot-grace-out').value = True
+            except Exception:
+                pass
             self.comp.addPin('air-ok-in', 'bit', 'in')
             self.comp.addPin('probe-up-in', 'bit', 'in')
             self.comp.addPin('inc-in', 'float', 'in')
@@ -3342,6 +3352,12 @@ class UserTab(QWidget):
                     c.mode(linuxcnc.MODE_MDI)
                     c.wait_complete(2.0)
                     c.mdi('o<tool_loc_declare> call [%d] [-1]' % tool)
+                    try:
+                        c.wait_complete(2.0)
+                    except Exception:
+                        pass
+                    self._mdi_owed = True
+                    self._mdi_return(c)
                     return          # one per pass; next pass rechecks
         except Exception:
             LOG.exception('LOC healer failed')
@@ -3378,7 +3394,138 @@ class UserTab(QWidget):
         except Exception:
             LOG.exception('spindle remark update failed')
 
+    # PER-AXIS JOG STEPS ON SCREEN (operator 2026-08-05, asked repeatedly):
+    # the wheel has always used a per-axis ladder (ned_pendant.INC_TABLE);
+    # the stock increment row showed one global list, so screen and wheel
+    # disagreed. Relabel the row for the SELECTED axis every time it
+    # changes, and make a click set the wheel's index too (pendant.inc-set)
+    # so the highlight and the applied jump size always move together.
+    _INC_LADDER = {
+        'x': [0.01, 0.05, 0.1, 0.5, 2.0],
+        'y': [0.01, 0.05, 0.1, 0.5, 1.0],
+        'z': [0.01, 0.05, 0.1, 0.5, 1.0],
+        'a': [0.01, 0.05, 0.1, 0.25, 0.5],
+        'c': [0.01, 0.05, 0.1, 0.25, 0.5],
+    }
+    _INC_AXES = ('x', 'y', 'z', 'a', 'c')
+
+    def _sync_inc_row(self):
+        try:
+            from PySide6.QtWidgets import QAbstractButton
+            w = self.window().findChild(QWidget, 'jogincrement')
+            if w is None:
+                return
+            btns = w.findChildren(QAbstractButton)
+            if len(btns) < 5:
+                return
+            ax = self._INC_AXES[int(getattr(self, '_mpg_axis_now', 0)) % 5]
+            lad = self._INC_LADDER[ax]
+            unit = 'MM' if ax in 'xyz' else 'DEG'
+            if getattr(self, '_inc_row_ax', None) != ax:
+                self._inc_row_ax = ax
+                for b, v in zip(btns[-5:], lad):
+                    b.setText(('%g %s' % (v, unit)))
+                if not getattr(self, '_inc_row_wired', False):
+                    self._inc_row_wired = True
+                    for i, b in enumerate(btns[-5:]):
+                        b.clicked.connect(
+                            lambda _=False, k=i: self._inc_pick(k))
+                LOG.info('JOG STEPS: row relabelled for %s: %s',
+                         ax.upper(), lad)
+        except Exception:
+            if not getattr(self, '_incrow_err', False):
+                self._incrow_err = True
+                LOG.exception('JOG STEPS: row sync failed')
+
+    def _inc_pick(self, idx):
+        try:
+            self.comp.getPin('inc-set-out').value = int(idx)
+            LOG.info('JOG STEPS: index %d selected from the screen', idx)
+        except Exception:
+            LOG.exception('JOG STEPS: could not set the wheel index')
+
+    def _mdi_return(self, c):
+        # Hand MDI back ONLY when the machine is genuinely idle: a mode
+        # change during a jog is refused and each refusal is an error
+        # toast in the operator's face (2026-08-05). If it is busy, skip --
+        # the next tick tries again.
+        try:
+            import linuxcnc
+            st = linuxcnc.stat(); st.poll()
+            if st.task_mode != linuxcnc.MODE_MDI:
+                return
+            moving = (st.interp_state != linuxcnc.INTERP_IDLE
+                      or not st.inpos
+                      or any(abs(v) > 1e-6 for v in st.joint_velocity[:6]))
+            if moving:
+                return
+            c.mode(linuxcnc.MODE_MANUAL)
+        except Exception:
+            pass
+
     def _homing_gate_tick(self):
+        self._sync_inc_row()
+        # a borrowed MDI that could not be returned earlier gets returned
+        # here, as soon as the machine goes quiet
+        try:
+            if getattr(self, '_mdi_owed', False):
+                import linuxcnc
+                self._mdi_return(linuxcnc.command())
+                st = linuxcnc.stat(); st.poll()
+                if st.task_mode == linuxcnc.MODE_MANUAL:
+                    self._mdi_owed = False
+        except Exception:
+            pass
+        # TOOL-STATE LOCK: POLL, don't trust edges (2026-08-05). The lock
+        # engaged during boot -- in the second before the brain restored
+        # the spindle record -- and never released, because the listener
+        # only fires on transitions and that FALSE edge landed before/while
+        # the handler was wiring. Read the pins every tick: the lock then
+        # tracks the truth and can never latch on a boot transient.
+        try:
+            if self.comp is not None:
+                u = bool(self.comp.getPin('tool-unrecorded-in').value)
+                p = bool(self.comp.getPin('tool-phantom-in').value)
+                # BOOT GRACE: hold the guard excused until the spindle
+                # record has settled (brain restore lands) or 30 s pass.
+                import time as _t
+                if not hasattr(self, '_grace_t0'):
+                    self._grace_t0 = _t.time()
+                    try:
+                        self.comp.getPin('boot-grace-out').value = True
+                        LOG.info('TOOL GUARD: boot grace ON (record settles '
+                                 'a few seconds after launch)')
+                    except Exception:
+                        pass
+                if getattr(self, '_grace_on', True):
+                    settled = False
+                    try:
+                        import linuxcnc
+                        st = linuxcnc.stat(); st.poll()
+                        # ONLY the real restore ends the grace: a
+                        # momentarily-quiet pin is not "settled" -- that
+                        # let go early and the guard re-raised (2026-08-05)
+                        settled = int(st.tool_in_spindle) > 0
+                    except Exception:
+                        pass
+                    if settled or _t.time() - self._grace_t0 > 30:
+                        self._grace_on = False
+                        try:
+                            self.comp.getPin('boot-grace-out').value = False
+                        except Exception:
+                            pass
+                        LOG.info('TOOL GUARD: boot grace OFF -- guard live')
+                self._tool_unrecorded = u
+                self._tool_phantom = p
+                # UNCONDITIONAL: recompute the lock from the pins every
+                # tick. Change-detection let a boot-transient lock latch
+                # (2026-08-05) -- the pins ARE the truth, so just apply
+                # them; _tool_lock_update is a no-op when nothing moved.
+                self._tool_lock_update()
+        except Exception:
+            if not getattr(self, '_lockpoll_err', False):
+                self._lockpoll_err = True
+                LOG.exception('TOOL LOCK poll failed -- lock may latch')
         self._update_spindle_remark()
         self._sync_fork_graphic()
         self._heal_banned_locs()
@@ -3515,6 +3662,15 @@ class UserTab(QWidget):
                 c.mdi('#%d=%.4f' % (p, f))
                 self._tool_safety_sent[p] = f
             LOG.info('TOOL SAFETY: %d value(s) mirrored to params', len(pend))
+            # BACK TO MANUAL (2026-08-05): this timer left the machine
+            # parked in MDI, where jogging is silently refused -- no wheel,
+            # no error. Borrow MDI, hand it back when the machine is quiet.
+            try:
+                c.wait_complete(2.0)
+            except Exception:
+                pass
+            self._mdi_owed = True
+            self._mdi_return(c)
         except Exception:
             LOG.exception('TOOL SAFETY: sync failed')
 
@@ -3980,7 +4136,7 @@ class UserTab(QWidget):
         if bool(val) == getattr(self, '_tool_unrecorded', False):
             return
         self._tool_unrecorded = bool(val)
-        if self._tool_unrecorded:
+        if self._tool_unrecorded and not getattr(self, '_grace_on', True):
             self._tool_alarm('TOOL IN SPINDLE, NOT IN LOGIC: something is '
                              'clamped but the machine has no record of it. '
                              'Set the tool number via LOAD SPINDLE.')
@@ -4012,8 +4168,9 @@ class UserTab(QWidget):
         # dead the motion buttons + MDI + CYCLE START so the GUI cannot
         # even try. DECLARE / LOAD / UNLOAD stay live -- they are the way
         # out.
-        locked = (getattr(self, '_tool_unrecorded', False)
-                  or getattr(self, '_tool_phantom', False))
+        locked = ((getattr(self, '_tool_unrecorded', False)
+                   or getattr(self, '_tool_phantom', False))
+                  and not getattr(self, '_grace_on', True))
         if locked == getattr(self, '_tool_locked', False):
             return
         self._tool_locked = locked
@@ -4038,7 +4195,7 @@ class UserTab(QWidget):
                     idx = self._tool_tab_index(tw)
                     if idx >= 0:
                         tw.tabBar().setTabTextColor(idx, QColor())
-                LOG.info('TOOL-STATE LOCK RELEASED')
+                LOG.error('TOOL-STATE LOCK RELEASED -- jogging is live')
         except Exception:
             LOG.exception('tool lock UI failed (HAL inhibit still holds)')
         for name in ('cycle_start_button', 'mdi_entry_box'):

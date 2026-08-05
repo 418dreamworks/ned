@@ -58,7 +58,7 @@ loadrt not names=sen.nsup,tool.mm.nexcuse,tool.mm.nrec,tool.mm.nlock
 # a read is in progress). ifdelay from [PSO]IFDELAY -- see the ini for the measured sweep.
 loadrt pso_live names=hm2_7i97.0.pktuart.0 ifdelay_p=[PSO]IFDELAY
 # limit-hit OR tree (6 hard-limit signals -> one indicator for the GUI LED).
-loadrt or2 names=limhit.0,limhit.1,limhit.2,limhit.3,limhit.4,sol.ts,sol.blow,sol.trel,sen.or,spinok,tool.mm.excuse,tool.mm.lock,tool.mm.excuse2
+loadrt or2 names=limhit.0,limhit.1,limhit.2,limhit.3,limhit.4,sol.ts,sol.blow,sol.trel,sen.or,spinok,tool.mm.excuse,tool.mm.lock,tool.mm.excuse2,tool.mm.excuse3
 # directional limit handling (tools/live/limdir.comp + tools/live/jogblock.comp):
 # limdir.N passes joint N's limit switch to motion ONLY while commanded velocity
 # moves TOWARD it (parked/away = no fault -> POWER + jog work on a depressed
@@ -156,6 +156,7 @@ addf tool.mm.unrecR           servo-thread
 addf tool.mm.phanR            servo-thread
 addf tool.mm.excuse           servo-thread
 addf tool.mm.excuse2          servo-thread
+addf tool.mm.excuse3          servo-thread
 addf tool.mm.nexcuse          servo-thread
 addf tool.mm.unrec            servo-thread
 addf tool.mm.phan             servo-thread
@@ -344,7 +345,15 @@ net sig-tool-released  => tool.mm.excuse.in1
 # the next drawbar release or any real declaration.
 net sig-tool-mm-exc1   tool.mm.excuse.out => tool.mm.excuse2.in0
 net sig-anon-load      => tool.mm.excuse2.in1
-net sig-tool-mm-excuse tool.mm.excuse2.out => tool.mm.nexcuse.in
+# BOOT GRACE (operator 2026-08-05): LinuxCNC boots with an EMPTY spindle
+# record while the iron still holds the tool -- the brain restores it a few
+# seconds later (needs ON + homed + idle). The guard was truthfully raising
+# UNRECORDED in that window and latching an alarm the operator could not
+# act on. The GUI holds ned-tab.boot-grace-out TRUE until the record is
+# settled (or 30 s), which excuses the guard exactly like an open drawbar.
+net sig-tool-mm-exc2   tool.mm.excuse2.out => tool.mm.excuse3.in0
+net sig-boot-grace     => tool.mm.excuse3.in1
+net sig-tool-mm-excuse tool.mm.excuse3.out => tool.mm.nexcuse.in
 net sig-tool-mm-ok     tool.mm.nexcuse.out => tool.mm.unrec.in1  tool.mm.phan.in1
 
 net sig-unrec-raw      tool.mm.unrecR.out => tool.mm.unrec.in0

@@ -553,12 +553,11 @@ class Brain(object):
                     return
                 subprocess.run(['timeout', '5', 'halcmd', 'setp',
                                 'arm.in0', str(base)], capture_output=True)
-                subprocess.run(['timeout', '5', 'halcmd', 'setp',
-                                'motion.switchkins-type', '1'],
-                               capture_output=True)
-                log('MODE %s: TOOL-TIP kins ACTIVE (pivot base %.3f + live '
-                    'tool length). XYZ now means the TOOL TIP.' %
-                    (mode, base))
+                # NO runtime switchkins call: it unhomes every joint
+                # (2026-08-05). run5 launches the tool-tip kins as type 0.
+                log('MODE %s: TOOL-TIP kins (launched as type 0), pivot '
+                    'base %.3f + live tool length. XYZ means the TOOL TIP.'
+                    % (mode, base))
         except Exception as e:
             log('MODE apply failed: {}'.format(e))
 

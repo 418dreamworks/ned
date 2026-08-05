@@ -181,6 +181,19 @@ fi
 
 # cores ON: rtapi_app said "dumping core" on the 2026-07-31 SIGSEGV but ulimit -c
 # was 0, so there was no core to autopsy. Next time there will be.
+# TOOL-TIP LAUNCHES DIRECTLY IN TYPE 0 (2026-08-05): switching switchkins
+# at runtime UNHOMES every joint (LinuxCNC invalidates homing on a kins
+# change) -- the machine came up homed, switched, and then refused to jog.
+# Instead generate an ini whose type 0 IS the tool-tip kins. Safe because
+# identity and tool-tip agree EXACTLY at A=0, which is where homing happens.
+if [ "$NED_KINS" = "tooltip" ]; then
+  GEN_TCP="$NED/configs/ned5_pb/ned5_pb_tcp_gen.ini"
+  sed 's/^KINEMATICS = ned_ac_kins .*/KINEMATICS = ned_ac_kins coordinates=XYZXAC/' \
+      "$INI" > "$GEN_TCP" || { echo "run5: tcp ini generation FAILED"; exit 1; }
+  INI="$GEN_TCP"
+  echo "run5: TOOL-TIP kins at launch (no runtime switch)"
+fi
+
 ulimit -c unlimited 2>/dev/null || true
 
 # SOFTWARE GL for the VTK backplot: TRIED AND REMOVED (2026-08-01) --
