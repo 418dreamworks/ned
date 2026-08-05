@@ -338,3 +338,13 @@ rack_atc.py/qml: fork circles = double-click record-only cycle
 (circle_cycle) + spindle badge click-to-declare (tool_length_6 event
 filter in ned_controls). A PB/qtpyvcp update clobbers ALL of it — diff
 against the .pre-* backups and this section.
+
+### A1b. ned_ac_kins.so — the swivel-head switchable kins (2026-08-05)
+Source `~/Documents/linuxcnc/src/emc/kinematics/ned_ac_kins.c` (tree commit
+47dc37aadd) + Makefile entries (objs list MUST include sincos/kins_util/
+switchkins/$(USERKFUNCS) or the .so exports nothing and ld dies on an empty
+version script). Build: `make ../rtlib/ned_ac_kins.so` in the tree's src/.
+Install (root): copy to /usr/lib/linuxcnc/modules/ like homemod (§A1).
+A LinuxCNC package update DELETES it; rebuild+reinstall, then verify with
+ned/tools/kins/kins_check.py (math lockstep) and an identity-mode launch.
+INI (when wired): KINEMATICS = ned_ac_kins coordinates=XYZXAC sparm=identityfirst
