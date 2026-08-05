@@ -101,6 +101,11 @@ h.newpin('increment', hal.HAL_FLOAT, hal.HAL_OUT)  # mm per DETENT (jump size)
 # (operator 2026-08-05: "the dro must get the speed and axis selection
 # from PB and not keep its own records").
 h.newpin('inc-index', hal.HAL_S32, hal.HAL_OUT)
+# GUI -> wheel: PB writes the slot it was clicked on. Adopted ONLY on a
+# CHANGE, and the value present at startup is never adopted -- PB's stock
+# increment row emits a selection while it builds, and adopting that pinned
+# the wheel to the smallest step (jogging looked dead, 2026-08-05).
+h.newpin('inc-set', hal.HAL_S32, hal.HAL_IN)
 h.newpin('jogspeed-out', hal.HAL_FLOAT, hal.HAL_OUT)  # 0..100 % -> linear_jog_slider
 h.newpin('lock-a', hal.HAL_BIT, hal.HAL_IN)  # LOCK A/C (DRO buttons via ned-tab):
 h.newpin('lock-c', hal.HAL_BIT, hal.HAL_IN)  # locked axes are SKIPPED in the cycle
@@ -188,6 +193,7 @@ ax_i = 0
 # 2026-08-04: waking up in 0.01 meant every session began with the wheel
 # doing nearly nothing
 inc_i = 2
+_inc_seen = None        # startup value of inc-set, never adopted
 spd_i = 2                       # start at MAX = the machine's boot reality
 jcmd = linuxcnc.command()       # NML maxvel = the V slider = the wheel cap
 btn_prev = False
@@ -202,7 +208,19 @@ spd_i0 = 2
 
 def apply(gate_off):
     # ONE speed setting (inc_i, starts at the middle slot), ONE per-axis
-    # table (INC_TABLE). The wheel owns the slot; nothing else writes it.
+    # table (INC_TABLE). The wheel owns the slot; the GUI may hand it a new
+    # one by CHANGING inc-set.
+    global inc_i, _inc_seen
+    try:
+        g = int(h['inc-set'])
+        if _inc_seen is None:
+            _inc_seen = g                # startup value: never adopted
+        elif g != _inc_seen:
+            _inc_seen = g
+            if 0 <= g < N_INC:
+                inc_i = g
+    except Exception:
+        pass
     inc = INC_TABLE[AXES[ax_i]][inc_i]
     for i, ax in enumerate(AXES):
         # locked() covers the homing interlock too: the enable pin itself

@@ -48,7 +48,8 @@ BLACK = '#000000'
 N_SLOTS = 5                # jog increment ladder length (ned_pendant)
 STRIP_H = 46               # top indicator strip height, px
 NUM_W = 9                  # fixed number field: '-4042.72 ' fits (12 ft X)
-NUM_INT = 4                # integer digits, zero-padded: 0000.00 / -4042.72
+NUM_INT = 4                # linear integer digits: 0000.00 .. -4042.72 (12 ft X)
+NUM_INT_ROT = 3            # degrees need only 000.00 (operator 2026-08-05)
 
 
 def ini_axes():
@@ -229,18 +230,21 @@ class Dro2(QWidget):
             if lin and self._mm:
                 # mm hides the 3rd decimal but KEEPS its column, so the
                 # point never moves between rows or modes
-                txt_m = ('%+.2f' % m) + '\u2007'
-                txt_w = ('%+.2f' % w) + '\u2007'
+                txt_m, txt_w = '%+.2f' % m, '%+.2f' % w
             else:
-                txt_m, txt_w = '%+.3f' % m, '%+.3f' % w
+                # degrees: 2 decimals like mm (operator 2026-08-05), so the
+                # point sits in the SAME column on every row
+                txt_m, txt_w = '%+.2f' % m, '%+.2f' % w
             # ZERO-PAD to a fixed field (operator 2026-08-05: "left pad
             # with as many zeros so we can see the 0000.00"): the decimal
             # point cannot move, and the digit count is the same on every
             # row -- readable from across the shop.
+            width = NUM_INT if lin else NUM_INT_ROT
+
             def _zpad(t):
                 sign, body = t[0], t[1:]
                 ip, _, fp = body.partition('.')
-                ip = ip.rjust(NUM_INT, '0')
+                ip = ip.rjust(width, '0')
                 return '%s%s.%s' % (sign, ip, fp)
             txt_m, txt_w = _zpad(txt_m), _zpad(txt_w)
             lab, mach, work = self.rows[i]

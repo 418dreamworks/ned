@@ -368,6 +368,13 @@ class UserTab(QWidget):
             self.comp = qhal.getComponent('ned-tab')
             self.comp.addPin('toolprobe-cmd', 'bit', 'out')
             self.comp.addPin('anon-load-out', 'bit', 'out')
+            # the slot the operator clicks on the increment row; -1 until
+            # they actually click (the pendant ignores the startup value)
+            self.comp.addPin('inc-set-out', 's32', 'out')
+            try:
+                self.comp.getPin('inc-set-out').value = -1
+            except Exception:
+                pass
 
             self.comp.addPin('air-ok-in', 'bit', 'in')
             self.comp.addPin('probe-up-in', 'bit', 'in')
@@ -3431,15 +3438,26 @@ class UserTab(QWidget):
                 self._inc_row_ax = ax
                 for b, v in zip(btns[-5:], lad):
                     b.setText(('%g %s' % (v, unit)))
-                # DISPLAY ONLY: the row shows what each slot means for
-                # THIS axis. It does not write the wheel's slot -- one
-                # publisher (the pendant), or the two fight (2026-08-05).
+                if not getattr(self, '_inc_row_wired', False):
+                    self._inc_row_wired = True
+                    for i, b in enumerate(btns[-5:]):
+                        b.clicked.connect(
+                            lambda _=False, k=i: self._inc_pick(k))
                 LOG.info('JOG STEPS: row relabelled for %s: %s',
                          ax.upper(), lad)
         except Exception:
             if not getattr(self, '_incrow_err', False):
                 self._incrow_err = True
                 LOG.exception('JOG STEPS: row sync failed')
+
+    def _inc_pick(self, idx):
+        # operator clicked a step: hand the slot to the wheel, which is the
+        # single publisher of the applied value (and of the DRO's block)
+        try:
+            self.comp.getPin('inc-set-out').value = int(idx)
+            LOG.info('JOG STEPS: slot %d selected on screen', idx)
+        except Exception:
+            LOG.exception('JOG STEPS: could not hand the slot to the wheel')
 
     def _homing_gate_tick(self):
         self._sync_inc_row()
