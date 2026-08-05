@@ -499,7 +499,9 @@ class UserDRO(QWidget):
             try:
                 w = self.findChild(QWidget, 'dro_entry_main_' + name)
                 m = self.findChild(QWidget, 'drolabel_machine_' + name)
-                fmt = '{:+.2f}' if name in 'xyz' else '{:+.3f}'
+                # degrees at 2 decimals like the linear axes
+                # (operator 2026-08-05) -- 3 was noise, not information
+                fmt = '{:+.2f}'
                 if allh:
                     if name in self._dro_overridden:
                         i = self.AXIS_IDX[name]

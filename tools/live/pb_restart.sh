@@ -18,9 +18,16 @@
 #   6. brain/pendant  -- pkill the userspace comps (children of the session)
 #   7. launch         -- run5.sh, backgrounded, log kept
 #   8. report         -- wait, then print the new session's arming lines
+#
+# --close-only: steps 1-6 and STOP (operator closes/relaunches themselves;
+# CLAUDE.md rule 12 -- launching is never mine). Same gate, same SIGTERM
+# then kill -9 escalation, same verify-dead abort. Added 2026-08-05 so a
+# "close PB" never becomes another hand-written kill block.
 set -u
 NED=/home/brains/Documents/ned
 OUT=/tmp/pb_restart.last
+CLOSE_ONLY=0
+[ "${1:-}" = "--close-only" ] && CLOSE_ONLY=1
 
 pids() { { pgrep -f "[b]in/probe_basic"; pgrep -x linuxcncsvr
            pgrep -x milltask; pgrep -x halui; } 2>/dev/null | sort -u; }
@@ -53,6 +60,11 @@ pkill -f "[n]ed_brain.py"   2>/dev/null
 pkill -f "[n]ed_pendant.py" 2>/dev/null
 pkill -f "live/dro2.py" 2>/dev/null   # the second-monitor DRO restarts with PB
 sleep 1
+
+if [ "$CLOSE_ONLY" = "1" ]; then
+  echo "pb_restart: CLOSED. Nothing launched -- run5.sh is the operator's."
+  exit 0
+fi
 
 # relaunch the SAME session flavor (mode grammar 2026-08-05): run5 now
 # REQUIRES a spelled mode; reuse the one the dying session recorded

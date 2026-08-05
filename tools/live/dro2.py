@@ -30,6 +30,7 @@ RUN:  tools/live/dro2.py            (fullscreen on the second screen)
 """
 
 import os
+import signal
 import subprocess
 import sys
 
@@ -189,8 +190,14 @@ class Dro2(QWidget):
         nf.setBold(True)
         lf = QFont('DejaVu Sans')
         lf.setPixelSize(lab_px)
+        # FIXED LETTER COLUMN: 'Y' is narrower than 'X', so a natural-width
+        # label handed that row 3 px more number space and slid its decimal
+        # point out of column. One width for every letter (2026-08-05).
+        lm = QFontMetrics(lf)
+        lab_w = max([lm.horizontalAdvance(a) for a in self.axes] or [lab_px])
         for lab, mach, work in self.rows:
             lab.setFont(lf)
+            lab.setFixedWidth(lab_w)
             mach.setFont(nf)
             work.setFont(nf)
         self._num_px = num_px
@@ -211,6 +218,16 @@ class Dro2(QWidget):
             self.stat.poll()
         except Exception:
             return
+        # UNITS FROM THE MACHINE: program_units 1=inch, 2=mm, 3=cm. It was
+        # hardcoded mm, so an inch session would have shown mm numbers
+        # labelled 'in' (operator 2026-08-05: "make sure it can accommodate
+        # inches"). Positions are always in machine units, so inch display
+        # divides the LINEAR axes only.
+        try:
+            self._mm = int(self.stat.program_units) != 1
+        except Exception:
+            self._mm = True
+        conv = 1.0 if self._mm else (1.0 / 25.4)
         idx = {'X': 0, 'Y': 1, 'Z': 2, 'A': 3, 'B': 4, 'C': 5,
                'U': 6, 'V': 7, 'W': 8}
         for i, letter in enumerate(self.axes):
@@ -221,32 +238,35 @@ class Dro2(QWidget):
                      - self.stat.tool_offset[j])
             except Exception:
                 m = w = 0.0
-            # ALWAYS the 3-decimal layout (A/C is the reference pattern):
-            # the decimals line up across every row and both columns. In mm
-            # the third decimal is simply not shown -- the column it would
-            # occupy stays, so nothing shifts (operator 2026-08-05).
+            if letter in 'XYZUVW':
+                m, w = m * conv, w * conv
+            # DECIMAL POINT IS COLUMN-LOCKED (operator 2026-08-05:
+            # "deg has 3 digits left of decimal and 2 right; linear has
+            # 4,2 in mm and 3,3 in inch; in all cases align the dot").
+            # Rows are RIGHT-aligned in a monospace face, so the dot lands
+            # in one column iff everything to its RIGHT is the same width
+            # on every row: same decimal count, same unit width. Integer
+            # digits differ freely -- they grow leftwards.
             lin = letter in 'XYZUVW'
+            dec = 3 if (lin and not self._mm) else 2
+            int_w = 4 if (lin and self._mm) else 3
+            # widest decimal count on screen in THIS unit mode
+            max_dec = 2 if self._mm else 3
+            # NBSP, not figure space: Qt collapses a run of ordinary
+            # spaces, and in inch mode the rotary pad swallowed the
+            # separator, shifting deg rows one cell right. NBSP is never
+            # collapsed and is digit-wide in this monospace face.
+            frac_pad = '\u00a0' * (max_dec - dec)
             unit = ('mm' if self._mm else 'in') if lin else 'deg'
-            if lin and self._mm:
-                # mm hides the 3rd decimal but KEEPS its column, so the
-                # point never moves between rows or modes
-                txt_m, txt_w = '%+.2f' % m, '%+.2f' % w
-            else:
-                # degrees: 2 decimals like mm (operator 2026-08-05), so the
-                # point sits in the SAME column on every row
-                txt_m, txt_w = '%+.2f' % m, '%+.2f' % w
-            # ZERO-PAD to a fixed field (operator 2026-08-05: "left pad
-            # with as many zeros so we can see the 0000.00"): the decimal
-            # point cannot move, and the digit count is the same on every
-            # row -- readable from across the shop.
-            width = NUM_INT if lin else NUM_INT_ROT
+            unit = unit.ljust(3, '\u00a0')           # 'mm.' == 'deg' == 'in.'
 
-            def _zpad(t):
-                sign, body = t[0], t[1:]
+            def _field(v):
+                sign = '-' if v < 0 else '+'
+                body = '%.*f' % (dec, abs(v))
                 ip, _, fp = body.partition('.')
-                ip = ip.rjust(width, '0')
-                return '%s%s.%s' % (sign, ip, fp)
-            txt_m, txt_w = _zpad(txt_m), _zpad(txt_w)
+                return '%s%s.%s%s' % (sign, ip.rjust(int_w, '0'), fp,
+                                      frac_pad)
+            txt_m, txt_w = _field(m), _field(w)
             lab, mach, work = self.rows[i]
             colour = GREEN if i == self.sel else WHITE
             # unit in a smaller font, after the number
@@ -258,8 +278,8 @@ class Dro2(QWidget):
                 # sign matches the AXIS LETTER size (operator 2026-08-05)
                 sgn_px = max(24, int(getattr(self, '_num_px', 100) * 0.42))
                 return ('<span style="font-size:%dpx;">%s</span>%s'
-                        '<span style="font-size:%dpx;"> %s</span>'
-                        % (sgn_px, sign, rest.replace(' ', '&#8199;'),
+                        '<span style="font-size:%dpx;">\u00a0%s</span>'
+                        % (sgn_px, sign, rest.replace(' ', '\u00a0'),
                            small, unit))
             mach.setText(_cell(txt_m))
             work.setText(_cell(txt_w))
@@ -280,6 +300,21 @@ def main():
 
     app = QApplication(sys.argv)
     w = Dro2(windowed=windowed)
+    # SIGTERM MUST KILL US (2026-08-05): hal.component() installs its own
+    # SIGTERM handler that only sets a flag, so a plain `kill` was ignored
+    # and run5.sh's pre-launch pkill would have left a stale DRO holding
+    # the 'dro2' HAL name -- the next session then falls back to
+    # numbers-only. Our handler runs because the 80 ms tick keeps giving
+    # Python a chance to service signals inside the Qt loop.
+    def _bye(signum, _frame):
+        sys.stderr.write('dro2: signal %d -- exiting\n' % signum)
+        sys.stderr.flush()
+        app.quit()
+    for _s in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
+        try:
+            signal.signal(_s, _bye)
+        except Exception:
+            pass
     screens = app.screens()
     if screen_idx is None:
         screen_idx = 1 if len(screens) > 1 else 0
