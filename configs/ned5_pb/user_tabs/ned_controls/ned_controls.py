@@ -368,16 +368,7 @@ class UserTab(QWidget):
             self.comp = qhal.getComponent('ned-tab')
             self.comp.addPin('toolprobe-cmd', 'bit', 'out')
             self.comp.addPin('anon-load-out', 'bit', 'out')
-            self.comp.addPin('boot-grace-out', 'bit', 'out')
             self.comp.addPin('inc-set-out', 's32', 'out')
-            # RAISE IT HERE, not on the first tick: the guard is live from
-            # the first servo cycle, and the record is empty until the
-            # brain's restore lands -- the alarm fired before the grace
-            # even switched on (2026-08-05).
-            try:
-                self.comp.getPin('boot-grace-out').value = True
-            except Exception:
-                pass
             self.comp.addPin('air-ok-in', 'bit', 'in')
             self.comp.addPin('probe-up-in', 'bit', 'in')
             self.comp.addPin('inc-in', 'float', 'in')
@@ -3356,8 +3347,7 @@ class UserTab(QWidget):
                         c.wait_complete(2.0)
                     except Exception:
                         pass
-                    self._mdi_owed = True
-                    self._mdi_return(c)
+
                     return          # one per pass; next pass rechecks
         except Exception:
             LOG.exception('LOC healer failed')
@@ -3444,38 +3434,8 @@ class UserTab(QWidget):
         except Exception:
             LOG.exception('JOG STEPS: could not set the wheel index')
 
-    def _mdi_return(self, c):
-        # Hand MDI back ONLY when the machine is genuinely idle: a mode
-        # change during a jog is refused and each refusal is an error
-        # toast in the operator's face (2026-08-05). If it is busy, skip --
-        # the next tick tries again.
-        try:
-            import linuxcnc
-            st = linuxcnc.stat(); st.poll()
-            if st.task_mode != linuxcnc.MODE_MDI:
-                return
-            moving = (st.interp_state != linuxcnc.INTERP_IDLE
-                      or not st.inpos
-                      or any(abs(v) > 1e-6 for v in st.joint_velocity[:6]))
-            if moving:
-                return
-            c.mode(linuxcnc.MODE_MANUAL)
-        except Exception:
-            pass
-
     def _homing_gate_tick(self):
         self._sync_inc_row()
-        # a borrowed MDI that could not be returned earlier gets returned
-        # here, as soon as the machine goes quiet
-        try:
-            if getattr(self, '_mdi_owed', False):
-                import linuxcnc
-                self._mdi_return(linuxcnc.command())
-                st = linuxcnc.stat(); st.poll()
-                if st.task_mode == linuxcnc.MODE_MANUAL:
-                    self._mdi_owed = False
-        except Exception:
-            pass
         # TOOL-STATE LOCK: POLL, don't trust edges (2026-08-05). The lock
         # engaged during boot -- in the second before the brain restored
         # the spindle record -- and never released, because the listener
@@ -3486,35 +3446,6 @@ class UserTab(QWidget):
             if self.comp is not None:
                 u = bool(self.comp.getPin('tool-unrecorded-in').value)
                 p = bool(self.comp.getPin('tool-phantom-in').value)
-                # BOOT GRACE: hold the guard excused until the spindle
-                # record has settled (brain restore lands) or 30 s pass.
-                import time as _t
-                if not hasattr(self, '_grace_t0'):
-                    self._grace_t0 = _t.time()
-                    try:
-                        self.comp.getPin('boot-grace-out').value = True
-                        LOG.info('TOOL GUARD: boot grace ON (record settles '
-                                 'a few seconds after launch)')
-                    except Exception:
-                        pass
-                if getattr(self, '_grace_on', True):
-                    settled = False
-                    try:
-                        import linuxcnc
-                        st = linuxcnc.stat(); st.poll()
-                        # ONLY the real restore ends the grace: a
-                        # momentarily-quiet pin is not "settled" -- that
-                        # let go early and the guard re-raised (2026-08-05)
-                        settled = int(st.tool_in_spindle) > 0
-                    except Exception:
-                        pass
-                    if settled or _t.time() - self._grace_t0 > 30:
-                        self._grace_on = False
-                        try:
-                            self.comp.getPin('boot-grace-out').value = False
-                        except Exception:
-                            pass
-                        LOG.info('TOOL GUARD: boot grace OFF -- guard live')
                 self._tool_unrecorded = u
                 self._tool_phantom = p
                 # UNCONDITIONAL: recompute the lock from the pins every
@@ -3669,8 +3600,7 @@ class UserTab(QWidget):
                 c.wait_complete(2.0)
             except Exception:
                 pass
-            self._mdi_owed = True
-            self._mdi_return(c)
+
         except Exception:
             LOG.exception('TOOL SAFETY: sync failed')
 
@@ -4136,7 +4066,7 @@ class UserTab(QWidget):
         if bool(val) == getattr(self, '_tool_unrecorded', False):
             return
         self._tool_unrecorded = bool(val)
-        if self._tool_unrecorded and not getattr(self, '_grace_on', True):
+        if self._tool_unrecorded:
             self._tool_alarm('TOOL IN SPINDLE, NOT IN LOGIC: something is '
                              'clamped but the machine has no record of it. '
                              'Set the tool number via LOAD SPINDLE.')
@@ -4170,7 +4100,7 @@ class UserTab(QWidget):
         # out.
         locked = ((getattr(self, '_tool_unrecorded', False)
                    or getattr(self, '_tool_phantom', False))
-                  and not getattr(self, '_grace_on', True))
+                 )
         if locked == getattr(self, '_tool_locked', False):
             return
         self._tool_locked = locked

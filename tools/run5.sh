@@ -188,7 +188,10 @@ fi
 # identity and tool-tip agree EXACTLY at A=0, which is where homing happens.
 if [ "$NED_KINS" = "tooltip" ]; then
   GEN_TCP="$NED/configs/ned5_pb/ned5_pb_tcp_gen.ini"
-  sed 's/^KINEMATICS = ned_ac_kins .*/KINEMATICS = ned_ac_kins coordinates=XYZXAC/' \
+  # base ini stays trivkins (the known-good default); the tool-tip kins and
+  # its own postgui live ONLY in this generated copy
+  sed -e 's|^KINEMATICS = .*|KINEMATICS = ned_ac_kins coordinates=XYZXAC|' \
+      -e 's|^POSTGUI_HALFILE = \(.*\)$|POSTGUI_HALFILE = \1\nPOSTGUI_HALFILE = postgui_tcp.hal|' \
       "$INI" > "$GEN_TCP" || { echo "run5: tcp ini generation FAILED"; exit 1; }
   INI="$GEN_TCP"
   echo "run5: TOOL-TIP kins at launch (no runtime switch)"
