@@ -30,35 +30,56 @@ NED="/home/brains/Documents/ned"
 # behaviour. Flags scan so `resume` and `-nopower` combine in any order.
 NOPOWER=0
 RESUME=0
-# KINS MODE FLAGS (operator 2026-08-05): -trivkins = pure XYZ machine
-# (identity kinematics, A/C homed to zero and clamped -- the DEFAULT, the
-# flag just says it out loud). -5axis = tool-tip mode (ned_ac_kins type 1:
-# XYZ means the TOOL TIP; the control moves the linears to keep the tip
-# planted while the head rotates). -5axis REFUSES until the module is
-# installed AND the pivot length has been calibrated -- tool-tip math with
-# a guessed pivot is confidently wrong everywhere except upright.
+# MODE GRAMMAR (operator 2026-08-05): the mode flag is REQUIRED -- spell
+# out exactly which axes are alive. Un-spelled rotaries get clamped
+# (soft limits +-0.001 deg after homing) so nothing can move them.
+#   -xyz      pure XYZ machine (A+C clamped at 0)
+#   -xyza     head tilt A live, C clamped at 0
+#   -xyzac    full swivel head
+#   -xyz_a  -xyz_b  -xyza_b  -xyzb_a   table-rotary modes: parse but
+#             REFUSED until the B-table build lands (task #25)
+# -tcp: tool-tip mode (ned_ac_kins type 1) -- XYZ means the TOOL TIP and
+# the linears chase it while the head rotates. Inert in -xyz. Refuses
+# until the module is installed AND a pivot length exists.
+NED_MODE=""
 NED_KINS=identity
 for _a in "$@"; do
   case "$_a" in
     -nopower)  NOPOWER=1 ;;
     resume)    RESUME=1 ;;
-    -trivkins) NED_KINS=identity ;;
-    -5axis)    NED_KINS=tooltip ;;
+    -xyz|-xyza|-xyzac) NED_MODE="${_a#-}" ;;
+    -xyz_a|-xyz_b|-xyza_b|-xyzb_a)
+      echo "run5: $_a refused -- the B-table build has not landed (task #25)"
+      exit 1 ;;
+    -tcp)      NED_KINS=tooltip ;;
+    -trivkins) NED_KINS=identity ;;   # old name, kept as alias for identity
+    -5axis)    NED_KINS=tooltip ;;    # old name, kept as alias for -tcp
+    *) echo "run5: unknown flag '$_a'"; exit 1 ;;
   esac
 done
+if [ -z "$NED_MODE" ]; then
+  echo "run5: SPELL THE MODE. one of: -xyz  -xyza  -xyzac   (+ optional -tcp, -nopower, resume)"
+  echo "      table modes -xyz_a -xyz_b -xyza_b -xyzb_a arrive with the B build"
+  exit 1
+fi
+if [ "$NED_KINS" = "tooltip" ] && [ "$NED_MODE" = "xyz" ]; then
+  echo "run5: note -- -tcp is inert in -xyz (no rotary can move); launching identity"
+  NED_KINS=identity
+fi
 if [ "$NED_KINS" = "tooltip" ]; then
   if [ ! -f /usr/lib/linuxcnc/modules/ned_ac_kins.so ]; then
-    echo "run5: -5axis refused -- ned_ac_kins.so is not installed"
-    echo "      (build is done; install needs root: see update_survival A1b)"
+    echo "run5: -tcp refused -- ned_ac_kins.so is not installed (update_survival A1b)"
     exit 1
   fi
-  if ! grep -q '^PIVOT_LENGTH' "$NED/configs/params/head_pivot.inc" 2>/dev/null; then
-    echo "run5: -5axis refused -- pivot length not calibrated yet"
-    echo "      (run the A/C calibration first; it writes configs/params/head_pivot.inc)"
+  if ! grep -q '^#<_pivot_length>' "$NED/configs/params/head_pivot.inc" 2>/dev/null &&      ! grep -q 'PIVOT' "$NED/configs/params/head_pivot.inc" 2>/dev/null; then
+    echo "run5: -tcp refused -- no pivot length (configs/params/head_pivot.inc missing)"
+    echo "      tape-measure A-pivot to spindle nose for PLAY, calibrate before CUTTING"
     exit 1
   fi
 fi
-export NED_KINS
+# remember the mode so pb_restart relaunches the SAME session flavor
+echo "NED_MODE=$NED_MODE NED_KINS=$NED_KINS" > "$NED/.last_run5_mode"
+export NED_MODE NED_KINS
 INI="$NED/configs/ned5_pb/ned5_pb.ini"
 LOG="$NED/lcnc.log"
 VENV="$HOME/qt_pb/qtpyvcp/venv"

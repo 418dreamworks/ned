@@ -53,7 +53,16 @@ pkill -f "[n]ed_brain.py"   2>/dev/null
 pkill -f "[n]ed_pendant.py" 2>/dev/null
 sleep 1
 
-nohup "$NED/tools/run5.sh" > "$OUT" 2>&1 &
+# relaunch the SAME session flavor (mode grammar 2026-08-05): run5 now
+# REQUIRES a spelled mode; reuse the one the dying session recorded
+_MODEFLAGS="-xyz"
+if [ -f "$NED/.last_run5_mode" ]; then
+  . "$NED/.last_run5_mode"
+  _MODEFLAGS="-${NED_MODE:-xyz}"
+  [ "${NED_KINS:-identity}" = "tooltip" ] && _MODEFLAGS="$_MODEFLAGS -tcp"
+fi
+# shellcheck disable=SC2086
+nohup "$NED/tools/run5.sh" $_MODEFLAGS > "$OUT" 2>&1 &
 echo "pb_restart: launching (log: $OUT) -- waiting 60 s"
 sleep 60
 

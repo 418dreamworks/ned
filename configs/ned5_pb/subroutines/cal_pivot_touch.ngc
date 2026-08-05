@@ -1,0 +1,27 @@
+(ned CAL PIVOT - one touch of the two-touch pivot-length measurement)
+(operator 2026-08-05: "measure tip, turn some known angle, measure again.)
+(user moves the tip over the probe and that is it." Press 1: any pose,)
+(usually upright. Operator then tilts A by MPG to the biggest angle where)
+(the tip still clearly touches first, re-parks over the puck, press 2.)
+(The probe capture records the REAL A at trigger - no preset angles. The)
+(GUI computes L = dZ / [cosA1 - cosA2] and writes head_pivot.inc.)
+o<cal_pivot_touch> sub
+#<fast_fr> = #3004
+#<slow_fr> = #3005
+o1 if [[#<fast_fr> LE 0] OR [#<slow_fr> LE 0]]
+    (abort, cal_pivot: probe feed rates #3004/#3005 are zero)
+o1 endif
+M64 P3
+G4 P0.4
+G91
+G38.2 Z-30 F#<fast_fr>
+G38.5 Z5  F#<fast_fr>
+G38.2 Z-4 F#<slow_fr>
+#<zt> = #5063
+#<at> = #5064
+G38.5 Z8 F#<fast_fr>
+G90
+M65 P3
+(DEBUG, EVAL[vcp.getWidget{"ned_controls"}.cal_pivot_point{#<zt>, #<at>}])
+o<cal_pivot_touch> endsub
+M2

@@ -1458,6 +1458,7 @@ class UserTab(QWidget):
     # cal_c_goto takes a 4th argument: which side of the puck to park on
     CAL_SUBS = {
         'puck': ('cal_probe_center', 'StartPuck', False),
+        'pivot': ('cal_pivot_touch', 'PIVOT TOUCH', False),
         'a':    ('cal_a_cycle',      'StartA',    True),
         'c':    ('cal_c_cycle',      'StartC',    True),
         # no 'ac' entry: StartAC is driven from Python (_ac_start), not by a
@@ -3222,6 +3223,75 @@ class UserTab(QWidget):
                          ('; T%d drops to the FLOOR' % cur) if cur else '')
         except Exception:
             LOG.exception('spindle editor failed')
+
+    def cal_pivot_point(self, zt, at):
+        # CAL PIVOT collector (operator 2026-08-05): each PIVOT TOUCH press
+        # probes the puck and lands here with the trigger Z and the REAL A
+        # angle. 2 touches = L from the pair (first-order exposed to A-axis
+        # tilt vs bed); 3 touches (-theta, 0, +theta order free) = the
+        # symmetric solve that cancels axis tilt and A-zero error. Touches
+        # more than 10 min apart start a fresh set.
+        import time, math
+        now = time.time()
+        pts = getattr(self, '_pivot_pts', [])
+        if pts and now - pts[-1][2] > 600:
+            pts = []
+        pts.append((float(zt), float(at), now))
+        self._pivot_pts = pts
+        n = len(pts)
+        LOG.error('CAL PIVOT touch %d: Z=%.4f A=%.3f deg', n, zt, at)
+        if n < 2:
+            return
+        if n == 2:
+            (z1, a1, _), (z2, a2, _) = pts
+            den = (math.cos(math.radians(a1)) - math.cos(math.radians(a2)))
+            if abs(den) < 0.01:
+                LOG.error('CAL PIVOT: angles too close (den=%.4f) -- tilt '
+                          'more and touch again', den)
+                return
+            L = (z2 - z1) / den
+            LOG.error('CAL PIVOT (2-touch): L=%.3f mm -- one more touch at '
+                      'the OPPOSITE tilt upgrades accuracy', L)
+            self._pivot_write(L, '2-touch')
+            return
+        # 3 touches: least-squares fit of z = z0 - L*cos(a) over all three
+        # (the symmetric solve; also tolerant of any touch order)
+        import statistics
+        zs = [p[0] for p in pts[:3]]
+        cs = [math.cos(math.radians(p[1])) for p in pts[:3]]
+        cbar = sum(cs) / 3.0
+        zbar = sum(zs) / 3.0
+        num = sum((c - cbar) * (z - zbar) for c, z in zip(cs, zs))
+        den = sum((c - cbar) ** 2 for c in cs)
+        if den < 1e-6:
+            LOG.error('CAL PIVOT: three touches but no angle spread')
+            return
+        L = -num / den
+        LOG.error('CAL PIVOT (3-touch symmetric): L=%.3f mm', L)
+        self._pivot_write(L, '3-touch')
+        self._pivot_pts = []
+
+    def _pivot_write(self, L, how):
+        try:
+            if L <= 0 or L > 1000:
+                LOG.error('CAL PIVOT: L=%.3f is not physical -- NOT '
+                          'written', L)
+                return
+            path = ('/home/brains/Documents/ned/configs/params/'
+                    'head_pivot.inc')
+            import time
+            with open(path, 'w') as f:
+                f.write('# head pivot length (A axis centerline -> tool '
+                        'tip at touch)\n'
+                        '# measured %s by CAL PIVOT (%s); tool length of '
+                        'the touching tool INCLUDED --\n'
+                        '# the arm sum2 subtracts/adds the live tool '
+                        'offset around the base value\n'
+                        'PIVOT_LENGTH = %.4f\n'
+                        % (time.strftime('%F %T'), how, L))
+            LOG.error('CAL PIVOT: head_pivot.inc written: %.4f (%s)', L, how)
+        except Exception:
+            LOG.exception('CAL PIVOT: write failed')
 
     def _heal_banned_locs(self):
         # P RESTRICTS LOC (operator 2026-08-04: "any ambiguous change drops

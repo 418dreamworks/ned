@@ -505,6 +505,63 @@ class Brain(object):
             log('DECLARE HOME failed: {}'.format(e))
 
 
+    def apply_mode(self):
+        # MODE GRAMMAR (operator 2026-08-05): NED_MODE spells the live axes;
+        # un-spelled rotaries get their soft limits clamped to +-0.001 deg
+        # after homing -- MDI/g-code words on them die at the limit check.
+        # NED_KINS=tooltip flips switchkins to type 1 (tool-tip mode) at the
+        # homed upright pose, where identity and tool-tip agree exactly.
+        # One shot; missing env (old launcher) = no clamps, no switch.
+        if getattr(self, '_mode_applied', False):
+            return
+        mode = os.environ.get('NED_MODE', '')
+        kins = os.environ.get('NED_KINS', 'identity')
+        if not mode:
+            self._mode_applied = True
+            return
+        try:
+            self.stat.poll()
+            if (self.stat.task_state != linuxcnc.STATE_ON
+                    or not all(self.stat.homed[:6])
+                    or self.stat.interp_state != linuxcnc.INTERP_IDLE):
+                return                      # retry next tick until ready
+            self._mode_applied = True
+            def clamp(jn, ax):
+                for k, v in (('min_limit', -0.001), ('max_limit', 0.001)):
+                    subprocess.run(['timeout', '5', 'halcmd', 'setp',
+                                    'ini.%d.%s' % (jn, k), str(v)],
+                                   capture_output=True)
+                log('MODE %s: %s CLAMPED (soft limits +-0.001)' %
+                    (mode, ax.upper()))
+            if 'a' not in mode.replace('xyz', '', 1).split('_')[0]:
+                clamp(4, 'a')
+            if 'c' not in mode.replace('xyz', '', 1).split('_')[0]:
+                clamp(5, 'c')
+            if kins == 'tooltip':
+                base = None
+                try:
+                    with open('/home/brains/Documents/ned/configs/params/'
+                              'head_pivot.inc') as f:
+                        for ln in f:
+                            if ln.startswith('PIVOT_LENGTH'):
+                                base = float(ln.split('=')[1])
+                except Exception:
+                    pass
+                if base is None:
+                    log('MODE: tooltip REFUSED -- no PIVOT_LENGTH in '
+                        'head_pivot.inc (run5 gate should have caught this)')
+                    return
+                subprocess.run(['timeout', '5', 'halcmd', 'setp',
+                                'arm.in0', str(base)], capture_output=True)
+                subprocess.run(['timeout', '5', 'halcmd', 'setp',
+                                'motion.switchkins-type', '1'],
+                               capture_output=True)
+                log('MODE %s: TOOL-TIP kins ACTIVE (pivot base %.3f + live '
+                    'tool length). XYZ now means the TOOL TIP.' %
+                    (mode, base))
+        except Exception as e:
+            log('MODE apply failed: {}'.format(e))
+
     def restore_spindle_tool(self):
         # SPINDLE TOOL SURVIVES REBOOT (operator 2026-08-04: "it should
         # survive reboot"). #3991 (persistent .var) remembers the clamped
@@ -840,6 +897,7 @@ class Brain(object):
             self.inplace_at = None
             self.do_inplace()
         self.restore_spindle_tool()
+        self.apply_mode()
         if self.teleop_at and now >= self.teleop_at:
             self.teleop_at = None
             self.ensure_teleop()
