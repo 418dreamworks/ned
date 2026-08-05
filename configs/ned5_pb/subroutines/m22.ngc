@@ -42,16 +42,18 @@ o80 endif
 G90
 (entry height. #<_rack_between>=1 means m21 just emptied the spindle inside)
 (the rack zone - enter at approach+50 instead of the full traverse Z. Gated)
-(by BOTH the sensor (o80 above proved nothing is clamped) and the logic)
-(record #3991 (operator 2026-08-04). Flag is consumed either way; a fetch)
+(by BOTH the sensor - o80 above proved nothing is clamped - and the logic)
+(record #3991, operator 2026-08-04. Flag is consumed either way; a fetch)
 (arriving from the workspace has flag 0 and enters at traverse Z as before.)
 #<zin> = #<ztrav>
-o90 if [[#<_rack_between> GT 0] AND [#3991 EQ 0]]
-  #<zin> = [#<zappr> + 50.0]
-  o92 if [#<zin> GT 0]
-    #<zin> = 0
-  o92 endif
-o90 endif
+o88 if [EXISTS[#<_rack_between>]]
+  o90 if [[#<_rack_between> GT 0] AND [#3991 EQ 0]]
+    #<zin> = [#<zappr> + 50.0]
+    o92 if [#<zin> GT 0]
+      #<zin> = 0
+    o92 endif
+  o90 endif
+o88 endif
 #<_rack_between> = 0
 G1 G53 F[#<ftrav>] Z[#<zin>]
 G1 G53 F[#<ftrav>] X[#<sx>] Y[#<sy>]

@@ -68,6 +68,17 @@ check() {
   return 0
 }
 
+# NESTED COMMENT lint (2026-08-04): rs274 -g PARSED '(a (b) c)' clean but
+# the live interp aborts 'Nested comment found' -- caught on the machine
+# mid-M6. Static check, every line, every file.
+for f in "$WORK"/subs/*.ngc; do
+  awk 'BEGIN{bad=0}
+    { line=$0; sub(/;.*/,"",line)
+      if (line ~ /\([^)]*\(/) { printf "  %s:%d NESTED COMMENT -> %s\n", FILENAME, NR, $0; bad=1 } }
+    END{exit bad}' "$f" || FAULT=1
+done
+[ "${FAULT:-0}" = "1" ] && { echo "NESTED COMMENT lint FAILED"; exit 1; }
+
 # --- static lint: the three comment/scope faults rs274 reports late or not
 # --- at all, per CLAUDE.md rule 18. Cheap, so it runs over EVERY cal file.
 lint() {
