@@ -223,3 +223,20 @@
       the `;`, then this. Each time I handed over a relaunch without the file
       having been parsed once. When a config edit cannot be verified offline,
       say so plainly instead of presenting it as ready.
+
+23. **GUI edits: three checks, every time (operator 2026-08-04).**
+    Any change that touches what the operator SEES — .ui, QSS, runtime
+    widget builds, hides, moves — ships with all three, no exceptions:
+    - **Match the existing style.** Read how the neighbouring sections are
+      formatted (fonts, captions, frames, spacing) and follow them; never
+      introduce a second visual language. When in doubt, screenshot a stock
+      section and compare side by side.
+    - **Few words.** Button faces and captions carry no explanations, no
+      second lines, no comments. If a control needs a paragraph, the design
+      is wrong.
+    - **Screen size must not move.** After EVERY GUI change, verify the
+      window still fits the monitor: check `pb_fit_check` output in
+      lcnc.log AND eyeball a screenshot for child-widget overflow (the
+      2026-08-03 failure grew CHILDREN past 1920x1200 while the top-level
+      window still reported the right size). A GUI edit without a fit
+      check is not finished.

@@ -1,0 +1,49 @@
+(ned tool location declare -- THE one bookkeeping path, atomic by design)
+; #1 = tool (1..99)   #2 = target: -1 table, 0 spindle, n = its HOME fork
+; Advisor-audited 2026-08-04: one interp sub owns the one-place sweep AND
+; the spindle pair (#3991 + M61) so no abort can split them. Writes only
+; records -- zero motion. The table (LOC column) is the only caller.
+o<tool_loc_declare> sub
+#<t>   = #1
+#<tgt> = #2
+o1 if [[#<t> LT 1] OR [#<t> GT 99]]
+    (abort, tool_loc_declare: bad tool number)
+o1 endif
+#<pockets> = #<_ini[atc]pockets>
+#<home> = #[4400 + #<t>]
+o2 if [[#<tgt> GT 0] AND [#<tgt> NE #<home>]]
+    (abort, tool_loc_declare: a tool can only sit in its OWN home fork)
+o2 endif
+o3 if [[#<tgt> GT 0] AND [[#[4000 + #<tgt>] NE 0] AND [#[4000 + #<tgt>] NE #<t>]]]
+    (abort, tool_loc_declare: that fork record holds another tool -- fix it first)
+o3 endif
+; ONE-PLACE SWEEP: clear this tool from every fork record
+#<i> = 1
+o10 while [#<i> LE #<pockets>]
+    o11 if [#[4000 + #<i>] EQ #<t>]
+        #[4000 + #<i>] = 0
+        (DEBUG, EVAL[vcp.getWidget{"rackatc"}.store_tool{#<i>, 0}])
+    o11 endif
+    #<i> = [#<i> + 1]
+o10 endwhile
+o20 if [#<tgt> EQ 0]
+    ; -> SPINDLE. Whoever held the record is displaced to TABLE by absence
+    ; (a spindle tool occupies no fork, so no other write exists).
+    #3991 = #<t>
+    M61 Q#<t>
+o20 else
+    ; -> FORK or TABLE: if this tool held the spindle record, clear it as a
+    ; pair, and drop its length offset -- an offset applied to nothing is
+    ; the phantom hazard.
+    o21 if [#3991 EQ #<t>]
+        #3991 = 0
+        M61 Q0
+        G49
+    o21 endif
+    o22 if [#<tgt> GT 0]
+        #[4000 + #<tgt>] = #<t>
+        (DEBUG, EVAL[vcp.getWidget{"rackatc"}.store_tool{#<tgt>, #<t>}])
+    o22 endif
+o20 endif
+o<tool_loc_declare> endsub
+M2

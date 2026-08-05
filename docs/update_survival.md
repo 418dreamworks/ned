@@ -271,3 +271,60 @@ is the only PB-core patch in the file; everything else ned adds lives in
 
 If the tab is not found the patch logs loudly and does nothing else — it can
 never block startup.
+
+
+## Bz. PATCHED Probe Basic core file: probe_basic.ui (GcodeTextEdit + DECLARE row, 2026-08-03/04)
+
+`~/qt_pb/probe_basic/src/probe_basic/probe_basic.ui`
+Stock copy kept beside it as `probe_basic.ui.stock-20260803`.
+
+**A PB update OVERWRITES this file** and two things break silently:
+- the g-code text pane goes BLANK again (stock points it at the C++
+  `GCodeEditor` widget, which never instantiates in this venv; ned repoints
+  the customwidget class/extends/header and both widget tags to the Python
+  `GcodeTextEdit`), and
+- the DECLARE row in TOOL CHANGE PANEL disappears (`ned_declare_input`
+  VCPLineEdit + `ned_declare_btn`, deep-copied from the M6 row, filename
+  property removed). `ned_controls.py:_build_declaration` then logs
+  "DECLARATION: DECLARE row NOT found" instead of wiring it.
+
+**Loud-log check after any PB update:** launch once and require
+`DECLARATION: DECLARE row wired from the .ui` in lcnc.log, and confirm
+g-code text is visible in the editor pane.
+
+## Bw. PATCHED qtpyvcp core file: mill_tool_table.py (DIAMETER MM/IN + live P column, 2026-08-03/04)
+
+`~/qt_pb/qtpyvcp/src/qtpyvcp/widgets/input_widgets/mill_tool_table.py`
+Stock copy kept beside it as `mill_tool_table.py.stock-20260803`.
+
+**A qtpyvcp update OVERWRITES this file** and the tool table reverts to a
+single DIAMETER column and the stale DB pocket field. The ned patch:
+- DIAMETER MM (the stored value, fed to LinuxCNC) + DIAMETER IN (=/25.4
+  view) via data()/setData() overrides;
+- P column reads the LIVE rack map from the var file (#4001..#4024), shows
+  S for the spindle tool, '-' for on-the-table; edits route through
+  `_declare_spindle` / `_declare_fork` (duplicates refused by name) and
+  every pocket write goes through `_store_pocket` + immediate save.
+
+**Loud check after any qtpyvcp update:** TOOL tab must show DIAMETER MM and
+DIAMETER IN columns and the P column must match the rack graphic; if it
+shows one DIAMETER column, the patch is gone — re-apply from git history
+(this repo does not carry the file; diff the .stock backup against git log
+notes from 2026-08-03/04 sessions).
+
+## Bv. ned .ui PURGE (operator 2026-08-04: "light and nimble, no bloat")
+
+DELETED outright (not hidden) from `probe_basic.ui`: mdi_entry_box_5/6/7,
+prog_coolant_setting_frame, ang_jog_slider_link (did nothing: no code and no
+setting read it; the sliders are hard-linked by a .ui connection anyway).
+From `rack_atc/template_rack_atc/template_rack_atc.ui`: mdi_entry_box_4,
+mdi_entry_box_rack_tab, rack_mdi_2, rack_atc_load_frame (took its buttons
+with it), reference_carousel_2, spindle_image_label,
+loaded_spindle_tool_number, m6_tool_call_button_tool_page,
+tool_number_entry_tool_page. Pre-purge backups: *.pre-purge-20260804.
+
+**A PB update restores ALL of them.** The SPARE lists in ned_controls.py are
+kept as a RESURRECTION NET: on a stock .ui they re-hide everything and log
+"STOCK SPARE(S) RESURRECTED" as an ERROR -- that line in lcnc.log after an
+update means: reapply this purge. "confirmed deleted" at INFO is the healthy
+state.

@@ -8,7 +8,7 @@
       -> no QGridLayout insertWidget hazard); ned_controls.py only
       findChild()s + connects and logs the wired/missing count loudly.
       Styling: one panel-level QSS on jp_panel using #objectName selectors
-      (dark + amber). Same 21 _JOG_WIDGETS names as the wide v2 layout;
+      (PB-native dark). Same 21 _JOG_WIDGETS names as the wide v2 layout;
       deltas are geometry only: SPEED buttons stacked vertically, presets
       2 cols x 3 rows, typed-move fields full-width (axis+unit live in the
       placeholder, jp_lbl_*/jp_unit_* labels deleted), CLEAR + GO ABS +
@@ -24,41 +24,37 @@
    <item>
     <widget class="QFrame" name="jp_panel">
      <property name="styleSheet"><string notr="true">
-#jp_panel { background: rgb(24,27,31); border: none; border-radius: 6px; }
-QLabel { background: transparent; color: rgb(148,155,163); }
-#jp_title { font: 75 9pt; color: rgb(148,155,163); }
-#jp_speed_caption, #jp_presets_caption, #jp_typed_caption {
-  font: 75 8pt; color: rgb(148,155,163); }
-#jp_feed_readout { font: 75 8pt; color: rgb(232,166,53); }
-#jp_presets_note { font: 8pt; color: rgb(110,117,124); }
-QPushButton { background: rgb(43,48,54); color: rgb(214,218,222);
-  border: 1px solid rgb(72,79,87); border-radius: 5px; font: 75 10pt; }
-QPushButton:pressed { background: rgb(60,66,73); }
-QPushButton:disabled { background: rgb(34,38,43);
-  color: rgb(105,111,118); border-color: rgb(55,60,66); }
-#jp_slow:checked, #jp_medium:checked, #jp_fast:checked {
-  background: rgb(232,166,53); color: rgb(20,20,20);
-  border-color: rgb(232,166,53); }
+/* WCS JOG -- Probe Basic native (dark) recipes only; sources:
+   probe_basic_dark.qss + probe_basic.ui section frames */
+/* no own chrome: the sidebar JOG page is already a framed panel --
+   a frame inside a frame wasted width (operator 2026-08-04) */
+#jp_panel { border: none; background: transparent; }
+#jp_title { border-style: solid; border-color: rgb(176,179,172);
+  border-width: 2px; border-radius: 5px; color: white;
+  background: rgb(90,90,90); font: 14pt &quot;Probe Basic Bebas Mono&quot;; }
+QLabel { background: transparent; color: white;
+  font: 12pt &quot;Probe Basic Bebas Mono&quot;; }
+#jp_feed_readout { color: white; background-color: rgb(108,108,108);
+  border-style: solid; border-color: rgb(116,116,116); border-width: 1px;
+  border-radius: 4px; font: 14pt &quot;Probe Basic Bebas Mono&quot;; }
+QPushButton { color: white; border-color: black; border-style: solid;
+  border-radius: 5px; border-width: 2px;
+  background: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(213, 218, 216, 255), stop:0.169312 rgba(82, 82, 83, 255), stop:0.328042 rgba(72, 70, 73, 255), stop:0.492063 rgba(78, 77, 79, 255), stop:0.703704 rgba(72, 70, 73, 255), stop:0.86 rgba(82, 82, 83, 255), stop:1 rgba(213, 218, 216, 255));
+  font-family: &quot;Probe Basic Bebas Mono&quot;; font-size: 15pt; }
+QPushButton:disabled { border-color: gray; }
+QPushButton:hover { background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+  stop: 0 #A19E9E, stop: 1.0 #5C5959); }
+QPushButton:pressed { background: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgba(85, 85, 238, 255), stop:0.544974 rgba(90, 91, 239, 255), stop:1 rgba(126, 135, 243, 255)); }
+QPushButton:checked { background: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgba(85, 85, 238, 255), stop:0.544974 rgba(90, 91, 239, 255), stop:1 rgba(126, 135, 243, 255)); }
+#jp_slow, #jp_medium, #jp_fast, #jp_clear, #jp_stop,
 #jp_p_xy0, #jp_p_xyz0, #jp_p_z0, #jp_p_zp10, #jp_p_xy0z10, #jp_p_a0c0 {
-  font: 75 9pt; }
-QLineEdit { background: rgb(28,32,36); color: white;
-  border: 1px solid rgb(72,79,87); border-radius: 5px;
-  padding: 2px 6px; font: 10pt;
-  selection-background-color: rgb(232,166,53); }
-QLineEdit:focus { border: 1px solid rgb(232,166,53); }
-#jp_go_abs, #jp_go_rel { background: rgb(32,30,24);
-  color: rgb(232,166,53); border: 1px solid rgb(232,166,53);
-  font: 75 10pt; }
-#jp_go_abs:pressed, #jp_go_rel:pressed { background: rgb(60,50,30); }
-#jp_go_abs:disabled, #jp_go_rel:disabled { background: rgb(30,31,33);
-  color: rgb(115,102,75); border-color: rgb(85,78,60); }
-#jp_status_dot { color: rgb(80,200,120); font: 11pt; }
-#jp_status_text { color: rgb(148,155,163); font: 9pt; }
-#jp_stop { background: transparent; color: rgb(220,90,90);
-  border: 1px solid rgb(200,80,80); font: 75 10pt; }
-#jp_stop:pressed { background: rgb(70,32,32); }
-#jp_stop:disabled { background: transparent; color: rgb(110,80,80);
-  border-color: rgb(80,60,60); }
+  font-family: &quot;Probe Basic Bebas Mono&quot;; font-size: 14pt; }
+QLineEdit { color: white; background-color: rgb(108,108,108);
+  border-style: solid; border-color: rgb(116,116,116); border-width: 1px;
+  border-radius: 4px; selection-color: white;
+  selection-background-color: rgb(65,84,255); padding-right: 2px;
+  font: 14pt &quot;Probe Basic Bebas Mono&quot;; }
+#jp_status_dot { font: 11pt; }
      </string></property>
      <layout class="QVBoxLayout" name="jp_v">
       <property name="leftMargin"><number>8</number></property>
@@ -68,19 +64,22 @@ QLineEdit:focus { border: 1px solid rgb(232,166,53); }
       <property name="spacing"><number>4</number></property>
       <item>
        <widget class="QLabel" name="jp_title">
-        <property name="text"><string>JOG &amp; PRESETS</string></property>
+        <property name="text"><string>WCS JOG</string></property>
+        <property name="minimumSize"><size><width>0</width><height>30</height></size></property>
+        <property name="maximumSize"><size><width>16777215</width><height>30</height></size></property>
+        <property name="alignment"><set>Qt::AlignCenter</set></property>
        </widget>
       </item>
       <item>
        <widget class="QLabel" name="jp_speed_caption">
-        <property name="text"><string>S P E E D</string></property>
+        <property name="text"><string>SPEED</string></property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="jp_slow">
         <property name="text"><string>SLOW</string></property>
         <property name="checkable"><bool>true</bool></property>
-        <property name="minimumSize"><size><width>0</width><height>30</height></size></property>
+        <property name="minimumSize"><size><width>0</width><height>33</height></size></property>
        </widget>
       </item>
       <item>
@@ -95,7 +94,7 @@ QLineEdit:focus { border: 1px solid rgb(232,166,53); }
        <widget class="QPushButton" name="jp_fast">
         <property name="text"><string>FAST</string></property>
         <property name="checkable"><bool>true</bool></property>
-        <property name="minimumSize"><size><width>0</width><height>30</height></size></property>
+        <property name="minimumSize"><size><width>0</width><height>33</height></size></property>
        </widget>
       </item>
       <item>
@@ -105,7 +104,7 @@ QLineEdit:focus { border: 1px solid rgb(232,166,53); }
       </item>
       <item>
        <widget class="QLabel" name="jp_presets_caption">
-        <property name="text"><string>P R E S E T S</string></property>
+        <property name="text"><string>ABS PRESET</string></property>
        </widget>
       </item>
       <item>
@@ -114,57 +113,45 @@ QLineEdit:focus { border: 1px solid rgb(232,166,53); }
         <property name="verticalSpacing"><number>4</number></property>
         <item row="0" column="0">
          <widget class="QPushButton" name="jp_p_xy0">
-          <property name="text"><string>XY 0
-X0 Y0</string></property>
+          <property name="text"><string>X0 Y0</string></property>
           <property name="minimumSize"><size><width>0</width><height>44</height></size></property>
          </widget>
         </item>
         <item row="0" column="1">
          <widget class="QPushButton" name="jp_p_xyz0">
-          <property name="text"><string>XYZ 0
-linear</string></property>
+          <property name="text"><string>X0 Y0 Z0</string></property>
           <property name="minimumSize"><size><width>0</width><height>44</height></size></property>
          </widget>
         </item>
         <item row="1" column="0">
          <widget class="QPushButton" name="jp_p_z0">
-          <property name="text"><string>Z 0
-Z0 only</string></property>
+          <property name="text"><string>Z0</string></property>
           <property name="minimumSize"><size><width>0</width><height>44</height></size></property>
          </widget>
         </item>
         <item row="1" column="1">
          <widget class="QPushButton" name="jp_p_zp10">
-          <property name="text"><string>Z +10
-safe lift</string></property>
+          <property name="text"><string>Z10</string></property>
           <property name="minimumSize"><size><width>0</width><height>44</height></size></property>
          </widget>
         </item>
         <item row="2" column="0">
          <widget class="QPushButton" name="jp_p_xy0z10">
-          <property name="text"><string>XY0 Z10
-X0 Y0 Z10</string></property>
+          <property name="text"><string>X0 Y0 Z10</string></property>
           <property name="minimumSize"><size><width>0</width><height>44</height></size></property>
          </widget>
         </item>
         <item row="2" column="1">
          <widget class="QPushButton" name="jp_p_a0c0">
-          <property name="text"><string>A0 C0
-head up</string></property>
+          <property name="text"><string>A0 C0</string></property>
           <property name="minimumSize"><size><width>0</width><height>44</height></size></property>
          </widget>
         </item>
        </layout>
       </item>
       <item>
-       <widget class="QLabel" name="jp_presets_note">
-        <property name="text"><string>Presets run immediately at the selected speed.</string></property>
-        <property name="wordWrap"><bool>true</bool></property>
-       </widget>
-      </item>
-      <item>
        <widget class="QLabel" name="jp_typed_caption">
-        <property name="text"><string>T Y P E D   M O V E</string></property>
+        <property name="text"><string>ABS CUSTOM</string></property>
        </widget>
       </item>
       <item>
@@ -205,14 +192,14 @@ head up</string></property>
       </item>
       <item>
        <widget class="QPushButton" name="jp_go_abs">
-        <property name="text"><string>GO ABS · move to</string></property>
+        <property name="text"><string>GO ABS</string></property>
         <property name="enabled"><bool>false</bool></property>
         <property name="minimumSize"><size><width>0</width><height>40</height></size></property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="jp_go_rel">
-        <property name="text"><string>GO REL · move by</string></property>
+        <property name="text"><string>GO REL</string></property>
         <property name="enabled"><bool>false</bool></property>
         <property name="minimumSize"><size><width>0</width><height>40</height></size></property>
        </widget>

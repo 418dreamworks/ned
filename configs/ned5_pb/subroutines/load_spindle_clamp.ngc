@@ -1,0 +1,15 @@
+(ned LOAD SPINDLE -- PURE drawbar clamp, zero bookkeeping)
+; operator 2026-08-04: "loading is just physical action... load is pull
+; drawbar back in. no impact to the table whatsoever". The record stays
+; whatever it was (normally T0 after an unload); clamping an actual tool
+; therefore raises UNRECORDED about 1 s later and the motion lock holds
+; until the operator declares it in the tool table (LOC column). That is
+; the designed flow, not an error.
+o<load_spindle_clamp> sub
+M66 P2 L0
+o1 if [#5399 EQ 0]
+    (ABORT, load_spindle_clamp: shaft not stopped -- not clamping)
+o1 endif
+o<clamptool> call
+o<load_spindle_clamp> endsub
+M2

@@ -31,6 +31,16 @@ MACHINE = gcode_check
 PARAMETER_FILE = test.var
 SUBROUTINE_PATH = subs
 INI
+# APPEND the machine sections the subs read via #<_ini[...]> ([ATC],
+# [AXIS_*]) from the real EXPANDED ini, so those lookups resolve to the
+# machine's true values (2026-08-04: they were "not defined", and before
+# the -v fix every #-param was 0 -- both made guards fire early and report
+# "parses clean" on bodies that never parsed). The FULL expanded ini cannot
+# be used: its REMAP lines crash standalone rs274.
+if [ -f "$NED/configs/ned5_pb/ned5_pb.ini.expanded" ]; then
+  awk '/^\[(ATC|AXIS_[A-Z])\][ \t]*$/{f=1} f && /^\[/ && !/^\[(ATC|AXIS_[A-Z])\][ \t]*$/{f=0} f' \
+      "$NED/configs/ned5_pb/ned5_pb.ini.expanded" >> "$WORK/test.ini"
+fi
 
 check() {
   local name=$1; shift
@@ -39,7 +49,11 @@ check() {
   cp "$NED/configs/ned5_pb/ned5_pb.var" "$WORK/test.var"
   printf 'o<%s> call%s\nM2\n' "$name" "$args" > "$WORK/drive.ngc"
   local out
-  out=$(cd "$WORK" && timeout 60 rs274 -i test.ini -g drive.ngc 2>&1)
+  # -v is REQUIRED: standalone rs274 IGNORES the ini's PARAMETER_FILE (found
+  # 2026-08-04 -- #4107 read 0 with the var only in the ini, 1.0 with -v).
+  # Without it every #-param is 0 and each sub dies on its earliest guard,
+  # reporting "parses clean" for a body that never parsed.
+  out=$(cd "$WORK" && timeout 60 rs274 -i test.ini -v test.var -g drive.ngc 2>&1)
   local fatal
   fatal=$(echo "$out" | grep -iE 'EOF in file|unclosed comment|not defined|bad character|unknown word|bad number|out of range' | head -2)
   local stop

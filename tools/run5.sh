@@ -151,6 +151,7 @@ halrun -U >/dev/null 2>&1 || true
 
 # 2. ensure the Mesa pin logger + log pruner are running
 pgrep -f 'tools/live/mesalog.sh' >/dev/null 2>&1 || ( "$NED/tools/live/mesalog.sh" >/dev/null 2>&1 & )
+pgrep -f 'tools/live/blackmark.py' >/dev/null 2>&1 || ( "$NED/tools/live/blackmark.py" >/dev/null 2>&1 & )
 pgrep -f 'tools/live/logclean.sh' >/dev/null 2>&1 || ( "$NED/tools/live/logclean.sh" >/dev/null 2>&1 & )
 
 # 3. keep lcnc.log bounded (last ~2000 lines) + stamp a session header

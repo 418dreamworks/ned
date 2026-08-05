@@ -58,7 +58,7 @@ loadrt not names=sen.nsup,tool.mm.nexcuse,tool.mm.nrec,tool.mm.nlock
 # a read is in progress). ifdelay from [PSO]IFDELAY -- see the ini for the measured sweep.
 loadrt pso_live names=hm2_7i97.0.pktuart.0 ifdelay_p=[PSO]IFDELAY
 # limit-hit OR tree (6 hard-limit signals -> one indicator for the GUI LED).
-loadrt or2 names=limhit.0,limhit.1,limhit.2,limhit.3,limhit.4,sol.ts,sol.blow,sol.trel,sen.or,spinok,tool.mm.excuse
+loadrt or2 names=limhit.0,limhit.1,limhit.2,limhit.3,limhit.4,sol.ts,sol.blow,sol.trel,sen.or,spinok,tool.mm.excuse,tool.mm.lock,tool.mm.excuse2
 # directional limit handling (tools/live/limdir.comp + tools/live/jogblock.comp):
 # limdir.N passes joint N's limit switch to motion ONLY while commanded velocity
 # moves TOWARD it (parked/away = no fault -> POWER + jog work on a depressed
@@ -155,11 +155,13 @@ addf tool.mm.nlock            servo-thread
 addf tool.mm.unrecR           servo-thread
 addf tool.mm.phanR            servo-thread
 addf tool.mm.excuse           servo-thread
+addf tool.mm.excuse2          servo-thread
 addf tool.mm.nexcuse          servo-thread
 addf tool.mm.unrec            servo-thread
 addf tool.mm.phan             servo-thread
 addf tool.mm.unrecdb          servo-thread
 addf tool.mm.phandb           servo-thread
+addf tool.mm.lock             servo-thread
 addf zferr.z                  servo-thread
 addf limdir.2                 servo-thread
 addf limdir.3                 servo-thread
@@ -335,7 +337,14 @@ net sig-no-tool-locked tool.mm.nlock.out => tool.mm.phanR.in1
 # Both are legitimately transient mid-change or with the drawbar open.
 net sig-tc-active      => tool.mm.excuse.in0
 net sig-tool-released  => tool.mm.excuse.in1
-net sig-tool-mm-excuse tool.mm.excuse.out => tool.mm.nexcuse.in
+# ANON-LOAD EXCUSE (operator 2026-08-04): the LOAD button clamps an
+# UNKNOWN tool on purpose -- record stays T0, work-zero on its tip, no
+# M6. The GUI latches ned-tab.anon-load-out while that state is intended,
+# which excuses UNRECORDED exactly like an open drawbar does. Cleared on
+# the next drawbar release or any real declaration.
+net sig-tool-mm-exc1   tool.mm.excuse.out => tool.mm.excuse2.in0
+net sig-anon-load      => tool.mm.excuse2.in1
+net sig-tool-mm-excuse tool.mm.excuse2.out => tool.mm.nexcuse.in
 net sig-tool-mm-ok     tool.mm.nexcuse.out => tool.mm.unrec.in1  tool.mm.phan.in1
 
 net sig-unrec-raw      tool.mm.unrecR.out => tool.mm.unrec.in0
@@ -348,6 +357,16 @@ setp tool.mm.phandb.on-delay   1.0
 setp tool.mm.phandb.off-delay  0.2
 net sig-tool-unrecorded tool.mm.unrecdb.out
 net sig-tool-phantom    tool.mm.phandb.out
+
+# TOOL-STATE LOCK (operator 2026-08-04: "spindle tool inconsistencies must
+# serve as a lock... no movements until it is resolved"). Either mismatch
+# inhibits BOTH jogging and feed motion at the motion controller itself --
+# the GUI gates buttons too, but this holds even for the MPG and a running
+# program. Resolution (DECLARE / UNLOAD) is bookkeeping MDI, no motion, so
+# the way out is never blocked.
+net sig-tool-unrecorded => tool.mm.lock.in0
+net sig-tool-phantom    => tool.mm.lock.in1
+net sig-tool-state-lock tool.mm.lock.out => motion.jog-inhibit motion.feed-inhibit
 
 net sig-tool-locked        => spinok.in0
 net sig-mode-manual        => spinok.in1

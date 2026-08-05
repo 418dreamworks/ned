@@ -367,6 +367,7 @@ class UserTab(QWidget):
         try:
             self.comp = qhal.getComponent('ned-tab')
             self.comp.addPin('toolprobe-cmd', 'bit', 'out')
+            self.comp.addPin('anon-load-out', 'bit', 'out')
             self.comp.addPin('air-ok-in', 'bit', 'in')
             self.comp.addPin('probe-up-in', 'bit', 'in')
             self.comp.addPin('inc-in', 'float', 'in')
@@ -2234,12 +2235,12 @@ class UserTab(QWidget):
     # All presets are ABSOLUTE work-coordinate targets except Z +10, which
     # is computed from the CURRENT work Z at click time (zlift=True).
     _JOG_PRESETS = (
-        ('jp_p_xy0',    'XY 0',    (('x', 0.0), ('y', 0.0)),              False),
-        ('jp_p_xyz0',   'XYZ 0',   (('x', 0.0), ('y', 0.0), ('z', 0.0)),  False),
-        ('jp_p_z0',     'Z 0',     (('z', 0.0),),                         False),
-        ('jp_p_zp10',   'Z +10',   None,                                  True),
-        ('jp_p_xy0z10', 'XY0 Z10', (('x', 0.0), ('y', 0.0), ('z', 10.0)), False),
-        ('jp_p_a0c0',   'A0 C0',   (('a', 0.0), ('c', 0.0)),              False))
+        ('jp_p_xy0',    'X0 Y0',     (('x', 0.0), ('y', 0.0)),              False),
+        ('jp_p_xyz0',   'X0 Y0 Z0',  (('x', 0.0), ('y', 0.0), ('z', 0.0)),  False),
+        ('jp_p_z0',     'Z0',        (('z', 0.0),),                         False),
+        ('jp_p_zp10',   'Z10',       None,                                  True),
+        ('jp_p_xy0z10', 'X0 Y0 Z10', (('x', 0.0), ('y', 0.0), ('z', 10.0)), False),
+        ('jp_p_a0c0',   'A0 C0',     (('a', 0.0), ('c', 0.0)),              False))
 
     _JOG_MOVERS = ('jp_p_xy0', 'jp_p_xyz0', 'jp_p_z0', 'jp_p_zp10',
                    'jp_p_xy0z10', 'jp_p_a0c0')   # lock these while moving
@@ -2389,7 +2390,8 @@ class UserTab(QWidget):
         lin, ang = JOG_SPEEDS[key]
         lbl = self._jp_w.get('jp_feed_readout')
         if lbl is not None:
-            lbl.setText('F{:g} mm/min · {:g} deg/min'.format(lin, ang))
+            # short face: 14pt Bebas clipped the long form at 200 px
+            lbl.setText('F{:g} · {:g}°'.format(lin, ang))
         LOG.info('JOG speed -> %s (F%g mm/min, %g deg/min)',
                  key.upper(), lin, ang)
 
@@ -2484,17 +2486,24 @@ class UserTab(QWidget):
         w = self._jp_w.get('jp_in_' + ax)
         if w is None:
             return
-        # metrics mirror the narrow-panel QLineEdit QSS (padding 2px 6px,
-        # 10pt) so the flash never changes the field's height at 200 px
-        w.setStyleSheet('background: rgb(96,28,28); color: white; '
-                        'border: 1px solid rgb(220,80,80); '
-                        'border-radius: 5px; padding: 2px 6px; font: 10pt;')
+        # metrics mirror the PB-native dataField QLineEdit QSS (1px border,
+        # radius 4, padding-right 2px, 14pt Bebas) -- a mismatched mirror
+        # makes fields resize during the flash
+        w.setStyleSheet('background: rgb(120,60,60); color: white; '
+                        'border: 1px solid rgb(200,80,80); '
+                        'border-radius: 4px; padding-right: 2px; '
+                        'font: 14pt "Probe Basic Bebas Mono";')
         QTimer.singleShot(700, lambda: w.setStyleSheet(''))
 
     # ---- UNITS IN/MM (settings tab) ---------------------------------------
 
-    _UNITS_ON = ('background-color: rgb(235,170,40); color: black; '
-                 'font-weight: bold;')   # house amber = active/selected
+    # PB-native active treatment: the SAME checked gradient every other
+    # selection button on the SETTINGS page wears (probe_basic_dark.qss
+    # :126-128); text/font cascade from the global QPushButton rules
+    _UNITS_ON = ('background: qlineargradient(spread:pad, x1:0, y1:0, '
+                 'x2:0, y2:1, stop:0 rgba(85, 85, 238, 255), '
+                 'stop:0.544974 rgba(90, 91, 239, 255), '
+                 'stop:1 rgba(126, 135, 243, 255));')
 
     def _units_panel_install(self):
         # PB has NO in/mm control -- units are the G20/G21 modal only
@@ -2512,20 +2521,31 @@ class UserTab(QWidget):
                 LOG.error('UNITS panel: settings host widget_51 not found '
                           '-- NOT installed')
                 return
+            from PySide6.QtCore import Qt as _Qt
+            from PySide6.QtWidgets import QSizePolicy as _QSP
             fr = QFrame()
             fr.setObjectName('ned_units_frame')
+            # mirror rpm_type_setting_frame (probe_basic.ui:19875-19951):
+            # fixed 530x100, default margins, 16pt Bebas centred header,
+            # 12-spacing button row
+            fr.setFixedSize(530, 100)
             v = QVBoxLayout(fr)
-            v.setContentsMargins(4, 4, 4, 4)
-            v.setSpacing(4)
             lab = QLabel('UNITS')
+            lab.setStyleSheet('QLabel{ color: rgb(238, 238, 236); '
+                              'font: 16pt "Probe Basic Bebas Mono"; }')
+            lab.setAlignment(_Qt.AlignmentFlag.AlignCenter)
+            lab.setMinimumSize(100, 25)
+            lab.setMaximumHeight(25)
             v.addWidget(lab)
             row = QHBoxLayout()
-            row.setSpacing(6)
+            row.setSpacing(12)
+            row.setContentsMargins(3, 3, 3, 3)
             self._units_btns = {}
             for key, txt in (('in', 'IN'), ('mm', 'MM')):
                 b = QPushButton(txt)
                 b.setObjectName('ned_units_' + key)
-                b.setMinimumHeight(62)
+                b.setMaximumHeight(40)
+                b.setSizePolicy(_QSP.Preferred, _QSP.Preferred)
                 b.clicked.connect(lambda _=False, k=key: self._units_click(k))
                 row.addWidget(b)
                 self._units_btns[key] = b
@@ -3002,6 +3022,11 @@ class UserTab(QWidget):
     # scattered across tabs is four places to fat-finger a command from
     # (operator 2026-08-03: "there are too many MDIs all over the god damn
     # place"). main_tab keeps mdiEntry + mdihistory; these go.
+    # RESURRECTION NET (operator 2026-08-04: "keep the code light... gone
+    # so they do not consume resources"): every control below is DELETED
+    # from the .ui files outright. This list stays so a PB update that
+    # restores stock .ui files gets its spares re-hidden until the purge
+    # is reapplied (docs/update_survival.md).
     SPARE_MDI = ('mdi_entry_box_4', 'mdi_entry_box_5',
                  'mdi_entry_box_6', 'mdi_entry_box_7',
                  # ATC tab had its own pair too, missed by the first sweep
@@ -3025,10 +3050,16 @@ class UserTab(QWidget):
                 # redundant -- hiding its frame takes the header, LOAD +
                 # field, UNLOAD and STORE TOOL IN RACK in one go, no empty
                 # box left behind. Per-widget hides above stay as defence.
-                'rack_atc_load_frame',
-                # REF RACK DATA: carousel position reference -- no carousel
+                                # REF RACK DATA: carousel position reference -- no carousel
                 # on ned, ever (operator 2026-08-04: "delete that button")
-                'reference_carousel_2')
+                'reference_carousel_2',
+                # PROGRAMMED COOLANT CONSTANTS: whole settings frame
+                # (operator 2026-08-04: "i won't be using these at all")
+                'prog_coolant_setting_frame',
+                # (native spindle display + load frame RESTORED to the
+                # RACK ATC page at operator request 2026-08-04 evening --
+                # they are no longer spares)
+                )
 
     def _hide_spare_mdi(self):
         win = self.window()
@@ -3040,13 +3071,16 @@ class UserTab(QWidget):
                 continue
             w.hide()
             gone.append(name)
-        if gone:
-            LOG.info('REDUNDANCY: hid %d control(s) (MAIN keeps the only '
-                     'MDI and the only M6 G43): %s',
-                     len(gone), ', '.join(gone))
         if missing:
-            LOG.error('REDUNDANCY: %d control(s) NOT found, still '
-                      'visible: %s', len(missing), ', '.join(missing))
+            # deleted from the .ui outright (operator 2026-08-04) -- absent
+            # is the INTENDED state; anything in `gone` above means a PB
+            # update resurrected stock spares and the purge must be reapplied
+            LOG.info('REDUNDANCY: %d control(s) confirmed deleted: %s',
+                     len(missing), ', '.join(missing))
+        if gone:
+            LOG.error('REDUNDANCY: %d STOCK SPARE(S) RESURRECTED (PB '
+                      'update?) -- hidden for now, reapply the .ui purge '
+                      '(update_survival): %s', len(gone), ', '.join(gone))
 
     # Buttons that command MOTION or issue MDI. LinuxCNC silently refuses an
     # MDI command on non-identity kinematics until every joint is homed, so
@@ -3059,11 +3093,8 @@ class UserTab(QWidget):
     # controls. Those are how you GET homed; disabling them is a trap.
     HOMING_GATED = (
         'm6_tool_call_button_main_panel',
-        'm6_tool_call_button_tool_page',
-        'm6_tool_call_button_atc_page',
-        'ned_declare_btn',
-        'remove_tool_2', 'remove_tool_button',
-        'tool_touch_off_button', 'tool_touch_off_button_atc',
+        'remove_tool_2',
+        'tool_touch_off_button',
         'go_to_zero_button_2', 'go_to_g30_button', 'go_to_home_button',
     )
 
@@ -3092,7 +3123,40 @@ class UserTab(QWidget):
         t.timeout.connect(self._homing_gate_tick)
         t.start(500)
 
+    def _update_spindle_remark(self):
+        # ATC spindle label shows the loaded tool's REMARK (operator
+        # 2026-08-04: "populate it with remark in the tool col"); DB read
+        # only on tool-number change, read-only connection
+        try:
+            import linuxcnc
+            st = linuxcnc.stat(); st.poll()
+            tno = int(st.tool_in_spindle)
+            if tno == getattr(self, '_remark_tool', None):
+                return
+            self._remark_tool = tno
+            if tno > 0:
+                self._anon_clear('T%d declared' % tno)
+            lab = self.window().findChild(QWidget,
+                                          'loaded_spindle_tool_number')
+            if lab is None:
+                return
+            if tno <= 0:
+                lab.setText('NO TOOL LOADED')
+                return
+            import sqlite3
+            con = sqlite3.connect(
+                'file:/home/brains/Documents/ned/configs/ned5_pb/'
+                'tool_table.db?mode=ro', uri=True)
+            row = con.execute('SELECT remark FROM tool WHERE tool_no=?',
+                              (tno,)).fetchone()
+            con.close()
+            rem = (row[0] or '').strip() if row else ''
+            lab.setText('T%d · %s' % (tno, rem) if rem else 'T%d' % tno)
+        except Exception:
+            LOG.exception('spindle remark update failed')
+
     def _homing_gate_tick(self):
+        self._update_spindle_remark()
         try:
             import linuxcnc
             st = linuxcnc.stat()
@@ -3100,6 +3164,8 @@ class UserTab(QWidget):
             homed = all(st.homed[:6])
         except Exception:
             homed = False            # unreadable -> assume NOT homed, refuse
+        if getattr(self, '_tool_locked', False):
+            homed = False       # tool-state lock deads the same buttons
         if homed == getattr(self, '_homed_now', None):
             return
         self._homed_now = homed
@@ -3173,16 +3239,35 @@ class UserTab(QWidget):
                 " JOIN custom_field_def d ON d.id = v.field_id"
                 " JOIN tool t ON t.id = v.tool_id"
                 " WHERE d.name IN ('safety_x','safety_y')").fetchall()
+            # HOME FORK mirror (operator 2026-08-04: "a specific tool always
+            # going back to a specific P and I assign which"): DB pocket =
+            # the assigned home, g-code reads #[4400+T]
+            homes = con.execute(
+                'SELECT tool_no, pocket FROM tool').fetchall()
             con.close()
+            for tno, pk in homes:
+                if not (1 <= int(tno) <= 30):
+                    continue
+                try:
+                    pk = float(int(float(pk)))
+                except (TypeError, ValueError):
+                    continue
+                rows.append((tno, 'home_p', pk))
             pend = []
             for tno, name, val in rows:
-                if not (1 <= int(tno) <= 14):
+                # safety block is sized 1..14; home_p mirrors up to T30
+                # (T15 the sawblade MUST keep its assigned home)
+                cap = 30 if name == 'home_p' else 14
+                if not (1 <= int(tno) <= cap):
                     continue
                 try:
                     f = float(val)
                 except (TypeError, ValueError):
                     continue
-                p = self.TOOL_SAFETY_BASE + 2 * int(tno)                     + (0 if name == 'safety_x' else 1)
+                if name == 'home_p':
+                    p = 4400 + int(tno)
+                else:
+                    p = self.TOOL_SAFETY_BASE + 2 * int(tno)                         + (0 if name == 'safety_x' else 1)
                 if self._tool_safety_sent.get(p) != f:
                     pend.append((p, f))
             if not pend:
@@ -3303,34 +3388,12 @@ class UserTab(QWidget):
         except Exception:
             LOG.exception('RACK TABLE: poll failed')
 
-    def _build_declaration(self):
-        """Wire the DECLARE row. It is built in probe_basic.ui, not here.
-
-        The row is a verbatim copy of the M6 G43 row in that file -- same
-        VCPLineEdit, same button geometry and palette -- with the names
-        changed to ned_declare_input / ned_declare_btn, the class changed to
-        QPushButton and the SubCallButton `filename` dropped so it calls
-        nothing on its own. Building widgets from Python instead cost three
-        placements and still rendered wrong, because the panel's styling
-        comes from rules a new widget cannot inherit. Copy the row that
-        already works; wire the button.
-        """
-        win = self.window()
-        edit = win.findChild(QWidget, 'ned_declare_input') if win else None
-        btn = win.findChild(QWidget, 'ned_declare_btn') if win else None
-        if edit is None or btn is None:
-            LOG.error('DECLARATION: row not found in the .ui '
-                      '(ned_declare_input=%s ned_declare_btn=%s) -- NOT '
-                      'wired. The button, if present, does nothing.',
-                      edit is not None, btn is not None)
-            return
-        try:
-            btn.clicked.disconnect()
-        except Exception:
-            pass
-        btn.clicked.connect(self._spindle_holds_declare)
-        self._sh_widgets = {'edit': edit}
-        LOG.info('DECLARATION: DECLARE row wired from the .ui')
+    def _build_declaration(self, *a, **k):
+        # DECLARE row DELETED (operator 2026-08-04: "get rid of the
+        # declaration button and number. we are replacing it with the
+        # forks") -- fork circles own declaration once the audited logic
+        # ships; LOAD SPINDLE remains the spindle-record path meanwhile.
+        LOG.info('DECLARATION: row deleted -- fork circles pending')
 
     def _relabel_buttons(self):
         """Retext core buttons at RUNTIME, never by editing probe_basic.ui.
@@ -3571,9 +3634,17 @@ class UserTab(QWidget):
             b.setText(pend['text'])
             self._load_pend.pop(b, None)
             try:
-                if not self._load_tool_ok(b):
-                    return                      # refused, loudly, above
-                b.callSub()          # PB's own sub call (tool no. from field)
+                # DECOUPLED (operator 2026-08-04): load is a PURE clamp --
+                # no tool number, no records; the table declares locations.
+                # Latch the ANON excuse: an unknown tool clamped on purpose
+                # is not an inconsistency (cleared on release/declaration).
+                b.callSub()
+                try:
+                    self.comp.getPin('anon-load-out').value = True
+                    LOG.info('ANON LOAD: unknown tool clamped by intent -- '
+                             'UNRECORDED excused until release/declaration')
+                except Exception:
+                    LOG.exception('anon-load latch failed')
                 # NOT proof of success -- callSub is fire-and-forget, so the
                 # sub can still abort ("Requested tool 1 not found in the
                 # tool table") long after this returns. The old wording said
@@ -3688,6 +3759,7 @@ class UserTab(QWidget):
         else:
             LOG.info('tool record agrees with the spindle again (was '
                      'unrecorded)')
+        self._tool_lock_update()
 
     def _on_tool_phantom(self, val):
         # Logic claims a tool the iron does not hold. This one is ACTIONABLE:
@@ -3703,6 +3775,73 @@ class UserTab(QWidget):
                              'nothing. Clear it with UNLOAD SPINDLE.')
         else:
             LOG.info('tool record agrees with the spindle again (was phantom)')
+        self._tool_lock_update()
+
+    def _tool_lock_update(self):
+        # TOOL-STATE LOCK (operator 2026-08-04): while the spindle record
+        # and the drawbar sensor disagree, HAL already inhibits jog+feed
+        # (tool.mm.lock -> motion.*-inhibit). Here: flash the TOOL tab and
+        # dead the motion buttons + MDI + CYCLE START so the GUI cannot
+        # even try. DECLARE / LOAD / UNLOAD stay live -- they are the way
+        # out.
+        locked = (getattr(self, '_tool_unrecorded', False)
+                  or getattr(self, '_tool_phantom', False))
+        if locked == getattr(self, '_tool_locked', False):
+            return
+        self._tool_locked = locked
+        win = self.window()
+        tw = win.findChild(QWidget, 'tabWidget') if win else None
+        try:
+            from PySide6.QtCore import QTimer
+            from PySide6.QtGui import QColor
+            if locked:
+                if getattr(self, '_tool_flash_timer', None) is None:
+                    t = QTimer(self)
+                    t.timeout.connect(self._tool_lock_flash)
+                    self._tool_flash_timer = t
+                self._tool_flash_on = False
+                self._tool_flash_timer.start(500)
+                LOG.error('TOOL-STATE LOCK ENGAGED: no movements until the '
+                          'spindle record matches the drawbar sensor')
+            else:
+                if getattr(self, '_tool_flash_timer', None) is not None:
+                    self._tool_flash_timer.stop()
+                if tw is not None:
+                    idx = self._tool_tab_index(tw)
+                    if idx >= 0:
+                        tw.tabBar().setTabTextColor(idx, QColor())
+                LOG.info('TOOL-STATE LOCK RELEASED')
+        except Exception:
+            LOG.exception('tool lock UI failed (HAL inhibit still holds)')
+        for name in ('cycle_start_button', 'mdi_entry_box'):
+            w2 = win.findChild(QWidget, name) if win else None
+            if w2 is not None:
+                w2.setEnabled(not locked)
+        self._homed_now = None      # force the homing gate to re-evaluate
+        self._homing_gate_tick()
+
+    def _tool_tab_index(self, tw):
+        for i in range(tw.count()):
+            if tw.widget(i) is not None                     and tw.widget(i).objectName() == 'tool_tab':
+                return i
+        return -1
+
+    def _tool_lock_flash(self):
+        try:
+            from PySide6.QtGui import QColor
+            win = self.window()
+            tw = win.findChild(QWidget, 'tabWidget') if win else None
+            if tw is None:
+                return
+            idx = self._tool_tab_index(tw)
+            if idx < 0:
+                return
+            self._tool_flash_on = not getattr(self, '_tool_flash_on', False)
+            tw.tabBar().setTabTextColor(
+                idx, QColor(230, 60, 60) if self._tool_flash_on
+                else QColor(255, 255, 255))
+        except Exception:
+            pass
 
     def _declare_say(self, w, msg):
         """Loud where it counts: the log, and error_msg so STATUS goes red.
@@ -3807,7 +3946,18 @@ class UserTab(QWidget):
 
     def _on_drawbar(self, val):
         self._drawbar_released = bool(val)
+        if self._drawbar_released:
+            self._anon_clear('drawbar released')
         self._sync_load_enabled()
+
+    def _anon_clear(self, why):
+        try:
+            pin = self.comp.getPin('anon-load-out')
+            if pin.value:
+                pin.value = False
+                LOG.info('ANON LOAD latch cleared (%s)', why)
+        except Exception:
+            pass
 
     def _on_air(self, val):
         self._air = bool(val)

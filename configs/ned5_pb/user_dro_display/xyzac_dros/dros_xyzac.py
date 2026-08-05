@@ -215,6 +215,23 @@ class UserDRO(QWidget):
         self._sync_lock_buttons()
 
     def _sync_lock_buttons(self):
+        # MPG-TIMER WATCHDOG (2026-08-04). During the hands-off stale-home
+        # hunt the log stream suggested _mpg_timer dies a few ticks in; the
+        # final evidence (screen showed STALE while the log said UNHOMED)
+        # says the real fault was lcnc.log's GUI stream stalling mid-session,
+        # not the timers. Kept anyway as cheap insurance: it is silent unless
+        # a timer is GENUINELY dead, and its counter log is the proof either
+        # way. If 'watchdog revive' never appears, the timers were fine.
+        try:
+            t = getattr(self, '_mpg_timer', None)
+            if t is not None and not t.isActive():
+                n = getattr(self, '_mpg_wd', 0) + 1
+                self._mpg_wd = n
+                if n <= 3 or n % 100 == 0:
+                    LOG.error('mpg/banner timer DEAD -- watchdog revive #%d', n)
+                t.start(300)
+        except Exception:
+            LOG.exception('mpg timer watchdog failed')
         win = self.window()
         tab = win.findChild(QWidget, 'ned_controls') if win else None
         if tab is None or not hasattr(tab, 'get_ac_lock'):
@@ -436,8 +453,13 @@ class UserDRO(QWidget):
                     LOG.info('HOME banner -> %s', state.upper())
                 if state == _HomeBanner.SESSION:
                     self._banner_latch = True
-            except Exception:
-                pass
+            except Exception as e:
+                # a silent pass here hid a stuck-UNHOMED banner for a whole
+                # session (2026-08-04); log each distinct failure once
+                msg = '%s: %s' % (type(e).__name__, e)
+                if msg != getattr(self, '_banner_err', None):
+                    self._banner_err = msg
+                    LOG.error('HOME banner eval FAILED: %s', msg)
 
     # UNHOMED DRO: free-mode joint jogging moves only JOINT positions -- world
     # coordinates (what the DRO widgets display) FREEZE with kinstype=BOTH, so

@@ -73,6 +73,23 @@ o82 endif
 M61 Q0
 G49
 (DEBUG, EVAL[vcp.getWidget{"rackatc"}.store_tool{#<p>, #<was>}])
-G1 G53 F[#<ftrav>] Z[#<ztrav>]
+(exit lift. operator 2026-08-04: between tools with a PROVEN-empty spindle)
+(the full climb to traverse Z is wasted time - lift only to approach+50 and)
+(tell m22 via #<_rack_between>. Caller passes #2=1 only when a fetch follows;)
+(unload-only paths lift to full traverse Z as before.)
+#<fetch_next> = 0
+o90 if [EXISTS[#2]]
+  #<fetch_next> = #2
+o90 endif
+o91 if [#<fetch_next> GT 0]
+  #<zbetween> = [#<zappr> + 50.0]
+  o92 if [#<zbetween> GT 0]
+    #<zbetween> = 0
+  o92 endif
+  #<_rack_between> = 1
+  G1 G53 F[#<ftrav>] Z[#<zbetween>]
+o91 else
+  G1 G53 F[#<ftrav>] Z[#<ztrav>]
+o91 endif
 o<m21> endsub
 M2

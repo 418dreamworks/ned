@@ -42,6 +42,17 @@ o120 if [#3991 NE #<tool_in_spindle>]
     (PRINT, o<toolchange> tool_in_spindle does not match 3991)
 o120 endif
 
+M66 P0 L0
+o136 if [[#5399 GT 0] AND [#<tool_in_spindle> EQ 0]]
+    (abort, toolchange: an ANONYMOUS tool is clamped [LOAD button] -- declare it in the table or unload before any M6)
+o136 endif
+o135 if [#<selected_tool> EQ #<tool_in_spindle>]
+    ; requested tool already loaded: standard harmless Tn M6 prefix --
+    ; without this the pocket scan finds nothing and aborts (advisor
+    ; finding 7, 2026-08-04)
+    o<toolchange> return
+o135 endif
+#<_rack_between> = 0 ; stale between-tools flag from an aborted change must never survive into a fresh M6
 #<next_pocket> = 0 ; assigns 0 to the next pocket for a later check if the tool is found in the rack
 #<open_pocket> = 0
 #130 = #<number_of_pockets> ; assign test parameter the number of pockets in the rack
@@ -65,19 +76,20 @@ o140 endif
 ; or if there is not tool in the spindle
 
 o150 if [#<tool_in_spindle> GT 0] ; checks if there is a valid tool in the spindle
-    ; ned FIXED HOMES (operator 2026-08-02: "my tool 15 MUST go back to its
-    ; own spot every time. its a fucking sawblade"): tool N returns to fork
-    ; N, ALWAYS. The stock lowest-empty-pocket shuffle is forbidden on this
-    ; rack -- pockets have per-tool geometry.
-    o151 if [#<tool_in_spindle> GT #<number_of_pockets>]
-        (abort, tool T#<tool_in_spindle> has no fork of its own [> pocket count])
+    ; ned ASSIGNED HOMES (operator 2026-08-04: "a specific tool always going
+    ; back to a specific P and I assign which tool is parked at which P").
+    ; The home fork is the tool table's P column, mirrored to #[4400+T] by
+    ; ned_controls. The stock lowest-empty-pocket shuffle stays forbidden.
+    #<home_fork> = #[4400 + #<tool_in_spindle>]
+    o151 if [[#<home_fork> LT 1] OR [#<home_fork> GT #<number_of_pockets>]]
+        (abort, T#<tool_in_spindle> has no assigned home fork -- set its P in the tool table)
     o151 endif
-    o152 if [#[4000 + #<tool_in_spindle>] NE 0]
-        (abort, fork #<tool_in_spindle> is not empty -- rack map out of sync, fix #40xx params)
+    o152 if [#[4000 + #<home_fork>] NE 0]
+        (abort, the home fork is not empty -- rack map out of sync with the P column)
     o152 endif
     (m21 does its own bookkeeping the moment release is proven -- a stop)
     (anywhere after leaves every record true; nothing to write here)
-    o<m21> call [#<tool_in_spindle>]
+    o<m21> call [#<home_fork>] [1] (a fetch follows - m21 may exit at approach+50)
 o150 endif
 
 o160 if [#<selected_tool> GT 0] ; selected tool is not tool 0

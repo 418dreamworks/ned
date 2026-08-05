@@ -27,6 +27,7 @@
 # configs/params/head_zero.inc, gear ratios in tools/live/ned_params.sh -- parsed at
 # start, never copied here.
 import os
+import subprocess
 import re
 import time
 import json
@@ -156,12 +157,6 @@ class Brain(object):
         self.sh_last = None
         self.sh_last_t = 0.0
         self.sh_next = 0.0
-        # PRE-POWER DECLARE (operator 2026-08-04: "stale home BEFORE power
-        # button is even clicked. power button is to enable motion, nothing
-        # else"). One canary home decides whether LinuxCNC's task layer
-        # accepts homing before STATE_ON; success -> full declare pre-power,
-        # refusal -> one log line and the ON-edge path unchanged.
-        self.prepower_at = time.time() + 4.0
         # transitions
         self.prev_on = False
         self.prev_interp_busy = False
@@ -490,6 +485,18 @@ class Brain(object):
                     '{:+.4f}'.format(self.hr_deg[a])
                     if self.hr_deg.get(a) is not None else 'NOT READ YET')
                     for a in ('a', 'c'))))
+            # AUTO-POWER moved the ON edge into task's startup window --
+            # the tool-DB init alone can block io for 10 s, and home()
+            # commands issued then are swallowed. Two attempts and giving up
+            # left the banner UNHOMED forever (2026-08-04). If anything is
+            # still unhomed, run the WHOLE declare again in 5 s, and keep
+            # doing so while the machine is ON: the declare is idempotent
+            # (it only touches still-unhomed joints).
+            still = [j for j in jns if not self.stat.homed[j]]
+            if still:
+                self.declare_at = time.time() + 5.0
+                log('DECLARE: joints {} still unhomed -- redeclaring in 5 s'
+                    .format(still))
             log('DECLARED HOME (zero-motion, NML 112): joints {} where '
                 'they stand; homed={} all6={} (STALE HOME until menu Home All)'
                 .format(jns, self.stat.homed[:6],
@@ -497,6 +504,57 @@ class Brain(object):
         except Exception as e:
             log('DECLARE HOME failed: {}'.format(e))
 
+
+    def restore_spindle_tool(self):
+        # SPINDLE TOOL SURVIVES REBOOT (operator 2026-08-04: "it should
+        # survive reboot"). #3991 (persistent .var) remembers the clamped
+        # tool, but LinuxCNC boots with tool_in_spindle=0. One shot, after
+        # the machine is ON + all homed + idle: if the drawbar sensor
+        # (motion.digital-in-00, the M66 P0 'locked' input) confirms
+        # something IS clamped, re-issue M61 Q<n>. Sensor empty -> no M61
+        # (restoring the number would fabricate a PHANTOM; the always-on
+        # guard flags the mismatch instead).
+        if getattr(self, '_spindle_restored', False):
+            return
+        try:
+            self.stat.poll()
+            if (self.stat.task_state != linuxcnc.STATE_ON
+                    or not all(self.stat.homed[:6])
+                    or self.stat.interp_state != linuxcnc.INTERP_IDLE):
+                return
+            self._spindle_restored = True     # one shot from here on
+            want = 0
+            with open('/home/brains/Documents/ned/configs/ned5_pb/'
+                      'ned5_pb.var') as f:
+                for ln in f:
+                    parts = ln.split()
+                    if len(parts) == 2 and parts[0] == '3991':
+                        want = int(float(parts[1]))
+                        break
+            if want <= 0:
+                return
+            if self.stat.tool_in_spindle == want:
+                return
+            locked = subprocess.run(
+                ['timeout', '5', 'halcmd', 'getp', 'motion.digital-in-00'],
+                capture_output=True, text=True).stdout.strip().upper()
+            if locked != 'TRUE':
+                log('SPINDLE RESTORE: #3991 says T{} but the drawbar sensor '
+                    'reads empty -- NOT restoring (guard will flag if a tool '
+                    'is really there)'.format(want))
+                return
+            self.cmd.mode(linuxcnc.MODE_MDI)
+            self.cmd.wait_complete()
+            self.cmd.mdi('M61 Q{}'.format(want))
+            self.cmd.wait_complete(4.0)
+            self.cmd.mode(linuxcnc.MODE_MANUAL)
+            self.cmd.wait_complete()
+            self.stat.poll()
+            log('SPINDLE RESTORE: T{} re-declared in spindle after reboot '
+                '(sensor-confirmed clamped); tool_in_spindle={}'
+                .format(want, self.stat.tool_in_spindle))
+        except Exception as e:
+            log('SPINDLE RESTORE failed: {}'.format(e))
 
     def do_inplace(self):
         # home unhomed A/C where they stand using the armed read; no motion.
@@ -775,43 +833,13 @@ class Brain(object):
             else:
                 self.want_read = True
                 log('MACHINE ON -> head read (A/C will home IN PLACE, no motion)')
-        if getattr(self, 'prepower_at', None) and now >= self.prepower_at:
-            self.prepower_at = None
-            try:
-                self.stat.poll()
-                off = self.stat.task_state != linuxcnc.STATE_ON
-                unhomed = not all(self.stat.homed[:4])
-            except Exception:
-                off = unhomed = False
-            if off and unhomed:
-                # head read first -- the PSO read does not need machine ON
-                # (pso_read.sh proves it with LinuxCNC closed entirely), so
-                # A/C can land pre-power too once it completes.
-                if not self.read_armed and not self.want_read:
-                    self.want_read = True
-                    log('PRE-POWER: head read requested (machine OFF)')
-                log('PRE-POWER DECLARE: canary home, joint 0, machine OFF')
-                self.declare_xyzw(only=[0])
-                try:
-                    time.sleep(1.0)
-                    self.stat.poll()
-                    took = bool(self.stat.homed[0])
-                except Exception:
-                    took = False
-                if took:
-                    log('PRE-POWER DECLARE: canary TOOK -- declaring the '
-                        'rest before power')
-                    self.declare_xyzw()
-                else:
-                    log('PRE-POWER DECLARE: LinuxCNC refuses homing before '
-                        'POWER (task gate) -- declare stays on the ON edge; '
-                        'the one refusal toast above is the canary')
         if getattr(self, 'declare_at', None) and now >= self.declare_at:
             self.declare_at = None
             self.declare_xyzw()
         if getattr(self, 'inplace_at', None) and now >= self.inplace_at:
             self.inplace_at = None
             self.do_inplace()
+        self.restore_spindle_tool()
         if self.teleop_at and now >= self.teleop_at:
             self.teleop_at = None
             self.ensure_teleop()

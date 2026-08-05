@@ -25,7 +25,7 @@ never act partially.
 | AC→0 | Absolute move to A0 C0 — the "send head to physical zero" button (when homed). |
 | Z +6 | Relative move Z up 6 mm. |
 
-## NED controls tab — JOG & PRESETS panel
+## NED controls tab — WCS JOG panel (renamed from JOG & PRESETS 2026-08-04)
 
 The visible NED tab page is BACK (2026-08-01): its content is the JOG &
 PRESETS panel (operator mockup). The module's invisible machinery is NOT a
@@ -47,13 +47,13 @@ abort partway can never leave relative mode modal.
 
 | Control | Behavior |
 |---|---|
-| ABSOLUTE / RELATIVE | Exclusive toggle pair; applies ONLY to the TYPED MOVE GO button. Presets are always absolute work-coordinate moves regardless of this toggle. |
+| ABSOLUTE / RELATIVE | Exclusive toggle pair; applies ONLY to the ABS CUSTOM (was TYPED MOVE) GO button. Presets are always absolute work-coordinate moves regardless of this toggle. |
 | SLOW / MEDIUM / FAST | Exclusive speed toggles (amber = selected; MEDIUM at launch) setting the feed for EVERY move this panel issues. SLOW = F304.8 (1 ft/min) · 60 deg/min; MEDIUM = F3657.6 (12 ft/min) · 720 deg/min; FAST = F21945.6 (12 ft in 10 s) · 4320 deg/min. FAST is commanded above the machine limits ON PURPOSE — the planner clamps to MAXV/accel (X/Y 200 mm/s = F12000, Z 169.3 mm/s, angular 30 deg/s = 1800 deg/min) and never errors. |
 | speed readout | Live amber label: "F\<mm/min\> mm/min · \<deg/min\> deg/min" for the selected speed. Updates on every toggle. |
-| XY 0 | `G90 G1 X0 Y0 F<lin>` — executes IMMEDIATELY on click, no GO. |
-| XYZ 0 | `G90 G1 X0 Y0 Z0 F<lin>` — ONE straight (diagonal) line, not sequenced. Immediate. |
+| X0 Y0 | `G90 G1 X0 Y0 F<lin>` — executes IMMEDIATELY on click, no GO. |
+| X0 Y0 Z0 | `G90 G1 X0 Y0 Z0 F<lin>` — ONE straight (diagonal) line, not sequenced. Immediate. |
 | Z 0 | `G90 G1 Z0 F<lin>`. Immediate. |
-| Z +10 | Safe lift: reads CURRENT work Z from stat and commands the ABSOLUTE target `G90 G1 Z(cur+10) F<lin>` — relative intent, absolute command; NOT absolute Z10, and never G91. Immediate. |
+| Z10 | Safe lift: reads CURRENT work Z from stat and commands the ABSOLUTE target `G90 G1 Z(cur+10) F<lin>` — relative intent, absolute command; NOT absolute Z10, and never G91. Immediate. |
 | XY0 Z10 | `G90 G1 X0 Y0 Z10 F<lin>` (absolute work Z10). Immediate. |
 | A0 C0 | `G90 G1 A0 C0 F<ang>` — head upright. Pure-rotary line, so F is deg/min (LinuxCNC G94 rule). Lock A / Lock C do NOT block it — locks only remove axes from MPG cycling. Immediate. |
 | caption | "Presets execute immediately at the selected speed — no GO needed." |
@@ -142,13 +142,13 @@ homing runs or the machine is moving.
 | After any program/MDI finishes | Brain returns MANUAL + teleop (MPG live) ~1 s after motion truly completes — never earlier, never mid-move, and never stealing the mode while you are entering a new MDI command. |
 
 
-## JOG & PRESETS panel v2 (stock JOG page, sidebar) -- ported 2026-08-02
+## WCS JOG panel v2 (stock JOG page, sidebar) -- ported 2026-08-02, renamed 2026-08-04
 
 | Control | Behavior |
 |---|---|
 | Panel location | The stock JOG page of the right sidebar stack -- REPLACES the stock jog arrow buttons (MPG owns axis jogging). NED tab page is empty. |
 | SLOW / MEDIUM / FAST | One global feed for every panel move: 200 / 1200 / 4000 mm/min (rotary 15 / 60 / 180 deg/min), emitted as the F word; persists between moves; live readout under the buttons. |
-| Presets (XY 0, XYZ 0, Z 0, Z +10, XY0 Z10, A0 C0) | Fire IMMEDIATELY at the selected speed, always absolute WORK coordinates; Z +10 = incremental lift computed from current work Z; A0 C0 = head upright, XYZ untouched. |
+| Presets (X0 Y0, X0 Y0 Z0, Z0, Z10, X0 Y0 Z10, A0 C0) — section caption ABS PRESET | Fire IMMEDIATELY at the selected speed, always absolute WORK coordinates; Z +10 = incremental lift computed from current work Z; A0 C0 = head upright, XYZ untouched. |
 | Typed move fields (X Y Z A C) | Any subset; blank = omitted (never sent as 0); values persist after the move; Enter in any field fires GO ABS. |
 | GO ABS / GO REL | move-to (work coords) / move-by (delta converted to absolute -- G91 never emitted). Both disabled until a field parses. |
 | Soft-limit pre-check | A violating target is REJECTED with a toast + red field flash -- never silently clamped. Static INI limits; the planner remains hard enforcement. |
