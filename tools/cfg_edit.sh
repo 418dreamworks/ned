@@ -1,3 +1,39 @@
+
+# USERSPACE PIN ORDER (2026-08-05, third occurrence tonight): brain.* and
+# pendant.* pins exist only AFTER their "loadusr -Wn <name>" line. A net
+# above it fails the WHOLE postgui load ("Pin 'brain.guard-arm' does not
+# exist"), and a net in ned5_iron.hal can never work at all -- those comps
+# load in postgui. Same class as the ini.N.* rule.
+python3 - <<'USRCHK'
+import re, sys
+bad = []
+post = '/home/brains/Documents/ned/configs/ned5_pb/postgui_pb.hal'
+iron = '/home/brains/Documents/ned/configs/ned5/ned5_iron.hal'
+try:
+    lines = open(post).read().splitlines()
+except OSError:
+    lines = []
+for comp in ('brain', 'pendant'):
+    load = next((i for i, l in enumerate(lines)
+                 if 'loadusr' in l and comp in l), None)
+    for i, l in enumerate(lines):
+        if l.strip().startswith('#'):
+            continue
+        if re.search(r'\b%s\.' % comp, l) and (load is None or i < load):
+            bad.append('postgui_pb.hal:%d %s.* net before its loadusr' % (i + 1, comp))
+try:
+    for i, l in enumerate(open(iron).read().splitlines()):
+        if l.strip().startswith('#'):
+            continue
+        if re.search(r'\b(brain|pendant)\.', l):
+            bad.append('ned5_iron.hal:%d userspace comp net in the IRON file' % (i + 1))
+except OSError:
+    pass
+for b in bad:
+    print('  ' + b)
+sys.exit(1 if bad else 0)
+USRCHK
+if [ $? -ne 0 ]; then echo "USERSPACE PIN ORDER lint FAILED"; exit 1; fi
 #!/bin/bash
 # The ONLY sanctioned way to modify anything under configs/. CLAUDE.md rule 21.
 #

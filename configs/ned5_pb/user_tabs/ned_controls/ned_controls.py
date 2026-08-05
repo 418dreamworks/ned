@@ -3390,13 +3390,30 @@ class UserTab(QWidget):
     # disagreed. Relabel the row for the SELECTED axis every time it
     # changes, and make a click set the wheel's index too (pendant.inc-set)
     # so the highlight and the applied jump size always move together.
-    _INC_LADDER = {
-        'x': [0.01, 0.05, 0.1, 0.5, 2.0],
-        'y': [0.01, 0.05, 0.1, 0.5, 1.0],
-        'z': [0.01, 0.05, 0.1, 0.5, 1.0],
-        'a': [0.01, 0.05, 0.1, 0.25, 0.5],
-        'c': [0.01, 0.05, 0.1, 0.25, 0.5],
-    }
+    # THE LADDER LIVES IN ned_pendant.INC_TABLE -- imported, never copied,
+    # so screen and wheel can never drift apart (X tops out at 2 mm, Y/Z at
+    # 1 mm, rotaries at 0.25/0.5 deg). The SLOT index is shared across axes:
+    # pick "fastest" once and every axis applies its own fastest value.
+    @property
+    def _INC_LADDER(self):
+        t = getattr(self, '_inc_ladder_cache', None)
+        if t is None:
+            try:
+                src = open('/home/brains/Documents/ned/tools/live/'
+                           'ned_pendant.py').read()
+                ns = {}
+                exec(src[src.index('INC_TABLE = {'):
+                         src.index('N_INC =')], ns)
+                t = ns['INC_TABLE']
+            except Exception:
+                LOG.exception('JOG STEPS: could not read the pendant ladder')
+                t = {'x': [0.01, 0.05, 0.1, 0.5, 2.0],
+                     'y': [0.01, 0.05, 0.1, 0.5, 1.0],
+                     'z': [0.01, 0.05, 0.1, 0.5, 1.0],
+                     'a': [0.01, 0.05, 0.1, 0.25, 0.5],
+                     'c': [0.01, 0.05, 0.1, 0.25, 0.5]}
+            self._inc_ladder_cache = t
+        return t
     _INC_AXES = ('x', 'y', 'z', 'a', 'c')
 
     def _sync_inc_row(self):
@@ -3593,6 +3610,19 @@ class UserTab(QWidget):
                 c.mdi('#%d=%.4f' % (p, f))
                 self._tool_safety_sent[p] = f
             LOG.info('TOOL SAFETY: %d value(s) mirrored to params', len(pend))
+            # HAND MDI BACK, ONCE, HERE (2026-08-05). This mirror runs at
+            # every launch (the sent-cache starts empty), and leaving the
+            # machine in MDI silently refuses every jog -- no wheel, no
+            # error message. One restore at this exact point is safe: the
+            # wait_complete above means the machine is idle. Do NOT retry
+            # this on a timer -- a mode change during a jog is refused and
+            # each refusal is an error toast in the operator's face.
+            try:
+                c.wait_complete(2.0)
+                c.mode(linuxcnc.MODE_MANUAL)
+                LOG.info('TOOL SAFETY: MDI handed back -- jogging is live')
+            except Exception:
+                LOG.exception('TOOL SAFETY: could not restore MANUAL')
             # BACK TO MANUAL (2026-08-05): this timer left the machine
             # parked in MDI, where jogging is silently refused -- no wheel,
             # no error. Borrow MDI, hand it back when the machine is quiet.
@@ -4426,6 +4456,10 @@ class UserTab(QWidget):
         return None
 
     def _on_axis(self, val):
+        # the GUI increment row is PER AXIS (operator, repeatedly):
+        # remember which axis the wheel is on so the row can relabel
+        self._mpg_axis_now = int(val)
+        self._inc_row_ax = None          # force a relabel on the next tick
         w = self._find_dro()
         if w is not None:
             try:

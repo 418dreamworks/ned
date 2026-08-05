@@ -49,7 +49,7 @@ loadrt timedelay names=air.debounce,head.ready,tool.mm.unrecdb,tool.mm.phandb
 # (head.ready instance loaded above with air.debounce -- ONE loadrt per comp.)
 # SEN gating: a GUI-requested LOW window locks A/C (pack drops to BB = cannot move) and
 # primes the pack; the following RISING edge makes it emit the absolute PSO frame.
-loadrt not names=sen.nsup,tool.mm.nexcuse,tool.mm.nrec,tool.mm.nlock
+loadrt not names=sen.nsup,tool.mm.nexcuse,tool.mm.nrec,tool.mm.nlock,tool.mm.narm
 # live absolute reader -- QUEUED PktUART reads ONLY (tools/live/pso_live.comp).
 # pso_abs (direct llio->read from the servo thread) is BANNED on this hm2_eth board: at 1 kHz
 # it caused watchdog bites; decimated 1-in-20 it overran the RX count FIFO (RCFIFO Error) --
@@ -58,7 +58,7 @@ loadrt not names=sen.nsup,tool.mm.nexcuse,tool.mm.nrec,tool.mm.nlock
 # a read is in progress). ifdelay from [PSO]IFDELAY -- see the ini for the measured sweep.
 loadrt pso_live names=hm2_7i97.0.pktuart.0 ifdelay_p=[PSO]IFDELAY
 # limit-hit OR tree (6 hard-limit signals -> one indicator for the GUI LED).
-loadrt or2 names=limhit.0,limhit.1,limhit.2,limhit.3,limhit.4,sol.ts,sol.blow,sol.trel,sen.or,spinok,tool.mm.excuse,tool.mm.lock,tool.mm.excuse2
+loadrt or2 names=limhit.0,limhit.1,limhit.2,limhit.3,limhit.4,sol.ts,sol.blow,sol.trel,sen.or,spinok,tool.mm.excuse,tool.mm.lock,tool.mm.excuse2,tool.mm.excuse3
 # directional limit handling (tools/live/limdir.comp + tools/live/jogblock.comp):
 # limdir.N passes joint N's limit switch to motion ONLY while commanded velocity
 # moves TOWARD it (parked/away = no fault -> POWER + jog work on a depressed
@@ -156,6 +156,8 @@ addf tool.mm.unrecR           servo-thread
 addf tool.mm.phanR            servo-thread
 addf tool.mm.excuse           servo-thread
 addf tool.mm.excuse2          servo-thread
+addf tool.mm.excuse3          servo-thread
+addf tool.mm.narm             servo-thread
 addf tool.mm.nexcuse          servo-thread
 addf tool.mm.unrec            servo-thread
 addf tool.mm.phan             servo-thread
@@ -335,6 +337,14 @@ net sig-tool-locked    => tool.mm.nlock.in  tool.mm.unrecR.in0
 net sig-no-tool-locked tool.mm.nlock.out => tool.mm.phanR.in1
 
 # Both are legitimately transient mid-change or with the drawbar open.
+# GUARD ARM (operator 2026-08-05): the guard is EXCUSED until the brain
+# reaches stale home. Before that, iocontrol has not served the tool table
+# yet (io loads it through the DB program: python + sqlite, seconds), so
+# tool-number reads 0 while iron holds a tool -- a mismatch that is nobody's
+# fault and offers nothing to fix. Nothing can move before stale home
+# anyway. After it, a mismatch is REAL and locks the machine as designed.
+# (the two guard-arm nets live in postgui_pb.hal: brain.* pins do not
+# exist until postgui's loadusr -Wn brain runs, exactly like ini.N.*)
 net sig-tc-active      => tool.mm.excuse.in0
 net sig-tool-released  => tool.mm.excuse.in1
 # ANON-LOAD EXCUSE (operator 2026-08-04): the LOAD button clamps an
@@ -343,8 +353,12 @@ net sig-tool-released  => tool.mm.excuse.in1
 # which excuses UNRECORDED exactly like an open drawbar does. Cleared on
 # the next drawbar release or any real declaration.
 net sig-tool-mm-exc1   tool.mm.excuse.out => tool.mm.excuse2.in0
-net sig-anon-load      => tool.mm.excuse2.in1
-net sig-tool-mm-excuse tool.mm.excuse2.out => tool.mm.nexcuse.in
+# three independent excuses, ORed: (1) mid-change or drawbar open,
+# (2) guard not armed yet -- boot window before stale home,
+# (3) anonymous load -- an unknown tool clamped on purpose
+net sig-tool-mm-exc2   tool.mm.excuse2.out => tool.mm.excuse3.in0
+net sig-anon-load      => tool.mm.excuse3.in1
+net sig-tool-mm-excuse tool.mm.excuse3.out => tool.mm.nexcuse.in
 net sig-tool-mm-ok     tool.mm.nexcuse.out => tool.mm.unrec.in1  tool.mm.phan.in1
 
 net sig-unrec-raw      tool.mm.unrecR.out => tool.mm.unrec.in0

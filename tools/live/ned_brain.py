@@ -86,7 +86,16 @@ HEAD_M0W0 = parse_head_zero()
 GEAR = parse_gears()
 
 h = hal.component('brain')
-for _p in ('sen-suppress', 'sen-force', 'pso-enable', 'pso-reset', 'r4-select'):
+for _p in ('sen-suppress', 'sen-force', 'pso-enable', 'pso-reset',
+           'r4-select',
+           # TOOL-GUARD ARM (operator 2026-08-05: "time the guard to start
+           # AFTER we achieve stale homing -- you can't move until then
+           # anyway"). FALSE at launch, so the always-on tool guard is
+           # excused through the boot window where iocontrol has not served
+           # the tool table yet (the DB program spawns python + sqlite:
+           # seconds). Raised once the declare lands, which is strictly
+           # after the record exists -- the guard then means something.
+           'guard-arm'):
     h.newpin(_p, hal.HAL_BIT, hal.HAL_OUT)
 # pso_live values arrive on OUR OWN netted pins (postgui_pb.hal) -- instance
 # access only. NEVER hal.get_value() here: it spins on the global HAL mutex,
@@ -561,9 +570,51 @@ class Brain(object):
         except Exception as e:
             log('MODE apply failed: {}'.format(e))
 
+    def arm_tool_guard(self):
+        # ARM WHEN THE RECORD IS ACTUALLY SERVED (2026-08-05). Measured:
+        # arming at stale home was still too early -- io publishes
+        # tool-number only after it has loaded the tool table through the
+        # DB program (python + sqlite), which finishes AFTER the declare.
+        # The guard then fired on a table that simply had not arrived.
+        # Condition now: LinuxCNC's tool_in_spindle agrees with our
+        # persistent record (#3991), i.e. the picture is genuinely
+        # consistent; 25 s backstop so a REAL mismatch still alarms.
+        if getattr(self, '_guard_armed', False):
+            return
+        try:
+            import time
+            if not hasattr(self, '_guard_t0'):
+                self._guard_t0 = time.time()
+            self.stat.poll()
+            if self.stat.task_state != linuxcnc.STATE_ON:
+                return
+            want = 0
+            with open('/home/brains/Documents/ned/configs/ned5_pb/'
+                      'ned5_pb.var') as f:
+                for ln in f:
+                    p = ln.split()
+                    if len(p) == 2 and p[0] == '3991':
+                        want = int(float(p[1]))
+                        break
+            served = int(self.stat.tool_in_spindle) == want
+            late = time.time() - self._guard_t0 > 25
+            if served or late:
+                self._guard_armed = True
+                h['guard-arm'] = True
+                log('TOOL GUARD ARMED (%s): record T%d, LinuxCNC T%d'
+                    % ('record served' if served else 'timeout backstop',
+                       want, int(self.stat.tool_in_spindle)))
+        except Exception as e:
+            log('TOOL GUARD arm check failed: {}'.format(e))
+
     def restore_spindle_tool(self):
-        # SPINDLE TOOL SURVIVES REBOOT (operator 2026-08-04: "it should
-        # survive reboot"). #3991 (persistent .var) remembers the clamped
+        # BACKSTOP ONLY since 2026-08-05: the tool database now reports the
+        # clamped tool as P0, so LinuxCNC knows it at load time and this
+        # never fires (verified: no SPINDLE RESTORE line on a clean boot).
+        # Kept because it is the only recovery if the DB program fails to
+        # serve -- it costs one comparison per tick and stays silent.
+        #
+        # #3991 (persistent .var) remembers the clamped
         # tool, but LinuxCNC boots with tool_in_spindle=0. One shot, after
         # the machine is ON + all homed + idle: if the drawbar sensor
         # (motion.digital-in-00, the M66 P0 'locked' input) confirms
@@ -896,6 +947,7 @@ class Brain(object):
             self.inplace_at = None
             self.do_inplace()
         self.restore_spindle_tool()
+        self.arm_tool_guard()
         self.apply_mode()
         if self.teleop_at and now >= self.teleop_at:
             self.teleop_at = None

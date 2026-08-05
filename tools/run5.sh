@@ -53,7 +53,6 @@ for _a in "$@"; do
       exit 1 ;;
     -tcp)      NED_KINS=tooltip ;;
     -trivkins) NED_KINS=identity ;;   # old name, kept as alias for identity
-    -5axis)    NED_KINS=tooltip ;;    # old name, kept as alias for -tcp
     *) echo "run5: unknown flag '$_a'"; exit 1 ;;
   esac
 done
