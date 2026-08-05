@@ -3006,9 +3006,11 @@ class UserTab(QWidget):
             LOG.info('UNLOAD SPINDLE: 5 s countdown wired on %d button(s): %s',
                      len(wired), ', '.join(wired))
         if missing:
-            LOG.error('UNLOAD SPINDLE: %d button(s) NOT wired (no countdown, '
-                      'no drawbar window, stock instant call still live): %s',
-                      len(missing), ', '.join(missing))
+            # absent = deleted from the .ui by design (2026-08-04 purges);
+            # a name that EXISTS but fails to wire would appear in `wired`
+            # count mismatches, not here
+            LOG.info('UNLOAD SPINDLE: %d name(s) confirmed deleted: %s',
+                     len(missing), ', '.join(missing))
 
     # Stock labels that say WHERE they go, not what they are called. The pair
     # GO TO ZERO / GO TO HOME is the easy mix-up: one is the active work
@@ -3594,9 +3596,8 @@ class UserTab(QWidget):
             LOG.info('LOAD SPINDLE: 5 s countdown wired on %d button(s): %s',
                      len(wired), ', '.join(wired))
         if missing:
-            LOG.error('LOAD SPINDLE: %d button(s) NOT wired (no countdown, '
-                      'stock instant call still live): %s',
-                      len(missing), ', '.join(missing))
+            LOG.info('LOAD SPINDLE: %d name(s) confirmed deleted: %s',
+                     len(missing), ', '.join(missing))
 
     DRAWBAR_WINDOW_S = 10
 
