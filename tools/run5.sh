@@ -30,12 +30,35 @@ NED="/home/brains/Documents/ned"
 # behaviour. Flags scan so `resume` and `-nopower` combine in any order.
 NOPOWER=0
 RESUME=0
+# KINS MODE FLAGS (operator 2026-08-05): -trivkins = pure XYZ machine
+# (identity kinematics, A/C homed to zero and clamped -- the DEFAULT, the
+# flag just says it out loud). -5axis = tool-tip mode (ned_ac_kins type 1:
+# XYZ means the TOOL TIP; the control moves the linears to keep the tip
+# planted while the head rotates). -5axis REFUSES until the module is
+# installed AND the pivot length has been calibrated -- tool-tip math with
+# a guessed pivot is confidently wrong everywhere except upright.
+NED_KINS=identity
 for _a in "$@"; do
   case "$_a" in
-    -nopower) NOPOWER=1 ;;
-    resume)   RESUME=1 ;;
+    -nopower)  NOPOWER=1 ;;
+    resume)    RESUME=1 ;;
+    -trivkins) NED_KINS=identity ;;
+    -5axis)    NED_KINS=tooltip ;;
   esac
 done
+if [ "$NED_KINS" = "tooltip" ]; then
+  if [ ! -f /usr/lib/linuxcnc/modules/ned_ac_kins.so ]; then
+    echo "run5: -5axis refused -- ned_ac_kins.so is not installed"
+    echo "      (build is done; install needs root: see update_survival A1b)"
+    exit 1
+  fi
+  if ! grep -q '^PIVOT_LENGTH' "$NED/configs/params/head_pivot.inc" 2>/dev/null; then
+    echo "run5: -5axis refused -- pivot length not calibrated yet"
+    echo "      (run the A/C calibration first; it writes configs/params/head_pivot.inc)"
+    exit 1
+  fi
+fi
+export NED_KINS
 INI="$NED/configs/ned5_pb/ned5_pb.ini"
 LOG="$NED/lcnc.log"
 VENV="$HOME/qt_pb/qtpyvcp/venv"
