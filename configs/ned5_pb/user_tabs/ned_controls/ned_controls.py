@@ -3358,6 +3358,8 @@ class UserTab(QWidget):
         try:
             from qtpyvcp.plugins import getPlugin
             tt = getPlugin('tooltable')
+            # (flute/geometry columns tried and retracted 2026-08-05:
+            # "that is CAM, not lcnc")
             for name, label in (('safety_x', 'SAFETY X'),
                                 ('safety_y', 'SAFETY Y')):
                 try:
