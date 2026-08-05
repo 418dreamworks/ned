@@ -3045,8 +3045,7 @@ class UserTab(QWidget):
                 'tool_number_entry_atc_page',
                 # TOUCH OFF CURRENT TOOL: the TOOL tab keeps the only one;
                 # the rack widget carried a full copy (operator 2026-08-04)
-                'tool_touch_off_button_atc',
-                # the operator then called the WHOLE ATC loading panel
+                                # the operator then called the WHOLE ATC loading panel
                 # redundant -- hiding its frame takes the header, LOAD +
                 # field, UNLOAD and STORE TOOL IN RACK in one go, no empty
                 # box left behind. Per-widget hides above stay as defence.
@@ -3056,6 +3055,13 @@ class UserTab(QWidget):
                 # PROGRAMMED COOLANT CONSTANTS: whole settings frame
                 # (operator 2026-08-04: "i won't be using these at all")
                 'prog_coolant_setting_frame',
+                # tool table persists in real time; these three are gone
+                # (operator 2026-08-04: "remove save, load and update
+                # loaded tool")
+                'tool_table_save_button',
+                'tool_table_reload_buttonold',
+                'update_tool_after_reload',
+                'tool_touch_off_button_atc',
                 # (native spindle display + load frame RESTORED to the
                 # RACK ATC page at operator request 2026-08-04 evening --
                 # they are no longer spares)
@@ -3093,7 +3099,7 @@ class UserTab(QWidget):
     # controls. Those are how you GET homed; disabling them is a trap.
     HOMING_GATED = (
         'm6_tool_call_button_main_panel',
-        'remove_tool_2',
+        'remove_tool_2', 'ned_rerack_button',
         'tool_touch_off_button',
         'go_to_zero_button_2', 'go_to_g30_button', 'go_to_home_button',
     )
@@ -3122,6 +3128,151 @@ class UserTab(QWidget):
         t = self._homing_gate_timer = QTimer(self)
         t.timeout.connect(self._homing_gate_tick)
         t.start(500)
+
+    def _sync_fork_graphic(self):
+        # STARTUP SYNC (operator 2026-08-04: "the forks do not represent
+        # the table"): the carousel only hears event pushes, so at boot it
+        # shows blank forks while the var file knows better. Push the whole
+        # rack map into it once, as soon as both exist.
+        if getattr(self, '_forks_synced', False):
+            return
+        try:
+            win = self.window()
+            rack = win.findChild(QWidget, 'rackatc') if win else None
+            if rack is None or not hasattr(rack, 'store_tool'):
+                return
+            path = ('/home/brains/Documents/ned/configs/ned5_pb/'
+                    'ned5_pb.var')
+            forks = {}
+            with open(path) as f:
+                for ln in f:
+                    bits = ln.split()
+                    if len(bits) == 2:
+                        try:
+                            pnum, val = int(bits[0]), float(bits[1])
+                        except ValueError:
+                            continue
+                        if 4001 <= pnum <= 4024:
+                            forks[pnum - 4000] = int(val)
+            for fork, tool in forks.items():
+                rack.store_tool(fork, tool)
+            self._forks_synced = True
+            LOG.info('FORK GRAPHIC synced from the var file: %s',
+                     {k: v for k, v in forks.items() if v} or 'all empty')
+        except Exception:
+            LOG.exception('fork graphic sync failed')
+
+    def _build_spindle_editor(self):
+        # THE one way to declare the spindle tool (operator 2026-08-04:
+        # "the only way to indicate a tool is in spindle is to change the
+        # number in the spindle in ATC. click it and put 5"). Click the
+        # badge -> type a number -> the table follows. 0 = spindle empty;
+        # whoever held the record drops to the FLOOR (-1).
+        try:
+            from PySide6.QtCore import Qt as _Qt
+            badge = self.window().findChild(QWidget, 'tool_length_6')
+            if badge is None:
+                LOG.error('SPINDLE EDITOR: badge tool_length_6 not found')
+                return
+            badge.setCursor(_Qt.PointingHandCursor)
+            badge.setToolTip('Click to set which tool is in the spindle')
+            badge.installEventFilter(self)
+            self._spindle_badge = badge
+            LOG.info('SPINDLE EDITOR: badge is click-to-declare')
+        except Exception:
+            LOG.exception('spindle editor build failed')
+
+    def eventFilter(self, obj, ev):
+        from PySide6.QtCore import QEvent
+        if (obj is getattr(self, '_spindle_badge', None)
+                and ev.type() == QEvent.MouseButtonRelease):
+            self._spindle_badge_clicked()
+            return True
+        return super(UserTab, self).eventFilter(obj, ev)
+
+    def _spindle_badge_clicked(self):
+        try:
+            import linuxcnc
+            from PySide6.QtWidgets import QInputDialog
+            st = linuxcnc.stat(); st.poll()
+            if (st.task_state != linuxcnc.STATE_ON
+                    or st.interp_state != linuxcnc.INTERP_IDLE
+                    or not all(st.homed[:6])):
+                LOG.error('SPINDLE EDITOR refused: machine must be ON, '
+                          'homed and idle')
+                return
+            cur = int(st.tool_in_spindle)
+            n, ok = QInputDialog.getInt(
+                self.window(), 'SPINDLE TOOL',
+                'Tool now in the spindle (0 = empty):', cur, 0, 99)
+            if not ok or n == cur:
+                return
+            c = linuxcnc.command()
+            c.mode(linuxcnc.MODE_MDI)
+            c.wait_complete(2.0)
+            if n == 0:
+                c.mdi('o<tool_loc_declare> call [%d] [-1]' % cur)
+                LOG.info('SPINDLE EDITOR: spindle -> empty; T%d recorded '
+                         'on the FLOOR', cur)
+            else:
+                c.mdi('o<tool_loc_declare> call [%d] [0]' % n)
+                LOG.info('SPINDLE EDITOR: T%d declared in spindle%s', n,
+                         ('; T%d drops to the FLOOR' % cur) if cur else '')
+        except Exception:
+            LOG.exception('spindle editor failed')
+
+    def _heal_banned_locs(self):
+        # P RESTRICTS LOC (operator 2026-08-04: "any ambiguous change drops
+        # LOC to TABLE. the table is the ground truth"): a rack-map record
+        # in a fork that is not the tool's assigned home is ambiguous and
+        # gets swept to TABLE automatically, through the same atomic sub
+        # every declaration uses. One heal per pass, loudly logged.
+        import time
+        if time.time() < getattr(self, '_heal_next', 0):
+            return
+        self._heal_next = time.time() + 5.0
+        try:
+            import linuxcnc, sqlite3
+            st = linuxcnc.stat(); st.poll()
+            if (st.task_state != linuxcnc.STATE_ON
+                    or st.interp_state != linuxcnc.INTERP_IDLE
+                    or not all(st.homed[:6])):
+                return
+            con = sqlite3.connect(
+                'file:/home/brains/Documents/ned/configs/ned5_pb/'
+                'tool_table.db?mode=ro', uri=True)
+            homes = {}
+            for tno, pk in con.execute('SELECT tool_no, pocket FROM tool'):
+                try:
+                    homes[int(tno)] = int(float(pk))
+                except (TypeError, ValueError):
+                    continue
+            con.close()
+            occ = {}
+            with open('/home/brains/Documents/ned/configs/ned5_pb/'
+                      'ned5_pb.var') as f:
+                for ln in f:
+                    bits = ln.split()
+                    if len(bits) == 2:
+                        try:
+                            p, v = int(bits[0]), int(float(bits[1]))
+                        except ValueError:
+                            continue
+                        if 4001 <= p <= 4024 and v:
+                            occ[p - 4000] = v
+            for fork, tool in occ.items():
+                if homes.get(tool) != fork:
+                    LOG.error('AMBIGUOUS LOC: T%d recorded in fork %d but '
+                              'its home is %s -- dropping to TABLE (the '
+                              'table is the ground truth)', tool, fork,
+                              homes.get(tool, 'unset'))
+                    c = linuxcnc.command()
+                    c.mode(linuxcnc.MODE_MDI)
+                    c.wait_complete(2.0)
+                    c.mdi('o<tool_loc_declare> call [%d] [-1]' % tool)
+                    return          # one per pass; next pass rechecks
+        except Exception:
+            LOG.exception('LOC healer failed')
 
     def _update_spindle_remark(self):
         # ATC spindle label shows the loaded tool's REMARK (operator
@@ -3157,6 +3308,8 @@ class UserTab(QWidget):
 
     def _homing_gate_tick(self):
         self._update_spindle_remark()
+        self._sync_fork_graphic()
+        self._heal_banned_locs()
         try:
             import linuxcnc
             st = linuxcnc.stat()
@@ -3393,7 +3546,8 @@ class UserTab(QWidget):
         # declaration button and number. we are replacing it with the
         # forks") -- fork circles own declaration once the audited logic
         # ships; LOAD SPINDLE remains the spindle-record path meanwhile.
-        LOG.info('DECLARATION: row deleted -- fork circles pending')
+        LOG.info('DECLARATION: the spindle badge owns it now')
+        self._build_spindle_editor()
 
     def _relabel_buttons(self):
         """Retext core buttons at RUNTIME, never by editing probe_basic.ui.

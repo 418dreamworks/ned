@@ -1,4 +1,21 @@
-# Fork-circle declaration logic — case audit draft (2026-08-04)
+# Fork-circle declaration logic — FINAL (2026-08-04 night)
+
+SUPERSEDED SECTIONS BELOW: the single/double-click case table was replaced
+by the operator's final rulings after the advisor audit:
+- Circles: DOUBLE-CLICK only (nuisance-click proof), record-only paperwork:
+  RACK→FLOOR, FLOOR→RACK (its home only), SPINDLE→FLOOR. No click ever
+  moves the machine or loads the spindle.
+- Spindle declaration: ONLY the ATC spindle badge (click → type number;
+  0 = empty; evicted/emptied records drop to FLOOR) or M6.
+- Machine-motion racking: M6 T0 (put-away-only) and RERACK TOOL.
+- LOC and Z OFFSET columns are dead to editing (no editor, no message);
+  lengths change only via touch-off. Anonymous (T0) touch-off applies
+  G43.1 temporarily, persists nothing.
+- Table persists in REAL TIME; SAVE/RELOAD/UPDATE-LOADED deleted.
+- DELETE TOOL sweeps the tool from everywhere (lock engages if clamped).
+- Accept-and-lock stands; ambiguity always drops LOC to FLOOR (healer).
+
+# Original audit draft (historical)
 
 Operator spec: circles on home forks replace the DECLARE row. This is the
 case table for audit BEFORE any code. Advisor findings get merged below.

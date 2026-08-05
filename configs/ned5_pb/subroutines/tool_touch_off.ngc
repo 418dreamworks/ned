@@ -94,9 +94,16 @@ G53 G1 F[#<traverse_fr>] Z0 (Send Spindle to home zero position)
 (define new tool length offset parameters)
 #<new_tool_length_offset> = [ABS[#<spindle_zero_height> + #5063 - #<offset_z>]]
 
-G10 L1 P #5400 Z [#<new_tool_length_offset>]  (5400 = tool number)
-
-T #5400 G43  H #5400    (enable tool length offset)
+(ANONYMOUS TOOL: operator 2026-08-04 - a hand-loaded unknown tool has)
+(record T0. its measured length applies TEMPORARILY via G43.1 so the tip)
+(reads true, but NOTHING is written to any tool row; unload's G49 clears)
+(it. a homed tool keeps the normal table write.)
+o160 if [#5400 GT 0]
+    G10 L1 P #5400 Z [#<new_tool_length_offset>]  (5400 = tool number)
+    T #5400 G43  H #5400    (enable tool length offset)
+o160 else
+    G43.1 Z [#<new_tool_length_offset>]  (temporary - not saved anywhere)
+o160 endif
 
 ; PUCK DOWN. Stock raises it with M64 P3 and never lowers it, so it stayed
 ; up after every touch-off until an abort or a calibration routine happened

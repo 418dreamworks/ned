@@ -1,0 +1,21 @@
+(ned RERACK TOOL -- machine-parks the spindle tool into its assigned home)
+; operator 2026-08-04: "the only way to put tool 5 in rack with software is
+; to store the tool: either m6g43 or Rerack Tool". Physical put-away via
+; m21 with all its sensor gates; no fetch follows, so the exit climbs to
+; full traverse Z.
+o<rerack_tool> sub
+#<t> = #5400
+o1 if [#<t> LT 1]
+    (abort, rerack: no tool is recorded in the spindle)
+o1 endif
+#<home> = #[4400 + #<t>]
+#<pockets> = #<_ini[atc]pockets>
+o2 if [[#<home> LT 1] OR [#<home> GT #<pockets>]]
+    (abort, rerack: T%d#<t> has no assigned home fork - set its P in the tool table)
+o2 endif
+o3 if [#[4000 + #<home>] NE 0]
+    (abort, rerack: the home fork record is not empty)
+o3 endif
+o<m21> call [#<home>] [0]
+o<rerack_tool> endsub
+M2

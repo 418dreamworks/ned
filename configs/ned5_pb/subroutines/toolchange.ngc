@@ -46,6 +46,21 @@ M66 P0 L0
 o136 if [[#5399 GT 0] AND [#<tool_in_spindle> EQ 0]]
     (abort, toolchange: an ANONYMOUS tool is clamped [LOAD button] -- declare it in the table or unload before any M6)
 o136 endif
+o137 if [#<selected_tool> EQ 0]
+    ; M6 T0 = put-away only (operator 2026-08-04: "m6g43(0)"): park the
+    ; loaded tool at its home and end with an empty spindle. No fetch.
+    o138 if [#<tool_in_spindle> GT 0]
+        #<home_fork> = #[4400 + #<tool_in_spindle>]
+        o139 if [[#<home_fork> LT 1] OR [#<home_fork> GT #<number_of_pockets>]]
+            (abort, T#<tool_in_spindle> has no assigned home fork -- set its P in the tool table)
+        o139 endif
+        o141 if [#[4000 + #<home_fork>] NE 0]
+            (abort, the home fork is not empty -- rack map out of sync with the P column)
+        o141 endif
+        o<m21> call [#<home_fork>]
+    o138 endif
+    o<toolchange> return
+o137 endif
 o135 if [#<selected_tool> EQ #<tool_in_spindle>]
     ; requested tool already loaded: standard harmless Tn M6 prefix --
     ; without this the pocket scan finds nothing and aborts (advisor

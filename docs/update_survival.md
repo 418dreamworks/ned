@@ -328,3 +328,13 @@ kept as a RESURRECTION NET: on a stock .ui they re-hide everything and log
 "STOCK SPARE(S) RESURRECTED" as an ERROR -- that line in lcnc.log after an
 update means: reapply this purge. "confirmed deleted" at INFO is the healthy
 state.
+
+### Bw addendum (2026-08-04 night): tool table is ground truth
+mill_tool_table.py now also: LOC + Z columns non-editable (flags), every
+accepted edit saves the DB immediately (_rt_save), DELETE sweeps records
+via o<tool_loc_declare>. probe_basic.ui lost tool_table_save_button /
+reload / update_tool_after_reload (resurrection net covers them).
+rack_atc.py/qml: fork circles = double-click record-only cycle
+(circle_cycle) + spindle badge click-to-declare (tool_length_6 event
+filter in ned_controls). A PB/qtpyvcp update clobbers ALL of it — diff
+against the .pre-* backups and this section.
