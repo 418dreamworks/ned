@@ -1,44 +1,50 @@
-2026-08-05 10:38:48  ned_brain EXIT on signal 15 (SIGTERM)
-2026-08-05 10:38:48  ned_brain exited (atexit; normal interpreter exit)
-2026-08-05 10:38:48  stored_home.json final save at exit
-2026-08-05 10:39:02  ==== ned_brain start ==== (resume=False head_zero={'a': (36, 14929465), 'c': (-169, 59257275)} gears={'a': 128.25, 'c': 203.7471})
-2026-08-05 10:39:02  MACHINE ON -> head read (A/C will home IN PLACE, no motion)
-2026-08-05 10:39:04  DECLARE: A held back -- no absolute read yet, banner stays UNHOMED until it lands
-2026-08-05 10:39:04  DECLARE: C held back -- no absolute read yet, banner stays UNHOMED until it lands
-2026-08-05 10:39:04  DECLARE: STALE frame from stored_home.json (saved 2026-08-05 10:38:48): {0: -0.99, 1: -0.812, 2: -0.2167, 3: -0.9866}
-2026-08-05 10:39:06  DECLARE: A/C from the absolute read: A=NOT READ YET  C=NOT READ YET
-2026-08-05 10:39:06  DECLARED HOME (zero-motion, NML 112): joints [0, 1, 2, 3] where they stand; homed=(1, 1, 1, 1, 0, 0) all6=False (STALE HOME until menu Home All)
-2026-08-05 10:39:06  HEADREAD C start (R4 set, SEN about to drop -> A/C locked)
-2026-08-05 10:39:08  HEADREAD C: +0.688 deg  (mt=-168 w=18289591)
-2026-08-05 10:39:08  HEADREAD -> ini.5.home_offset = +0.6883
-2026-08-05 10:39:09  HEADREAD A start (R4 set, SEN about to drop -> A/C locked)
-2026-08-05 10:39:11  HEADREAD A: -49.749 deg  (mt=53 w=63446016)
-2026-08-05 10:39:11  HEADREAD -> ini.4.home_offset = -49.7486
-2026-08-05 10:39:11  HEAD READ armed: C=+0.688 A=-49.749
-2026-08-05 10:39:11  IN-PLACE HOME: joint(s) [4, 5] homed where they stand (no motion): A=-49.749  C=+0.688
-2026-08-05 10:39:12  IN-PLACE HOME: joint 4 homed, ini.home restored to 0
-2026-08-05 10:39:12  IN-PLACE HOME: joint 5 homed, ini.home restored to 0
-2026-08-05 10:39:12  SPINDLE RESTORE: T3 re-declared in spindle after reboot (sensor-confirmed clamped); tool_in_spindle=3
-2026-08-05 10:39:12  TOOL GUARD ARMED (record served): record T3, LinuxCNC T3
-2026-08-05 10:41:04  ned_brain EXIT on signal 15 (SIGTERM)
-2026-08-05 10:41:04  ned_brain exited (atexit; normal interpreter exit)
-2026-08-05 10:41:04  stored_home.json final save at exit
-2026-08-05 10:41:18  ==== ned_brain start ==== (resume=False head_zero={'a': (36, 14929465), 'c': (-169, 59257275)} gears={'a': 128.25, 'c': 203.7471})
-2026-08-05 10:41:19  MACHINE ON -> head read (A/C will home IN PLACE, no motion)
-2026-08-05 10:41:20  DECLARE: A held back -- no absolute read yet, banner stays UNHOMED until it lands
-2026-08-05 10:41:20  DECLARE: C held back -- no absolute read yet, banner stays UNHOMED until it lands
-2026-08-05 10:41:20  DECLARE: STALE frame from stored_home.json (saved 2026-08-05 10:41:04): {0: -0.995, 1: -0.812, 2: -0.2128, 3: -0.9866}
-2026-08-05 10:41:22  DECLARE: A/C from the absolute read: A=NOT READ YET  C=NOT READ YET
-2026-08-05 10:41:22  DECLARED HOME (zero-motion, NML 112): joints [0, 1, 2, 3] where they stand; homed=(1, 1, 1, 1, 0, 0) all6=False (STALE HOME until menu Home All)
-2026-08-05 10:41:22  HEADREAD C start (R4 set, SEN about to drop -> A/C locked)
-2026-08-05 10:41:24  HEADREAD C: +0.688 deg  (mt=-168 w=18289725)
-2026-08-05 10:41:24  HEADREAD -> ini.5.home_offset = +0.6883
-2026-08-05 10:41:25  HEADREAD A start (R4 set, SEN about to drop -> A/C locked)
-2026-08-05 10:41:27  HEADREAD A: -49.749 deg  (mt=53 w=63445967)
-2026-08-05 10:41:27  HEADREAD -> ini.4.home_offset = -49.7486
-2026-08-05 10:41:27  HEAD READ armed: C=+0.688 A=-49.749
-2026-08-05 10:41:27  IN-PLACE HOME: joint(s) [4, 5] homed where they stand (no motion): A=-49.749  C=+0.688
-2026-08-05 10:41:28  IN-PLACE HOME: joint 4 homed, ini.home restored to 0
-2026-08-05 10:41:28  IN-PLACE HOME: joint 5 homed, ini.home restored to 0
-2026-08-05 10:41:28  SPINDLE RESTORE: T3 re-declared in spindle after reboot (sensor-confirmed clamped); tool_in_spindle=3
-2026-08-05 10:41:28  TOOL GUARD ARMED (record served): record T3, LinuxCNC T3
+2026-08-05 11:50:56  MACHINE ON -> head read (A/C will home IN PLACE, no motion)
+2026-08-05 11:50:58  DECLARE: STALE frame from stored_home.json (saved 2026-08-05 11:47:08): {0: 0.0, 1: 0.008, 2: -0.004, 3: 0.0052}
+2026-08-05 11:51:01  DECLARE: home(0) missed (attempt 1), reissuing
+2026-08-05 11:51:04  DECLARE: home(0) missed (attempt 2), reissuing
+2026-08-05 11:51:09  DECLARE: home(4) missed (attempt 1), reissuing
+2026-08-05 11:51:12  DECLARE: home(4) missed (attempt 2), reissuing
+2026-08-05 11:51:12  DECLARE: A/C from the absolute read: A=-49.3713  C=+0.6883
+2026-08-05 11:51:12  DECLARE: joints [4] still unhomed -- redeclaring in 5 s
+2026-08-05 11:51:12  DECLARED HOME (zero-motion, NML 112): joints [4] where they stand; homed=(0, 1, 1, 0, 0, 1) all6=False (STALE HOME until menu Home All)
+2026-08-05 11:51:12  HEADREAD C start (R4 set, SEN about to drop -> A/C locked)
+2026-08-05 11:51:19  HEADREAD C REJECTED: raw (mt=53 w=54424241) identical to previous read -- stale/other-axis data, NOT writing home_offset
+2026-08-05 11:51:20  HEADREAD A start (R4 set, SEN about to drop -> A/C locked)
+2026-08-05 11:51:27  HEADREAD A NO NEW FRAME (parsed still 230)
+2026-08-05 11:51:27  HEAD READ incomplete (C=None A=None) -- retry 1
+2026-08-05 11:51:28  DECLARE: A held back -- no absolute read yet, banner stays UNHOMED until it lands
+2026-08-05 11:51:28  DECLARE: STALE frame from stored_home.json (saved 2026-08-05 11:47:08): {0: 0.0, 1: 0.008, 2: -0.004, 3: 0.0052}
+2026-08-05 11:51:35  DECLARE: home(0) missed (attempt 1), reissuing
+2026-08-05 11:51:38  DECLARE: home(0) missed (attempt 2), reissuing
+2026-08-05 11:51:39  DECLARE: A/C from the absolute read: A=NOT READ YET  C=NOT READ YET
+2026-08-05 11:51:39  DECLARE: joints [0, 3] still unhomed -- redeclaring in 5 s
+2026-08-05 11:51:39  DECLARED HOME (zero-motion, NML 112): joints [0, 3] where they stand; homed=(0, 1, 1, 0, 0, 1) all6=False (STALE HOME until menu Home All)
+2026-08-05 11:51:39  HEADREAD C start (R4 set, SEN about to drop -> A/C locked)
+2026-08-05 11:51:46  HEADREAD C NO NEW FRAME (parsed still 230)
+2026-08-05 11:51:47  HEADREAD A start (R4 set, SEN about to drop -> A/C locked)
+2026-08-05 11:51:54  HEADREAD A NO NEW FRAME (parsed still 230)
+2026-08-05 11:51:54  HEAD READ incomplete (C=None A=None) -- retry 2
+2026-08-05 11:51:54  DECLARE: A held back -- no absolute read yet, banner stays UNHOMED until it lands
+2026-08-05 11:51:54  DECLARE: STALE frame from stored_home.json (saved 2026-08-05 11:47:08): {0: 0.0, 1: 0.008, 2: -0.004, 3: 0.0052}
+2026-08-05 11:52:01  DECLARE: home(0) missed (attempt 1), reissuing
+2026-08-05 11:52:04  DECLARE: home(0) missed (attempt 2), reissuing
+2026-08-05 11:52:06  DECLARE: A/C from the absolute read: A=NOT READ YET  C=NOT READ YET
+2026-08-05 11:52:06  DECLARE: joints [0, 3] still unhomed -- redeclaring in 5 s
+2026-08-05 11:52:06  DECLARED HOME (zero-motion, NML 112): joints [0, 3] where they stand; homed=(0, 1, 1, 0, 0, 1) all6=False (STALE HOME until menu Home All)
+2026-08-05 11:52:06  HEADREAD C start (R4 set, SEN about to drop -> A/C locked)
+2026-08-05 11:52:13  HEADREAD C NO NEW FRAME (parsed still 230)
+2026-08-05 11:52:13  HEADREAD A start (R4 set, SEN about to drop -> A/C locked)
+2026-08-05 11:52:20  HEADREAD A NO NEW FRAME (parsed still 230)
+2026-08-05 11:52:21  HEAD READ FAILED 3x -- NOT armed; A/C homing stays blocked
+2026-08-05 11:52:21  DECLARE: A held back -- no absolute read yet, banner stays UNHOMED until it lands
+2026-08-05 11:52:21  DECLARE: STALE frame from stored_home.json (saved 2026-08-05 11:47:08): {0: 0.0, 1: 0.008, 2: -0.004, 3: 0.0052}
+2026-08-05 11:52:28  DECLARE: home(0) missed (attempt 1), reissuing
+2026-08-05 11:52:31  DECLARE: home(0) missed (attempt 2), reissuing
+2026-08-05 11:52:32  DECLARE: A/C from the absolute read: A=NOT READ YET  C=NOT READ YET
+2026-08-05 11:52:32  DECLARE: joints [0, 3] still unhomed -- redeclaring in 5 s
+2026-08-05 11:52:32  DECLARED HOME (zero-motion, NML 112): joints [0, 3] where they stand; homed=(0, 1, 1, 0, 0, 1) all6=False (STALE HOME until menu Home All)
+2026-08-05 11:52:42  WEDGE WATCHDOG: homing joints [0, 3] no motion for 5 s -> cycle ABORTED
+2026-08-05 11:52:43  DECLARE: A held back -- no absolute read yet, banner stays UNHOMED until it lands
+2026-08-05 11:52:43  DECLARE: STALE frame from stored_home.json (saved 2026-08-05 11:47:08): {0: 0.0, 1: 0.008, 2: -0.004, 3: 0.0052}
+2026-08-05 11:53:11  DECLARE: home(0) missed (attempt 1), reissuing
+2026-08-05 11:53:19  DECLARE: home(0) missed (attempt 2), reissuing

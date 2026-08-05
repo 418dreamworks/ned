@@ -795,17 +795,35 @@ class Brain(object):
             self.hv_attempt += 1
             log('HOME VERIFY: {} -- NOT actually homed, correcting (unhome + rehome '
                 'with the fresh read)'.format('; '.join(msgs)))
+            # HOMING MUST COMPLETE ON ITS OWN (operator 2026-08-05).
+            # Measured that day: LinuxCNC's immediate-home path SETS the
+            # position from ini.N.home_offset (the absolute read) and then
+            # never performs the HOME_FINAL_VEL move to HOME=0 -- proved by
+            # writing offset -3.0 and watching the DRO land on -3.0 and
+            # stay. So unhome+rehome could never fix a tilted head; it just
+            # re-declared it, and with a stale offset it declared 0 while
+            # the iron sat at -49 deg. The DRO and the encoder disagreed,
+            # which with an absolute encoder must be impossible.
+            # Correct action: the position is already truthful after
+            # homing, so DRIVE the axis to zero, then re-verify.
             try:
                 self.cmd.mode(linuxcnc.MODE_MANUAL)
                 self.cmd.wait_complete()
-                self.cmd.teleop_enable(0)   # homing = joint mode, always
-                self.cmd.wait_complete()
-                for ax in bad:
-                    self.cmd.unhome(4 if ax == 'a' else 5)
+                self.cmd.teleop_enable(1)   # a coordinated move to zero
                 self.cmd.wait_complete()
                 self.correcting = True
-                for ax in bad:
-                    self.cmd.home(4 if ax == 'a' else 5)
+                words = ' '.join('%s0' % ax.upper() for ax in bad)
+                self.cmd.mode(linuxcnc.MODE_MDI)
+                self.cmd.wait_complete()
+                log('HOME COMPLETION: driving %s to zero (LinuxCNC does not '
+                    'run the final move on this config)' % words)
+                self.cmd.mdi('G0 %s' % words)
+                self.cmd.wait_complete(60.0)
+                self.cmd.mode(linuxcnc.MODE_MANUAL)
+                self.cmd.wait_complete()
+                # re-arm a FRESH read so the next verify judges reality
+                self.read_armed = False
+                self.want_read = True
             except Exception as e:
                 self.verify_fail(bad, msgs, 'correction failed: {}'.format(e))
         else:

@@ -368,7 +368,7 @@ class UserTab(QWidget):
             self.comp = qhal.getComponent('ned-tab')
             self.comp.addPin('toolprobe-cmd', 'bit', 'out')
             self.comp.addPin('anon-load-out', 'bit', 'out')
-            self.comp.addPin('inc-set-out', 's32', 'out')
+
             self.comp.addPin('air-ok-in', 'bit', 'in')
             self.comp.addPin('probe-up-in', 'bit', 'in')
             self.comp.addPin('inc-in', 'float', 'in')
@@ -3388,8 +3388,7 @@ class UserTab(QWidget):
     # the wheel has always used a per-axis ladder (ned_pendant.INC_TABLE);
     # the stock increment row showed one global list, so screen and wheel
     # disagreed. Relabel the row for the SELECTED axis every time it
-    # changes, and make a click set the wheel's index too (pendant.inc-set)
-    # so the highlight and the applied jump size always move together.
+    # changes. DISPLAY ONLY -- the wheel owns the slot.
     # THE LADDER LIVES IN ned_pendant.INC_TABLE -- imported, never copied,
     # so screen and wheel can never drift apart (X tops out at 2 mm, Y/Z at
     # 1 mm, rotaries at 0.25/0.5 deg). The SLOT index is shared across axes:
@@ -3432,24 +3431,15 @@ class UserTab(QWidget):
                 self._inc_row_ax = ax
                 for b, v in zip(btns[-5:], lad):
                     b.setText(('%g %s' % (v, unit)))
-                if not getattr(self, '_inc_row_wired', False):
-                    self._inc_row_wired = True
-                    for i, b in enumerate(btns[-5:]):
-                        b.clicked.connect(
-                            lambda _=False, k=i: self._inc_pick(k))
+                # DISPLAY ONLY: the row shows what each slot means for
+                # THIS axis. It does not write the wheel's slot -- one
+                # publisher (the pendant), or the two fight (2026-08-05).
                 LOG.info('JOG STEPS: row relabelled for %s: %s',
                          ax.upper(), lad)
         except Exception:
             if not getattr(self, '_incrow_err', False):
                 self._incrow_err = True
                 LOG.exception('JOG STEPS: row sync failed')
-
-    def _inc_pick(self, idx):
-        try:
-            self.comp.getPin('inc-set-out').value = int(idx)
-            LOG.info('JOG STEPS: index %d selected from the screen', idx)
-        except Exception:
-            LOG.exception('JOG STEPS: could not set the wheel index')
 
     def _homing_gate_tick(self):
         self._sync_inc_row()

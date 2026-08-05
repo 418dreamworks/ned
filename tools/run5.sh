@@ -194,6 +194,10 @@ if [ "$NED_KINS" = "tooltip" ]; then
       "$INI" > "$GEN_TCP" || { echo "run5: tcp ini generation FAILED"; exit 1; }
   INI="$GEN_TCP"
   echo "run5: TOOL-TIP kins at launch (no runtime switch)"
+  echo "run5: NOTE -- world XYZ will mean the TOOL TIP. The pivot arm must"
+  echo "      be fed (brain sets arm.in0 from head_pivot.inc); if it reads"
+  echo "      0 the kins falls back to its 250 mm placeholder and jogs go"
+  echo "      nowhere sensible. 2026-08-05: that cost a jogging session."
 fi
 
 ulimit -c unlimited 2>/dev/null || true
@@ -211,6 +215,13 @@ halrun -U >/dev/null 2>&1 || true
 # 2. ensure the Mesa pin logger + log pruner are running
 pgrep -f 'tools/live/mesalog.sh' >/dev/null 2>&1 || ( "$NED/tools/live/mesalog.sh" >/dev/null 2>&1 & )
 pgrep -f 'tools/live/blackmark.py' >/dev/null 2>&1 || ( "$NED/tools/live/blackmark.py" >/dev/null 2>&1 & )
+
+# SECOND-MONITOR DRO (operator 2026-08-05): comes up with PB, every launch
+# and every relaunch. Self-contained (reads LinuxCNC directly), so it can
+# never destabilise the GUI -- and it keeps showing the numbers even if PB
+# dies. Killed and restarted here so a stale copy never lingers.
+pkill -f 'live/dro2.py' >/dev/null 2>&1
+( sleep 12; "$NED/tools/live/dro2.py" > "$NED/logs/dro2.log" 2>&1 & ) &
 pgrep -f 'tools/live/logclean.sh' >/dev/null 2>&1 || ( "$NED/tools/live/logclean.sh" >/dev/null 2>&1 & )
 
 # 3. keep lcnc.log bounded (last ~2000 lines) + stamp a session header

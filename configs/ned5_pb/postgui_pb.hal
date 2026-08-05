@@ -84,8 +84,6 @@ net sig-mist-blow   iocontrol.0.coolant-mist  =>  sol.blow.in1
 
 # --- MPG PENDANT (ned_pendant.py drives the same signals nedgui did) --------
 loadusr -Wn pendant /home/brains/Documents/ned/tools/live/ned_pendant.py
-# GUI increment row -> wheel index (pins exist only after the loadusr)
-net sig-inc-set       ned-tab.inc-set-out => pendant.inc-set
 net sig-mpg-btn-raw  pendant.button-raw  <=  hm2_7i97.0.inmux.00.input-00
 net sig-mpg-counts   =>  pendant.wheel
 # pendant selections -> the GUI's own netted pins (highlight + increment sync).
@@ -93,6 +91,9 @@ net sig-mpg-counts   =>  pendant.wheel
 # user DROs DEFERRED (after postgui!) so a DRO-owned pin here kills postgui.
 net sig-mpg-inc      ned-tab.inc-in       <=  pendant.increment
 net sig-mpg-axis     ned-tab.axis-in      <=  pendant.sel-axis
+# jog-speed SLOT INDEX: one publisher (the pendant), many readers (PB, the
+# second-monitor DRO). Nobody keeps a private copy.
+net sig-mpg-inc-index                     <=  pendant.inc-index
 # LOCK A / LOCK C (DRO buttons): pendant skips locked axes in the cycle
 net sig-lock-a       pendant.lock-a       <=  ned-tab.lock-a-out
 net sig-lock-c       pendant.lock-c       <=  ned-tab.lock-c-out

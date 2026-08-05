@@ -96,7 +96,11 @@ h.newpin('increment', hal.HAL_FLOAT, hal.HAL_OUT)  # mm per DETENT (jump size)
 # increment row writes this index; the pendant adopts it, so clicking a
 # speed on screen moves the highlight AND the applied jump size, and the
 # wheel and GUI can never disagree. -1 = GUI has not spoken.
-h.newpin('inc-set', hal.HAL_S32, hal.HAL_IN)
+# the AUTHORITATIVE slot index (0..N_INC-1). PB and the second-monitor DRO
+# both read this -- neither keeps its own idea of the jog speed
+# (operator 2026-08-05: "the dro must get the speed and axis selection
+# from PB and not keep its own records").
+h.newpin('inc-index', hal.HAL_S32, hal.HAL_OUT)
 h.newpin('jogspeed-out', hal.HAL_FLOAT, hal.HAL_OUT)  # 0..100 % -> linear_jog_slider
 h.newpin('lock-a', hal.HAL_BIT, hal.HAL_IN)  # LOCK A/C (DRO buttons via ned-tab):
 h.newpin('lock-c', hal.HAL_BIT, hal.HAL_IN)  # locked axes are SKIPPED in the cycle
@@ -197,13 +201,8 @@ spd_i0 = 2
 
 
 def apply(gate_off):
-    global inc_i
-    try:
-        _g = int(h['inc-set'])
-        if 0 <= _g < N_INC and _g != inc_i:
-            inc_i = _g
-    except Exception:
-        pass
+    # ONE speed setting (inc_i, starts at the middle slot), ONE per-axis
+    # table (INC_TABLE). The wheel owns the slot; nothing else writes it.
     inc = INC_TABLE[AXES[ax_i]][inc_i]
     for i, ax in enumerate(AXES):
         # locked() covers the homing interlock too: the enable pin itself
@@ -213,6 +212,7 @@ def apply(gate_off):
     h['jog-scale-ang'] = min(inc, ANG_CAP) / CPD
     h['sel-axis'] = ax_i
     h['increment'] = inc
+    h['inc-index'] = inc_i
     h['jogspeed-out'] = JOG_SPEEDS[spd_i][1] / MAXV * 100.0
 
 

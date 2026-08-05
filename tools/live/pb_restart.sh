@@ -51,6 +51,7 @@ if [ -n "$P" ]; then
 fi
 pkill -f "[n]ed_brain.py"   2>/dev/null
 pkill -f "[n]ed_pendant.py" 2>/dev/null
+pkill -f "live/dro2.py" 2>/dev/null   # the second-monitor DRO restarts with PB
 sleep 1
 
 # relaunch the SAME session flavor (mode grammar 2026-08-05): run5 now
