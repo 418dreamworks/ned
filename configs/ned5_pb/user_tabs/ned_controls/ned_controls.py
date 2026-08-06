@@ -3427,10 +3427,6 @@ class UserTab(QWidget):
         return (s.actual_position[i] - s.g5x_offset[i] - s.g92_offset[i]
                 - s.tool_offset[i])
 
-    def _tcp_zlim(self, s, which):
-        m = self._z_min_limit() if which == 'min' else self._z_max_limit()
-        return m - s.g5x_offset[2] - s.g92_offset[2] - s.tool_offset[2]
-
     def _tcp_field(self, w, dflt, lo, hi):
         try:
             v = abs(float(w.text()))
@@ -3481,27 +3477,24 @@ class UserTab(QWidget):
             return
         c, s = gate
         s.poll()
-        z_now = self._tcp_work(s, 2)
         a_now = self._tcp_work(s, 3)
-        zmin = self._tcp_zlim(s, 'min') + 1.0
-        # FIXED PLUNGE, both touches, from wherever the operator parked
-        # (operator 2026-08-05: "you cannot compute the floor and apply to
-        # max plunge depth. the whole point is that the contact will not be
-        # as expected, and it translates to a correction in L. just plunge
-        # 30mm. user will put probe so that it will contact on plunge").
-        # Sizing the plunge from an L estimate would bake the model into
-        # the measurement's own bounds -- and the deviation from that
-        # expectation IS the answer. The only clamp left is the Z soft
-        # limit, which is a machine limit, not an expectation.
+        # FIXED PLUNGE, both touches, straight down from wherever the
+        # operator parked (operator 2026-08-05: "just plunge 30mm. user
+        # will put probe so that it will contact on plunge").
+        # NO ABSOLUTE TARGET IS COMPUTED HERE ANY MORE. It used to send
+        # z_now - plunge, with z_now from stat.actual_position minus
+        # stat.g5x_offset -- and stat reported zero offsets while the
+        # interpreter had G54 live at Z -512.205, so the "work" target of
+        # -447 arrived as machine -959 and motion refused it instantly:
+        # "Probe move on line 44 would exceed Z's negative limit", no
+        # movement at all. The sub is incremental now; G91 has no frame to
+        # get wrong, and every absolute it does use is derived from #5063.
         plunge = self._tcp_field(self._tcp_plunge, 30.0, 2.0, 80.0)
-        zfloor = max(z_now - plunge, zmin)
-        zback = z_now
         if which == 1:
             self._tcp_pts = []
             self._tcp_result.setText('L = ---')
             self._tcp_say('touch 1: plunging %.1f mm from here. Puck goes '
-                          'UP and STAYS up until the pair is done.'
-                          % (z_now - zfloor))
+                          'UP and STAYS up until the pair is done.' % plunge)
         else:
             z1, a1 = self._tcp_pts[0]
             den = (math.cos(math.radians(a1)) - math.cos(math.radians(a_now)))
@@ -3512,14 +3505,15 @@ class UserTab(QWidget):
                               % (a_now - a1, den), bad=True)
                 return
             self._tcp_say('touch 2 at A %.2f deg: plunging %.1f mm from '
-                          'here.' % (a_now, z_now - zfloor))
+                          'here.' % (a_now, plunge))
         self._tcp_state = 'wait%d' % which
         self._tcp_t0 = time.time()
         self._tcp_set_face()
         c.mdi('o<tcp_touch> call [%.4f] [%d] [%.4f]'
-              % (zfloor, 1 if which == 1 else 0, zback))
-        LOG.error('TCP CAL touch %d ISSUED: floor %.4f back %.4f (A now '
-                  '%.3f)', which, zfloor, zback, a_now)
+              % (plunge, 1 if which == 1 else 0, 15.0))
+        LOG.error('TCP CAL touch %d ISSUED: plunge %.1f mm INCREMENTAL, '
+                  'hover 15.0 above contact (A now %.3f)',
+                  which, plunge, a_now)
 
     def tcp_cal_point(self, zt, at):
         """Called BY THE G-CODE at the probe trip -- the only place the
@@ -3591,7 +3585,11 @@ class UserTab(QWidget):
             c, s = gate
             s.poll()
             clear = self._tcp_field(self._tcp_clear, 30.0, 10.0, 150.0)
-            zsafe = min(z1 + clear, self._tcp_zlim(s, 'max') - 1.0)
+            # z1 IS #5063, the interpreter's own reading, so a clearance
+            # measured from it lands in the same frame no matter which WCS
+            # is live. Do NOT re-introduce a stat-derived limit here: that
+            # is exactly the arithmetic that sent the probe to machine -959.
+            zsafe = z1 + clear
             # XY comes from G30 (#5181/#5182, MACHINE coords) inside the
             # sub, NOT from #3045/#3046: those are written from #5061/#5062
             # and so are WORK-frame numbers, valid only in the frame that

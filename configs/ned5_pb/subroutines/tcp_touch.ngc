@@ -7,15 +7,23 @@
 (tool tip at any tilt and no rod-radius term enters the math.)
 (THE PUCK STAYS UP BETWEEN THE TWO TOUCHES. Its pop-up repeatability would)
 (otherwise land straight in dZ, which IS the measurement.)
-(The GUI owns the state machine, the bounds and the arithmetic. This file)
-(owns motion only.)
-(Args: #1 = absolute Z floor = parked Z minus the plunge depth)
+(INCREMENTAL BY DESIGN. This took an absolute Z floor computed in the GUI)
+(from stat.actual_position minus stat.g5x_offset. stat reported zero)
+(offsets while the interpreter had G54 live at Z -512.205, so a "work")
+(target of -447 became machine -959 and motion refused it: "Probe move on)
+(line 44 would exceed Z negative limit", instantly, without moving.)
+(G91 has no frame to get wrong -- "30 mm down from here" is the same)
+(instruction in every coordinate system, and it is what the operator)
+(actually asked for. Every absolute Z below is derived from #5063, which)
+(is reported in whatever frame the interpreter is really in, so it agrees)
+(with itself by construction.)
+(Args: #1 = plunge depth in mm, positive, measured from where we sit)
 (      #2 = 1 to deploy the puck first, 0 when it is already up)
-(      #3 = absolute Z to retract to when the touch is done)
+(      #3 = hover height above the contact to retract to)
 o<tcp_touch> sub
-  #<zfloor> = #1
+  #<plunge> = #1
   #<deploy> = #2
-  #<zback>  = #3
+  #<hover>  = #3
   #<fast>   = 200.0
   #<latch>  = 10.0
   #<back>   = 1.0
@@ -24,6 +32,10 @@ o<tcp_touch> sub
   o10 if [#<_metric> EQ 0]
     (abort, TCP CAL: switch to MM first - this routine is metric)
   o10 endif
+
+  o15 if [#<plunge> LE 0]
+    (abort, TCP CAL: plunge depth must be positive)
+  o15 endif
 
   ; the F slider must not scale a probe: cal_probe_center learned this when
   ; 150% turned programmed 200 into 300 (2026-08-03)
@@ -34,23 +46,22 @@ o<tcp_touch> sub
     G4 P1.5
   o20 endif
 
-  ; FIXED PLUNGE. zfloor is simply the parked height minus the operator
-  ; plunge depth, the SAME on both touches. Nothing here predicts where
-  ; contact should be: the operator parks so the needle contacts inside
-  ; the plunge, and the deviation from expectation IS the measurement.
-  ; A needle that is NOT over the puck fails the probe at the floor
-  ; instead of driving into the table.
-  G90
-  G38.2 Z#<zfloor> F[#<fast>]
+  ; FIXED PLUNGE, straight down from wherever the operator parked. Nothing
+  ; here predicts where contact should be: the deviation from expectation
+  ; IS the measurement. A needle not over the puck simply runs out of
+  ; plunge and reports no contact.
   G91
+  G38.2 Z-#<plunge> F[#<fast>]
   G1 Z[#<back>] F[#<trav>]
   G38.2 Z-[#<back> + 1.0] F[#<latch>]
   #<zt> = #5063
   #<at> = #5064
   ; release PROVEN before any ordinary move -- see ca_touch.ngc
   G38.5 Z[#<back> + 1.0] F[#<latch>]
+  ; back to absolute ONLY against #5063, the interpreter own reading, so
+  ; the frame cancels
   G90
-  G1 Z#<zback> F[#<trav>]
+  G1 Z[#<zt> + #<hover>] F[#<trav>]
   M50 P1
   (DEBUG, EVAL[vcp.getWidget{"ned_controls"}.tcp_cal_point{#<zt>, #<at>}])
 o<tcp_touch> endsub

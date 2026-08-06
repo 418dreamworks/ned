@@ -189,8 +189,19 @@ if [ "$NED_KINS" = "tooltip" ]; then
   GEN_TCP="$NED/configs/ned5_pb/ned5_pb_tcp_gen.ini"
   # base ini stays trivkins (the known-good default); the tool-tip kins and
   # its own postgui live ONLY in this generated copy
+  # ONE POSTGUI FILE, CONCATENATED (2026-08-05). This used to append a
+  # SECOND "POSTGUI_HALFILE =" line, and qtpyvcp's launcher reads exactly
+  # one (launcher.py:196 loads `postgui_halfile`, singular). The tcp file
+  # was therefore never loaded: `arm` never existed, ned_brain's
+  # `setp arm.in0 157` went nowhere, and ned_ac_kins.pivot-length sat at
+  # its 250 mm DEFAULT placeholder while the GUI reported "kins=tcp".
+  # Silent, and it makes every tool-tip number wrong.
+  GEN_PG="$NED/configs/ned5_pb/postgui_tcp_all.hal"
+  cat "$NED/configs/ned5_pb/postgui_pb.hal" \
+      "$NED/configs/ned5_pb/postgui_tcp.hal" > "$GEN_PG" \
+      || { echo "run5: tcp postgui concat FAILED"; exit 1; }
   sed -e 's|^KINEMATICS = .*|KINEMATICS = ned_ac_kins coordinates=XYZXAC|' \
-      -e 's|^POSTGUI_HALFILE = \(.*\)$|POSTGUI_HALFILE = \1\nPOSTGUI_HALFILE = postgui_tcp.hal|' \
+      -e 's|^POSTGUI_HALFILE = .*|POSTGUI_HALFILE = postgui_tcp_all.hal|' \
       "$INI" > "$GEN_TCP" || { echo "run5: tcp ini generation FAILED"; exit 1; }
   INI="$GEN_TCP"
   echo "run5: TOOL-TIP kins at launch (no runtime switch)"
