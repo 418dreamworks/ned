@@ -3235,6 +3235,53 @@ class UserTab(QWidget):
         'go_to_zero_button_2', 'go_to_g30_button', 'go_to_home_button',
     )
 
+    # only these survive the pre-home sweep -- the two controls the
+    # operator needs to recover the machine, and nothing else
+    PREHOME_ALLOW = ('power_button', 'stop_button', 'estop_button',
+                     'machine_power_button', 'machine_estop_button')
+
+    def _sweep_gate(self, win, homed):
+        """Disable EVERY button until home is declared; restore after.
+
+        Tracks exactly what it switched off so re-enabling cannot turn on a
+        control that was disabled for its own reasons (drawbar, tool lock,
+        machine off) -- those owners re-assert on their own ticks."""
+        from PySide6.QtWidgets import QPushButton, QToolButton
+        if win is None:
+            return
+        if not homed:
+            off = getattr(self, '_prehome_off', None)
+            if off is not None:
+                return                      # already swept, nothing new
+            off = []
+            for b in win.findChildren(QPushButton) + win.findChildren(
+                    QToolButton):
+                n = b.objectName()
+                if n in self.PREHOME_ALLOW or 'estop' in n.lower():
+                    continue
+                if not b.isEnabled():
+                    continue                # already off; not ours to restore
+                b.setEnabled(False)
+                off.append(b)
+            self._prehome_off = off
+            LOG.error('PRE-HOME GATE: %d control(s) DISABLED -- only E-stop '
+                      'and power live until the home declaration lands',
+                      len(off))
+            return
+        off = getattr(self, '_prehome_off', None)
+        if off is None:
+            return
+        n_ok = 0
+        for b in off:
+            try:
+                b.setEnabled(True)
+                n_ok += 1
+            except RuntimeError:
+                pass                        # widget deleted since
+        self._prehome_off = None
+        LOG.error('PRE-HOME GATE RELEASED: home declared, %d control(s) '
+                  're-enabled', n_ok)
+
     def _sync_load_enabled(self):
         """LOAD needs BOTH: a homed machine and an open drawbar.
 
@@ -4219,6 +4266,16 @@ class UserTab(QWidget):
         self._homed_now = homed
         win = self.window()
         hit, missing = [], []
+        # BEFORE THE DECLARATION LANDS, EVERYTHING IS DEAD except E-stop and
+        # power (operator 2026-08-05: "the only buttons that can work are
+        # estop, and power. nothing else"). This is NOT rule 17's forbidden
+        # gate: rule 17 protects the DECLARED stale home from gating the
+        # operator. This covers the window BEFORE it applies, when the
+        # machine has no valid position at all -- "stale home doesn't apply
+        # instantly. before it applies, GATE EVERYTHING". An enumerated list
+        # of 7 names used to stand here, which is why ZERO was clickable on
+        # a fresh launch.
+        self._sweep_gate(win, homed)
         for name in self.HOMING_GATED:
             w = win.findChild(QWidget, name) if win else None
             if w is None:
