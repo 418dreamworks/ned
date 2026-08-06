@@ -5292,6 +5292,17 @@ class UserTab(QWidget):
             _declared = all(_st.homed[:6])
         except Exception:
             _declared = None        # unknown: neither engage nor strand
+        if _declared and not getattr(self, '_prehome_done', False):
+            self._prehome_done = True
+            LOG.error('PRE-HOME GATE: startup window CLOSED for this '
+                      'session -- later transient unhomes (REF A/C reads) '
+                      'no longer swallow input')
+        if getattr(self, '_prehome_done', False):
+            _declared = True     # one-shot: the gate exists for the window
+                                 # before the FIRST declaration only. It
+                                 # re-armed during a mid-session REF read
+                                 # and ATE 18 operator clicks (2026-08-06
+                                 # 14:0x, 'autoconverge not working').
         if _declared is not None:
             try:
                 # ENFORCEMENT is the event filter -- it cannot be defeated
