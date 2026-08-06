@@ -4005,6 +4005,20 @@ class UserTab(QWidget):
                               'diff %+.4f' % (v['n'], self.SVY_N,
                                               v['L'] - _to, v['ofs'],
                                               abs(mp) + abs(mn), mp - mn))
+                # GUI rows AFTER the file write -- a widget failure must
+                # never cost data. Two rows per pair, one per side; the
+                # last column carries the PARAM number (nose).
+                try:
+                    nose = v['L'] - _to
+                    self._tcp_add_row(v['n'], {
+                        'a1': v['ofs'], 'a2': 35.0 + v['ofs'],
+                        'z1': v['z0'], 'z2': v['zp'], 'L': nose}, None)
+                    self._tcp_add_row(v['n'], {
+                        'a1': v['ofs'], 'a2': -35.0 + v['ofs'],
+                        'z1': v['z0'], 'z2': z, 'L': nose}, None)
+                except Exception:
+                    LOG.exception('SURVEY: table row failed -- data is in '
+                                  'the ndjson regardless')
                 v['step'] = 'apply'
             self._tcp_auto_go_next = True
             return
