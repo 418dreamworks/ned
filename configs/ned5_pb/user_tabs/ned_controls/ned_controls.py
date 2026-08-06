@@ -3669,15 +3669,28 @@ class UserTab(QWidget):
         at A=0. Changing it at a tilt would step the world position under
         the machine."""
         try:
-            import subprocess, linuxcnc
-            st = linuxcnc.stat()
-            st.poll()
-            a = abs(st.actual_position[3])
-            if a > 0.05:
-                LOG.error('TCP APPLY REFUSED: A is at %.3f deg. The pivot '
-                          'only cancels out of Z at A=0 -- applying here '
-                          'would step the world position. Pin left alone.',
-                          st.actual_position[3])
+            import subprocess
+            # A FROM HAL, NOT FROM stat. This guard is the only thing
+            # standing between a pivot write and a servo jerk, and stat has
+            # already been caught lying tonight -- it reported g5x_offset as
+            # zeros while the interpreter held G54 at -512.205, which sent a
+            # probe to machine -959. joint.4.pos-fb is the servo's own
+            # feedback and cannot be stale.
+            r = subprocess.run(['timeout', '5', 'halcmd', 'getp',
+                                'joint.4.pos-fb'],
+                               capture_output=True, text=True)
+            try:
+                a_live = float(r.stdout.strip())
+            except ValueError:
+                LOG.error('TCP APPLY REFUSED: could not read joint.4.pos-fb '
+                          '-- refusing to write the pivot blind')
+                return None
+            if abs(a_live) > 0.05:
+                LOG.error('TCP APPLY REFUSED: A is at %.4f deg (servo '
+                          'feedback). Pivot length is a kinematics term: '
+                          'writing it here steps the solution by '
+                          'dL*sin(A) in Y and faults the joints. Pin left '
+                          'alone.', a_live)
                 return None
             r = subprocess.run(['timeout', '5', 'halcmd', 'getp', 'arm.in1'],
                                capture_output=True, text=True)
