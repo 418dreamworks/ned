@@ -3808,7 +3808,12 @@ class UserTab(QWidget):
     # leverage is 1/(1-cos A) = 6566 mm of pivot per mm of residual, so
     # residuals under 0.02 mm at the small angles certify nothing. 0.5 mm
     # of pivot is what the operator is converging (advisor S9).
-    TCP_DL_TOL = 0.5
+    # 0.05 mm = the noise floor: 0.01 mm of probe scatter maps to
+    # 0.055 mm of L at 35 deg (1/(1-cosA) leverage). Operator 2026-08-05:
+    # 0.1 already "seems quite large". Early exit now only fires on an
+    # exceptionally clean run; otherwise the sweep runs to the 35 deg
+    # verification, which is the point.
+    TCP_DL_TOL = 0.05
 
     def _tcp_auto_press(self):
         if getattr(self, '_tcp_auto_on', False):
