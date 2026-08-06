@@ -3806,29 +3806,29 @@ class UserTab(QWidget):
             self._tcp_auto_stop('gate refused')
             return
         c, s = gate
-        import math
-        plunge = self._tcp_field(self._tcp_plunge, 30.0, 2.0, 80.0)
-        _, L_set = self._tcp_kins()
-        # worst-case tip excursion while A rotates: the sub lifts this far
-        # before every rotation (advisor S3)
-        lift = max(5.0, L_set * (1 - math.cos(math.radians(abs(targa))))
-                   + 5.0)
-        if repos and plunge > 0:
-            # contact is 5 mm below the start pose plus the tip excursion at
-            # this angle -- never the operator's free-park 30 mm, which is a
-            # table strike on a miss (advisor S4)
-            need = 5.0 + L_set * (1 - math.cos(math.radians(targa))) + 3.0
-            plunge = min(plunge, max(8.0, need))
+        # OPERATOR SPEC (2026-08-05): the REFERENCE plunges the full field
+        # value -- the operator parks about an inch above the puck, so
+        # "before that, it should be 30mm". Once the start pose is banked
+        # 5 mm above the found contact, every later step plunges 6 mm
+        # ("after the first return to +5mm, sure, we can amend the plunge
+        # to 6mm"). No rotation lift: "the whole point is not to move 15
+        # at one go with a bad calibration, its to go in little stages so
+        # by the time you move 15, you are not off by much any more" --
+        # the ladder of applies IS the safety mechanism.
+        if repos:
+            plunge = 6.0
+        else:
+            plunge = self._tcp_field(self._tcp_plunge, 30.0, 2.0, 80.0)
         st = self._tcp_auto_start or (0.0, 0.0, 0.0)
         c.mdi('o<tcp_auto_step> call [%.4f] [%d] [%.4f] [%.4f] [%.4f] '
-              '[%.4f] [%d] [%.4f]'
-              % (targa, repos, st[0], st[1], st[2], plunge, puck, lift))
+              '[%.4f] [%d]'
+              % (targa, repos, st[0], st[1], st[2], plunge, puck))
         self._tcp_auto_t0 = time.time()
         self._tcp_auto_want = targa
         self._tcp_auto_idle_t0 = None
         LOG.error('TCP AUTO: step issued A=%.3f repos=%d start=%.4f/%.4f/'
-                  '%.4f plunge=%.1f puck=%d lift=%.1f', targa, repos,
-                  st[0], st[1], st[2], plunge, puck, lift)
+                  '%.4f plunge=%.1f puck=%d', targa, repos, st[0], st[1],
+                  st[2], plunge, puck)
 
     def tcp_auto_point(self, xt, yt, zt, at):
         """Called BY THE G-CODE at every probe trip in the auto sequence."""
@@ -3934,15 +3934,11 @@ class UserTab(QWidget):
             gate = self._cal_gate('TCP AUTO park')
             if gate:
                 c, _ = gate
-                import math, time
-                _, L_set = self._tcp_kins()
-                lift = L_set * (1 - math.cos(math.radians(35.0))) + 5.0
+                import time
                 if st:
-                    # plunge 0 = MOVE ONLY; puck -1 retracts it; the lift
-                    # covers the worst-case unwind from any angle
+                    # plunge 0 = MOVE ONLY; puck -1 retracts it
                     c.mdi('o<tcp_auto_step> call [0] [1] [%.4f] [%.4f] '
-                          '[%.4f] [0] [-1] [%.4f]'
-                          % (st[0], st[1], st[2], lift))
+                          '[%.4f] [0] [-1]' % (st[0], st[1], st[2]))
                 else:
                     # no start pose yet (stopped before the reference
                     # landed): no motion, but the puck must still come down

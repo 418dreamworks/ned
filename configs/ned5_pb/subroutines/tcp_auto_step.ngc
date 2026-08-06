@@ -20,12 +20,6 @@
 (           0 leave it as it is. THE PUCK MUST BE UP BEFORE ANY PLUNGE --)
 (           it was missing entirely and the first sweep plunged onto a)
 (           retracted puck, 2026-08-05.)
-(      #8 = lift in mm above the start pose for every A rotation. With a)
-(           wrong pivot the TIP moves L*[1-COS A] while A turns: at a)
-(           161 mm error 5 mm of clearance is gone by 15 deg, the return)
-(           move drives the needle into the puck and motion aborts with)
-(           "Probe tripped during non-probe move" -- no callback, dead)
-(           sweep. The GUI computes the worst case per angle.)
 o<tcp_auto_step> sub
   #<targa>  = #1
   #<repos>  = #2
@@ -34,7 +28,6 @@ o<tcp_auto_step> sub
   #<sz>     = #5
   #<plunge> = #6
   #<puck>   = #7
-  #<lift>   = #8
   #<fast>   = 200.0
   #<latch>  = 10.0
   #<back>   = 1.0
@@ -63,12 +56,11 @@ o<tcp_auto_step> sub
 
   o20 if [#<repos> GT 0]
     G90
-    ; ROTATE HIGH. Lift by the worst-case tip excursion FIRST, rotate,
-    ; then come back to the start pose. Rotating at the start height put
-    ; the needle into the puck from 15 deg up (advisor audit 2026-08-05).
-    ; This ordering also fixes the stop-park, which used to rotate A at
-    ; whatever Z the machine had stopped at.
-    G1 Z[#<sz> + #<lift>] F[#<trav>]
+    ; rotate AT the start height, then put the tip back on the start pose.
+    ; OPERATOR SPEC (2026-08-05): no extra lift. The applies at the small
+    ; angles shrink the pivot error before the angles grow, so the
+    ; excursion stays small -- and if it ever does contact, the probe's own
+    ; trip-during-move abort IS the intended stop.
     G1 A#<targa> F[#<arot>]
     G1 X#<sx> Y#<sy> Z#<sz> F[#<trav>]
   o20 endif
@@ -90,10 +82,8 @@ o<tcp_auto_step> sub
     ; from wherever contact was, no frame involved. Later steps have a real
     ; start pose and go back to it absolutely.
     o35 if [#<repos> GT 0]
-      ; retract straight to lift height: the A unwind below swings the
-      ; physical tip by the pivot ERROR, so it must not happen at 5 mm
       G90
-      G1 Z[#<sz> + #<lift>] F[#<trav>]
+      G1 Z#<sz> F[#<trav>]
     o35 else
       G91
       G1 Z5.0 F[#<trav>]
