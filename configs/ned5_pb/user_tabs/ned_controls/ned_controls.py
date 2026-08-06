@@ -3893,6 +3893,7 @@ class UserTab(QWidget):
         self._tcp_auto_on = True
         self._tcp_auto_phase = 'survey'
         self._svy = {'n': 0, 'step': 'ref-issue', 'z0': None, 'zp': None,
+                     'best_L': 0.0, 'best_sum': None,
                      'L': 0.0, 'ofs': 0.0,
                      'log': ('/home/brains/Documents/ned/logs/'
                              'tcp_survey_%s.ndjson'
@@ -3905,6 +3906,8 @@ class UserTab(QWidget):
                     capture_output=True, text=True).stdout.strip())
             self._tcp_result.setText('PARAM (axis->nose) = %.4f'
                                      % self._svy['arm0_saved'])
+            self._svy['best_L'] = (self._svy['arm0_saved']
+                                   + self._tcp_tooloff())
         except Exception:
             LOG.exception('SURVEY: could not read arm.in0 at press')
             self._svy['arm0_saved'] = None
@@ -3921,9 +3924,10 @@ class UserTab(QWidget):
         self._tcp_auto_go_next = False
         self._tcp_auto_idle_t0 = None
         self._tcp_set_face()
-        self._tcp_say('SURVEY: %d random pairs, L %s ofs %s, three '
-                      'touches each. Data -> %s'
-                      % (self.SVY_N, self.SVY_L, self.SVY_OFS,
+        self._tcp_say('SURVEY: %d pairs, draws +-%.1f%% around the '
+                      'running best (start %.3f), ofs %s. Data -> %s'
+                      % (self.SVY_N, self.SVY_HALF_PCT,
+                         self._svy['best_L'], self.SVY_OFS,
                          self._svy['log']))
         self._tcp_survey_next()   # step 'ref': puck up + reference probe
 
@@ -4019,6 +4023,14 @@ class UserTab(QWidget):
                 except Exception:
                     LOG.exception('SURVEY: table row failed -- data is in '
                                   'the ndjson regardless')
+                sm = abs(mp) + abs(mn)
+                if v.get('best_sum') is None or sm < v['best_sum']:
+                    v['best_sum'] = sm
+                    v['best_L'] = v['L']
+                    self._svy_out({'t': 'best', 'n': v['n'],
+                                   'L': round(v['L'], 4),
+                                   'nose': round(v['L'] - _to, 4),
+                                   'sum': round(sm, 4)})
                 v['step'] = 'apply'
             self._tcp_auto_go_next = True
             return
@@ -4148,7 +4160,9 @@ class UserTab(QWidget):
                 self._tcp_auto_stop('SURVEY complete: %d pairs -> %s'
                                     % (v['n'], v['log']))
                 return
-            v['L'] = random.uniform(*self.SVY_L)
+            b = v['best_L']
+            h = b * self.SVY_HALF_PCT / 100.0
+            v['L'] = random.uniform(b - h, b + h)
             v['ofs'] = random.uniform(*self.SVY_OFS)
             # the sub ended the last touch at A0; the pivot write goes
             # through the guarded tick path, which calls back here
@@ -4219,7 +4233,11 @@ class UserTab(QWidget):
     # random A offset, THREE touches (zero at A=ofs, +35+ofs, -35+ofs),
     # everything to logs/tcp_survey_<stamp>.ndjson.
     SVY_N = 500
-    SVY_L = (321.0, 325.0)       # tip length draw, mm
+    # ADAPTIVE (operator 2026-08-06): draws are ALWAYS +-0.5% around the
+    # RUNNING BEST -- start at the banked parameter, recenter on every
+    # pair that beats the best sum. A fixed bracket went stale the moment
+    # the parameter improved (it sampled 156-160 while truth sat at 155.7).
+    SVY_HALF_PCT = 0.5
     SVY_OFS = (-0.30, 0.30)      # A offset draw, deg
 
     def _tcp_tooloff(self):
