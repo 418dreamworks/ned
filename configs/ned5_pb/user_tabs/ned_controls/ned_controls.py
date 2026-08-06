@@ -1048,6 +1048,13 @@ class UserTab(QWidget):
             self._tcp_table = tbla
             hbl.addWidget(tbla)
 
+            xbtn = QPushButton('CLEAR DATA')
+            xbtn.setObjectName('tcp_clear_btn')
+            xbtn.setMinimumHeight(40)
+            xbtn.setStyleSheet(self.CAL_QSS['clear'])
+            xbtn.clicked.connect(lambda _=False: self._tcp_clear_data())
+            hbl.addWidget(xbtn)
+
             tpg.addWidget(tcol, 0, 0)
             tpg.addWidget(hbox, 0, 1)
             tpg.setColumnStretch(1, 1)
@@ -4618,6 +4625,32 @@ class UserTab(QWidget):
             t.scrollToBottom()
         except Exception:
             LOG.exception('TCP CAL: could not add the improvement row')
+
+    def _tcp_clear_data(self):
+        """Empty the table AND the memory AND the file -- the file goes to
+        trash/ (never rm), and the in-memory history is reset too, or the
+        next eval would silently resurrect everything from RAM (watched
+        that happen 2026-08-06 00:23: file trashed on disk, sweep re-wrote
+        it from memory within seconds)."""
+        try:
+            import os, shutil, time
+            if os.path.exists(self.TCP_HIST):
+                dst = ('/home/brains/Documents/ned/trash/configs/ned5_pb/'
+                       'tcp_cal.json.%s' % time.strftime('%Y%m%d-%H%M%S'))
+                os.makedirs(os.path.dirname(dst), exist_ok=True)
+                shutil.move(self.TCP_HIST, dst)
+            self._tcp_hist = []
+            d = getattr(self, '_tcp_desc', None)
+            if d:
+                d['data'] = []
+            t = getattr(self, '_tcp_table', None)
+            if t is not None:
+                t.setRowCount(0)
+            self._tcp_result.setText('L = ---')
+            self._tcp_say('DATA CLEARED -- history trashed, table empty.')
+            LOG.error('TCP CAL: data cleared by the operator (trashed)')
+        except Exception:
+            LOG.exception('TCP CAL: clear failed')
 
     def _tcp_save_hist(self):
         try:
