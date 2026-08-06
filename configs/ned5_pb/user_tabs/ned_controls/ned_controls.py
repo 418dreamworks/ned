@@ -24,14 +24,102 @@ Pins (nets in postgui_pb.hal):
 import os
 import time
 
-from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QWidget
+from PySide6.QtCore import QTimer, QObject, QEvent
+from PySide6.QtGui import QWindow
+from PySide6.QtWidgets import QWidget, QApplication
 
 from qtpyvcp import hal as qhal
 from qtpyvcp.utilities import logger
 from qtpyvcp.utilities.runtime_ui_loader import load_ui as load_runtime_ui
 
 LOG = logger.getLogger(__name__)
+
+
+class _PreHomeInputGate(QObject):
+    """Swallow every user input except the survivors.
+
+    setEnabled(False) IS NOT A GATE IN THIS GUI. MDIButton and SubCallButton
+    bind issue_mdi.bindOk (mdi_button.py:48, subcall_button.py:58), which
+    re-runs widget.setEnabled(ok) on every task_state / interp_state / homed
+    change (machine_actions.py:317, 323-329). With NO_FORCE_HOMING = 1
+    (ned5_pb.ini:155) STATUS.allHomed() is hard True (status.py:717-719), so
+    `ok` flips True the instant POWER is pressed and every MDI button comes
+    back to life. The rules engine does the same through the Enable property
+    (base_widget.py:301-307). A one-shot disable loses that race every time --
+    which is exactly what the operator saw when ZERO X stayed clickable.
+
+    This filter sits ABOVE the widgets: the event never reaches them, so what
+    they do to their own enabled state is irrelevant. It also covers the
+    line edits, MDIEntry boxes, sliders and combo boxes a button-only sweep
+    never touched -- an MDIEntry takes typed g-code and moves the machine.
+    """
+
+    _BLOCK = frozenset((
+        QEvent.Type.MouseButtonPress, QEvent.Type.MouseButtonRelease,
+        QEvent.Type.MouseButtonDblClick, QEvent.Type.Wheel,
+        QEvent.Type.KeyPress, QEvent.Type.KeyRelease,
+        QEvent.Type.Shortcut, QEvent.Type.ContextMenu,
+        QEvent.Type.TabletPress, QEvent.Type.TabletRelease,
+        QEvent.Type.TouchBegin, QEvent.Type.TouchUpdate,
+        QEvent.Type.TouchEnd, QEvent.Type.DragEnter, QEvent.Type.Drop,
+    ))
+
+    def __init__(self, parent=None):
+        super(_PreHomeInputGate, self).__init__(parent)
+        self._allow = []
+        self._swallowed = 0
+        self._last_log = 0.0
+
+    def setSurvivors(self, widgets):
+        self._allow = [w for w in widgets if w is not None]
+
+    def swallowed(self):
+        return self._swallowed
+
+    def eventFilter(self, obj, ev):
+        try:
+            if ev.type() not in self._BLOCK:
+                return False
+        except Exception:
+            return False
+        try:
+            # A spontaneous mouse/key event reaches the QWindow FIRST; Qt
+            # then re-sends it to the widget under the cursor, which is where
+            # the decision belongs. Blocking here would kill the survivors.
+            if isinstance(obj, QWindow):
+                return False
+            if isinstance(obj, QWidget):
+                # Qt modality already blocks the survivors while a modal
+                # dialog is up; gating the dialog too would strand the
+                # operator with a box they cannot dismiss AND no E-stop.
+                modal = QApplication.activeModalWidget()
+                if modal is not None and (obj is modal
+                                          or modal.isAncestorOf(obj)):
+                    return False
+                w = obj
+                while w is not None:
+                    for a in self._allow:
+                        if w is a:
+                            return False
+                    w = w.parentWidget()
+        except RuntimeError:
+            return True          # destroyed mid-event: fail CLOSED
+        except Exception:
+            LOG.exception('PRE-HOME GATE: filter fault -- swallowing anyway')
+            return True
+        self._swallowed += 1
+        if ev.type() in (QEvent.Type.MouseButtonPress, QEvent.Type.KeyPress):
+            now = time.time()
+            if now - self._last_log > 2.0:
+                self._last_log = now
+                try:
+                    who = obj.objectName() or obj.__class__.__name__
+                except Exception:
+                    who = '<destroyed>'
+                LOG.error('PRE-HOME GATE: input to %s BLOCKED -- only E-STOP '
+                          'and POWER work until the home declaration lands',
+                          who)
+        return True
 
 STYLE_UP = 'font: 75 18pt; background: rgb(30,140,30); color: white;'
 STYLE_DOWN = 'font: 75 18pt; background: rgb(140,30,30); color: white;'
@@ -3256,8 +3344,15 @@ class UserTab(QWidget):
 
     # only these survive the pre-home sweep -- the two controls the
     # operator needs to recover the machine, and nothing else
-    PREHOME_ALLOW = ('power_button', 'stop_button', 'estop_button',
-                     'machine_power_button', 'machine_estop_button')
+    # exit_button IS THE E-STOP: ActionButton, machine.estop.toggle,
+    # text "E-STOP" (probe_basic_ui.py:11912, gui_map badge 238). It is NOT
+    # called estop_button -- the two estop names listed here before did not
+    # exist and 'estop' does not appear in 'exit_button', so the sweep was
+    # DISABLING THE E-STOP and _estop_bindOk never re-enables it (it only
+    # calls setChecked, machine_actions.py:83). E-STOP was dead for the
+    # whole pre-home window. Found by advisor audit 2026-08-05.
+    PREHOME_ALLOW = ('exit_button', 'power_button', 'stop_button')
+    PREHOME_SURVIVORS = ('exit_button', 'power_button', 'stop_button')
 
     def _sweep_gate(self, win, homed):
         """Disable EVERY button until home is declared; restore after.
@@ -3283,7 +3378,13 @@ class UserTab(QWidget):
                 if n in self.PREHOME_ALLOW or 'estop' in n.lower():
                     continue
                 if id(b) in known:
-                    continue                # already ours
+                    # Its owner may have re-enabled it (qtpyvcp bindOk runs
+                    # on every status change). Grey it again, but do not
+                    # re-record it. Without this the FIRST self-re-enable
+                    # was permanent and silent.
+                    if b.isEnabled():
+                        b.setEnabled(False)
+                    continue
                 if not b.isEnabled():
                     continue                # already off; not ours to restore
                 b.setEnabled(False)
@@ -3453,6 +3554,65 @@ class UserTab(QWidget):
     # Identity kins: L_in_force = 0, so a pair gives L outright.
     # Tool-tip kins: the pair gives the CORRECTION, and dZ is the residual.
     TCP_HIST = '/home/brains/Documents/ned/configs/ned5_pb/tcp_cal.json'
+
+    def _gate_survivor_widgets(self):
+        win = self.window()
+        if win is None:
+            return []
+        out = []
+        for name in self.PREHOME_SURVIVORS:
+            try:
+                w = win.findChild(QWidget, name)
+            except RuntimeError:
+                w = None
+            if w is not None:
+                out.append(w)
+        return out
+
+    def _arm_input_gate(self):
+        """Make the GUI non-interactive except E-STOP and POWER."""
+        gate = getattr(self, '_input_gate', None)
+        if gate is None:
+            gate = self._input_gate = _PreHomeInputGate(self)
+        surv = self._gate_survivor_widgets()
+        if not surv:
+            # NEVER leave the operator without E-stop. If not one survivor
+            # resolves, refuse to arm -- loudly -- rather than lock them out.
+            if not getattr(self, '_gate_nosurv_logged', False):
+                self._gate_nosurv_logged = True
+                LOG.error('PRE-HOME GATE: none of %s found -- NOT ARMED '
+                          '(refusing to lock the operator out of E-stop)',
+                          ', '.join(self.PREHOME_SURVIVORS))
+            self._release_input_gate(quiet=True)
+            return
+        self._gate_nosurv_logged = False
+        gate.setSurvivors(surv)      # refreshed each tick: late rebuilds
+        if getattr(self, '_input_gate_armed', False):
+            return
+        app = QApplication.instance()
+        if app is None:
+            LOG.error('PRE-HOME GATE: no QApplication -- NOT ARMED')
+            return
+        app.installEventFilter(gate)
+        self._input_gate_armed = True
+        LOG.error('PRE-HOME GATE ARMED: every input swallowed except %s',
+                  ', '.join(w.objectName() for w in surv))
+
+    def _release_input_gate(self, quiet=False):
+        if not getattr(self, '_input_gate_armed', False):
+            return
+        self._input_gate_armed = False
+        gate = getattr(self, '_input_gate', None)
+        app = QApplication.instance()
+        try:
+            if app is not None and gate is not None:
+                app.removeEventFilter(gate)
+        except RuntimeError:
+            pass
+        if not quiet:
+            LOG.error('PRE-HOME GATE RELEASED: home declared, input restored '
+                      '(%d event(s) swallowed)',
+                      gate.swallowed() if gate is not None else 0)
 
     def _sweep_release_force(self):
         """Unconditionally re-enable everything the gate switched off.
@@ -4384,10 +4544,21 @@ class UserTab(QWidget):
             _declared = None        # unknown: neither engage nor strand
         if _declared is not None:
             try:
+                # ENFORCEMENT is the event filter -- it cannot be defeated
+                # by a widget re-enabling itself, and it covers line edits,
+                # MDIEntry, sliders and combo boxes the button sweep never
+                # touched. The sweep below is now COSMETIC: it greys things
+                # so the operator can see the gate. Safety does not depend
+                # on it any more.
+                if _declared:
+                    self._release_input_gate()
+                else:
+                    self._arm_input_gate()
                 self._sweep_gate(self.window(), _declared)
             except Exception:
                 LOG.exception('PRE-HOME GATE failed -- forcing RELEASE so '
                               'the GUI cannot stay stranded')
+                self._release_input_gate(quiet=True)
                 self._sweep_release_force()
         self._sync_inc_row()
         # TOOL-STATE LOCK: POLL, don't trust edges (2026-08-05). The lock
