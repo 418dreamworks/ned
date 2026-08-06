@@ -3970,6 +3970,7 @@ class UserTab(QWidget):
             # go_next then lands in a -wait state and no-ops -- without
             # this, a late-delivered zero touch could be recorded as the
             # +35 reading (delivery lags idle by up to 200 ms).
+            v['retry'] = 0
             if st == 'ref-wait':
                 self._tcp_auto_ref = (z, a)
                 self._tcp_auto_start = (x, y, z + 5.0)
@@ -4692,8 +4693,17 @@ class UserTab(QWidget):
                         self._tcp_manual_pending = False
                         self._hand_back_manual(linuxcnc.command(), 'TCP CAL')
                         v0 = getattr(self, '_svy', None)
+                        _fb = 99.0
+                        try:
+                            import subprocess as _sp
+                            _fb = abs(float(_sp.run(
+                                ['timeout', '5', 'halcmd', 'getp',
+                                 'joint.4.pos-fb'], capture_output=True,
+                                text=True).stdout.strip()))
+                        except Exception:
+                            LOG.exception('SURVEY: restore fb read failed')
                         if (v0 and v0.get('arm0_saved') is not None
-                                and abs(a_live) <= 0.05):
+                                and _fb <= 0.05):
                             import subprocess as _sp
                             _sp.run(['timeout', '5', 'halcmd', 'setp',
                                      'arm.in0', '%.4f' % v0['arm0_saved']],
@@ -4805,8 +4815,20 @@ class UserTab(QWidget):
                     if t is None:
                         self._tcp_auto_idle_t0 = time.time()
                     elif time.time() - t > 2.0:
-                        self._tcp_auto_stop('the step ended with no probe '
-                                            'trip -- aborted')
+                        v = getattr(self, '_svy', None)
+                        if (getattr(self, '_tcp_auto_phase', '') == 'survey'
+                                and v
+                                and str(v.get('step', '')).endswith('-wait')
+                                and v.get('retry', 0) < 2):
+                            v['retry'] = v.get('retry', 0) + 1
+                            v['step'] = v['step'].replace('-wait', '-issue')
+                            self._tcp_auto_idle_t0 = None
+                            LOG.error('SURVEY: step lost (MDI refused or no '
+                                      'callback) -- RETRY %d', v['retry'])
+                            self._tcp_survey_next()
+                        else:
+                            self._tcp_auto_stop('the step ended with no '
+                                                'probe trip -- aborted')
         st = getattr(self, '_tcp_state', 'idle')
         if st not in ('wait1', 'wait2'):
             return
