@@ -560,8 +560,12 @@ class Brain(object):
                     log('MODE: tooltip REFUSED -- no PIVOT_LENGTH in '
                         'head_pivot.inc (run5 gate should have caught this)')
                     return
-                subprocess.run(['timeout', '5', 'halcmd', 'setp',
-                                'arm.in0', str(base)], capture_output=True)
+                # DO NOT WRITE THE PIVOT HERE. run5 puts it in the
+                # generated postgui, so it is set at HAL load before the
+                # machine can be powered. Writing it now steps the
+                # kinematics under a live servo loop: at A=-24 deg a
+                # 0->157 step commands 64 mm of Jy and faults every joint.
+                # That was the startup jerk (2026-08-05).
                 # NO runtime switchkins call: it unhomes every joint
                 # (2026-08-05). run5 launches the tool-tip kins as type 0.
                 log('MODE %s: TOOL-TIP kins (launched as type 0), pivot '

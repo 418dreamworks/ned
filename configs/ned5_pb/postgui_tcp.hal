@@ -12,10 +12,12 @@
 # spindle belongs in head_pivot.inc only until that tool's length is known.
 loadrt sum2 names=arm
 addf arm servo-thread
-# in0 is the head constant. Left at 0 here ON PURPOSE: ned_brain sets it
-# from head_pivot.inc, and 0 makes a brain that never ran obvious instead
-# of silently plausible.
-setp arm.in0 0.0
+# in0, the head constant, is APPENDED BY run5 from head_pivot.inc when it
+# generates postgui_tcp_all.hal -- so it is set here at HAL load, before
+# the machine can be powered. It is deliberately NOT written at runtime:
+# pivot length is a kinematics term, and stepping it under a live servo
+# loop commands dL*sin(A) of Y instantly. ned_brain used to do exactly
+# that and jerked the servos on every launch with the head off zero.
 net sig-tool-zoff motion.tooloffset.z => arm.in1
 net sig-pivot-arm arm.out => ned_ac_kins.pivot-length
 # Discrete geometry, not calibrated numbers: azimuth 90 puts the A tilt in

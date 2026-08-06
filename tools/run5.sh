@@ -200,6 +200,17 @@ if [ "$NED_KINS" = "tooltip" ]; then
   cat "$NED/configs/ned5_pb/postgui_pb.hal" \
       "$NED/configs/ned5_pb/postgui_tcp.hal" > "$GEN_PG" \
       || { echo "run5: tcp postgui concat FAILED"; exit 1; }
+  # PIVOT AT LOAD TIME, NOT INTO A LIVE SERVO LOOP (2026-08-05).
+  # ned_brain used to setp arm.in0 after the machine was enabled, so
+  # pivot-length stepped 0 -> 157 in ONE servo period. Pivot length is a
+  # term in the kinematics: at A=-24 deg that step commands 64 mm of Jy.
+  # Every launch with the head off zero jerked the servos and faulted.
+  # Written here, it is in place before the machine can be powered.
+  _PIV=$(awk -F= '/^PIVOT_LENGTH/{gsub(/[ \t]/,"",$2); print $2; exit}' \
+         "$NED/configs/params/head_pivot.inc")
+  [ -n "$_PIV" ] || { echo "run5: no PIVOT_LENGTH in head_pivot.inc"; exit 1; }
+  echo "setp arm.in0 $_PIV" >> "$GEN_PG"
+  echo "run5: pivot arm.in0 = $_PIV set at HAL load (no live-loop write)" 
   sed -e 's|^KINEMATICS = .*|KINEMATICS = ned_ac_kins coordinates=XYZXAC|' \
       -e 's|^POSTGUI_HALFILE = .*|POSTGUI_HALFILE = postgui_tcp_all.hal|' \
       "$INI" > "$GEN_TCP" || { echo "run5: tcp ini generation FAILED"; exit 1; }
