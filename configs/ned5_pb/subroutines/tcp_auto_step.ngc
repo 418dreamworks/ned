@@ -31,7 +31,11 @@ o<tcp_auto_step> sub
   #<fast>   = 200.0
   #<latch>  = 10.0
   #<back>   = 1.0
-  #<trav>   = 1500.0
+  ; SLOW (operator 2026-08-05: "move slowly to get there"). The tilt moves
+  ; the tip by the pivot ERROR, and that error is largest on the first
+  ; steps -- exactly when speed would hurt most.
+  #<trav>   = 800.0
+  #<arot>   = 300.0
 
   o10 if [#<_metric> EQ 0]
     (abort, TCP AUTO: switch to MM first - this routine is metric)
@@ -55,7 +59,7 @@ o<tcp_auto_step> sub
     ; rotate FIRST, at the safe start height, then put the TIP back on the
     ; start pose. With a wrong pivot the tilt moves the tip; this move is
     ; what pulls it back over the puck.
-    G1 A#<targa> F1000
+    G1 A#<targa> F[#<arot>]
     G1 X#<sx> Y#<sy> Z#<sz> F[#<trav>]
   o20 endif
 
@@ -78,7 +82,7 @@ o<tcp_auto_step> sub
   ; joint jump in one servo cycle and threw following errors on four joints
   ; (2026-08-05, by hand, guard bypassed). At A=0 the pivot cancels out of
   ; the solution entirely, so the write costs nothing.
-  G1 A0 F1000
+  G1 A0 F[#<arot>]
   ; puck DOWN at the end of the sequence -- an energised solenoid bleeds
   ; the air supply down, learned 2026-08-02 the hard way
   o40 if [#<puck> LT 0]

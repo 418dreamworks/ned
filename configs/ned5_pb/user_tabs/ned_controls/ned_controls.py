@@ -3454,6 +3454,22 @@ class UserTab(QWidget):
     # Tool-tip kins: the pair gives the CORRECTION, and dZ is the residual.
     TCP_HIST = '/home/brains/Documents/ned/configs/ned5_pb/tcp_cal.json'
 
+    def _sweep_release_force(self):
+        """Unconditionally re-enable everything the gate switched off.
+
+        Not hypothetical: 394 controls stayed disabled for a whole session
+        because the tick stopped reaching the release path."""
+        off = getattr(self, '_prehome_off', None) or []
+        n = 0
+        for b in off:
+            try:
+                b.setEnabled(True)
+                n += 1
+            except RuntimeError:
+                pass
+        self._prehome_off = None
+        LOG.error('PRE-HOME GATE FORCE-RELEASED: %d control(s) re-enabled', n)
+
     def _puck_toggle(self, up):
         """Raise or drop the tool-setter puck. M64/M65 P3 -- no motion.
 
@@ -3564,8 +3580,13 @@ class UserTab(QWidget):
     # The A=0 reference Z is taken ONCE -- "that number never changes" --
     # and every later step returns to the ORIGINAL start pose before
     # probing, which is what corrects drift in Y.
-    TCP_ANGLES = [0.1, 0.2, 0.5, 1.0, 2.0, 5.0,
-                  10.0, 15.0, 20.0, 25.0, 30.0, 35.0]
+    # Operator 2026-08-05: "like 1 deg, 2 deg, 2deg, then 5deg 5 deg until
+    # get to 35" -- increments of +1, +2, +2, then +5, so the absolute
+    # angles below. 35 is the ceiling: past it the rod RADIUS touches
+    # before the needle tip. The old 0.1/0.2 steps were useless anyway --
+    # at 0.1 deg the leverage (1-cos A) is 1.5e-6 and the solve is pure
+    # noise.
+    TCP_ANGLES = [1.0, 3.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0]
     TCP_TOL = 0.02          # mm of residual dZ that counts as converged
 
     def _tcp_auto_press(self):
@@ -3627,10 +3648,11 @@ class UserTab(QWidget):
             # the one-off A=0 reference, and the start pose every later step
             # returns to -- both in the interpreter's own frame
             self._tcp_auto_ref = (z, a)
-            self._tcp_auto_start = (x, y, z + 10.0)
+            # 5 mm of lift (operator: "raise 5mm, rotate a bit, reprobe")
+            self._tcp_auto_start = (x, y, z + 5.0)
             self._tcp_say('reference: Z %.4f at A %.3f. Start pose banked '
-                          '10 mm above it -- every step returns here before '
-                          'probing.' % (z, a))
+                          '5 mm above it -- every step lifts here, rotates, '
+                          'and comes back down to probe.' % (z, a))
             self._tcp_auto_next()
             return
         z0, a0 = self._tcp_auto_ref
@@ -4346,6 +4368,27 @@ class UserTab(QWidget):
             LOG.exception('JOG STEPS: could not hand the slot to the wheel')
 
     def _homing_gate_tick(self):
+        # THE GATE RUNS FIRST, AND ALONE. It used to run at the BOTTOM of
+        # this tick, after five other calls -- so anything raising earlier
+        # left 394 controls disabled with no way back. That is exactly what
+        # happened: the gate engaged at startup, the tick stopped reaching
+        # it, and the entire GUI stayed dead after home was declared, which
+        # is why AUTO CONVERGE did nothing when pressed. A gate that can
+        # brick the machine must never depend on unrelated code succeeding.
+        try:
+            import linuxcnc
+            _st = linuxcnc.stat()
+            _st.poll()
+            _declared = all(_st.homed[:6])
+        except Exception:
+            _declared = None        # unknown: neither engage nor strand
+        if _declared is not None:
+            try:
+                self._sweep_gate(self.window(), _declared)
+            except Exception:
+                LOG.exception('PRE-HOME GATE failed -- forcing RELEASE so '
+                              'the GUI cannot stay stranded')
+                self._sweep_release_force()
         self._sync_inc_row()
         # TOOL-STATE LOCK: POLL, don't trust edges (2026-08-05). The lock
         # engaged during boot -- in the second before the brain restored
@@ -4388,10 +4431,6 @@ class UserTab(QWidget):
         if getattr(self, '_tool_locked', False):
             homed = False       # tool-state lock deads the same buttons
         win = self.window()
-        # the sweep runs on EVERY unhomed tick, not only on a change:
-        # sub-tabs are built on a 6.5 s timer, so widgets appear long after
-        # the first tick and have to be caught as they show up
-        self._sweep_gate(win, declared)
         if homed == getattr(self, '_homed_now', None):
             return
         self._homed_now = homed
