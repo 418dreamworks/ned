@@ -1,5 +1,5 @@
-# head pivot: A-axis centerline -> spindle NOSE, from the HQD drawing
-# (421 - 264, operator 2026-08-05). The kins arm adds the live tool
-# length on top (postgui sum2), so this stays the bare machine constant.
-# PIVOT TOUCH (probe cycle) verifies this against the head as assembled.
-PIVOT_LENGTH = 157.0
+# head pivot fed to arm.in0 at HAL load (run5 bakes it into the tcp postgui).
+# WRITTEN BY THE OPERATOR: TCP tab SAVE PIVOT, 2026-08-06 00:19:03.
+# Value includes the touching rod while its tool records 0 length --
+# subtract the rod stickout to get the bare axis->nose constant.
+PIVOT_LENGTH = 158.3512
