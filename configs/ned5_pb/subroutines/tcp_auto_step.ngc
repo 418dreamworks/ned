@@ -73,8 +73,20 @@ o<tcp_auto_step> sub
     #<zt> = #5063
     #<at> = #5064
     G38.5 Z[#<back> + 1.0] F[#<latch>]
-    G90
-    G1 Z#<sz> F[#<trav>]
+    ; RETRACT. On the REFERENCE probe there is no start pose yet -- the GUI
+    ; passes sz = 0, and retracting to absolute Z0 sent the head hundreds of
+    ; mm up and aborted before the callback, so the sweep never got its
+    ; first reading and just sat there. Lift INCREMENTALLY instead: 5 mm up
+    ; from wherever contact was, no frame involved. Later steps have a real
+    ; start pose and go back to it absolutely.
+    o35 if [#<repos> GT 0]
+      G90
+      G1 Z#<sz> F[#<trav>]
+    o35 else
+      G91
+      G1 Z5.0 F[#<trav>]
+      G90
+    o35 endif
   o30 endif
   ; A BACK TO ZERO BEFORE THE GUI APPLIES THE NEW PIVOT. Changing
   ; pivot-length steps the inverse solution by dL*sin[A] in Y and
