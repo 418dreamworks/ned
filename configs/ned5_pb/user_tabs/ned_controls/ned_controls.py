@@ -1023,6 +1023,16 @@ class UserTab(QWidget):
             tres.setStyleSheet('color: #78DC78; font: bold 20pt;')
             self._tcp_result = tres
             tbl.addWidget(tres)
+            # COMMIT: the ONLY thing that writes head_pivot.inc. The sweep
+            # applies to the LIVE pin; this button makes it survive the
+            # relaunch (param files change only on the operator's explicit
+            # action -- this press IS that action).
+            cbtn = QPushButton('SAVE PIVOT TO MACHINE')
+            cbtn.setObjectName('tcp_commit_btn')
+            cbtn.setMinimumHeight(52)
+            cbtn.setStyleSheet(self.CAL_QSS['commit'])
+            cbtn.clicked.connect(lambda _=False: self._tcp_commit())
+            tbl.addWidget(cbtn)
             tc.addWidget(tbox)
 
             sbox, sbl = _mkbox('BOUNDS')
@@ -3667,6 +3677,52 @@ class UserTab(QWidget):
                 b.blockSignals(False)
             except RuntimeError:
                 pass
+
+    def _tcp_commit(self):
+        """Write the pivot IN FORCE to head_pivot.inc -- the survivor.
+
+        Reads arm.in0, not the last measurement: arm.in0 is what _tcp_apply
+        left after the sweep converged, already in the axis-arm convention
+        (live tool length is added back on top by the sum2 at every launch).
+        NOTE while the touching tool records 0 length in the table, this
+        number still CONTAINS that rod: it is right for THIS rod, and it
+        becomes the true axis->nose machine constant only once the rod's
+        stickout is measured and subtracted (nose #3010 path, task list)."""
+        try:
+            import subprocess, time
+            r = subprocess.run(['timeout', '5', 'halcmd', 'getp', 'arm.in0'],
+                               capture_output=True, text=True)
+            try:
+                v = float(r.stdout.strip())
+            except ValueError:
+                self._tcp_say('COMMIT refused: arm.in0 unreadable -- is the '
+                              '-tcp session up?', bad=True)
+                return
+            if not (50.0 < v < 1000.0):
+                self._tcp_say('COMMIT refused: %.3f is not a physical '
+                              'pivot' % v, bad=True)
+                return
+            path = ('/home/brains/Documents/ned/configs/params/'
+                    'head_pivot.inc')
+            with open(path, 'w') as f:
+                f.write('# head pivot fed to arm.in0 at HAL load (run5 '
+                        'bakes it into the tcp postgui).\n'
+                        '# WRITTEN BY THE OPERATOR: TCP tab SAVE PIVOT, '
+                        '%s.\n'
+                        '# Value includes the touching rod while its tool '
+                        'records 0 length --\n'
+                        '# subtract the rod stickout to get the bare '
+                        'axis->nose constant.\n'
+                        'PIVOT_LENGTH = %.4f\n'
+                        % (time.strftime('%F %T'), v))
+            self._tcp_say('SAVED: PIVOT_LENGTH = %.4f -> head_pivot.inc. '
+                          'Every -tcp launch now starts with it.' % v)
+            LOG.error('TCP COMMIT: head_pivot.inc = %.4f (operator button)',
+                      v)
+        except Exception:
+            LOG.exception('TCP COMMIT failed -- head_pivot.inc NOT written')
+            self._tcp_say('COMMIT FAILED -- head_pivot.inc not written, '
+                          'see the log', bad=True)
 
     def _tcp_kins(self):
         """('identity'|'tcp', pivot length currently IN FORCE)."""
