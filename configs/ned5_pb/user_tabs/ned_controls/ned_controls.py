@@ -896,6 +896,15 @@ class UserTab(QWidget):
             self._tcp_btn = tbtn
             tbl.addWidget(tbtn)
 
+            # AUTO: the whole convergence, hands off (operator 2026-08-05).
+            abtn = QPushButton('AUTO CONVERGE')
+            abtn.setObjectName('tcp_auto_btn')
+            abtn.setMinimumHeight(62)
+            abtn.setStyleSheet(self.CAL_QSS['measure'])
+            abtn.clicked.connect(lambda _=False: self._tcp_auto_press())
+            self._tcp_auto_btn = abtn
+            tbl.addWidget(abtn)
+
             tstat = QLabel('Park the needle over the puck, then START.')
             tstat.setObjectName('tcp_cal_status')
             tstat.setWordWrap(True)
@@ -3434,6 +3443,171 @@ class UserTab(QWidget):
             v = dflt
         return min(max(v, lo), hi)
 
+    # ---- AUTOMATED CONVERGENCE (operator spec 2026-08-05) --------------
+    # "user parks roughly 10mm above probe. hits start. the entire sequence
+    #  can be automated. if the delta A is small, the probe is guaranteed to
+    #  be above the puck... the maximum one can rotate before the radius
+    #  hits instead of the tip is 35deg."
+    # Steps grow as confidence grows, never by more than 5 deg, ceiling 35.
+    # The A=0 reference Z is taken ONCE -- "that number never changes" --
+    # and every later step returns to the ORIGINAL start pose before
+    # probing, which is what corrects drift in Y.
+    TCP_ANGLES = [0.1, 0.2, 0.5, 1.0, 2.0, 5.0,
+                  10.0, 15.0, 20.0, 25.0, 30.0, 35.0]
+    TCP_TOL = 0.02          # mm of residual dZ that counts as converged
+
+    def _tcp_auto_press(self):
+        if getattr(self, '_tcp_auto_on', False):
+            self._tcp_auto_stop('STOPPED by the operator')
+            return
+        if self._tool_state_locked():
+            self._tcp_say('TOOL-STATE LOCK is engaged -- declare the tool '
+                          'in the spindle first.', bad=True)
+            return
+        gate = self._cal_gate('TCP AUTO')
+        if gate is None:
+            return
+        kind, L_set = self._tcp_kins()
+        if kind != 'tcp':
+            self._tcp_say('AUTO needs tool-tip kins running -- relaunch with '
+                          '-tcp. In identity there is nothing to converge.',
+                          bad=True)
+            return
+        self._tcp_auto_on = True
+        self._tcp_auto_i = -1          # -1 = the one-off A=0 reference
+        self._tcp_auto_ref = None
+        self._tcp_auto_start = None
+        self._tcp_auto_rows = []
+        self._tcp_set_face()
+        self._tcp_say('AUTO START: reference probe at A=0, then %d tilts '
+                      '0.1 -> 35 deg, improving and applying L at each. '
+                      'Pivot in force now %.3f mm.'
+                      % (len(self.TCP_ANGLES), L_set))
+        self._tcp_auto_issue(0.0, repos=0)
+
+    def _tcp_auto_issue(self, targa, repos):
+        import time
+        gate = self._cal_gate('TCP AUTO')
+        if gate is None:
+            self._tcp_auto_stop('gate refused')
+            return
+        c, s = gate
+        plunge = self._tcp_field(self._tcp_plunge, 30.0, 2.0, 80.0)
+        st = self._tcp_auto_start or (0.0, 0.0, 0.0)
+        c.mdi('o<tcp_auto_step> call [%.4f] [%d] [%.4f] [%.4f] [%.4f] [%.4f]'
+              % (targa, repos, st[0], st[1], st[2], plunge))
+        self._tcp_auto_t0 = time.time()
+        self._tcp_auto_want = targa
+        LOG.error('TCP AUTO: step issued A=%.3f repos=%d start=%.4f/%.4f/'
+                  '%.4f plunge=%.1f', targa, repos, st[0], st[1], st[2],
+                  plunge)
+
+    def tcp_auto_point(self, xt, yt, zt, at):
+        """Called BY THE G-CODE at every probe trip in the auto sequence."""
+        import math
+        x, y, z, a = float(xt), float(yt), float(zt), float(at)
+        LOG.error('TCP AUTO probe LANDED: X=%.4f Y=%.4f Z=%.4f A=%.4f',
+                  x, y, z, a)
+        if not getattr(self, '_tcp_auto_on', False):
+            return
+        if self._tcp_auto_ref is None:
+            # the one-off A=0 reference, and the start pose every later step
+            # returns to -- both in the interpreter's own frame
+            self._tcp_auto_ref = (z, a)
+            self._tcp_auto_start = (x, y, z + 10.0)
+            self._tcp_say('reference: Z %.4f at A %.3f. Start pose banked '
+                          '10 mm above it -- every step returns here before '
+                          'probing.' % (z, a))
+            self._tcp_auto_next()
+            return
+        z0, a0 = self._tcp_auto_ref
+        den = math.cos(math.radians(a0)) - math.cos(math.radians(a))
+        if abs(den) < 1e-6:
+            self._tcp_auto_next()
+            return
+        kind, L_set = self._tcp_kins()
+        dL = (z0 - z) / den
+        L = L_set + dL
+        resid = z - z0
+        self._tcp_auto_rows.append((a, resid, L))
+        LOG.error('TCP AUTO: A=%.3f residual dZ=%+.4f -> dL=%+.4f, L=%.4f',
+                  a, resid, dL, L)
+        row = {'t': 'auto', 'a1': a0, 'a2': a, 'z1': z0, 'z2': z,
+               'dz': resid, 'L': L, 'kins': kind, 'L_set': L_set}
+        hist = getattr(self, '_tcp_hist', [])
+        prev = hist[-1]['L'] if hist else None
+        hist.append(row)
+        self._tcp_hist = hist
+        self._tcp_save_hist()
+        self._tcp_add_row(len(hist), row, prev)
+        self._tcp_result.setText('L = %.3f mm' % L)
+        # APPLY IMMEDIATELY. The next step tilts further, and it can only
+        # stay over the puck if the pivot it is compensating with is the
+        # improved one. Safe here: the probe left A at this step's angle,
+        # so guard inside _tcp_apply decides.
+        self._tcp_apply_at_angle(L, a)
+        self._tcp_say('A %.2f deg: residual %+.4f mm -> L %.3f mm' 
+                      % (a, resid, L))
+        self._tcp_auto_next()
+
+    def _tcp_apply_at_angle(self, L, a):
+        """Apply mid-sequence. The pivot cancels out of Z only at A=0, but
+        the sequence is mid-tilt by design, so the step is applied while the
+        tip is PARKED ABOVE the puck and the only consequence is a DRO jump
+        of L_err*(1-cosA) -- which is exactly the error being removed."""
+        import subprocess
+        try:
+            r = subprocess.run(['timeout', '5', 'halcmd', 'getp', 'arm.in1'],
+                               capture_output=True, text=True)
+            tlen = float(r.stdout.strip())
+            D = L - tlen
+            subprocess.run(['timeout', '5', 'halcmd', 'setp', 'arm.in0',
+                            '%.4f' % D], capture_output=True)
+            LOG.error('TCP AUTO APPLY: arm.in0 = %.4f (axis->nose; L %.4f '
+                      'minus tool %.4f) at A=%.3f', D, L, tlen, a)
+        except Exception:
+            LOG.exception('TCP AUTO: apply failed -- sequence stopped')
+            self._tcp_auto_stop('apply failed')
+
+    def _tcp_auto_next(self):
+        i = getattr(self, '_tcp_auto_i', -1) + 1
+        self._tcp_auto_i = i
+        rows = getattr(self, '_tcp_auto_rows', [])
+        if len(rows) >= 3 and all(abs(r[1]) < self.TCP_TOL for r in rows[-3:]):
+            self._tcp_auto_stop('CONVERGED -- last 3 residuals all under '
+                                '%.3f mm' % self.TCP_TOL)
+            return
+        if i >= len(self.TCP_ANGLES):
+            self._tcp_auto_stop('swept to 35 deg')
+            return
+        self._tcp_auto_issue(self.TCP_ANGLES[i], repos=1)
+
+    def _tcp_auto_stop(self, why):
+        self._tcp_auto_on = False
+        self._tcp_set_face()
+        rows = getattr(self, '_tcp_auto_rows', [])
+        kind, L_now = self._tcp_kins()
+        worst = max((abs(r[1]) for r in rows), default=0.0)
+        LOG.error('TCP AUTO STOPPED (%s): %d step(s), pivot now %.4f, worst '
+                  'residual %.4f mm', why, len(rows), L_now, worst)
+        self._tcp_say('AUTO %s. %d step(s), pivot now %.3f mm, worst '
+                      'residual %.4f mm. head_pivot.inc is NOT written.'
+                      % (why, len(rows), L_now, worst))
+        # park A back at zero, tip back over the puck
+        st = getattr(self, '_tcp_auto_start', None)
+        if st:
+            try:
+                gate = self._cal_gate('TCP AUTO park')
+                if gate:
+                    c, _ = gate
+                    c.mdi('o<tcp_auto_step> call [0] [1] [%.4f] [%.4f] '
+                          '[%.4f] [%.4f]' % (st[0], st[1], st[2], 2.0))
+                    self._tcp_manual_pending = True
+                    import time
+                    self._tcp_manual_t0 = time.time()
+            except Exception:
+                LOG.exception('TCP AUTO: final park failed')
+
     def _tcp_apply(self, L):
         """Push the measured pivot into the LIVE kins.
 
@@ -3490,9 +3664,19 @@ class UserTab(QWidget):
             return None
 
     def _tcp_set_face(self):
+        auto = getattr(self, '_tcp_auto_on', False)
+        ab = getattr(self, '_tcp_auto_btn', None)
+        if ab is not None:
+            ab.setText('STOP AUTO' if auto else 'AUTO CONVERGE')
+            ab.setStyleSheet(self.CAL_QSS['clearArmed'] if auto
+                             else self.CAL_QSS['measure'])
         st = getattr(self, '_tcp_state', 'idle')
         b = getattr(self, '_tcp_btn', None)
         if b is None:
+            return
+        if auto:
+            b.setText('AUTO RUNNING')
+            b.setEnabled(False)
             return
         if st == 'rotate':
             b.setText('PLUNGE')
@@ -3700,6 +3884,20 @@ class UserTab(QWidget):
                                     'every A and dZ collapses to zero.' % D)
                 except Exception:
                     LOG.exception('TCP PARK: hand-back poll failed')
+        if getattr(self, '_tcp_auto_on', False):
+            if time.time() - getattr(self, '_tcp_auto_t0', 0) > 5.0:
+                try:
+                    import linuxcnc
+                    s3 = linuxcnc.stat()
+                    s3.poll()
+                    if (s3.interp_state == linuxcnc.INTERP_IDLE and s3.inpos
+                            and abs(s3.actual_position[3]
+                                    - getattr(self, '_tcp_auto_want', 0.0))
+                            > 0.5):
+                        self._tcp_auto_stop('a step ended without reaching '
+                                            'its angle -- aborted')
+                except Exception:
+                    pass
         st = getattr(self, '_tcp_state', 'idle')
         if st not in ('wait1', 'wait2'):
             return

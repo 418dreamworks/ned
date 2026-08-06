@@ -1,0 +1,66 @@
+(ned TCP CAL -- ONE STEP of the automated convergence, operator 2026-08-05)
+(Sequence the operator specified: park ~10 mm over the puck, press START,)
+(and the machine walks A up in small steps, improving L at each one.)
+(Each step: rotate A, RETURN TO THE ORIGINAL START POSE, probe down.)
+(The return is not cosmetic -- with tool-tip kins live, commanding the)
+(same tool-tip XYZ puts the TIP back where it started whatever A is, so)
+(any drift in Y from a wrong pivot is corrected before every probe.)
+(The A=0 reference Z is taken ONCE and never re-measured: that number)
+(does not change, so re-touching it only adds noise.)
+(35 deg is the ceiling -- past that the rod RADIUS contacts before the)
+(needle tip and the measurement stops being about the tip.)
+(EVERY position here is the interpreter own reading from a previous)
+(probe -- #5061/#5062/#5063. Nothing is reconstructed from stat: that)
+(is what sent a probe to machine -959 and refused to move.)
+(Args: #1 = target A in degrees)
+(      #2 = 1 to reposition to the start pose first, 0 for the first probe)
+(      #3 = start X   #4 = start Y   #5 = start Z, all tool-tip work frame)
+(      #6 = plunge depth in mm, positive)
+o<tcp_auto_step> sub
+  #<targa>  = #1
+  #<repos>  = #2
+  #<sx>     = #3
+  #<sy>     = #4
+  #<sz>     = #5
+  #<plunge> = #6
+  #<fast>   = 200.0
+  #<latch>  = 10.0
+  #<back>   = 1.0
+  #<trav>   = 1500.0
+
+  o10 if [#<_metric> EQ 0]
+    (abort, TCP AUTO: switch to MM first - this routine is metric)
+  o10 endif
+  o15 if [#<plunge> LE 0]
+    (abort, TCP AUTO: plunge depth must be positive)
+  o15 endif
+  o16 if [ABS[#<targa>] GT 35]
+    (abort, TCP AUTO: A beyond 35 deg - the rod radius would touch first)
+  o16 endif
+
+  M50 P0
+
+  o20 if [#<repos> GT 0]
+    G90
+    ; rotate FIRST, at the safe start height, then put the TIP back on the
+    ; start pose. With a wrong pivot the tilt moves the tip; this move is
+    ; what pulls it back over the puck.
+    G1 A#<targa> F1000
+    G1 X#<sx> Y#<sy> Z#<sz> F[#<trav>]
+  o20 endif
+
+  G91
+  G38.2 Z-#<plunge> F[#<fast>]
+  G1 Z[#<back>] F[#<trav>]
+  G38.2 Z-[#<back> + 1.0] F[#<latch>]
+  #<xt> = #5061
+  #<yt> = #5062
+  #<zt> = #5063
+  #<at> = #5064
+  G38.5 Z[#<back> + 1.0] F[#<latch>]
+  G90
+  G1 Z#<sz> F[#<trav>]
+  M50 P1
+  (DEBUG, EVAL[vcp.getWidget{"ned_controls"}.tcp_auto_point{#<xt>, #<yt>, #<zt>, #<at>}])
+o<tcp_auto_step> endsub
+M2
