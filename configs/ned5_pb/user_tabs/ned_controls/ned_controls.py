@@ -477,6 +477,12 @@ class UserTab(QWidget):
             self.comp.addPin('homeall-out', 'bit', 'out')
             self.comp.addPin('lock-a-out', 'bit', 'out')
             self.comp.addPin('lock-c-out', 'bit', 'out')
+            # per-axis MPG locks for the linears too (operator 2026-08-06:
+            # DRO single-click = lock). MPG-scope only: typed moves and
+            # presets on XYZ are NOT gated by these.
+            self.comp.addPin('lock-x-out', 'bit', 'out')
+            self.comp.addPin('lock-y-out', 'bit', 'out')
+            self.comp.addPin('lock-z-out', 'bit', 'out')
             # per-axis head REF (REF A / REF C buttons): pulse -> ned_brain
             # runs unhome -> fresh read -> home THAT joint only
             self.comp.addPin('refa-out', 'bit', 'out')
@@ -1592,8 +1598,8 @@ class UserTab(QWidget):
             if st.interp_state != linuxcnc.INTERP_IDLE or not st.inpos:
                 c.error_msg('%s refused: machine is busy' % label)
                 return
-            c.mode(linuxcnc.MODE_MDI)
-            c.wait_complete()
+            if not self._take_mdi(c, label):
+                return
             for p in ('3058', '3060', '3061', '3059'):
                 c.mdi('#%s = 0' % p)
             self._hand_back_manual(c, label)
@@ -2516,7 +2522,11 @@ class UserTab(QWidget):
                 LOG.error('JOG panel: %d missing: %s', len(missing),
                           ', '.join(missing))
             # panel state
-            self._ac_locked = {'a': False, 'c': False}
+            # MERGE, don't reset (advisor c-nit): a lock toggled before
+            # the jog panel wires must survive this line
+            base = {'a': False, 'c': False}
+            base.update(getattr(self, '_ac_locked', {}) or {})
+            self._ac_locked = base
             self._jog_go_ok = False    # >=1 typed field parses as a number
             self._jog_idle = None      # None = unknown (before first poll)
             self._jog_stat_nml = None  # status-strip stat channel
@@ -2634,13 +2644,15 @@ class UserTab(QWidget):
         try:
             import linuxcnc
             if zlift:
+                # machine frame (advisor V2): same lie as GO REL; a false
+                # base inside limits goes to the WRONG Z with no error
                 s = linuxcnc.stat()
                 s.poll()
-                z = self._jog_work_pos(s, 'z')
+                z = s.actual_position[2]
                 vals = (('z', z + 10.0),)
-                LOG.info('Z +10: work Z %.4f -> absolute target Z%.4f',
+                LOG.info('Z +10: machine Z %.4f -> G53 target Z%.4f',
                          z, z + 10.0)
-            self._jog_issue(label, list(vals))
+            self._jog_issue(label, list(vals), g53=zlift)
         except Exception as e:
             LOG.error('%s preset failed: %s', label, e)
 
@@ -2803,8 +2815,8 @@ class UserTab(QWidget):
                 c.error_msg('%s refused: machine is busy' % label)
                 LOG.error('%s refused: machine busy', label)
                 return
-            c.mode(linuxcnc.MODE_MDI)
-            c.wait_complete()
+            if not self._take_mdi(c, label):
+                return
             c.mdi('G20' if key == 'in' else 'G21')
             self._hand_back_manual(c, label)
             LOG.info('UNITS -> %s issued',
@@ -2871,15 +2883,22 @@ class UserTab(QWidget):
                 LOG.error('%s: no axis values entered', label)
                 return
             if rel:
+                # MACHINE-frame math (advisor V1): stat's OFFSETS are
+                # structurally untrustworthy -- a task mode switch aborts
+                # the interp_list and eats the queued G5X status update,
+                # so g5x can read zeros while G54 is live (+50 up became
+                # machine -881 tonight). stat's POSITIONS are servo truth.
+                # delta + actual_position, issued as G53, never touches an
+                # offset anywhere.
                 s = linuxcnc.stat()
                 s.poll()
-                vals = [(ax, self._jog_work_pos(s, ax) + v)
+                vals = [(ax, s.actual_position[JOG_AXIS_IDX[ax]] + v)
                         for ax, v in vals]
-            self._jog_issue(label, vals)
+            self._jog_issue(label, vals, g53=rel)
         except Exception as e:
             LOG.error('GO failed: %s', e)
 
-    def _jog_issue(self, label, vals):
+    def _jog_issue(self, label, vals, g53=False):
         # vals = [(axis letter, ABSOLUTE work target)]. Guards -> soft-limit
         # pre-check (REJECT, never clamp) -> MDI mode CONFIRMED by poll ->
         # ONE fire-and-forget mdi(). Refusals are LOUD: error toast + log
@@ -2927,12 +2946,16 @@ class UserTab(QWidget):
             # + (g5x + g92 + tool) offset (house math; XY G5x rotation not
             # modeled, same as every other panel). A violating move is
             # REJECTED -- never clamped silently.
-            if self._jog_limits:
+            # pre-check ONLY machine-frame (g53) targets: they compare
+            # against machine-frame limits exactly. Work-frame targets
+            # CANNOT be pre-checked here -- the only offset source (stat)
+            # lies (advisor V3), and a wrong pre-check is worse than none;
+            # the planner enforces limits in the interp's true frame and
+            # its refusal is loud.
+            if self._jog_limits and g53:
                 for ax, tw in vals:
                     i = JOG_AXIS_IDX[ax]
-                    off = (s.g5x_offset[i] + s.g92_offset[i]
-                           + s.tool_offset[i])
-                    mt = tw + off
+                    mt = tw
                     lo, hi = self._jog_limits[ax]
                     if mt < lo - 1e-6 or mt > hi + 1e-6:
                         self._jog_flash(ax)
@@ -3001,7 +3024,11 @@ class UserTab(QWidget):
                     reasserts += 1
                     c.mode(linuxcnc.MODE_MDI)
                 time.sleep(0.02)
-            line = 'G90 G1 {} F{:.1f}'.format(words, feed)
+            # G53: non-modal, FORCED absolute even under a stranded G91,
+            # offsets never consulted (advisor part 1 verdict) -- the only
+            # frame-proof one-liner for machine-frame targets
+            line = ('G53 G1 {} F{:.1f}' if g53
+                    else 'G90 G1 {} F{:.1f}').format(words, feed)
             c.mdi(line)   # FIRE AND FORGET -- brain restores MANUAL+teleop
             LOG.info('%s: MDI "%s" issued (fire-and-forget; brain restores '
                      'MANUAL+teleop when motion completes)', label, line)
@@ -3522,8 +3549,8 @@ class UserTab(QWidget):
             if not ok or n == cur:
                 return
             c = linuxcnc.command()
-            c.mode(linuxcnc.MODE_MDI)
-            c.wait_complete(2.0)
+            if not self._take_mdi(c, 'SPINDLE EDITOR'):
+                return
             if n == 0:
                 c.mdi('o<tool_loc_declare> call [%d] [-1]' % cur)
                 LOG.info('SPINDLE EDITOR: spindle -> empty; T%d recorded '
@@ -3753,6 +3780,26 @@ class UserTab(QWidget):
             LOG.exception('TCP CAL: could not read the pivot in force')
         return ('identity', 0.0)
 
+    def _take_mdi(self, c, label, secs=4.0):
+        """Take MDI and CONFIRM it landed, re-asserting against the
+        brain's MANUAL-restore race (advisor M1-M6: six single-shot
+        mode() calls lost that race intermittently -- lost declarations,
+        lost G20/G21, a drawbar left bleeding air)."""
+        import linuxcnc, time
+        s = linuxcnc.stat()
+        deadline = time.time() + secs
+        c.mode(linuxcnc.MODE_MDI)
+        c.wait_complete(1.0)
+        while True:
+            s.poll()
+            if s.task_mode == linuxcnc.MODE_MDI:
+                return True
+            if time.time() > deadline:
+                LOG.error('%s: task never reached MDI in %.0fs', label, secs)
+                return False
+            c.mode(linuxcnc.MODE_MDI)
+            time.sleep(0.15)
+
     def _hand_back_manual(self, c, label, wait=2.0):
         """Return the machine to MANUAL after a BOOKKEEPING MDI.
 
@@ -3842,14 +3889,10 @@ class UserTab(QWidget):
             return
         c0, s0 = gate
         s0.poll()
-        # a live A work offset makes G1 A0 land the JOINT off zero, so the
-        # apply guard (joint.4.pos-fb) would refuse every step (advisor S11)
-        if abs(s0.g5x_offset[3]) > 1e-6 or abs(s0.g92_offset[3]) > 1e-6:
-            self._tcp_say('AUTO refused: A carries a work offset -- G1 A0 '
-                          'would not put the joint at zero and the pivot '
-                          'could never be applied.', bad=True)
-            self._hand_back_manual(c0, 'TCP AUTO')
-            return
+        # no stat-offset guard here (advisor V4): stat's offsets lie, so
+        # the old test false-passed exactly when a real A offset existed.
+        # The straighten block below IS the honest guard -- after G1 A0,
+        # servo feedback still off zero = an offset exists, refuse there.
         kind, L_set = self._tcp_kins()
         if kind != 'tcp':
             self._tcp_say('AUTO needs tool-tip kins running -- relaunch with '
@@ -5104,8 +5147,8 @@ class UserTab(QWidget):
                               'table is the ground truth)', tool, fork,
                               homes.get(tool, 'unset'))
                     c = linuxcnc.command()
-                    c.mode(linuxcnc.MODE_MDI)
-                    c.wait_complete(2.0)
+                    if not self._take_mdi(c, 'AMBIGUOUS LOC heal'):
+                        return
                     c.mdi('o<tool_loc_declare> call [%d] [-1]' % tool)
                     self._hand_back_manual(c, 'AMBIGUOUS LOC heal')
 
@@ -5675,8 +5718,8 @@ class UserTab(QWidget):
                 LOG.error('DRAWBAR: window expired but the machine is busy -- '
                           'NOT touching the solenoid')
                 return
-            c.mode(linuxcnc.MODE_MDI)
-            c.wait_complete()
+            if not self._take_mdi(c, 'DRAWBAR'):
+                return
             # o<clamptool> = M65 P0 PLUS M66 P0 L3 Q2, which waits up to 2 s
             # for the tool-LOCKED sensor and aborts if it never confirms. A
             # bare M65 P0 de-energises the solenoid and assumes it worked.
@@ -5877,8 +5920,8 @@ class UserTab(QWidget):
                 c.error_msg('UNLOAD SPINDLE needs a HOMED machine (MDI is '
                             'homed-gated on gantry kinematics). Home All (Homing menu) or resume first.')
                 return
-            c.mode(linuxcnc.MODE_MDI)
-            c.wait_complete()
+            if not self._take_mdi(c, 'UNLOAD SPINDLE'):
+                return
             c.mdi('o<unload_spindle> call')
             # the sub's M66 sensor waits outlive the 5 s default timeout;
             # a mode switch on a timed-out wait would abort it mid-sequence

@@ -107,6 +107,9 @@ h.newpin('inc-index', hal.HAL_S32, hal.HAL_OUT)
 # the wheel to the smallest step (jogging looked dead, 2026-08-05).
 h.newpin('inc-set', hal.HAL_S32, hal.HAL_IN)
 h.newpin('jogspeed-out', hal.HAL_FLOAT, hal.HAL_OUT)  # 0..100 % -> linear_jog_slider
+h.newpin('lock-x', hal.HAL_BIT, hal.HAL_IN)  # per-axis MPG locks, DRO
+h.newpin('lock-y', hal.HAL_BIT, hal.HAL_IN)  # single-click (operator
+h.newpin('lock-z', hal.HAL_BIT, hal.HAL_IN)  # 2026-08-06); start UNLOCKED
 h.newpin('lock-a', hal.HAL_BIT, hal.HAL_IN)  # LOCK A/C (DRO buttons via ned-tab):
 h.newpin('lock-c', hal.HAL_BIT, hal.HAL_IN)  # locked axes are SKIPPED in the cycle
 h.ready()
@@ -172,6 +175,8 @@ def locked(i):
     if homing_active():
         return True
     ax = AXES[i]
+    if ax in ('x', 'y', 'z') and h['lock-' + ax]:
+        return True
     if ax == 'a' and (h['lock-a'] or not _head_homed(4)):
         return True
     if ax == 'c' and (h['lock-c'] or not _head_homed(5)):
@@ -247,9 +252,14 @@ try:
         now = time.time()
 
         if locked(ax_i):                 # LOCK flipped on while selected
-            ax_i = adv(ax_i, 1)
-            print('ned_pendant: axis -> {} (previous locked)'.format(
-                AXES[ax_i].upper()), flush=True)
+            _j = adv(ax_i, 1)
+            if not locked(_j):
+                # all-five-locked is reachable now (XYZ locks exist);
+                # adv returns the original index then, and evicting to it
+                # printed this line every 60 ms forever (advisor d)
+                ax_i = _j
+                print('ned_pendant: axis -> {} (previous locked)'.format(
+                    AXES[ax_i].upper()), flush=True)
 
         if pressed and not btn_prev:                      # button went down
             press_t = now
