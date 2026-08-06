@@ -993,25 +993,16 @@ class UserTab(QWidget):
             tc.setContentsMargins(0, 0, 0, 0)
             tc.setSpacing(8)
 
-            tbox, tbl = _mkbox('A PIVOT LENGTH  --  needle on the puck')
-            tbtn = QPushButton('START')
-            tbtn.setObjectName('tcp_cal_btn')
-            tbtn.setMinimumHeight(90)
-            tbtn.setStyleSheet(self.CAL_QSS['pose'])
-            tbtn.clicked.connect(lambda _=False: self._tcp_press())
-            self._tcp_btn = tbtn
-            tbl.addWidget(tbtn)
-
-            # AUTO: the whole convergence, hands off (operator 2026-08-05).
+            tbox, tbl = _mkbox('A PIVOT')
             abtn = QPushButton('AUTO CONVERGE')
             abtn.setObjectName('tcp_auto_btn')
-            abtn.setMinimumHeight(62)
+            abtn.setMinimumHeight(90)
             abtn.setStyleSheet(self.CAL_QSS['measure'])
             abtn.clicked.connect(lambda _=False: self._tcp_auto_press())
             self._tcp_auto_btn = abtn
             tbl.addWidget(abtn)
 
-            tstat = QLabel('Park the needle over the puck, then START.')
+            tstat = QLabel('Park over the puck. AUTO CONVERGE.')
             tstat.setObjectName('tcp_cal_status')
             tstat.setWordWrap(True)
             tstat.setStyleSheet('color: rgb(200,208,205); font: 11pt;')
@@ -1035,28 +1026,6 @@ class UserTab(QWidget):
             tbl.addWidget(cbtn)
             tc.addWidget(tbox)
 
-            sbox, sbl = _mkbox('BOUNDS')
-            for cap, obj, dflt, attr in (
-                    ('plunge depth (mm)', 'tcp_cal_plunge', '30.0', '_tcp_plunge'),
-                    ('safe clearance (mm)', 'tcp_cal_clear', '30.0', '_tcp_clear')):
-                r = QHBoxLayout()
-                lb = QLabel(cap)
-                ed = QLineEdit(dflt)
-                ed.setObjectName(obj)
-                ed.setMinimumHeight(32)
-                ed.setStyleSheet(self.CAL_QSS.get('read', ''))
-                setattr(self, attr, ed)
-                r.addWidget(lb)
-                r.addWidget(ed)
-                sbl.addLayout(r)
-            snote = QLabel('Both touches plunge this far from wherever you '
-                           'parked. Park so the needle contacts inside it -- '
-                           'nothing here predicts where contact should be, '
-                           'because that deviation IS the measurement.')
-            snote.setWordWrap(True)
-            snote.setStyleSheet('color: rgb(160,160,160); font: 9pt;')
-            sbl.addWidget(snote)
-            tc.addWidget(sbox)
             tc.addStretch(1)
 
             hbox, hbl = _mkbox('IMPROVEMENTS')
@@ -1078,12 +1047,6 @@ class UserTab(QWidget):
             tbla.setStyleSheet(self.CAL_QSS.get('log', ''))
             self._tcp_table = tbla
             hbl.addWidget(tbla)
-            hnote = QLabel('dZ is the whole signal in identity kins. With '
-                           'tool-tip kins running it is the RESIDUAL -- it '
-                           'shrinks toward zero as L converges.')
-            hnote.setWordWrap(True)
-            hnote.setStyleSheet('color: rgb(160,160,160); font: 9pt;')
-            hbl.addWidget(hnote)
 
             tpg.addWidget(tcol, 0, 0)
             tpg.addWidget(hbox, 0, 1)
@@ -3696,14 +3659,30 @@ class UserTab(QWidget):
         becomes the true axis->nose machine constant only once the rod's
         stickout is measured and subtracted (nose #3010 path, task list)."""
         try:
-            import subprocess, time
-            r = subprocess.run(['timeout', '5', 'halcmd', 'getp', 'arm.in0'],
-                               capture_output=True, text=True)
-            try:
-                v = float(r.stdout.strip())
-            except ValueError:
-                self._tcp_say('COMMIT refused: arm.in0 unreadable -- is the '
-                              '-tcp session up?', bad=True)
+            import time
+            # FROM THE MEASUREMENT RECORD, NEVER THE LIVE PIN. The pin is a
+            # transient -- any relaunch re-seeds it from head_pivot.inc, and
+            # on 2026-08-05 23:52 that made this button write the STALE 157
+            # back over a finished calibration whose real result (L 323.68)
+            # was sitting in tcp_cal.json the whole time.
+            hist = getattr(self, '_tcp_hist', []) or []
+            evals = [r for r in hist if r.get('t') == 'descent-eval']
+            v = None
+            if evals:
+                best = min(evals, key=lambda r: r['mean'])
+                v = float(best['L'])
+                src = ('best alternate eval %d (mean|miss| %.4f)'
+                       % (best['n'], best['mean']))
+            else:
+                probes = [r for r in hist if r.get('t') != 'descent-eval']
+                if probes:
+                    v = float(probes[-1]['L'])
+                    src = ('last measurement, A %.1f deg'
+                           % probes[-1].get('a2', 0.0))
+            if v is None:
+                self._tcp_say('SAVE refused: no measurements in '
+                              'tcp_cal.json -- run AUTO CONVERGE first.',
+                              bad=True)
                 return
             if not (50.0 < v < 1000.0):
                 self._tcp_say('COMMIT refused: %.3f is not a physical '
@@ -3716,16 +3695,19 @@ class UserTab(QWidget):
                         'bakes it into the tcp postgui).\n'
                         '# WRITTEN BY THE OPERATOR: TCP tab SAVE PIVOT, '
                         '%s.\n'
+                        '# Source: %s.\n'
                         '# Value includes the touching rod while its tool '
                         'records 0 length --\n'
                         '# subtract the rod stickout to get the bare '
                         'axis->nose constant.\n'
                         'PIVOT_LENGTH = %.4f\n'
-                        % (time.strftime('%F %T'), v))
-            self._tcp_say('SAVED: PIVOT_LENGTH = %.4f -> head_pivot.inc. '
-                          'Every -tcp launch now starts with it.' % v)
-            LOG.error('TCP COMMIT: head_pivot.inc = %.4f (operator button)',
-                      v)
+                        % (time.strftime('%F %T'), src, v))
+            self._tcp_say('SAVED: PIVOT_LENGTH = %.4f (%s) -> '
+                          'head_pivot.inc.' % (v, src))
+            LOG.error('TCP COMMIT: head_pivot.inc = %.4f from %s', v, src)
+            # bring the live pin along (A=0-guarded) so file and session
+            # agree without a relaunch
+            self._tcp_apply(v)
         except Exception:
             LOG.exception('TCP COMMIT failed -- head_pivot.inc NOT written')
             self._tcp_say('COMMIT FAILED -- head_pivot.inc not written, '
@@ -3885,14 +3867,9 @@ class UserTab(QWidget):
         # at one go with a bad calibration, its to go in little stages so
         # by the time you move 15, you are not off by much any more" --
         # the ladder of applies IS the safety mechanism.
-        if repos:
-            # 10, not 6: "the calibration could be far off up front"
-            # (operator 2026-08-05) -- the early steps carry the whole
-            # pivot error in the tip height, so the step plunge needs the
-            # extra reach
-            plunge = 10.0
-        else:
-            plunge = self._tcp_field(self._tcp_plunge, 30.0, 2.0, 80.0)
+        # 30 free-park reference, 10 for every step (operator spec; the
+        # BOUNDS fields are gone -- these ARE the numbers)
+        plunge = 30.0 if not repos else 10.0
         st = self._tcp_auto_start or (0.0, 0.0, 0.0)
         c.mdi('o<tcp_auto_step> call [%.4f] [%d] [%.4f] [%.4f] [%.4f] '
               '[%.4f] [%d]'
@@ -4014,121 +3991,161 @@ class UserTab(QWidget):
             return
         self._tcp_auto_issue(self.TCP_ANGLES[i], repos=1)
 
-    # ---- FINAL STAGE: model-less 1-D search on L at +-35 deg ----------
-    # Operator 2026-08-05: "at the end, i want A to rotate 35 and -35, and
-    # I want to do a modelless one dimensional search in L, change L by no
-    # more than 0.5pct and just do a noisy gradient descent".
-    # Success/failure descent: evaluate mean|miss| over the +-35 pair,
-    # nudge L, re-evaluate; accept what improves, otherwise revert,
-    # reverse and halve. No kinematic formula anywhere in the loop -- the
-    # +-pair also shows any asymmetry the cos model is blind to.
-    TCP_DESC_CAP_PCT = 0.5      # never move L more than this per step
-    TCP_DESC_START_PCT = 0.1    # first nudge; after the ladder L is close
-    TCP_DESC_FLOOR_MM = 0.02    # step floor: RESET to start, keep exploring
-    TCP_DESC_NOISE_MM = 0.002   # improvement smaller than this = noise
-    # operator 2026-08-05: "it can go for 200 cycles. i don't care" -- the
-    # updating rule is an EXPLORER, not the answer; every eval is saved and
-    # the number is PICKED FROM THE DATA at the end.
-    TCP_DESC_MAX_EVALS = 200    # 2 probes per eval; STOP always works
+    # ---- FINAL STAGE: alternating secant descent at +-35 deg -----------
+    # Operator 2026-08-06, final form: "with one variable each time, you
+    # just need 2 numbers to do newton gradient descent... 2 pairs of reads
+    # to get a new L, and 2 pairs of reads to get a new A0 and keep
+    # alternating... apply annealing. don't move in huge jumps, change
+    # values by a quarter of the prescribed change."
+    #   L turn: error = |miss(+35)| + |miss(-35)|  (sum of ABSOLUTE errors)
+    #   A turn: signed error = miss(+35) - miss(-35)   (the difference)
+    # Two evals per turn -- at x and at x+h -- give the secant slope; the
+    # Newton step -e/slope is taken at ONE QUARTER, capped. No kinematic
+    # formula anywhere: both slopes come from the machine's own reads.
+    # A-zero moves bank through _cal_bank (head_zero.inc + REF A in-place
+    # re-home, ~15 s each, backed up every write).
+    TCP_H_L = 0.30       # mm probe perturbation for the L secant
+    TCP_H_A = 0.03       # deg probe perturbation for the A secant
+    TCP_ANNEAL = 0.25    # quarter of the prescribed Newton change
+    TCP_CAP_L_PCT = 0.5  # never move L more than this per update
+    TCP_CAP_A = 0.10     # deg, never move A zero more than this per update
+    TCP_E_NOISE = 0.005  # mm; slope smaller than this over h = no update
+    TCP_DESC_MAX_EVALS = 200
 
     def _tcp_descent_begin(self, how):
         _, L0 = self._tcp_kins()
         self._tcp_auto_phase = 'descent'
         self._tcp_desc = {
-            'L': L0,
-            'step': max(self.TCP_DESC_FLOOR_MM,
-                        L0 * self.TCP_DESC_START_PCT / 100.0),
-            'cap': L0 * self.TCP_DESC_CAP_PCT / 100.0,
-            'dir': 1.0,
-            'best': None,       # metric of the ACCEPTED L
-            'prev_L': None,     # to revert a rejected move
-            'evals': 0,
-            'probes': [None, None],   # [+35 miss, -35 miss]
+            'var': 'L', 'stage': 'a',
+            'xa': None, 'ea': None,
+            'L': L0, 'Acum': 0.0,
+            'evals': 0, 'probes': [None, None], 'data': [],
+            'refwait': False, 'ref_t0': 0.0,
         }
-        self._tcp_say('DESCENT (%s): +-35 deg pairs, model-less, steps '
-                      '<= %.2f mm (0.5%%), from L %.3f.'
-                      % (how, self._tcp_desc['cap'], L0))
-        LOG.error('TCP DESCENT begin (%s): L=%.4f step=%.3f cap=%.3f',
-                  how, L0, self._tcp_desc['step'], self._tcp_desc['cap'])
+        self._tcp_say('ALTERNATE (%s): 2 pairs -> new L (sum), 2 pairs -> '
+                      'new A0 (difference), quarter-step, from L %.3f.'
+                      % (how, L0))
+        LOG.error('TCP ALT begin (%s): L=%.4f', how, L0)
         self._tcp_auto_issue(35.0, repos=1)
 
     def _tcp_descent_next(self):
+        import time
         d = self._tcp_desc
         if d is None:
             self._tcp_auto_stop('descent state lost')
             return
-        if d['probes'][0] is not None and d['probes'][1] is None:
-            self._tcp_auto_issue(-35.0, repos=1)
-            return
         if d['probes'][0] is None:
             self._tcp_auto_issue(35.0, repos=1)
             return
-        # both probes in: evaluate the L THOSE PROBES MEASURED
-        mp, mn = d['probes'][0], d['probes'][1]
-        m = (abs(mp) + abs(mn)) / 2.0
-        asym = mp - mn
-        d['evals'] += 1
+        if d['probes'][1] is None:
+            self._tcp_auto_issue(-35.0, repos=1)
+            return
+        mp, mn = d['probes']
         d['probes'] = [None, None]
-        # SAVE EVERY EVALUATION (operator: "save all the data and we can
-        # pick a number from there... we want to look at all the data
-        # holistically"). One record per eval: the L in force and both
-        # signed misses -- everything a later fit could want.
-        rec = {'t': 'descent-eval', 'n': d['evals'], 'L': d['L'],
-               'miss_p35': mp, 'miss_m35': mn, 'mean': m, 'asym': asym}
-        d.setdefault('data', []).append(rec)
+        d['evals'] += 1
+        # L: ABSOLUTE errors summed (operator 2026-08-06) -- the signed
+        # sum would leak the +-asymmetry into the L turn and make L fight
+        # the A variable. A: the difference stays SIGNED, its zero
+        # crossing IS the target ("makes the error of +-35 EQUAL").
+        e = (abs(mp) + abs(mn)) if d['var'] == 'L' else (mp - mn)
+        x = d['L'] if d['var'] == 'L' else d['Acum']
+        rec = {'t': 'descent-eval', 'n': d['evals'], 'var': d['var'],
+               'stage': d['stage'], 'L': d['L'], 'Acum': d['Acum'],
+               'miss_p35': mp, 'miss_m35': mn,
+               'mean': (abs(mp) + abs(mn)) / 2.0,
+               'sum': mp + mn, 'diff': mp - mn}
+        d['data'].append(rec)
         hist = getattr(self, '_tcp_hist', [])
         hist.append(rec)
         self._tcp_hist = hist
         try:
             self._tcp_save_hist()
         except Exception:
-            LOG.exception('TCP DESCENT: eval record not saved')
-        LOG.error('TCP DESCENT eval %d/%d: L=%.4f mean|miss|=%.4f '
-                  'asym=%+.4f (step %.3f, dir %+d)', d['evals'],
-                  self.TCP_DESC_MAX_EVALS, d['L'], m, asym,
-                  d['step'], int(d['dir']))
-        self._tcp_say('descent %d/%d: L %.3f -> miss %.4f mm, asym %+.4f'
-                      % (d['evals'], self.TCP_DESC_MAX_EVALS, d['L'], m,
-                         asym))
-        # the updating rule is only the explorer -- never trusted blindly
-        # (operator). It walks; the ANSWER is picked from the data below.
-        if d['best'] is None or m < d['best'] - self.TCP_DESC_NOISE_MM:
-            d['best'] = m
-            d['prev_L'] = d['L']
-            accepted = True
-        else:
-            accepted = False
-        if not accepted and d['prev_L'] is not None:
-            d['L'] = d['prev_L']
-            d['dir'] = -d['dir']
-            d['step'] = d['step'] / 2.0
-            if d['step'] < self.TCP_DESC_FLOOR_MM:
-                # floor does NOT end the run: reset and keep exploring --
-                # more data around the minimum is the point
-                d['step'] = max(self.TCP_DESC_FLOOR_MM,
-                                d['prev_L'] * self.TCP_DESC_START_PCT
-                                / 100.0)
+            LOG.exception('TCP ALT: eval record not saved')
+        LOG.error('TCP ALT eval %d/%d [%s/%s]: L=%.4f A0+=%.4f  sum=%+.4f '
+                  'diff=%+.4f', d['evals'], self.TCP_DESC_MAX_EVALS,
+                  d['var'], d['stage'], d['L'], d['Acum'],
+                  rec['sum'], rec['diff'])
+        self._tcp_say('%s/%s %d: sum %+.4f  diff %+.4f'
+                      % (d['var'], d['stage'], d['evals'],
+                         rec['sum'], rec['diff']))
         if d['evals'] >= self.TCP_DESC_MAX_EVALS:
-            # PICK FROM THE DATA: the L whose measured pair had the
-            # smallest mean|miss| across the whole run
-            data = d.get('data', [])
+            data = d['data']
             best = min(data, key=lambda r: r['mean'])
             self._tcp_apply_queue(best['L'])
             self._tcp_auto_stop(
-                'DESCENT complete: %d evals saved to tcp_cal.json. Best '
-                'OBSERVED: L %.3f (miss %.4f, asym %+.4f, eval %d) -- '
-                'applied. Pick differently from the data if it reads '
-                'otherwise.' % (len(data), best['L'], best['mean'],
-                                best['asym'], best['n']))
+                'ALTERNATE complete: %d evals in tcp_cal.json. Best '
+                'observed: L %.3f (mean|miss| %.4f, eval %d) applied; A0 '
+                'net %+.4f deg banked.' % (len(data), best['L'],
+                                           best['mean'], best['n'],
+                                           d['Acum']))
             return
-        # explorer takes its next step, capped at 0.5%
-        d['L'] = d['L'] + d['dir'] * min(d['step'], d['cap'])
-        self._tcp_apply_queue(d['L'])
+        if d['stage'] == 'a':
+            # first point of the turn banked; perturb by h for the second
+            d['xa'], d['ea'] = x, e
+            d['stage'] = 'b'
+            if d['var'] == 'L':
+                d['L'] = d['L'] + self.TCP_H_L
+                self._tcp_apply_queue(d['L'])
+            else:
+                self._tcp_bank_azero(self.TCP_H_A, 'secant probe step')
+            return
+        # stage b: secant -> annealed quarter step, then switch variable
+        xa, ea, xb, eb = d['xa'], d['ea'], x, e
+        de = eb - ea
+        if abs(de) < self.TCP_E_NOISE or abs(xb - xa) < 1e-9:
+            move = 0.0
+            LOG.error('TCP ALT %s: slope below noise (de=%+.4f over '
+                      '%+.4f) -- no update this turn', d['var'], de,
+                      xb - xa)
+        else:
+            newton = -eb * (xb - xa) / de
+            move = self.TCP_ANNEAL * newton
+            cap = (d['L'] * self.TCP_CAP_L_PCT / 100.0
+                   if d['var'] == 'L' else self.TCP_CAP_A)
+            move = max(-cap, min(cap, move))
+        d['stage'] = 'a'
+        d['xa'] = d['ea'] = None
+        if d['var'] == 'L':
+            nxt = 'A0'
+            d['var'] = 'A'
+            if move != 0.0:
+                d['L'] = d['L'] + move
+                self._tcp_say('L -> %.3f (quarter of %+.3f); now %s'
+                              % (d['L'], move / self.TCP_ANNEAL, nxt))
+                self._tcp_apply_queue(d['L'])
+                return
+            self._tcp_apply_queue(d['L'])   # re-apply = no-op, keeps flow
+            return
+        d['var'] = 'L'
+        if move != 0.0:
+            self._tcp_say('A0 %+.4f deg (quarter of %+.4f); now L'
+                          % (move, move / self.TCP_ANNEAL))
+            self._tcp_bank_azero(move, 'annealed update')
+            return
+        self._tcp_auto_issue(35.0, repos=1)
+
+    def _tcp_bank_azero(self, delta, why):
+        """Adjust the A zero by `delta` deg through the SAME machinery the
+        AC tab banks with: head_zero.inc (backed up), #3069 cleared, REF A
+        pulsed, brain re-reads the absolute encoder and re-homes A in
+        place. ~15 s, A briefly unhomed; the tick waits it out."""
+        import time
+        d = self._tcp_desc
+        try:
+            self._cal_bank('A', delta, 'refa-out', '3069', 0.0, 0.0)
+            d['Acum'] += delta
+            d['refwait'] = True
+            d['ref_t0'] = time.time()
+            LOG.error('TCP ALT: A0 bank %+.4f deg (%s), net %+.4f -- '
+                      'waiting for the REF re-home', delta, why, d['Acum'])
+        except Exception:
+            LOG.exception('TCP ALT: A0 bank failed -- stopping')
+            self._tcp_auto_stop('A-zero bank failed')
 
     def _tcp_apply_queue(self, L):
         """Queue an L write through the ONE guarded path: the tick applies
-        at confirmed A=0 + idle, then calls _tcp_auto_next, which in the
-        descent phase issues the next +-35 probe."""
+        at confirmed A=0 + idle, then calls _tcp_auto_next."""
         import time
         self._tcp_auto_pending_L = L
         self._tcp_auto_apply_t0 = time.time()
@@ -4467,6 +4484,27 @@ class UserTab(QWidget):
         # straight and the interpreter is idle, and only then take the next
         # step. Serialising it this way is what makes each larger tilt
         # compensate with the improved pivot.
+        d_rw = getattr(self, '_tcp_desc', None)
+        if (getattr(self, '_tcp_auto_on', False) and d_rw
+                and d_rw.get('refwait')):
+            # an A0 bank is re-homing A in place (~15 s, A unhomed).
+            # NOTHING advances -- and the no-callback watchdog must not
+            # fire -- until the machine is homed and idle again.
+            try:
+                import linuxcnc
+                s6 = linuxcnc.stat()
+                s6.poll()
+                if (all(s6.homed[:6])
+                        and s6.interp_state == linuxcnc.INTERP_IDLE
+                        and s6.inpos):
+                    d_rw['refwait'] = False
+                    self._tcp_auto_t0 = time.time()
+                    self._tcp_auto_issue(35.0, repos=1)
+                elif time.time() - d_rw.get('ref_t0', 0) > 90.0:
+                    self._tcp_auto_stop('REF A re-home never finished')
+            except Exception:
+                LOG.exception('TCP ALT: refwait poll failed')
+            return
         if getattr(self, '_tcp_auto_pending_L', None) is not None:
             # the 45 s deadline lives OUTSIDE the try: a halcmd that keeps
             # failing used to raise BEFORE the elif, so the deadline was
