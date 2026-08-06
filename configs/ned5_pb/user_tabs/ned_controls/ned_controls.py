@@ -3798,7 +3798,7 @@ class UserTab(QWidget):
     # before the needle tip. The old 0.1/0.2 steps were useless anyway --
     # at 0.1 deg the leverage (1-cos A) is 1.5e-6 and the solve is pure
     # noise.
-    TCP_ANGLES = [1.0, 3.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0]
+    TCP_ANGLES = [5.0, 15.0, 25.0, 35.0]
     TCP_TOL = 0.02          # mm of residual dZ (manual cycle display)
     # convergence is judged on |dL|, NOT the raw residual: at 1 deg the
     # leverage is 1/(1-cos A) = 6566 mm of pivot per mm of residual, so
@@ -3839,6 +3839,9 @@ class UserTab(QWidget):
                           bad=True)
             self._hand_back_manual(c0, 'TCP AUTO')
             return
+        # every rerun starts with an empty table (operator 2026-08-06:
+        # "clear up that data on next rerun") -- old rows go to trash/
+        self._tcp_clear_data()
         self._tcp_auto_on = True
         self._tcp_auto_i = -1          # -1 = the one-off A=0 reference
         self._tcp_auto_ref = None
@@ -4042,10 +4045,13 @@ class UserTab(QWidget):
             self._tcp_auto_stop('descent state lost')
             return
         if d['probes'][0] is None:
-            self._tcp_auto_issue(35.0, repos=1)
+            # the A variable is a COMMAND OFFSET (operator 2026-08-06:
+            # "just offset it so that +35 is +35.01") -- nothing physical
+            # changes mid-run, the probes simply target 35+ofs / -35+ofs.
+            self._tcp_auto_issue(35.0 + d['Acum'], repos=1)
             return
         if d['probes'][1] is None:
-            self._tcp_auto_issue(-35.0, repos=1)
+            self._tcp_auto_issue(-35.0 + d['Acum'], repos=1)
             return
         mp, mn = d['probes']
         d['probes'] = [None, None]
@@ -4095,7 +4101,8 @@ class UserTab(QWidget):
                 d['L'] = d['L'] + self.TCP_H_L
                 self._tcp_apply_queue(d['L'])
             else:
-                self._tcp_bank_azero(self.TCP_H_A, 'secant probe step')
+                d['Acum'] += self.TCP_H_A     # retarget only, no banking
+                self._tcp_auto_issue(35.0 + d['Acum'], repos=1)
             return
         # stage b: secant -> annealed quarter step, then switch variable
         xa, ea, xb, eb = d['xa'], d['ea'], x, e
@@ -4126,29 +4133,10 @@ class UserTab(QWidget):
             return
         d['var'] = 'L'
         if move != 0.0:
-            self._tcp_say('A0 %+.4f deg (quarter of %+.4f); now L'
-                          % (move, move / self.TCP_ANNEAL))
-            self._tcp_bank_azero(move, 'annealed update')
-            return
-        self._tcp_auto_issue(35.0, repos=1)
-
-    def _tcp_bank_azero(self, delta, why):
-        """Adjust the A zero by `delta` deg through the SAME machinery the
-        AC tab banks with: head_zero.inc (backed up), #3069 cleared, REF A
-        pulsed, brain re-reads the absolute encoder and re-homes A in
-        place. ~15 s, A briefly unhomed; the tick waits it out."""
-        import time
-        d = self._tcp_desc
-        try:
-            self._cal_bank('A', delta, 'refa-out', '3069', 0.0, 0.0)
-            d['Acum'] += delta
-            d['refwait'] = True
-            d['ref_t0'] = time.time()
-            LOG.error('TCP ALT: A0 bank %+.4f deg (%s), net %+.4f -- '
-                      'waiting for the REF re-home', delta, why, d['Acum'])
-        except Exception:
-            LOG.exception('TCP ALT: A0 bank failed -- stopping')
-            self._tcp_auto_stop('A-zero bank failed')
+            d['Acum'] = max(-1.0, min(1.0, d['Acum'] + move))
+            self._tcp_say('A0 offset -> %+.4f deg (quarter of %+.4f); now L'
+                          % (d['Acum'], move / self.TCP_ANNEAL))
+        self._tcp_auto_issue(35.0 + d['Acum'], repos=1)
 
     def _tcp_apply_queue(self, L):
         """Queue an L write through the ONE guarded path: the tick applies
@@ -4172,6 +4160,15 @@ class UserTab(QWidget):
                       'residual %.4f mm. head_pivot.inc is NOT written.'
                       % (why, len(rows), L_now, worst))
         # park A back at zero, tip back over the puck
+        # the net A0 offset banks ONCE, at the very end, through the AC
+        # tab's proven path (_cal_bank: head_zero.inc + REF A encoder
+        # read + in-place re-home). Mid-run banking is what wedged on the
+        # unpowered PSO. Deferred until the park has landed -- REF unhomes
+        # A, and the park still has to move.
+        d0 = getattr(self, '_tcp_desc', None)
+        if (getattr(self, '_tcp_auto_phase', '') == 'descent' and d0
+                and abs(d0.get('Acum', 0.0)) > 0.005):
+            self._tcp_bank_after_park = d0['Acum']
         st = getattr(self, '_tcp_auto_start', None)
         try:
             gate = self._cal_gate('TCP AUTO park')
@@ -4472,6 +4469,13 @@ class UserTab(QWidget):
                             and s2.task_mode == linuxcnc.MODE_MDI):
                         self._tcp_manual_pending = False
                         self._hand_back_manual(linuxcnc.command(), 'TCP CAL')
+                        ab = getattr(self, '_tcp_bank_after_park', None)
+                        if ab is not None:
+                            self._tcp_bank_after_park = None
+                            self._tcp_say('banking net A0 %+.4f deg via '
+                                          'REF A (the proven AC path)' % ab)
+                            self._cal_bank('A', ab, 'refa-out', '3069',
+                                           0.0, 0.0)
                         # the park has landed and A is back at 0: the one
                         # moment the pivot can change without stepping the
                         # world position
@@ -4491,27 +4495,6 @@ class UserTab(QWidget):
         # straight and the interpreter is idle, and only then take the next
         # step. Serialising it this way is what makes each larger tilt
         # compensate with the improved pivot.
-        d_rw = getattr(self, '_tcp_desc', None)
-        if (getattr(self, '_tcp_auto_on', False) and d_rw
-                and d_rw.get('refwait')):
-            # an A0 bank is re-homing A in place (~15 s, A unhomed).
-            # NOTHING advances -- and the no-callback watchdog must not
-            # fire -- until the machine is homed and idle again.
-            try:
-                import linuxcnc
-                s6 = linuxcnc.stat()
-                s6.poll()
-                if (all(s6.homed[:6])
-                        and s6.interp_state == linuxcnc.INTERP_IDLE
-                        and s6.inpos):
-                    d_rw['refwait'] = False
-                    self._tcp_auto_t0 = time.time()
-                    self._tcp_auto_issue(35.0, repos=1)
-                elif time.time() - d_rw.get('ref_t0', 0) > 90.0:
-                    self._tcp_auto_stop('REF A re-home never finished')
-            except Exception:
-                LOG.exception('TCP ALT: refwait poll failed')
-            return
         if getattr(self, '_tcp_auto_pending_L', None) is not None:
             # the 45 s deadline lives OUTSIDE the try: a halcmd that keeps
             # failing used to raise BEFORE the elif, so the deadline was

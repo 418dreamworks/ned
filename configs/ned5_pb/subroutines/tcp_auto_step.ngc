@@ -40,8 +40,11 @@ o<tcp_auto_step> sub
   o10 if [#<_metric> EQ 0]
     (abort, TCP AUTO: switch to MM first - this routine is metric)
   o10 endif
-  o16 if [ABS[#<targa>] GT 35]
-    (abort, TCP AUTO: A beyond 35 deg - the rod radius would touch first)
+  ; 36, not 35: the descent's A0 command offset rides on top of the
+  ; +-35 targets (35.01 etc, capped +-1 deg), and the radius margin at 36
+  ; is unchanged in practice
+  o16 if [ABS[#<targa>] GT 36]
+    (abort, TCP AUTO: A beyond 36 deg - the rod radius would touch first)
   o16 endif
 
   M50 P0
