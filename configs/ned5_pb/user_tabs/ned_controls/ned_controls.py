@@ -3721,6 +3721,10 @@ class UserTab(QWidget):
             self._tcp_say('SAVED: PIVOT_LENGTH = %.4f (%s) -> '
                           'head_pivot.inc.' % (v, src))
             LOG.error('TCP COMMIT: head_pivot.inc = %.4f from %s', v, src)
+            try:
+                self._tcp_result.setText('PARAM (axis->nose) = %.4f' % v)
+            except Exception:
+                pass
             # bring the live pin along (A=0-guarded). _tcp_apply expects
             # axis->TIP and subtracts the LIVE tool itself -- handing it
             # the nose value double-subtracted the tool (advisor F1: pin
@@ -3886,6 +3890,16 @@ class UserTab(QWidget):
                              'tcp_survey_%s.ndjson'
                              % _t.strftime('%Y%m%d-%H%M%S'))}
         random.seed()
+        try:
+            self._svy['arm0_saved'] = self._tcp_tooloff() * 0 + float(
+                __import__('subprocess').run(
+                    ['timeout', '5', 'halcmd', 'getp', 'arm.in0'],
+                    capture_output=True, text=True).stdout.strip())
+            self._tcp_result.setText('PARAM (axis->nose) = %.4f'
+                                     % self._svy['arm0_saved'])
+        except Exception:
+            LOG.exception('SURVEY: could not read arm.in0 at press')
+            self._svy['arm0_saved'] = None
         self._tcp_auto_i = -1          # -1 = the one-off A=0 reference
         self._tcp_auto_ref = None
         self._tcp_auto_start = None
@@ -4669,6 +4683,17 @@ class UserTab(QWidget):
                     if s2.interp_state == linuxcnc.INTERP_IDLE and s2.inpos:
                         self._tcp_manual_pending = False
                         self._hand_back_manual(linuxcnc.command(), 'TCP CAL')
+                        v0 = getattr(self, '_svy', None)
+                        if (v0 and v0.get('arm0_saved') is not None
+                                and abs(a_live) <= 0.05):
+                            import subprocess as _sp
+                            _sp.run(['timeout', '5', 'halcmd', 'setp',
+                                     'arm.in0', '%.4f' % v0['arm0_saved']],
+                                    capture_output=True)
+                            LOG.error('SURVEY: arm.in0 RESTORED to the '
+                                      'saved parameter %.4f',
+                                      v0['arm0_saved'])
+                            v0['arm0_saved'] = None
                         ab = getattr(self, '_tcp_bank_after_park', None)
                         if ab is not None:
                             self._tcp_bank_after_park = None
