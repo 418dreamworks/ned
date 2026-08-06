@@ -3747,7 +3747,12 @@ class UserTab(QWidget):
     # at 0.1 deg the leverage (1-cos A) is 1.5e-6 and the solve is pure
     # noise.
     TCP_ANGLES = [1.0, 3.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0]
-    TCP_TOL = 0.02          # mm of residual dZ that counts as converged
+    TCP_TOL = 0.02          # mm of residual dZ (manual cycle display)
+    # convergence is judged on |dL|, NOT the raw residual: at 1 deg the
+    # leverage is 1/(1-cos A) = 6566 mm of pivot per mm of residual, so
+    # residuals under 0.02 mm at the small angles certify nothing. 0.5 mm
+    # of pivot is what the operator is converging (advisor S9).
+    TCP_DL_TOL = 0.5
 
     def _tcp_auto_press(self):
         if getattr(self, '_tcp_auto_on', False):
@@ -3760,23 +3765,39 @@ class UserTab(QWidget):
         gate = self._cal_gate('TCP AUTO')
         if gate is None:
             return
+        c0, s0 = gate
+        s0.poll()
+        # a live A work offset makes G1 A0 land the JOINT off zero, so the
+        # apply guard (joint.4.pos-fb) would refuse every step (advisor S11)
+        if abs(s0.g5x_offset[3]) > 1e-6 or abs(s0.g92_offset[3]) > 1e-6:
+            self._tcp_say('AUTO refused: A carries a work offset -- G1 A0 '
+                          'would not put the joint at zero and the pivot '
+                          'could never be applied.', bad=True)
+            self._hand_back_manual(c0, 'TCP AUTO')
+            return
         kind, L_set = self._tcp_kins()
         if kind != 'tcp':
             self._tcp_say('AUTO needs tool-tip kins running -- relaunch with '
                           '-tcp. In identity there is nothing to converge.',
                           bad=True)
+            self._hand_back_manual(c0, 'TCP AUTO')
             return
         self._tcp_auto_on = True
         self._tcp_auto_i = -1          # -1 = the one-off A=0 reference
         self._tcp_auto_ref = None
         self._tcp_auto_start = None
         self._tcp_auto_rows = []
+        self._tcp_auto_pending_L = None
+        self._tcp_auto_go_next = False
+        self._tcp_auto_idle_t0 = None
         self._tcp_set_face()
         self._tcp_say('AUTO START: reference probe at A=0, then %d tilts '
-                      '0.1 -> 35 deg, improving and applying L at each. '
+                      '%s deg, improving and applying L at each. '
                       'Pivot in force now %.3f mm.'
-                      % (len(self.TCP_ANGLES), L_set))
+                      % (len(self.TCP_ANGLES),
+                         '/'.join('%g' % a for a in self.TCP_ANGLES), L_set))
         self._tcp_auto_issue(0.0, repos=0, puck=1)   # puck UP, stays up
+        self._puck_sync(True)
 
     def _tcp_auto_issue(self, targa, repos, puck=0):
         import time
@@ -3785,16 +3806,29 @@ class UserTab(QWidget):
             self._tcp_auto_stop('gate refused')
             return
         c, s = gate
+        import math
         plunge = self._tcp_field(self._tcp_plunge, 30.0, 2.0, 80.0)
+        _, L_set = self._tcp_kins()
+        # worst-case tip excursion while A rotates: the sub lifts this far
+        # before every rotation (advisor S3)
+        lift = max(5.0, L_set * (1 - math.cos(math.radians(abs(targa))))
+                   + 5.0)
+        if repos and plunge > 0:
+            # contact is 5 mm below the start pose plus the tip excursion at
+            # this angle -- never the operator's free-park 30 mm, which is a
+            # table strike on a miss (advisor S4)
+            need = 5.0 + L_set * (1 - math.cos(math.radians(targa))) + 3.0
+            plunge = min(plunge, max(8.0, need))
         st = self._tcp_auto_start or (0.0, 0.0, 0.0)
         c.mdi('o<tcp_auto_step> call [%.4f] [%d] [%.4f] [%.4f] [%.4f] '
-              '[%.4f] [%d]'
-              % (targa, repos, st[0], st[1], st[2], plunge, puck))
+              '[%.4f] [%d] [%.4f]'
+              % (targa, repos, st[0], st[1], st[2], plunge, puck, lift))
         self._tcp_auto_t0 = time.time()
         self._tcp_auto_want = targa
+        self._tcp_auto_idle_t0 = None
         LOG.error('TCP AUTO: step issued A=%.3f repos=%d start=%.4f/%.4f/'
-                  '%.4f plunge=%.1f puck=%d', targa, repos, st[0], st[1],
-                  st[2], plunge, puck)
+                  '%.4f plunge=%.1f puck=%d lift=%.1f', targa, repos,
+                  st[0], st[1], st[2], plunge, puck, lift)
 
     def tcp_auto_point(self, xt, yt, zt, at):
         """Called BY THE G-CODE at every probe trip in the auto sequence."""
@@ -3813,7 +3847,11 @@ class UserTab(QWidget):
             self._tcp_say('reference: Z %.4f at A %.3f. Start pose banked '
                           '5 mm above it -- every step lifts here, rotates, '
                           'and comes back down to probe.' % (z, a))
-            self._tcp_auto_next()
+            # DO NOT issue the next step from inside this callback: it is
+            # delivered on the notification poll at an arbitrary moment, and
+            # _cal_gate refusing here killed the whole sweep with the puck
+            # left up (advisor S8). The tick issues it once genuinely idle.
+            self._tcp_auto_go_next = True
             return
         z0, a0 = self._tcp_auto_ref
         den = math.cos(math.radians(a0)) - math.cos(math.radians(a))
@@ -3824,7 +3862,13 @@ class UserTab(QWidget):
         dL = (z0 - z) / den
         L = L_set + dL
         resid = z - z0
-        self._tcp_auto_rows.append((a, resid, L))
+        self._tcp_auto_rows.append((a, resid, L, dL))
+        # BANK THE STATE FIRST (advisor S7): a RuntimeError from any widget
+        # below would otherwise lose the measurement and stall the sweep --
+        # the row would be in the history file but pending_L never set.
+        self._tcp_auto_pending_L = L
+        import time as _t
+        self._tcp_auto_apply_t0 = _t.time()
         LOG.error('TCP AUTO: A=%.3f residual dZ=%+.4f -> dL=%+.4f, L=%.4f',
                   a, resid, dL, L)
         row = {'t': 'auto', 'a1': a0, 'a2': a, 'z1': z0, 'z2': z,
@@ -3833,36 +3877,37 @@ class UserTab(QWidget):
         prev = hist[-1]['L'] if hist else None
         hist.append(row)
         self._tcp_hist = hist
-        self._tcp_save_hist()
-        self._tcp_add_row(len(hist), row, prev)
-        self._tcp_result.setText('L = %.3f mm' % L)
-        # APPLY IMMEDIATELY. The next step tilts further, and it can only
-        # stay over the puck if the pivot it is compensating with is the
-        # improved one. Safe here: the probe left A at this step's angle,
-        # so guard inside _tcp_apply decides.
-        # DO NOT APPLY HERE. This callback runs when the INTERPRETER
-        # reaches the DEBUG line, not when the G1 A0 that precedes it has
-        # physically finished -- motion is queued. Applying now would read
-        # A mid-rotation, the guard would refuse, and the write would be
-        # silently skipped every single step. Defer to the tick, which
-        # waits for the interpreter to go idle AND for the servo feedback
-        # to say the head is actually straight. Writing the pivot into a
-        # powered machine is fine, but ONLY when it is straight
-        # (operator 2026-08-05).
-        self._tcp_say('A %.2f deg: residual %+.4f mm -> L %.3f mm -- '
-                      'applying once the head is back at zero'
-                      % (a, resid, L))
-        self._tcp_auto_pending_L = L
-        import time as _t
-        self._tcp_auto_apply_t0 = _t.time()
+        try:
+            self._tcp_save_hist()
+            self._tcp_add_row(len(hist), row, prev)
+            self._tcp_result.setText('L = %.3f mm' % L)
+            # The apply is DEFERRED to the tick. Measured in pb.log
+            # 2026-08-05 23:17: this callback is delivered on the 200 ms
+            # notification poll AFTER the queued motion (including G1 A0)
+            # has physically drained -- but delivery timing is arbitrary,
+            # so the tick's own idle + servo-feedback check is what decides
+            # when the pivot write is safe, never this callback.
+            self._tcp_say('A %.2f deg: residual %+.4f mm -> L %.3f mm -- '
+                          'applying once the head is confirmed straight'
+                          % (a, resid, L))
+        except Exception:
+            LOG.exception('TCP AUTO: display update failed -- measurement '
+                          'already banked, sweep continues')
 
     def _tcp_auto_next(self):
+        if not getattr(self, '_tcp_auto_on', False):
+            # STOP must mean stop: without this, a pending apply landing
+            # after the operator's stop re-issued a 30 mm plunge onto the
+            # puck the park had just RETRACTED (advisor S2).
+            LOG.error('TCP AUTO: next step SUPPRESSED -- sweep is stopped')
+            return
         i = getattr(self, '_tcp_auto_i', -1) + 1
         self._tcp_auto_i = i
         rows = getattr(self, '_tcp_auto_rows', [])
-        if len(rows) >= 3 and all(abs(r[1]) < self.TCP_TOL for r in rows[-3:]):
-            self._tcp_auto_stop('CONVERGED -- last 3 residuals all under '
-                                '%.3f mm' % self.TCP_TOL)
+        if len(rows) >= 3 and all(abs(r[3]) < self.TCP_DL_TOL
+                                  for r in rows[-3:]):
+            self._tcp_auto_stop('CONVERGED -- last 3 pivot corrections all '
+                                'under %.2f mm' % self.TCP_DL_TOL)
             return
         if i >= len(self.TCP_ANGLES):
             self._tcp_auto_stop('swept to 35 deg')
@@ -3871,6 +3916,9 @@ class UserTab(QWidget):
 
     def _tcp_auto_stop(self, why):
         self._tcp_auto_on = False
+        self._tcp_auto_pending_L = None     # a stop discards the pending
+        self._tcp_auto_go_next = False      # apply AND the queued next step
+        self._tcp_auto_idle_t0 = None
         self._tcp_set_face()
         rows = getattr(self, '_tcp_auto_rows', [])
         kind, L_now = self._tcp_kins()
@@ -3882,21 +3930,32 @@ class UserTab(QWidget):
                       % (why, len(rows), L_now, worst))
         # park A back at zero, tip back over the puck
         st = getattr(self, '_tcp_auto_start', None)
-        if st:
-            try:
-                gate = self._cal_gate('TCP AUTO park')
-                if gate:
-                    c, _ = gate
-                    # plunge 0 = MOVE ONLY. This used to pass 2.0 and
-                    # probe again on the way out, for no reason. puck -1
-                    # retracts it so no solenoid is left energised.
+        try:
+            gate = self._cal_gate('TCP AUTO park')
+            if gate:
+                c, _ = gate
+                import math, time
+                _, L_set = self._tcp_kins()
+                lift = L_set * (1 - math.cos(math.radians(35.0))) + 5.0
+                if st:
+                    # plunge 0 = MOVE ONLY; puck -1 retracts it; the lift
+                    # covers the worst-case unwind from any angle
                     c.mdi('o<tcp_auto_step> call [0] [1] [%.4f] [%.4f] '
-                          '[%.4f] [0] [-1]' % (st[0], st[1], st[2]))
-                    self._tcp_manual_pending = True
-                    import time
-                    self._tcp_manual_t0 = time.time()
-            except Exception:
-                LOG.exception('TCP AUTO: final park failed')
+                          '[%.4f] [0] [-1] [%.4f]'
+                          % (st[0], st[1], st[2], lift))
+                else:
+                    # no start pose yet (stopped before the reference
+                    # landed): no motion, but the puck must still come down
+                    # -- an energised solenoid bleeds the air (advisor S13)
+                    c.mdi('M65 P3')
+                # feed override was pinned by M50 P0 in the sub; an abort
+                # skips its own restore (advisor S12)
+                c.mdi('M50 P1')
+                self._puck_sync(False)
+                self._tcp_manual_pending = True
+                self._tcp_manual_t0 = time.time()
+        except Exception:
+            LOG.exception('TCP AUTO: final park failed')
 
     def _tcp_apply(self, L):
         """Push the measured pivot into the LIVE kins.
@@ -4016,6 +4075,8 @@ class UserTab(QWidget):
                           'so this cycle would STALL at zero feed instead of '
                           'failing. Declare the tool in the spindle first.',
                           bad=True)
+            # the gate above switched to MDI; leaving it there kills the MPG
+            self._hand_back_manual(gate[0], 'TCP CAL')
             return
         c, s = gate
         s.poll()
@@ -4192,6 +4253,10 @@ class UserTab(QWidget):
         # step. Serialising it this way is what makes each larger tilt
         # compensate with the improved pivot.
         if getattr(self, '_tcp_auto_pending_L', None) is not None:
+            # the 45 s deadline lives OUTSIDE the try: a halcmd that keeps
+            # failing used to raise BEFORE the elif, so the deadline was
+            # unreachable and the sweep hung forever (advisor S5)
+            ok, a_live = False, float('nan')
             try:
                 import linuxcnc, subprocess
                 s4 = linuxcnc.stat()
@@ -4200,37 +4265,67 @@ class UserTab(QWidget):
                                     'joint.4.pos-fb'],
                                    capture_output=True, text=True)
                 a_live = float(r.stdout.strip())
-                if (s4.interp_state == linuxcnc.INTERP_IDLE and s4.inpos
-                        and abs(a_live) <= 0.05):
-                    L = self._tcp_auto_pending_L
-                    self._tcp_auto_pending_L = None
-                    D = self._tcp_apply(L)
-                    if D is not None:
-                        self._tcp_say('APPLIED at A %.4f: axis->nose %.3f mm'
-                                      % (a_live, D))
-                    self._tcp_auto_next()
-                elif time.time() - getattr(self, '_tcp_auto_apply_t0',
-                                           0) > 45.0:
-                    self._tcp_auto_pending_L = None
-                    self._tcp_auto_stop('head never returned to zero, so the '
-                                        'pivot could not be applied safely')
+                ok = (s4.interp_state == linuxcnc.INTERP_IDLE and s4.inpos
+                      and abs(a_live) <= 0.05)
             except Exception:
-                LOG.exception('TCP AUTO: deferred apply failed')
+                LOG.exception('TCP AUTO: deferred-apply poll failed')
+            if ok:
+                L = self._tcp_auto_pending_L
+                self._tcp_auto_pending_L = None
+                D = self._tcp_apply(L)
+                if D is not None:
+                    self._tcp_say('APPLIED at A %.4f: axis->nose %.3f mm'
+                                  % (a_live, D))
+                self._tcp_auto_next()
+            elif time.time() - getattr(self, '_tcp_auto_apply_t0',
+                                       0) > 45.0:
+                self._tcp_auto_pending_L = None
+                self._tcp_auto_stop('head never returned to zero, so the '
+                                    'pivot could not be applied safely')
+            return
+        if getattr(self, '_tcp_auto_go_next', False):
+            # the reference probe's next step, issued from HERE and not from
+            # the notification callback: the callback arrives at an
+            # arbitrary moment and _cal_gate refusing there killed the sweep
+            # with the puck left up (advisor S8)
+            try:
+                import linuxcnc
+                s5 = linuxcnc.stat()
+                s5.poll()
+                if s5.interp_state == linuxcnc.INTERP_IDLE and s5.inpos:
+                    self._tcp_auto_go_next = False
+                    self._tcp_auto_next()
+            except Exception:
+                LOG.exception('TCP AUTO: first-step poll failed')
             return
         if getattr(self, '_tcp_auto_on', False):
+            # A STEP THAT ABORTED NEVER CALLS BACK -- that is the ONLY
+            # failure visible from here. Do NOT test A against the target:
+            # the sub ends every step with G1 A0, so a SUCCESSFUL step
+            # leaves A at zero and the old test fired on success. Proven in
+            # pb.log 2026-08-05 23:17:08.733 -- aborted 79 ms BEFORE the
+            # reading arrived, and a good measurement at A=1.0000 was
+            # thrown away (advisor S1). Instead: 2 s of continuous idle
+            # with nothing pending and no callback = the step died.
             if time.time() - getattr(self, '_tcp_auto_t0', 0) > 5.0:
+                quiet = False
                 try:
                     import linuxcnc
                     s3 = linuxcnc.stat()
                     s3.poll()
-                    if (s3.interp_state == linuxcnc.INTERP_IDLE and s3.inpos
-                            and abs(s3.actual_position[3]
-                                    - getattr(self, '_tcp_auto_want', 0.0))
-                            > 0.5):
-                        self._tcp_auto_stop('a step ended without reaching '
-                                            'its angle -- aborted')
+                    quiet = (s3.interp_state == linuxcnc.INTERP_IDLE
+                             and s3.inpos)
                 except Exception:
-                    pass
+                    LOG.exception('TCP AUTO: watchdog poll failed')
+                if not quiet:
+                    self._tcp_auto_idle_t0 = None
+                else:
+                    t = getattr(self, '_tcp_auto_idle_t0', None)
+                    if t is None:
+                        self._tcp_auto_idle_t0 = time.time()
+                    elif time.time() - t > 2.0:
+                        self._tcp_auto_stop('the step ended with no probe '
+                                            'trip -- aborted')
         st = getattr(self, '_tcp_state', 'idle')
         if st not in ('wait1', 'wait2'):
             return

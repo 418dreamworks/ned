@@ -20,6 +20,12 @@
 (           0 leave it as it is. THE PUCK MUST BE UP BEFORE ANY PLUNGE --)
 (           it was missing entirely and the first sweep plunged onto a)
 (           retracted puck, 2026-08-05.)
+(      #8 = lift in mm above the start pose for every A rotation. With a)
+(           wrong pivot the TIP moves L*[1-COS A] while A turns: at a)
+(           161 mm error 5 mm of clearance is gone by 15 deg, the return)
+(           move drives the needle into the puck and motion aborts with)
+(           "Probe tripped during non-probe move" -- no callback, dead)
+(           sweep. The GUI computes the worst case per angle.)
 o<tcp_auto_step> sub
   #<targa>  = #1
   #<repos>  = #2
@@ -28,6 +34,7 @@ o<tcp_auto_step> sub
   #<sz>     = #5
   #<plunge> = #6
   #<puck>   = #7
+  #<lift>   = #8
   #<fast>   = 200.0
   #<latch>  = 10.0
   #<back>   = 1.0
@@ -56,9 +63,12 @@ o<tcp_auto_step> sub
 
   o20 if [#<repos> GT 0]
     G90
-    ; rotate FIRST, at the safe start height, then put the TIP back on the
-    ; start pose. With a wrong pivot the tilt moves the tip; this move is
-    ; what pulls it back over the puck.
+    ; ROTATE HIGH. Lift by the worst-case tip excursion FIRST, rotate,
+    ; then come back to the start pose. Rotating at the start height put
+    ; the needle into the puck from 15 deg up (advisor audit 2026-08-05).
+    ; This ordering also fixes the stop-park, which used to rotate A at
+    ; whatever Z the machine had stopped at.
+    G1 Z[#<sz> + #<lift>] F[#<trav>]
     G1 A#<targa> F[#<arot>]
     G1 X#<sx> Y#<sy> Z#<sz> F[#<trav>]
   o20 endif
@@ -80,8 +90,10 @@ o<tcp_auto_step> sub
     ; from wherever contact was, no frame involved. Later steps have a real
     ; start pose and go back to it absolutely.
     o35 if [#<repos> GT 0]
+      ; retract straight to lift height: the A unwind below swings the
+      ; physical tip by the pivot ERROR, so it must not happen at 5 mm
       G90
-      G1 Z#<sz> F[#<trav>]
+      G1 Z[#<sz> + #<lift>] F[#<trav>]
     o35 else
       G91
       G1 Z5.0 F[#<trav>]
@@ -94,7 +106,9 @@ o<tcp_auto_step> sub
   ; joint jump in one servo cycle and threw following errors on four joints
   ; (2026-08-05, by hand, guard bypassed). At A=0 the pivot cancels out of
   ; the solution entirely, so the write costs nothing.
-  G1 A0 F[#<arot>]
+  o38 if [#<repos> GT 0]
+    G1 A0 F[#<arot>]
+  o38 endif
   ; puck DOWN at the end of the sequence -- an energised solenoid bleeds
   ; the air supply down, learned 2026-08-02 the hard way
   o40 if [#<puck> LT 0]
