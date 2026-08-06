@@ -4075,6 +4075,7 @@ class UserTab(QWidget):
             'var': 'L', 'stage': 'a',
             'xa': None, 'ea': None,
             'L': L0, 'Acum': 0.0, 'ref_ofs': 0.0, 'reffing': False,
+            'Lstep': 0.30, 'Ldir': 0.0,
             'evals': 0, 'probes': [None, None], 'data': [],
             'refwait': False, 'ref_t0': 0.0,
         }
@@ -4157,7 +4158,15 @@ class UserTab(QWidget):
                 d['Acum'] += self.TCP_H_A     # retarget only, no banking
                 self._tcp_auto_issue(35.0 + d['Acum'], repos=1)
             return
-        # stage b: secant -> annealed quarter step, then switch variable
+        # stage b: decide the move, then switch variable.
+        # L: PLAIN GRADIENT DESCENT (operator 2026-08-06: "we cannot do
+        # newton on the L step. just gradient descent in the direction of
+        # minimizing the abs sum") -- |m+|+|m-| is non-negative, Newton
+        # has no zero crossing to aim at. Two evals give the slope's SIGN;
+        # step against it; the step HALVES whenever the direction flips
+        # (the annealing), floor 0.05 mm, cap 0.5%.
+        # A: secant Newton at a quarter step -- the signed difference
+        # genuinely crosses zero, so the prescription is meaningful.
         xa, ea, xb, eb = d['xa'], d['ea'], x, e
         de = eb - ea
         if abs(de) < self.TCP_E_NOISE or abs(xb - xa) < 1e-9:
@@ -4165,12 +4174,17 @@ class UserTab(QWidget):
             LOG.error('TCP ALT %s: slope below noise (de=%+.4f over '
                       '%+.4f) -- no update this turn', d['var'], de,
                       xb - xa)
+        elif d['var'] == 'L':
+            gdir = -1.0 if de > 0 else 1.0     # against the slope
+            if d['Ldir'] and gdir != d['Ldir']:
+                d['Lstep'] = max(0.05, d['Lstep'] / 2.0)
+            d['Ldir'] = gdir
+            cap = d['L'] * self.TCP_CAP_L_PCT / 100.0
+            move = gdir * min(d['Lstep'], cap)
         else:
             newton = -eb * (xb - xa) / de
             move = self.TCP_ANNEAL * newton
-            cap = (d['L'] * self.TCP_CAP_L_PCT / 100.0
-                   if d['var'] == 'L' else self.TCP_CAP_A)
-            move = max(-cap, min(cap, move))
+            move = max(-self.TCP_CAP_A, min(self.TCP_CAP_A, move))
         d['stage'] = 'a'
         d['xa'] = d['ea'] = None
         if d['var'] == 'L':
