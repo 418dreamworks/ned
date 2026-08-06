@@ -3855,6 +3855,8 @@ class UserTab(QWidget):
         self._tcp_auto_ref = None
         self._tcp_auto_start = None
         self._tcp_auto_rows = []
+        self._tcp_auto_phase = 'ladder'
+        self._tcp_desc = None
         self._tcp_auto_pending_L = None
         self._tcp_auto_go_next = False
         self._tcp_auto_idle_t0 = None
@@ -3926,6 +3928,30 @@ class UserTab(QWidget):
             self._tcp_auto_go_next = True
             return
         z0, a0 = self._tcp_auto_ref
+        if getattr(self, '_tcp_auto_phase', 'ladder') == 'descent':
+            # MODEL-LESS (operator 2026-08-05): record the miss, nothing
+            # else. No cos, no leverage -- the descent only ever asks
+            # "did the tip miss shrink?"
+            d = self._tcp_desc
+            miss = z - z0
+            d['probes'][1 if a < 0 else 0] = miss
+            _, L_now = self._tcp_kins()
+            row = {'t': 'descent', 'a1': a0, 'a2': a, 'z1': z0, 'z2': z,
+                   'dz': miss, 'L': L_now, 'kins': 'tcp', 'L_set': L_now}
+            hist = getattr(self, '_tcp_hist', [])
+            hist.append(row)
+            self._tcp_hist = hist
+            try:
+                self._tcp_save_hist()
+                self._tcp_add_row(len(hist), row, None)
+            except Exception:
+                LOG.exception('TCP DESCENT: display update failed -- '
+                              'measurement banked, continuing')
+            LOG.error('TCP DESCENT probe: A=%+.2f miss=%+.4f (L in force '
+                      '%.4f)', a, miss, L_now)
+            # next action decided from the tick, never from this callback
+            self._tcp_auto_go_next = True
+            return
         den = math.cos(math.radians(a0)) - math.cos(math.radians(a))
         if abs(den) < 1e-6:
             self._tcp_auto_next()
@@ -3976,15 +4002,136 @@ class UserTab(QWidget):
         i = getattr(self, '_tcp_auto_i', -1) + 1
         self._tcp_auto_i = i
         rows = getattr(self, '_tcp_auto_rows', [])
+        if getattr(self, '_tcp_auto_phase', 'ladder') == 'descent':
+            self._tcp_descent_next()
+            return
         if len(rows) >= 3 and all(abs(r[3]) < self.TCP_DL_TOL
                                   for r in rows[-3:]):
-            self._tcp_auto_stop('CONVERGED -- last 3 pivot corrections all '
-                                'under %.2f mm' % self.TCP_DL_TOL)
+            self._tcp_descent_begin('ladder CONVERGED early')
             return
         if i >= len(self.TCP_ANGLES):
-            self._tcp_auto_stop('swept to 35 deg')
+            self._tcp_descent_begin('ladder swept to 35 deg')
             return
         self._tcp_auto_issue(self.TCP_ANGLES[i], repos=1)
+
+    # ---- FINAL STAGE: model-less 1-D search on L at +-35 deg ----------
+    # Operator 2026-08-05: "at the end, i want A to rotate 35 and -35, and
+    # I want to do a modelless one dimensional search in L, change L by no
+    # more than 0.5pct and just do a noisy gradient descent".
+    # Success/failure descent: evaluate mean|miss| over the +-35 pair,
+    # nudge L, re-evaluate; accept what improves, otherwise revert,
+    # reverse and halve. No kinematic formula anywhere in the loop -- the
+    # +-pair also shows any asymmetry the cos model is blind to.
+    TCP_DESC_CAP_PCT = 0.5      # never move L more than this per step
+    TCP_DESC_START_PCT = 0.1    # first nudge; after the ladder L is close
+    TCP_DESC_FLOOR_MM = 0.02    # step floor: RESET to start, keep exploring
+    TCP_DESC_NOISE_MM = 0.002   # improvement smaller than this = noise
+    # operator 2026-08-05: "it can go for 200 cycles. i don't care" -- the
+    # updating rule is an EXPLORER, not the answer; every eval is saved and
+    # the number is PICKED FROM THE DATA at the end.
+    TCP_DESC_MAX_EVALS = 200    # 2 probes per eval; STOP always works
+
+    def _tcp_descent_begin(self, how):
+        _, L0 = self._tcp_kins()
+        self._tcp_auto_phase = 'descent'
+        self._tcp_desc = {
+            'L': L0,
+            'step': max(self.TCP_DESC_FLOOR_MM,
+                        L0 * self.TCP_DESC_START_PCT / 100.0),
+            'cap': L0 * self.TCP_DESC_CAP_PCT / 100.0,
+            'dir': 1.0,
+            'best': None,       # metric of the ACCEPTED L
+            'prev_L': None,     # to revert a rejected move
+            'evals': 0,
+            'probes': [None, None],   # [+35 miss, -35 miss]
+        }
+        self._tcp_say('DESCENT (%s): +-35 deg pairs, model-less, steps '
+                      '<= %.2f mm (0.5%%), from L %.3f.'
+                      % (how, self._tcp_desc['cap'], L0))
+        LOG.error('TCP DESCENT begin (%s): L=%.4f step=%.3f cap=%.3f',
+                  how, L0, self._tcp_desc['step'], self._tcp_desc['cap'])
+        self._tcp_auto_issue(35.0, repos=1)
+
+    def _tcp_descent_next(self):
+        d = self._tcp_desc
+        if d is None:
+            self._tcp_auto_stop('descent state lost')
+            return
+        if d['probes'][0] is not None and d['probes'][1] is None:
+            self._tcp_auto_issue(-35.0, repos=1)
+            return
+        if d['probes'][0] is None:
+            self._tcp_auto_issue(35.0, repos=1)
+            return
+        # both probes in: evaluate the L THOSE PROBES MEASURED
+        mp, mn = d['probes'][0], d['probes'][1]
+        m = (abs(mp) + abs(mn)) / 2.0
+        asym = mp - mn
+        d['evals'] += 1
+        d['probes'] = [None, None]
+        # SAVE EVERY EVALUATION (operator: "save all the data and we can
+        # pick a number from there... we want to look at all the data
+        # holistically"). One record per eval: the L in force and both
+        # signed misses -- everything a later fit could want.
+        rec = {'t': 'descent-eval', 'n': d['evals'], 'L': d['L'],
+               'miss_p35': mp, 'miss_m35': mn, 'mean': m, 'asym': asym}
+        d.setdefault('data', []).append(rec)
+        hist = getattr(self, '_tcp_hist', [])
+        hist.append(rec)
+        self._tcp_hist = hist
+        try:
+            self._tcp_save_hist()
+        except Exception:
+            LOG.exception('TCP DESCENT: eval record not saved')
+        LOG.error('TCP DESCENT eval %d/%d: L=%.4f mean|miss|=%.4f '
+                  'asym=%+.4f (step %.3f, dir %+d)', d['evals'],
+                  self.TCP_DESC_MAX_EVALS, d['L'], m, asym,
+                  d['step'], int(d['dir']))
+        self._tcp_say('descent %d/%d: L %.3f -> miss %.4f mm, asym %+.4f'
+                      % (d['evals'], self.TCP_DESC_MAX_EVALS, d['L'], m,
+                         asym))
+        # the updating rule is only the explorer -- never trusted blindly
+        # (operator). It walks; the ANSWER is picked from the data below.
+        if d['best'] is None or m < d['best'] - self.TCP_DESC_NOISE_MM:
+            d['best'] = m
+            d['prev_L'] = d['L']
+            accepted = True
+        else:
+            accepted = False
+        if not accepted and d['prev_L'] is not None:
+            d['L'] = d['prev_L']
+            d['dir'] = -d['dir']
+            d['step'] = d['step'] / 2.0
+            if d['step'] < self.TCP_DESC_FLOOR_MM:
+                # floor does NOT end the run: reset and keep exploring --
+                # more data around the minimum is the point
+                d['step'] = max(self.TCP_DESC_FLOOR_MM,
+                                d['prev_L'] * self.TCP_DESC_START_PCT
+                                / 100.0)
+        if d['evals'] >= self.TCP_DESC_MAX_EVALS:
+            # PICK FROM THE DATA: the L whose measured pair had the
+            # smallest mean|miss| across the whole run
+            data = d.get('data', [])
+            best = min(data, key=lambda r: r['mean'])
+            self._tcp_apply_queue(best['L'])
+            self._tcp_auto_stop(
+                'DESCENT complete: %d evals saved to tcp_cal.json. Best '
+                'OBSERVED: L %.3f (miss %.4f, asym %+.4f, eval %d) -- '
+                'applied. Pick differently from the data if it reads '
+                'otherwise.' % (len(data), best['L'], best['mean'],
+                                best['asym'], best['n']))
+            return
+        # explorer takes its next step, capped at 0.5%
+        d['L'] = d['L'] + d['dir'] * min(d['step'], d['cap'])
+        self._tcp_apply_queue(d['L'])
+
+    def _tcp_apply_queue(self, L):
+        """Queue an L write through the ONE guarded path: the tick applies
+        at confirmed A=0 + idle, then calls _tcp_auto_next, which in the
+        descent phase issues the next +-35 probe."""
+        import time
+        self._tcp_auto_pending_L = L
+        self._tcp_auto_apply_t0 = time.time()
 
     def _tcp_auto_stop(self, why):
         self._tcp_auto_on = False
@@ -4452,6 +4599,8 @@ class UserTab(QWidget):
             return
         prev = None
         for i, row in enumerate(self._tcp_hist):
+            if row.get('t') == 'descent-eval':
+                continue        # eval summaries: in the file, not the table
             self._tcp_add_row(i + 1, row, prev)
             prev = row['L']
         if self._tcp_hist:
