@@ -3912,7 +3912,10 @@ class UserTab(QWidget):
         self._tcp_auto_ref = None
         self._tcp_auto_start = None
         self._tcp_auto_rows = []
-        self._tcp_auto_phase = 'ladder'
+        # phase stays 'survey' -- the stale 'ladder' assignment here
+        # OVERWROTE the survey seed three lines up, so every press of the
+        # new button ran the OLD ladder+descent all night and the survey
+        # never executed once (found 2026-08-06 08:45)
         self._tcp_desc = None
         self._tcp_auto_pending_L = None
         self._tcp_auto_go_next = False
