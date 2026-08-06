@@ -3687,7 +3687,7 @@ class UserTab(QWidget):
                        % (best['n'], best['mean'], best['L'], toff))
             else:
                 probes = [r for r in hist
-                          if not str(r.get('t', '')).startswith('descent-')]
+                          if not str(r.get('t', '')).startswith('descent')]
                 if probes:
                     toff = float(probes[-1].get('tooloff',
                                                 self._tcp_tooloff()))
@@ -3721,9 +3721,12 @@ class UserTab(QWidget):
             self._tcp_say('SAVED: PIVOT_LENGTH = %.4f (%s) -> '
                           'head_pivot.inc.' % (v, src))
             LOG.error('TCP COMMIT: head_pivot.inc = %.4f from %s', v, src)
-            # bring the live pin along (A=0-guarded) so file and session
-            # agree without a relaunch
-            self._tcp_apply(v)
+            # bring the live pin along (A=0-guarded). _tcp_apply expects
+            # axis->TIP and subtracts the LIVE tool itself -- handing it
+            # the nose value double-subtracted the tool (advisor F1: pin
+            # fell to ~158 with tool-tip kins live the moment SAVE was
+            # pressed).
+            self._tcp_apply(v + self._tcp_tooloff())
         except Exception:
             LOG.exception('TCP COMMIT failed -- head_pivot.inc NOT written')
             self._tcp_say('COMMIT FAILED -- head_pivot.inc not written, '
@@ -4139,7 +4142,11 @@ class UserTab(QWidget):
         if d['evals'] >= self.TCP_DESC_MAX_EVALS:
             data = d['data']
             best = min(data, key=lambda r: r['mean'])
-            self._tcp_apply_queue(best['L'])
+            # NOT _tcp_apply_queue: _tcp_auto_stop clears that slot two
+            # lines later and the "applied" in the message was a lie
+            # (advisor F3). The manual slot is consumed after the park
+            # lands, through the same guard.
+            self._tcp_pending_L = float(best['L'])
             self._tcp_auto_stop(
                 'ALTERNATE complete: %d evals in tcp_cal.json. Best '
                 'observed: L %.3f (mean|miss| %.4f, eval %d) applied; A0 '
@@ -4187,23 +4194,26 @@ class UserTab(QWidget):
             move = max(-self.TCP_CAP_A, min(self.TCP_CAP_A, move))
         d['stage'] = 'a'
         d['xa'] = d['ea'] = None
+        # REBASE TO THE TURN'S BASE xa (advisor F2): stepping from
+        # xb = xa+h made a downhill turn land exactly back on xa -- zero
+        # net progress, all 200 evals burned in place -- and a
+        # below-noise turn ratcheted the perturbation in permanently.
+        # move == 0 now restores xa exactly, for both variables.
         if d['var'] == 'L':
-            nxt = 'A0'
             d['var'] = 'A'
-            if move != 0.0:
-                d['L'] = d['L'] + move
-                self._tcp_say('L -> %.3f (quarter of %+.3f); now %s'
-                              % (d['L'], move / self.TCP_ANNEAL, nxt))
-                self._tcp_apply_queue(d['L'])
-                return
-            self._tcp_apply_queue(d['L'])   # re-apply = no-op, keeps flow
+            d['L'] = xa + move
+            self._tcp_say('L -> %.3f (step %+.3f); now A0'
+                          % (d['L'], move))
+            self._tcp_apply_queue(d['L'])
             return
         d['var'] = 'L'
+        d['Acum'] = max(-1.0, min(1.0, xa + move))
         if move != 0.0:
-            d['Acum'] = max(-1.0, min(1.0, d['Acum'] + move))
-            self._tcp_say('A0 offset -> %+.4f deg (quarter of %+.4f); now L'
-                          % (d['Acum'], move / self.TCP_ANNEAL))
-        self._tcp_auto_issue(35.0 + d['Acum'], repos=1)
+            self._tcp_say('A0 offset -> %+.4f deg; now L' % d['Acum'])
+        # through descent_next, NOT a direct issue: the re-reference
+        # check lives there, and bypassing it judged the first L pair
+        # after an A nudge against the stale reference (advisor F4)
+        self._tcp_descent_next()
 
     def _tcp_apply_queue(self, L):
         """Queue an L write through the ONE guarded path: the tick applies
@@ -4232,15 +4242,18 @@ class UserTab(QWidget):
         # read + in-place re-home). Mid-run banking is what wedged on the
         # unpowered PSO. Deferred until the park has landed -- REF unhomes
         # A, and the park still has to move.
-        d0 = getattr(self, '_tcp_desc', None)
-        if (getattr(self, '_tcp_auto_phase', '') == 'descent' and d0
-                and abs(d0.get('Acum', 0.0)) > 0.005):
-            self._tcp_bank_after_park = d0['Acum']
         st = getattr(self, '_tcp_auto_start', None)
         try:
             gate = self._cal_gate('TCP AUTO park')
             if gate:
                 c, _ = gate
+                # bank flag only ONCE the park is really issued -- set
+                # earlier, a refused gate stranded it and the stale bank
+                # fired on some LATER run's park (advisor F5a)
+                d0 = getattr(self, '_tcp_desc', None)
+                if (getattr(self, '_tcp_auto_phase', '') == 'descent'
+                        and d0 and abs(d0.get('Acum', 0.0)) > 0.005):
+                    self._tcp_bank_after_park = d0['Acum']
                 import time
                 if st:
                     # plunge 0 = MOVE ONLY; puck -1 retracts it
@@ -4532,8 +4545,7 @@ class UserTab(QWidget):
                     import linuxcnc
                     s2 = linuxcnc.stat()
                     s2.poll()
-                    if (s2.interp_state == linuxcnc.INTERP_IDLE and s2.inpos
-                            and s2.task_mode == linuxcnc.MODE_MDI):
+                    if s2.interp_state == linuxcnc.INTERP_IDLE and s2.inpos:
                         self._tcp_manual_pending = False
                         self._hand_back_manual(linuxcnc.command(), 'TCP CAL')
                         ab = getattr(self, '_tcp_bank_after_park', None)
@@ -4583,9 +4595,14 @@ class UserTab(QWidget):
                 L = self._tcp_auto_pending_L
                 self._tcp_auto_pending_L = None
                 D = self._tcp_apply(L)
-                if D is not None:
-                    self._tcp_say('APPLIED at A %.4f: axis->nose %.3f mm'
-                                  % (a_live, D))
+                if D is None:
+                    if getattr(self, '_tcp_auto_on', False):
+                        self._tcp_auto_stop('pivot apply failed -- '
+                                            'continuing would mislabel L '
+                                            'in every later record')
+                    return
+                self._tcp_say('APPLIED at A %.4f: axis->nose %.3f mm'
+                              % (a_live, D))
                 self._tcp_auto_next()
             elif time.time() - getattr(self, '_tcp_auto_apply_t0',
                                        0) > 45.0:
@@ -4724,11 +4741,13 @@ class UserTab(QWidget):
                 continue        # bookkeeping rows: in the file, not the table
             self._tcp_add_row(i + 1, row, prev)
             prev = row['L']
-        if self._tcp_hist:
-            self._tcp_result.setText('L = %.3f mm'
-                                     % self._tcp_hist[-1]['L'])
+        rows = [r for r in self._tcp_hist if 'L' in r]
+        if rows:
+            # not hist[-1]: a descent-ref record carries no 'L', and the
+            # KeyError here took down the entire subtab build (advisor F7)
+            self._tcp_result.setText('L = %.3f mm' % rows[-1]['L'])
             LOG.info('TCP CAL: %d earlier measurement(s) restored, last '
-                     'L=%.3f', len(self._tcp_hist), self._tcp_hist[-1]['L'])
+                     'L=%.3f', len(rows), rows[-1]['L'])
 
     def cal_pivot_point(self, zt, at):
         # CAL PIVOT collector (operator 2026-08-05): each PIVOT TOUCH press
