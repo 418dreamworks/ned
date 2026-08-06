@@ -4,17 +4,21 @@
 (ORDER MATTERS. Z clears FIRST, then the puck drops, then A unwinds: at)
 (A=0 the tool tip sits lower than at any tilt, so unwinding A while low)
 (would drive the needle down onto the puck.)
-(Z is referenced to the touch-1 contact height, NOT to #3047. #3047 was)
-(measured with a different tool, so its number only means the puck top for)
-(THAT stickout; the touch-1 Z is this needle own reading of the same face.)
-(Args: #1 = puck centre X   #2 = puck centre Y)
-(      #3 = touch-1 contact Z -- the puck top for THIS tool)
-(      #4 = absolute safe Z for the A unwind)
+(XY COMES FROM G30, #5181/#5182, IN MACHINE COORDINATES. The stored puck)
+(centre #3045/#3046 is written from #5061/#5062, so it is a WORK-frame)
+(number and is only valid in the frame that was active when the puck was)
+(measured. Today those two numbers equal G30 exactly, which means they)
+(were taken with a zero offset -- and G54 is offset by tens of mm now, so)
+(a G90 move to them would park somewhere else entirely. G30 holds the)
+(same XY in machine terms and cannot drift with the work offset.)
+(Z stays in the WORK frame, referenced to the touch-1 contact: this)
+(needle own reading of the puck face. #3047 was measured with a different)
+(tool, so its number only means the puck top for THAT stickout.)
+(Args: #1 = touch-1 contact Z, work frame -- the puck top for THIS tool)
+(      #2 = absolute work-frame safe Z for the A unwind)
 o<tcp_park> sub
-  #<cx>    = #1
-  #<cy>    = #2
-  #<ztop>  = #3
-  #<zsafe> = #4
+  #<ztop>  = #1
+  #<zsafe> = #2
   #<trav>  = 2000.0
   #<lift>  = 1000.0
 
@@ -29,7 +33,9 @@ o<tcp_park> sub
   M65 P3
   G4 P1.5
   G1 A0 F1000
-  G1 X#<cx> Y#<cy> F[#<trav>]
+  ; dead centre over the probe in MACHINE coordinates, no Z word, so the
+  ; clearance established above is held right through the traverse
+  G53 G1 X#5181 Y#5182 F[#<trav>]
   G1 Z[#<ztop> + 10.0] F[#<lift>]
 o<tcp_park> endsub
 M2

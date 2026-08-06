@@ -75,7 +75,15 @@ if [ -f "$NED/.last_run5_mode" ]; then
   [ "${NED_KINS:-identity}" = "tooltip" ] && _MODEFLAGS="$_MODEFLAGS -tcp"
 fi
 # shellcheck disable=SC2086
-nohup "$NED/tools/run5.sh" $_MODEFLAGS > "$OUT" 2>&1 &
+# DETACH INTO ITS OWN SESSION (2026-08-05). Plain `nohup ... &` left the
+# whole tree -- run5, its `script` wrapper, linuxcnc, PB -- in the CALLER's
+# process group. Launched from an agent tool call, that group is torn down
+# when the call returns: the pty master closes and PB dies on its next
+# write with "ICE default IO error handler doing an exit(), errno = 32",
+# taking rtapi_app down with it (signal 11). Twice, both at ~t+104s, while
+# operator-launched sessions ran for many minutes. nohup only ignores
+# SIGHUP; setsid is what survives the group kill.
+setsid nohup "$NED/tools/run5.sh" $_MODEFLAGS > "$OUT" 2>&1 < /dev/null &
 echo "pb_restart: launching (log: $OUT) -- waiting 60 s"
 sleep 60
 

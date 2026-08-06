@@ -3312,6 +3312,25 @@ class UserTab(QWidget):
             import linuxcnc
             from PySide6.QtWidgets import QInputDialog
             st = linuxcnc.stat(); st.poll()
+            # DEADLOCK BREAK (2026-08-05). The tool-state lock drives
+            # motion.feed-inhibit, so any move in flight when the lock
+            # engages FREEZES at zero feed and the interpreter never goes
+            # back to IDLE. The idle test below then refuses the
+            # declaration -- and the declaration is the ONLY thing that
+            # clears the lock. Seven refused clicks proved it. Under the
+            # lock a non-idle interpreter is frozen, not progressing, so
+            # clear it here instead of deadlocking the operator.
+            if (st.task_state == linuxcnc.STATE_ON
+                    and all(st.homed[:6])
+                    and st.interp_state != linuxcnc.INTERP_IDLE
+                    and self._tool_state_locked()):
+                cc = linuxcnc.command()
+                cc.abort()
+                cc.wait_complete(2.0)
+                st.poll()
+                LOG.error('SPINDLE EDITOR: a move was frozen at zero feed by '
+                          'the tool-state lock -- aborted it so the '
+                          'declaration can proceed')
             if (st.task_state != linuxcnc.STATE_ON
                     or st.interp_state != linuxcnc.INTERP_IDLE
                     or not all(st.homed[:6])):
@@ -3359,6 +3378,22 @@ class UserTab(QWidget):
         except Exception:
             LOG.exception('TCP CAL: could not read the pivot in force')
         return ('identity', 0.0)
+
+    def _tool_state_locked(self):
+        """TRUE while the spindle record and the drawbar disagree.
+
+        The lock drives motion.jog-inhibit AND motion.feed-inhibit
+        (ned5_iron.hal:383), so a move issued under it does not fail -- it
+        STALLS at zero feed and the interpreter never returns to IDLE."""
+        try:
+            import subprocess
+            r = subprocess.run(['timeout', '5', 'halcmd', 'getp',
+                                'tool.mm.lock.out'],
+                               capture_output=True, text=True)
+            return r.stdout.strip().upper().startswith('TRUE')
+        except Exception:
+            LOG.exception('could not read the tool-state lock')
+            return False
 
     def _tcp_work(self, s, i):
         """Work-frame coordinate -- the frame #5063/#5064 report in."""
@@ -3410,6 +3445,12 @@ class UserTab(QWidget):
         import math, time
         gate = self._cal_gate('TCP CAL')
         if gate is None:
+            return
+        if self._tool_state_locked():
+            self._tcp_say('TOOL-STATE LOCK is engaged -- feed is inhibited, '
+                          'so this cycle would STALL at zero feed instead of '
+                          'failing. Declare the tool in the spindle first.',
+                          bad=True)
             return
         c, s = gate
         s.poll()
@@ -3518,22 +3559,17 @@ class UserTab(QWidget):
             s.poll()
             clear = self._tcp_field(self._tcp_clear, 30.0, 10.0, 150.0)
             zsafe = min(z1 + clear, self._tcp_zlim(s, 'max') - 1.0)
-            cx = cy = None
-            try:
-                cx = float(self._cal_fields['3045'][0].text())
-                cy = float(self._cal_fields['3046'][0].text())
-            except Exception:
-                cx = cy = None
-            if cx is None or cy is None:
-                cx = self._tcp_work(s, 0)
-                cy = self._tcp_work(s, 1)
-                self._tcp_say('no puck centre stored -- parking over the '
-                              'CURRENT XY instead. StartPuck fills 3045/3046.',
-                              bad=True)
-            c.mdi('o<tcp_park> call [%.4f] [%.4f] [%.4f] [%.4f]'
-                  % (cx, cy, z1, zsafe))
-            LOG.error('TCP PARK issued: safe Z %.4f, centre %.4f %.4f, '
-                      'finish 10 mm over %.4f', zsafe, cx, cy, z1)
+            # XY comes from G30 (#5181/#5182, MACHINE coords) inside the
+            # sub, NOT from #3045/#3046: those are written from #5061/#5062
+            # and so are WORK-frame numbers, valid only in the frame that
+            # was active when the puck was measured. They currently equal
+            # G30 exactly, which means they were taken with a zero offset --
+            # G54 is offset by tens of mm today, so a G90 move to them would
+            # park somewhere else entirely (2026-08-05).
+            c.mdi('o<tcp_park> call [%.4f] [%.4f]' % (z1, zsafe))
+            LOG.error('TCP PARK issued: safe Z %.4f, then G30 XY (machine) '
+                      'and finish 10 mm over the touch-1 contact %.4f',
+                      zsafe, z1)
         except Exception:
             LOG.exception('TCP PARK failed to issue')
         self._tcp_state = 'idle'

@@ -64,7 +64,18 @@ python3_bin=""
 IFS=':' read -ra path_dirs <<< "$PATH"
 for path_dir in "${path_dirs[@]}"; do
     candidate="$path_dir/python3"
-    if [ -x "$candidate" ] && "$candidate" -c "import qtpyvcp.tools.tool_db_backend" >/dev/null 2>&1; then
+    # CHEAP PROBE (2026-08-05). This used to IMPORT
+    # qtpyvcp.tools.tool_db_backend just to test the candidate, then exec
+    # it -- paying for the whole qtpyvcp import TWICE before io sees a
+    # single byte. io gives the db program 10 s
+    # ("tooldata_db:read_reply fail: timeout_ms=10000") and the double
+    # import measured 6 s warm and idle; at launch it competes with
+    # realtime setup, hm2_eth, the Qt/VTK import, brain, pendant and the
+    # DRO, so it intermittently blew the budget and LinuxCNC died with
+    # "can't load tool table". find_spec only RESOLVES the package, it
+    # does not execute it, so the probe is now near-free and the single
+    # remaining import is the exec below.
+    if [ -x "$candidate" ] && "$candidate" -c "import importlib.util, sys; sys.exit(0 if importlib.util.find_spec('qtpyvcp') else 1)" >/dev/null 2>&1; then
         python3_bin="$candidate"
         break
     fi
