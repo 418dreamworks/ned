@@ -12,7 +12,7 @@
 #   The value below is the current derived SCALE_A, hand-placed. See docs/gui.md.
 TYPE = ANGULAR
 MAX_VELOCITY = 30
-MAX_ACCELERATION = 30
+MAX_ACCELERATION = 300
 STEPGEN_MAXVEL = 36
 STEPGEN_MAXACCEL = 450
 # SCALE sign = A motion direction. POSITIVE (paired with pso_home.sh A sign=-1) so A+ = right-hand-rule

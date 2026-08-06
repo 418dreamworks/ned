@@ -4188,11 +4188,11 @@ class UserTab(QWidget):
             return
         if st == 'p-issue':
             v['step'] = 'p-wait'
-            self._tcp_auto_issue(35.0 + v['ofs'], repos=1)
+            self._tcp_auto_issue(self.SVY_TILT + v['ofs'], repos=1)
             return
         if st == 'm-issue':
             v['step'] = 'm-wait'
-            self._tcp_auto_issue(-35.0 + v['ofs'], repos=1)
+            self._tcp_auto_issue(-self.SVY_TILT + v['ofs'], repos=1)
             return
         # -wait states: a stale go_next lands here; the callback owns them
 
@@ -4253,6 +4253,9 @@ class UserTab(QWidget):
     # 0.25 (operator 2026-08-06): the optimum is known to ~0.01 mm now;
     # +-0.8 mm of draw brackets it without wasting pairs in the wings
     SVY_HALF_PCT = 0.25
+    # 20, not 35 (operator 2026-08-06): jerk persists at soft accel, so
+    # the tilt comes down while backlash is chased
+    SVY_TILT = 20.0
     SVY_OFS = (-0.30, 0.30)      # A offset draw, deg
 
     def _tcp_tooloff(self):
