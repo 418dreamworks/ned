@@ -3600,14 +3600,21 @@ class UserTab(QWidget):
         # stay over the puck if the pivot it is compensating with is the
         # improved one. Safe here: the probe left A at this step's angle,
         # so guard inside _tcp_apply decides.
-        # the step unwound A to 0 before returning, so this goes through
-        # the SAME A=0 guard as everything else. Applying mid-tilt steps the
-        # joints by dL*sin(A) and following-errors the machine -- proven by
-        # hand at A=-24 deg, four joints faulted (2026-08-05).
-        self._tcp_apply(L)
-        self._tcp_say('A %.2f deg: residual %+.4f mm -> L %.3f mm' 
+        # DO NOT APPLY HERE. This callback runs when the INTERPRETER
+        # reaches the DEBUG line, not when the G1 A0 that precedes it has
+        # physically finished -- motion is queued. Applying now would read
+        # A mid-rotation, the guard would refuse, and the write would be
+        # silently skipped every single step. Defer to the tick, which
+        # waits for the interpreter to go idle AND for the servo feedback
+        # to say the head is actually straight. Writing the pivot into a
+        # powered machine is fine, but ONLY when it is straight
+        # (operator 2026-08-05).
+        self._tcp_say('A %.2f deg: residual %+.4f mm -> L %.3f mm -- '
+                      'applying once the head is back at zero'
                       % (a, resid, L))
-        self._tcp_auto_next()
+        self._tcp_auto_pending_L = L
+        import time as _t
+        self._tcp_auto_apply_t0 = _t.time()
 
     def _tcp_auto_next(self):
         i = getattr(self, '_tcp_auto_i', -1) + 1
@@ -3937,6 +3944,36 @@ class UserTab(QWidget):
                                     'every A and dZ collapses to zero.' % D)
                 except Exception:
                     LOG.exception('TCP PARK: hand-back poll failed')
+        # AUTO: apply the pending pivot as soon as the head is genuinely
+        # straight and the interpreter is idle, and only then take the next
+        # step. Serialising it this way is what makes each larger tilt
+        # compensate with the improved pivot.
+        if getattr(self, '_tcp_auto_pending_L', None) is not None:
+            try:
+                import linuxcnc, subprocess
+                s4 = linuxcnc.stat()
+                s4.poll()
+                r = subprocess.run(['timeout', '5', 'halcmd', 'getp',
+                                    'joint.4.pos-fb'],
+                                   capture_output=True, text=True)
+                a_live = float(r.stdout.strip())
+                if (s4.interp_state == linuxcnc.INTERP_IDLE and s4.inpos
+                        and abs(a_live) <= 0.05):
+                    L = self._tcp_auto_pending_L
+                    self._tcp_auto_pending_L = None
+                    D = self._tcp_apply(L)
+                    if D is not None:
+                        self._tcp_say('APPLIED at A %.4f: axis->nose %.3f mm'
+                                      % (a_live, D))
+                    self._tcp_auto_next()
+                elif time.time() - getattr(self, '_tcp_auto_apply_t0',
+                                           0) > 45.0:
+                    self._tcp_auto_pending_L = None
+                    self._tcp_auto_stop('head never returned to zero, so the '
+                                        'pivot could not be applied safely')
+            except Exception:
+                LOG.exception('TCP AUTO: deferred apply failed')
+            return
         if getattr(self, '_tcp_auto_on', False):
             if time.time() - getattr(self, '_tcp_auto_t0', 0) > 5.0:
                 try:
