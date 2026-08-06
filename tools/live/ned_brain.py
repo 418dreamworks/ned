@@ -110,6 +110,8 @@ h.newpin('homeall-in', hal.HAL_BIT, hal.HAL_IN)
 # rising edge = REF A / REF C button (one-axis REF ALL, operator 2026-08-01):
 # unhome that joint -> fresh read -> home THAT joint only -> verify it only.
 h.newpin('tcactive-in', hal.HAL_BIT, hal.HAL_IN)
+h.newpin('seq-active-in', hal.HAL_BIT, hal.HAL_IN)   # MODE INTERLOCK
+h.newpin('seq-hb-in', hal.HAL_U32, hal.HAL_IN)       # its liveness beat
 h.newpin('ref-a-in', hal.HAL_BIT, hal.HAL_IN)
 h.newpin('ref-c-in', hal.HAL_BIT, hal.HAL_IN)
 h.ready()
@@ -149,6 +151,9 @@ class Brain(object):
         ini = os.path.basename(os.environ.get('INI_FILE_NAME', ''))
         self.resume_mode = 'resume' in ini
         self.resume_armed = False
+        self.seq_hb_last = -1
+        self.seq_hb_t = 0.0
+        self.seq_was = False
         # head read state machine
         self.hr_step = 0
         self.hr_axis = 'c'
@@ -849,6 +854,29 @@ class Brain(object):
             pass
 
     # ---- teleop recovery (port of _ensure_teleop/_auto_back_to_manual) -------
+    def seq_active(self, now):
+        try:
+            if not bool(h['seq-active-in']):
+                if self.seq_was:
+                    self.seq_was = False
+                    log('SEQ INTERLOCK released -- MANUAL restore is live')
+                return False
+            hb = int(h['seq-hb-in'])
+            if hb != self.seq_hb_last:
+                self.seq_hb_last = hb
+                self.seq_hb_t = now
+            fresh = (now - self.seq_hb_t) < 5.0
+            if fresh and not self.seq_was:
+                self.seq_was = True
+                log('SEQ INTERLOCK armed -- mode belongs to the sequence')
+            if not fresh and self.seq_was:
+                self.seq_was = False
+                log('SEQ INTERLOCK flag STALE (no heartbeat 5 s) -- '
+                    'ignoring it, MANUAL restore live again')
+            return fresh
+        except Exception:
+            return False
+
     def ensure_teleop(self):
         try:
             if self.stat.task_state == linuxcnc.STATE_ON and all(self.stat.homed[:6]):
@@ -1135,6 +1163,15 @@ class Brain(object):
             if bool(h['tcactive-in']):
                 # TOOL CHANGE IN PROGRESS: never steal the mode --
                 # the restore aborted an M6 mid-return (01:34).
+                self.flip_armed = False
+                self.done_since = now
+            if self.seq_active(now):
+                # MODE INTERLOCK (operator 2026-08-06): an orchestrated MDI
+                # chain owns the mode; restoring MANUAL between its steps
+                # is the race that silently ate one MDI in N. Same shape as
+                # the tcactive guard above. Counts only while the heartbeat
+                # is alive, so a crashed GUI cannot leave the wheel dead --
+                # 5 s after the beat stops, normal restore returns.
                 self.flip_armed = False
                 self.done_since = now
             if self.flip_armed and on \

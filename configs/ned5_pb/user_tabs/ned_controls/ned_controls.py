@@ -497,6 +497,8 @@ class UserTab(QWidget):
             #   phantom    = logic claims a tool, iron holds none
             self.comp.addPin('tool-unrecorded-in', 'bit', 'in')
             self.comp.addPin('tool-phantom-in', 'bit', 'in')
+            self.comp.addPin('seq-active-out', 'bit', 'out')
+            self.comp.addPin('seq-hb-out', 'u32', 'out')
             self.comp.ready()
             # A AND C START LOCKED, ALWAYS (operator 2026-08-04). A head
             # axis is the one thing a stray wheel nudge can wreck silently --
@@ -3858,6 +3860,10 @@ class UserTab(QWidget):
         # every rerun starts with an empty table (operator 2026-08-06:
         # "clear up that data on next rerun") -- old rows go to trash/
         self._tcp_clear_data()
+        # ARM FIRST (advisor D1): the straighten + G43 preamble below is
+        # MDI too -- unarmed, it sat in exactly the race this interlock
+        # exists to kill.
+        self._seq_flag(True)
         # G43 HERE, not at boot: applying it from the brain's restore ran
         # MDI during the declare and every home() missed (2026-08-06).
         # The tool length must be in force or every L is off by the tool.
@@ -3880,6 +3886,7 @@ class UserTab(QWidget):
                     if abs(float(r.stdout.strip())) > 0.05:
                         self._tcp_say('refused: could not straighten A '
                                       'for G43', bad=True)
+                        self._seq_flag(False)
                         self._hand_back_manual(c0, 'TCP SURVEY')
                         return
                 c0.mdi('G43 H%d' % s0.tool_in_spindle)
@@ -3888,6 +3895,7 @@ class UserTab(QWidget):
                           s0.tool_in_spindle, self._tcp_tooloff())
         except Exception:
             LOG.exception('TCP SURVEY: G43 check failed')
+            self._seq_flag(False)
             return
         import random, time as _t
         self._tcp_auto_on = True
@@ -3923,6 +3931,9 @@ class UserTab(QWidget):
         self._tcp_auto_pending_L = None
         self._tcp_auto_go_next = False
         self._tcp_auto_idle_t0 = None
+        # advisor D3: a leftover manual-cycle pending would fire
+        # _hand_back_manual mid-survey and clobber arm.in0
+        self._tcp_manual_pending = False
         self._tcp_set_face()
         self._tcp_say('SURVEY: %d pairs, draws +-%.1f%% around the '
                       'running best (start %.3f), ofs %s. Data -> %s'
@@ -4238,7 +4249,9 @@ class UserTab(QWidget):
     # RUNNING BEST -- start at the banked parameter, recenter on every
     # pair that beats the best sum. A fixed bracket went stale the moment
     # the parameter improved (it sampled 156-160 while truth sat at 155.7).
-    SVY_HALF_PCT = 0.5
+    # 0.25 (operator 2026-08-06): the optimum is known to ~0.01 mm now;
+    # +-0.8 mm of draw brackets it without wasting pairs in the wings
+    SVY_HALF_PCT = 0.25
     SVY_OFS = (-0.30, 0.30)      # A offset draw, deg
 
     def _tcp_tooloff(self):
@@ -4407,6 +4420,7 @@ class UserTab(QWidget):
         self._tcp_auto_apply_t0 = time.time()
 
     def _tcp_auto_stop(self, why):
+        self._seq_flag(False)
         self._tcp_auto_on = False
         self._tcp_auto_pending_L = None     # a stop discards the pending
         self._tcp_auto_go_next = False      # apply AND the queued next step
@@ -5195,7 +5209,28 @@ class UserTab(QWidget):
         except Exception:
             LOG.exception('JOG STEPS: could not hand the slot to the wheel')
 
+    def _seq_flag(self, on):
+        """MODE INTERLOCK: while TRUE (and the heartbeat lives), ned_brain
+        will not restore MANUAL between our MDI steps -- the race that
+        silently ate one MDI in N. Brain ignores a stale flag 5 s after
+        the heartbeat stops, so a GUI crash cannot kill the wheel."""
+        try:
+            if self.comp is not None:
+                self.comp.getPin('seq-active-out').value = bool(on)
+                LOG.error('SEQ INTERLOCK %s', 'ARMED' if on else 'RELEASED')
+        except Exception:
+            LOG.exception('SEQ INTERLOCK flag write failed')
+
     def _homing_gate_tick(self):
+        # heartbeat FIRST (advisor D2): anything below that raises must not
+        # starve the beat, or the brain declares the armed flag STALE
+        # mid-survey and the race silently returns
+        try:
+            if self.comp is not None:
+                p = self.comp.getPin('seq-hb-out')
+                p.value = (int(p.value) + 1) & 0x7FFFFFFF
+        except Exception:
+            pass
         # THE GATE RUNS FIRST, AND ALONE. It used to run at the BOTTOM of
         # this tick, after five other calls -- so anything raising earlier
         # left 394 controls disabled with no way back. That is exactly what

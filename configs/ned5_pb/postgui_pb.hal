@@ -42,6 +42,12 @@ loadusr -Wn brain /home/brains/Documents/ned/tools/live/ned_brain.py
 # 2026-08-05). brain.* pins exist only after the loadusr above.
 net sig-guard-arm      brain.guard-arm => tool.mm.narm.in
 net sig-guard-unarmed  tool.mm.narm.out => tool.mm.excuse2.in1
+
+# MODE INTERLOCK (operator 2026-08-06): while the GUI runs an orchestrated
+# MDI chain it owns the task mode; the brain skips its MANUAL restore.
+# Heartbeat guards against a stale flag from a crashed GUI.
+net sig-seq-active   ned-tab.seq-active-out => brain.seq-active-in
+net sig-seq-hb       ned-tab.seq-hb-out     => brain.seq-hb-in
 # TOOL CHANGE IN PROGRESS (toolchange.ngc M64/M65 P1): brain suspends
 # its MANUAL/teleop restore while high (it aborted an M6 mid-return,
 # 2026-08-02 01:34)
