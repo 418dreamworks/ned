@@ -1060,15 +1060,17 @@ class UserTab(QWidget):
             tc.addStretch(1)
 
             hbox, hbl = _mkbox('IMPROVEMENTS')
-            # dL, not raw dZ (operator 2026-08-05: the raw number is
-            # "stupid" -- 0.1 mm of dZ is 74 mm of pivot at 3 deg and
-            # 0.56 mm at 35). dL = the correction to L this pair implies,
-            # already leverage-corrected; it is also what the 0.05 mm
-            # convergence tolerance judges. No 'change' column either.
-            tbla = QTableWidget(0, 5)
+            # TIP TERMS (operator 2026-08-05: "what i expect it to be vs
+            # where it actually is in terms of the tip"). With a correct
+            # pivot the tip touches at the SAME Z at every angle, so:
+            #   EXPECT = the reference touch Z (where it should land)
+            #   ACTUAL = where it landed at this tilt
+            #   MISS   = actual - expect (0 when calibrated; + = tip high)
+            # L is the pivot this pair solves to.
+            tbla = QTableWidget(0, 6)
             tbla.setObjectName('tcp_cal_table')
             tbla.setHorizontalHeaderLabels(
-                ['#', 'A1', 'A2', 'dL (mm)', 'L (mm)'])
+                ['#', 'A', 'EXPECT Z', 'ACTUAL Z', 'MISS', 'L (mm)'])
             tbla.verticalHeader().setVisible(False)
             tbla.setEditTriggers(QAbstractItemView.NoEditTriggers)
             tbla.setSelectionMode(QAbstractItemView.NoSelection)
@@ -4423,10 +4425,10 @@ class UserTab(QWidget):
                 return
             r = t.rowCount()
             t.insertRow(r)
-            dl = row['L'] - row.get('L_set', 0.0)
             for col, txt in enumerate(
-                    (str(n), '%.2f' % row['a1'], '%.2f' % row['a2'],
-                     '%+.3f' % dl, '%.3f' % row['L'])):
+                    (str(n), '%.2f' % row['a2'], '%.4f' % row['z1'],
+                     '%.4f' % row['z2'], '%+.4f' % (row['z2'] - row['z1']),
+                     '%.3f' % row['L'])):
                 t.setItem(r, col, QTableWidgetItem(txt))
             t.scrollToBottom()
         except Exception:
