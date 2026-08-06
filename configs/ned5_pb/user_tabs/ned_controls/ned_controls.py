@@ -1491,6 +1491,7 @@ class UserTab(QWidget):
             c.wait_complete()
             for p in ('3058', '3060', '3061', '3059'):
                 c.mdi('#%s = 0' % p)
+            self._hand_back_manual(c, label)
             LOG.info('%s: dy, depth, X offset and the pending flag zeroed -- '
                      'the next StartC will position for a fresh jog', label)
             self.cal_say('>> C reference cleared -- next StartC re-teaches')
@@ -2041,6 +2042,9 @@ class UserTab(QWidget):
             c.mode(linuxcnc.MODE_MDI)
             c.wait_complete()
             c.mdi('%s = 0' % ('#3069' if ax == 'A' else '#3070'))
+            # back to MANUAL BEFORE the REF pulse: the brain re-homes the
+            # joint in place, and homing only runs in MANUAL
+            self._hand_back_manual(c, label)
 
             # re-zero the axis in this session. The brain re-reads the
             # absolute encoder against the file we just wrote, sets
@@ -2697,6 +2701,7 @@ class UserTab(QWidget):
             c.mode(linuxcnc.MODE_MDI)
             c.wait_complete()
             c.mdi('G20' if key == 'in' else 'G21')
+            self._hand_back_manual(c, label)
             LOG.info('UNITS -> %s issued',
                      'G20 (inch)' if key == 'in' else 'G21 (mm)')
         except Exception as e:
@@ -3354,6 +3359,8 @@ class UserTab(QWidget):
                 c.mdi('o<tool_loc_declare> call [%d] [0]' % n)
                 LOG.info('SPINDLE EDITOR: T%d declared in spindle%s', n,
                          ('; T%d drops to the FLOOR' % cur) if cur else '')
+            # a declaration is paperwork, not a job -- give the machine back
+            self._hand_back_manual(c, 'SPINDLE EDITOR')
         except Exception:
             LOG.exception('spindle editor failed')
 
@@ -3378,6 +3385,26 @@ class UserTab(QWidget):
         except Exception:
             LOG.exception('TCP CAL: could not read the pivot in force')
         return ('identity', 0.0)
+
+    def _hand_back_manual(self, c, label, wait=2.0):
+        """Return the machine to MANUAL after a BOOKKEEPING MDI.
+
+        Jogging only exists in MANUAL, so an MDI left parked kills the wheel
+        silently: 2026-08-05 the operator declared T5, the tool-state lock
+        cleared, every inhibit read FALSE -- and nothing moved, because
+        task_mode was still MDI. There is no visible MAN button to recover
+        with, so whatever parks the machine has to un-park it.
+
+        NEVER call this with MOTION in flight -- a mode switch ABORTS motion.
+        Bookkeeping only, or from an idle-completion poll."""
+        try:
+            import linuxcnc
+            c.wait_complete(wait)
+            c.mode(linuxcnc.MODE_MANUAL)
+            LOG.info('%s: MDI handed back -- jogging is live', label)
+        except Exception:
+            LOG.exception('%s: could not restore MANUAL -- jogging may be '
+                          'dead until the mode is changed', label)
 
     def _tool_state_locked(self):
         """TRUE while the spindle record and the drawbar disagree.
@@ -3508,6 +3535,12 @@ class UserTab(QWidget):
         if n == 1:
             self._tcp_state = 'rotate'
             self._tcp_set_face()
+            # HAND THE MACHINE BACK. The next thing the operator does is
+            # rotate A on the MPG, and the MPG is dead in MDI. _tcp_tick
+            # does it once the retract has genuinely finished -- switching
+            # mode here would abort the move still in flight.
+            self._tcp_manual_pending = True
+            self._tcp_manual_t0 = time.time()
             self._tcp_say('touch 1 banked. ROTATE A on the MPG until the '
                           'needle still sits over the puck, then PLUNGE.')
             return
@@ -3567,6 +3600,13 @@ class UserTab(QWidget):
             # G54 is offset by tens of mm today, so a G90 move to them would
             # park somewhere else entirely (2026-08-05).
             c.mdi('o<tcp_park> call [%.4f] [%.4f]' % (z1, zsafe))
+            # The park is MOTION, so MANUAL cannot be restored here -- a mode
+            # switch aborts motion mid-move. _tcp_tick does it once the park
+            # has genuinely finished, which matters: the next iteration needs
+            # the MPG to rotate A, and the MPG is dead in MDI.
+            import time as _t
+            self._tcp_manual_pending = True
+            self._tcp_manual_t0 = _t.time()
             LOG.error('TCP PARK issued: safe Z %.4f, then G30 XY (machine) '
                       'and finish 10 mm over the touch-1 contact %.4f',
                       zsafe, z1)
@@ -3581,6 +3621,18 @@ class UserTab(QWidget):
         would sit on PROBING... forever (the exact failure mode the AC tab
         hit in 2026-08-03 when only a/c armed the watcher)."""
         import time
+        if getattr(self, '_tcp_manual_pending', False):
+            if time.time() - getattr(self, '_tcp_manual_t0', 0) > 2.0:
+                try:
+                    import linuxcnc
+                    s2 = linuxcnc.stat()
+                    s2.poll()
+                    if (s2.interp_state == linuxcnc.INTERP_IDLE and s2.inpos
+                            and s2.task_mode == linuxcnc.MODE_MDI):
+                        self._tcp_manual_pending = False
+                        self._hand_back_manual(linuxcnc.command(), 'TCP CAL')
+                except Exception:
+                    LOG.exception('TCP PARK: hand-back poll failed')
         st = getattr(self, '_tcp_state', 'idle')
         if st not in ('wait1', 'wait2'):
             return
@@ -3771,10 +3823,7 @@ class UserTab(QWidget):
                     c.mode(linuxcnc.MODE_MDI)
                     c.wait_complete(2.0)
                     c.mdi('o<tool_loc_declare> call [%d] [-1]' % tool)
-                    try:
-                        c.wait_complete(2.0)
-                    except Exception:
-                        pass
+                    self._hand_back_manual(c, 'AMBIGUOUS LOC heal')
 
                     return          # one per pass; next pass rechecks
         except Exception:
