@@ -30,12 +30,12 @@ o<tcp_auto_step> sub
   #<puck>   = #7
   #<fast>   = 200.0
   #<latch>  = 10.0
-  #<back>   = 1.0
+  #<back>   = 0.8
   ; SLOW (operator 2026-08-05: "move slowly to get there"). The tilt moves
   ; the tip by the pivot ERROR, and that error is largest on the first
   ; steps -- exactly when speed would hurt most.
   #<trav>   = 800.0
-  #<arot>   = 300.0
+  #<arot>   = 450.0
 
   o10 if [#<_metric> EQ 0]
     (abort, TCP AUTO: switch to MM first - this routine is metric)
@@ -72,12 +72,12 @@ o<tcp_auto_step> sub
     G91
     G38.2 Z-#<plunge> F[#<fast>]
     G1 Z[#<back>] F[#<trav>]
-    G38.2 Z-[#<back> + 1.0] F[#<latch>]
+    G38.2 Z-[#<back> + 0.2] F[#<latch>]
     #<xt> = #5061
     #<yt> = #5062
     #<zt> = #5063
     #<at> = #5064
-    G38.5 Z[#<back> + 1.0] F[#<latch>]
+    G38.5 Z[#<back> + 0.2] F[#<latch>]
     ; RETRACT. On the REFERENCE probe there is no start pose yet -- the GUI
     ; passes sz = 0, and retracting to absolute Z0 sent the head hundreds of
     ; mm up and aborted before the callback, so the sweep never got its
@@ -89,7 +89,7 @@ o<tcp_auto_step> sub
       G1 Z#<sz> F[#<trav>]
     o35 else
       G91
-      G1 Z5.0 F[#<trav>]
+      G1 Z1.0 F[#<trav>]
       G90
     o35 endif
   o30 endif

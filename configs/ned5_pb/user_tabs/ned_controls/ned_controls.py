@@ -3980,7 +3980,8 @@ class UserTab(QWidget):
             v['retry'] = 0
             if st == 'ref-wait':
                 self._tcp_auto_ref = (z, a)
-                self._tcp_auto_start = (x, y, z + 5.0)
+                # 1 mm hover (operator 2026-08-06 speed-up; was 5)
+                self._tcp_auto_start = (x, y, z + 1.0)
                 self._svy_out({'t': 'ref', 'z': z, 'a': a})
                 v['step'] = 'apply'
             elif st == 'z0-wait':
