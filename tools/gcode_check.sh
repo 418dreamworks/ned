@@ -53,7 +53,13 @@ check() {
   # 2026-08-04 -- #4107 read 0 with the var only in the ini, 1.0 with -v).
   # Without it every #-param is 0 and each sub dies on its earliest guard,
   # reporting "parses clean" for a body that never parsed.
-  out=$(cd "$WORK" && timeout 60 rs274 -i test.ini -v test.var -g drive.ngc 2>&1)
+  # HOME sandboxed: rs274 is a tool-mmap CREATOR -- it O_TRUNCs
+  # $HOME/.tool.mmap before parsing options, over the LIVE table io,
+  # milltask and PB share. Every scanner run against a running machine
+  # truncated the live tool table (T5 "not found") and SIGBUS-crashed
+  # milltask/halui (01:38 and 08:53 cores). -t would not help; only a
+  # throwaway HOME does. Advisor root-cause 2026-08-06.
+  out=$(cd "$WORK" && HOME="$WORK" timeout 60 rs274 -i test.ini -v test.var -g drive.ngc 2>&1)
   local fatal
   fatal=$(echo "$out" | grep -iE 'EOF in file|unclosed comment|not defined|bad character|unknown word|bad number|out of range' | head -2)
   local stop
