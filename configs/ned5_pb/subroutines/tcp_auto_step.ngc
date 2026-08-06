@@ -60,6 +60,13 @@ o<tcp_auto_step> sub
   G38.5 Z[#<back> + 1.0] F[#<latch>]
   G90
   G1 Z#<sz> F[#<trav>]
+  ; A BACK TO ZERO BEFORE THE GUI APPLIES THE NEW PIVOT. Changing
+  ; pivot-length steps the inverse solution by dL*sin[A] in Y and
+  ; dL*[1-cos A] in Z -- at A=-24 deg a 160 mm correction commanded a 66 mm
+  ; joint jump in one servo cycle and threw following errors on four joints
+  ; (2026-08-05, by hand, guard bypassed). At A=0 the pivot cancels out of
+  ; the solution entirely, so the write costs nothing.
+  G1 A0 F1000
   M50 P1
   (DEBUG, EVAL[vcp.getWidget{"ned_controls"}.tcp_auto_point{#<xt>, #<yt>, #<zt>, #<at>}])
 o<tcp_auto_step> endsub

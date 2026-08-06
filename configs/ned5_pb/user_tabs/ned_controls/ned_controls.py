@@ -3545,29 +3545,14 @@ class UserTab(QWidget):
         # stay over the puck if the pivot it is compensating with is the
         # improved one. Safe here: the probe left A at this step's angle,
         # so guard inside _tcp_apply decides.
-        self._tcp_apply_at_angle(L, a)
+        # the step unwound A to 0 before returning, so this goes through
+        # the SAME A=0 guard as everything else. Applying mid-tilt steps the
+        # joints by dL*sin(A) and following-errors the machine -- proven by
+        # hand at A=-24 deg, four joints faulted (2026-08-05).
+        self._tcp_apply(L)
         self._tcp_say('A %.2f deg: residual %+.4f mm -> L %.3f mm' 
                       % (a, resid, L))
         self._tcp_auto_next()
-
-    def _tcp_apply_at_angle(self, L, a):
-        """Apply mid-sequence. The pivot cancels out of Z only at A=0, but
-        the sequence is mid-tilt by design, so the step is applied while the
-        tip is PARKED ABOVE the puck and the only consequence is a DRO jump
-        of L_err*(1-cosA) -- which is exactly the error being removed."""
-        import subprocess
-        try:
-            r = subprocess.run(['timeout', '5', 'halcmd', 'getp', 'arm.in1'],
-                               capture_output=True, text=True)
-            tlen = float(r.stdout.strip())
-            D = L - tlen
-            subprocess.run(['timeout', '5', 'halcmd', 'setp', 'arm.in0',
-                            '%.4f' % D], capture_output=True)
-            LOG.error('TCP AUTO APPLY: arm.in0 = %.4f (axis->nose; L %.4f '
-                      'minus tool %.4f) at A=%.3f', D, L, tlen, a)
-        except Exception:
-            LOG.exception('TCP AUTO: apply failed -- sequence stopped')
-            self._tcp_auto_stop('apply failed')
 
     def _tcp_auto_next(self):
         i = getattr(self, '_tcp_auto_i', -1) + 1
