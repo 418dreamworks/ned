@@ -112,6 +112,27 @@ class Dro2(QWidget):
         self.strip = JogStrip()
         root.addWidget(self.strip, 0)      # stretch 0: fixed strip
 
+        # column headers (operator 2026-08-06: "i need to know WCS vs
+        # MCS") -- MCS over the left/machine column, WCS G5x over the
+        # right/work column, each centered on its column. Fixed height;
+        # the axis rows give up the space.
+        hdr = QWidget()
+        hrow = QHBoxLayout(hdr)
+        hrow.setContentsMargins(14, 0, 14, 0)
+        hrow.setSpacing(10)
+        self.hdr_pad = QLabel('')
+        h_m = QLabel('MCS')
+        h_w = QLabel('WCS G5x')
+        for _h in (h_m, h_w):
+            _h.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+            _h.setStyleSheet('color: %s; background: transparent;' % WHITE)
+        hrow.addWidget(self.hdr_pad, 0)
+        hrow.addWidget(h_m, 5)
+        hrow.addWidget(h_w, 5)
+        self.hdr = hdr
+        self.hdr_labels = (h_m, h_w)
+        root.addWidget(hdr, 0)
+
         self.rows = []
         for letter in self.axes:
             holder = QWidget()
@@ -176,7 +197,15 @@ class Dro2(QWidget):
     # ---- fonts: numbers fill ~80% of the screen ------------------------
     def _resize_fonts(self):
         rows = max(1, len(self.rows))
-        avail = self.height() - STRIP_H
+        hdr_px = max(18, int(self.height() * 0.030))
+        hf = QFont('DejaVu Sans')
+        hf.setPixelSize(hdr_px)
+        hf.setBold(True)
+        for _h in self.hdr_labels:
+            _h.setFont(hf)
+        self.hdr.setFixedHeight(int(hdr_px * 1.5))
+        # rows squeezed by the header height (operator: make space)
+        avail = self.height() - STRIP_H - self.hdr.height()
         by_height = (avail / rows) * 0.80
         # WIDTH BUDGET: NUM_W monospace glyphs per column, two columns, plus
         # the letter column. X on this machine reaches -4042.72 mm, so the
@@ -184,17 +213,20 @@ class Dro2(QWidget):
         per_col = (self.width() - 90) / 2.0
         by_width = per_col / (NUM_W * 0.62)
         num_px = int(max(40, min(by_height, by_width)))
-        lab_px = max(24, int(num_px * 0.42))
+        # letters BOLD and +5 (operator 2026-08-06)
+        lab_px = max(24, int(num_px * 0.42)) + 5
         nf = QFont('DejaVu Sans Mono')
         nf.setPixelSize(num_px)
         nf.setBold(True)
         lf = QFont('DejaVu Sans')
         lf.setPixelSize(lab_px)
+        lf.setBold(True)
         # FIXED LETTER COLUMN: 'Y' is narrower than 'X', so a natural-width
         # label handed that row 3 px more number space and slid its decimal
         # point out of column. One width for every letter (2026-08-05).
         lm = QFontMetrics(lf)
         lab_w = max([lm.horizontalAdvance(a) for a in self.axes] or [lab_px])
+        self.hdr_pad.setFixedWidth(lab_w)   # headers align with the columns
         for lab, mach, work in self.rows:
             lab.setFont(lf)
             lab.setFixedWidth(lab_w)
