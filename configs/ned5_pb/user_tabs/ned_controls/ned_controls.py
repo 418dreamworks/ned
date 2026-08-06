@@ -3869,11 +3869,19 @@ class UserTab(QWidget):
                                     'joint.4.pos-fb'],
                                    capture_output=True, text=True)
                 if abs(float(r.stdout.strip())) > 0.05:
-                    self._tcp_say('refused: tool length not in force and '
-                                  'the head is not straight -- cannot G43 '
-                                  'safely', bad=True)
-                    self._hand_back_manual(c0, 'TCP SURVEY')
-                    return
+                    # straighten it ourselves -- pressing the button IS
+                    # consent to motion (it probes). Refusing here made
+                    # the button dead after any zero re-bank (2026-08-06).
+                    c0.mdi('G1 A0 F300')
+                    c0.wait_complete(30.0)
+                    r = subprocess.run(['timeout', '5', 'halcmd', 'getp',
+                                        'joint.4.pos-fb'],
+                                       capture_output=True, text=True)
+                    if abs(float(r.stdout.strip())) > 0.05:
+                        self._tcp_say('refused: could not straighten A '
+                                      'for G43', bad=True)
+                        self._hand_back_manual(c0, 'TCP SURVEY')
+                        return
                 c0.mdi('G43 H%d' % s0.tool_in_spindle)
                 c0.wait_complete(4.0)
                 LOG.error('TCP SURVEY: G43 H%d applied (tool length %.3f)',
