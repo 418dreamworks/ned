@@ -3250,23 +3250,31 @@ class UserTab(QWidget):
         if win is None:
             return
         if not homed:
-            off = getattr(self, '_prehome_off', None)
-            if off is not None:
-                return                      # already swept, nothing new
-            off = []
+            # RE-SWEEP EVERY TICK. This used to sweep once and return early
+            # forever -- and the sub-tabs are built on a 6.5 s timer, well
+            # after the first sweep, so every control created later (the WCS
+            # JOG presets, ZERO Y among them) was never gated at all. The
+            # operator could still click it. Widgets appear late; the gate
+            # has to keep looking.
+            off = getattr(self, '_prehome_off', None) or []
+            known = set(id(b) for b in off)
             for b in win.findChildren(QPushButton) + win.findChildren(
                     QToolButton):
                 n = b.objectName()
                 if n in self.PREHOME_ALLOW or 'estop' in n.lower():
                     continue
+                if id(b) in known:
+                    continue                # already ours
                 if not b.isEnabled():
                     continue                # already off; not ours to restore
                 b.setEnabled(False)
                 off.append(b)
+            n_new = len(off) - len(known)
             self._prehome_off = off
-            LOG.error('PRE-HOME GATE: %d control(s) DISABLED -- only E-stop '
-                      'and power live until the home declaration lands',
-                      len(off))
+            if n_new:
+                LOG.error('PRE-HOME GATE: %d new control(s) DISABLED (%d '
+                          'total) -- only E-stop and power live until the '
+                          'home declaration lands', n_new, len(off))
             return
         off = getattr(self, '_prehome_off', None)
         if off is None:
@@ -4259,12 +4267,23 @@ class UserTab(QWidget):
             homed = all(st.homed[:6])
         except Exception:
             homed = False            # unreadable -> assume NOT homed, refuse
+        # DECLARED is the real home state and drives the pre-home sweep.
+        # `homed` below additionally folds in the tool-state lock for the
+        # narrow HOMING_GATED list. They must NOT be the same variable: the
+        # tool lock forcing homed=False would fire the full sweep and kill
+        # the declaration controls -- the exact deadlock fixed earlier
+        # today, where the only way out of the lock was disabled by it.
+        declared = homed
         if getattr(self, '_tool_locked', False):
             homed = False       # tool-state lock deads the same buttons
+        win = self.window()
+        # the sweep runs on EVERY unhomed tick, not only on a change:
+        # sub-tabs are built on a 6.5 s timer, so widgets appear long after
+        # the first tick and have to be caught as they show up
+        self._sweep_gate(win, declared)
         if homed == getattr(self, '_homed_now', None):
             return
         self._homed_now = homed
-        win = self.window()
         hit, missing = [], []
         # BEFORE THE DECLARATION LANDS, EVERYTHING IS DEAD except E-stop and
         # power (operator 2026-08-05: "the only buttons that can work are
@@ -4275,7 +4294,6 @@ class UserTab(QWidget):
         # instantly. before it applies, GATE EVERYTHING". An enumerated list
         # of 7 names used to stand here, which is why ZERO was clickable on
         # a fresh launch.
-        self._sweep_gate(win, homed)
         for name in self.HOMING_GATED:
             w = win.findChild(QWidget, name) if win else None
             if w is None:
