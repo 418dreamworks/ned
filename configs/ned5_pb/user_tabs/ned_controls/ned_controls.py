@@ -1060,12 +1060,15 @@ class UserTab(QWidget):
             tc.addStretch(1)
 
             hbox, hbl = _mkbox('IMPROVEMENTS')
-            # no 'change' column -- operator 2026-08-05: "completely
-            # uninformative". dZ and L carry the run.
+            # dL, not raw dZ (operator 2026-08-05: the raw number is
+            # "stupid" -- 0.1 mm of dZ is 74 mm of pivot at 3 deg and
+            # 0.56 mm at 35). dL = the correction to L this pair implies,
+            # already leverage-corrected; it is also what the 0.05 mm
+            # convergence tolerance judges. No 'change' column either.
             tbla = QTableWidget(0, 5)
             tbla.setObjectName('tcp_cal_table')
             tbla.setHorizontalHeaderLabels(
-                ['#', 'A1', 'A2', 'dZ', 'L (mm)'])
+                ['#', 'A1', 'A2', 'dL (mm)', 'L (mm)'])
             tbla.verticalHeader().setVisible(False)
             tbla.setEditTriggers(QAbstractItemView.NoEditTriggers)
             tbla.setSelectionMode(QAbstractItemView.NoSelection)
@@ -4420,9 +4423,10 @@ class UserTab(QWidget):
                 return
             r = t.rowCount()
             t.insertRow(r)
+            dl = row['L'] - row.get('L_set', 0.0)
             for col, txt in enumerate(
                     (str(n), '%.2f' % row['a1'], '%.2f' % row['a2'],
-                     '%+.4f' % row['dz'], '%.3f' % row['L'])):
+                     '%+.3f' % dl, '%.3f' % row['L'])):
                 t.setItem(r, col, QTableWidgetItem(txt))
             t.scrollToBottom()
         except Exception:
