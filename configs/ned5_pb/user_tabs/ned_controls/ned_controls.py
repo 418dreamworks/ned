@@ -912,7 +912,7 @@ class UserTab(QWidget):
 
             sbox, sbl = _mkbox('BOUNDS')
             for cap, obj, dflt, attr in (
-                    ('max plunge (mm)', 'tcp_cal_plunge', '25.0', '_tcp_plunge'),
+                    ('plunge depth (mm)', 'tcp_cal_plunge', '30.0', '_tcp_plunge'),
                     ('safe clearance (mm)', 'tcp_cal_clear', '30.0', '_tcp_clear')):
                 r = QHBoxLayout()
                 lb = QLabel(cap)
@@ -924,10 +924,10 @@ class UserTab(QWidget):
                 r.addWidget(lb)
                 r.addWidget(ed)
                 sbl.addLayout(r)
-            snote = QLabel('Plunge stops at the floor either way: a needle '
-                           'that is not over the puck fails the probe there '
-                           'instead of reaching the table. The second touch '
-                           'allows for the tip rising by L*[1-cosA].')
+            snote = QLabel('Both touches plunge this far from wherever you '
+                           'parked. Park so the needle contacts inside it -- '
+                           'nothing here predicts where contact should be, '
+                           'because that deviation IS the measurement.')
             snote.setWordWrap(True)
             snote.setStyleSheet('color: rgb(160,160,160); font: 9pt;')
             sbl.addWidget(snote)
@@ -3376,24 +3376,6 @@ class UserTab(QWidget):
             v = dflt
         return min(max(v, lo), hi)
 
-    def _tcp_L_est(self):
-        """Best available pivot estimate -- bounds only, never the answer."""
-        h = getattr(self, '_tcp_hist', [])
-        if h:
-            return float(h[-1]['L'])
-        kind, L = self._tcp_kins()
-        if L > 1.0:
-            return L
-        try:
-            with open('/home/brains/Documents/ned/configs/params/'
-                      'head_pivot.inc') as f:
-                for ln in f:
-                    if ln.startswith('PIVOT_LENGTH'):
-                        return float(ln.split('=')[1])
-        except Exception:
-            pass
-        return 250.0
-
     def _tcp_set_face(self):
         st = getattr(self, '_tcp_state', 'idle')
         b = getattr(self, '_tcp_btn', None)
@@ -3434,14 +3416,23 @@ class UserTab(QWidget):
         z_now = self._tcp_work(s, 2)
         a_now = self._tcp_work(s, 3)
         zmin = self._tcp_zlim(s, 'min') + 1.0
+        # FIXED PLUNGE, both touches, from wherever the operator parked
+        # (operator 2026-08-05: "you cannot compute the floor and apply to
+        # max plunge depth. the whole point is that the contact will not be
+        # as expected, and it translates to a correction in L. just plunge
+        # 30mm. user will put probe so that it will contact on plunge").
+        # Sizing the plunge from an L estimate would bake the model into
+        # the measurement's own bounds -- and the deviation from that
+        # expectation IS the answer. The only clamp left is the Z soft
+        # limit, which is a machine limit, not an expectation.
+        plunge = self._tcp_field(self._tcp_plunge, 30.0, 2.0, 80.0)
+        zfloor = max(z_now - plunge, zmin)
+        zback = z_now
         if which == 1:
-            plunge = self._tcp_field(self._tcp_plunge, 25.0, 2.0, 80.0)
-            zfloor = max(z_now - plunge, zmin)
-            zback = z_now
             self._tcp_pts = []
             self._tcp_result.setText('L = ---')
-            self._tcp_say('touch 1: plunge stops %.1f mm down, puck goes UP '
-                          'and STAYS up until the pair is done'
+            self._tcp_say('touch 1: plunging %.1f mm from here. Puck goes '
+                          'UP and STAYS up until the pair is done.'
                           % (z_now - zfloor))
         else:
             z1, a1 = self._tcp_pts[0]
@@ -3452,14 +3443,8 @@ class UserTab(QWidget):
                               'Rotate further and press again.'
                               % (a_now - a1, den), bad=True)
                 return
-            # the tip RISES by L*(cosA1-cosA2), so the machine must descend
-            # that much further before the needle reaches the same face
-            drop = max(0.0, self._tcp_L_est() * den)
-            zfloor = max(z1 - drop - 10.0, z1 - 100.0, zmin)
-            zback = z1 + 15.0
-            self._tcp_say('touch 2 at A %.2f deg: expecting ~%.1f mm more '
-                          'descent, floor %.1f mm below touch 1'
-                          % (a_now, drop, z1 - zfloor))
+            self._tcp_say('touch 2 at A %.2f deg: plunging %.1f mm from '
+                          'here.' % (a_now, z_now - zfloor))
         self._tcp_state = 'wait%d' % which
         self._tcp_t0 = time.time()
         self._tcp_set_face()

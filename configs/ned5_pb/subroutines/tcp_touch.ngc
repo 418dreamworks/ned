@@ -9,7 +9,7 @@
 (otherwise land straight in dZ, which IS the measurement.)
 (The GUI owns the state machine, the bounds and the arithmetic. This file)
 (owns motion only.)
-(Args: #1 = absolute Z floor -- the probe may not descend past it)
+(Args: #1 = absolute Z floor = parked Z minus the plunge depth)
 (      #2 = 1 to deploy the puck first, 0 when it is already up)
 (      #3 = absolute Z to retract to when the touch is done)
 o<tcp_touch> sub
@@ -34,10 +34,12 @@ o<tcp_touch> sub
     G4 P1.5
   o20 endif
 
-  ; BOUNDED PLUNGE. zfloor comes from the GUI: on touch 1 it is the
-  ; operator max-plunge below the parked height, on touch 2 it also allows
-  ; for the tip rising by L*[1-cosA]. A needle that is NOT over the puck
-  ; simply fails the probe there instead of driving into the table.
+  ; FIXED PLUNGE. zfloor is simply the parked height minus the operator
+  ; plunge depth, the SAME on both touches. Nothing here predicts where
+  ; contact should be: the operator parks so the needle contacts inside
+  ; the plunge, and the deviation from expectation IS the measurement.
+  ; A needle that is NOT over the puck fails the probe at the floor
+  ; instead of driving into the table.
   G90
   G38.2 Z#<zfloor> F[#<fast>]
   G91
