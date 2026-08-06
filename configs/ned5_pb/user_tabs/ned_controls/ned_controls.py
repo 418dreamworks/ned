@@ -658,6 +658,22 @@ class UserTab(QWidget):
                 bl.setSpacing(6)
                 return bx, bl
 
+            # PUCK toggle, on EVERY calibration page (operator 2026-08-05:
+            # "in all calibration pages give me a button to send the puck up
+            # and down. just a toggle"). There is no deployed sensor, so the
+            # button carries the state it commanded -- and the 1.5 s dwell
+            # is the only proof the pneumatics had time to act.
+            self._puck_btns = []
+            def _mkpuck():
+                pb = QPushButton('PUCK UP')
+                pb.setObjectName('ned_puck_toggle')
+                pb.setCheckable(True)
+                pb.setMinimumHeight(46)
+                pb.setStyleSheet(self.CAL_QSS['pose'])
+                pb.clicked.connect(lambda ck=False: self._puck_toggle(ck))
+                self._puck_btns.append(pb)
+                return pb
+
             b1, b1l = _mkbox('1   PUCK CENTRE')
             self._cal_btn = {}
             def _mkbtn(key, cap, cls, w=None):
@@ -834,6 +850,7 @@ class UserTab(QWidget):
             self._cal_delta_base = self._read_vars(
                 ('3050', '3051', '3055', '3056',
                  '3062', '3063', '3064', '3065'))
+            c0.addWidget(_mkpuck())
             tabs.addTab(cal_page, 'AC CALIBRATION')
 
             # ---- RACK CALIBRATION: its own page beside AC CALIBRATION ----
@@ -859,6 +876,7 @@ class UserTab(QWidget):
             rbl.addWidget(rnote)
             rl.addWidget(rbox)
             rl.addStretch(1)
+            rbl.addWidget(_mkpuck())
             tabs.addTab(rack_page, 'RACK CALIBRATION')
             # ---- TCP CALIBRATION: the A pivot length, ONE button ---------
             # Operator 2026-08-05. Two probes of the SAME puck face at two
@@ -965,6 +983,7 @@ class UserTab(QWidget):
             tpg.addWidget(tcol, 0, 0)
             tpg.addWidget(hbox, 0, 1)
             tpg.setColumnStretch(1, 1)
+            tbl.addWidget(_mkpuck())
             tabs.addTab(tcp_page, 'TCP CALIBRATION')
             self._tcp_state = 'idle'
             self._tcp_pts = []
@@ -3435,6 +3454,44 @@ class UserTab(QWidget):
     # Tool-tip kins: the pair gives the CORRECTION, and dZ is the residual.
     TCP_HIST = '/home/brains/Documents/ned/configs/ned5_pb/tcp_cal.json'
 
+    def _puck_toggle(self, up):
+        """Raise or drop the tool-setter puck. M64/M65 P3 -- no motion.
+
+        Every calibration page carries one and they mirror each other. The
+        dwell matters: there is no deployed sensor, so the 1.5 s IS the
+        proof the puck had time to travel before anything plunges at it --
+        the auto sweep shipped without a deploy at all and plunged onto a
+        retracted puck (2026-08-05)."""
+        up = bool(up)
+        try:
+            import linuxcnc
+            gate = self._cal_gate('PUCK')
+            if gate is None:
+                self._puck_sync(not up)          # refused: leave state honest
+                return
+            c, _ = gate
+            c.mdi('M64 P3' if up else 'M65 P3')
+            c.mdi('G4 P1.5')
+            self._hand_back_manual(c, 'PUCK')
+            LOG.error('PUCK %s commanded (M%d P3)', 'UP' if up else 'DOWN',
+                      64 if up else 65)
+            self._puck_sync(up)
+        except Exception:
+            LOG.exception('PUCK toggle failed')
+            self._puck_sync(not up)
+
+    def _puck_sync(self, up):
+        for b in getattr(self, '_puck_btns', []):
+            try:
+                b.blockSignals(True)
+                b.setChecked(up)
+                b.setText('PUCK DOWN' if up else 'PUCK UP')
+                b.setStyleSheet(self.CAL_QSS['measure'] if up
+                                else self.CAL_QSS['pose'])
+                b.blockSignals(False)
+            except RuntimeError:
+                pass
+
     def _tcp_kins(self):
         """('identity'|'tcp', pivot length currently IN FORCE)."""
         try:
@@ -3538,9 +3595,9 @@ class UserTab(QWidget):
                       '0.1 -> 35 deg, improving and applying L at each. '
                       'Pivot in force now %.3f mm.'
                       % (len(self.TCP_ANGLES), L_set))
-        self._tcp_auto_issue(0.0, repos=0)
+        self._tcp_auto_issue(0.0, repos=0, puck=1)   # puck UP, stays up
 
-    def _tcp_auto_issue(self, targa, repos):
+    def _tcp_auto_issue(self, targa, repos, puck=0):
         import time
         gate = self._cal_gate('TCP AUTO')
         if gate is None:
@@ -3549,13 +3606,14 @@ class UserTab(QWidget):
         c, s = gate
         plunge = self._tcp_field(self._tcp_plunge, 30.0, 2.0, 80.0)
         st = self._tcp_auto_start or (0.0, 0.0, 0.0)
-        c.mdi('o<tcp_auto_step> call [%.4f] [%d] [%.4f] [%.4f] [%.4f] [%.4f]'
-              % (targa, repos, st[0], st[1], st[2], plunge))
+        c.mdi('o<tcp_auto_step> call [%.4f] [%d] [%.4f] [%.4f] [%.4f] '
+              '[%.4f] [%d]'
+              % (targa, repos, st[0], st[1], st[2], plunge, puck))
         self._tcp_auto_t0 = time.time()
         self._tcp_auto_want = targa
         LOG.error('TCP AUTO: step issued A=%.3f repos=%d start=%.4f/%.4f/'
-                  '%.4f plunge=%.1f', targa, repos, st[0], st[1], st[2],
-                  plunge)
+                  '%.4f plunge=%.1f puck=%d', targa, repos, st[0], st[1],
+                  st[2], plunge, puck)
 
     def tcp_auto_point(self, xt, yt, zt, at):
         """Called BY THE G-CODE at every probe trip in the auto sequence."""
@@ -3647,8 +3705,11 @@ class UserTab(QWidget):
                 gate = self._cal_gate('TCP AUTO park')
                 if gate:
                     c, _ = gate
+                    # plunge 0 = MOVE ONLY. This used to pass 2.0 and
+                    # probe again on the way out, for no reason. puck -1
+                    # retracts it so no solenoid is left energised.
                     c.mdi('o<tcp_auto_step> call [0] [1] [%.4f] [%.4f] '
-                          '[%.4f] [%.4f]' % (st[0], st[1], st[2], 2.0))
+                          '[%.4f] [0] [-1]' % (st[0], st[1], st[2]))
                     self._tcp_manual_pending = True
                     import time
                     self._tcp_manual_t0 = time.time()

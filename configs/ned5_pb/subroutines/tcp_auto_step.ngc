@@ -15,7 +15,11 @@
 (Args: #1 = target A in degrees)
 (      #2 = 1 to reposition to the start pose first, 0 for the first probe)
 (      #3 = start X   #4 = start Y   #5 = start Z, all tool-tip work frame)
-(      #6 = plunge depth in mm, positive)
+(      #6 = plunge depth in mm; 0 or less = MOVE ONLY, do not probe)
+(      #7 = puck: 1 raise and dwell before probing, -1 retract at the end,)
+(           0 leave it as it is. THE PUCK MUST BE UP BEFORE ANY PLUNGE --)
+(           it was missing entirely and the first sweep plunged onto a)
+(           retracted puck, 2026-08-05.)
 o<tcp_auto_step> sub
   #<targa>  = #1
   #<repos>  = #2
@@ -23,6 +27,7 @@ o<tcp_auto_step> sub
   #<sy>     = #4
   #<sz>     = #5
   #<plunge> = #6
+  #<puck>   = #7
   #<fast>   = 200.0
   #<latch>  = 10.0
   #<back>   = 1.0
@@ -31,14 +36,19 @@ o<tcp_auto_step> sub
   o10 if [#<_metric> EQ 0]
     (abort, TCP AUTO: switch to MM first - this routine is metric)
   o10 endif
-  o15 if [#<plunge> LE 0]
-    (abort, TCP AUTO: plunge depth must be positive)
-  o15 endif
   o16 if [ABS[#<targa>] GT 35]
     (abort, TCP AUTO: A beyond 35 deg - the rod radius would touch first)
   o16 endif
 
   M50 P0
+
+  ; PUCK UP FIRST, and give the pneumatics their settle time. There is no
+  ; deployed sensor, so the dwell IS the proof -- same 1.5 s the puck
+  ; centre cycle uses. Nothing below may plunge before this has run.
+  o18 if [#<puck> GT 0]
+    M64 P3
+    G4 P1.5
+  o18 endif
 
   o20 if [#<repos> GT 0]
     G90
@@ -49,17 +59,19 @@ o<tcp_auto_step> sub
     G1 X#<sx> Y#<sy> Z#<sz> F[#<trav>]
   o20 endif
 
-  G91
-  G38.2 Z-#<plunge> F[#<fast>]
-  G1 Z[#<back>] F[#<trav>]
-  G38.2 Z-[#<back> + 1.0] F[#<latch>]
-  #<xt> = #5061
-  #<yt> = #5062
-  #<zt> = #5063
-  #<at> = #5064
-  G38.5 Z[#<back> + 1.0] F[#<latch>]
-  G90
-  G1 Z#<sz> F[#<trav>]
+  o30 if [#<plunge> GT 0]
+    G91
+    G38.2 Z-#<plunge> F[#<fast>]
+    G1 Z[#<back>] F[#<trav>]
+    G38.2 Z-[#<back> + 1.0] F[#<latch>]
+    #<xt> = #5061
+    #<yt> = #5062
+    #<zt> = #5063
+    #<at> = #5064
+    G38.5 Z[#<back> + 1.0] F[#<latch>]
+    G90
+    G1 Z#<sz> F[#<trav>]
+  o30 endif
   ; A BACK TO ZERO BEFORE THE GUI APPLIES THE NEW PIVOT. Changing
   ; pivot-length steps the inverse solution by dL*sin[A] in Y and
   ; dL*[1-cos A] in Z -- at A=-24 deg a 160 mm correction commanded a 66 mm
@@ -67,7 +79,15 @@ o<tcp_auto_step> sub
   ; (2026-08-05, by hand, guard bypassed). At A=0 the pivot cancels out of
   ; the solution entirely, so the write costs nothing.
   G1 A0 F1000
+  ; puck DOWN at the end of the sequence -- an energised solenoid bleeds
+  ; the air supply down, learned 2026-08-02 the hard way
+  o40 if [#<puck> LT 0]
+    M65 P3
+    G4 P1.5
+  o40 endif
   M50 P1
-  (DEBUG, EVAL[vcp.getWidget{"ned_controls"}.tcp_auto_point{#<xt>, #<yt>, #<zt>, #<at>}])
+  o50 if [#<plunge> GT 0]
+    (DEBUG, EVAL[vcp.getWidget{"ned_controls"}.tcp_auto_point{#<xt>, #<yt>, #<zt>, #<at>}])
+  o50 endif
 o<tcp_auto_step> endsub
 M2
