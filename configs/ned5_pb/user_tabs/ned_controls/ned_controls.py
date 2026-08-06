@@ -3434,6 +3434,61 @@ class UserTab(QWidget):
             v = dflt
         return min(max(v, lo), hi)
 
+    def _tcp_apply(self, L):
+        """Push the measured pivot into the LIVE kins.
+
+        This is what closes the operator's loop: "applying the updated
+        parameter, and repeat until the deltaZ is sufficiently close to
+        zero". Without it every pair re-measures the same error and the
+        residual never moves.
+
+        WRITES arm.in0 = L - live tool length, NOT L. arm.in0 is the
+        MACHINE constant (A axis -> spindle nose); the arm sum2 adds
+        motion.tooloffset.z on top, so a different tool gets its own L for
+        free. Storing L itself would bake THIS rod's stickout into the
+        number that has to serve every tool.
+
+        RUNTIME ONLY. head_pivot.inc is the operator's to commit, and it
+        should receive the axis->nose constant, not L.
+
+        REFUSES OFF ZERO: pivot length only cancels out of the Z solution
+        at A=0. Changing it at a tilt would step the world position under
+        the machine."""
+        try:
+            import subprocess, linuxcnc
+            st = linuxcnc.stat()
+            st.poll()
+            a = abs(st.actual_position[3])
+            if a > 0.05:
+                LOG.error('TCP APPLY REFUSED: A is at %.3f deg. The pivot '
+                          'only cancels out of Z at A=0 -- applying here '
+                          'would step the world position. Pin left alone.',
+                          st.actual_position[3])
+                return None
+            r = subprocess.run(['timeout', '5', 'halcmd', 'getp', 'arm.in1'],
+                               capture_output=True, text=True)
+            try:
+                tlen = float(r.stdout.strip())
+            except ValueError:
+                LOG.error('TCP APPLY: no arm sum2 (identity kins, or the '
+                          'tcp postgui did not load) -- nothing to apply')
+                return None
+            D = L - tlen
+            subprocess.run(['timeout', '5', 'halcmd', 'setp', 'arm.in0',
+                            '%.4f' % D], capture_output=True)
+            v = subprocess.run(['timeout', '5', 'halcmd', 'getp',
+                                'ned_ac_kins.pivot-length'],
+                               capture_output=True, text=True)
+            LOG.error('TCP APPLY: axis->nose %.4f written to arm.in0 '
+                      '(L %.4f - tool length %.4f); pivot-length now reads '
+                      '%s. RUNTIME ONLY -- head_pivot.inc still holds the '
+                      'old value until you commit it.',
+                      D, L, tlen, v.stdout.strip())
+            return D
+        except Exception:
+            LOG.exception('TCP APPLY failed -- pivot NOT updated')
+            return None
+
     def _tcp_set_face(self):
         st = getattr(self, '_tcp_state', 'idle')
         b = getattr(self, '_tcp_btn', None)
@@ -3563,6 +3618,7 @@ class UserTab(QWidget):
         self._tcp_save_hist()
         self._tcp_add_row(len(hist), row, prev)
         self._tcp_result.setText('L = %.3f mm' % L)
+        self._tcp_pending_L = L
         chg = ('' if prev is None else '   change %+.3f mm' % (L - prev))
         self._tcp_say('L = %.3f mm  [%s kins, pivot in force %.3f, dZ '
                       '%+.4f over %.2f deg]%s'
@@ -3629,6 +3685,19 @@ class UserTab(QWidget):
                             and s2.task_mode == linuxcnc.MODE_MDI):
                         self._tcp_manual_pending = False
                         self._hand_back_manual(linuxcnc.command(), 'TCP CAL')
+                        # the park has landed and A is back at 0: the one
+                        # moment the pivot can change without stepping the
+                        # world position
+                        L = getattr(self, '_tcp_pending_L', None)
+                        if L is not None:
+                            self._tcp_pending_L = None
+                            D = self._tcp_apply(L)
+                            if D is not None:
+                                self._tcp_say(
+                                    'APPLIED: axis->nose %.3f mm is live. '
+                                    'Next pair is a NULL test -- with L '
+                                    'right, the touch Z is the SAME at '
+                                    'every A and dZ collapses to zero.' % D)
                 except Exception:
                     LOG.exception('TCP PARK: hand-back poll failed')
         st = getattr(self, '_tcp_state', 'idle')
