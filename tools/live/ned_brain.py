@@ -806,26 +806,22 @@ class Brain(object):
             # which with an absolute encoder must be impossible.
             # Correct action: the position is already truthful after
             # homing, so DRIVE the axis to zero, then re-verify.
-            try:
-                self.cmd.mode(linuxcnc.MODE_MANUAL)
-                self.cmd.wait_complete()
-                self.cmd.teleop_enable(1)   # a coordinated move to zero
-                self.cmd.wait_complete()
-                self.correcting = True
-                words = ' '.join('%s0' % ax.upper() for ax in bad)
-                self.cmd.mode(linuxcnc.MODE_MDI)
-                self.cmd.wait_complete()
-                log('HOME COMPLETION: driving %s to zero (LinuxCNC does not '
-                    'run the final move on this config)' % words)
-                self.cmd.mdi('G0 %s' % words)
-                self.cmd.wait_complete(60.0)
-                self.cmd.mode(linuxcnc.MODE_MANUAL)
-                self.cmd.wait_complete()
-                # re-arm a FRESH read so the next verify judges reality
-                self.read_armed = False
-                self.want_read = True
-            except Exception as e:
-                self.verify_fail(bad, msgs, 'correction failed: {}'.format(e))
+            # THE BRAIN NEVER MOVES THE MACHINE. Operator 2026-08-05:
+            # "stale home is declaration, NO FUCKING movement".
+            # This used to issue `G0 A0 C0` to "complete" the home. That is
+            # motion nobody asked for, fired from a path that also runs
+            # after a DECLARED (stale) home -- so a launch could command the
+            # head to swing from wherever it sat, and did. A declaration
+            # states where the machine is; it must never move it there.
+            # The discrepancy is still reported, loudly, and the operator
+            # decides. Nothing here commands motion, ever.
+            words = ' '.join('%s=%s' % (ax.upper(), m) for ax, m in
+                             zip(bad, msgs)) if msgs else ' '.join(
+                                 ax.upper() for ax in bad)
+            log('HOME VERIFY: {} is off zero after homing. NOT CORRECTING -- '
+                'the brain does not move the machine. Re-home physically or '
+                'jog it; this is a report, not an action.'.format(words))
+            self.verify_fail(bad, msgs, 'off zero -- no automatic correction')
         else:
             self.verify_fail(bad, msgs, 'still off after one correction')
 
