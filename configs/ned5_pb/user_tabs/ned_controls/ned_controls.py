@@ -3854,7 +3854,38 @@ class UserTab(QWidget):
         # every rerun starts with an empty table (operator 2026-08-06:
         # "clear up that data on next rerun") -- old rows go to trash/
         self._tcp_clear_data()
+        # G43 HERE, not at boot: applying it from the brain's restore ran
+        # MDI during the declare and every home() missed (2026-08-06).
+        # The tool length must be in force or every L is off by the tool.
+        try:
+            s0.poll()
+            if self._tcp_tooloff() < 1.0 and s0.tool_in_spindle > 0:
+                import subprocess
+                r = subprocess.run(['timeout', '5', 'halcmd', 'getp',
+                                    'joint.4.pos-fb'],
+                                   capture_output=True, text=True)
+                if abs(float(r.stdout.strip())) > 0.05:
+                    self._tcp_say('refused: tool length not in force and '
+                                  'the head is not straight -- cannot G43 '
+                                  'safely', bad=True)
+                    self._hand_back_manual(c0, 'TCP SURVEY')
+                    return
+                c0.mdi('G43 H%d' % s0.tool_in_spindle)
+                c0.wait_complete(4.0)
+                LOG.error('TCP SURVEY: G43 H%d applied (tool length %.3f)',
+                          s0.tool_in_spindle, self._tcp_tooloff())
+        except Exception:
+            LOG.exception('TCP SURVEY: G43 check failed')
+            return
+        import random, time as _t
         self._tcp_auto_on = True
+        self._tcp_auto_phase = 'survey'
+        self._svy = {'n': 0, 'step': 'ref-issue', 'z0': None, 'zp': None,
+                     'L': 0.0, 'ofs': 0.0,
+                     'log': ('/home/brains/Documents/ned/logs/'
+                             'tcp_survey_%s.ndjson'
+                             % _t.strftime('%Y%m%d-%H%M%S'))}
+        random.seed()
         self._tcp_auto_i = -1          # -1 = the one-off A=0 reference
         self._tcp_auto_ref = None
         self._tcp_auto_start = None
@@ -3865,13 +3896,11 @@ class UserTab(QWidget):
         self._tcp_auto_go_next = False
         self._tcp_auto_idle_t0 = None
         self._tcp_set_face()
-        self._tcp_say('AUTO START: reference probe at A=0, then %d tilts '
-                      '%s deg, improving and applying L at each. '
-                      'Pivot in force now %.3f mm.'
-                      % (len(self.TCP_ANGLES),
-                         '/'.join('%g' % a for a in self.TCP_ANGLES), L_set))
-        self._tcp_auto_issue(0.0, repos=0, puck=1)   # puck UP, stays up
-        self._puck_sync(True)
+        self._tcp_say('SURVEY: %d random pairs, L %s ofs %s, three '
+                      'touches each. Data -> %s'
+                      % (self.SVY_N, self.SVY_L, self.SVY_OFS,
+                         self._svy['log']))
+        self._tcp_survey_next()   # step 'ref': puck up + reference probe
 
     def _tcp_auto_issue(self, targa, repos, puck=0):
         import time
@@ -3910,6 +3939,44 @@ class UserTab(QWidget):
         LOG.error('TCP AUTO probe LANDED: X=%.4f Y=%.4f Z=%.4f A=%.4f',
                   x, y, z, a)
         if not getattr(self, '_tcp_auto_on', False):
+            return
+        if getattr(self, '_tcp_auto_phase', '') == 'survey':
+            v = self._svy
+            st = v['step']
+            # STRICT issue/wait split: this callback acts ONLY on -wait
+            # states, _tcp_survey_next only on -issue/'apply'. A stale
+            # go_next then lands in a -wait state and no-ops -- without
+            # this, a late-delivered zero touch could be recorded as the
+            # +35 reading (delivery lags idle by up to 200 ms).
+            if st == 'ref-wait':
+                self._tcp_auto_ref = (z, a)
+                self._tcp_auto_start = (x, y, z + 5.0)
+                self._svy_out({'t': 'ref', 'z': z, 'a': a})
+                v['step'] = 'apply'
+            elif st == 'z0-wait':
+                v['z0'] = z
+                v['step'] = 'p-issue'
+            elif st == 'p-wait':
+                v['zp'] = z
+                v['step'] = 'm-issue'
+            elif st == 'm-wait':
+                v['n'] += 1
+                mp, mn = v['zp'] - v['z0'], z - v['z0']
+                self._svy_out({'t': 'pair', 'n': v['n'],
+                               'L': round(v['L'], 4),
+                               'ofs': round(v['ofs'], 4),
+                               'z0': round(v['z0'], 4),
+                               'zp': round(v['zp'], 4), 'zm': round(z, 4),
+                               'mp': round(mp, 4), 'mn': round(mn, 4),
+                               'sum': round(abs(mp) + abs(mn), 4),
+                               'diff': round(mp - mn, 4),
+                               'tooloff': round(self._tcp_tooloff(), 4)})
+                self._tcp_say('pair %d/%d: L %.3f ofs %+.3f  sum %.4f '
+                              'diff %+.4f' % (v['n'], self.SVY_N, v['L'],
+                                              v['ofs'], abs(mp) + abs(mn),
+                                              mp - mn))
+                v['step'] = 'apply'
+            self._tcp_auto_go_next = True
             return
         if self._tcp_auto_ref is None:
             # the one-off A=0 reference, and the start pose every later step
@@ -4014,6 +4081,50 @@ class UserTab(QWidget):
             LOG.exception('TCP AUTO: display update failed -- measurement '
                           'already banked, sweep continues')
 
+    def _svy_out(self, rec):
+        import json, time
+        rec['ts'] = time.strftime('%F %T')
+        try:
+            with open(self._svy['log'], 'a') as f:
+                f.write(json.dumps(rec) + '\n')
+        except Exception:
+            LOG.exception('SURVEY: data line NOT saved')
+
+    def _tcp_survey_next(self):
+        import random
+        v = self._svy
+        st = v['step']
+        if st == 'ref-issue':
+            v['step'] = 'ref-wait'
+            self._tcp_auto_issue(0.0, repos=0, puck=1)
+            self._puck_sync(True)
+            return
+        if st == 'apply':
+            if v['n'] >= self.SVY_N:
+                self._tcp_auto_stop('SURVEY complete: %d pairs -> %s'
+                                    % (v['n'], v['log']))
+                return
+            v['L'] = random.uniform(*self.SVY_L)
+            v['ofs'] = random.uniform(*self.SVY_OFS)
+            # the sub ended the last touch at A0; the pivot write goes
+            # through the guarded tick path, which calls back here
+            v['step'] = 'z0-issue'
+            self._tcp_apply_queue(v['L'])
+            return
+        if st == 'z0-issue':
+            v['step'] = 'z0-wait'
+            self._tcp_auto_issue(v['ofs'], repos=1)
+            return
+        if st == 'p-issue':
+            v['step'] = 'p-wait'
+            self._tcp_auto_issue(35.0 + v['ofs'], repos=1)
+            return
+        if st == 'm-issue':
+            v['step'] = 'm-wait'
+            self._tcp_auto_issue(-35.0 + v['ofs'], repos=1)
+            return
+        # -wait states: a stale go_next lands here; the callback owns them
+
     def _tcp_auto_next(self):
         if not getattr(self, '_tcp_auto_on', False):
             # STOP must mean stop: without this, a pending apply landing
@@ -4024,6 +4135,9 @@ class UserTab(QWidget):
         i = getattr(self, '_tcp_auto_i', -1) + 1
         self._tcp_auto_i = i
         rows = getattr(self, '_tcp_auto_rows', [])
+        if getattr(self, '_tcp_auto_phase', 'ladder') == 'survey':
+            self._tcp_survey_next()
+            return
         if getattr(self, '_tcp_auto_phase', 'ladder') == 'descent':
             self._tcp_descent_next()
             return
@@ -4056,6 +4170,13 @@ class UserTab(QWidget):
     TCP_CAP_A = 0.10     # deg, never move A zero more than this per update
     TCP_E_NOISE = 0.005  # mm; slope smaller than this over h = no update
     TCP_DESC_MAX_EVALS = 200
+    # SURVEY (operator 2026-08-06: "just make autoconverge do the random
+    # draws, and save the data. that's it"): N pairs, each = random L and
+    # random A offset, THREE touches (zero at A=ofs, +35+ofs, -35+ofs),
+    # everything to logs/tcp_survey_<stamp>.ndjson.
+    SVY_N = 500
+    SVY_L = (321.0, 325.0)       # tip length draw, mm
+    SVY_OFS = (-0.30, 0.30)      # A offset draw, deg
 
     def _tcp_tooloff(self):
         """motion.tooloffset.z in force NOW (0 when no G43 / identity).

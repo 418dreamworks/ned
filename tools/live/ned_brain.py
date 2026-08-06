@@ -658,31 +658,6 @@ class Brain(object):
             self.cmd.wait_complete()
             self.cmd.mdi('M61 Q{}'.format(want))
             self.cmd.wait_complete(4.0)
-            # APPLY THE LENGTH TOO (2026-08-06). M61 restores the RECORD
-            # only; without G43 motion.tooloffset.z stays 0, the pivot arm
-            # sums to the bare axis->nose constant, and every relaunch
-            # looked like the calibration had reverted ("it started back
-            # at 157" -- it had not; the tool length was missing). In
-            # tool-tip kins a length step at a tilt jerks the joints, so
-            # the head must be STRAIGHT by servo feedback first.
-            ok_g43 = True
-            if os.environ.get('NED_KINS', '') == 'tooltip':
-                try:
-                    r = subprocess.run(['timeout', '5', 'halcmd', 'getp',
-                                        'joint.4.pos-fb'],
-                                       capture_output=True, text=True)
-                    ok_g43 = abs(float(r.stdout.strip())) <= 0.05
-                except Exception:
-                    ok_g43 = False
-            if ok_g43:
-                self.cmd.mdi('G43 H{}'.format(want))
-                self.cmd.wait_complete(4.0)
-                log('SPINDLE RESTORE: G43 H{} applied -- tool length is in '
-                    'force'.format(want))
-            else:
-                log('SPINDLE RESTORE: G43 H{} NOT applied -- head is not '
-                    'straight (tool-tip kins would step the joints). '
-                    'Straighten A, then re-declare or M6.'.format(want))
             self.cmd.mode(linuxcnc.MODE_MANUAL)
             self.cmd.wait_complete()
             self.stat.poll()
