@@ -1,0 +1,26 @@
+# ned -- TOOL-TIP (RTCP) postgui. Loaded ONLY by the generated -tcp ini,
+# never by the identity config. run5.sh appends it as a second
+# POSTGUI_HALFILE; without this file a -tcp launch dies at postgui load.
+#
+# The kins pin is the distance from the A-axis centreline to the TOOL TIP,
+# so it has to track the live tool length. arm.out = head constant + tool
+# Z offset. ned_brain writes arm.in0 from configs/params/head_pivot.inc at
+# mode apply; motion.tooloffset.z supplies the rest.
+#
+# With NO tool length applied, tooloffset.z is 0 and arm.out is the bare
+# head constant -- so a pivot measured with an unmeasured tool in the
+# spindle belongs in head_pivot.inc only until that tool's length is known.
+loadrt sum2 names=arm
+addf arm servo-thread
+# in0 is the head constant. Left at 0 here ON PURPOSE: ned_brain sets it
+# from head_pivot.inc, and 0 makes a brain that never ran obvious instead
+# of silently plausible.
+setp arm.in0 0.0
+net sig-tool-zoff motion.tooloffset.z => arm.in1
+net sig-pivot-arm arm.out => ned_ac_kins.pivot-length
+# Discrete geometry, not calibrated numbers: azimuth 90 puts the A tilt in
+# the YZ plane at C=0, tilt-sign matches the physical A direction to the
+# model. Neither is determined by the pivot measurement -- (1-cosA) is even
+# in A, so the two-touch solve is blind to the sign.
+setp ned_ac_kins.azimuth-offset 90
+setp ned_ac_kins.tilt-sign 1

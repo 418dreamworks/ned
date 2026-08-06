@@ -860,6 +860,113 @@ class UserTab(QWidget):
             rl.addWidget(rbox)
             rl.addStretch(1)
             tabs.addTab(rack_page, 'RACK CALIBRATION')
+            # ---- TCP CALIBRATION: the A pivot length, ONE button ---------
+            # Operator 2026-08-05. Two probes of the SAME puck face at two
+            # different A angles give the pivot length outright:
+            #     z(A) = const + dL * cos(A)      dL = L_true - L_in_force
+            #     dL   = (z1 - z2) / (cos A1 - cos A2)
+            # The rod carries a NEEDLE POINT on the spindle axis, so the
+            # contact IS the tool tip at any tilt and no rod-radius term
+            # enters. In identity kins the pivot in force is 0, so a pair
+            # yields L ABSOLUTELY -- no starting guess to correct. In
+            # tool-tip kins it yields the CORRECTION to the pin, and dZ is
+            # the residual that shrinks as L converges.
+            # This tab NEVER touches the A/C locks. The operator's own
+            # rotation between the two touches is exactly what guarantees
+            # the needle still lands on the puck.
+            from PySide6.QtWidgets import (QTableWidget, QTableWidgetItem,
+                                           QHeaderView, QAbstractItemView)
+            tcp_page = QWidget()
+            tpg = QGridLayout(tcp_page)
+            tpg.setContentsMargins(8, 8, 8, 8)
+            tpg.setSpacing(8)
+
+            tcol = QWidget()
+            tcol.setFixedWidth(470)
+            tc = QVBoxLayout(tcol)
+            tc.setContentsMargins(0, 0, 0, 0)
+            tc.setSpacing(8)
+
+            tbox, tbl = _mkbox('A PIVOT LENGTH  --  needle on the puck')
+            tbtn = QPushButton('START')
+            tbtn.setObjectName('tcp_cal_btn')
+            tbtn.setMinimumHeight(90)
+            tbtn.setStyleSheet(self.CAL_QSS['pose'])
+            tbtn.clicked.connect(lambda _=False: self._tcp_press())
+            self._tcp_btn = tbtn
+            tbl.addWidget(tbtn)
+
+            tstat = QLabel('Park the needle over the puck, then START.')
+            tstat.setObjectName('tcp_cal_status')
+            tstat.setWordWrap(True)
+            tstat.setStyleSheet('color: rgb(200,208,205); font: 11pt;')
+            self._tcp_status = tstat
+            tbl.addWidget(tstat)
+
+            tres = QLabel('L = ---')
+            tres.setObjectName('tcp_cal_result')
+            tres.setStyleSheet('color: #78DC78; font: bold 20pt;')
+            self._tcp_result = tres
+            tbl.addWidget(tres)
+            tc.addWidget(tbox)
+
+            sbox, sbl = _mkbox('BOUNDS')
+            for cap, obj, dflt, attr in (
+                    ('max plunge (mm)', 'tcp_cal_plunge', '25.0', '_tcp_plunge'),
+                    ('safe clearance (mm)', 'tcp_cal_clear', '30.0', '_tcp_clear')):
+                r = QHBoxLayout()
+                lb = QLabel(cap)
+                ed = QLineEdit(dflt)
+                ed.setObjectName(obj)
+                ed.setMinimumHeight(32)
+                ed.setStyleSheet(self.CAL_QSS.get('read', ''))
+                setattr(self, attr, ed)
+                r.addWidget(lb)
+                r.addWidget(ed)
+                sbl.addLayout(r)
+            snote = QLabel('Plunge stops at the floor either way: a needle '
+                           'that is not over the puck fails the probe there '
+                           'instead of reaching the table. The second touch '
+                           'allows for the tip rising by L*[1-cosA].')
+            snote.setWordWrap(True)
+            snote.setStyleSheet('color: rgb(160,160,160); font: 9pt;')
+            sbl.addWidget(snote)
+            tc.addWidget(sbox)
+            tc.addStretch(1)
+
+            hbox, hbl = _mkbox('IMPROVEMENTS')
+            tbla = QTableWidget(0, 6)
+            tbla.setObjectName('tcp_cal_table')
+            tbla.setHorizontalHeaderLabels(
+                ['#', 'A1', 'A2', 'dZ', 'L (mm)', 'change'])
+            tbla.verticalHeader().setVisible(False)
+            tbla.setEditTriggers(QAbstractItemView.NoEditTriggers)
+            tbla.setSelectionMode(QAbstractItemView.NoSelection)
+            tbla.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+            tbla.setStyleSheet(self.CAL_QSS.get('log', ''))
+            self._tcp_table = tbla
+            hbl.addWidget(tbla)
+            hnote = QLabel('dZ is the whole signal in identity kins. With '
+                           'tool-tip kins running it is the RESIDUAL -- it '
+                           'shrinks toward zero as L converges.')
+            hnote.setWordWrap(True)
+            hnote.setStyleSheet('color: rgb(160,160,160); font: 9pt;')
+            hbl.addWidget(hnote)
+
+            tpg.addWidget(tcol, 0, 0)
+            tpg.addWidget(hbox, 0, 1)
+            tpg.setColumnStretch(1, 1)
+            tabs.addTab(tcp_page, 'TCP CALIBRATION')
+            self._tcp_state = 'idle'
+            self._tcp_pts = []
+            self._tcp_load_hist()
+            _tt = QTimer(self)
+            _tt.timeout.connect(self._tcp_tick)
+            _tt.start(500)
+            self._tcp_timer = _tt
+            LOG.info('SUBTABS: TCP CALIBRATION tab built (kins=%s, '
+                     'pivot in force %.3f)', *self._tcp_kins())
+
             self._cal_tab_index = tabs.indexOf(cal_page)
             tabs.currentChanged.connect(self._cal_tab_changed)
             cstat = QLabel('')
@@ -3231,6 +3338,294 @@ class UserTab(QWidget):
         except Exception:
             LOG.exception('spindle editor failed')
 
+    # ==== TCP CALIBRATION: A pivot length, one button ====================
+    # z(A) = const + dL*cos(A),  dL = L_true - L_in_force
+    #   ->  dL = (z1 - z2) / (cos A1 - cos A2)
+    # Identity kins: L_in_force = 0, so a pair gives L outright.
+    # Tool-tip kins: the pair gives the CORRECTION, and dZ is the residual.
+    TCP_HIST = '/home/brains/Documents/ned/configs/ned5_pb/tcp_cal.json'
+
+    def _tcp_kins(self):
+        """('identity'|'tcp', pivot length currently IN FORCE)."""
+        try:
+            import linuxcnc, os, subprocess
+            ini = linuxcnc.ini(os.environ['INI_FILE_NAME'])
+            if 'ned_ac_kins' not in (ini.find('KINS', 'KINEMATICS') or ''):
+                return ('identity', 0.0)
+            r = subprocess.run(['timeout', '5', 'halcmd', 'getp',
+                                'ned_ac_kins.pivot-length'],
+                               capture_output=True, text=True)
+            return ('tcp', float(r.stdout.strip()))
+        except Exception:
+            LOG.exception('TCP CAL: could not read the pivot in force')
+        return ('identity', 0.0)
+
+    def _tcp_work(self, s, i):
+        """Work-frame coordinate -- the frame #5063/#5064 report in."""
+        return (s.actual_position[i] - s.g5x_offset[i] - s.g92_offset[i]
+                - s.tool_offset[i])
+
+    def _tcp_zlim(self, s, which):
+        m = self._z_min_limit() if which == 'min' else self._z_max_limit()
+        return m - s.g5x_offset[2] - s.g92_offset[2] - s.tool_offset[2]
+
+    def _tcp_field(self, w, dflt, lo, hi):
+        try:
+            v = abs(float(w.text()))
+        except Exception:
+            v = dflt
+        return min(max(v, lo), hi)
+
+    def _tcp_L_est(self):
+        """Best available pivot estimate -- bounds only, never the answer."""
+        h = getattr(self, '_tcp_hist', [])
+        if h:
+            return float(h[-1]['L'])
+        kind, L = self._tcp_kins()
+        if L > 1.0:
+            return L
+        try:
+            with open('/home/brains/Documents/ned/configs/params/'
+                      'head_pivot.inc') as f:
+                for ln in f:
+                    if ln.startswith('PIVOT_LENGTH'):
+                        return float(ln.split('=')[1])
+        except Exception:
+            pass
+        return 250.0
+
+    def _tcp_set_face(self):
+        st = getattr(self, '_tcp_state', 'idle')
+        b = getattr(self, '_tcp_btn', None)
+        if b is None:
+            return
+        if st == 'rotate':
+            b.setText('PLUNGE')
+            b.setStyleSheet(self.CAL_QSS.get('measure', ''))
+            b.setEnabled(True)
+        elif st in ('wait1', 'wait2'):
+            b.setText('PROBING...')
+            b.setEnabled(False)
+        else:
+            b.setText('START')
+            b.setStyleSheet(self.CAL_QSS['pose'])
+            b.setEnabled(True)
+
+    def _tcp_say(self, msg, bad=False):
+        (LOG.error if bad else LOG.info)('TCP CAL: %s', msg)
+        self.cal_say(('!! ' if bad else '>> ') + msg)
+        w = getattr(self, '_tcp_status', None)
+        if w is not None:
+            w.setText(msg)
+
+    def _tcp_press(self):
+        if getattr(self, '_tcp_state', 'idle') == 'rotate':
+            self._tcp_touch(2)
+        else:
+            self._tcp_touch(1)
+
+    def _tcp_touch(self, which):
+        import math, time
+        gate = self._cal_gate('TCP CAL')
+        if gate is None:
+            return
+        c, s = gate
+        s.poll()
+        z_now = self._tcp_work(s, 2)
+        a_now = self._tcp_work(s, 3)
+        zmin = self._tcp_zlim(s, 'min') + 1.0
+        if which == 1:
+            plunge = self._tcp_field(self._tcp_plunge, 25.0, 2.0, 80.0)
+            zfloor = max(z_now - plunge, zmin)
+            zback = z_now
+            self._tcp_pts = []
+            self._tcp_result.setText('L = ---')
+            self._tcp_say('touch 1: plunge stops %.1f mm down, puck goes UP '
+                          'and STAYS up until the pair is done'
+                          % (z_now - zfloor))
+        else:
+            z1, a1 = self._tcp_pts[0]
+            den = (math.cos(math.radians(a1)) - math.cos(math.radians(a_now)))
+            if abs(den) < 0.005:
+                self._tcp_say('A has moved only %.2f deg from touch 1 -- '
+                              'cos separation %.4f is too small to solve. '
+                              'Rotate further and press again.'
+                              % (a_now - a1, den), bad=True)
+                return
+            # the tip RISES by L*(cosA1-cosA2), so the machine must descend
+            # that much further before the needle reaches the same face
+            drop = max(0.0, self._tcp_L_est() * den)
+            zfloor = max(z1 - drop - 10.0, z1 - 100.0, zmin)
+            zback = z1 + 15.0
+            self._tcp_say('touch 2 at A %.2f deg: expecting ~%.1f mm more '
+                          'descent, floor %.1f mm below touch 1'
+                          % (a_now, drop, z1 - zfloor))
+        self._tcp_state = 'wait%d' % which
+        self._tcp_t0 = time.time()
+        self._tcp_set_face()
+        c.mdi('o<tcp_touch> call [%.4f] [%d] [%.4f]'
+              % (zfloor, 1 if which == 1 else 0, zback))
+        LOG.error('TCP CAL touch %d ISSUED: floor %.4f back %.4f (A now '
+                  '%.3f)', which, zfloor, zback, a_now)
+
+    def tcp_cal_point(self, zt, at):
+        """Called BY THE G-CODE at the probe trip -- the only place the
+        measurement enters. Loud on every landing: a silent probe is
+        indistinguishable from a missed one."""
+        import time
+        pts = getattr(self, '_tcp_pts', [])
+        pts.append((float(zt), float(at)))
+        self._tcp_pts = pts
+        n = len(pts)
+        LOG.error('TCP CAL touch %d LANDED: Z=%.4f  A=%.3f deg', n, zt, at)
+        self.cal_say('   touch %d: Z %.4f   A %.3f' % (n, zt, at))
+        if n == 1:
+            self._tcp_state = 'rotate'
+            self._tcp_set_face()
+            self._tcp_say('touch 1 banked. ROTATE A on the MPG until the '
+                          'needle still sits over the puck, then PLUNGE.')
+            return
+        self._tcp_solve()
+
+    def _tcp_solve(self):
+        import math, time
+        (z1, a1), (z2, a2) = self._tcp_pts[0], self._tcp_pts[1]
+        den = math.cos(math.radians(a1)) - math.cos(math.radians(a2))
+        if abs(den) < 0.005:
+            self._tcp_say('angles too close to solve (den %.5f)' % den,
+                          bad=True)
+            self._tcp_state = 'rotate'
+            self._tcp_set_face()
+            return
+        kind, L_set = self._tcp_kins()
+        dL = (z1 - z2) / den
+        L = L_set + dL
+        hist = getattr(self, '_tcp_hist', [])
+        prev = hist[-1]['L'] if hist else None
+        row = {'t': time.strftime('%F %T'), 'a1': a1, 'a2': a2,
+               'z1': z1, 'z2': z2, 'dz': z2 - z1, 'L': L, 'kins': kind,
+               'L_set': L_set}
+        hist.append(row)
+        self._tcp_hist = hist
+        self._tcp_save_hist()
+        self._tcp_add_row(len(hist), row, prev)
+        self._tcp_result.setText('L = %.3f mm' % L)
+        chg = ('' if prev is None else '   change %+.3f mm' % (L - prev))
+        self._tcp_say('L = %.3f mm  [%s kins, pivot in force %.3f, dZ '
+                      '%+.4f over %.2f deg]%s'
+                      % (L, kind, L_set, z2 - z1, a2 - a1, chg))
+        LOG.error('TCP CAL RESULT: L=%.4f mm (dL=%+.4f on %.4f in force); '
+                  'z1=%.4f a1=%.3f  z2=%.4f a2=%.3f  den=%.5f -- NOT '
+                  'written to head_pivot.inc, that stays the operator call',
+                  L, dL, L_set, z1, a1, z2, a2, den)
+        self._tcp_park(z1)
+
+    def _tcp_park(self, z1):
+        """Safe Z, puck down, A to 0, then dead centre 10 mm over the puck."""
+        try:
+            import linuxcnc
+            gate = self._cal_gate('TCP PARK')
+            if gate is None:
+                self._tcp_state = 'idle'
+                self._tcp_set_face()
+                return
+            c, s = gate
+            s.poll()
+            clear = self._tcp_field(self._tcp_clear, 30.0, 10.0, 150.0)
+            zsafe = min(z1 + clear, self._tcp_zlim(s, 'max') - 1.0)
+            cx = cy = None
+            try:
+                cx = float(self._cal_fields['3045'][0].text())
+                cy = float(self._cal_fields['3046'][0].text())
+            except Exception:
+                cx = cy = None
+            if cx is None or cy is None:
+                cx = self._tcp_work(s, 0)
+                cy = self._tcp_work(s, 1)
+                self._tcp_say('no puck centre stored -- parking over the '
+                              'CURRENT XY instead. StartPuck fills 3045/3046.',
+                              bad=True)
+            c.mdi('o<tcp_park> call [%.4f] [%.4f] [%.4f] [%.4f]'
+                  % (cx, cy, z1, zsafe))
+            LOG.error('TCP PARK issued: safe Z %.4f, centre %.4f %.4f, '
+                      'finish 10 mm over %.4f', zsafe, cx, cy, z1)
+        except Exception:
+            LOG.exception('TCP PARK failed to issue')
+        self._tcp_state = 'idle'
+        self._tcp_pts = []
+        self._tcp_set_face()
+
+    def _tcp_tick(self):
+        """A probe that aborts never calls back. Without this the button
+        would sit on PROBING... forever (the exact failure mode the AC tab
+        hit in 2026-08-03 when only a/c armed the watcher)."""
+        import time
+        st = getattr(self, '_tcp_state', 'idle')
+        if st not in ('wait1', 'wait2'):
+            return
+        if time.time() - getattr(self, '_tcp_t0', 0) < 3.0:
+            return
+        try:
+            import linuxcnc
+            s = linuxcnc.stat()
+            s.poll()
+            if s.interp_state != linuxcnc.INTERP_IDLE:
+                return
+        except Exception:
+            return
+        n = len(getattr(self, '_tcp_pts', []))
+        want = 1 if st == 'wait1' else 2
+        if n >= want:
+            return
+        self._tcp_state = 'rotate' if n == 1 else 'idle'
+        self._tcp_set_face()
+        self._tcp_say('touch %d did NOT land -- the cycle ended with no '
+                      'probe trip. The needle was most likely not over the '
+                      'puck. Puck is still UP.' % want, bad=True)
+
+    def _tcp_add_row(self, n, row, prev):
+        try:
+            from PySide6.QtWidgets import QTableWidgetItem
+            t = getattr(self, '_tcp_table', None)
+            if t is None:
+                return
+            r = t.rowCount()
+            t.insertRow(r)
+            chg = '--' if prev is None else '%+.3f' % (row['L'] - prev)
+            for col, txt in enumerate(
+                    (str(n), '%.2f' % row['a1'], '%.2f' % row['a2'],
+                     '%+.4f' % row['dz'], '%.3f' % row['L'], chg)):
+                t.setItem(r, col, QTableWidgetItem(txt))
+            t.scrollToBottom()
+        except Exception:
+            LOG.exception('TCP CAL: could not add the improvement row')
+
+    def _tcp_save_hist(self):
+        try:
+            import json
+            with open(self.TCP_HIST, 'w') as f:
+                json.dump(getattr(self, '_tcp_hist', []), f, indent=1)
+        except Exception:
+            LOG.exception('TCP CAL: history not saved')
+
+    def _tcp_load_hist(self):
+        import json
+        self._tcp_hist = []
+        try:
+            with open(self.TCP_HIST) as f:
+                self._tcp_hist = json.load(f)
+        except Exception:
+            return
+        prev = None
+        for i, row in enumerate(self._tcp_hist):
+            self._tcp_add_row(i + 1, row, prev)
+            prev = row['L']
+        if self._tcp_hist:
+            self._tcp_result.setText('L = %.3f mm'
+                                     % self._tcp_hist[-1]['L'])
+            LOG.info('TCP CAL: %d earlier measurement(s) restored, last '
+                     'L=%.3f', len(self._tcp_hist), self._tcp_hist[-1]['L'])
+
     def cal_pivot_point(self, zt, at):
         # CAL PIVOT collector (operator 2026-08-05): each PIVOT TOUCH press
         # probes the puck and lands here with the trigger Z and the REAL A
@@ -3256,7 +3651,12 @@ class UserTab(QWidget):
                 LOG.error('CAL PIVOT: angles too close (den=%.4f) -- tilt '
                           'more and touch again', den)
                 return
-            L = (z2 - z1) / den
+            # SIGN (verified against ned_ac_kins.c 2026-08-05): the tip
+            # RISES with tilt, so the machine must descend FURTHER and z2 is
+            # BELOW z1. z(a) = const + L*cos(a)  =>  L = (z1-z2)/(cosA1-cosA2).
+            # This read (z2-z1) and every measurement came out NEGATIVE, so
+            # _pivot_write's positivity guard silently refused all of them.
+            L = (z1 - z2) / den
             LOG.error('CAL PIVOT (2-touch): L=%.3f mm -- one more touch at '
                       'the OPPOSITE tilt upgrades accuracy', L)
             self._pivot_write(L, '2-touch')
@@ -3273,7 +3673,8 @@ class UserTab(QWidget):
         if den < 1e-6:
             LOG.error('CAL PIVOT: three touches but no angle spread')
             return
-        L = -num / den
+        # slope of z on cos(a) IS +L (see the 2-touch note above)
+        L = num / den
         LOG.error('CAL PIVOT (3-touch symmetric): L=%.3f mm', L)
         self._pivot_write(L, '3-touch')
         self._pivot_pts = []

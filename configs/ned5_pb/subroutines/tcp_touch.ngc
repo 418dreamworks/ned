@@ -1,0 +1,55 @@
+(ned TCP CAL -- ONE TOUCH of the two-touch pivot-length measurement)
+(Operator 2026-08-05, one button: touch 1 probes wherever the operator has)
+(parked the needle over the puck. The operator then tilts A on the MPG so)
+(the needle still lands on the puck -- that hand step is the whole point,)
+(it is what guarantees the touch -- and touch 2 probes again.)
+(The rod carries a NEEDLE POINT on the spindle axis, so the contact IS the)
+(tool tip at any tilt and no rod-radius term enters the math.)
+(THE PUCK STAYS UP BETWEEN THE TWO TOUCHES. Its pop-up repeatability would)
+(otherwise land straight in dZ, which IS the measurement.)
+(The GUI owns the state machine, the bounds and the arithmetic. This file)
+(owns motion only.)
+(Args: #1 = absolute Z floor -- the probe may not descend past it)
+(      #2 = 1 to deploy the puck first, 0 when it is already up)
+(      #3 = absolute Z to retract to when the touch is done)
+o<tcp_touch> sub
+  #<zfloor> = #1
+  #<deploy> = #2
+  #<zback>  = #3
+  #<fast>   = 200.0
+  #<latch>  = 10.0
+  #<back>   = 1.0
+  #<trav>   = 1000.0
+
+  o10 if [#<_metric> EQ 0]
+    (abort, TCP CAL: switch to MM first - this routine is metric)
+  o10 endif
+
+  ; the F slider must not scale a probe: cal_probe_center learned this when
+  ; 150% turned programmed 200 into 300 (2026-08-03)
+  M50 P0
+
+  o20 if [#<deploy> GT 0]
+    M64 P3
+    G4 P1.5
+  o20 endif
+
+  ; BOUNDED PLUNGE. zfloor comes from the GUI: on touch 1 it is the
+  ; operator max-plunge below the parked height, on touch 2 it also allows
+  ; for the tip rising by L*[1-cosA]. A needle that is NOT over the puck
+  ; simply fails the probe there instead of driving into the table.
+  G90
+  G38.2 Z#<zfloor> F[#<fast>]
+  G91
+  G1 Z[#<back>] F[#<trav>]
+  G38.2 Z-[#<back> + 1.0] F[#<latch>]
+  #<zt> = #5063
+  #<at> = #5064
+  ; release PROVEN before any ordinary move -- see ca_touch.ngc
+  G38.5 Z[#<back> + 1.0] F[#<latch>]
+  G90
+  G1 Z#<zback> F[#<trav>]
+  M50 P1
+  (DEBUG, EVAL[vcp.getWidget{"ned_controls"}.tcp_cal_point{#<zt>, #<at>}])
+o<tcp_touch> endsub
+M2

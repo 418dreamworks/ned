@@ -1,0 +1,35 @@
+(ned TCP CAL -- park after the second touch, operator 2026-08-05:)
+("it goes back to a safe distance, A = 0, and returns to dead center above)
+(probe, 10mm above the probe".)
+(ORDER MATTERS. Z clears FIRST, then the puck drops, then A unwinds: at)
+(A=0 the tool tip sits lower than at any tilt, so unwinding A while low)
+(would drive the needle down onto the puck.)
+(Z is referenced to the touch-1 contact height, NOT to #3047. #3047 was)
+(measured with a different tool, so its number only means the puck top for)
+(THAT stickout; the touch-1 Z is this needle own reading of the same face.)
+(Args: #1 = puck centre X   #2 = puck centre Y)
+(      #3 = touch-1 contact Z -- the puck top for THIS tool)
+(      #4 = absolute safe Z for the A unwind)
+o<tcp_park> sub
+  #<cx>    = #1
+  #<cy>    = #2
+  #<ztop>  = #3
+  #<zsafe> = #4
+  #<trav>  = 2000.0
+  #<lift>  = 1000.0
+
+  o10 if [#<_metric> EQ 0]
+    (abort, TCP CAL: switch to MM first - this routine is metric)
+  o10 endif
+
+  G90
+  G1 Z#<zsafe> F[#<lift>]
+  ; puck down before anything traverses -- an energised solenoid bleeds the
+  ; air supply down, learned 2026-08-02 the hard way
+  M65 P3
+  G4 P1.5
+  G1 A0 F1000
+  G1 X#<cx> Y#<cy> F[#<trav>]
+  G1 Z[#<ztop> + 10.0] F[#<lift>]
+o<tcp_park> endsub
+M2
