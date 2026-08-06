@@ -3675,17 +3675,26 @@ class UserTab(QWidget):
             hist = getattr(self, '_tcp_hist', []) or []
             evals = [r for r in hist if r.get('t') == 'descent-eval']
             v = None
+            # head_pivot.inc = AXIS->NOSE; record L = AXIS->TIP for the
+            # tool in force at MEASUREMENT time. Subtract THAT record's
+            # offset, never today's.
             if evals:
                 best = min(evals, key=lambda r: r['mean'])
-                v = float(best['L'])
-                src = ('best alternate eval %d (mean|miss| %.4f)'
-                       % (best['n'], best['mean']))
+                toff = float(best.get('tooloff', self._tcp_tooloff()))
+                v = float(best['L']) - toff
+                src = ('best alternate eval %d (mean|miss| %.4f; L %.3f '
+                       'minus tool %.3f)'
+                       % (best['n'], best['mean'], best['L'], toff))
             else:
-                probes = [r for r in hist if r.get('t') != 'descent-eval']
+                probes = [r for r in hist
+                          if not str(r.get('t', '')).startswith('descent-')]
                 if probes:
-                    v = float(probes[-1]['L'])
-                    src = ('last measurement, A %.1f deg'
-                           % probes[-1].get('a2', 0.0))
+                    toff = float(probes[-1].get('tooloff',
+                                                self._tcp_tooloff()))
+                    v = float(probes[-1]['L']) - toff
+                    src = ('last measurement, A %.1f deg; L %.3f minus '
+                           'tool %.3f' % (probes[-1].get('a2', 0.0),
+                                          probes[-1]['L'], toff))
             if v is None:
                 self._tcp_say('SAVE refused: no measurements in '
                               'tcp_cal.json -- run AUTO CONVERGE first.',
@@ -3920,6 +3929,28 @@ class UserTab(QWidget):
             # else. No cos, no leverage -- the descent only ever asks
             # "did the tip miss shrink?"
             d = self._tcp_desc
+            if d.get('reffing'):
+                # zero was nudged -- THIS probe is the fresh reference at
+                # the new zero (operator 2026-08-06: "remeasure Z touch
+                # with A at zero whenever the A zero is nudged. if not...
+                # all the math is wrong" -- the sum metric compares
+                # against this Z, and the old one is off by L*(1-cos ofs),
+                # 49 um at the 1 deg cap).
+                d['reffing'] = False
+                self._tcp_auto_ref = (z, a)
+                d['ref_ofs'] = d['Acum']
+                hist = getattr(self, '_tcp_hist', [])
+                hist.append({'t': 'descent-ref', 'z': z, 'a': a,
+                             'Acum': d['Acum']})
+                self._tcp_hist = hist
+                try:
+                    self._tcp_save_hist()
+                except Exception:
+                    LOG.exception('TCP ALT: ref record not saved')
+                LOG.error('TCP ALT: reference re-probed at A %+.4f: Z %.4f',
+                          a, z)
+                self._tcp_auto_go_next = True
+                return
             miss = z - z0
             d['probes'][1 if a < 0 else 0] = miss
             _, L_now = self._tcp_kins()
@@ -3957,7 +3988,8 @@ class UserTab(QWidget):
         LOG.error('TCP AUTO: A=%.3f residual dZ=%+.4f -> dL=%+.4f, L=%.4f',
                   a, resid, dL, L)
         row = {'t': 'auto', 'a1': a0, 'a2': a, 'z1': z0, 'z2': z,
-               'dz': resid, 'L': L, 'kins': kind, 'L_set': L_set}
+               'dz': resid, 'L': L, 'kins': kind, 'L_set': L_set,
+               'tooloff': self._tcp_tooloff()}
         hist = getattr(self, '_tcp_hist', [])
         prev = hist[-1]['L'] if hist else None
         hist.append(row)
@@ -4022,13 +4054,27 @@ class UserTab(QWidget):
     TCP_E_NOISE = 0.005  # mm; slope smaller than this over h = no update
     TCP_DESC_MAX_EVALS = 200
 
+    def _tcp_tooloff(self):
+        """motion.tooloffset.z in force NOW (0 when no G43 / identity).
+        Recorded with every measurement: a record's L is axis->TIP for the
+        tool in force THEN, and head_pivot.inc holds axis->NOSE. Tonight's
+        records mix sessions at 164.85 and 0 -- a raw record L saved as
+        the nose constant double-counts the tool (operator caught it)."""
+        try:
+            import subprocess
+            r = subprocess.run(['timeout', '5', 'halcmd', 'getp', 'arm.in1'],
+                               capture_output=True, text=True)
+            return float(r.stdout.strip())
+        except Exception:
+            return 0.0
+
     def _tcp_descent_begin(self, how):
         _, L0 = self._tcp_kins()
         self._tcp_auto_phase = 'descent'
         self._tcp_desc = {
             'var': 'L', 'stage': 'a',
             'xa': None, 'ea': None,
-            'L': L0, 'Acum': 0.0,
+            'L': L0, 'Acum': 0.0, 'ref_ofs': 0.0, 'reffing': False,
             'evals': 0, 'probes': [None, None], 'data': [],
             'refwait': False, 'ref_t0': 0.0,
         }
@@ -4045,6 +4091,12 @@ class UserTab(QWidget):
             self._tcp_auto_stop('descent state lost')
             return
         if d['probes'][0] is None:
+            if d.get('ref_ofs', 0.0) != d['Acum'] and not d.get('reffing'):
+                d['reffing'] = True
+                self._tcp_say('zero nudged to %+.4f -- re-probing the '
+                              'reference there first' % d['Acum'])
+                self._tcp_auto_issue(d['Acum'], repos=1)
+                return
             # the A variable is a COMMAND OFFSET (operator 2026-08-06:
             # "just offset it so that +35 is +35.01") -- nothing physical
             # changes mid-run, the probes simply target 35+ofs / -35+ofs.
@@ -4063,6 +4115,7 @@ class UserTab(QWidget):
         e = (abs(mp) + abs(mn)) if d['var'] == 'L' else (mp - mn)
         x = d['L'] if d['var'] == 'L' else d['Acum']
         rec = {'t': 'descent-eval', 'n': d['evals'], 'var': d['var'],
+               'tooloff': self._tcp_tooloff(),
                'stage': d['stage'], 'L': d['L'], 'Acum': d['Acum'],
                'miss_p35': mp, 'miss_m35': mn,
                'mean': (abs(mp) + abs(mn)) / 2.0,
@@ -4653,8 +4706,8 @@ class UserTab(QWidget):
             return
         prev = None
         for i, row in enumerate(self._tcp_hist):
-            if row.get('t') == 'descent-eval':
-                continue        # eval summaries: in the file, not the table
+            if str(row.get('t', '')).startswith('descent-'):
+                continue        # bookkeeping rows: in the file, not the table
             self._tcp_add_row(i + 1, row, prev)
             prev = row['L']
         if self._tcp_hist:
