@@ -3985,7 +3985,9 @@ class UserTab(QWidget):
             elif st == 'm-wait':
                 v['n'] += 1
                 mp, mn = v['zp'] - v['z0'], z - v['z0']
+                _to = self._tcp_tooloff()
                 self._svy_out({'t': 'pair', 'n': v['n'],
+                               'nose': round(v['L'] - _to, 4),
                                'L': round(v['L'], 4),
                                'ofs': round(v['ofs'], 4),
                                'z0': round(v['z0'], 4),
@@ -3993,11 +3995,13 @@ class UserTab(QWidget):
                                'mp': round(mp, 4), 'mn': round(mn, 4),
                                'sum': round(abs(mp) + abs(mn), 4),
                                'diff': round(mp - mn, 4),
-                               'tooloff': round(self._tcp_tooloff(), 4)})
-                self._tcp_say('pair %d/%d: L %.3f ofs %+.3f  sum %.4f '
-                              'diff %+.4f' % (v['n'], self.SVY_N, v['L'],
-                                              v['ofs'], abs(mp) + abs(mn),
-                                              mp - mn))
+                               'tooloff': round(_to, 4)})
+                # the number the OPERATOR refers to is the one the param
+                # file gets: nose = L - tool (operator 2026-08-06)
+                self._tcp_say('pair %d/%d: nose %.3f ofs %+.3f  sum %.4f '
+                              'diff %+.4f' % (v['n'], self.SVY_N,
+                                              v['L'] - _to, v['ofs'],
+                                              abs(mp) + abs(mn), mp - mn))
                 v['step'] = 'apply'
             self._tcp_auto_go_next = True
             return
