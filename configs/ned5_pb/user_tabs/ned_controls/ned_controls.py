@@ -1060,10 +1060,12 @@ class UserTab(QWidget):
             tc.addStretch(1)
 
             hbox, hbl = _mkbox('IMPROVEMENTS')
-            tbla = QTableWidget(0, 6)
+            # no 'change' column -- operator 2026-08-05: "completely
+            # uninformative". dZ and L carry the run.
+            tbla = QTableWidget(0, 5)
             tbla.setObjectName('tcp_cal_table')
             tbla.setHorizontalHeaderLabels(
-                ['#', 'A1', 'A2', 'dZ', 'L (mm)', 'change'])
+                ['#', 'A1', 'A2', 'dZ', 'L (mm)'])
             tbla.verticalHeader().setVisible(False)
             tbla.setEditTriggers(QAbstractItemView.NoEditTriggers)
             tbla.setSelectionMode(QAbstractItemView.NoSelection)
@@ -4418,10 +4420,9 @@ class UserTab(QWidget):
                 return
             r = t.rowCount()
             t.insertRow(r)
-            chg = '--' if prev is None else '%+.3f' % (row['L'] - prev)
             for col, txt in enumerate(
                     (str(n), '%.2f' % row['a1'], '%.2f' % row['a2'],
-                     '%+.4f' % row['dz'], '%.3f' % row['L'], chg)):
+                     '%+.4f' % row['dz'], '%.3f' % row['L'])):
                 t.setItem(r, col, QTableWidgetItem(txt))
             t.scrollToBottom()
         except Exception:
