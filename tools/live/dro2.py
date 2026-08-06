@@ -122,7 +122,7 @@ class Dro2(QWidget):
         hrow.setSpacing(10)
         self.hdr_pad = QLabel('')
         h_m = QLabel('MCS')
-        h_w = QLabel('WCS G5x')
+        h_w = QLabel('WCS')
         for _h in (h_m, h_w):
             _h.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
             _h.setStyleSheet('color: %s; background: transparent;' % WHITE)
@@ -131,6 +131,7 @@ class Dro2(QWidget):
         hrow.addWidget(h_w, 5)
         self.hdr = hdr
         self.hdr_labels = (h_m, h_w)
+        self.hdr_wcs = h_w
         root.addWidget(hdr, 0)
 
         self.rows = []
@@ -260,6 +261,19 @@ class Dro2(QWidget):
         except Exception:
             self._mm = True
         conv = 1.0 if self._mm else (1.0 / 25.4)
+        # header shows the ACTIVE work system, not a generic G5x
+        # (operator 2026-08-06): g5x_index 1..9 -> G54..G59.3
+        try:
+            # this binding is 0-BASED: measured live, g5x_index reads 0
+            # with G54 active (2026-08-06)
+            g = int(self.stat.g5x_index)
+            name = ('G54', 'G55', 'G56', 'G57', 'G58', 'G59', 'G59.1',
+                    'G59.2', 'G59.3')[g] if 0 <= g <= 8 else 'G5x'
+            want = 'WCS ' + name
+            if self.hdr_wcs.text() != want:
+                self.hdr_wcs.setText(want)
+        except Exception:
+            pass
         idx = {'X': 0, 'Y': 1, 'Z': 2, 'A': 3, 'B': 4, 'C': 5,
                'U': 6, 'V': 7, 'W': 8}
         for i, letter in enumerate(self.axes):

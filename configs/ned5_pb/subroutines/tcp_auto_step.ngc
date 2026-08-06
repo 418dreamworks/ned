@@ -71,7 +71,11 @@ o<tcp_auto_step> sub
   o30 if [#<plunge> GT 0]
     G91
     G38.2 Z-#<plunge> F[#<fast>]
-    G1 Z[#<back>] F[#<trav>]
+    ; back off as a PROBE-AWAY move: a plain G1 here fired "Probe tripped
+    ; during non-probe move" whenever the release band exceeded the 0.8 mm
+    ; back-off (three in a row killed the 09:43 run at pair 19). G38.5
+    ; stops the moment the contact releases and cannot trip-error.
+    G38.5 Z[#<back>] F[#<fast>]
     G38.2 Z-[#<back> + 0.2] F[#<latch>]
     #<xt> = #5061
     #<yt> = #5062
