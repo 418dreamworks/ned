@@ -3816,7 +3816,11 @@ class UserTab(QWidget):
         # by the time you move 15, you are not off by much any more" --
         # the ladder of applies IS the safety mechanism.
         if repos:
-            plunge = 6.0
+            # 10, not 6: "the calibration could be far off up front"
+            # (operator 2026-08-05) -- the early steps carry the whole
+            # pivot error in the tip height, so the step plunge needs the
+            # extra reach
+            plunge = 10.0
         else:
             plunge = self._tcp_field(self._tcp_plunge, 30.0, 2.0, 80.0)
         st = self._tcp_auto_start or (0.0, 0.0, 0.0)
