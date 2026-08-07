@@ -339,6 +339,18 @@ rack_atc.py/qml: fork circles = double-click record-only cycle
 filter in ned_controls). A PB/qtpyvcp update clobbers ALL of it — diff
 against the .pre-* backups and this section.
 
+### A1c. qtpyvcp ToolActor session leak (patched 2026-08-07)
+`~/qt_pb/qtpyvcp/src/qtpyvcp/widgets/display_widgets/vtk_backplot/tool_actor.py`
+carries a one-line ned patch: `self.session.close()` at the end of
+`ToolActor.__init__`. Stock leaks one SQLAlchemy connection per tool
+change (update_tool builds a new ToolActor on toolTableChanged /
+toolOffsetChanged / toolInSpindleChanged); the 16th change kills the VCP
+with `QueuePool limit of size 5 overflow 10 reached`. Killed a 6.5 h
+overnight GA run at 08:34 on 2026-08-07. Stock copy:
+`tool_actor.py.stock-20260807`. STILL PRESENT UPSTREAM at v6.0.6
+(line 296) -- a qtpyvcp update WILL clobber this; re-apply and re-check
+after every PB update. Verify: grep -c 'self.session.close' should be 1.
+
 ### A1b. ned_ac_kins.so — the swivel-head switchable kins (2026-08-05)
 Source `~/Documents/linuxcnc/src/emc/kinematics/ned_ac_kins.c` (tree commit
 47dc37aadd) + Makefile entries (objs list MUST include sincos/kins_util/
