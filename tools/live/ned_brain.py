@@ -728,6 +728,36 @@ class Brain(object):
         except Exception as e:
             log('IN-PLACE HOME failed: {}'.format(e))
 
+    def fire_pending_refs(self):
+        # Home queued A/C joints ONLY with an armed read and ONLY when no
+        # OTHER joint is homing: homing.c do_home_one_joint() overwrites
+        # an active sequencer's state unconditionally (the 2026-07-31
+        # joint-4 wedge). Called from read_done AND every tick, so a
+        # deferral retries until XYZ finish; the read stays armed until
+        # verify. A FAILED read never arms -> A/C stay unhomed, loudly.
+        if not self.pending_ref or not self.read_armed:
+            return
+        try:
+            self.stat.poll()
+            if any(self.stat.joint[j]['homing'] for j in range(6)
+                   if j not in self.pending_ref):
+                return
+        except Exception:
+            return
+        jns = sorted(self.pending_ref)
+        self.pending_ref = set()
+        try:
+            self.cmd.mode(linuxcnc.MODE_MANUAL)
+            self.cmd.wait_complete()
+            self.cmd.teleop_enable(0)
+            self.cmd.wait_complete()
+            for jn in jns:
+                self.cmd.home(jn)
+            log('REF dispatch: read armed + no cycle running -> homing '
+                'joint(s) {}'.format(jns))
+        except Exception as e:
+            log('REF dispatch failed: {}'.format(e))
+
     def read_done(self):
         # a read cycle finished; armed ONLY if BOTH axes produced an accepted
         # value (offsets written) -- a no-frame/rejected read must not arm.
@@ -743,21 +773,11 @@ class Brain(object):
             # the same code from the tick (the 02:06 bug: inplace_at was
             # scheduled but nothing consumed it -> A/C never homed).
             self.do_inplace()
-            # per-axis REF A / REF C: the read is armed -- home the requested
-            # joint(s) NOW, nothing else (spec: the other head axis untouched)
-            if self.pending_ref:
-                jns = sorted(self.pending_ref)
-                self.pending_ref = set()
-                try:
-                    self.cmd.mode(linuxcnc.MODE_MANUAL)
-                    self.cmd.wait_complete()
-                    self.cmd.teleop_enable(0)   # homing = joint mode
-                    self.cmd.wait_complete()
-                    for jn in jns:
-                        self.cmd.home(jn)
-                    log('REF single: read armed -> homing joint(s) {}'.format(jns))
-                except Exception as e:
-                    log('REF single homing failed: {}'.format(e))
+            # per-axis REF A / REF C and the HOME ALL handoff: dispatch is
+            # factored to fire_pending_refs(), which refuses to cut into a
+            # running homing cycle (the 2026-07-31 joint-4 wedge) and is
+            # retried from the tick until XYZ sequences finish.
+            self.fire_pending_refs()
             if self.announce_armed:
                 self.announce_armed = False
                 try:
@@ -1009,13 +1029,20 @@ class Brain(object):
         # the pin -> the head never moves on refX/refY/refZ ("i hit refY, but
         # A and C zeroed. that's incorrect"). The guard below still aborts any
         # A/C homing that arrives before the read is armed.
+        self.fire_pending_refs()
         ha = bool(h['homeall-in'])
         if ha and not getattr(self, 'prev_homeall', False) and on:
-            if not self.read_armed:
-                self.want_read = True
+            # 2026-08-06: A/C are OUT of the task home-all sequence.
+            # ALWAYS force a fresh read -- a stale armed read from an
+            # unfinished earlier cycle sailed through the guard and homed
+            # A against an old offset (the compounding 66.6 deg tilt).
+            self.read_armed = False
+            self.want_read = True
+            self.pending_ref = {4, 5}
             self.verify_want = {'c', 'a'}   # full-cycle verify judges both
             self.head_homed_seen = set()
-            log('HOME ALL -> parallel head read (A/C home last in the sequence)')
+            log('HOME ALL -> fresh head read forced; brain homes A/C '
+                'read-gated once XYZ sequences finish')
         self.prev_homeall = ha
 
         # PER-AXIS REF A / REF C (one-axis REF ALL, operator 2026-08-01):

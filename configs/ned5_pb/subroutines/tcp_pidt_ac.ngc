@@ -1,0 +1,33 @@
+(ned PID A+C random-move test, operator 2026-08-06: "what happens to PID)
+(error with A and C simultaneous moves in the +-90 and +-180 ball".)
+(One leg: coordinated A+C move at the given feed, 2 s settle. No probing,)
+(no puck. The driving script pre-checks every target's tip-fixed joint)
+(solution against soft limits before calling; the guards here are the)
+(last line, not the plan.)
+(Args: #1 = target A deg   #2 = target C deg   #3 = rotary feed deg/min)
+o<tcp_pidt_ac> sub
+  #<targa> = #1
+  #<targc> = #2
+  #<arf>   = #3
+
+  o10 if [#<_metric> EQ 0]
+    (abort, PID AC: switch to MM first - this routine is metric)
+  o10 endif
+  o16 if [ABS[#<targa>] GT 91]
+    (abort, PID AC: A beyond 91 deg)
+  o16 endif
+  o17 if [ABS[#<targc>] GT 181]
+    (abort, PID AC: C beyond 181 deg)
+  o17 endif
+  o18 if [[#<arf> LT 50] OR [#<arf> GT 1800]]
+    (abort, PID AC: feed outside 50-1800 deg/min)
+  o18 endif
+
+  M50 P0
+  G90
+  G1 A#<targa> C#<targc> F[#<arf>]
+  G4 P2.0
+  M50 P1
+  (DEBUG, EVAL[vcp.getWidget{"ned_controls"}.tcp_pidt_point{#5423}])
+o<tcp_pidt_ac> endsub
+M2

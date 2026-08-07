@@ -12,7 +12,7 @@
 #   The value below is the current derived SCALE_A, hand-placed. See docs/gui.md.
 TYPE = ANGULAR
 MAX_VELOCITY = 30
-MAX_ACCELERATION = 300
+MAX_ACCELERATION = 2
 STEPGEN_MAXVEL = 36
 STEPGEN_MAXACCEL = 450
 # SCALE sign = A motion direction. POSITIVE (paired with pso_home.sh A sign=-1) so A+ = right-hand-rule
@@ -40,5 +40,8 @@ HOME_LATCH_VEL = 0
 # The REF ALL button (dros_xyzac.py -> ned_controls.request_homeall) unhomes A/C
 # FIRST (HOME_NO_REHOME no-op otherwise) and tools/live/ned_brain.py arms the fresh
 # absolute read in parallel while XYZ homes; its guard blocks un-armed A/C homing.
-HOME_SEQUENCE = 3
+# HOME_SEQUENCE removed 2026-08-06: A/C never home via the task home-all.
+# The brain homes them read-gated (pending_ref) -- Home All consumed
+# stale ini.N.home_offset when a prior cycle left read_armed latched,
+# tilting A by the stale value each cycle (compounding).
 HOME_USE_INDEX = NO

@@ -114,7 +114,7 @@ MAX_LIMIT = 1.0
 # NOTE: LinuxCNC enforces soft limits only AFTER the axis is homed, and they are
 # only ABSOLUTE if home was set to the true head angle -- see docs/gui.md.
 MAX_VELOCITY = 30
-MAX_ACCELERATION = 300
+MAX_ACCELERATION = 2
 MIN_LIMIT = -115.0
 MAX_LIMIT = 115.0
 
@@ -124,7 +124,7 @@ MAX_LIMIT = 115.0
 # NOTE: enforced only AFTER homing, and absolute only if home = true head angle.
 # Bounded (NOT a wrapping/rollover axis) so a +ve->-ve move interpolates through 0.
 MAX_VELOCITY = 30
-MAX_ACCELERATION = 300
+MAX_ACCELERATION = 2
 MIN_LIMIT = -315.0
 MAX_LIMIT = 315.0
 
@@ -255,7 +255,7 @@ DEADBAND = 0.005
 MAX_OUTPUT = @MAX_VEL_LIN
 INPUT_SCALE  = 787.402
 OUTPUT_SCALE = 178.2
-BACKLASH = 0.0254
+BACKLASH = 0.0
 HOME = 0.0
 HOME_OFFSET = 5.0
 HOME_SEARCH_VEL = 80.0
@@ -278,7 +278,7 @@ HOME_IGNORE_LIMITS = YES
 #   The value below is the current derived SCALE_A, hand-placed. See docs/gui.md.
 TYPE = ANGULAR
 MAX_VELOCITY = 30
-MAX_ACCELERATION = 300
+MAX_ACCELERATION = 2
 STEPGEN_MAXVEL = 36
 STEPGEN_MAXACCEL = 450
 # SCALE sign = A motion direction. POSITIVE (paired with pso_home.sh A sign=-1) so A+ = right-hand-rule
@@ -306,7 +306,10 @@ HOME_LATCH_VEL = 0
 # The REF ALL button (dros_xyzac.py -> ned_controls.request_homeall) unhomes A/C
 # FIRST (HOME_NO_REHOME no-op otherwise) and tools/live/ned_brain.py arms the fresh
 # absolute read in parallel while XYZ homes; its guard blocks un-armed A/C homing.
-HOME_SEQUENCE = 3
+# HOME_SEQUENCE removed 2026-08-06: A/C never home via the task home-all.
+# The brain homes them read-gated (pending_ref) -- Home All consumed
+# stale ini.N.home_offset when a prior cycle left read_armed latched,
+# tilting A by the stale value each cycle (compounding).
 HOME_USE_INDEX = NO
 
 [joint.c]
@@ -319,7 +322,7 @@ HOME_USE_INDEX = NO
 #   mis-place scales. DO NOT run it against configs/ned5. Value below hand-placed.
 TYPE = ANGULAR
 MAX_VELOCITY = 30
-MAX_ACCELERATION = 300
+MAX_ACCELERATION = 2
 STEPGEN_MAXVEL = 36
 STEPGEN_MAXACCEL = 450
 # SCALE sign = C motion direction (negative: motor turns opposite to encoder/DRO+). Magnitude = ned_params.sh SCALE_C.
@@ -348,6 +351,9 @@ HOME_LATCH_VEL = 0
 # The REF ALL button (dros_xyzac.py -> ned_controls.request_homeall) unhomes A/C
 # FIRST (HOME_NO_REHOME no-op otherwise) and tools/live/ned_brain.py arms the fresh
 # absolute read in parallel while XYZ homes; its guard blocks un-armed A/C homing.
-HOME_SEQUENCE = 3
+# HOME_SEQUENCE removed 2026-08-06: A/C never home via the task home-all.
+# The brain homes them read-gated (pending_ref) -- Home All consumed
+# stale ini.N.home_offset when a prior cycle left read_armed latched,
+# tilting A by the stale value each cycle (compounding).
 HOME_USE_INDEX = NO
 

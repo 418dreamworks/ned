@@ -1,0 +1,33 @@
+(ned PID TRACKING -- one A leg, operator 2026-08-06: "i want to track PID)
+(errors when we move and stop A between -90 0 90" + 3-speed tiers: "5)
+(+-90s at slow, another 5 at medium and another 5 at fast". One leg =)
+(move A to the target at the given feed, then a 2 s settle so the decel)
+(transient and the static hold separate cleanly in the PID logs. NO)
+(probing, NO puck, NO Z moves: with tool-tip kins live the XYZ joints)
+(mirror the rotation to hold the tip still -- that coupled response IS)
+(the measurement. The GUI pre-checks joint excursions vs soft limits.)
+(Args: #1 = target A in degrees   #2 = A feed in deg/min)
+o<tcp_pidt_step> sub
+  #<targa> = #1
+  #<arf>   = #2
+
+  o10 if [#<_metric> EQ 0]
+    (abort, PID TRACK: switch to MM first - this routine is metric)
+  o10 endif
+  o16 if [ABS[#<targa>] GT 91]
+    (abort, PID TRACK: A beyond 91 deg)
+  o16 endif
+  o17 if [[#<arf> LT 50] OR [#<arf> GT 1800]]
+    (abort, PID TRACK: feed outside 50-1800 deg/min)
+  o17 endif
+
+  M50 P0
+  G90
+  G1 A#<targa> F[#<arf>]
+  ; 2 s settle at the stop: the decel transient dies out and the logs get
+  ; a clean static-hold window at this angle before the next leg
+  G4 P2.0
+  M50 P1
+  (DEBUG, EVAL[vcp.getWidget{"ned_controls"}.tcp_pidt_point{#5423}])
+o<tcp_pidt_step> endsub
+M2

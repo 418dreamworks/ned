@@ -1010,6 +1010,14 @@ class UserTab(QWidget):
             self._tcp_auto_btn = abtn
             tbl.addWidget(abtn)
 
+            pbtn = QPushButton('PID TRACKING')
+            pbtn.setObjectName('tcp_pidt_btn')
+            pbtn.setMinimumHeight(52)
+            pbtn.setStyleSheet(self.CAL_QSS['pose'])
+            pbtn.clicked.connect(lambda _=False: self._pidt_press())
+            self._pidt_btn = pbtn
+            tbl.addWidget(pbtn)
+
             tstat = QLabel('Park over the puck. AUTO CONVERGE.')
             tstat.setObjectName('tcp_cal_status')
             tstat.setWordWrap(True)
@@ -2925,22 +2933,10 @@ class UserTab(QWidget):
                             'running or homing)' % label)
                 LOG.error('%s refused: machine busy', label)
                 return
-            # A/C LOCK GATE (operator 2026-08-02): a locked head axis must
-            # never be turned by a typed move or a preset, and the refusal
-            # must SAY SO -- silently dropping the axis would be worse.
-            locked = [ax.upper() for ax, _t in vals
-                      if ax in ('a', 'c') and self._ac_locked.get(ax)]
-            if locked:
-                names = ' and '.join(locked)
-                c.error_msg('%s refused: %s axis is LOCKED -- click LOCK %s '
-                            'in the DRO to unlock it first'
-                            % (label, names, locked[0]))
-                LOG.error('%s refused: %s LOCKED', label, names)
-                for ax, _t in vals:
-                    if ax.upper() in locked:
-                        self._jog_flash(ax)
-                return
-
+            # DRO locks gate the MPG ONLY (operator 2026-08-06, supersedes
+            # the 2026-08-02 typed-move gate that lived here): commanded
+            # moves NEVER consult them -- the locks exist to stop
+            # inadvertent pendant bumps, nothing else.
             # SOFT-LIMIT PRE-CHECK, machine coordinates: limits are machine-
             # frame, targets are work-frame -> machine target = work target
             # + (g5x + g92 + tool) offset (house math; XY G5x rotation not
@@ -4298,7 +4294,7 @@ class UserTab(QWidget):
     SVY_HALF_PCT = 0.25
     # 20, not 35 (operator 2026-08-06): jerk persists at soft accel, so
     # the tilt comes down while backlash is chased
-    SVY_TILT = 20.0
+    SVY_TILT = 30.0
     SVY_OFS = (-0.30, 0.30)      # A offset draw, deg
 
     def _tcp_tooloff(self):
@@ -5255,6 +5251,308 @@ class UserTab(QWidget):
             LOG.info('JOG STEPS: slot %d selected on screen', idx)
         except Exception:
             LOG.exception('JOG STEPS: could not hand the slot to the wheel')
+
+    # ---- PID TRACKING = the A+C random survey (operator 2026-08-06:
+    # "make this the PID tracking button"). One press: verify the FULL
+    # +-90/+-180 ball fits the soft limits from the parked pose, then
+    # PIDT_LEGS random simultaneous (A, C, F) legs, direct pose-to-pose,
+    # NO zero-returns, 2 s settle each stop (tcp_pidt_ac.ngc), ends AT
+    # the last pose. STOP = press again (aborts mid-leg, stays put).
+    # Data: logs/ac_survey_*.ndjson (a, c, F, timestamps per leg); the
+    # external 6 Hz HAL logger supplies the error traces.
+    # Prior single-axis waypoint version retired same day -- its
+    # accel/feed results are banked in
+    # docs/commissioning/ac_motion_tuning_2026-08-06.md.
+    PIDT_LEGS = 40
+    PIDT_A_BALL = 90.0
+    PIDT_C_BALL = 180.0
+    PIDT_F_RANGE = (150.0, 600.0)
+
+    def _pidt_press(self):
+        import math, random, time as _t
+        if getattr(self, '_pidt_on', False):
+            self._pidt_stop('STOPPED by the operator')
+            return
+        if getattr(self, '_tcp_auto_on', False):
+            self._tcp_say('AUTO CONVERGE is running -- stop it first.',
+                          bad=True)
+            return
+        if self._tool_state_locked():
+            self._tcp_say('TOOL-STATE LOCK is engaged -- declare the tool '
+                          'first (feeds run at zero velocity locked).',
+                          bad=True)
+            return
+        gate = self._cal_gate('PID TRACK')
+        if gate is None:
+            return
+        c0, s0 = gate
+        kind, _L = self._tcp_kins()
+        if kind != 'tcp':
+            self._tcp_say('PID TRACK needs tool-tip kins (-tcp).', bad=True)
+            self._hand_back_manual(c0, 'PID TRACK')
+            return
+        # G43 preamble -- without the tool length the kins holds a point
+        # one tool-length up the shank and the tip sweeps arcs
+        try:
+            s0.poll()
+            if self._tcp_tooloff() < 1.0 and s0.tool_in_spindle > 0:
+                c0.mdi('G43 H%d' % s0.tool_in_spindle)
+                c0.wait_complete(4.0)
+                LOG.error('PIDT: G43 H%d applied (tool length %.3f)',
+                          s0.tool_in_spindle, self._tcp_tooloff())
+            if self._tcp_tooloff() < 1.0:
+                self._tcp_say('PID TRACK refused: no tool length in force '
+                              '(G43).', bad=True)
+                self._hand_back_manual(c0, 'PID TRACK')
+                return
+        except Exception:
+            LOG.exception('PIDT: G43 preamble failed')
+            self._hand_back_manual(c0, 'PID TRACK')
+            return
+        # envelope: needs the parked pose (tip banked at A0 C0), then the
+        # whole ball must fit -- covers every intermediate pose of every
+        # leg (the planner does not police joints under world moves)
+        try:
+            import subprocess
+            def _gp(pin):
+                return float(subprocess.run(
+                    ['timeout', '5', 'halcmd', 'getp', pin],
+                    capture_output=True, text=True).stdout.strip())
+            L = _gp('ned_ac_kins.pivot-length')
+            ja, jc = _gp('joint.4.pos-fb'), _gp('joint.5.pos-fb')
+            jx, jy, jz = (_gp('joint.0.pos-fb'), _gp('joint.1.pos-fb'),
+                          _gp('joint.2.pos-fb'))
+            xlo = _gp('ini.0.min_limit') + 5.0
+            xhi = _gp('ini.0.max_limit') - 5.0
+            ylo = _gp('ini.1.min_limit') + 5.0
+            yhi = _gp('ini.1.max_limit') - 5.0
+            zlo = _gp('ini.2.min_limit') + 5.0
+        except Exception:
+            LOG.exception('PIDT: envelope readback failed')
+            self._tcp_say('PID TRACK refused: could not read joints/'
+                          'limits.', bad=True)
+            self._hand_back_manual(c0, 'PID TRACK')
+            return
+        prob = []
+        if abs(ja) > 0.5 or abs(jc) > 0.5:
+            prob.append('park A and C at 0 first (A=%.1f C=%.1f)'
+                        % (ja, jc))
+        if jx - L < xlo or jx + L > xhi:
+            prob.append('X ball out of limits')
+        if jy - L < ylo or jy + L > yhi:
+            prob.append('Y ball out of limits')
+        if jz - L < zlo:
+            prob.append('Z headroom short %.0f mm -- park the tip at '
+                        'least that much higher' % (zlo - (jz - L)))
+        if prob:
+            self._tcp_say('PID TRACK refused: ' + '; '.join(prob),
+                          bad=True)
+            LOG.error('PIDT REFUSED: L=%.1f pose=(%.1f,%.1f,%.1f) '
+                      'A=%.2f C=%.2f', L, jx, jy, jz, ja, jc)
+            self._hand_back_manual(c0, 'PID TRACK')
+            return
+        self._seq_flag(True)
+        self._pidt = {'legs': 0, 'targ': None, 'retry': 0, 't0': 0.0,
+                      'tip': (jx, jy, jz), 'L': L,
+                      'lim': (xlo, xhi, ylo, yhi, zlo),
+                      'pa': 0.0, 'pc': 0.0,
+                      'log': ('/home/brains/Documents/ned/logs/'
+                              'ac_survey_%s.ndjson'
+                              % _t.strftime('%Y%m%d-%H%M%S'))}
+        random.seed()
+        self._pidt_on = True
+        self._pidt_go_next = False
+        self._pidt_idle_t0 = None
+        self._pidt_manual_pending = False
+        if getattr(self, '_pidt_timer', None) is None:
+            t = QTimer(self)
+            t.timeout.connect(self._pidt_tick)
+            t.start(500)
+            self._pidt_timer = t
+            LOG.error('PIDT: tick timer started (500 ms)')
+        self._pidt_out({'t': 'start', 'L': round(L, 4),
+                        'jx': round(jx, 4), 'jy': round(jy, 4),
+                        'jz': round(jz, 4)})
+        self._pidt_set_face()
+        self._tcp_say('PID TRACK: %d random A/C legs, A +-%.0f C +-%.0f '
+                      'F %s, ball verified. Legs -> %s'
+                      % (self.PIDT_LEGS, self.PIDT_A_BALL,
+                         self.PIDT_C_BALL, list(self.PIDT_F_RANGE),
+                         self._pidt['log']))
+        self._pidt_next()
+
+    def _pidt_out(self, rec):
+        import json, time
+        rec['ts'] = round(time.time(), 3)
+        try:
+            with open(self._pidt['log'], 'a') as f:
+                f.write(json.dumps(rec) + '\n')
+        except Exception:
+            LOG.exception('PIDT: data line NOT saved')
+
+    def _pidt_ok(self, a, cdeg):
+        import math
+        v = self._pidt
+        jx, jy, jz = v['tip']
+        L = v['L']
+        xlo, xhi, ylo, yhi, zlo = v['lim']
+        t = math.radians(cdeg + 90.0)
+        p = math.radians(180.0 - a)
+        rx = L * math.sin(p) * math.cos(t)
+        ry = L * math.sin(p) * math.sin(t)
+        rz = L * math.cos(p)
+        return (xlo <= jx - rx <= xhi and ylo <= jy - ry <= yhi
+                and jz - L - rz >= zlo)
+
+    def _pidt_next(self):
+        import random, time
+        v = self._pidt
+        if v['legs'] >= self.PIDT_LEGS:
+            self._pidt_stop('survey COMPLETE: %d legs -> %s'
+                            % (v['legs'], v['log']))
+            return
+        if v.get('retry', 0) == 0 or v['targ'] is None:
+            for _ in range(200):
+                a = random.uniform(-self.PIDT_A_BALL, self.PIDT_A_BALL)
+                cd = random.uniform(-self.PIDT_C_BALL, self.PIDT_C_BALL)
+                F = random.uniform(*self.PIDT_F_RANGE)
+                if self._pidt_ok(a, cd) and (abs(a - v['pa']) > 5
+                                             or abs(cd - v['pc']) > 5):
+                    break
+            else:
+                self._pidt_stop('no valid draw -- envelope too tight')
+                return
+            v['targ'] = (a, cd, F)
+        a, cd, F = v['targ']
+        gate = self._cal_gate('PID TRACK')
+        if gate is None:
+            self._pidt_stop('gate refused')
+            return
+        c, _s = gate
+        c.mdi('o<tcp_pidt_ac> call [%.3f] [%.3f] [%.0f]' % (a, cd, F))
+        v['t0'] = time.time()
+        self._pidt_idle_t0 = None
+        self._pidt_out({'t': 'issue', 'a': round(a, 2), 'c': round(cd, 2),
+                        'F': round(F, 0), 'leg': v['legs']})
+        LOG.error('PIDT: leg %d issued A%+.2f C%+.2f F%.0f',
+                  v['legs'], a, cd, F)
+
+    def tcp_pidt_point(self, at):
+        """Called BY THE G-CODE (tcp_pidt_ac.ngc) after each leg's
+        settle dwell."""
+        if not getattr(self, '_pidt_on', False):
+            return
+        v = self._pidt
+        v['retry'] = 0
+        v['legs'] += 1
+        a, cd, F = v['targ']
+        v['pa'], v['pc'] = a, cd
+        v['targ'] = None
+        self._pidt_out({'t': 'leg', 'a': round(a, 2), 'c': round(cd, 2),
+                        'F': round(F, 0), 'leg': v['legs']})
+        LOG.error('PIDT: leg %d LANDED (A%+.2f C%+.2f)', v['legs'], a, cd)
+        if v['legs'] % 5 == 0:
+            self._tcp_say('PID TRACK: %d/%d legs, data -> %s'
+                          % (v['legs'], self.PIDT_LEGS, v['log']))
+        self._pidt_go_next = True
+
+    def _pidt_tick(self):
+        import time
+        if getattr(self, '_pidt_manual_pending', False):
+            if time.time() - getattr(self, '_pidt_manual_t0', 0) > 2.0:
+                try:
+                    import linuxcnc
+                    s2 = linuxcnc.stat()
+                    s2.poll()
+                    if s2.interp_state == linuxcnc.INTERP_IDLE and s2.inpos:
+                        self._pidt_manual_pending = False
+                        self._hand_back_manual(linuxcnc.command(),
+                                               'PID TRACK')
+                except Exception:
+                    LOG.exception('PIDT: hand-back poll failed')
+            return
+        if not getattr(self, '_pidt_on', False):
+            return
+        if getattr(self, '_pidt_go_next', False):
+            try:
+                import linuxcnc
+                s5 = linuxcnc.stat()
+                s5.poll()
+                if s5.interp_state == linuxcnc.INTERP_IDLE and s5.inpos:
+                    self._pidt_go_next = False
+                    self._pidt_next()
+            except Exception:
+                LOG.exception('PIDT: go-next poll failed')
+            return
+        # WATCHDOG: an aborted leg never calls back -- 2 s of continuous
+        # idle after the 5 s issue grace = the leg died. Retry re-issues
+        # the SAME target (retry budget 2), then stop-in-place.
+        v = getattr(self, '_pidt', None)
+        if not v or v.get('targ') is None:
+            return
+        if time.time() - v.get('t0', 0) < 5.0:
+            return
+        try:
+            import linuxcnc
+            s6 = linuxcnc.stat()
+            s6.poll()
+            if s6.interp_state == linuxcnc.INTERP_IDLE and s6.inpos:
+                if self._pidt_idle_t0 is None:
+                    self._pidt_idle_t0 = time.time()
+                elif time.time() - self._pidt_idle_t0 > 2.0:
+                    self._pidt_idle_t0 = None
+                    v['retry'] += 1
+                    if v['retry'] <= 2:
+                        LOG.error('PIDT: leg lost -- RETRY %d', v['retry'])
+                        self._pidt_next()
+                    else:
+                        self._pidt_stop('leg ended with no callback -- '
+                                        'aborted')
+            else:
+                self._pidt_idle_t0 = None
+        except Exception:
+            LOG.exception('PIDT: watchdog poll failed')
+
+    def _pidt_stop(self, why):
+        self._seq_flag(False)
+        self._pidt_on = False
+        self._pidt_go_next = False
+        self._pidt_idle_t0 = None
+        self._pidt_set_face()
+        v = getattr(self, '_pidt', None) or {}
+        LOG.error('PIDT STOPPED (%s): %d leg(s), data %s', why,
+                  v.get('legs', 0), v.get('log', '-'))
+        self._tcp_say('PID TRACK %s. %d leg(s). Data: %s'
+                      % (why, v.get('legs', 0), v.get('log', '-')))
+        # abort any in-flight leg and STAY at the resulting pose
+        # (operator 2026-08-06: no zero-returns, no end park)
+        try:
+            import linuxcnc, time
+            ca = linuxcnc.command()
+            ca.abort()
+            ca.wait_complete(2.0)
+        except Exception:
+            LOG.exception('PIDT: abort at stop failed')
+        try:
+            gate = self._cal_gate('PID TRACK stop')
+            if gate:
+                c, _ = gate
+                import time
+                # an abort skips the sub's own M50 P1 restore
+                c.mdi('M50 P1')
+                self._pidt_manual_pending = True
+                self._pidt_manual_t0 = time.time()
+        except Exception:
+            LOG.exception('PIDT: M50 restore failed')
+
+    def _pidt_set_face(self):
+        b = getattr(self, '_pidt_btn', None)
+        if b is None:
+            return
+        on = getattr(self, '_pidt_on', False)
+        b.setText('STOP PID TRACK' if on else 'PID TRACKING')
+        b.setStyleSheet(self.CAL_QSS['clearArmed'] if on
+                        else self.CAL_QSS['pose'])
 
     def _seq_flag(self, on):
         """MODE INTERLOCK: while TRUE (and the heartbeat lives), ned_brain
@@ -6312,9 +6610,9 @@ class UserTab(QWidget):
             # it -- CLAUDE.md rule 17 binds my scripted motion, not the
             # operator's buttons.
             self._homeall_clicks = getattr(self, '_homeall_clicks', 0) + 1
-            LOG.info('REF ALL: physical reset dispatched (sequences are '
-                     'static: Z 0, Y 1, X pair -2, A/C 3); homeall_clicks=%d',
-                     self._homeall_clicks)
+            LOG.info('REF ALL: XYZ sequences dispatched (Z 0, Y 1, X pair '
+                     '-2); A/C brain-homed read-gated after XYZ; '
+                     'homeall_clicks=%d', self._homeall_clicks)
         except Exception as e:
             LOG.error('REF ALL failed: %s', e)
 
