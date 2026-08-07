@@ -5263,10 +5263,10 @@ class UserTab(QWidget):
     # Prior single-axis waypoint version retired same day -- its
     # accel/feed results are banked in
     # docs/commissioning/ac_motion_tuning_2026-08-06.md.
-    PIDT_LEGS = 40
+    PIDT_LEGS = 100000   # effectively endless; STOP is the end
     PIDT_A_BALL = 90.0
     PIDT_C_BALL = 180.0
-    PIDT_F_RANGE = (150.0, 600.0)
+    PIDT_F_RANGE = (600.0, 600.0)   # 800 tripped joint 2 ferror
 
     def _pidt_press(self):
         import math, random, time as _t
@@ -5333,10 +5333,17 @@ class UserTab(QWidget):
                           'limits.', bad=True)
             self._hand_back_manual(c0, 'PID TRACK')
             return
+        # The ball is an XYZ question, not an A/C one (operator 2026-08-07:
+        # "its just a fucking abs encoder position"). Compute where the TIP
+        # is from whatever pose the head is in, then check the swing around
+        # THAT point. No A/C parking required.
+        import math as _m
+        _az = _m.radians(jc + 90.0)        # NOT _t: that is the time alias
+        _pol = _m.radians(180.0 - ja)
+        jx = jx + L * _m.sin(_pol) * _m.cos(_az)
+        jy = jy + L * _m.sin(_pol) * _m.sin(_az)
+        jz = jz + L + L * _m.cos(_pol)
         prob = []
-        if abs(ja) > 0.5 or abs(jc) > 0.5:
-            prob.append('park A and C at 0 first (A=%.1f C=%.1f)'
-                        % (ja, jc))
         if jx - L < xlo or jx + L > xhi:
             prob.append('X ball out of limits')
         if jy - L < ylo or jy + L > yhi:

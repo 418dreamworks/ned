@@ -5,6 +5,6 @@
 # NOTE: LinuxCNC enforces soft limits only AFTER the axis is homed, and they are
 # only ABSOLUTE if home was set to the true head angle -- see docs/gui.md.
 MAX_VELOCITY = 30
-MAX_ACCELERATION = 300
+MAX_ACCELERATION = 2
 MIN_LIMIT = -115.0
 MAX_LIMIT = 115.0

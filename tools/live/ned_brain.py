@@ -160,13 +160,10 @@ class Brain(object):
         self.hr_cb = None
         self.hr_cb_delay = 0
         self.hr_deg = {}
-        self.hr_p0 = 0
         self.hr_p1 = 0
         self.hr_lastraw = None
         # verify / homing
-        self.hv_attempt = 0
         self.prev_ac_homed = False
-        self.correcting = False
         # stored homing saver
         self.sh_last = None
         self.sh_last_t = 0.0
@@ -211,15 +208,26 @@ class Brain(object):
         self.hr_cb = cb
         self.hr_axis = axis
         self.hr_step = 1
+        # STATELESS START (operator 2026-08-07: "A and C homing are fucking
+        # stateless ... you don't need to know anything about the past").
+        # Every carried value is destroyed before the request goes out, so
+        # nothing from an earlier cycle can be mistaken for this one's
+        # measurement: the degree slot, the raw-frame memory, and the two
+        # ini pins the home consumes. A read that fails then leaves NOTHING.
         self.hr_deg[axis] = None
+        self.hr_lastraw = None
+        _jn = 4 if axis == 'a' else 5
+        os.system('halcmd setp ini.{}.home_offset 0 >/dev/null 2>&1'
+                  .format(_jn))
+        os.system('halcmd setp ini.{}.home 0 >/dev/null 2>&1'.format(_jn))
         try:
             h['r4-select'] = (axis == 'a')    # settle R4 BEFORE touching SEN
             h['pso-enable'] = True
             h['pso-reset'] = True
-            self.hr_p0 = int(h['parsed-in'])
         except Exception:
-            self.hr_p0 = 0
-        log('HEADREAD {} start (R4 set, SEN about to drop -> A/C locked)'.format(axis.upper()))
+            pass
+        log('HEADREAD {} start (blanked: hr_deg, lastraw, ini.{}.home, '
+            'ini.{}.home_offset)'.format(axis.upper(), _jn, _jn))
 
     def hr_tick(self):
         st = self.hr_step
@@ -241,11 +249,33 @@ class Brain(object):
                 try:
                     self.hr_p1 = int(h['parsed-in'])
                 except Exception:
-                    self.hr_p1 = self.hr_p0
+                    # POISON, never hr_p0: if the counter is unreadable at the
+                    # rise we cannot PROVE freshness, so the read must fail.
+                    # 1<<32 is unreachable for a u32 counter -> early-exit
+                    # never fires and hr_report's `p <= hr_p1` always rejects.
+                    self.hr_p1 = 1 << 32
                 h['sen-force'] = True     # rising edge -> pack bursts
             elif st >= HR_ST_TIMEOUT:
                 self.hr_step = 0
                 self.hr_report()
+                # WIPE AFTER USE (operator 2026-08-07: "delete every other
+                # fucking number or pin after use"). hr_report has taken the
+                # value; nothing may still hold it. hr_p1 is poisoned so a
+                # later hr_report can never accept without a new SEN rise,
+                # and the raw memory goes. The reader's own multiturn/within
+                # are zeroed by the pso-reset edge at the next hr_start,
+                # before any burst can be consumed.
+                self.hr_p1 = 1 << 32
+                self.hr_lastraw = None
+                # CLEARING AFTER THE READ (operator 2026-08-06: "is there a
+                # way to CLEAR a pin after it is read") is done by hr_start's
+                # pso-reset rising edge, which the comp turns into a FIFO
+                # flush + multiturn/within = 0 before every burst -- so the
+                # pins are empty at the moment a read could consume them.
+                # NOT pulsed here: enable drops on this same tick, and a
+                # True/False pair written microseconds apart is invisible to
+                # a 1 kHz comp. tools/tests/test_headread_freshness.py
+                # asserts the flush actually fires.
                 h['sen-force'] = False
                 h['sen-suppress'] = False
                 h['pso-enable'] = False   # stop touching the board (servo timing)
@@ -257,7 +287,19 @@ class Brain(object):
                 return
         except Exception as e:
             self.hr_step = 0
-            log('HEADREAD failed: {}'.format(e))
+            # ABORT = FULL BLANK. R4 also gates the 70 V rotary brick, and a
+            # latched pso-reset swallows the next flush edge (prev_reset is
+            # tracked while the comp is disabled, pso_live.comp:90).
+            for _p, _v in (('sen-force', False), ('sen-suppress', False),
+                           ('pso-enable', False), ('pso-reset', False),
+                           ('r4-select', False)):
+                try:
+                    h[_p] = _v
+                except Exception:
+                    pass
+            self.hr_p1 = 1 << 32
+            self.hr_lastraw = None
+            log('HEADREAD failed: {} -- all read pins blanked'.format(e))
             return
         self.hr_step = st + 1
 
@@ -270,8 +312,23 @@ class Brain(object):
             log('HEADREAD read failed: {}'.format(e))
             return
         ax = self.hr_axis
-        if p == self.hr_p0:
-            log('HEADREAD {} NO NEW FRAME (parsed still {})'.format(ax.upper(), p))
+        # FRESHNESS BASELINE = hr_p1 (captured at the SEN RISE, the instant
+        # the pack is asked to burst) -- NOT hr_p0 (captured in hr_start,
+        # 1.75 s earlier, before the flush and the SEN drop).
+        # 2026-08-06 HEAD-CRASH-CLASS BUG: any byte parsed during that
+        # 1.75 s window (leftover buffer, the other pack's tail) bumped
+        # `parsed`, so this test passed while the pins still held an OLDER
+        # frame. That frame was A-at-true-zero (mt=36 w~17.08M, 0.0001 deg
+        # from the stored reference), so the brain declared A=+0.000 and
+        # homing -- a pure declaration, no motion -- stamped ZERO onto a
+        # head physically at +66 deg. Verify re-read the same stale frame
+        # and blessed it. Nothing below can catch this; the baseline must
+        # be right. A read with no post-rise frame MUST fail: hr_deg stays
+        # None -> read_done refuses to arm -> A/C homing stays blocked.
+        if p <= self.hr_p1:
+            log('HEADREAD {} NO NEW FRAME since the SEN rise (parsed {} <= '
+                '{}) -- pins hold an OLD frame, REFUSING it'.format(
+                    ax.upper(), p, self.hr_p1))
             return
         # RE-PARSE, never the startup cache. Banking rewrites head_zero.inc
         # while this process runs; with the cached zero the REF re-home that
@@ -299,8 +356,15 @@ class Brain(object):
         log('HEADREAD {}: {:+.3f} deg  (mt={} w={})'.format(ax.upper(), deg, mt, w))
         self.hr_deg[ax] = deg
         jn = 4 if ax == 'a' else 5
-        os.system('halcmd setp ini.{}.home_offset {:.4f} >/dev/null 2>&1'.format(jn, deg))
-        log('HEADREAD -> ini.{}.home_offset = {:+.4f}'.format(jn, deg))
+        # Only a read that PRECEDES a home may arm the pin. A verify read has
+        # no home to feed; writing it there leaves a number for someone else
+        # to consume later.
+        if jn in self.pending_ref or getattr(self, 'inplace_pending', False):
+            os.system('halcmd setp ini.{}.home_offset {:.4f} >/dev/null 2>&1'
+                      .format(jn, deg))
+            log('HEADREAD -> ini.{}.home_offset = {:+.4f}'.format(jn, deg))
+        else:
+            log('HEADREAD {}: verify read, no offset written'.format(ax.upper()))
 
     # ---- stored homing (port of _sh_save / _resume_prep, consent in run5.sh) --
     def sh_save(self, now, force=False):
@@ -676,7 +740,7 @@ class Brain(object):
         # home unhomed A/C where they stand using the armed read; no motion.
         # Skipped if a real cycle is in flight.
         if not getattr(self, 'inplace_pending', False) or self.pending_ref \
-           or self.verify_want:
+           or self.verify_want or not self.read_armed:
             return
         # NEVER CUT INTO A RUNNING HOMING CYCLE. This routine switches to
         # MANUAL, drops teleop and issues unhome/home; doing that under Home
@@ -719,7 +783,10 @@ class Brain(object):
                 os.system('halcmd setp ini.{}.home {:.4f} >/dev/null 2>&1'
                           .format(jn, self.hr_deg[ax]))
                 self.cmd.home(jn)
-                self.inplace_restore.add(jn)
+                self.cmd.wait_complete()          # one joint at a time
+                os.system('halcmd setp ini.{}.home 0 >/dev/null 2>&1'
+                          .format(jn))            # consumed -> wiped NOW
+                self.inplace_restore.add(jn)      # edge restore is belt-only
             log('IN-PLACE HOME: joint(s) {} homed where they stand '
                 '(no motion): {}'.format(
                     [j for j, _ in jns],
@@ -744,17 +811,38 @@ class Brain(object):
                 return
         except Exception:
             return
-        jns = sorted(self.pending_ref)
-        self.pending_ref = set()
+        # ONE JOINT PER DISPATCH (2026-08-06 23:13 wedge): home(4)+home(5)
+        # back-to-back stomped the homing state machine -- C won, A's
+        # cycle orphaned with homing latched through abort AND off/on.
+        # do_home_one_joint sets sequencer state unconditionally, so two
+        # rapid calls are the 2026-07-31 wedge in a new coat. The tick
+        # retries this method; the guard above holds joint 5 back until
+        # joint 4's cycle fully completes.
+        jn = sorted(self.pending_ref)[0]
         try:
             self.cmd.mode(linuxcnc.MODE_MANUAL)
             self.cmd.wait_complete()
             self.cmd.teleop_enable(0)
             self.cmd.wait_complete()
-            for jn in jns:
-                self.cmd.home(jn)
+            # DESTINATION IS ALWAYS 0 -- never inherit ini.N.home from an
+            # earlier cycle. do_inplace() parks the read value there to home
+            # without motion and restores 0 on the homed EDGE; if that edge
+            # is late or missed, the leftover becomes THIS home's target and
+            # the head travels to the PREVIOUS read instead of zero.
+            # 2026-08-07, measured: travel was HOME - home_offset
+            # = -0.1 - 66.6828 = -66.7828, which is the 0/66/0/66 swing.
+            os.system('halcmd setp ini.{}.home 0 >/dev/null 2>&1'.format(jn))
+            self.cmd.home(jn)
+            self.cmd.wait_complete()
+            self.pending_ref.discard(jn)   # only once it really went out
+            # CONSUMED -> WIPED. The offset has done its one job; leaving it
+            # in the pin is what let a later home travel to a previous
+            # cycle's number.
+            os.system('halcmd setp ini.{}.home_offset 0 >/dev/null 2>&1'
+                      .format(jn))
+            self.hr_deg[('a' if jn == 4 else 'c')] = None
             log('REF dispatch: read armed + no cycle running -> homing '
-                'joint(s) {}'.format(jns))
+                'joint {} ({} still queued)'.format(jn, sorted(self.pending_ref) or 'none'))
         except Exception as e:
             log('REF dispatch failed: {}'.format(e))
 
@@ -801,6 +889,12 @@ class Brain(object):
 
     # ---- post-home verify (port of _post_verify/_verify_eval/_verify_fail) ---
     def verify_eval(self):
+        # THE ONLY QUESTION AT THE END OF HOMING (operator 2026-08-07):
+        # is the NEWLY READ position AT ZERO or not? Nothing else.
+        # No declaration comparison, no DRO comparison, no memory of any
+        # earlier cycle -- those all reintroduce state. The head read that
+        # just landed is the whole input; if it is not zero, homing did not
+        # put the head at zero and that is the error.
         bad, msgs = [], []
         for ax in self.verify_axes:
             d = self.hr_deg.get(ax)
@@ -809,61 +903,64 @@ class Brain(object):
                 msgs.append('{}: verify read FAILED'.format(ax.upper()))
             elif abs(d) > HR_VERIFY_TOL:
                 bad.append(ax)
-                msgs.append('{}: {:+.3f} deg after homing'.format(ax.upper(), d))
+                msgs.append('{}: reads {:+.3f} deg, not zero'.format(
+                    ax.upper(), d))
         if not bad:
-            log('HOME VERIFY OK ({}): C={:+.3f} A={:+.3f} deg'.format(
+            log('HOME VERIFY OK ({}): freshly read AT ZERO -- {}'.format(
                 '+'.join(a.upper() for a in self.verify_axes),
-                self.hr_deg.get('c'), self.hr_deg.get('a')))
+                '  '.join('{}={:+.3f}'.format(a.upper(), self.hr_deg[a])
+                          for a in self.verify_axes)))
             self.read_armed = False    # next homing cycle needs a fresh read
             self.verify_want = set()   # cycle complete; next ref may start
-            # A/C homed outside the HOME ALL sequence -> task does not enter
-            # teleop by itself; re-enter so the MPG axis jog is live.
             self.ensure_teleop()
             return
-        if self.hv_attempt < 1:
-            self.hv_attempt += 1
-            log('HOME VERIFY: {} -- NOT actually homed, correcting (unhome + rehome '
-                'with the fresh read)'.format('; '.join(msgs)))
-            # HOMING MUST COMPLETE ON ITS OWN (operator 2026-08-05).
-            # Measured that day: LinuxCNC's immediate-home path SETS the
-            # position from ini.N.home_offset (the absolute read) and then
-            # never performs the HOME_FINAL_VEL move to HOME=0 -- proved by
-            # writing offset -3.0 and watching the DRO land on -3.0 and
-            # stay. So unhome+rehome could never fix a tilted head; it just
-            # re-declared it, and with a stale offset it declared 0 while
-            # the iron sat at -49 deg. The DRO and the encoder disagreed,
-            # which with an absolute encoder must be impossible.
-            # Correct action: the position is already truthful after
-            # homing, so DRIVE the axis to zero, then re-verify.
-            # THE BRAIN NEVER MOVES THE MACHINE. Operator 2026-08-05:
-            # "stale home is declaration, NO FUCKING movement".
-            # This used to issue `G0 A0 C0` to "complete" the home. That is
-            # motion nobody asked for, fired from a path that also runs
-            # after a DECLARED (stale) home -- so a launch could command the
-            # head to swing from wherever it sat, and did. A declaration
-            # states where the machine is; it must never move it there.
-            # The discrepancy is still reported, loudly, and the operator
-            # decides. Nothing here commands motion, ever.
-            words = ' '.join('%s=%s' % (ax.upper(), m) for ax, m in
-                             zip(bad, msgs)) if msgs else ' '.join(
-                                 ax.upper() for ax in bad)
-            log('HOME VERIFY: {} is off zero after homing. NOT CORRECTING -- '
-                'the brain does not move the machine. Re-home physically or '
-                'jog it; this is a report, not an action.'.format(words))
-            self.verify_fail(bad, msgs, 'off zero -- no automatic correction')
-        else:
-            self.verify_fail(bad, msgs, 'still off after one correction')
+        self.verify_fail(bad, msgs, 'not at zero after homing')
 
     def verify_fail(self, bad, msgs, why):
-        # the homed flag must not lie: leave the offending joints unhomed
+        # THE DRO MUST ALWAYS SHOW WHAT PSO RETURNS (operator 2026-08-07:
+        # "REGARDLESS what the unhomed error is, DRO ALWAYS reads what PSO
+        # returns ... i don't want to miss the error message, but see DRO=0
+        # and think i am homed").
+        # So: re-declare each bad axis AT ITS MEASURED ANGLE. Writing
+        # ini.N.home = the same measured value makes the declaration
+        # motionless (the in-place trick), then ini.N.home goes back to 0 so
+        # no leftover can become a later home's target. When the read itself
+        # failed there is no trustworthy number -- that joint is unhomed.
         try:
             self.cmd.mode(linuxcnc.MODE_MANUAL)
             self.cmd.wait_complete()
+            self.cmd.teleop_enable(0)   # homing/unhoming = joint mode
+            self.cmd.wait_complete()
             for ax in bad:
-                self.cmd.unhome(4 if ax == 'a' else 5)
-        except Exception:
-            pass
-        txt = 'HOMING VERIFY FAILED ({}): {}. Joint(s) {} left UNHOMED.'.format(
+                jn = 4 if ax == 'a' else 5
+                d = self.hr_deg.get(ax)
+                self.cmd.unhome(jn)
+                self.cmd.wait_complete()
+                if d is None:
+                    log('VERIFY FAIL: {} read FAILED -- joint {} UNHOMED, no '
+                        'trustworthy angle to show'.format(ax.upper(), jn))
+                    continue
+                os.system('halcmd setp ini.{}.home_offset {:.4f} '
+                          '>/dev/null 2>&1'.format(jn, d))
+                os.system('halcmd setp ini.{}.home {:.4f} >/dev/null 2>&1'
+                          .format(jn, d))
+                self.cmd.home(jn)
+                self.cmd.wait_complete()
+                os.system('halcmd setp ini.{}.home 0 >/dev/null 2>&1'
+                          .format(jn))
+                os.system('halcmd setp ini.{}.home_offset 0 >/dev/null 2>&1'
+                          .format(jn))
+                # DRO now shows the PSO truth; clear the homed flag so the
+                # machine never CLAIMS a home it failed to achieve.
+                # unhome() clears the flag only -- the position stays.
+                self.cmd.unhome(jn)
+                self.cmd.wait_complete()
+                log('VERIFY FAIL: {} DRO set to the measured {:+.4f} deg '
+                    '(no motion), joint {} left UNHOMED'.format(
+                        ax.upper(), d, jn))
+        except Exception as e:
+            log('VERIFY FAIL: DRO truth-set failed: {}'.format(e))
+        txt = 'HOMING VERIFY FAILED ({}): {}. Joint(s) {} NOT trusted -- DRO now shows the PSO reading.'.format(
             why, '; '.join(msgs), ', '.join(ax.upper() for ax in bad))
         log(txt)
         self.read_armed = False    # next homing attempt needs a fresh read
@@ -1106,7 +1203,7 @@ class Brain(object):
             ac_homing = bool(s.joint[4]['homing'] or s.joint[5]['homing'])
         except Exception:
             pass
-        if ac_homing and not self.read_armed and not self.correcting:
+        if ac_homing and not self.read_armed:
             try:
                 self.cmd.abort()
                 self.cmd.error_msg('A/C offsets not read yet -- homing aborted. '
@@ -1144,9 +1241,6 @@ class Brain(object):
         # (homed-edge tracking moved to the TOP of tick -- see the note there)
         if self.verify_want and self.verify_want <= self.head_homed_seen \
            and self.hr_step == 0 and self.hr_cb_delay == 0 and not head_busy:
-            if not self.correcting:
-                self.hv_attempt = 0
-            self.correcting = False
             self.verify_axes = tuple(sorted(self.verify_want))
             self.head_homed_seen = set()
             log('HOME CYCLE: {} homed -> post-read verify'.format(

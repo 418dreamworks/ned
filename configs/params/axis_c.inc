@@ -5,6 +5,6 @@
 # NOTE: enforced only AFTER homing, and absolute only if home = true head angle.
 # Bounded (NOT a wrapping/rollover axis) so a +ve->-ve move interpolates through 0.
 MAX_VELOCITY = 30
-MAX_ACCELERATION = 300
+MAX_ACCELERATION = 2
 MIN_LIMIT = -315.0
 MAX_LIMIT = 315.0

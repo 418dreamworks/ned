@@ -21,12 +21,18 @@ def out(rec):
 AXES = ('xw', 'y', 'z')          # gantry pair = ONE lineage (identical
 PINAX = {'xw': ('x', 'w'), 'y': ('y',), 'z': ('z',)}   # gains, always)
 GENES = ('Pgain', 'Igain', 'Dgain', 'FF1', 'FF2')
-L_PIV = 320.77
+L_PIV = 243.94   # unused; geometry comes from L_LIVE
 BUDGET = 48
 TEST_F = 800.0
 TEST_ACCEL = 2.0
-CUBE_HALF_MM = 0.5          # operator: 1 mm cube -> terminate + blacklist
-CUBE10_HALF_MM = 5.0        # operator: 10 mm cube -> exit 4, full rezero
+BOX_COST = 1.0e6            # um^2: rankable, never competitive
+# 10 mm box (operator 2026-08-07). A 1 mm box is pointless: the sampler runs
+# at ~20 Hz in userspace and the machine's own ferror trip (2.54 mm) always
+# wins the race -- proven live, 0.624 mm seen, machine dropped before the
+# abort landed. The box is now a coarse backstop; the real protection is
+# keeping the GA inside gains that cannot produce a big excursion.
+CUBE_HALF_MM = 5.0          # operator: 1 mm cube -> terminate + blacklist
+CUBE10_HALF_MM = 5.0        # same tier now; kept for the log wording        # operator: 10 mm cube -> exit 4, full rezero
 POLISH = os.environ.get('TUNE_MODE') == 'polish'
 TRASH = LOGD + '/pid_tune_trash.ndjson'
 ORIGF = LOGD + '/pid_original_gains.json'
@@ -58,16 +64,19 @@ out({'t': 'originals', 'genes': ORIG})
 BOUNDS = {}
 for ax in AXES:
     P0, I0 = ORIG[ax]['Pgain'], ORIG[ax]['Igain']
-    BOUNDS[ax] = {'Pgain': (0.5 * P0, 2.0 * P0), 'Igain': (0.0, 3.0 * I0),
-                  'Dgain': (0.0, 0.05), 'FF1': (0.95, 1.03),
-                  'FF2': (0.0, 0.012)}
+    # tightened 2026-08-07: the GA explores, it does not gamble. Measured:
+    # within 0.5x-2x P the worst tip error was ~0.13 mm, so these bounds
+    # cannot approach even the old 1 mm box.
+    BOUNDS[ax] = {'Pgain': (0.7 * P0, 1.5 * P0), 'Igain': (0.0, 2.0 * I0),
+                  'Dgain': (0.0, 0.02), 'FF1': (0.97, 1.02),
+                  'FF2': (0.0, 0.008)}
 SIGSCALE = 0.5 if POLISH else 1.0
-SIG0 = lambda ax: {'Pgain': 0.05 * SIGSCALE,
-                   'Igain': 0.10 * max(ORIG[ax]['Igain'], 1.0) * SIGSCALE,
-                   'Dgain': 0.0015 * SIGSCALE, 'FF1': 0.002 * SIGSCALE,
-                   'FF2': 0.0004 * SIGSCALE}
-STEP_CAP = lambda g: {'Pgain': 0.15 * g['Pgain'], 'Igain': 0.20 * max(g['Igain'], 1.0),
-                      'Dgain': 0.005, 'FF1': 0.005, 'FF2': 0.001}
+SIG0 = lambda ax: {'Pgain': 0.03 * SIGSCALE,
+                   'Igain': 0.06 * max(ORIG[ax]['Igain'], 1.0) * SIGSCALE,
+                   'Dgain': 0.0008 * SIGSCALE, 'FF1': 0.0012 * SIGSCALE,
+                   'FF2': 0.00025 * SIGSCALE}
+STEP_CAP = lambda g: {'Pgain': 0.08 * g['Pgain'], 'Igain': 0.12 * max(g['Igain'], 1.0),
+                      'Dgain': 0.003, 'FF1': 0.003, 'FF2': 0.0006}
 
 def load_trash():
     # old records carry per-axis x/w genes; normalize to the xw-lineage
@@ -112,8 +121,17 @@ signal.signal(signal.SIGTERM, lambda *a: sys.exit(1))
 s = linuxcnc.stat(); c = linuxcnc.command()
 # HARD START GUARDS (operator rules): correct pivot in force, tip inside
 # the cube at its center, machine homed -- refuse to run otherwise
-assert abs(gp('ned_ac_kins.pivot-length') - 320.7741) < 0.01, \
-    'pivot wrong -- G43 not in force, REFUSING to run trials'
+# Geometry is read LIVE, never hardcoded: the tool changes. What must be
+# true is that a tool length is in force and the pivot chain is consistent
+# (pivot = arm.in0 + motion.tooloffset.z).
+_TOOLOFF = gp('motion.tooloffset.z')
+_ARM0 = gp('arm.in0')
+L_LIVE = gp('ned_ac_kins.pivot-length')
+assert _TOOLOFF > 1.0, 'no tool length in force (G43) -- REFUSING'
+assert abs(L_LIVE - (_ARM0 + _TOOLOFF)) < 0.01, \
+    'pivot chain inconsistent (%.4f != %.4f + %.4f) -- REFUSING' % (
+        L_LIVE, _ARM0, _TOOLOFF)
+log('geometry: arm %.4f + tool %.4f = pivot %.4f' % (_ARM0, _TOOLOFF, L_LIVE))
 def _start_tip_guard():
     jx, jy, jz = (gp('joint.0.pos-fb'), gp('joint.1.pos-fb'),
                   gp('joint.2.pos-fb'))
@@ -143,10 +161,10 @@ def tip_from_joints(jx, jy, jz, a_deg, c_deg):
     # forward kins with the TRUE L, independent of the live pin: catches
     # wrong-pivot, count-drift, any geometry-class failure
     t = math.radians(c_deg + 90.0); p = math.radians(180.0 - a_deg)
-    rx = 320.7741 * math.sin(p) * math.cos(t)
-    ry = 320.7741 * math.sin(p) * math.sin(t)
-    rz = 320.7741 * math.cos(p)
-    return (jx + rx, jy + ry, jz + 320.7741 + rz)
+    rx = L_LIVE * math.sin(p) * math.cos(t)
+    ry = L_LIVE * math.sin(p) * math.sin(t)
+    rz = L_LIVE * math.cos(p)
+    return (jx + rx, jy + ry, jz + L_LIVE + rz)
 CMDF = SP + '/tune_cmds.txt'
 open(CMDF, 'w').write(''.join('getp %s\n' % p for p in PINS))
 _start_tip_guard()   # refuse to trial unless the tip starts inside the cube
@@ -231,7 +249,14 @@ def run_trial(cand, tag):
         if sam.cube or sam.kill: break
     sam.stop_f = True; sam.join(2)
     if sam.cube:
-        for ax in AXES: set_axis(ax, champ[ax])
+        # OPERATOR RECOVERY SPEC (2026-08-07): (a) stop the movement,
+        # (b) command XYZAC to all zero -- a plain static move, the box is
+        # NOT policed on the way there, (c) blacklist this gene-set but KEEP
+        # it as a datapoint, (d) carry on with the GA. NO rehoming, no
+        # restart. Gains go back to the known-good set first: driving the
+        # recovery move on the set that just lost the box would be daft.
+        for ax in AXES:
+            set_axis(ax, champ[ax])
         rec = {'t': 'trash', 'n': ntrial[0], 'tag': tag,
                'genes': {ax: {g: round(cand[ax][g], 6) for g in GENES}
                          for ax in AXES},
@@ -243,13 +268,38 @@ def run_trial(cand, tag):
         out({'t': 'raw', 'n': ntrial[0], 'pins': PINS,
              'rows': [[round(t, 3)] + [round(x, 6) for x in v]
                       for t, v in sam.rows]})
-        if sam.cube10:
-            log('TIP LEFT THE 10 MM CUBE -- TRASH recorded; exit 4: wrapper '
-                'must RESTART STACK + PHYSICAL REZERO + baseline (operator rule)')
-            sys.exit(4)
-        log('TIP CUBE VIOLATION (1 mm) -- TRASH recorded, TERMINATING '
-            '(restart resumes with it blacklisted)')
-        sys.exit(3)
+        log('BOX VIOLATION (%s) -- aborting, gains restored, going to '
+            'XYZAC zero; gene-set blacklisted and kept as a datapoint'
+            % rec['reason'])
+        try:
+            c.abort(); c.wait_complete(3.0)
+            for attempt in range(4):
+                c.mode(linuxcnc.MODE_MDI); c.wait_complete(2.0)
+                c.mdi('G53 G1 X0 Y0 Z0 A0 C0 F800')
+                t0 = time.time()
+                moved = False
+                while time.time() - t0 < 8:
+                    time.sleep(1); s.poll()
+                    if s.interp_state != linuxcnc.INTERP_IDLE:
+                        moved = True; break
+                if moved: break
+                log('recovery move quiet, retry %d' % (attempt + 1))
+            t0 = time.time()
+            while time.time() - t0 < 300:
+                time.sleep(2); s.poll()
+                if s.interp_state == linuxcnc.INTERP_IDLE and s.inpos \
+                   and time.time() - t0 > 4:
+                    break
+            s.poll()
+            log('recovery park done: X=%.2f Y=%.2f Z=%.2f A=%.2f C=%.2f'
+                % tuple(s.actual_position[i] for i in (0, 1, 2, 3, 5)))
+        except Exception as e:
+            log('RECOVERY FAILED: %s -- stopping the run' % e)
+            sys.exit(5)
+        # OPERATOR 2026-08-07: do NOT remove it from the pool -- give it a
+        # high error so it rarely reproduces, and keep the record as data.
+        # The abort above is what stops it running away.
+        return {ax: BOX_COST for ax in AXES}
     if sam.kill:
         c.abort(); c.wait_complete(2.0)
         set_axis(sam.kill, champ[sam.kill])
@@ -410,11 +460,8 @@ while ntrial[0] < BUDGET - 4 and stag < 8:
     o1 = {ax: mutate(ax, inc[ax], sig[ax]) for ax in AXES}
     o2 = {ax: (mutate(ax, cross(ax, *random.sample(arch[ax], 2)), sig[ax])
                if len(arch[ax]) > 1 else mutate(ax, inc[ax], sig[ax])) for ax in AXES}
-    ok = False
-    for _ in range(20):
-        if not (is_trash(o1) or is_trash(o2)): ok = True; break
-        o1 = {ax: mutate(ax, inc[ax], sig[ax]) for ax in AXES}
-        o2 = {ax: mutate(ax, inc[ax], sig[ax]) for ax in AXES}
+    ok = True   # nothing is excluded from the pool any more (operator
+                # 2026-08-07): a box violation scores BOX_COST instead
     if not ok:
         # advisor: NEVER run a trash match -- single-gene half-sigma
         # nudge off the incumbent; still trash => skip the generation

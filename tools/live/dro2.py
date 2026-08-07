@@ -48,6 +48,8 @@ WHITE = '#f0f0f0'
 BLACK = '#000000'
 N_SLOTS = 5                # jog increment ladder length (ned_pendant)
 STRIP_H = 46               # top indicator strip height, px
+# ---- VERSION: bump on EVERY PB / LinuxCNC edit. 'vNNN:' + <=30 chars ----
+VERSION = 'v007:PIDT F600'
 NUM_W = 9                  # fixed number field: '-4042.72 ' fits (12 ft X)
 NUM_INT = 4                # linear integer digits: 0000.00 .. -4042.72 (12 ft X)
 NUM_INT_ROT = 3            # degrees need only 000.00 (operator 2026-08-05)
@@ -89,6 +91,17 @@ class JogStrip(QWidget):
         w = self.width() / float(N_SLOTS)
         p.fillRect(int(self.slot * w) + 4, 6,
                    int(w) - 8, self.height() - 12, QColor(WHITE))
+        # VERSION MARKER (operator 2026-08-07): the end-of-edit marker.
+        # BUMP IT on every PB or LinuxCNC change -- it is the cheapest,
+        # most instant signal that a launch carries the new code.
+        # Blue reads on both the black strip and the white jog block.
+        f = p.font()
+        f.setPointSize(13)
+        f.setBold(True)
+        p.setFont(f)
+        p.setPen(QColor('#3AA0FF'))
+        p.drawText(self.rect().adjusted(10, 0, -10, 0),
+                   Qt.AlignVCenter | Qt.AlignLeft, VERSION)
         p.end()
 
 
