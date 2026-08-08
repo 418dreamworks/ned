@@ -76,17 +76,36 @@ class NedHomingMenu(QMenu):
                     # (2026-08-03). Also require the machine to be idle and no
                     # joint mid-homing, so the menu cannot invite a click into
                     # a window where the answer is "not yet".
+                    # ...and NOT while the brain still owns the head. A
+                    # zero-travel declare can raise and drop joint['homing']
+                    # inside one 500 ms poll, so this flag -- held from the
+                    # first pin write until every head joint is confirmed
+                    # back at HOME_IDLE -- is what actually closes the window
+                    # (operator 2026-08-07: "positive confirmation of
+                    # whatever process is required to end before another
+                    # homing can take place").
+                    tab = self._tab()
+                    _hb = getattr(tab, 'head_busy', None) if tab else None
+                    busy = bool(_hb()) if callable(_hb) else True
+                    if not callable(_hb) and not getattr(
+                            self, '_hb_missing_logged', False):
+                        self._hb_missing_logged = True
+                        LOG.error('NED Homing menu: ned_controls.head_busy() '
+                                  'not reachable (tab=%r) -- menu held '
+                                  'DISABLED (fail closed)', tab)
                     ready = (st.task_state == linuxcnc.STATE_ON
                              and st.homed[4] and st.homed[5]
                              and st.interp_state == linuxcnc.INTERP_IDLE
+                             and not busy
                              and not any(st.joint[j]['homing']
                                          for j in range(6)))
                     if ready != self.isEnabled():
                         self.setEnabled(ready)
-                        LOG.info('NED Homing menu %s (ON=%s, A/C in-place=%s)',
+                        LOG.info('NED Homing menu %s (ON=%s, A/C in-place=%s,'
+                                 ' head-busy=%s)',
                                  'ENABLED' if ready else 'disabled',
                                  st.task_state == linuxcnc.STATE_ON,
-                                 bool(st.homed[4] and st.homed[5]))
+                                 bool(st.homed[4] and st.homed[5]), busy)
                 except Exception as e:
                     self._nml = None
                     if not getattr(self, '_poll_err_logged', False):
@@ -115,6 +134,18 @@ class NedHomingMenu(QMenu):
         label = text.replace('&', '')
         LOG.info('NED Homing menu CLICK: %s -> %s%r', label, meth, args)
         tab = self._tab()
+        # Second, independent refusal at click time: the 500 ms poll can be
+        # up to half a second stale, and a click is never silently swallowed.
+        if tab is not None and tab.head_busy():
+            LOG.error('NED Homing menu REFUSED %s: the head is mid-cycle '
+                      '(head-busy) -- no home issued', label)
+            try:
+                linuxcnc.command().error_msg(
+                    '%s refused: head homing still in progress' % label)
+            except Exception as _e:
+                LOG.error('NED Homing menu: could not surface the refusal '
+                          'to the operator: %s', _e)
+            return
         if tab is None or not hasattr(tab, meth):
             LOG.error('NED Homing menu: ned_controls tab / method %r NOT '
                       'found -- NO home command issued', meth)

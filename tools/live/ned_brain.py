@@ -87,15 +87,18 @@ GEAR = parse_gears()
 
 h = hal.component('brain')
 for _p in ('sen-suppress', 'sen-force', 'pso-enable', 'pso-reset',
-           'r4-select',
-           # TOOL-GUARD ARM (operator 2026-08-05: "time the guard to start
-           # AFTER we achieve stale homing -- you can't move until then
-           # anyway"). FALSE at launch, so the always-on tool guard is
-           # excused through the boot window where iocontrol has not served
-           # the tool table yet (the DB program spawns python + sqlite:
-           # seconds). Raised once the declare lands, which is strictly
-           # after the record exists -- the guard then means something.
-           'guard-arm'):
+           # NO GUARD-ARM PIN (deleted 2026-08-07). It muted the tool
+           # guard through the boot window so the "iocontrol has not served
+           # the tool table yet" mismatch would not alarm -- i.e. a safety
+           # interlock switched OFF to suppress a message that was TRUE.
+           # The 25 s unmute clock also started at brain start, above the
+           # STATE_ON check, so it routinely expired before the machine was
+           # even powered and armed on a mismatch it had just printed
+           # ("TOOL GUARD ARMED (timeout backstop): record T2, LinuxCNC
+           # T0", 2026-08-07 09:47). The guard now watches from HAL load;
+           # a boot mismatch locks motion and clears itself the moment
+           # restore_spindle_tool reconciles the record.
+           'r4-select'):
     h.newpin(_p, hal.HAL_BIT, hal.HAL_OUT)
 # pso_live values arrive on OUR OWN netted pins (postgui_pb.hal) -- instance
 # access only. NEVER hal.get_value() here: it spins on the global HAL mutex,
@@ -114,6 +117,31 @@ h.newpin('seq-active-in', hal.HAL_BIT, hal.HAL_IN)   # MODE INTERLOCK
 h.newpin('seq-hb-in', hal.HAL_U32, hal.HAL_IN)       # its liveness beat
 h.newpin('ref-a-in', hal.HAL_BIT, hal.HAL_IN)
 h.newpin('ref-c-in', hal.HAL_BIT, hal.HAL_IN)
+# THE HOMING STATE MACHINE ITSELF. homing.c exports joint.N.home-state (s32)
+# and names the enum at homing.c:76-100: HOME_IDLE = 0 ... HOME_FINAL_MOVE_
+# START = 20, which is the state where homing.c:1279 does
+#     joint->free_tp.pos_cmd = H[joint_num].home;
+# i.e. where the destination is LATCHED. Any write to ini.N.home between
+# cmd.home() and that latch changes where the head goes -- on 2026-08-07 C
+# travelled -114.7048 deg on a DECLARE that must not move at all. Netted
+# pins, never halcmd, because this is read every tick (a getp per tick would
+# fork twice a tick on a Pi, and hal.get_value spins the global mutex).
+h.newpin('hstate-4-in', hal.HAL_S32, hal.HAL_IN)
+h.newpin('hstate-5-in', hal.HAL_S32, hal.HAL_IN)
+# TRUE while ANY head homing work is outstanding -- pins armed, a home in
+# flight, a read running, a verify pending or a confirmed wipe still owed.
+# The GUI greys every homing control off this (operator 2026-08-07: "prevent
+# pressing homing any other button until its completely safe ... positive
+# confirmation of whatever process is required to end").
+h.newpin('head-busy', hal.HAL_BIT, hal.HAL_OUT)
+# TOOL TABLE SERVED -- the ONLY thing that releases the default motion lock
+# (tool.mm.ntbl -> tool.mm.lock2 -> motion.jog-inhibit + feed-inhibit).
+# FALSE here and FALSE on an unconnected pin, so every way this can fail --
+# brain not started, postgui net missing, table never served -- leaves the
+# machine LOCKED. Positive verification only (operator 2026-08-07: "these
+# are so crucial, they must be positively verified before user can do
+# anything").
+h.newpin('tool-table-ok', hal.HAL_BIT, hal.HAL_OUT)
 h.ready()
 
 # LOUD DEATH: 2026-08-01 19:40 launch, brain+pendant both vanished silently
@@ -200,8 +228,108 @@ class Brain(object):
         self.prev_refc = False
         # (flip machinery deleted 2026-08-02: sequences are permanent)
         self.seq_watch_n = 0
+        # joints whose ini.N.home/home_offset are still owed a wipe. The wipe
+        # is drained ONLY after positive confirmation (homed latched + every
+        # head joint back at HOME_IDLE), and it is deliberately NOT load
+        # bearing: set_home_pins() rewrites both pins before every single
+        # home, so a wipe that is late or missed cannot feed a later cycle.
+        self.pin_wipe = set()
+        # motor-pos-fb at the instant a DECLARE was armed. A declare must not
+        # move the head; if this changes, it moved, and that is an error.
+        self.declare_snap = {}
 
     # ---- head read (exact port of nedgui _hr_start/_hr_tick/_hr_report) -----
+    # ==== ini.N.home / ini.N.home_offset -- THE ONLY WRITER ===============
+    # Every path that homes a head joint goes through set_home_pins() ->
+    # cmd.home(). Nothing else may touch these pins. Six independent writers
+    # is why the 2026-08-07 declare could not be reasoned about.
+    HEAD_JN = (4, 5)
+    HOME_IDLE = 0            # homing.c:78
+
+    def home_state(self, jn):
+        try:
+            return int(h['hstate-{}-in'.format(jn)])
+        except Exception:
+            return None
+
+    def head_quiet(self, why=''):
+        # EVERY head joint must be HOME_IDLE, not just the one about to be
+        # homed: do_home_one_joint (homing.c:265-281) stamps HOME_START
+        # without checking whether another joint is mid-cycle, so motion
+        # will never tell us "joint 4 is busy" -- we have to look.
+        for _jn in self.HEAD_JN:
+            st = self.home_state(_jn)
+            if st is None:
+                log('HOME GATE: joint.{}.home-state unreadable -- refusing '
+                    '{}'.format(_jn, why))
+                return False
+            if st != self.HOME_IDLE:
+                log('HOME GATE: joint {} in home-state {} (not IDLE) -- '
+                    'refusing {}'.format(_jn, st, why))
+                return False
+        return True
+
+    def motor_fb(self, jn):
+        try:
+            r = subprocess.run(
+                ['timeout', '5', 'halcmd', 'getp',
+                 'joint.{}.motor-pos-fb'.format(jn)],
+                capture_output=True, text=True)
+            return float(r.stdout.strip()) if not r.returncode else None
+        except Exception:
+            return None
+
+    def set_home_pins(self, jn, home, offset, why):
+        """Gate -> write BOTH pins -> read back -> compare. False = refused,
+        loudly, and NO home may be issued. The read-back is the point: a
+        setp that was lost or late aborts the cycle instead of homing to
+        someone else's number."""
+        if not self.head_quiet('to arm joint {} ({})'.format(jn, why)):
+            return False
+        for pin, val in (('home', home), ('home_offset', offset)):
+            name = 'ini.{}.{}'.format(jn, pin)
+            rc = os.system('halcmd setp {} {:.4f} >/dev/null 2>&1'
+                           .format(name, val))
+            if rc:
+                log('HOME PINS: setp {} failed rc={} -- NOT homing ({})'
+                    .format(name, rc, why))
+                return False
+            try:
+                r = subprocess.run(['timeout', '5', 'halcmd', 'getp', name],
+                                   capture_output=True, text=True)
+                back = float(r.stdout.strip())
+                ok = (r.returncode == 0) and abs(back - val) < 1e-4
+            except Exception:
+                back, ok = None, False
+            if not ok:
+                log('HOME PINS: {} reads back {} after writing {:+.4f} -- '
+                    'REFUSING to home ({})'.format(name, back, val, why))
+                return False
+        self.pin_wipe.add(jn)
+        log('HOME PINS: joint {} armed home={:+.4f} home_offset={:+.4f} '
+            '(both read back OK; home-state 4/5 = {}/{}) -- {}'.format(
+                jn, home, offset, self.home_state(4), self.home_state(5), why))
+        return True
+
+    def wipe_home_pins(self, jn, why):
+        """Blank both pins. Gated the same way -- blanking during a home is
+        exactly the bug this whole path exists to stop."""
+        if not self.head_quiet('to wipe joint {} ({})'.format(jn, why)):
+            return False
+        os.system('halcmd setp ini.{}.home_offset 0 >/dev/null 2>&1'.format(jn))
+        os.system('halcmd setp ini.{}.home 0 >/dev/null 2>&1'.format(jn))
+        self.pin_wipe.discard(jn)
+        log('HOME PINS: joint {} wiped (home + home_offset) -- {}'
+            .format(jn, why))
+        return True
+
+    def head_busy(self):
+        return bool(self.hr_step or self.pending_ref or self.verify_want
+                    or self.pin_wipe
+                    or getattr(self, 'inplace_pending', False)
+                    or any(self.home_state(j) not in (self.HOME_IDLE, None)
+                           for j in self.HEAD_JN))
+
     def hr_start(self, axis, cb=None):
         if self.hr_step:
             return
@@ -217,9 +345,7 @@ class Brain(object):
         self.hr_deg[axis] = None
         self.hr_lastraw = None
         _jn = 4 if axis == 'a' else 5
-        os.system('halcmd setp ini.{}.home_offset 0 >/dev/null 2>&1'
-                  .format(_jn))
-        os.system('halcmd setp ini.{}.home 0 >/dev/null 2>&1'.format(_jn))
+        self.wipe_home_pins(_jn, 'stateless read start')
         try:
             h['r4-select'] = (axis == 'a')    # settle R4 BEFORE touching SEN
             h['pso-enable'] = True
@@ -356,15 +482,14 @@ class Brain(object):
         log('HEADREAD {}: {:+.3f} deg  (mt={} w={})'.format(ax.upper(), deg, mt, w))
         self.hr_deg[ax] = deg
         jn = 4 if ax == 'a' else 5
-        # Only a read that PRECEDES a home may arm the pin. A verify read has
-        # no home to feed; writing it there leaves a number for someone else
-        # to consume later.
-        if jn in self.pending_ref or getattr(self, 'inplace_pending', False):
-            os.system('halcmd setp ini.{}.home_offset {:.4f} >/dev/null 2>&1'
-                      .format(jn, deg))
-            log('HEADREAD -> ini.{}.home_offset = {:+.4f}'.format(jn, deg))
-        else:
-            log('HEADREAD {}: verify read, no offset written'.format(ax.upper()))
+        # THE READ NEVER TOUCHES THE PINS. It used to arm ini.N.home_offset
+        # here, which meant the offset sat in the pin from the read until
+        # the home -- a window anything could write into, and the number
+        # outlived its use if the home never came. set_home_pins() now
+        # writes BOTH pins immediately before each cmd.home(), so the
+        # measurement lives only in self.hr_deg until it is consumed.
+        log('HEADREAD {}: joint {} measurement held in hr_deg, pins '
+            'untouched until the home'.format(ax.upper(), jn))
 
     # ---- stored homing (port of _sh_save / _resume_prep, consent in run5.sh) --
     def sh_save(self, now, force=False):
@@ -643,42 +768,48 @@ class Brain(object):
         except Exception as e:
             log('MODE apply failed: {}'.format(e))
 
-    def arm_tool_guard(self):
-        # ARM WHEN THE RECORD IS ACTUALLY SERVED (2026-08-05). Measured:
-        # arming at stale home was still too early -- io publishes
-        # tool-number only after it has loaded the tool table through the
-        # DB program (python + sqlite), which finishes AFTER the declare.
-        # The guard then fired on a table that simply had not arrived.
-        # Condition now: LinuxCNC's tool_in_spindle agrees with our
-        # persistent record (#3991), i.e. the picture is genuinely
-        # consistent; 25 s backstop so a REAL mismatch still alarms.
-        if getattr(self, '_guard_armed', False):
-            return
+    def tool_table_gate(self):
+        """Publish 'iocontrol has served the tool table'.
+
+        The test is POSITIVE: at least one entry with a real tool number.
+        stat.tool_table is an empty tuple before the status buffer is
+        initialised and holds only the spindle slot until io finishes
+        loading through the DB program (python + sqlite, seconds), so
+        counting id > 0 is the fact that the table exists -- not a timer,
+        not "it has probably arrived by now".
+        """
         try:
-            import time
-            if not hasattr(self, '_guard_t0'):
-                self._guard_t0 = time.time()
             self.stat.poll()
-            if self.stat.task_state != linuxcnc.STATE_ON:
-                return
-            want = 0
-            with open('/home/brains/Documents/ned/configs/ned5_pb/'
-                      'ned5_pb.var') as f:
-                for ln in f:
-                    p = ln.split()
-                    if len(p) == 2 and p[0] == '3991':
-                        want = int(float(p[1]))
-                        break
-            served = int(self.stat.tool_in_spindle) == want
-            late = time.time() - self._guard_t0 > 25
-            if served or late:
-                self._guard_armed = True
-                h['guard-arm'] = True
-                log('TOOL GUARD ARMED (%s): record T%d, LinuxCNC T%d'
-                    % ('record served' if served else 'timeout backstop',
-                       want, int(self.stat.tool_in_spindle)))
+            n = sum(1 for t in self.stat.tool_table if int(t.id) > 0)
         except Exception as e:
-            log('TOOL GUARD arm check failed: {}'.format(e))
+            n = 0
+            if not getattr(self, '_tbl_err', False):
+                self._tbl_err = True
+                log('TOOL TABLE: cannot read stat.tool_table ({}) -- motion '
+                    'stays LOCKED'.format(e))
+        ok = n > 0
+        if ok != getattr(self, '_tbl_ok', None):
+            self._tbl_ok = ok
+            h['tool-table-ok'] = ok
+            log('TOOL TABLE: {} -- motion {}'.format(
+                'served, {} tools'.format(n) if ok else 'NOT served',
+                'permitted' if ok else 'LOCKED'))
+        # Say it once if it is taking abnormally long. This changes NOTHING
+        # about the lock -- the lock is unconditional until the table
+        # exists; this only stops a never-loading table looking like a hang.
+        if not ok:
+            if not hasattr(self, '_tbl_t0'):
+                self._tbl_t0 = time.time()
+            elif (time.time() - self._tbl_t0 > 20
+                    and not getattr(self, '_tbl_shouted', False)):
+                self._tbl_shouted = True
+                msg = ('TOOL TABLE NOT LOADED -- motion is locked until it '
+                       'is')
+                log(msg)
+                try:
+                    self.cmd.error_msg(msg)
+                except Exception:
+                    log('TOOL TABLE: could not surface the message')
 
     def restore_spindle_tool(self):
         # BACKSTOP ONLY since 2026-08-05: the tool database now reports the
@@ -778,20 +909,31 @@ class Brain(object):
             self.cmd.wait_complete()
             self.cmd.teleop_enable(0)
             self.cmd.wait_complete()
-            self.inplace_restore = set()
+            # ONE JOINT PER PASS. The old loop homed joint 4, wiped
+            # ini.4.home, then wrote ini.5.home and homed joint 5 -- all
+            # while joint 4 was still in its homing sequence, because
+            # wait_complete() returns on command acceptance, not on
+            # completion. Those writes landed inside joint 5's window
+            # between cmd.home() and the destination latch at
+            # homing.c:1279, and C travelled -114.7048 deg on a declare
+            # that must not move at all (2026-08-07).
+            # Now: arm -> verify -> home ONE joint, then return. The next
+            # joint needs every head joint back at HOME_IDLE, which only
+            # happens once this one has finished; the tick retries.
             for jn, ax in jns:
-                os.system('halcmd setp ini.{}.home {:.4f} >/dev/null 2>&1'
-                          .format(jn, self.hr_deg[ax]))
+                d = self.hr_deg[ax]
+                # HOME == home_offset -> travel = HOME - home_offset = 0.
+                if not self.set_home_pins(jn, d, d, 'declare in place'):
+                    self.inplace_pending = True   # refused: retry when quiet
+                    return
+                self.declare_snap[jn] = self.motor_fb(jn)
                 self.cmd.home(jn)
-                self.cmd.wait_complete()          # one joint at a time
-                os.system('halcmd setp ini.{}.home 0 >/dev/null 2>&1'
-                          .format(jn))            # consumed -> wiped NOW
-                self.inplace_restore.add(jn)      # edge restore is belt-only
-            log('IN-PLACE HOME: joint(s) {} homed where they stand '
-                '(no motion): {}'.format(
-                    [j for j, _ in jns],
-                    '  '.join('{}={:+.3f}'.format(ax.upper(), self.hr_deg[ax])
-                              for _, ax in jns)))
+                self.cmd.wait_complete()
+                log('IN-PLACE HOME: joint {} ({}) declared at {:+.3f} deg, '
+                    'zero travel; nothing writes those pins until it is '
+                    'confirmed idle'.format(jn, ax.upper(), d))
+                self.inplace_pending = True       # the other joint, next tick
+                return
         except Exception as e:
             log('IN-PLACE HOME failed: {}'.format(e))
 
@@ -831,16 +973,23 @@ class Brain(object):
             # the head travels to the PREVIOUS read instead of zero.
             # 2026-08-07, measured: travel was HOME - home_offset
             # = -0.1 - 66.6828 = -66.7828, which is the 0/66/0/66 swing.
-            os.system('halcmd setp ini.{}.home 0 >/dev/null 2>&1'.format(jn))
+            _ax = 'a' if jn == 4 else 'c'
+            _d = self.hr_deg.get(_ax)
+            if _d is None:
+                log('REF dispatch: joint {} has no armed read -- refusing'
+                    .format(jn))
+                return
+            # A REF drives the head TO ZERO: home = 0, offset = the reading.
+            # Both are written and read back here, immediately before the
+            # command, so no leftover from any earlier cycle can be what
+            # this home consumes.
+            if not self.set_home_pins(jn, 0.0, _d, 'REF joint {} to zero'
+                                      .format(jn)):
+                return                     # refused: the tick retries
             self.cmd.home(jn)
             self.cmd.wait_complete()
             self.pending_ref.discard(jn)   # only once it really went out
-            # CONSUMED -> WIPED. The offset has done its one job; leaving it
-            # in the pin is what let a later home travel to a previous
-            # cycle's number.
-            os.system('halcmd setp ini.{}.home_offset 0 >/dev/null 2>&1'
-                      .format(jn))
-            self.hr_deg[('a' if jn == 4 else 'c')] = None
+            self.hr_deg[_ax] = None
             log('REF dispatch: read armed + no cycle running -> homing '
                 'joint {} ({} still queued)'.format(jn, sorted(self.pending_ref) or 'none'))
         except Exception as e:
@@ -940,16 +1089,12 @@ class Brain(object):
                     log('VERIFY FAIL: {} read FAILED -- joint {} UNHOMED, no '
                         'trustworthy angle to show'.format(ax.upper(), jn))
                     continue
-                os.system('halcmd setp ini.{}.home_offset {:.4f} '
-                          '>/dev/null 2>&1'.format(jn, d))
-                os.system('halcmd setp ini.{}.home {:.4f} >/dev/null 2>&1'
-                          .format(jn, d))
+                if not self.set_home_pins(jn, d, d, 'verify-fail DRO truth'):
+                    log('VERIFY FAIL: {} pins refused -- joint {} left '
+                        'UNHOMED, DRO not corrected'.format(ax.upper(), jn))
+                    continue
                 self.cmd.home(jn)
                 self.cmd.wait_complete()
-                os.system('halcmd setp ini.{}.home 0 >/dev/null 2>&1'
-                          .format(jn))
-                os.system('halcmd setp ini.{}.home_offset 0 >/dev/null 2>&1'
-                          .format(jn))
                 # DRO now shows the PSO truth; clear the homed flag so the
                 # machine never CLAIMS a home it failed to achieve.
                 # unhome() clears the flag only -- the position stays.
@@ -1027,15 +1172,52 @@ class Brain(object):
                 if _cur and not self.prev_head_homed[_jn]:
                     if _ax in self.verify_want:
                         self.head_homed_seen.add(_ax)
-                    if _jn in getattr(self, 'inplace_restore', set()):
-                        os.system('halcmd setp ini.{}.home 0 '
-                                  '>/dev/null 2>&1'.format(_jn))
-                        self.inplace_restore.discard(_jn)
-                        log('IN-PLACE HOME: joint {} homed, ini.home restored '
-                            'to 0'.format(_jn))
+                    # DID THE DECLARE MOVE THE HEAD? It must not. This is
+                    # the detector that would have caught C's -114.7048 deg
+                    # swing the first time instead of after the fact --
+                    # motor-pos-fb is raw motor position, untouched by
+                    # home_offset, so any change here is real motion.
+                    _snap = self.declare_snap.pop(_jn, None)
+                    if _snap is not None:
+                        _fb = self.motor_fb(_jn)
+                        if _fb is None:
+                            log('DECLARE: joint {} motor-pos-fb unreadable '
+                                '-- motion NOT verified'.format(_jn))
+                        elif abs(_fb - _snap) > 0.01:
+                            _t = ('DECLARE MOVED THE HEAD: joint {} '
+                                  'motor-pos-fb {:+.4f} -> {:+.4f} '
+                                  '({:+.4f} deg) on a ZERO-TRAVEL declare'
+                                  .format(_jn, _snap, _fb, _fb - _snap))
+                            log(_t)
+                            try:
+                                self.cmd.error_msg(_t)
+                            except Exception:
+                                pass
+                        else:
+                            log('DECLARE: joint {} did not move '
+                                '({:+.4f} -> {:+.4f}) -- correct'
+                                .format(_jn, _snap, _fb))
                 self.prev_head_homed[_jn] = _cur
         except Exception as _e:
             log('head-edge tracking failed: {}'.format(_e))
+
+        # CONFIRMED WIPE. Drained only when EVERY head joint is back at
+        # HOME_IDLE -- positive confirmation that no home is in flight, which
+        # is the whole safety condition. Deliberately not load-bearing:
+        # set_home_pins() rewrites both pins before every home, so a wipe
+        # that is late or missed can no longer feed a later cycle. It is
+        # hygiene -- no number outlives its one use (operator 2026-08-07:
+        # "delete every other fucking number or pin after use").
+        # silent pre-check: head_quiet() logs, and the tick runs ~10x/s, so
+        # asking it directly would spam the log for the whole of every home
+        if self.pin_wipe and all(self.home_state(_j) == self.HOME_IDLE
+                                 for _j in self.HEAD_JN):
+            for _jn in sorted(self.pin_wipe):
+                self.wipe_home_pins(_jn, 'consumed -- confirmed idle')
+        try:
+            h['head-busy'] = self.head_busy()
+        except Exception:
+            pass
 
         # head-read state machine has the tick when active
         if self.hr_step:
@@ -1109,8 +1291,8 @@ class Brain(object):
         if getattr(self, 'inplace_at', None) and now >= self.inplace_at:
             self.inplace_at = None
             self.do_inplace()
+        self.tool_table_gate()
         self.restore_spindle_tool()
-        self.arm_tool_guard()
         self.apply_mode()
         if self.teleop_at and now >= self.teleop_at:
             self.teleop_at = None

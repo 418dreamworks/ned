@@ -5,5 +5,10 @@
 # MAX_VELOCITY: WRITTEN by tools/live/ned_params.sh (MAX_VEL_LIN) -- edit THERE, never here.
 MAX_VELOCITY = 200
 MAX_ACCELERATION = 200.0
-MIN_LIMIT = -4042.725
-MAX_LIMIT = 1.0
+# LIMITS DISABLED 2026-08-07 (operator: "disable all axis limits for now").
+# An axis limit bounds the TOOL TIP, not the carriage; under ned_ac_kins
+# the tip sits up to L*(1-cos A) above the joint, so a joint-sized number
+# here refused most of Z. Real fix = limits as a function of L_tool.
+# The JOINT limits below are untouched and still stop the machine.
+MIN_LIMIT = -5042.725
+MAX_LIMIT = 1001

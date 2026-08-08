@@ -38,10 +38,28 @@ net cycle-hours   qtpyvcp.timerhours.in   <= time.0.hours
 # -Wn: the component announces itself as 'brain', not 'ned_brain' -- plain -W
 # waits forever for a component named after the executable (halcmd hung here).
 loadusr -Wn brain /home/brains/Documents/ned/tools/live/ned_brain.py
-# TOOL GUARD ARM: excused until the brain reaches stale home (operator
-# 2026-08-05). brain.* pins exist only after the loadusr above.
-net sig-guard-arm      brain.guard-arm => tool.mm.narm.in
-net sig-guard-unarmed  tool.mm.narm.out => tool.mm.excuse2.in1
+# (no tool-guard arming net any more -- the guard watches from HAL load;
+#  see the NO BOOT EXCUSE block in configs/ned5/ned5_iron.hal)
+# TOOL TABLE SERVED: the ONLY thing that releases the default motion lock.
+# FALSE until the brain sees a real entry in stat.tool_table.
+net sig-tool-table-ok  brain.tool-table-ok
+# the GUI greys CYCLE START / MDI off the SAME lock the motion controller
+# obeys, so a control is never live while HAL is refusing motion
+net sig-motion-lock    ned-tab.motion-lock-in
+# the TABLE half alone: the startup input gate opens only on homed AND this
+net sig-tool-table-ok  ned-tab.table-ok-in
+
+# HOMING STATE MACHINE, LIVE. homing.c exports joint.N.home-state and names
+# the enum at homing.c:76-100 (HOME_IDLE = 0 ... HOME_FINAL_MOVE_START = 20,
+# the state where homing.c:1279 latches the destination). The brain refuses
+# to write ini.N.home / ini.N.home_offset unless BOTH head joints read IDLE:
+# do_home_one_joint (homing.c:265-281) stamps HOME_START without checking
+# whether another joint is mid-cycle, so nothing else reports "joint 4 busy".
+net sig-hstate-4      joint.4.home-state => brain.hstate-4-in
+net sig-hstate-5      joint.5.home-state => brain.hstate-5-in
+# HEAD BUSY: TRUE while any head homing work is outstanding. Every homing
+# control in the GUI greys off this and re-enables when it clears.
+net sig-head-busy     brain.head-busy    => ned-tab.head-busy-in
 
 # MODE INTERLOCK (operator 2026-08-06): while the GUI runs an orchestrated
 # MDI chain it owns the task mode; the brain skips its MANUAL restore.
@@ -85,7 +103,8 @@ net sig-tool-probe        =>  qtpyvcp.probe-led.on
 # and M7/M9 drive iocontrol coolant-mist -> OR'd into sol.blow alongside the
 # M64 P4 path (sol.blow.in0). Flood is unused (its menu entry is hidden).
 net sig-mist-blow   iocontrol.0.coolant-mist  =>  sol.blow.in1
-# (the pendant-fed nets sig-mpg-inc / sig-mpg-axis are below, AFTER the
+# (the pendant-fed nets sig-mpg-inc-index / sig-mpg-axis are below, AFTER
+#  the
 #  pendant loadusr -- its pins must exist first)
 
 # --- MPG PENDANT (ned_pendant.py drives the same signals nedgui did) --------
@@ -95,11 +114,10 @@ net sig-mpg-counts   =>  pendant.wheel
 # pendant selections -> the GUI's own netted pins (highlight + increment sync).
 # BOTH pins live on ned-tab: user tabs load synchronously, but PB loads the
 # user DROs DEFERRED (after postgui!) so a DRO-owned pin here kills postgui.
-net sig-mpg-inc      ned-tab.inc-in       <=  pendant.increment
 net sig-mpg-axis     ned-tab.axis-in      <=  pendant.sel-axis
 # jog-speed SLOT INDEX: one publisher (the pendant), many readers (PB, the
 # second-monitor DRO). Nobody keeps a private copy.
-net sig-mpg-inc-index                     <=  pendant.inc-index
+net sig-mpg-inc-index ned-tab.inc-index-in <=  pendant.inc-index
 net sig-inc-set       ned-tab.inc-set-out => pendant.inc-set
 # LOCK A / LOCK C (DRO buttons): pendant skips locked axes in the cycle
 net sig-lock-a       pendant.lock-a       <=  ned-tab.lock-a-out

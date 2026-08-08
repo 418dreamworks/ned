@@ -234,44 +234,24 @@ Two changes, both in `setNotify()`:
 
 Also needs `QTimer` added to the `PySide6.QtCore` import line.
 
-## By. PATCHED Probe Basic core file: probe_basic.py (STATUS error flag, 2026-08-03)
+## By. probe_basic.py -- NO LONGER PATCHED (2026-08-07)
 
-`~/qt_pb/probe_basic/src/probe_basic/probe_basic.py`
-Stock copy kept beside it as `probe_basic.py.stock-20260803`.
+The STATUS-tab red-title error flag was **removed** on 2026-08-07 at the
+operator's direction ("i don't care about the status red signal at this
+point ... remove code that was made for that purpose"). It never showed
+in the GUI.
 
-**A PB update OVERWRITES this file and the flag silently disappears.**
-Nothing errors; the STATUS tab simply stops turning red and an operator who
-relies on it to catch a message that has already self-dismissed will believe
-the machine reported nothing.
+`~/qt_pb/probe_basic/src/probe_basic/probe_basic.py` is now **byte-identical
+to `probe_basic.py.stock-20260803`** (verified: `diff` returns nothing), so
+ned carries NO patch in this file and a PB update cannot break anything
+here. Do not re-apply it.
 
-**What the patch does.** Popups now clear themselves after 1 s (see Bx), so a
-message that scrolls past has to leave a mark somewhere. On any error the
-STATUS tab TITLE turns red and stays red until the operator opens that tab.
-Only `setTabTextColor` on the tab bar is used — the STATUS widget itself is
-never touched, restyled or replaced (operator instruction).
-
-Two pieces, both in `probe_basic.py`:
-- in `ProbeBasic.__init__`: finds the `QTabWidget` whose page is named
-  `status_tab`, stores the stock tab colour, connects `currentChanged`, and
-  subscribes to `getPlugin('notifications').error_message`.
-- methods `_ned_err_flag` / `_ned_err_tab_changed` beside
-  `_on_tool_table_dirty_changed`.
-
-**This is a CORE edit, made at the operator's explicit direction 2026-08-03**
-("let's just edit PB core"), overriding the usual user-sections-only rule. It
-is the only PB-core patch in the file; everything else ned adds lives in
-`configs/ned5_pb/user_tabs/`.
-
-**Re-verify after any PB update** — the log lines are the proof, per B3:
-- `ned: STATUS tab error flag armed (tab index N)` on startup.
-- `ned: STATUS opened -- error flag cleared` when the tab is opened after an
-  error.
-- `ned: STATUS tab NOT FOUND -- error flagging is OFF` means PB renamed or
-  restructured the tab and the patch needs reworking, not just re-applying.
-
-If the tab is not found the patch logs loudly and does nothing else — it can
-never block startup.
-
+Only the tab-title colouring was removed -- `_ned_err_tabs/_ned_err_index/
+_ned_err_colour`, the `QTabWidget` walk, two `setTabTextColor` calls and the
+`notifications.error_message` subscription. No lock, gate, guard or tool
+logic was in that patch. `ned_controls._tool_alarm` is untouched and still
+does `LOG.error` + `linuxcnc.command().error_msg`; the popup self-dismisses
+after 1 s (see Bx) and **lcnc.log is the durable record of an alarm**.
 
 ## Bz. PATCHED Probe Basic core file: probe_basic.ui (GcodeTextEdit + DECLARE row, 2026-08-03/04)
 
@@ -339,17 +319,31 @@ rack_atc.py/qml: fork circles = double-click record-only cycle
 filter in ned_controls). A PB/qtpyvcp update clobbers ALL of it — diff
 against the .pre-* backups and this section.
 
-### A1c. qtpyvcp ToolActor session leak (patched 2026-08-07)
-`~/qt_pb/qtpyvcp/src/qtpyvcp/widgets/display_widgets/vtk_backplot/tool_actor.py`
-carries a one-line ned patch: `self.session.close()` at the end of
-`ToolActor.__init__`. Stock leaks one SQLAlchemy connection per tool
-change (update_tool builds a new ToolActor on toolTableChanged /
-toolOffsetChanged / toolInSpindleChanged); the 16th change kills the VCP
-with `QueuePool limit of size 5 overflow 10 reached`. Killed a 6.5 h
-overnight GA run at 08:34 on 2026-08-07. Stock copy:
-`tool_actor.py.stock-20260807`. STILL PRESENT UPSTREAM at v6.0.6
-(line 296) -- a qtpyvcp update WILL clobber this; re-apply and re-check
-after every PB update. Verify: grep -c 'self.session.close' should be 1.
+### A1c. qtpyvcp tool-database session leak (upstream fix, cherry-picked 2026-08-07)
+The fork carries UPSTREAM commit `9ac9f430` (kcjengr/qtpyvcp `pyside6`,
+cherry-picked as `2eb47b99`; our own inferior one-liner `2e9fbb02` was
+reverted first by `98d725a4`). Two files:
+`widgets/display_widgets/vtk_backplot/tool_actor.py` and
+`widgets/db_widgets/tool_model.py`. Both held a SQLAlchemy `Session` as an
+instance attribute, so each object kept a pooled connection checked out for
+its whole life. `VTKBackPlot.update_tool()` builds a fresh `ToolActor` on
+every toolTableChanged / toolOffsetChanged / toolInSpindleChanged, so
+connections piled up one per tool change until the pool (size 5, overflow
+10) was exhausted and the VCP died with `QueuePool limit of size 5 overflow
+10 reached`. Killed a 6.5 h overnight GA run at 08:34 on 2026-08-07.
+The fix scopes every query in `with Session() as session:` and DELETES the
+attribute, so nothing can hold a connection again; in tool_actor the
+session closes before any VTK object is built. Side effect: a tool row with
+no STL no longer reaches `setFilename(None)`, which raised on PySide6 --
+that raise used to escape `__init__` and leak the connection anyway, which
+is why a trailing `close()` was not enough. Lathe configs leaked Session
+objects but never checked out connections (the lathe branch returns before
+the query); only mills crashed.
+Stock copy: `tool_actor.py.stock-20260807`. Verify after any qtpyvcp
+update: `grep -c 'self\.session' ` on both files must be 0, and
+`grep -c 'with Session() as session'` must be 1 in tool_actor.py and 2 in
+tool_model.py. Once the fork rebases past `9ac9f430` this section is
+historical -- the fix is upstream, not a local carry.
 
 ### A1b. ned_ac_kins.so — the swivel-head switchable kins (2026-08-05)
 Source `~/Documents/linuxcnc/src/emc/kinematics/ned_ac_kins.c` (tree commit

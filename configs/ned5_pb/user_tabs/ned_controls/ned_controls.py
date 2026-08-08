@@ -19,7 +19,7 @@ Pins (nets in postgui_pb.hal):
   ned-tab.toolprobe-cmd  bit out   -> sol.ts.in1 (OR'd with the M64 P3 path)
   ned-tab.air-ok-in      bit in    <- sig-air-pressure-ok
   ned-tab.probe-up-in    bit in    <- sig-toolsetter-deploy (real state, incl M64)
-  ned-tab.inc-in         float in  <- pendant.increment
+  ned-tab.inc-index-in   s32   in  <- pendant.inc-index (the SLOT, not the value)
 """
 import os
 import time
@@ -464,9 +464,29 @@ class UserTab(QWidget):
             except Exception:
                 pass
 
+            # HEAD BUSY (brain.head-busy): TRUE from the moment the brain
+            # arms ini.N.home/home_offset until POSITIVE confirmation that
+            # every head joint is back at HOME_IDLE with no read, verify or
+            # owed pin-wipe outstanding. stat.joint[j]['homing'] is NOT a
+            # substitute -- on a zero-travel declare it can rise and fall
+            # between two 500 ms polls, which is the window a second homing
+            # click lands in.
+            self.comp.addPin('head-busy-in', 'bit', 'in')
+            # THE REAL MOTION LOCK (tool.mm.lock2 -> motion.jog-inhibit +
+            # feed-inhibit). Covers BOTH reasons: a spindle/record mismatch
+            # AND the tool table not being served. The GUI used to grey off
+            # its own two Python flags, so with the table missing the HAL
+            # was refusing motion while CYCLE START and MDI still looked
+            # live -- a control that cannot act must not be clickable.
+            self.comp.addPin('motion-lock-in', 'bit', 'in')
+            # the TABLE half on its own: the startup gate needs to know
+            # "table served", not "locked for one of two reasons"
+            self.comp.addPin('table-ok-in', 'bit', 'in')
             self.comp.addPin('air-ok-in', 'bit', 'in')
             self.comp.addPin('probe-up-in', 'bit', 'in')
-            self.comp.addPin('inc-in', 'float', 'in')
+            # the pendant's SLOT INDEX, never its value: the row is
+            # relabelled per axis, so only the slot is comparable
+            self.comp.addPin('inc-index-in', 's32', 'in')
             # axis lives HERE, not on the DRO module: PB loads user DROs
             # DEFERRED (after the UI settles = AFTER postgui), so a net onto a
             # DRO-owned pin kills postgui ("Pin 'ned-dro.axis-in' does not
@@ -525,12 +545,14 @@ class UserTab(QWidget):
                 except Exception:
                     LOG.exception('startup: could not LOCK %s -- the wheel '
                                   'can still move it', _ax.upper())
+            self.comp.addListener('head-busy-in', self._on_head_busy)
+            self.comp.addListener('motion-lock-in', self._on_motion_lock)
             self.comp.addListener('air-ok-in', self._on_air)
             self.comp.addListener('drawbar-released-in', self._on_drawbar)
             self.comp.addListener('tool-unrecorded-in', self._on_tool_unrecorded)
             self.comp.addListener('tool-phantom-in', self._on_tool_phantom)
             self.comp.addListener('probe-up-in', self._on_up)
-            self.comp.addListener('inc-in', self._on_inc)
+            self.comp.addListener('inc-index-in', self._on_inc_index)
             self.comp.addListener('axis-in', self._on_axis)
             self.comp.addListener('jogspeed-in', self._on_jogspeed)
             LOG.info('ned-tab HAL component ready')
@@ -3365,8 +3387,17 @@ class UserTab(QWidget):
     # whole pre-home window. Found by advisor audit 2026-08-05.
     PREHOME_ALLOW = ('exit_button', 'power_button', 'stop_button')
     PREHOME_SURVIVORS = ('exit_button', 'power_button', 'stop_button')
+    # While the machine is locked for a SPINDLE/TABLE INCONSISTENCY the way
+    # out is the ATC and TOOL tabs -- operator 2026-08-07: "NO BUTTONS work
+    # other than going to ATC/TABLE and setting the table to correct the
+    # error ... make sure that all the buttons inside of ATC and TOOL are
+    # not blocked". Naming the TAB PAGES is enough: the event filter walks
+    # up parents, so every control inside them passes. The tab BAR is a
+    # survivor too or the pages cannot be reached.
+    TOOLLOCK_SURVIVORS = ('exit_button', 'power_button', 'stop_button',
+                          'atc_tab', 'tool_tab')
 
-    def _sweep_gate(self, win, homed):
+    def _sweep_gate(self, win, homed, keep=()):
         """Disable EVERY button until home is declared; restore after.
 
         Tracks exactly what it switched off so re-enabling cannot turn on a
@@ -3389,6 +3420,18 @@ class UserTab(QWidget):
                 n = b.objectName()
                 if n in self.PREHOME_ALLOW or 'estop' in n.lower():
                     continue
+                # anything living inside a survivor stays USABLE, not just
+                # un-swallowed: greying the ATC/TOOL buttons would hide the
+                # only way out of a spindle/table inconsistency
+                if keep:
+                    _w, _skip = b, False
+                    while _w is not None:
+                        if any(_w is k for k in keep):
+                            _skip = True
+                            break
+                        _w = _w.parentWidget()
+                    if _skip:
+                        continue
                 if id(b) in known:
                     # Its owner may have re-enabled it (qtpyvcp bindOk runs
                     # on every status change). Grey it again, but do not
@@ -3567,12 +3610,22 @@ class UserTab(QWidget):
     # Tool-tip kins: the pair gives the CORRECTION, and dZ is the residual.
     TCP_HIST = '/home/brains/Documents/ned/configs/ned5_pb/tcp_cal.json'
 
-    def _gate_survivor_widgets(self):
+    def _gate_survivor_widgets(self, names=None):
         win = self.window()
         if win is None:
             return []
         out = []
-        for name in self.PREHOME_SURVIVORS:
+        if names is None:
+            names = self.PREHOME_SURVIVORS
+        else:
+            # reaching a survivor PAGE requires its tab bar to be clickable
+            try:
+                from PySide6.QtWidgets import QTabWidget
+                for tw in win.findChildren(QTabWidget):
+                    out.append(tw.tabBar())
+            except Exception:
+                LOG.exception('GATE: could not add the tab bar as a survivor')
+        for name in names:
             try:
                 w = win.findChild(QWidget, name)
             except RuntimeError:
@@ -3581,12 +3634,12 @@ class UserTab(QWidget):
                 out.append(w)
         return out
 
-    def _arm_input_gate(self):
-        """Make the GUI non-interactive except E-STOP and POWER."""
+    def _arm_input_gate(self, names=None):
+        """Make the GUI non-interactive except the named survivors."""
         gate = getattr(self, '_input_gate', None)
         if gate is None:
             gate = self._input_gate = _PreHomeInputGate(self)
-        surv = self._gate_survivor_widgets()
+        surv = self._gate_survivor_widgets(names)
         if not surv:
             # NEVER leave the operator without E-stop. If not one survivor
             # resolves, refuse to arm -- loudly -- rather than lock them out.
@@ -5597,11 +5650,26 @@ class UserTab(QWidget):
             _declared = all(_st.homed[:6])
         except Exception:
             _declared = None        # unknown: neither engage nor strand
+        # THE STARTUP WINDOW CLOSES ON TWO FACTS, NOT ONE (operator
+        # 2026-08-07: "until machine is stale homed, AND the tool table is
+        # loaded, user cannot press ANY button"). Fail closed: an
+        # unreadable pin counts as NOT served.
+        try:
+            _table_ok = bool(self.comp.getPin('table-ok-in').value)
+        except Exception:
+            _table_ok = False
+        if _declared and not _table_ok:
+            if not getattr(self, '_gate_tbl_logged', False):
+                self._gate_tbl_logged = True
+                LOG.error('PRE-HOME GATE: home is declared but the TOOL '
+                          'TABLE is not served -- gate stays SHUT')
+        _declared = bool(_declared) and _table_ok
         if _declared and not getattr(self, '_prehome_done', False):
             self._prehome_done = True
             LOG.error('PRE-HOME GATE: startup window CLOSED for this '
-                      'session -- later transient unhomes (REF A/C reads) '
-                      'no longer swallow input')
+                      'session (homed + tool table served) -- later '
+                      'transient unhomes (REF A/C reads) no longer swallow '
+                      'input')
         if getattr(self, '_prehome_done', False):
             _declared = True     # one-shot: the gate exists for the window
                                  # before the FIRST declaration only. It
@@ -5616,11 +5684,31 @@ class UserTab(QWidget):
                 # touched. The sweep below is now COSMETIC: it greys things
                 # so the operator can see the gate. Safety does not depend
                 # on it any more.
-                if _declared:
-                    self._release_input_gate()
-                else:
+                if not _declared:
+                    # startup: only E-STOP / POWER / EXIT
                     self._arm_input_gate()
-                self._sweep_gate(self.window(), _declared)
+                    self._sweep_gate(self.window(), False)
+                elif self._motion_lock_on():
+                    # SPINDLE/TABLE INCONSISTENCY: same total block, but the
+                    # ATC and TOOL tabs stay fully usable -- that is where
+                    # the operator corrects the record. Everything inside
+                    # them stays enabled as well as un-swallowed.
+                    self._arm_input_gate(self.TOOLLOCK_SURVIVORS)
+                    _keep = self._gate_survivor_widgets(
+                        self.TOOLLOCK_SURVIVORS)
+                    self._sweep_gate(self.window(), False, keep=_keep)
+                    if not getattr(self, '_toolgate_logged', False):
+                        self._toolgate_logged = True
+                        LOG.error('TOOL GATE ARMED: spindle/table '
+                                  'inconsistency -- only E-STOP, POWER, '
+                                  'EXIT and the ATC/TOOL tabs are live')
+                else:
+                    if getattr(self, '_toolgate_logged', False):
+                        self._toolgate_logged = False
+                        LOG.error('TOOL GATE RELEASED: spindle and table '
+                                  'agree -- the GUI is live again')
+                    self._release_input_gate()
+                    self._sweep_gate(self.window(), True)
             except Exception:
                 LOG.exception('PRE-HOME GATE failed -- forcing RELEASE so '
                               'the GUI cannot stay stranded')
@@ -6266,19 +6354,29 @@ class UserTab(QWidget):
     # refuse the load, never permit it.
     _drawbar_released = False
 
-    def _tool_alarm(self, msg):
-        """Say it once, loudly, and leave a mark that outlives the popup.
+    # ONE LINE, the operator's words (2026-08-07): "just say CHECK SPINDLE
+    # RACK TABLE CONSISTENCY". The old text spelled out which way round the
+    # mismatch was and was read as its own opposite -- "TOOL IN SPINDLE, NOT
+    # IN LOGIC" was reported back as "an error saying tool not in spindle".
+    # Which side is wrong belongs in the log, not on the operator's screen.
+    TOOL_ALARM_MSG = 'CHECK SPINDLE RACK TABLE CONSISTENCY'
 
-        Popups self-dismiss after 1 s, so error_msg is what matters here: it
-        turns the STATUS tab title red and it STAYS red until the operator
-        opens that tab (probe_basic.py ned patch).
+    def _tool_alarm(self, detail):
+        """One short line to the operator; the direction of the mismatch to
+        the log.
+
+        The popup self-dismisses after 1 s (native_notification.py) and
+        nothing persists it -- the STATUS-tab red-title patch was removed
+        2026-08-07 at the operator's direction. lcnc.log is the durable
+        record, which is why the detail must land there.
         """
-        LOG.error(msg)
+        LOG.error('%s -- %s', self.TOOL_ALARM_MSG, detail)
         try:
             import linuxcnc
-            linuxcnc.command().error_msg(msg)
-        except Exception:
-            pass
+            linuxcnc.command().error_msg(self.TOOL_ALARM_MSG)
+        except Exception as e:
+            LOG.error('could not surface the tool alarm to the operator: %s',
+                      e)
 
     def _on_tool_unrecorded(self, val):
         # Iron holds a tool the logic does not know about. Informational --
@@ -6287,9 +6385,9 @@ class UserTab(QWidget):
             return
         self._tool_unrecorded = bool(val)
         if self._tool_unrecorded:
-            self._tool_alarm('TOOL IN SPINDLE, NOT IN LOGIC: something is '
-                             'clamped but the machine has no record of it. '
-                             'Set the tool number via LOAD SPINDLE.')
+            self._tool_alarm('UNRECORDED: something is clamped but the '
+                             'machine has no record of it (LOAD SPINDLE '
+                             'sets the tool number)')
         else:
             LOG.info('tool record agrees with the spindle again (was '
                      'unrecorded)')
@@ -6303,10 +6401,10 @@ class UserTab(QWidget):
             return
         self._tool_phantom = bool(val)
         if self._tool_phantom:
-            self._tool_alarm('PHANTOM TOOL -- NEEDS FIXING: the machine '
-                             'believes a tool is loaded but the spindle is '
-                             'empty. Its length offset is being applied to '
-                             'nothing. Clear it with UNLOAD SPINDLE.')
+            self._tool_alarm('PHANTOM: the machine believes a tool is '
+                             'loaded but the spindle is empty, so its length '
+                             'offset is being applied to nothing (UNLOAD '
+                             'SPINDLE clears it)')
         else:
             LOG.info('tool record agrees with the spindle again (was phantom)')
         self._tool_lock_update()
@@ -6318,9 +6416,16 @@ class UserTab(QWidget):
         # dead the motion buttons + MDI + CYCLE START so the GUI cannot
         # even try. DECLARE / LOAD / UNLOAD stay live -- they are the way
         # out.
-        locked = ((getattr(self, '_tool_unrecorded', False)
-                   or getattr(self, '_tool_phantom', False))
-                 )
+        # Follow the HAL lock, not just our own two flags -- tool.mm.lock2
+        # also holds for "tool table not served", which the Python side
+        # never sees.
+        try:
+            hal_locked = bool(self.comp.getPin('motion-lock-in').value)
+        except Exception:
+            hal_locked = bool(getattr(self, '_motion_locked', False))
+        locked = (hal_locked
+                  or getattr(self, '_tool_unrecorded', False)
+                  or getattr(self, '_tool_phantom', False))
         if locked == getattr(self, '_tool_locked', False):
             return
         self._tool_locked = locked
@@ -6645,11 +6750,43 @@ class UserTab(QWidget):
                 return w
         return None
 
+    def _on_head_busy(self, val):
+        # One flag, one publisher (the brain). The homing menu polls
+        # head_busy() and greys every entry while it is TRUE.
+        self._head_busy = bool(val)
+        LOG.info('HEAD BUSY -> %s (homing controls %s)',
+                 self._head_busy, 'LOCKED' if self._head_busy else 'released')
+
+    def _motion_lock_on(self):
+        """The HAL motion lock, read from the pin. Unreadable = LOCKED."""
+        try:
+            return bool(self.comp.getPin('motion-lock-in').value)
+        except Exception:
+            return True
+
+    def _on_motion_lock(self, val):
+        self._motion_locked = bool(val)
+        LOG.info('MOTION LOCK -> %s (HAL jog/feed inhibit)',
+                 self._motion_locked)
+        self._tool_lock_update()
+
+    def head_busy(self):
+        """TRUE while any head homing work is outstanding.
+
+        Read from the HAL pin, not the remembered flag, so a missed listener
+        callback cannot leave a homing control live during a cycle.
+        """
+        try:
+            return bool(self.comp.getPin('head-busy-in').value)
+        except Exception:
+            return bool(getattr(self, '_head_busy', False))
+
     def _on_axis(self, val):
         # the GUI increment row is PER AXIS (operator, repeatedly):
         # remember which axis the wheel is on so the row can relabel
         self._mpg_axis_now = int(val)
         self._inc_row_ax = None          # force a relabel on the next tick
+        self._apply_inc_slot()           # same slot, this axis's value
         w = self._find_dro()
         if w is not None:
             try:
@@ -6663,25 +6800,60 @@ class UserTab(QWidget):
     # untouched -- jogblock still downshifts the effective step and still
     # publishes it on ned-tab.stepmm-in; nothing in the GUI paints it.
 
-    def _on_inc(self, val):
+    def _on_inc_index(self, idx):
+        # MIRROR BY SLOT, NEVER BY VALUE (operator 2026-08-07: the top
+        # rotary step could not be selected -- "it highlights and drops
+        # back to 0.25"). The old code matched the applied increment
+        # against jogincrement._buttons_by_value, which is built from the
+        # STOCK [DISPLAY]INCREMENTS mm ladder (0.01/0.05/0.1/0.5/1). On
+        # A and C slot 4 is 0.5 DEG, and 0.5 collides with the stock
+        # 0.5 mm button at index 3 -- so picking the top slot clicked
+        # button 3, which wrote slot 3 back to the wheel. The slot index
+        # is the only thing the two ladders share.
         try:
-            self._jog_inc_mm = float(val)
-            # the jogblock approach profile handles speed at any step size;
-            # nothing here may touch the increment or the rate cap
-        except Exception:
-            pass
+            i = int(idx)
+        except (TypeError, ValueError):
+            LOG.error('JOG STEPS: slot %r is not an index', idx)
+            return
+        self._inc_slot = i
+        self._apply_inc_slot()
+
+    def _apply_inc_slot(self):
+        # the slot means whatever THIS axis's ladder says it means, so the
+        # value is re-derived on every axis change as well
+        i = getattr(self, '_inc_slot', None)
+        if i is None:
+            return
+        ax = self._INC_AXES[int(getattr(self, '_mpg_axis_now', 0)) % 5]
+        lad = self._INC_LADDER[ax]
+        if not 0 <= i < len(lad):
+            LOG.error('JOG STEPS: slot %d outside the %s ladder %s',
+                      i, ax.upper(), lad)
+            return
+        # the jogblock approach profile handles speed at any step size;
+        # nothing here may touch the increment or the rate cap
+        self._jog_inc_mm = float(lad[i])
         win = self.window()
         if win is None:
             return
         jw = win.findChild(QWidget, 'jogincrement')
-        for btn, v in getattr(jw, '_buttons_by_value', []):
-            try:
-                if abs(float(v) - float(val)) < 1e-9:
-                    if not btn.isChecked():
-                        btn.click()
-                    break
-            except Exception:
-                pass
+        if jw is None:
+            LOG.error('JOG STEPS: jogincrement row not found -- no mirror')
+            return
+        from PySide6.QtWidgets import QAbstractButton
+        btns = jw.findChildren(QAbstractButton)[-len(lad):]
+        if len(btns) < len(lad):
+            LOG.error('JOG STEPS: row has %d buttons, ladder %s has %d',
+                      len(btns), ax.upper(), len(lad))
+            return
+        # setChecked, NOT click: the buttons are autoExclusive so this
+        # moves the highlight on its own, and it does not re-emit clicked
+        # (which would run qtpyvcp setJogIncrement on our relabelled text
+        # and echo the slot straight back at the wheel)
+        if not btns[i].isChecked():
+            btns[i].setChecked(True)
+            LOG.info('JOG STEPS: row mirrored to slot %d = %g on %s',
+                     i, lad[i], ax.upper())
 
     # ---- Qt-only housekeeping --------------------------------------------
     def _tick(self):

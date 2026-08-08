@@ -49,7 +49,7 @@ loadrt timedelay names=air.debounce,head.ready,tool.mm.unrecdb,tool.mm.phandb
 # (head.ready instance loaded above with air.debounce -- ONE loadrt per comp.)
 # SEN gating: a GUI-requested LOW window locks A/C (pack drops to BB = cannot move) and
 # primes the pack; the following RISING edge makes it emit the absolute PSO frame.
-loadrt not names=sen.nsup,tool.mm.nexcuse,tool.mm.nrec,tool.mm.nlock,tool.mm.narm
+loadrt not names=sen.nsup,tool.mm.nexcuse,tool.mm.nrec,tool.mm.nlock,tool.mm.ntbl
 # live absolute reader -- QUEUED PktUART reads ONLY (tools/live/pso_live.comp).
 # pso_abs (direct llio->read from the servo thread) is BANNED on this hm2_eth board: at 1 kHz
 # it caused watchdog bites; decimated 1-in-20 it overran the RX count FIFO (RCFIFO Error) --
@@ -58,7 +58,7 @@ loadrt not names=sen.nsup,tool.mm.nexcuse,tool.mm.nrec,tool.mm.nlock,tool.mm.nar
 # a read is in progress). ifdelay from [PSO]IFDELAY -- see the ini for the measured sweep.
 loadrt pso_live names=hm2_7i97.0.pktuart.0 ifdelay_p=[PSO]IFDELAY
 # limit-hit OR tree (6 hard-limit signals -> one indicator for the GUI LED).
-loadrt or2 names=limhit.0,limhit.1,limhit.2,limhit.3,limhit.4,sol.ts,sol.blow,sol.trel,sen.or,spinok,tool.mm.excuse,tool.mm.lock,tool.mm.excuse2,tool.mm.excuse3
+loadrt or2 names=limhit.0,limhit.1,limhit.2,limhit.3,limhit.4,sol.ts,sol.blow,sol.trel,sen.or,spinok,tool.mm.excuse,tool.mm.lock,tool.mm.lock2,tool.mm.excuse2,tool.mm.excuse3
 # directional limit handling (tools/live/limdir.comp + tools/live/jogblock.comp):
 # limdir.N passes joint N's limit switch to motion ONLY while commanded velocity
 # moves TOWARD it (parked/away = no fault -> POWER + jog work on a depressed
@@ -157,13 +157,14 @@ addf tool.mm.phanR            servo-thread
 addf tool.mm.excuse           servo-thread
 addf tool.mm.excuse2          servo-thread
 addf tool.mm.excuse3          servo-thread
-addf tool.mm.narm             servo-thread
 addf tool.mm.nexcuse          servo-thread
 addf tool.mm.unrec            servo-thread
 addf tool.mm.phan             servo-thread
 addf tool.mm.unrecdb          servo-thread
 addf tool.mm.phandb           servo-thread
 addf tool.mm.lock             servo-thread
+addf tool.mm.ntbl             servo-thread
+addf tool.mm.lock2            servo-thread
 addf zferr.z                  servo-thread
 addf limdir.2                 servo-thread
 addf limdir.3                 servo-thread
@@ -337,14 +338,20 @@ net sig-tool-locked    => tool.mm.nlock.in  tool.mm.unrecR.in0
 net sig-no-tool-locked tool.mm.nlock.out => tool.mm.phanR.in1
 
 # Both are legitimately transient mid-change or with the drawbar open.
-# GUARD ARM (operator 2026-08-05): the guard is EXCUSED until the brain
-# reaches stale home. Before that, iocontrol has not served the tool table
-# yet (io loads it through the DB program: python + sqlite, seconds), so
-# tool-number reads 0 while iron holds a tool -- a mismatch that is nobody's
-# fault and offers nothing to fix. Nothing can move before stale home
-# anyway. After it, a mismatch is REAL and locks the machine as designed.
-# (the two guard-arm nets live in postgui_pb.hal: brain.* pins do not
-# exist until postgui's loadusr -Wn brain runs, exactly like ini.N.*)
+# NO BOOT EXCUSE (2026-08-07). excuse2.in1 used to carry NOT(brain.guard-arm)
+# so the guard was switched OFF until a 25 s timer expired. That is a safety
+# interlock disabled to suppress a message that was TRUE: at boot iocontrol
+# has not served the tool table (it loads through the DB program: python +
+# sqlite, seconds), so tool-number reads 0 while iron holds a tool -- and
+# the correct response to "I do not know what is in the spindle" is to
+# refuse motion, not to look away. The guard now watches from HAL load. The
+# boot mismatch locks jog+feed for the couple of seconds until
+# restore_spindle_tool re-declares the tool, then clears itself (measured
+# 2026-08-07: LOCK ENGAGED -> SPINDLE RESTORE -> LOCK RELEASED). Homing is
+# not inhibited (jog_inhibit is read only by the jog handlers,
+# command.c:781/849/928; feed_inhibit only scales coordinated feed,
+# control.c:416), so the boot declare still runs and clears the lock.
+setp tool.mm.excuse2.in1 0
 net sig-tc-active      => tool.mm.excuse.in0
 net sig-tool-released  => tool.mm.excuse.in1
 # ANON-LOAD EXCUSE (operator 2026-08-04): the LOAD button clamps an
@@ -380,7 +387,25 @@ net sig-tool-phantom    tool.mm.phandb.out
 # the way out is never blocked.
 net sig-tool-unrecorded => tool.mm.lock.in0
 net sig-tool-phantom    => tool.mm.lock.in1
-net sig-tool-state-lock tool.mm.lock.out => motion.jog-inhibit motion.feed-inhibit
+net sig-tool-state-lock tool.mm.lock.out => tool.mm.lock2.in0
+
+# NO TOOL TABLE = NO MOTION (operator 2026-08-07: "the table MUST load
+# because table not loading is itself an error and there is no reason to
+# jog ... these are so crucial, they must be positively verified before
+# user can do anything"). Same doctrine as the head-home gate: DEFAULT
+# LOCKED, released only on a positive fact.
+# brain.tool-table-ok goes TRUE only when stat.tool_table actually holds a
+# real entry (id > 0), i.e. iocontrol has served the table through the DB
+# program. Until then ntbl.in reads FALSE -- unconnected pins read 0, and
+# the brain's pin is FALSE before it publishes -- so ntbl.out is TRUE and
+# motion is inhibited. A brain that never starts, a postgui that never
+# runs, or a table that never loads all leave the machine LOCKED, which is
+# the correct answer to "I do not know what tools exist".
+# The net that drives it lives in postgui: brain.* pins do not exist until
+# postgui's loadusr -Wn brain has run.
+net sig-tool-table-ok   => tool.mm.ntbl.in
+net sig-no-tool-table   tool.mm.ntbl.out => tool.mm.lock2.in1
+net sig-motion-lock     tool.mm.lock2.out => motion.jog-inhibit motion.feed-inhibit
 
 net sig-tool-locked        => spinok.in0
 net sig-mode-manual        => spinok.in1
