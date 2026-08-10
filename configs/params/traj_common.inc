@@ -11,3 +11,12 @@ MAX_LINEAR_VELOCITY = 333.334
 DEFAULT_ANGULAR_VELOCITY = 15
 MAX_ANGULAR_VELOCITY = 30
 NO_FORCE_HOMING = 0
+# BOOT AT THE LAST SESSION'S COORDINATES, natively (2026-08-10).
+# taskintf.cc:1673-1730: joint pos_fb is written here at shutdown and
+# restored via emcJointSetMotorOffset at startup. Replaces the Python
+# stored_home.json declare for XYZ. It restores A/C too -- no per-joint
+# opt-out exists -- which is harmless ONLY because A/C are
+# HOME_ABSOLUTE_ENCODER=2: the first home overwrites the offset from the
+# live pso pin and cannot move the head. Under =1 a stored number
+# becomes travel; that is the 2026-08-07 C swing. Never set A/C to =1.
+POSITION_FILE = position.txt

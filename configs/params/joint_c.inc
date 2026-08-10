@@ -24,10 +24,18 @@ HOME = 0.0
 # HOME_OFFSET is WRITTEN at every homing by tools/live/ned_brain.py (live absolute read via
 # configs/params/head_zero.inc), UNWRAPPED (no mod-360 fold: +190 stays +190). SSOT of the
 # zero is head_zero.inc; this line is regenerated every launch -- do NOT hand-edit. With
-# HOME_ABSOLUTE_ENCODER=1: homing sets the DRO to this position, then MOVES the head to 0
-# (= encoder zero in head_zero.inc = physical zero) at HOME_FINAL_VEL.
+# HOME_ABSOLUTE_ENCODER=2 (2026-08-10): homing sets the joint position to
+# HOME_OFFSET and STOPS -- homing.c:1139-1146 jumps straight to HOME_FINISHED,
+# there is no final move in the state machine at all. So a wrong offset is a
+# wrong NUMBER, never travel. Under =1 the final move to HOME made a bad
+# offset into motion: that is the -114.7 deg C swing of 2026-08-07 and the
+# ~102 deg A/C swing of 2026-08-10. A and C have no switches, so =2 costs
+# nothing -- driving the head to zero is now an ordinary commanded move,
+# separate from homing.
+# NOTE both =1 and =2 imply HOME_NO_REHOME (taskintf.cc:326-336), so a second
+# home in one session needs unhome() first (homing.c:766-770).
 HOME_OFFSET = 0.0
-HOME_ABSOLUTE_ENCODER = 1
+HOME_ABSOLUTE_ENCODER = 2
 HOME_FINAL_VEL = 5
 HOME_SEARCH_VEL = 0
 HOME_LATCH_VEL = 0

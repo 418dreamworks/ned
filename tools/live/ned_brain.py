@@ -228,12 +228,9 @@ class Brain(object):
         self.prev_xyz_homing = False
         # per-axis REF A / REF C (one-axis REF ALL)
         self.pending_ref = set()      # joints to home once the read arms
-        self.verify_axes = ('c', 'a')  # axes the CURRENT verify read judges
         # verify bookkeeping: axes AWAITING verify accumulate (a second
         # single-ref must never overwrite the first's scope -- C landed
         # -1.26 deg unflagged when Home A overwrote it, 2026-08-01 13:31)
-        self.verify_want = set()
-        self.head_homed_seen = set()
         self.prev_head_homed = {4: False, 5: False}
         self.prev_refa = False
         self.prev_refc = False
@@ -297,7 +294,11 @@ class Brain(object):
         someone else's number."""
         if not self.head_quiet('to arm joint {} ({})'.format(jn, why)):
             return False
-        for pin, val in (('home', home), ('home_offset', offset)):
+        # home_offset is DRIVEN BY pso_live (postgui sig-abs-deg-a/c) since
+        # 2026-08-10 -- it is a netted pin now and setp on it fails. Only
+        # `home` is ours, and under HOME_ABSOLUTE_ENCODER=2 even that is
+        # unused: no final move exists.
+        for pin, val in (('home', home),):
             name = 'ini.{}.{}'.format(jn, pin)
             rc = os.system('halcmd setp {} {:.4f} >/dev/null 2>&1'
                            .format(name, val))
@@ -327,15 +328,14 @@ class Brain(object):
         exactly the bug this whole path exists to stop."""
         if not self.head_quiet('to wipe joint {} ({})'.format(jn, why)):
             return False
-        os.system('halcmd setp ini.{}.home_offset 0 >/dev/null 2>&1'.format(jn))
         os.system('halcmd setp ini.{}.home 0 >/dev/null 2>&1'.format(jn))
         self.pin_wipe.discard(jn)
-        log('HOME PINS: joint {} wiped (home + home_offset) -- {}'
+        log('HOME PINS: joint {} home wiped (offset is pso-driven) -- {}'
             .format(jn, why))
         return True
 
     def head_busy(self):
-        return bool(self.hr_step or self.pending_ref or self.verify_want
+        return bool(self.hr_step or self.pending_ref
                     or self.pin_wipe
                     or getattr(self, 'inplace_pending', False)
                     or any(self.home_state(j) not in (self.HOME_IDLE, None)
@@ -896,9 +896,6 @@ class Brain(object):
         elif self.pending_ref:
             why = 'a REF is queued for joint(s) {}'.format(
                 sorted(self.pending_ref))
-        elif self.verify_want:
-            why = 'a verify is outstanding for {}'.format(
-                sorted(self.verify_want))
         elif not self.read_armed:
             why = 'no armed head read'
         if why is not None:
@@ -1099,84 +1096,13 @@ class Brain(object):
                 except Exception:
                     pass
 
-    # ---- post-home verify (port of _post_verify/_verify_eval/_verify_fail) ---
-    def verify_eval(self):
-        # THE ONLY QUESTION AT THE END OF HOMING (operator 2026-08-07):
-        # is the NEWLY READ position AT ZERO or not? Nothing else.
-        # No declaration comparison, no DRO comparison, no memory of any
-        # earlier cycle -- those all reintroduce state. The head read that
-        # just landed is the whole input; if it is not zero, homing did not
-        # put the head at zero and that is the error.
-        bad, msgs = [], []
-        for ax in self.verify_axes:
-            d = self.hr_deg.get(ax)
-            if d is None:
-                bad.append(ax)
-                msgs.append('{}: verify read FAILED'.format(ax.upper()))
-            elif abs(d) > HR_VERIFY_TOL:
-                bad.append(ax)
-                msgs.append('{}: reads {:+.3f} deg, not zero'.format(
-                    ax.upper(), d))
-        if not bad:
-            log('HOME VERIFY OK ({}): freshly read AT ZERO -- {}'.format(
-                '+'.join(a.upper() for a in self.verify_axes),
-                '  '.join('{}={:+.3f}'.format(a.upper(), self.hr_deg[a])
-                          for a in self.verify_axes)))
-            self.read_armed = False    # next homing cycle needs a fresh read
-            self.verify_want = set()   # cycle complete; next ref may start
-            self.ensure_teleop()
-            return
-        self.verify_fail(bad, msgs, 'not at zero after homing')
-
-    def verify_fail(self, bad, msgs, why):
-        # THE DRO MUST ALWAYS SHOW WHAT PSO RETURNS (operator 2026-08-07:
-        # "REGARDLESS what the unhomed error is, DRO ALWAYS reads what PSO
-        # returns ... i don't want to miss the error message, but see DRO=0
-        # and think i am homed").
-        # So: re-declare each bad axis AT ITS MEASURED ANGLE. Writing
-        # ini.N.home = the same measured value makes the declaration
-        # motionless (the in-place trick), then ini.N.home goes back to 0 so
-        # no leftover can become a later home's target. When the read itself
-        # failed there is no trustworthy number -- that joint is unhomed.
-        try:
-            self.cmd.mode(linuxcnc.MODE_MANUAL)
-            self.cmd.wait_complete()
-            self.cmd.teleop_enable(0)   # homing/unhoming = joint mode
-            self.cmd.wait_complete()
-            for ax in bad:
-                jn = 4 if ax == 'a' else 5
-                d = self.hr_deg.get(ax)
-                self.cmd.unhome(jn)
-                self.cmd.wait_complete()
-                if d is None:
-                    log('VERIFY FAIL: {} read FAILED -- joint {} UNHOMED, no '
-                        'trustworthy angle to show'.format(ax.upper(), jn))
-                    continue
-                if not self.set_home_pins(jn, d, d, 'verify-fail DRO truth'):
-                    log('VERIFY FAIL: {} pins refused -- joint {} left '
-                        'UNHOMED, DRO not corrected'.format(ax.upper(), jn))
-                    continue
-                self.cmd.home(jn)
-                self.cmd.wait_complete()
-                # DRO now shows the PSO truth; clear the homed flag so the
-                # machine never CLAIMS a home it failed to achieve.
-                # unhome() clears the flag only -- the position stays.
-                self.cmd.unhome(jn)
-                self.cmd.wait_complete()
-                log('VERIFY FAIL: {} DRO set to the measured {:+.4f} deg '
-                    '(no motion), joint {} left UNHOMED'.format(
-                        ax.upper(), d, jn))
-        except Exception as e:
-            log('VERIFY FAIL: DRO truth-set failed: {}'.format(e))
-        txt = 'HOMING VERIFY FAILED ({}): {}. Joint(s) {} NOT trusted -- DRO now shows the PSO reading.'.format(
-            why, '; '.join(msgs), ', '.join(ax.upper() for ax in bad))
-        log(txt)
-        self.read_armed = False    # next homing attempt needs a fresh read
-        self.verify_want = set()   # cycle over; a fresh ref may start
-        try:
-            self.cmd.error_msg(txt)   # Probe Basic pops this as an error
-        except Exception:
-            pass
+    # NO POST-HOME VERIFY (2026-08-10). It asked "is the head at zero after
+    # homing?" -- the right question only while homing DROVE the head to
+    # zero. With HOME_ABSOLUTE_ENCODER=2 homing sets the coordinate and moves
+    # nothing, so the test could only ever fail, and its failure path
+    # unhomed the joint. Homing can no longer put the head anywhere, so
+    # there is nothing left to verify. Driving to zero is now an ordinary
+    # move and carries ordinary motion protection.
 
     # ---- teleop recovery (port of _ensure_teleop/_auto_back_to_manual) -------
     def seq_active(self, now):
@@ -1233,8 +1159,6 @@ class Brain(object):
             for _jn, _ax in ((4, 'a'), (5, 'c')):
                 _cur = bool(s.homed[_jn])
                 if _cur and not self.prev_head_homed[_jn]:
-                    if _ax in self.verify_want:
-                        self.head_homed_seen.add(_ax)
                     # DID THE DECLARE MOVE THE HEAD? It must not. This is
                     # the detector that would have caught C's -114.7048 deg
                     # swing the first time instead of after the fact --
@@ -1388,8 +1312,6 @@ class Brain(object):
             self.read_armed = False
             self.want_read = True
             self.pending_ref = {4, 5}
-            self.verify_want = {'c', 'a'}   # full-cycle verify judges both
-            self.head_homed_seen = set()
             log('HOME ALL -> fresh head read forced; brain homes A/C '
                 'read-gated once XYZ sequences finish')
         self.prev_homeall = ha
@@ -1412,7 +1334,7 @@ class Brain(object):
                 # SERIALIZE head cycles: a second request mid-cycle unhomed
                 # the other joint under the first cycle's feet and masked
                 # its verify (2026-08-01 13:30-31)
-                if self.pending_ref or self.verify_want:
+                if self.pending_ref:
                     log('REF {} refused: a head cycle is still completing'.format(ax.upper()))
                     try:
                         self.cmd.error_msg('REF %s refused: previous head '
@@ -1436,8 +1358,6 @@ class Brain(object):
                     # post-home verify actually triggers for single refs --
                     # both failed 17:23: Home C's read fired mid-Home-A and
                     # A's verify never ran
-                    self.verify_want.add(ax)
-                    self.head_homed_seen.discard(ax)
                     self.read_armed = False   # spec: ALWAYS a fresh read
                     self.want_read = True
                     log('REF {} -> unhomed joint {}, fresh read, will home it '
@@ -1491,13 +1411,6 @@ class Brain(object):
         # second single-ref unhomed the other joint mid-cycle, and its scope
         # got overwritten: C sat -1.26 deg unflagged, 2026-08-01 13:31)
         # (homed-edge tracking moved to the TOP of tick -- see the note there)
-        if self.verify_want and self.verify_want <= self.head_homed_seen \
-           and self.hr_step == 0 and self.hr_cb_delay == 0 and not head_busy:
-            self.verify_axes = tuple(sorted(self.verify_want))
-            self.head_homed_seen = set()
-            log('HOME CYCLE: {} homed -> post-read verify'.format(
-                '+'.join(a.upper() for a in self.verify_axes)))
-            self.hr_start('c', lambda: self.hr_start('a', self.verify_eval))
             return
 
         # MODE POLICY (operator 2026-07-31: no MAN/AUTO/MDI buttons): MANUAL is

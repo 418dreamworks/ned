@@ -6656,6 +6656,100 @@ class UserTab(QWidget):
             LOG.error('set_ac_lock failed: %s', e)
 
 
+    # HOME A / HOME C (Homing menu) = adopt the encoder, then drive that
+    # joint to zero in JOINT MODE (operator 2026-08-10: "all I want is to
+    # move A and C to zero without TCP whether or not its TCP mode").
+    #
+    # Joint mode matters: in world mode with ned_ac_kins the controller
+    # holds the TOOL TIP still while the head swings, so A0 C0 demands a
+    # huge XYZ excursion and is refused -- "Linear move would exceed joint
+    # 0's positive limit" (observed 2026-08-10 11:5x). teleop_enable(0)
+    # commands the joint directly; the kins module is untouched, so this
+    # needs no switchkins.
+    #
+    # ORDER IS THE SAFETY PROPERTY. The coordinate is adopted FIRST (the
+    # home, which under HOME_ABSOLUTE_ENCODER=2 cannot move anything), and
+    # only then is a move commanded to a known destination with soft limits
+    # live. A bad read now yields a wrong move that is bounded and
+    # watchable -- never the unannounced 100 deg swing that homing itself
+    # used to produce when a bad offset became travel.
+    AC_ZERO_VEL = 5.0          # deg/s, HOME_FINAL_VEL's old value
+
+    def ac_to_zero(self, ax):
+        """Adopt the encoder for this head axis, then joint-jog it to 0."""
+        import linuxcnc
+        jn = 4 if ax == 'a' else 5
+        label = 'HOME %s' % ax.upper()
+        c, s = linuxcnc.command(), linuxcnc.stat()
+        s.poll()
+        if s.task_state != linuxcnc.STATE_ON:
+            c.error_msg('%s refused: machine is not ON' % label)
+            LOG.error('%s refused: not ON', label)
+            return
+        if any(s.joint[j]['homing'] for j in range(6)):
+            c.error_msg('%s refused: a homing cycle is running' % label)
+            LOG.error('%s refused: homing in progress', label)
+            return
+        # (the 2026-08-10 stale-offset guard is gone: pso_live drives
+        #  ini.N.home_offset every servo cycle now, so there is no wiped pin
+        #  left to adopt. Nothing writes it, so nothing can blank it.)
+        # 1. adopt. Under =2 this sets the coordinate and moves nothing.
+        #    NO_REHOME is implied by =2 (taskintf.cc:326-336), so an
+        #    already-homed joint must be unhomed first or home() is a
+        #    silent no-op (homing.c:766-770).
+        c.mode(linuxcnc.MODE_MANUAL)
+        c.wait_complete(2.0)
+        if s.homed[jn]:
+            c.unhome(jn)
+            c.wait_complete(2.0)
+        c.home(jn)
+        c.wait_complete(2.0)
+        for _ in range(40):                 # <=4 s for homed to latch
+            s.poll()
+            if s.homed[jn] and not s.joint[jn]['homing']:
+                break
+            time.sleep(0.1)
+        s.poll()
+        if not s.homed[jn]:
+            c.error_msg('%s: joint %d did not adopt the encoder -- NOT '
+                        'moving' % (label, jn))
+            LOG.error('%s: adopt failed, joint %d still unhomed', label, jn)
+            return
+        here = s.joint[jn]['output']
+        LOG.info('%s: adopted %+.4f deg (no motion); now joint-jogging to 0',
+                 label, here)
+        if abs(here) < 0.001:
+            LOG.info('%s: already at zero, nothing to move', label)
+            return
+        # 2. move, in JOINT mode so XYZ is not dragged into it
+        c.teleop_enable(0)
+        c.wait_complete(2.0)
+        c.jog(linuxcnc.JOG_INCREMENT, True, jn, self.AC_ZERO_VEL, -here)
+        LOG.info('%s: joint jog %+.4f deg at %.1f deg/s issued',
+                 label, -here, self.AC_ZERO_VEL)
+
+    def ac_to_zero_both(self):
+        """HOME AC: A to zero, then C, one after the other."""
+        LOG.info('HOME AC: A first, then C')
+        self.ac_to_zero('a')
+        self._ac_chain = QTimer(self)
+        self._ac_chain.setSingleShot(True)
+        self._ac_chain.timeout.connect(self._ac_zero_c_when_still)
+        self._ac_chain.start(500)
+
+    def _ac_zero_c_when_still(self):
+        """Wait for A to stop before starting C -- never two head joints at
+        once (operator 2026-08-10: clicking Home C during a Home A jog
+        corrupted the C DRO)."""
+        import linuxcnc
+        s = linuxcnc.stat()
+        s.poll()
+        if abs(s.current_vel) > 0.01 or s.joint[4]['homing']:
+            self._ac_chain.start(500)          # still moving; look again
+            return
+        LOG.info('HOME AC: A settled, starting C')
+        self.ac_to_zero('c')
+
     def request_single_ref(self, ax):
         # REF A / REF C: one-axis REF ALL (operator 2026-08-01). Pulse the
         # per-axis pin; ned_brain does unhome -> fresh read -> home THAT

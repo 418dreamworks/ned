@@ -40,6 +40,25 @@ net cycle-hours   qtpyvcp.timerhours.in   <= time.0.hours
 loadusr -Wn brain /home/brains/Documents/ned/tools/live/ned_brain.py
 # (no tool-guard arming net any more -- the guard watches from HAL load;
 #  see the NO BOOT EXCUSE block in configs/ned5/ned5_iron.hal)
+# ---- ABSOLUTE ANGLE -> home_offset, IN HAL, EVERY SERVO CYCLE -------------
+# ini.N.home_offset is a HAL IN pin, so it can be DRIVEN rather than poked.
+# That is the whole fix: no `halcmd setp`, so no window between the write and
+# homing.c:1279 latching the destination, and nothing can wipe the pin to 0
+# and have a home adopt zero at a 124 deg head ("HOME C: adopted +0.0000",
+# 2026-08-10). A and C share one UART; r4-select says which pack is talking,
+# so pso_live latches each valid frame into its own output and both stay good.
+setp hm2_7i97.0.pktuart.0.ref-mt-a  [HEAD_ABS_ZERO]A_MULTITURN
+setp hm2_7i97.0.pktuart.0.ref-w-a   [HEAD_ABS_ZERO]A_WITHIN
+setp hm2_7i97.0.pktuart.0.ref-mt-c  [HEAD_ABS_ZERO]C_MULTITURN
+setp hm2_7i97.0.pktuart.0.ref-w-c   [HEAD_ABS_ZERO]C_WITHIN
+setp hm2_7i97.0.pktuart.0.gear-a    [HEAD_GEAR]A_GEAR
+setp hm2_7i97.0.pktuart.0.gear-c    [HEAD_GEAR]C_GEAR
+setp hm2_7i97.0.pktuart.0.sign-a    [HEAD_GEAR]A_SIGN
+setp hm2_7i97.0.pktuart.0.sign-c    [HEAD_GEAR]C_SIGN
+net sig-r4-select     =>  hm2_7i97.0.pktuart.0.sel-a
+net sig-abs-deg-a     hm2_7i97.0.pktuart.0.deg-a  =>  ini.4.home_offset
+net sig-abs-deg-c     hm2_7i97.0.pktuart.0.deg-c  =>  ini.5.home_offset
+
 # TOOL TABLE SERVED: the ONLY thing that releases the default motion lock.
 # FALSE until the brain sees a real entry in stat.tool_table.
 net sig-tool-table-ok  brain.tool-table-ok

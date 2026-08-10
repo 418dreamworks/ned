@@ -43,6 +43,7 @@ NED_PARAMS_SH = os.path.join(NED, 'tools/live/ned_params.sh')
 
 # section name <-> .inc file map. head_zero.inc deliberately absent.
 FILES = [
+    ('head_gear', 'head_gear.inc'),
     ('emcmot', 'emcmot.inc'),
     ('traj', 'traj_common.inc'),
     ('spindle0', 'spindle_0.inc'),
@@ -98,6 +99,10 @@ def derived(dt):
         'SCALE_C': '%.4f' % (f('DRIVE_PPR') * f('GEAR_C') / 360.0),
         'SCALE_ROT': '%.3f' % (f('ROT_FULLSTEPS') * f('ROT_MICROSTEP')
                                * f('ROT_GEAR') / 360.0),
+        # exposed so HAL can setp pso_live's per-axis gear from the SSOT
+        # instead of anyone re-typing it (CLAUDE.md rule 11)
+        'GEAR_A': dt['GEAR_A'],
+        'GEAR_C': dt['GEAR_C'],
         'MAX_VEL_LIN': dt['MAX_VEL_LIN'],
         'MAXV_DISPLAY': dt['MAXV_DISPLAY'],
     }

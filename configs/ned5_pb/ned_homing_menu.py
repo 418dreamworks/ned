@@ -33,7 +33,8 @@ class NedHomingMenu(QMenu):
     Home All  -> request_homeall (XYZ switch-home, A/C read+home parallel)
     Home X    -> home_x_pair     (gantry pair, synchronized -1 ONLY)
     Home Y/Z  -> home_joint      (that joint alone)
-    Home A/C  -> request_single_ref (fresh head read -> home -> verify)
+    Home A/C  -> ac_to_zero (adopt the encoder, then joint-jog that
+                 joint to 0 -- joint mode, so TCP does not drag XYZ in)
     """
 
     ENTRIES = [
@@ -41,8 +42,9 @@ class NedHomingMenu(QMenu):
         ('Home &X', 'home_x_pair', ()),
         ('Home &Y', 'home_joint', ('Y', 1)),
         ('Home &Z', 'home_joint', ('Z', 2)),
-        ('Home A', 'request_single_ref', ('a',)),
-        ('Home C', 'request_single_ref', ('c',)),
+        ('Home A', 'ac_to_zero', ('a',)),
+        ('Home C', 'ac_to_zero', ('c',)),
+        ('Home A&C', 'ac_to_zero_both', ()),
     ]
 
     def __init__(self, parent=None, axes=None):
@@ -93,7 +95,12 @@ class NedHomingMenu(QMenu):
                         LOG.error('NED Homing menu: ned_controls.head_busy() '
                                   'not reachable (tab=%r) -- menu held '
                                   'DISABLED (fail closed)', tab)
-                    ready = (st.task_state == linuxcnc.STATE_ON
+                    # NOTHING IN THIS MENU WHILE ANYTHING MOVES (operator
+                    # 2026-08-10: Home C clicked during a Home A jog corrupted
+                    # the C DRO). joint['homing'] is FALSE during ac_to_zero's
+                    # jog, so velocity is the only honest 'machine is busy'.
+                    ready = (abs(st.current_vel) < 0.01
+                             and st.task_state == linuxcnc.STATE_ON
                              and st.homed[4] and st.homed[5]
                              and st.interp_state == linuxcnc.INTERP_IDLE
                              and not busy

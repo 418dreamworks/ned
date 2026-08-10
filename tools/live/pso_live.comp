@@ -41,6 +41,29 @@ pin out u32 parse_err  "frames whose new bytes left NO complete message in the b
 pin out u32 frames_seen "total completed frames drained since load";
 pin out u32 rxstatus   "raw RX status reg (b21 has-data, b16-20 nframes, b0/1/4/5 errs)";
 pin out s32 fsm        "state-machine state (0 idle,1 sizes,2 fetch,3 data) -- diagnostic";
+
+// ---- DEGREES, LATCHED PER AXIS -------------------------------------------
+// The whole point: ini.4/5.home_offset are HAL IN pins, so they can be DRIVEN
+// from here every servo cycle instead of poked with `halcmd setp` from a
+// python loop. That removes the write-then-latch window that produced the
+// 2026-08-07 C swing, and it removes the wiped-pin hazard that made
+// "HOME C: adopted +0.0000" possible on 2026-08-10 -- nothing clears these,
+// they simply always hold the last good reading for their axis.
+// A and C share one UART; r4-select says which pack is on the line, so each
+// valid frame is latched into ITS OWN output and both stay valid forever.
+pin in  bit   sel_a      "TRUE = the frames now arriving are the A pack (net from r4-select)";
+pin in  s32   ref_mt_a   "A zero reference multiturn (configs/params/head_zero.inc)";
+pin in  u32   ref_w_a    "A zero reference within-turn";
+pin in  s32   ref_mt_c   "C zero reference multiturn";
+pin in  u32   ref_w_c    "C zero reference within-turn";
+pin in  float gear_a     "A gear ratio (motor rev per axis rev)";
+pin in  float gear_c     "C gear ratio";
+pin in  float sign_a     "A direction convention, +1 or -1";
+pin in  float sign_c     "C direction convention, +1 or -1";
+pin out float deg_a      "A absolute angle, deg -- net to ini.4.home_offset";
+pin out float deg_c      "C absolute angle, deg -- net to ini.5.home_offset";
+pin out bit   deg_a_ok   "a valid A frame has been latched since load";
+pin out bit   deg_c_ok   "a valid C frame has been latched since load";
 pin in  bit enable     "MUST be TRUE for the reader to run. FALSE = do nothing at all (not even status).";
 pin in  bit reset      "rising edge: queued FIFO flush + clear rolling buffer + zero multiturn/within (so a stale value cannot masquerade as a fresh read)";
 pin out bit oversize   "TRUE = frame far larger than one 17-char message -> ifdelay too long. THAT FAILS SILENTLY otherwise.";
@@ -198,6 +221,25 @@ FUNCTION(pso_live){
                 multiturn = (rtapi_s32)(sign*mt);
                 within = (rtapi_u32)wt;
                 valid = 1; parsed++;
+                // latch degrees into the pin for whichever pack is selected.
+                // PE = mt*2^26 + within; deg = SIGN*(PE-PS)/(2^26*GEAR)*360
+                {
+                    double R = 67108864.0;   /* 2^26 counts per motor rev */
+                    double pe = (double)multiturn * R + (double)within;
+                    if (sel_a) {
+                        if (gear_a > 0.0) {
+                            double ps = (double)ref_mt_a * R + (double)ref_w_a;
+                            deg_a = sign_a * (pe - ps) / (R * gear_a) * 360.0;
+                            deg_a_ok = 1;
+                        }
+                    } else {
+                        if (gear_c > 0.0) {
+                            double ps = (double)ref_mt_c * R + (double)ref_w_c;
+                            deg_c = sign_c * (pe - ps) / (R * gear_c) * 360.0;
+                            deg_c_ok = 1;
+                        }
+                    }
+                }
             } else {
                 parse_err++;
             }
