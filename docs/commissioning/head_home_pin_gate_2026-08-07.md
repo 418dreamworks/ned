@@ -115,3 +115,115 @@ launch must show, in `lcnc.log`:
 If `home-state 4/5` reads `0/0` even while a home is running, the postgui
 net is missing and the gate is passing blind — that is the one failure
 mode this design cannot self-detect.
+
+
+---
+
+# 2026-08-08 night: why C stayed unhomed, and what was actually wrong
+
+The 2026-08-07 gate above was correct but the launch still stranded joint 5
+and locked the whole GUI behind it. Root cause was NOT the gate. Evidence
+and fixes, all verified live with the machine in E-STOP (no motion, not one
+command issued to an axis).
+
+## The chain
+
+`do_inplace()` homes ONE joint per pass and re-arms `inplace_pending` for
+the next, so it depends on being called periodically. It had no periodic
+caller:
+
+- `tick()` called it only behind `inplace_at`, a one-shot.
+- `inplace_at` was assigned in exactly one place, the machine-ON edge, and
+  only `if self.read_armed and ...` — **fifteen lines below
+  `self.read_armed = False`, with nothing in between to set it back.**
+  Unsatisfiable. `inplace_at` was never assigned in any session.
+- So `read_done()` was the only caller. Joint 4 homed, joint 5 never did,
+  `all(homed)` stayed false, `restore_spindle_tool` could not run, the tool
+  record stayed T0 against a clamped tool, and the UNRECORDED lock plus the
+  pre-home input gate held the GUI dead. 13 minutes, no message.
+
+Proof it was reachability and not a guard: `inplace_at` has one assignment
+site; the log shows the *else* arm firing
+(`MACHINE ON -> head read (A/C will home IN PLACE, no motion)`, and the
+other arm's message appears in no log ever); `sh_save` sits *after* the call
+site in `tick()` and `stored_home.json` kept updating, so the tick was
+running past it every cycle; `wchan = hrtimer_nanosleep`, one thread — the
+brain was not blocked in a scripted `halcmd`.
+
+## Fixes, and how each was verified without moving anything
+
+1. **Periodic caller.** `do_inplace()` is now called unconditionally every
+   tick; the mode/teleop switch moved below the `jns` computation so a tick
+   with nothing to do does not fight the operator for the task mode.
+   *Verified:* new pin `brain.inplace-calls` climbed 48 → 97 in 12 s (~4 Hz)
+   with `homed4/5` FALSE in E-STOP. It would have read 0 forever before.
+2. **Silent declines named.** The `inplace_pending / pending_ref /
+   verify_want / read_armed` guard now logs its reason, once per change.
+   *Verified:* `IN-PLACE HOME: standing by -- nothing pending` printed once
+   and did not repeat across 400+ calls.
+3. **`inplace_pending` is cleared on completion, not on entry.** It used to
+   be dropped before `jns` was computed, so an unhomed joint with no
+   measurement was removed from the list AND the retry discarded in the same
+   breath. *Verified:* at 22:42:55 `declare_xyzw` had already declared all
+   six, `do_inplace` logged `proceeding`, found nothing unhomed and cleared
+   itself.
+4. **A missing measurement is named, not silently dropped** — an unhomed
+   head joint with `hr_deg[ax] is None` keeps the routine pending and says
+   so. *Code only; needs a failed read to trigger.*
+7. **The unsatisfiable pre-launch branch and dead `inplace_at` deleted.**
+   Always a fresh read after power-on — a read taken after the drives are
+   energised describes the head at the moment it is declared.
+   *Live evidence of the defect:* the pre-launch read armed at 22:41:27,
+   power-on at 22:42:45 logged the else arm, and a second identical read ran
+   at 22:42:50-55. Every launch paid for a read it threw away.
+
+`brain.inplace-calls` is permanent on purpose: the failure was invisible
+because a routine that declines silently looks exactly like a routine that
+is never called. `halcmd getp brain.inplace-calls` now separates them.
+
+## Air interlock (2026-08-08, compressor off)
+
+`sig-emc-enable = air.permit.out = sig-estop-released AND
+sig-air-ok-debounced`, and `sig-air-pressure-ok` is 7I97 `inmux.00.input-12`
+(TB5-7). With air removed, `iocontrol.0.emc-enable-in` is FALSE and the
+machine cannot leave E-STOP at all — a hard blocker on the road to stale
+home. Defeated for bench work with:
+
+    halcmd unlinkp air.debounce.in
+    halcmd setp air.debounce.in 1
+
+**Every HAL reload wipes it** — it must be re-applied after each launch.
+Undo with `halcmd net sig-air-pressure-ok air.debounce.in`.
+
+## The rest of the class, triggered offline against the real code
+
+The remaining defects only appear after a machine-ON edge, which schedules
+the declare -- barred on the bench ("DO NOT MOVE THE MACHINE AT ALL. NOT
+EVEN HOMING"). So they were triggered with `tools/brain_harness.py`, which
+execs ned_brain.py's own text with the driver loop cut and hal/linuxcnc/
+GUI_LOG stubbed. The `do_inplace` that runs there is the file the machine
+runs, character for character -- not a reimplementation.
+
+Run the same scenarios against `git show <sha>:tools/live/ned_brain.py` to
+tell a real defect from a guess. Results, new code vs commit 43cf5db:
+
+| scenario | old | new |
+|---|---|---|
+| C unhomed, `hr_deg['c']` is None | 0 logs, 0 homes, **`inplace_pending` dropped to False** -- and still nothing after the read lands: stranded for good, silently | names the gap ONCE, holds pending, declares the instant the measurement arrives |
+| declines with a REF queued | 0 logs | `standing by -- a REF is queued for joint(s) [5]`, once |
+| declines on verify / no armed read / not pending | 0 logs | one line each, named, once |
+| A and C both unhomed and measured | one pass only, C stranded (no periodic caller) | joint 4 then joint 5 on successive passes, pending held until both, then cleared |
+| both already homed | -- | no command issued, pending cleared |
+
+So: defect 4 CONFIRMED real and fixed; defect 5 (the fixed `(4,'a'),(5,'c')`
+order) is real but harmless once a periodic caller exists -- both joints get
+declared, A simply goes first; defect 6 (a home silently no-oping on an
+already-homed absolute joint, `homing.c:766-770`) is **REJECTED** as a live
+risk: `do_inplace` lists only unhomed joints, so it never hands a home to a
+homed one, and `fire_pending_refs` unhomes before it homes.
+
+One thing the night did demonstrate: the launch declare is genuinely
+zero-motion. At 22:42:49 all six joints went homed via `DECLARED HOME
+(zero-motion, NML 112)` — a set-position, not a move — with A at +102.5877
+and C at -124.7503, unchanged all evening, and `do_inplace` never issued a
+single `cmd.home()`.

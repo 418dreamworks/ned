@@ -51,6 +51,10 @@ HR_ST_TIMEOUT = 28   # ~5 s after the rise with no parse -> report no-frame
 HR_VERIFY_TOL = 0.05  # deg
 
 
+def now_mono():
+    return time.monotonic()
+
+
 def log(msg):
     line = '{}  {}'.format(time.strftime('%Y-%m-%d %H:%M:%S'), msg)
     print('ned_brain: ' + msg, flush=True)
@@ -142,6 +146,13 @@ h.newpin('head-busy', hal.HAL_BIT, hal.HAL_OUT)
 # are so crucial, they must be positively verified before user can do
 # anything").
 h.newpin('tool-table-ok', hal.HAL_BIT, hal.HAL_OUT)
+# REACHABILITY COUNTER. do_inplace() homes one joint per pass and re-arms
+# itself for the next, so it depends on being CALLED periodically -- and on
+# 2026-08-08 it wasn't: its only live caller was read_done(), joint 4 homed,
+# joint 5 never did, and the routine declined in silence for 13 minutes with
+# nothing to show for it. A silent decline is invisible; a counter is not.
+# Watch it with: halcmd getp brain.inplace-calls
+h.newpin('inplace-calls', hal.HAL_S32, hal.HAL_OUT)
 h.ready()
 
 # LOUD DEATH: 2026-08-01 19:40 launch, brain+pendant both vanished silently
@@ -870,9 +881,35 @@ class Brain(object):
     def do_inplace(self):
         # home unhomed A/C where they stand using the armed read; no motion.
         # Skipped if a real cycle is in flight.
-        if not getattr(self, 'inplace_pending', False) or self.pending_ref \
-           or self.verify_want or not self.read_armed:
+        try:
+            self._inpl_n = getattr(self, '_inpl_n', 0) + 1
+            h['inplace-calls'] = self._inpl_n
+        except Exception:
+            pass
+        # WHY IT IS DECLINING, SAID OUT LOUD -- once per change of reason,
+        # so it costs nothing at 4 Hz but can never again strand A/C in
+        # silence (2026-08-08: 13 minutes of nothing while joint 5 sat
+        # unhomed and the whole GUI stayed locked behind it).
+        why = None
+        if not getattr(self, 'inplace_pending', False):
+            why = 'nothing pending'
+        elif self.pending_ref:
+            why = 'a REF is queued for joint(s) {}'.format(
+                sorted(self.pending_ref))
+        elif self.verify_want:
+            why = 'a verify is outstanding for {}'.format(
+                sorted(self.verify_want))
+        elif not self.read_armed:
+            why = 'no armed head read'
+        if why is not None:
+            if why != getattr(self, '_inpl_why', None):
+                self._inpl_why = why
+                log('IN-PLACE HOME: standing by -- {}'.format(why))
             return
+        if getattr(self, '_inpl_why', None) is not None:
+            self._inpl_why = None
+            log('IN-PLACE HOME: proceeding (pending + armed read + no REF '
+                'or verify outstanding)')
         # NEVER CUT INTO A RUNNING HOMING CYCLE. This routine switches to
         # MANUAL, drops teleop and issues unhome/home; doing that under Home
         # All takes the sequencer's joint out from under it. On 2026-08-03 the
@@ -895,16 +932,42 @@ class Brain(object):
                 return
         except Exception:
             return
-        self.inplace_pending = False
         try:
             self.stat.poll()
         except Exception:
             return
-        jns = [(jn, ax) for jn, ax in ((4, 'a'), (5, 'c'))
-               if not self.stat.homed[jn] and self.hr_deg.get(ax) is not None]
-        if not jns:
+        # THE FLAG IS CLEARED ON COMPLETION, NOT ON ENTRY. It used to be
+        # dropped before jns was even computed, so an unhomed joint with no
+        # measurement was silently removed from the list AND the retry was
+        # thrown away in the same breath -- stranded for good, saying
+        # nothing.
+        unhomed = [(jn, ax) for jn, ax in ((4, 'a'), (5, 'c'))
+                   if not self.stat.homed[jn]]
+        if not unhomed:
+            self.inplace_pending = False      # both declared: job done
+            self._inpl_gap = None
             return
+        jns = [(jn, ax) for jn, ax in unhomed
+               if self.hr_deg.get(ax) is not None]
+        gap = sorted(ax.upper() for jn, ax in unhomed
+                     if self.hr_deg.get(ax) is None)
+        if gap != (getattr(self, '_inpl_gap', None) or []):
+            self._inpl_gap = gap
+            if gap:
+                log('IN-PLACE HOME: {} unhomed with NO measurement -- '
+                    'staying pending; nothing can be declared for it until '
+                    'a read lands'.format(', '.join(gap)))
+        if not jns:
+            return                    # pending STAYS set: retry on a read
+        # throttle: this runs at tick rate now, and a home that keeps
+        # failing must not become a hot loop of mode switches
+        if now_mono() < getattr(self, '_inpl_next', 0.0):
+            return
+        self._inpl_next = now_mono() + 2.0
         try:
+            # mode/teleop AFTER jns: this runs on every tick now, and
+            # switching the task mode when there is nothing to home would
+            # fight the operator for the whole session.
             self.cmd.mode(linuxcnc.MODE_MANUAL)
             self.cmd.wait_complete()
             self.cmd.teleop_enable(0)
@@ -1272,25 +1335,32 @@ class Brain(object):
             # (operator: jog-ready immediately; menu homing = the
             # physical reset; banner shows STALE HOME until then)
             self.declare_at = now + 1.5
-            if self.read_armed and self.hr_deg.get('a') is not None \
-               and self.hr_deg.get('c') is not None:
-                # pre-launch read is armed; drives were off and A/C are
-                # MPG-locked while unhomed, so the head cannot have moved.
-                # In-place home fires from the tick in ~1 s; an async
-                # verify read follows and corrects if anything is off.
-                self.inplace_at = now + 1.0
-                log('MACHINE ON -> pre-launch head read armed '
-                    '(C={:+.3f} A={:+.3f}) -> A/C homing in place now'
-                    .format(self.hr_deg['c'], self.hr_deg['a']))
-            else:
-                self.want_read = True
-                log('MACHINE ON -> head read (A/C will home IN PLACE, no motion)')
+            # ALWAYS A FRESH READ AFTER POWER-ON. There used to be a branch
+            # here that reused the pre-launch read and scheduled inplace_at,
+            # but it tested self.read_armed FIFTEEN LINES BELOW setting it
+            # False, with nothing in between to set it back -- unsatisfiable,
+            # so inplace_at was never assigned and its tick call site was
+            # dead code. That is what left joint 5 unhomed on 2026-08-08:
+            # read_done() became the only caller of do_inplace().
+            # Deleted rather than repaired: a read taken AFTER the drives are
+            # energised describes the head as it is at the moment we declare
+            # it, which is the read worth trusting. It costs a few seconds.
+            self.want_read = True
+            log('MACHINE ON -> fresh head read (A/C will home IN PLACE, '
+                'no motion)')
         if getattr(self, 'declare_at', None) and now >= self.declare_at:
             self.declare_at = None
             self.declare_xyzw()
-        if getattr(self, 'inplace_at', None) and now >= self.inplace_at:
-            self.inplace_at = None
-            self.do_inplace()
+        # EVERY TICK, unconditionally. do_inplace() homes ONE joint per pass
+        # and re-arms inplace_pending for the next, so it NEEDS a periodic
+        # caller. It had none: inplace_at is assigned at exactly one place
+        # (the ON edge, and only when the pre-launch read was already
+        # armed), so on a normal launch it stays None and this call site was
+        # dead -- read_done() was the only caller, joint 4 homed, joint 5
+        # never did, and everything downstream stayed locked (2026-08-08
+        # 21:59). The routine is self-guarded by inplace_pending, so calling
+        # it every tick costs one attribute test when there is nothing to do.
+        self.do_inplace()
         self.tool_table_gate()
         self.restore_spindle_tool()
         self.apply_mode()

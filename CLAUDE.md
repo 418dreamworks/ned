@@ -240,3 +240,10 @@
       2026-08-03 failure grew CHILDREN past 1920x1200 while the top-level
       window still reported the right size). A GUI edit without a fit
       check is not finished.
+
+24. **100 WORDS. HARD CAP (operator 2026-08-10).** Every reply to the
+    operator is 100 words or fewer. Longer than that, ASK PERMISSION first
+    and wait. This outranks any urge to explain, caveat, enumerate or show
+    work. Tables and code blocks count. If the answer will not fit, give
+    the answer and offer the detail -- do not spend the budget on preamble.
+    Repeatedly: "just talk less please. MUCH LESS".
