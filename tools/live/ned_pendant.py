@@ -81,7 +81,9 @@ def ini_maxv():
 
 
 MAXV = ini_maxv()
-JOG_SPEEDS = [('SLOW', 5.08), ('MED', 60.96), ('MAX', MAXV)]  # mm/s
+# mm/s. Operator 2026-08-11: "make fast feed 8000 ... medium can be 3000"
+# (mm/min). A/C are unaffected -- they are capped by MAX_ANGULAR_VELOCITY.
+JOG_SPEEDS = [('SLOW', 5.08), ('MED', 50.0), ('MAX', 133.333)]  # 3000 / 8000
 
 h = hal.component('pendant')
 for _ax in AXES:
@@ -106,7 +108,30 @@ h.newpin('inc-index', hal.HAL_S32, hal.HAL_OUT)
 # increment row emits a selection while it builds, and adopting that pinned
 # the wheel to the smallest step (jogging looked dead, 2026-08-05).
 h.newpin('inc-set', hal.HAL_S32, hal.HAL_IN)
-h.newpin('jogspeed-out', hal.HAL_FLOAT, hal.HAL_OUT)  # 0..100 % -> linear_jog_slider
+h.newpin('jogspeed-out', hal.HAL_FLOAT, hal.HAL_OUT)  # pinned at 100 %
+# ZERO THE SELECTED AXIS FROM THE WHEEL (operator 2026-08-11: "ive never
+# actually used the speed slider. like, ever. so get rid of it. it can be at
+# 100pct all the time. instead a doubleclick and then registering 100 detents
+# moves in any direction zeros the selected axis"). Double-tap-and-hold was
+# feed override; it is the zero gesture now. Pulsed TRUE briefly; the GUI
+# issues the G10 L20 for whatever axis sel-axis names.
+h.newpin('zero-axis-out', hal.HAL_BIT, hal.HAL_OUT)
+# WHICH axis to zero. Not sel-axis: the first tap of the double-tap has
+# already advanced sel-axis by one, so sel-axis names the wrong one.
+h.newpin('zero-axis-idx', hal.HAL_S32, hal.HAL_OUT)
+# TRIPLE-TAP = LOCK/UNLOCK THE SELECTED AXIS (operator 2026-08-11: "Triple
+# click on mpg locks out all other inputs to that axis ... otherwise i have
+# to hike back to computer to press the lock unlock"). Pulsed; the GUI
+# THE MPG LOCK IS THE PENDANT'S OWN, AND IS NOT THE GUI LOCK (operator
+# 2026-08-11: "the MPG lock and the gui lock are completely independent.
+# The GUI lock means an axis is completely not selectable"):
+#   GUI lock (lock-x..c, from the DRO buttons) -> axis is SKIPPED entirely
+#   MPG lock (here, triple-tap)                -> axis is SELECTABLE but
+#                                                 will not jog, so it can
+#                                                 be triple-tapped free
+# Published so the standalone DRO can paint the letter red.
+for _a in ('x', 'y', 'z', 'a', 'c'):
+    h.newpin('mpg-lock-' + _a, hal.HAL_BIT, hal.HAL_OUT)
 h.newpin('lock-x', hal.HAL_BIT, hal.HAL_IN)  # per-axis MPG locks, DRO
 h.newpin('lock-y', hal.HAL_BIT, hal.HAL_IN)  # single-click (operator
 h.newpin('lock-z', hal.HAL_BIT, hal.HAL_IN)  # 2026-08-06); start UNLOCKED
@@ -175,6 +200,9 @@ def locked(i):
     if homing_active():
         return True
     ax = AXES[i]
+    # NOTE: locked axes are no longer skipped in the selection cycle
+    # (operator 2026-08-11: "you can select the axis, just do nothing
+    # except triple click") -- see the eviction block in the main loop.
     if ax in ('x', 'y', 'z') and h['lock-' + ax]:
         return True
     if ax == 'a' and (h['lock-a'] or not _head_homed(4)):
@@ -185,8 +213,8 @@ def locked(i):
 
 
 def adv(i, step):
-    # next axis in the cycle direction, skipping locked ones (X/Y/Z can
-    # never lock, so this always terminates on an unlocked axis)
+    # Skips GUI-LOCKED axes only. An MPG-locked axis is still selectable --
+    # that is the whole point of it (operator 2026-08-11).
     for _ in range(len(AXES)):
         i = (i + step) % len(AXES)
         if not locked(i):
@@ -203,8 +231,16 @@ spd_i = 2                       # start at MAX = the machine's boot reality
 jcmd = linuxcnc.command()       # NML maxvel = the V slider = the wheel cap
 btn_prev = False
 press_t = 0.0
-last_release = 0.0
-double_hold = False             # this press is the double-tap-and-hold (jog speed)
+double_hold = False             # this press is the double-tap-and-hold (zero)
+zero_sent = False               # the zero gesture already fired this press
+zero_pulse = 0                  # passes left holding zero-axis-out high
+zero_ax = 0                     # axis the zero gesture targets
+pending_double = 0.0            # a double waiting out its triple window
+mpg_lock = [False] * len(AXES)  # the pendant's OWN per-axis MPG lock
+refractory = 0.0                # ignore presses until this time (post-lock)
+lock_sent = False               # a lock toggle fired on this press
+pending_tap = 0.0               # a single tap waiting out its double window
+ZERO_DETENTS = 100              # a full 100 detents -- never an accident
 rotated = False                 # wheel moved during this press
 wheel0 = 0
 inc_i0 = 0
@@ -230,19 +266,23 @@ def apply(gate_off):
     for i, ax in enumerate(AXES):
         # locked() covers the homing interlock too: the enable pin itself
         # drops for EVERY axis the moment any homing cycle starts
-        h['jog-en-' + ax] = bool(i == ax_i and not gate_off and not locked(i))
+        h['jog-en-' + ax] = bool(i == ax_i and not gate_off
+                                 and not locked(i) and not mpg_lock[i])
+        h['mpg-lock-' + ax] = bool(mpg_lock[i])
     h['jog-scale-lin'] = inc / CPD
     h['jog-scale-ang'] = min(inc, ANG_CAP) / CPD
     h['sel-axis'] = ax_i
     h['increment'] = inc
     h['inc-index'] = inc_i
-    h['jogspeed-out'] = JOG_SPEEDS[spd_i][1] / MAXV * 100.0
+    # ALWAYS 100 %. The slider is gone; the increment slot is the only
+    # speed control, which is the one the operator actually uses.
+    h['jogspeed-out'] = 100.0
 
 
 apply(False)
 print('ned_pendant: ready -- increments {} (from [DISPLAY]INCREMENTS), '
       'tap=next axis, double-tap=back, press+wheel=jump size, '
-      'double-tap+hold+wheel=feed override'.format(INCREMENTS), flush=True)
+      'double-tap+hold+100 detents=ZERO the selected axis'.format(INCREMENTS), flush=True)
 
 try:
     while True:
@@ -251,48 +291,91 @@ try:
         wheel = h['wheel']
         now = time.time()
 
-        if locked(ax_i):                 # LOCK flipped on while selected
+        # GUI LOCK = COMPLETELY NOT SELECTABLE (operator 2026-08-11: "The
+        # GUI lock means an axis is completely not selectable"). Flipped on
+        # while selected, it evicts. The MPG lock is the OPPOSITE and is
+        # deliberately NOT handled here: an MPG-locked axis stays selected
+        # so it can be triple-tapped free without walking to the screen.
+        if locked(ax_i):
             _j = adv(ax_i, 1)
             if not locked(_j):
-                # all-five-locked is reachable now (XYZ locks exist);
-                # adv returns the original index then, and evicting to it
-                # printed this line every 60 ms forever (advisor d)
                 ax_i = _j
-                print('ned_pendant: axis -> {} (previous locked)'.format(
+                print('ned_pendant: axis -> {} (previous GUI-locked)'.format(
                     AXES[ax_i].upper()), flush=True)
 
+        if pressed and not btn_prev and now < refractory:
+            btn_prev = pressed            # inside the post-lock refractory:
+            apply(pressed)                # swallow the press entirely
+            continue
         if pressed and not btn_prev:                      # button went down
             press_t = now
             wheel0 = wheel
             inc_i0 = inc_i
             spd_i0 = spd_i
             rotated = False
+            zero_sent = False
+            lock_sent = False
             # 0.36 s = 80% of the original 0.45 s (operator taps fast in
             # sequence; slower pairs must register as single taps)
-            double_hold = (now - last_release) < 0.36     # second tap of a double
+            # THIRD tap: cancel the pending double-tap-back and lock
+            # instead. The double's action is DEFERRED for exactly this
+            # reason (operator 2026-08-11: "you have to add the same
+            # listener after double click so that you dont get a
+            # doubleclick then a triple click applying").
+            if pending_double > 0.0:
+                pending_double = 0.0
+                double_hold = False
+                mpg_lock[ax_i] = not mpg_lock[ax_i]
+                lock_sent = True         # this press is a LOCK and nothing else
+                refractory = now + 0.6   # audit D4: a 4th tap must not
+                                         # navigate off the axis just locked
+                print('ned_pendant: MPG LOCK {} -> {} (triple tap)'.format(
+                    AXES[ax_i].upper(),
+                    'LOCKED' if mpg_lock[ax_i] else 'UNLOCKED'), flush=True)
+            else:
+                double_hold = pending_tap > 0.0          # second of a double
+                if double_hold:
+                    pending_tap = 0.0    # the first tap's advance is CANCELLED
+            # No compensation needed any more: the first tap no longer
+            # advances anything until its double-tap window has expired,
+            # so ax_i IS the axis the operator is looking at.
+            zero_ax = ax_i
 
         if pressed:
-            detents = (wheel - wheel0) // DETENT
+            # TRUNCATE TOWARD ZERO, not floor (audit D2). Python's //
+            # rounds DOWN, so a single reverse count gave detents = -1 and
+            # -1//10 = -1 -- one count of wheel jitter dropped the jump
+            # size a whole slot and, via `rotated`, swallowed the tap.
+            # Forward needed 40 counts for the same step.
+            _raw = wheel - wheel0
+            detents = int(_raw / DETENT)
             if detents != 0:
                 rotated = True
-            if double_hold:
-                # jog speed: 3 presets (SLOW/MED/MAX), right = faster.
-                # Takes effect through NML maxvel -- caps the wheel chase.
-                new_i = max(0, min(len(JOG_SPEEDS) - 1,
-                                   spd_i0 + detents // SPEED_DETENTS))
-                if new_i != spd_i:
-                    spd_i = new_i
-                    name, v = JOG_SPEEDS[spd_i]
-                    try:
-                        jcmd.maxvel(v)
-                    except Exception as e:
-                        print('ned_pendant: maxvel failed: {}'.format(e), flush=True)
-                    print('ned_pendant: jog speed -> {} ({} mm/s)'.format(
-                        name, v), flush=True)
+            if lock_sent or mpg_lock[ax_i]:
+                # MPG LOCK SWALLOWS EVERY OTHER INPUT (operator 2026-08-11:
+                # "locks out all other inputs to that axis ... for anything to
+                # register, it must be unlocked first"). Covers the ZERO gesture,
+                # which otherwise wrote a work offset on a locked axis, and the
+                # jump-size slot. lock_sent also stops a triple's third press
+                # falling through to the jump-size branch.
+                pass
+            elif double_hold:
+                # ZERO THE MOMENT 100 DETENTS LAND (operator 2026-08-11:
+                # "the zero should happen when 100 detents are detected
+                # instead of at the release"). Either direction. Once per
+                # press, so keeping the wheel turning cannot re-fire it.
+                if abs(detents) >= ZERO_DETENTS and not zero_sent:
+                    zero_sent = True
+                    h['zero-axis-idx'] = zero_ax
+                    h['zero-axis-out'] = True
+                    zero_pulse = 5
+                    print('ned_pendant: ZERO {} ({} detents)'.format(
+                        AXES[zero_ax].upper(), detents), flush=True)
             else:
                 # jump size: step through the on-screen increment list,
                 # 25 detents per step (1/detent was too abrupt)
-                new_i = max(0, min(N_INC - 1, inc_i0 + detents // INC_DETENTS))
+                new_i = max(0, min(N_INC - 1,
+                                   inc_i0 + int(detents / INC_DETENTS)))
                 if new_i != inc_i:
                     inc_i = new_i
                     print('ned_pendant: jump slot {} -> {}/detent on {}'.format(
@@ -303,19 +386,53 @@ try:
             # rotated or long-held presses select things; only CLEAN quick taps
             # switch axis. A quick second tap (double_hold armed at its press,
             # but neither held nor rotated) = the double-tap-back gesture.
-            if not rotated and (now - press_t) < 0.4:
+            # THE WHOLE GESTURE IS JUDGED HERE, ONCE, ON RELEASE (operator
+            # 2026-08-11): a double-click released with NO wheel movement =
+            # previous axis; a double-click with 100+ detents turned before
+            # that second release = ZERO the axis you were on. Deciding
+            # mid-hold fired while the operator was still turning.
+            if zero_sent or lock_sent:
+                # ONCE A GESTURE HAS FIRED, THE RELEASE DOES NOTHING
+                # (operator 2026-08-11: "if triple click, listen for
+                # completion of triple click command only. all others,
+                # ignore"). Without this the third press's release fell
+                # through to pending_tap and queued an axis advance 0.36 s
+                # after the lock toggle.
+                pass
+            # NO 0.4 s CEILING (audit D5): it required a quick release, so
+            # holding tap 1 or 2 slightly long silently ate the whole gesture
+            # -- no advance, no reverse, no feedback. A press that never turned
+            # the wheel is a tap however long it was held.
+            elif not rotated:
                 if double_hold:
-                    # quick double-tap = previous axis (first tap advanced +1)
-                    ax_i = adv(adv(ax_i, -1), -1)
-                    print('ned_pendant: axis <- {} (double-tap back)'.format(
-                        AXES[ax_i].upper()), flush=True)
+                    # DEFERRED, like the single tap: a third tap inside the
+                    # window turns this into a lock toggle instead.
+                    pending_double = now
                 else:
-                    ax_i = adv(ax_i, 1)
-                    print('ned_pendant: axis -> {}'.format(AXES[ax_i].upper()),
-                          flush=True)
-            last_release = now
+                    # DEFERRED: a single tap advances only once the
+                    # double-tap window closes. Advancing on the release
+                    # made every double-tap advance first and act on the
+                    # NEXT axis (operator 2026-08-11: "double click still
+                    # advances").
+                    pending_tap = now
             double_hold = False
 
+        # the deferred single tap lands here, once nothing followed it
+        if pending_tap and not pressed and (now - pending_tap) > 0.36:
+            pending_tap = 0.0
+            ax_i = adv(ax_i, 1)
+            print('ned_pendant: axis -> {}'.format(AXES[ax_i].upper()),
+                  flush=True)
+        # and the deferred double, once no third tap followed
+        if pending_double and not pressed and (now - pending_double) > 0.36:
+            pending_double = 0.0
+            ax_i = adv(ax_i, -1)
+            print('ned_pendant: axis <- {} (double-tap back)'.format(
+                AXES[ax_i].upper()), flush=True)
+        if zero_pulse:
+            zero_pulse -= 1
+            if zero_pulse == 0:
+                h['zero-axis-out'] = False
         btn_prev = pressed
         apply(pressed)
 except KeyboardInterrupt:

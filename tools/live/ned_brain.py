@@ -822,6 +822,12 @@ class Brain(object):
                 except Exception:
                     log('TOOL TABLE: could not surface the message')
 
+    def _restore_say(self, msg):
+        """Say it once per CHANGE of reason -- this runs at tick rate."""
+        if msg != getattr(self, '_restore_why', None):
+            self._restore_why = msg
+            log('SPINDLE RESTORE: {}'.format(msg))
+
     def restore_spindle_tool(self):
         # BACKSTOP ONLY since 2026-08-05: the tool database now reports the
         # clamped tool as P0, so LinuxCNC knows it at load time and this
@@ -836,15 +842,26 @@ class Brain(object):
         # something IS clamped, re-issue M61 Q<n>. Sensor empty -> no M61
         # (restoring the number would fabricate a PHANTOM; the always-on
         # guard flags the mismatch instead).
-        if getattr(self, '_spindle_restored', False):
+        # NOT A ONE-SHOT ANY MORE (2026-08-11). It used to latch
+        # _spindle_restored = True the first time the gate passed, BEFORE
+        # doing any work, and then return silently on three different
+        # paths. If the tool table momentarily carried T12 in P0 the
+        # restore saw tool_in_spindle == want, returned, and burned its
+        # only attempt; a later table reload dropped tool_in_spindle to 0
+        # and nothing could ever put it back. The operator arrived to a
+        # machine locked on UNRECORDED with T12 physically clamped, #3991
+        # = 12, and NOT ONE LINE in the log explaining it.
+        # Now it watches: any time the record and the sensor disagree it
+        # re-declares, and every decision says why, once per change.
+        if now_mono() < getattr(self, '_restore_next', 0.0):
             return
+        self._restore_next = now_mono() + 5.0
         try:
             self.stat.poll()
             if (self.stat.task_state != linuxcnc.STATE_ON
                     or not all(self.stat.homed[:6])
                     or self.stat.interp_state != linuxcnc.INTERP_IDLE):
                 return
-            self._spindle_restored = True     # one shot from here on
             want = 0
             with open('/home/brains/Documents/ned/configs/ned5_pb/'
                       'ned5_pb.var') as f:
@@ -854,8 +871,12 @@ class Brain(object):
                         want = int(float(parts[1]))
                         break
             if want <= 0:
+                self._restore_say('no tool recorded in #3991 (%r) -- nothing '
+                                  'to restore' % want)
                 return
             if self.stat.tool_in_spindle == want:
+                self._restore_say('LinuxCNC already has T%d -- nothing to do'
+                                  % want)
                 return
             locked = subprocess.run(
                 ['timeout', '5', 'halcmd', 'getp', 'motion.digital-in-00'],

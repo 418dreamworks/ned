@@ -44,12 +44,14 @@ from PySide6.QtWidgets import (QApplication, QWidget, QLabel,    # noqa: E402
 import linuxcnc                                             # noqa: E402
 
 GREEN = '#2ee62e'          # selected row
+PROBE_RED = '#ff2020'      # toolsetter is touching -- visible across the shop
+LOCK_RED = '#ff4040'       # this axis is MPG-locked: selectable, will not jog
 WHITE = '#f0f0f0'
 BLACK = '#000000'
 N_SLOTS = 5                # jog increment ladder length (ned_pendant)
 STRIP_H = 46               # top indicator strip height, px
 # ---- VERSION: bump on EVERY PB / LinuxCNC edit. 'vNNN:' + <=30 chars ----
-VERSION = 'v012:GUI GATED'
+VERSION = 'v025:GUI ROW RED'
 NUM_W = 9                  # fixed number field: '-4042.72 ' fits (12 ft X)
 NUM_INT = 4                # linear integer digits: 0000.00 .. -4042.72 (12 ft X)
 NUM_INT_ROT = 3            # degrees need only 000.00 (operator 2026-08-05)
@@ -76,8 +78,15 @@ class JogStrip(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.slot = 2
+        self.probe = False
         self.setFixedHeight(STRIP_H)
         self.setAutoFillBackground(False)
+
+    def set_probe(self, on):
+        on = bool(on)
+        if on != self.probe:
+            self.probe = on
+            self.update()
 
     def set_slot(self, i):
         i = max(0, min(N_SLOTS - 1, int(i)))
@@ -90,7 +99,8 @@ class JogStrip(QWidget):
         p.fillRect(self.rect(), QColor(BLACK))
         w = self.width() / float(N_SLOTS)
         p.fillRect(int(self.slot * w) + 4, 6,
-                   int(w) - 8, self.height() - 12, QColor(WHITE))
+                   int(w) - 8, self.height() - 12,
+                   QColor(PROBE_RED if self.probe else WHITE))
         # VERSION MARKER (operator 2026-08-07): the end-of-edit marker.
         # BUMP IT on every PB or LinuxCNC change -- it is the cheapest,
         # most instant signal that a launch carries the new code.
@@ -116,6 +126,9 @@ class Dro2(QWidget):
         self.sel = 0
         self._mm = True
         self.slot = 2
+        self.probe = False
+        self.locks = {}
+        self.guilocks = {}
         self._hal = None
         self._hal_setup()
 
@@ -186,9 +199,38 @@ class Dro2(QWidget):
             self._hal = hal.component('dro2')
             self._hal.newpin('axis-in', hal.HAL_S32, hal.HAL_IN)
             self._hal.newpin('inc-index-in', hal.HAL_S32, hal.HAL_IN)
+            # TOOLSETTER CONTACT (operator 2026-08-11: "i want that white
+            # speed indicator to be red if the tool setter pin detects
+            # continuity to ground. it lets me use tool probe from far").
+            # sig-tool-probe is 7i84.0.0.input-28 (TB2-13, *54, via R10),
+            # the same signal that feeds motion.probe-input.
+            self._hal.newpin('probe-in', hal.HAL_BIT, hal.HAL_IN)
+            # PER-AXIS MPG LOCK -- the PENDANT's lock (triple tap), NOT the GUI
+            # lock. GUI-locked axes are unselectable and never reach the
+            # wheel at all. (operator 2026-08-11: "color it red on the
+            # standalone dro when it is locked"). A locked axis is still
+            # selectable -- it just does not jog until it is triple-tapped
+            # unlocked -- so the screen has to say which ones are dead.
+            for _a in ('x', 'y', 'z', 'a', 'c'):
+                self._hal.newpin('lock-%s-in' % _a, hal.HAL_BIT, hal.HAL_IN)
+                # ...and the GUI lock, which is a DIFFERENT thing: that axis
+                # is not selectable at all, so the WHOLE ROW goes red
+                # (operator 2026-08-11). MPG lock reds the letter only.
+                self._hal.newpin('gui-%s-in' % _a, hal.HAL_BIT, hal.HAL_IN)
             self._hal.ready()
             for sig, pin in (('sig-mpg-axis', 'dro2.axis-in'),
-                             ('sig-mpg-inc-index', 'dro2.inc-index-in')):
+                             ('sig-mpg-inc-index', 'dro2.inc-index-in'),
+                             ('sig-tool-probe', 'dro2.probe-in'),
+                             ('sig-mpg-lock-x', 'dro2.lock-x-in'),
+                             ('sig-mpg-lock-y', 'dro2.lock-y-in'),
+                             ('sig-mpg-lock-z', 'dro2.lock-z-in'),
+                             ('sig-mpg-lock-a', 'dro2.lock-a-in'),
+                             ('sig-mpg-lock-c', 'dro2.lock-c-in'),
+                             ('sig-lock-x', 'dro2.gui-x-in'),
+                             ('sig-lock-y', 'dro2.gui-y-in'),
+                             ('sig-lock-z', 'dro2.gui-z-in'),
+                             ('sig-lock-a', 'dro2.gui-a-in'),
+                             ('sig-lock-c', 'dro2.gui-c-in')):
                 subprocess.run(['halcmd', 'net', sig, pin],
                                capture_output=True, timeout=5)
         except Exception as e:
@@ -205,6 +247,11 @@ class Dro2(QWidget):
             # the DRO never keeps its own record of speed or axis.
             self.sel = int(self._hal['axis-in'])
             self.slot = int(self._hal['inc-index-in'])
+            self.probe = bool(self._hal['probe-in'])
+            self.locks = {a: bool(self._hal['lock-%s-in' % a])
+                          for a in ('x', 'y', 'z', 'a', 'c')}
+            self.guilocks = {a: bool(self._hal['gui-%s-in' % a])
+                             for a in ('x', 'y', 'z', 'a', 'c')}
         except Exception:
             pass
 
@@ -260,6 +307,7 @@ class Dro2(QWidget):
             sys.stderr.flush()
         self._hal_read()
         self.strip.set_slot(self.slot)
+        self.strip.set_probe(self.probe)
         try:
             self.stat.poll()
         except Exception:
@@ -327,22 +375,43 @@ class Dro2(QWidget):
                                       frac_pad)
             txt_m, txt_w = _field(m), _field(w)
             lab, mach, work = self.rows[i]
-            colour = GREEN if i == self.sel else WHITE
+            # THE LETTER carries the lock, the NUMBERS carry the
+            # selection (operator 2026-08-11: "lets just apply the red lock
+            # to the letter only. that way, what is highlighted is always
+            # clear"). Red on the whole row hid which axis the wheel was on.
+            _ax = self.axes[i].lower()
+            if self.guilocks.get(_ax):
+                # GUI LOCK: the axis cannot even be SELECTED -- the whole
+                # row is red so that reads at a glance.
+                colour = lab_colour = LOCK_RED
+            else:
+                colour = GREEN if i == self.sel else WHITE
+                # MPG LOCK: selectable, just will not jog -- letter only,
+                # so the green selection stays readable.
+                lab_colour = LOCK_RED if self.locks.get(_ax) else colour
             # unit in a smaller font, after the number
             small = int(getattr(self, '_num_px', 100) * 0.30)
             def _cell(t):
                 # SMALL SIGN (operator 2026-08-05): it carries one bit and
                 # was eating a whole digit cell at full height
                 sign, rest = t[0], t[1:]
-                # sign matches the AXIS LETTER size (operator 2026-08-05)
-                sgn_px = max(24, int(getattr(self, '_num_px', 100) * 0.42))
-                return ('<span style="font-size:%dpx;">%s</span>%s'
+                # DOUBLE SIZE, VERTICALLY CENTRED (operator 2026-08-11:
+                # "lets have the + and - signs be centered instead of at
+                # the bottom of the numbers, and double in size"). A small
+                # inline span sits on the text BASELINE, which put the sign
+                # down at the foot of the digits; vertical-align:middle
+                # lifts it to the middle of the number's own line box.
+                sgn_px = max(48, int(getattr(self, '_num_px', 100) * 0.84))
+                return ('<span style="font-size:%dpx;'
+                        'vertical-align:middle;">%s</span>%s'
                         '<span style="font-size:%dpx;">\u00a0%s</span>'
                         % (sgn_px, sign, rest.replace(' ', '\u00a0'),
                            small, unit))
             mach.setText(_cell(txt_m))
             work.setText(_cell(txt_w))
-            for wdg in (lab, mach, work):
+            lab.setStyleSheet('color: %s; background: transparent;'
+                              % lab_colour)
+            for wdg in (mach, work):
                 wdg.setStyleSheet('color: %s; background: transparent;'
                                   % colour)
 

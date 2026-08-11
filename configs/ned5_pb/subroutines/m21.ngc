@@ -50,7 +50,17 @@ o80 endif
 G90
 G1 G53 F[#<ftrav>] Z[#<ztrav>]
 G1 G53 F[#<ftrav>] X[#<cx>] Y[#<sy>]
-G1 G53 F[#<ftrav>] Z[#<zappr>]
+(SPINDLE GATE. Operator 2026-08-11: "you have to do the check when you get to)
+(the unload XY before even descending to the safeZ" -- the old check lived in)
+(unload_spindle, which is reached with the tool already down in the fork, so a)
+(still-spinning shaft aborted while sitting in the plastic and melted it.)
+(M5 first, then WAIT for digital-in-02; abort here, at traverse Z, clear of)
+(the rack. Q30 because the spindle coasts down -- there is no brake.)
+M5
+M66 P2 L3 Q30
+o83 if [#5399 LT 0]
+  (abort, m21: spindle still turning at the fork XY - NOT descending)
+o83 endif
 G1 G53 F[#3980] Z[#<zload>]
 G4 P1
 G1 G53 F[#3980] X[#<sx>]

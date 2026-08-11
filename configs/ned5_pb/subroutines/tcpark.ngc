@@ -1,0 +1,13 @@
+; PARK AFTER EVERY TOOL CHANGE (operator 2026-08-11: "all MDI tool changes
+; should have that ... go to safe height, and rapid to G30 XY and then, go
+; to G30 Z. all rapid"). A T0 used to leave the spindle sitting over a fork
+; -- an empty taper parked above a tool is where a bumped MPG does damage.
+; Sequenced, not a bare G30: clear Z FIRST, then travel, then drop.
+; #5181/2/3 are the stored G30 point in MACHINE coordinates.
+o<tcpark> sub
+  ; RETRACT AND STAY (operator 2026-08-11: "i don't want it to traverse to
+  ; g30 automatically anymore. retract to safety and stay there. nothing
+  ; else"). Z only -- X and Y are left exactly where the change finished.
+  G53 G0 Z0
+o<tcpark> endsub
+M2

@@ -482,6 +482,14 @@ class UserTab(QWidget):
             # the TABLE half on its own: the startup gate needs to know
             # "table served", not "locked for one of two reasons"
             self.comp.addPin('table-ok-in', 'bit', 'in')
+            # MPG ZERO GESTURE: double-tap + hold + 100 detents on the wheel
+            # (ned_pendant.zero-axis-out). Zeroes whatever axis the wheel has
+            # selected -- replaces the jog-speed slider the operator never used.
+            self.comp.addPin('zero-axis-in', 'bit', 'in')
+            # WHICH axis: not the live MPG selection. The first tap of the
+            # double-tap already advanced it, so the pendant sends the axis
+            # the operator was actually on.
+            self.comp.addPin('zero-axis-idx-in', 's32', 'in')
             self.comp.addPin('air-ok-in', 'bit', 'in')
             self.comp.addPin('probe-up-in', 'bit', 'in')
             # the pendant's SLOT INDEX, never its value: the row is
@@ -546,6 +554,7 @@ class UserTab(QWidget):
                     LOG.exception('startup: could not LOCK %s -- the wheel '
                                   'can still move it', _ax.upper())
             self.comp.addListener('head-busy-in', self._on_head_busy)
+            self.comp.addListener('zero-axis-in', self._on_mpg_zero)
             self.comp.addListener('motion-lock-in', self._on_motion_lock)
             self.comp.addListener('air-ok-in', self._on_air)
             self.comp.addListener('drawbar-released-in', self._on_drawbar)
@@ -659,6 +668,15 @@ class UserTab(QWidget):
         self._timer = QTimer(self)
         self._timer.timeout.connect(self._tick)
         self._timer.start(500)
+
+        # WCS PUBLISH -- its OWN timer, deliberately not _tick (2026-08-10).
+        # Hosting it in _tick made it impossible to tell whether the code
+        # was running at all: a call counter there logged three calls while
+        # other _tick output kept flowing. One timer, one job, one log line
+        # per outcome, so the next boot explains itself.
+        self._wcs_timer = QTimer(self)
+        self._wcs_timer.timeout.connect(self._publish_wcs_once)
+        self._wcs_timer.start(1000)
 
     # ---- NED CONTROLS sub-tabs: JOG / CLAMP ------------------------------
 
@@ -3114,17 +3132,33 @@ class UserTab(QWidget):
         except Exception as e:
             LOG.error('STOP failed: %s', e)
 
-    # ---- pendant double-tap+hold -> the 0-100% jog speed slider ----------
+    # ---- the jog-speed slider is GONE (operator 2026-08-11) -------------
+    # "ive never actually used the speed slider. like, ever. so get rid of
+    # it. it can be at 100pct all the time." The pendant pins jogspeed-out
+    # at 100 and the wheel's increment slot is the only speed control. This
+    # hides the slider and its % readout, and pins the setting at 100 so
+    # nothing else can wind it down.
     def _on_jogspeed(self, val):
         win = self.window()
         if win is None:
             return
-        slider = win.findChild(QWidget, 'linear_jog_slider')
-        if slider is not None:
-            try:
-                slider.setValue(int(round(float(val))))
-            except Exception:
-                pass
+        hid = []
+        for name in ('linear_jog_slider', 'fr_override_dro'):
+            w = win.findChild(QWidget, name)
+            if w is None:
+                continue
+            if name == 'linear_jog_slider':
+                try:
+                    w.setValue(100)
+                except Exception:
+                    pass
+            if w.isVisible():
+                w.hide()
+                hid.append(name)
+        if hid and not getattr(self, '_jogslider_gone', False):
+            self._jogslider_gone = True
+            LOG.info('JOG SPEED slider removed (pinned 100%%): hid %s',
+                     ', '.join(hid))
 
 
     # ---- override cluster (V/F/S/R rows -> -10%/+10% button clusters) ----
@@ -5684,10 +5718,31 @@ class UserTab(QWidget):
                 # touched. The sweep below is now COSMETIC: it greys things
                 # so the operator can see the gate. Safety does not depend
                 # on it any more.
+                _cd = self.countdown_button()
+                import time as _t
+                _uw = _t.time() < getattr(self, '_unload_window_until', 0)
                 if not _declared:
                     # startup: only E-STOP / POWER / EXIT
                     self._arm_input_gate()
                     self._sweep_gate(self.window(), False)
+                elif _uw and _cd is None:
+                    _names = self.PREHOME_SURVIVORS + tuple(
+                        b.objectName() for b in getattr(self, '_load_btns', []))
+                    self._arm_input_gate(_names)
+                    self._sweep_gate(self.window(), False,
+                                     keep=self._gate_survivor_widgets(_names))
+                elif _cd is not None:
+                    # a countdown is running: everything dead but E-STOP,
+                    # POWER, EXIT and the counting button (its own cancel)
+                    _names = self.PREHOME_SURVIVORS + (_cd.objectName(),)
+                    self._arm_input_gate(_names)
+                    self._sweep_gate(self.window(), False,
+                                     keep=self._gate_survivor_widgets(_names))
+                    if not getattr(self, '_cd_logged', False):
+                        self._cd_logged = True
+                        LOG.error('COUNTDOWN GATE ARMED on %s -- everything '
+                                  'else is dead until it finishes or is '
+                                  'cancelled', _cd.objectName())
                 elif self._motion_lock_on():
                     # SPINDLE/TABLE INCONSISTENCY: same total block, but the
                     # ATC and TOOL tabs stay fully usable -- that is where
@@ -5703,6 +5758,9 @@ class UserTab(QWidget):
                                   'inconsistency -- only E-STOP, POWER, '
                                   'EXIT and the ATC/TOOL tabs are live')
                 else:
+                    if getattr(self, '_cd_logged', False):
+                        self._cd_logged = False
+                        LOG.error('COUNTDOWN GATE RELEASED')
                     if getattr(self, '_toolgate_logged', False):
                         self._toolgate_logged = False
                         LOG.error('TOOL GATE RELEASED: spindle and table '
@@ -5732,6 +5790,7 @@ class UserTab(QWidget):
                 # (2026-08-05) -- the pins ARE the truth, so just apply
                 # them; _tool_lock_update is a no-op when nothing moved.
                 self._tool_lock_update()
+                self._tool_alarm_repeat()
         except Exception:
             if not getattr(self, '_lockpoll_err', False):
                 self._lockpoll_err = True
@@ -5755,6 +5814,19 @@ class UserTab(QWidget):
         declared = homed
         if getattr(self, '_tool_locked', False):
             homed = False       # tool-state lock deads the same buttons
+        # ...AND NOTHING IN THIS LIST WHILE THE MACHINE IS BUSY (operator
+        # 2026-08-10: "while homing zero buttons continue to work. THEY
+        # SHOULDN'T" / "touch off tool button also worked"). `homed` alone
+        # is true all the way THROUGH a homing cycle, so it never gated
+        # them. joint['homing'] is FALSE during ac_to_zero's joint jog, so
+        # velocity has to be in the test too.
+        try:
+            if (abs(st.current_vel) > 0.01
+                    or any(st.joint[j]['homing'] for j in range(6))
+                    or st.interp_state != linuxcnc.INTERP_IDLE):
+                homed = False
+        except Exception:
+            homed = False        # unreadable -> refuse
         win = self.window()
         if homed == getattr(self, '_homed_now', None):
             return
@@ -5852,6 +5924,13 @@ class UserTab(QWidget):
                 try:
                     pk = float(int(float(pk)))
                 except (TypeError, ValueError):
+                    continue
+                # P0 MEANS "IN THE SPINDLE", NOT "NO HOME" (2026-08-11).
+                # Mirroring it wiped #[4400+T] the moment a tool was picked
+                # up, so the put-away then aborted with "T13 has no
+                # assigned home fork" and the spindle stayed down. The home
+                # is the last fork the tool actually sat in; keep it.
+                if pk <= 0:
                     continue
                 rows.append((tno, 'home_p', pk))
             pend = []
@@ -6305,6 +6384,13 @@ class UserTab(QWidget):
             b.setText(pend['text'])
             self._unload_pend.pop(b, None)
             self._unload_run()
+            # DRAWBAR IS NOW OPEN. For 10 s the operator may load a tool and
+            # NOTHING ELSE (operator 2026-08-10: "during the 10 second, LOAD
+            # spindle becomes useable. everything else stays unused").
+            import time as _t
+            self._unload_window_until = _t.time() + 10.0
+            LOG.error('UNLOAD WINDOW: drawbar released -- LOAD SPINDLE only, '
+                      '10 s')
 
         timer.timeout.connect(tick)
         b.setText('CANCEL  5')
@@ -6359,7 +6445,57 @@ class UserTab(QWidget):
     # mismatch was and was read as its own opposite -- "TOOL IN SPINDLE, NOT
     # IN LOGIC" was reported back as "an error saying tool not in spindle".
     # Which side is wrong belongs in the log, not on the operator's screen.
-    TOOL_ALARM_MSG = 'CHECK SPINDLE RACK TABLE CONSISTENCY'
+    TOOL_ALARM_MSG = 'CHECK TOOL CONFIGURATION'
+
+    def _tool_fault_detail(self):
+        """The concrete fault and the exact way out, from live state."""
+        import linuxcnc
+        try:
+            st = linuxcnc.stat(); st.poll()
+            have = int(st.tool_in_spindle)
+        except Exception:
+            have = -1
+        rec = 0
+        try:
+            with open('/home/brains/Documents/ned/configs/ned5_pb/'
+                      'ned5_pb.var') as f:
+                for ln in f:
+                    p = ln.split()
+                    if len(p) == 2 and p[0] == '3991':
+                        rec = int(float(p[1]))
+                        break
+        except Exception:
+            pass
+        if getattr(self, '_tool_unrecorded', False):
+            return ('T%d is clamped but LinuxCNC has no record of it '
+                    '(it says T%d). Go to the TOOL tab and press LOAD '
+                    'SPINDLE for T%d.' % (rec, have, rec)) if rec else (
+                    'a tool is clamped but LinuxCNC has no record of it. '
+                    'Go to the TOOL tab and press LOAD SPINDLE.')
+        if getattr(self, '_tool_phantom', False):
+            return ('LinuxCNC thinks T%d is loaded but the spindle is '
+                    'empty. Go to the TOOL tab and press UNLOAD SPINDLE.'
+                    % have)
+        return 'the tool table has not been served yet.'
+
+    def _tool_alarm_repeat(self):
+        """Say it again while the lock holds. A toast that self-dismisses
+        after 1 s is not a message -- the operator arrived to a machine
+        locked on UNRECORDED and never saw a word of it (2026-08-11)."""
+        import time as _t
+        if not self._motion_lock_on():
+            self._tool_nag_at = 0.0
+            return
+        if _t.time() < getattr(self, '_tool_nag_at', 0.0):
+            return
+        self._tool_nag_at = _t.time() + 10.0
+        msg = '%s: %s' % (self.TOOL_ALARM_MSG, self._tool_fault_detail())
+        LOG.error(msg)
+        try:
+            import linuxcnc
+            linuxcnc.command().error_msg(msg)
+        except Exception as e:
+            LOG.error('could not surface the tool alarm: %s', e)
 
     def _tool_alarm(self, detail):
         """One short line to the operator; the direction of the mismatch to
@@ -6844,6 +6980,32 @@ class UserTab(QWidget):
                 return w
         return None
 
+    def _on_mpg_zero(self, val):
+        """Wheel asked to zero the selected axis. Rising edge only."""
+        if not bool(val):
+            return
+        import linuxcnc
+        try:
+            idx = int(self.comp.getPin('zero-axis-idx-in').value)
+        except Exception:
+            idx = int(getattr(self, '_mpg_axis_now', 0))
+        ax = self._INC_AXES[idx % 5].upper()
+        c, s = linuxcnc.command(), linuxcnc.stat()
+        s.poll()
+        if (s.task_state != linuxcnc.STATE_ON
+                or s.interp_state != linuxcnc.INTERP_IDLE
+                or abs(s.current_vel) > 0.01
+                or any(s.joint[j]['homing'] for j in range(6))):
+            c.error_msg('ZERO %s refused: machine is busy' % ax)
+            LOG.error('MPG ZERO %s refused: busy', ax)
+            return
+        if not self._take_mdi(c, 'MPG ZERO %s' % ax):
+            return
+        c.mdi('G10 L20 P0 %s0' % ax)
+        LOG.error('MPG ZERO: %s set to 0 (G10 L20 P0 %s0) from the wheel',
+                  ax, ax)
+        self._hand_back_manual(c, 'MPG ZERO %s' % ax)
+
     def _on_head_busy(self, val):
         # One flag, one publisher (the brain). The homing menu polls
         # head_busy() and greys every entry while it is TRUE.
@@ -6950,7 +7112,198 @@ class UserTab(QWidget):
                      i, lad[i], ax.upper())
 
     # ---- Qt-only housekeeping --------------------------------------------
+    def countdown_button(self):
+        """The button whose countdown is running, or None.
+
+        A COUNTDOWN EXISTS TO MAKE THE OPERATOR STOP AND THINK (operator
+        2026-08-10: "the whole point of the countdown is that the user has
+        to pause and think if he was sure about the task"). So while one
+        runs, the ONLY live controls are E-STOP, POWER, EXIT and the
+        counting button itself -- which is also how you cancel it.
+
+        UNLOAD SPINDLE is NOT exempt during its 5 s countdown (operator
+        2026-08-10: "during the 5 second countdown, NOTHING is useable").
+        Its exception comes AFTER, once the drawbar has released.
+        """
+        for b, pend in list(getattr(self, '_unload_pend', {}).items()):
+            if pend is not None:
+                return b
+        for b, pend in list(getattr(self, '_load_pend', {}).items()):
+            if pend is not None:
+                return b
+        for b, pend in list(getattr(self, '_cal_pend', {}).items()):
+            if pend is not None:
+                return b
+        dro = self._find_dro()
+        for key in list(getattr(dro, '_zero_pending', {}) or {}):
+            w = self.window().findChild(QWidget, key) if self.window() else None
+            if w is not None:
+                return w
+        return None
+
+    def _publish_wcs_once(self):
+        """Get the active WCS into the status buffer, once per session.
+
+        THE FAULT. After a fresh start stat.g5x_index reads 0 and
+        stat.g5x_offset reads zeros, while the interpreter actually holds
+        the right numbers -- an MDI `(debug, #5221)` prints -3730.005. The
+        DRO renders those status fields, so the SCREEN shows machine
+        coordinates while the MACHINE would cut in the right place. The
+        screen lies and the iron does not, which is the dangerous way
+        round. It is INTERMITTENT: some boots report correctly unaided.
+
+        WHY. The field has one producer, SET_G5X_OFFSET (emccanon.cc:490 ->
+        emctaskmain.cc:1901). Interp::init() calls it (rs274ngc_pre.cc:1103)
+        but only by appending to interp_list (emccanon.cc:436) -- a queue
+        that is flushed if anything aborts before task consumes it, which
+        is what makes this a race. Re-commanding G54 does not help:
+        convert_coordinate_system returns early when the origin is already
+        active (interp_convert.cc:1793) and emits nothing.
+
+        THE FIX. Select another system, then come back, as TWO SEPARATE
+        BLOCKS. Measured by hand: `G55` -> index 2, then `G54` -> index 1
+        with the correct offsets published. `G55 G54` in ONE block does
+        nothing -- two codes from the same modal group net to no change,
+        which is how iteration 1 failed.
+
+        Settings words only, so no motion. G55 is active for the moment
+        between the two blocks and nothing is commanded in that gap.
+        """
+        if getattr(self, '_wcs_published', False):
+            return
+        try:
+            import linuxcnc
+            s = linuxcnc.stat(); s.poll()
+            # ...and NOT while a joint is still homing. all(homed) flickers
+            # True mid-declare (A/C are declared one at a time), and firing
+            # in that window put the MDI in during the cycle: the drain
+            # timed out and it logged FAILED (2026-08-10 17:1x).
+            if (not all(s.homed[:6])
+                    or any(s.joint[j]['homing'] for j in range(6))
+                    or s.interp_state != linuxcnc.INTERP_IDLE):
+                n = getattr(self, '_wcs_wait', 0) + 1
+                self._wcs_wait = n
+                if n == 1 or n % 30 == 0:
+                    LOG.error('WCS PUBLISH waiting: homed=%s interp=%d',
+                              all(s.homed[:6]), s.interp_state)
+                return
+            if s.g5x_index != 0:
+                self._wcs_published = True
+                self._wcs_timer.stop()
+                LOG.error('WCS PUBLISH not needed: LinuxCNC reported G%d '
+                          '%.4f %.4f %.4f by itself', 53 + s.g5x_index,
+                          s.g5x_offset[0], s.g5x_offset[1], s.g5x_offset[2])
+                return
+            self._wcs_published = True
+            self._wcs_timer.stop()
+            LOG.error('WCS PUBLISH: index 0 with offsets in the var file -- '
+                      'republishing via G55 then G54')
+            c = linuxcnc.command()
+            c.mode(linuxcnc.MODE_MDI); c.wait_complete(3.0)
+            c.mdi('G55'); c.wait_complete(3.0)
+            c.mdi('G54'); c.wait_complete(3.0)
+            # DO NOT LEAVE MDI UNTIL THE MESSAGE HAS LANDED. wait_complete
+            # returns on command ACCEPTANCE, not when interp_list drains,
+            # and SET_G5X rides that queue (emccanon.cc:436). Switching the
+            # task mode discards what is still queued -- which is exactly
+            # how the startup publication is lost in the first place, and
+            # why iteration 3 logged "FAILED: index still 0" here while the
+            # identical two blocks worked by hand (by hand I read the index
+            # BEFORE going back to MANUAL). So poll the thing we actually
+            # care about, then hand the mode back.
+            import time as _t
+            _dead = _t.time() + 3.0
+            while _t.time() < _dead:
+                s.poll()
+                if s.g5x_index != 0:
+                    break
+                _t.sleep(0.05)
+            c.mode(linuxcnc.MODE_MANUAL); c.wait_complete(2.0)
+            s.poll()
+            if s.g5x_index == 0:
+                # A FAILED ATTEMPT MUST NOT LATCH. Un-arm and let the timer
+                # try again -- the first attempt can land in a window the
+                # guards did not catch, and a permanent give-up leaves the
+                # DRO showing machine coordinates for the whole session.
+                self._wcs_published = False
+                self._wcs_timer.start(1000)
+                LOG.error('WCS PUBLISH retrying: index still 0 after G55/G54')
+            else:
+                LOG.error('WCS PUBLISH OK: G%d active, offsets %.4f %.4f '
+                          '%.4f', 53 + s.g5x_index, s.g5x_offset[0],
+                          s.g5x_offset[1], s.g5x_offset[2])
+        except Exception:
+            LOG.exception('WCS PUBLISH errored -- DRO may show machine coords')
+
+    def _gcode_freshness(self):
+        """THE G-CODE ON SCREEN MUST BE THE G-CODE THAT RUNS.
+
+        Two independent latches let them diverge (advisor 2026-08-10):
+
+        1. qtpyvcp arms a QFileSystemWatcher on the loaded program
+           (status.py:739) and `updateFile` (status.py:261) is the only
+           thing that refreshes the view for an UNCHANGED path. Qt drops
+           the watch after ONE atomic save -- write-temp + os.replace, what
+           vim/gedit/VSCode do by default -- and it is never re-added. From
+           then on no disk edit is ever noticed.
+        2. RELOAD PGM does re-open the interpreter (program_actions.py:87
+           -> emcTaskPlanOpen -> rs274ngc_pre.cc:1403 fopen, a genuine
+           fresh read) but STATUS.file only emits when the filename STRING
+           changes (status.py:774), so the VIEW is not refreshed.
+
+        Together: screen shows the old program, Cycle Start executes the
+        new one. The operator hit exactly that today -- 20 mm slots and
+        F600 on screen, 19 mm and F4000 on disk.
+
+        So: poll. stat() beats inotify here -- it survives atomic saves,
+        editors on other hosts and NFS. Re-emitting the file signal
+        re-populates the text view AND the backplot; it does NOT call
+        program_open, so it cannot disturb the interpreter (RELOAD already
+        owns that side).
+        """
+        try:
+            import linuxcnc, os as _os
+            from qtpyvcp.plugins import getPlugin
+            st = getattr(self, '_nml_stat', None) or linuxcnc.stat()
+            st.poll()
+            path = st.file
+            if not path or st.interp_state != linuxcnc.INTERP_IDLE:
+                return
+            sig = (path,) + tuple(
+                getattr(_os.stat(path), a) for a in ('st_mtime_ns', 'st_size'))
+        except Exception:
+            return
+        if sig == getattr(self, '_gc_sig', None):
+            return
+        first = getattr(self, '_gc_sig', None) is None
+        self._gc_sig = sig
+        if first:
+            return                     # first sighting is the baseline
+        # BOTH SIDES, ALWAYS, OR NOT AT ALL. Refreshing only the view would
+        # just invert the divergence -- new on screen, old in the
+        # interpreter. This is exactly what qtpyvcp's own watcher does when
+        # it works (status.py:261-268): emit for the display, program_open
+        # for the interpreter. Idle-only, so it can never disturb a run.
+        try:
+            import linuxcnc as _lc
+            getPlugin('status').file.signal.emit(path)
+            _lc.command().program_open(path)
+            LOG.error('G-CODE REFRESHED (view + interpreter): %s changed on '
+                      'disk -- screen, backplot and what Cycle Start runs '
+                      'are back in agreement', path)
+        except Exception:
+            LOG.exception('G-CODE REFRESH FAILED for %s -- screen and '
+                          'interpreter may disagree, reload by hand', path)
+
     def _tick(self):
+        # BELT AND BRACES. _publish_wcs_once is one-shot and idempotent, so
+        # driving it from both its own timer and here costs an attribute
+        # test. Worth it: during this investigation each timer in turn
+        # appeared to stop after one call, and a WCS that silently stays
+        # unpublished shows the operator machine coordinates on a DRO they
+        # are about to cut from.
+        self._publish_wcs_once()
+        self._gcode_freshness()
         win = self.window()
         if win is None:
             return

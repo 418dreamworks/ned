@@ -5,10 +5,15 @@
 ; The sim versions used the SIM's pin numbers (P2/P4/P5) -- on ned P4 is the
 ; chip blow-off. Every pin below is ned's.
 o<unload_spindle> sub
-; spindle must be stopped
-M66 P2 L0
-o<usp1> if [#5399 EQ 0]
-    (ABORT, unload_spindle: shaft not stopped -- not releasing)
+; Spindle must be stopped -- and we STOP it, we do not merely complain.
+; Operator 2026-08-11: "the spindle should be stopped the moment that button
+; is pressed". The old code only read the sensor and aborted, which left the
+; shaft turning. M5 commands the stop; M66 L3 then waits for the coast-down
+; (no brake exists on this machine), and only a timeout aborts.
+M5
+M66 P2 L3 Q30
+o<usp1> if [#5399 LT 0]
+    (ABORT, unload_spindle: shaft never stopped -- not releasing)
 o<usp1> endif
 M64 P0
 ; wait for the tool-released sensor, up to 5 s
@@ -36,5 +41,6 @@ M61 Q0
 G49
 #3991 = 0
 (DEBUG, drawbar RELEASED -- remove the tool. Open until LOAD SPINDLE / M65 P0)
+
 o<unload_spindle> endsub
 M2 (end program)

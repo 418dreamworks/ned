@@ -106,8 +106,33 @@ class NedHomingMenu(QMenu):
                              and not busy
                              and not any(st.joint[j]['homing']
                                          for j in range(6)))
+                    # NAME THE BLOCKER. This used to log only ON /
+                    # A-C-homed / head-busy, so a menu greyed by velocity,
+                    # interp state or a homing joint looked identical to a
+                    # healthy one and the operator could not tell why the
+                    # entries were dead (2026-08-10: "check why i can't
+                    # reach the clicking to home").
+                    _why = []
+                    if abs(st.current_vel) >= 0.01:
+                        _why.append('moving (vel %.3f)' % st.current_vel)
+                    if st.task_state != linuxcnc.STATE_ON:
+                        _why.append('machine not ON (state %d)'
+                                    % st.task_state)
+                    if not (st.homed[4] and st.homed[5]):
+                        _why.append('A/C not homed (%d,%d)'
+                                    % (st.homed[4], st.homed[5]))
+                    if st.interp_state != linuxcnc.INTERP_IDLE:
+                        _why.append('interp not IDLE (%d)' % st.interp_state)
+                    if busy:
+                        _why.append('head busy')
+                    _hj = [j for j in range(6) if st.joint[j]['homing']]
+                    if _hj:
+                        _why.append('joint(s) %s homing' % _hj)
                     if ready != self.isEnabled():
                         self.setEnabled(ready)
+                        if not ready:
+                            LOG.error('NED Homing menu DISABLED because: %s',
+                                      '; '.join(_why) or 'unknown')
                         LOG.info('NED Homing menu %s (ON=%s, A/C in-place=%s,'
                                  ' head-busy=%s)',
                                  'ENABLED' if ready else 'disabled',

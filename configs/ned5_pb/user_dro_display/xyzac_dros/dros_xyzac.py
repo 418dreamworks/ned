@@ -177,19 +177,18 @@ class UserDRO(QWidget):
                     sig.disconnect()
                 except Exception:
                     pass
-            if name == 'zero_all_button':
-                b.clicked.connect(lambda _=False, btn=b, a=axes:
-                                  self._zero_click(btn, a))
-            else:
-                # SINGLE = LOCK, DOUBLE = the zero countdown (operator
-                # 2026-08-06: "double clicks on the zero XYZ button starts
-                # the zero counter, and single click is a lock"). The
-                # 260 ms window turns a click into a lock toggle only if no
-                # second click follows; a click during a running countdown
-                # keeps its old meaning: cancel.
-                b.installEventFilter(self)
-                b.clicked.connect(lambda _=False, btn=b, a=axes:
-                                  self._xyz_click(btn, a))
+            # SINGLE = LOCK, DOUBLE = the zero countdown (operator
+            # 2026-08-06: "double clicks on the zero XYZ button starts the
+            # zero counter, and single click is a lock"). ZERO ALL is in
+            # this loop on the same terms since 2026-08-10 -- "lets have the
+            # zeroall have the same lock and zero behavior as xyz" -- it
+            # just carries three axes instead of one.
+            # Qt's own doubleClickInterval decides: a click becomes a lock
+            # toggle only if no second click follows; a click during a
+            # running countdown keeps its old meaning, cancel.
+            b.installEventFilter(self)
+            b.clicked.connect(lambda _=False, btn=b, a=axes:
+                              self._xyz_click(btn, a))
         # LOCK A / LOCK C -- the A/C ZERO buttons repurposed as checkable
         # toggles. Locked = skipped entirely in the MPG selection cycle
         # (ned_controls tab -> ned-tab.lock-*-out -> pendant.lock-*).
@@ -249,14 +248,31 @@ class UserDRO(QWidget):
         tab = win.findChild(QWidget, 'ned_controls') if win else None
         if tab is None or not hasattr(tab, 'get_ac_lock'):
             return
+        # BUSY = NOT CLICKABLE (operator 2026-08-10: "while homing zero
+        # buttons continue to work. THEY SHOULDN'T"). The two loops below
+        # used to force-re-enable these every 400 ms to beat qtpyvcp's
+        # bindOk greying -- which also undid any disable WE wanted, so a
+        # zero countdown could be started mid-home. _zero_run_queue only
+        # deferred the G10 at the END; the click was accepted and the
+        # countdown ran, which is what the operator saw.
+        try:
+            import linuxcnc as _lc
+            _s = _lc.stat(); _s.poll()
+            busy = (abs(_s.current_vel) > 0.01
+                    or any(_s.joint[j]['homing'] for j in range(6))
+                    or _s.interp_state != _lc.INTERP_IDLE
+                    or _s.task_state != _lc.STATE_ON)
+        except Exception:
+            busy = True          # unreadable -> refuse
+            return
         # XYZ lock visuals follow the same truth (advisor b), and every
         # lock button is kept ENABLED (advisor A4: issue_mdi.bindOk greys
         # them during any program/MDI -- but a lock is pure HAL, needed
         # most mid-cycle)
         for ax, b in getattr(self, '_xyz_lock_btns', {}).items():
             try:
-                if not b.isEnabled():
-                    b.setEnabled(True)
+                if b.isEnabled() == busy:
+                    b.setEnabled(not busy)
                 on = bool(tab.get_ac_lock(ax))
                 base = getattr(b, '_ned_base_qss', None)
                 if base is None:
@@ -270,8 +286,8 @@ class UserDRO(QWidget):
                 pass
         for ax, b in getattr(self, '_lock_btns', {}).items():
             try:
-                if not b.isEnabled():
-                    b.setEnabled(True)       # advisor A4
+                if b.isEnabled() == busy:
+                    b.setEnabled(not busy)
                 state = bool(tab.get_ac_lock(ax))
                 if b.isChecked() != state:
                     b.blockSignals(True)
@@ -299,9 +315,27 @@ class UserDRO(QWidget):
             if t is not None:
                 t.stop()                     # cancel the single-click lock
                 t.deleteLater()
+            # A DOUBLE CLICK MUST NEVER LEAVE IT LOCKED (operator
+            # 2026-08-10: "a double click should lock XYZ but it also zeros
+            # it" / "if its a double click it should not lock"). Cancelling
+            # the pending timer only wins if the timer has not fired yet --
+            # doubleClickInterval is a race we cannot reliably win. So if a
+            # lock DID land in the last 1.5 s on this button, put it back.
+            import time as _t
+            u = getattr(self, '_xyz_lock_undo', {}).pop(obj.objectName(),
+                                                        None)
+            if u is not None and (_t.time() - u[0]) < 1.5:
+                win = self.window()
+                tab = win.findChild(QWidget, 'ned_controls') if win else None
+                if tab is not None and hasattr(tab, 'set_ac_lock'):
+                    tab.set_ac_lock(u[1], u[2])
+                    LOG.info('LOCK %s reverted to %s -- that was a double '
+                             'click, not a lock', u[1].upper(),
+                             'ON' if u[2] else 'OFF')
             name = obj.objectName()
             ax = {'zero_x_button': 'X', 'zero_y_button': 'Y',
-                  'zero_z_button': 'Z'}.get(name)
+                  'zero_z_button': 'Z',
+                  'zero_all_button': 'X Y Z'}.get(name)
             if ax:
                 self._zero_click(obj, ax)    # the zero counter
                 return True
@@ -331,20 +365,32 @@ class UserDRO(QWidget):
         t.start(QApplication.doubleClickInterval() + 50)
 
     def _xyz_lock_toggle(self, btn, axes):
-        ax = axes.lower()
+        # `axes` may be one axis ('X') or several ('X Y Z' from ZERO ALL,
+        # operator 2026-08-10: "lets have the zeroall have the same lock and
+        # zero behavior as xyz"). For a group, one click flips them all to
+        # the SAME new state -- locked unless every one is already locked --
+        # so the button never leaves the three disagreeing.
+        axl = [a.lower() for a in axes.split()]
+        ax = axl[0]
         getattr(self, '_xyz_p1', {}).pop(btn.objectName(), None)
         win = self.window()
         tab = win.findChild(QWidget, 'ned_controls') if win else None
         if tab is None or not hasattr(tab, 'set_ac_lock'):
             LOG.error('LOCK %s: ned-tab not found', axes)
             return
-        on = not bool(getattr(tab, '_ac_locked', {}).get(ax))
-        tab.set_ac_lock(ax, on)
+        cur = getattr(tab, '_ac_locked', {})
+        on = not all(bool(cur.get(a)) for a in axl)
+        for a in axl:
+            tab.set_ac_lock(a, on)
         # NO paint here (advisor b): set_ac_lock swallows pin failures, so
         # painting on the click showed a red lock the wheel did not obey.
         # _sync_lock_buttons repaints from the tab's actual state, 400 ms.
         self._xyz_lock_btns = getattr(self, '_xyz_lock_btns', {})
         self._xyz_lock_btns[ax] = btn
+        # remember it, so a double-click that raced us can put it back
+        import time as _t
+        self._xyz_lock_undo = getattr(self, '_xyz_lock_undo', {})
+        self._xyz_lock_undo[btn.objectName()] = (_t.time(), ax, not on)
         LOG.info('LOCK %s -> %s (DRO single-click)', axes,
                  'ON' if on else 'OFF')
 

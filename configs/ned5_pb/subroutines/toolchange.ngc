@@ -59,13 +59,18 @@ o137 if [#<selected_tool> EQ 0]
         o141 endif
         o<m21> call [#<home_fork>]
     o138 endif
-    o<toolchange> return
+    ; T0 ENDS LIKE ANY OTHER CHANGE (operator 2026-08-11: "after doing
+    ; G43(T0) unload spindle with ATC, move back to height as you normally
+    ; would if it was G43(T1)"). Same tcpark as the normal exit below --
+    ; retract only, no traverse.
+    o<tcpark> call
+    o<toolchange> return [1]
 o137 endif
 o135 if [#<selected_tool> EQ #<tool_in_spindle>]
     ; requested tool already loaded: standard harmless Tn M6 prefix --
     ; without this the pocket scan finds nothing and aborts (advisor
     ; finding 7, 2026-08-04)
-    o<toolchange> return
+    o<toolchange> return [1]
 o135 endif
 #<_rack_between> = 0 ; stale between-tools flag from an aborted change must never survive into a fresh M6
 #<next_pocket> = 0 ; assigns 0 to the next pocket for a later check if the tool is found in the rack
@@ -122,8 +127,10 @@ o170 endif
 
 M65 P1 ; tool change complete -> release the brain
 o<program_coolant> call
+o<tcpark> call
 
 (PRINT, o<toolchange> endsub)
 o<toolchange> endsub [1]
+
 
 M2
