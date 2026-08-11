@@ -63,7 +63,37 @@ NUM_INT_ROT = 3            # degrees need only 000.00 (operator 2026-08-05)
 # (one pin set, remapped in HAL), so the DRO has to bind them to the row
 # they now describe. Colouring C red while the operator locked B would be a
 # lie on the one display that is trusted at a glance.
-ROT = 'b' if os.environ.get('NED_MODE', '') == 'xyzab' else 'c'
+def _rotary_slot_letter():
+    """Which axis does the pendant's rotary slot ACTUALLY drive?
+
+    Ask HAL, not the environment. The pendant publishes that slot on
+    pendant.jog-en-c -> signal mpg-sel-c no matter what it drives, and the
+    postgui overlay nets that signal to the real axis:
+
+        mpg-sel-c  ==> axis.b.jog-enable   (-xyzab)
+        mpg-sel-c  ==> axis.c.jog-enable   (-xyzac)
+
+    So the wiring itself is the answer, and it cannot be got wrong by a
+    launch that forgets to export something. It WAS got wrong that way
+    (2026-08-11): dro2 read NED_MODE, a restart that did not pass it fell
+    back to 'c', the lock pins were bound to a row that is not on screen,
+    and B stayed white while the operator had it locked in PB.
+    """
+    try:
+        out = subprocess.run(['timeout', '5', 'halcmd', 'show', 'sig',
+                              'mpg-sel-c'], capture_output=True,
+                             text=True).stdout
+        for ln in out.splitlines():
+            ln = ln.strip()
+            if ln.startswith('==> axis.') and ln.endswith('.jog-enable'):
+                return ln.split('axis.', 1)[1].split('.', 1)[0].lower()
+    except Exception:
+        pass
+    # HAL unreachable: fall back to the launch mode, then to the old default
+    return 'b' if os.environ.get('NED_MODE', '') == 'xyzab' else 'c'
+
+
+ROT = _rotary_slot_letter()
 
 
 def ini_axes():
