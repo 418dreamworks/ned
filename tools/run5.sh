@@ -414,7 +414,11 @@ pgrep -f 'tools/live/blackmark.py' >/dev/null 2>&1 || ( "$NED/tools/live/blackma
 # never destabilise the GUI -- and it keeps showing the numbers even if PB
 # dies. Killed and restarted here so a stale copy never lingers.
 pkill -f 'live/dro2.py' >/dev/null 2>&1
-( sleep 12; "$NED/tools/live/dro2.py" > "$NED/logs/dro2.log" 2>&1 & ) &
+# dro2 is a SEPARATE process: it inherits NED_MODE but nothing told it
+# which ini is running, so ini_axes() fell back to its hardcoded XYZAC
+# list and the standalone DRO showed a C row and no B at all.
+( sleep 12; INI_FILE_NAME="$INI" "$NED/tools/live/dro2.py" \
+    > "$NED/logs/dro2.log" 2>&1 & ) &
 pgrep -f 'tools/live/logclean.sh' >/dev/null 2>&1 || ( "$NED/tools/live/logclean.sh" >/dev/null 2>&1 & )
 
 # 3. keep lcnc.log bounded (last ~2000 lines) + stamp a session header

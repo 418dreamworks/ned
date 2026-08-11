@@ -67,9 +67,22 @@ ROT = 'b' if os.environ.get('NED_MODE', '') == 'xyzab' else 'c'
 
 
 def ini_axes():
-    """Axis letters from the RUNNING ini, duplicates dropped (gantry)."""
+    """Axis letters the operator can actually command, asked of the RUNNING
+    machine rather than assumed.
+
+    Two things were wrong with taking this from a hardcoded fallback list:
+    dro2 is a separate process that was never handed INI_FILE_NAME, so it
+    ALWAYS used the fallback -- the standalone DRO showed a C row and no B
+    at all under -xyzab -- and a fixed list cannot follow a mode change.
+
+    So: letters come from [TRAJ]COORDINATES, and any axis whose joint has
+    been clamped to a point is dropped. That clamp is how every mode parks
+    an un-spelled rotary (ned_brain.apply_mode), so this needs no knowledge
+    of which mode is running: -xyzac drops nothing, -xyzab drops the parked
+    C, -xyz drops both. Nothing here names an axis.
+    """
     path = os.environ.get('INI_FILE_NAME', '')
-    letters = []
+    letters, coords = [], ''
     try:
         ini = linuxcnc.ini(path) if path else None
         coords = (ini.find('TRAJ', 'COORDINATES') if ini else None) or ''
@@ -78,7 +91,36 @@ def ini_axes():
                 letters.append(c)
     except Exception:
         pass
-    return letters or ['X', 'Y', 'Z', 'A', 'C']
+    if not letters:
+        # no ini: the axis mask is the config's own answer, always there
+        try:
+            st = linuxcnc.stat(); st.poll()
+            letters = [L for i, L in enumerate('XYZABCUVW')
+                       if st.axis_mask & (1 << i)]
+        except Exception:
+            return ['X', 'Y', 'Z', 'A', 'C']
+    # drop what cannot move. COORDINATES is positional, so its Nth letter is
+    # joint N; a gantry letter appears twice and keeps its first joint.
+    try:
+        st = linuxcnc.stat(); st.poll()
+        seq = [c for c in coords.replace(' ', '').upper() if c.isalpha()]
+        jn = {}
+        for i, c in enumerate(seq):
+            jn.setdefault(c, i)
+        live = []
+        for L in letters:
+            j = jn.get(L)
+            if j is not None and j < st.joints:
+                span = (st.joint[j]['max_position_limit']
+                        - st.joint[j]['min_position_limit'])
+                if span < 0.01:
+                    continue          # clamped to a point: parked, not shown
+            live.append(L)
+        if live:
+            letters = live
+    except Exception:
+        pass
+    return letters
 
 
 class JogStrip(QWidget):
@@ -131,6 +173,16 @@ class Dro2(QWidget):
         self.setWindowTitle('ned DRO')
         self.setStyleSheet('background: %s;' % BLACK)
         self.axes = ini_axes()
+        # RE-ASK, don't assume. The axis set is not fixed at startup:
+        # a parked rotary is clamped by ned_brain.apply_mode only once
+        # the launch sequence has put it where it belongs, which is
+        # seconds AFTER this window exists. Sampling once left the
+        # parked C on screen for the whole session. Re-checking costs
+        # one NML poll every few seconds and needs no idea of which
+        # mode is running.
+        self._axes_timer = QTimer(self)
+        self._axes_timer.timeout.connect(self._recheck_axes)
+        self._axes_timer.start(4000)
         self.stat = linuxcnc.stat()
         self.sel = 0
         self._mm = True
@@ -170,6 +222,8 @@ class Dro2(QWidget):
         root.addWidget(hdr, 0)
 
         self.rows = []
+        self._holders = {}
+        self._all_axes = list(self.axes)
         for letter in self.axes:
             holder = QWidget()
             row = QHBoxLayout(holder)
@@ -194,7 +248,11 @@ class Dro2(QWidget):
             row.addWidget(work, 5)
             # every axis row shares the remaining height equally
             root.addWidget(holder, 1)
+            # the holder is kept so a row can be HIDDEN when its axis
+            # stops being commandable -- rebuilding a live layout to
+            # drop one line is all risk and no benefit.
             self.rows.append((lab, mach, work))
+            self._holders[letter] = holder
 
         self.t = QTimer(self)
         self.t.timeout.connect(self.tick)
@@ -246,6 +304,20 @@ class Dro2(QWidget):
             sys.stderr.write('dro2: HAL unavailable (%s) -- numbers only\n'
                              % e)
             self._hal = None
+
+    def _recheck_axes(self):
+        """Rebuild if the commandable axis set has changed."""
+        try:
+            now = ini_axes()
+        except Exception:
+            return
+        if now == self.axes:
+            return
+        old = self.axes
+        self.axes = now
+        for letter, holder in self._holders.items():
+            holder.setVisible(letter in now)
+        print('dro2: commandable axes %s -> %s' % (old, now), flush=True)
 
     def _hal_read(self):
         if self._hal is None:
@@ -346,7 +418,14 @@ class Dro2(QWidget):
             pass
         idx = {'X': 0, 'Y': 1, 'Z': 2, 'A': 3, 'B': 4, 'C': 5,
                'U': 6, 'V': 7, 'W': 8}
-        for i, letter in enumerate(self.axes):
+        # self.rows was built from _all_axes and is indexed by BUILD
+        # position. Iterating self.axes here would slide every row up
+        # by one the moment an axis is hidden -- B would be painted
+        # into C's line. Walk the build order and skip what is hidden.
+        for i, letter in enumerate(getattr(self, '_all_axes',
+                                           self.axes)):
+            if letter not in self.axes:
+                continue
             j = idx.get(letter, i)
             try:
                 m = self.stat.actual_position[j]

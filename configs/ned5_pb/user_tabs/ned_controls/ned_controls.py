@@ -22,6 +22,7 @@ Pins (nets in postgui_pb.hal):
   ned-tab.inc-index-in   s32   in  <- pendant.inc-index (the SLOT, not the value)
 """
 import os
+import re
 import time
 
 from PySide6.QtCore import QTimer, QObject, QEvent
@@ -141,10 +142,15 @@ STYLE_NOAIR = 'font: 75 18pt; background: rgb(70,70,70); color: rgb(180,180,180)
 # command; the selection persists between moves. All values are inside the
 # machine limits (X/Y 200 mm/s, Z 169.3 mm/s, angular 30 deg/s), so the
 # planner never has to clamp these.
+# (linear mm/min, angular deg/min). Operator 2026-08-11: "for the jog, make
+# fast feed 8000 ... medium can be 3000 ... AC speed can stay the same", so
+# only the linear column moved. THIS is the table the PB jog panel's
+# SLOW/MEDIUM/FAST buttons read -- ned_pendant.py has a separate one for the
+# wheel, and editing that one alone changed nothing the operator could feel.
 JOG_SPEEDS = {
     'slow':   (200.0,   15.0),
-    'medium': (1200.0,  60.0),
-    'fast':   (4000.0, 180.0),
+    'medium': (3000.0,  60.0),
+    'fast':   (8000.0, 180.0),
 }
 
 # EMC 9-axis order XYZABCUVW -> stat.actual_position/g5x_offset/... index
@@ -647,6 +653,10 @@ class UserTab(QWidget):
         QTimer.singleShot(4000, self.xyzab_launch_start)
         if ROT == 'b':
             QTimer.singleShot(7000, self._xyzab_relabel_gui)
+            # subtabs land at 6.5 s and the DRO is deferred further;
+            # a widget that appears after the walk would keep the
+            # design-time letter, so sweep again once it is all up.
+            QTimer.singleShot(14000, self._xyzab_relabel_gui)
 
         # SPINDLE SECTION (operator 2026-08-01): spindle load meter ->
         # chip-load-per-flute PLACEHOLDER; left RPM readout -> live
@@ -2710,41 +2720,87 @@ class UserTab(QWidget):
         LOG.info('JOG speed -> %s (F%g mm/min, %g deg/min)',
                  key.upper(), lin, ang)
 
-    def _xyzab_relabel_gui(self):
-        """Every visible 'C' that now means B. -xyzab only.
+    # ==================================================================
+    # AXIS-LETTER RELABEL  (generic; no widget list, no hardcoded captions)
+    # ==================================================================
+    # Every .ui in this config was authored for the XYZAC machine, so the
+    # second rotary is spelled C throughout -- captions, placeholders,
+    # tooltips, group titles, the DRO row. Which axis that slot ACTUALLY
+    # drives is a launch-time fact (ROT, from NED_MODE). Rather than name
+    # the widgets that need changing -- a list that goes stale the moment
+    # anyone adds a button -- walk the whole tree and rewrite the letter.
+    #
+    # The token rule is what makes a blind rewrite safe: a C that is not
+    # preceded by a letter or digit and not followed by a letter. That is
+    # every axis use (C, C0, "C . deg", "A0 C0", "LOCK C") and none of the
+    # words -- CLEAR, CANCEL, COOLANT, WCS, MDI keep their C.
+    #
+    # Reversible by construction: launch -xyzac and ROT is 'c', the pattern
+    # rewrites C to C, and nothing moves.
+    _AXWORD = re.compile(r'(?<![A-Za-z0-9])C(?![A-Za-z])')
+    _TEXT_PROPS = ('text', 'placeholderText', 'toolTip', 'title',
+                   'windowTitle')
 
-        The operator's words, 2026-08-11: "i see mistakes with gui saying C
-        everywhere". The slot is internally still 'c', so nothing renames
-        itself -- each caption has to be pointed at the axis it now drives.
-        """
-        from PySide6.QtWidgets import QLineEdit, QAbstractButton
-        win, n = self.window(), 0
-        for e in win.findChildren(QLineEdit, 'jp_in_c'):
-            e.setPlaceholderText('B \u00b7 deg'); n += 1
-        for b in win.findChildren(QAbstractButton, 'jp_p_a0c0'):
-            b.setText('A0 B0'); n += 1
-        LOG.info('XYZAB: %d jog-panel caption(s) repointed C -> B', n)
-        # HEAD-C CALIBRATION CANNOT ACT HERE. C is driven to zero at launch
-        # and clamped to +-0.001 deg, so every one of these would be refused
-        # at the soft limit. Standing law: grey out what cannot act rather
-        # than leave a button that swallows the click.
+    def _relabel_axis_letters(self, root=None):
+        """Repoint every visible C at the axis the rotary slot really is."""
+        want = ROT.upper()
+        if want == 'C':
+            return 0                       # -xyzac: the .ui is already right
+        from PySide6.QtWidgets import QWidget
+        root = root if root is not None else self.window()
+        if root is None:
+            return 0
+        n = 0
+        for w in [root] + root.findChildren(QWidget):
+            # A control that CANNOT act keeps its original name. Those are
+            # the head-C cycles: they really do mean C, they are disabled
+            # because C is parked, and renaming them to B would promise a
+            # calibration that does not exist. Tagged at disable time, so
+            # this stays a rule rather than a list.
+            if w.property('ned_keep_letter'):
+                continue
+            for prop in self._TEXT_PROPS:
+                get, st = 'setX', None
+                try:
+                    cur = w.property(prop)
+                except Exception:
+                    continue
+                if not isinstance(cur, str) or not cur:
+                    continue
+                new = self._AXWORD.sub(want, cur)
+                if new == cur:
+                    continue
+                try:
+                    w.setProperty(prop, new)
+                    n += 1
+                except Exception:
+                    pass
+        LOG.info('AXIS RELABEL: %d caption(s) C -> %s', n, want)
+        return n
+
+    def _xyzab_relabel_gui(self):
+        # Order matters: tag-then-relabel. The disable pass marks the
+        # controls whose letter must survive, so the generic walk can skip
+        # them without knowing their names.
+        win = self.window()
+        if win is None:
+            return
         d = 0
-        for name in ('cal_c_cycle', 'cal_c_goto_left', 'cal_c_goto_right',
-                     'cal_ac_cycle'):
-            for b in win.findChildren(QAbstractButton, name):
+        for b in win.findChildren(QWidget):
+            t = (b.property('text') or '') if hasattr(b, 'text') else ''
+            if not isinstance(t, str):
+                t = ''
+            # head-C calibration: any control whose caption names a C cycle.
+            if re.search(r'(?<![A-Za-z0-9])C(?![A-Za-z])', t) and (
+                    'START' in t.upper() or 'REF' in t.upper()
+                    or 'LEFT' in t.upper() or 'RIGHT' in t.upper()):
+                b.setProperty('ned_keep_letter', True)
                 b.setEnabled(False)
-                b.setToolTip('Disabled in -xyzab: C is parked at zero and '
-                             'clamped; the rotary is B.')
+                b.setToolTip('Disabled: C is parked at zero and clamped in '
+                             'this mode; the rotary is %s.' % ROT.upper())
                 d += 1
-        for b in win.findChildren(QAbstractButton):
-            t = (b.text() or '').strip().upper()
-            if t in ('STARTC', 'START C', 'C LEFT', 'C RIGHT', 'STARTAC',
-                     'START AC', 'CLEAR C REF'):
-                b.setEnabled(False)
-                b.setToolTip('Disabled in -xyzab: C is parked at zero and '
-                             'clamped; the rotary is B.')
-                d += 1
-        LOG.info('XYZAB: %d head-C calibration control(s) disabled', d)
+        LOG.info('AXIS RELABEL: %d head-C control(s) pinned and disabled', d)
+        self._relabel_axis_letters()
 
     def _jog_work_pos(self, s, ax):
         # current WORK coordinate of axis letter ax (house offset math)
