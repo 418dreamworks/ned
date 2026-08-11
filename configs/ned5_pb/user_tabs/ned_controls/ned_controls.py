@@ -6851,6 +6851,18 @@ class UserTab(QWidget):
             c.error_msg('%s refused: a homing cycle is running' % label)
             LOG.error('%s refused: homing in progress', label)
             return
+        # motion.jog-inhibit SWALLOWS JOGS SILENTLY. command.c reads it in
+        # every jog handler and simply returns -- no error, no NML reply, the
+        # caller cannot tell a completed jog from a discarded one. So this
+        # has to be asked BEFORE the jog, not discovered afterwards by the
+        # axis not having moved (2026-08-11: the -xyzab launch sequence sent
+        # C to zero, nothing happened, and it blamed the head -- the real
+        # cause was the tool-state lock, T13 clamped against a T0 record).
+        if self._motion_lock_on():
+            c.error_msg('%s refused: motion is locked (%s)'
+                        % (label, self._tool_fault_detail()))
+            LOG.error('%s refused: motion.jog-inhibit is set', label)
+            return
         # (the 2026-08-10 stale-offset guard is gone: pso_live drives
         #  ini.N.home_offset every servo cycle now, so there is no wiped pin
         #  left to adopt. Nothing writes it, so nothing can blank it.)
@@ -6950,11 +6962,36 @@ class UserTab(QWidget):
                 return
             if moving:
                 return
+            # B IS DECLARED FIRST, and that ordering is load-bearing.
+            # It used to be last, which deadlocked the whole launch
+            # (2026-08-11): M61 -- the brain's spindle-tool re-declare --
+            # goes through MDI, MDI refuses with "all joints must be homed",
+            # and joint 6 was the one joint still unhomed. No tool record
+            # means tool.mm.lock2 holds motion.jog-inhibit, which silently
+            # discards the very jog that drives C to zero, which is the step
+            # that was supposed to reach the B home. Nothing in that loop
+            # reports anything; it just sits.
+            # Declaring B first costs nothing -- it is a zero-length home
+            # with no prerequisites -- and it makes the machine fully homed
+            # before anything else is asked of it.
+            self.home_b_inplace()
+            self._ab_step = 'check_c'
+            self._ab_deadline = time.time() + 30.0
+            return
+        if step == 'check_c':
+            if moving:
+                return
+            if not s.homed[6]:
+                if time.time() > self._ab_deadline:
+                    self._ab_done('B never reported homed -- STOPPING before '
+                                  'C is touched; nothing else will work '
+                                  'until every joint is homed')
+                return
             cpos = s.joint[5]['output']
             if abs(cpos) <= self.XYZAB_C_TOL:
-                LOG.info('XYZAB: C is already at zero (%+.4f) -- no homing '
-                         'needed, going straight to B', cpos)
-                self._ab_step = 'home_b'
+                LOG.info('XYZAB: C is already at zero (%+.4f) -- nothing to '
+                         'home', cpos)
+                self._ab_done('B declared, C already at zero')
                 return
             LOG.info('XYZAB: C reads %+.4f -- physical XYZ homing first so '
                      'the head has room, then C to zero', cpos)
@@ -6972,6 +7009,18 @@ class UserTab(QWidget):
                 return
             if moving or not all(s.homed[:4]):
                 return
+            # Homing is NOT jog-inhibited (it drives free_tp directly), so
+            # XYZ homes happily with the tool lock on -- but the jog that
+            # follows would be discarded without a word. Wait for the lock
+            # rather than spend the one attempt.
+            if self._motion_lock_on():
+                if not getattr(self, '_ab_lock_said', False):
+                    self._ab_lock_said = True
+                    LOG.error('XYZAB: XYZ is homed but motion is LOCKED (%s)'
+                              ' -- holding before C is driven to zero',
+                              self._tool_fault_detail())
+                self._ab_deadline = time.time() + 120.0
+                return
             LOG.info('XYZAB: XYZ homed; driving C to zero from %+.4f',
                      s.joint[5]['output'])
             self.ac_to_zero('c')
@@ -6986,17 +7035,17 @@ class UserTab(QWidget):
                 return
             cpos = s.joint[5]['output']
             if abs(cpos) > self.XYZAB_C_TOL:
+                if self._motion_lock_on():
+                    # the jog was discarded, not attempted -- go round again
+                    self._ab_step = 'wait_xyz'
+                    self._ab_deadline = time.time() + 120.0
+                    return
                 self._ab_done('C stopped at %+.4f, not zero -- NOT declaring '
-                              'B; check the head' % cpos)
+                              'B. Motion is not locked, so this is the head '
+                              'or the C drive' % cpos)
                 return
-            LOG.info('XYZAB: C at %+.4f, at zero', cpos)
-            self._ab_step = 'home_b'
-            return
-        if step == 'home_b':
-            if moving:
-                return
-            self.home_b_inplace()
-            self._ab_done('C at zero, B declared')
+            self._ab_done('C driven to zero (%+.4f); B was declared '
+                           'before the cycle' % cpos)
             return
 
     def home_b_inplace(self):

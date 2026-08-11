@@ -40,3 +40,14 @@ setp tool.mm.phandb.on-delay   1.0
 setp tool.mm.phandb.off-delay  0.2
 net tool-unrecorded tool.mm.unrecdb.out
 net tool-phantom    tool.mm.phandb.out
+
+# --- -xyzab: B power gate (ned5_b.hal) -------------------------------------
+# `logic` rather than another and2: and2 is already loaded with a fixed name
+# list in ned5_iron.hal and a realtime component cannot be loadrt'd twice.
+# personality 0x102 = 2 inputs + `and` output (logic(9)). The stepgen half of
+# ned5_b.hal cannot be tested here -- it needs hm2_eth and the board.
+loadrt logic names=b.pwr personality=0x102
+addf b.pwr t1
+net b-amp-req  => b.pwr.in-00
+net b-armed    => b.pwr.in-01
+net b-servo-on b.pwr.and

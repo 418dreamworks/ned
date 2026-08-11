@@ -1,0 +1,277 @@
+# ============================================================================
+#  ned5_pb postgui_pb.hal  --  Probe Basic GUI glue for the real machine.
+#  Runs AFTER probe_basic builds its qtpyvcp.* HAL pins. Machine signals live
+#  in ../ned5/ned5_iron.hal (shared with the nedgui config).
+#
+#  The MPG pendant state machine is tools/live/ned_pendant.py (userspace HAL) --
+#  identical behavior to the nedgui handler it replaces: tap=next axis,
+#  double-tap=back, hold+wheel=speed. Its pins stand in 1:1 for nedgui.jog-*.
+#
+#  tools/live/ned_brain.py carries the rest of the developed logic (head A/C
+#  absolute read -> arm -> post-home verify, R4 park, stored homing + resume
+#  arming, teleop recovery, gui.md event log) -- its pins stand in for the
+#  nedgui sen/pso/r4 pins, wired below to the same iron signals.
+#
+#  NOT wired on purpose:
+#    - qtpyvcp_manualtoolchange: iron HAL self-acks the toolchange loop.
+# ============================================================================
+
+# spin permit mode-feed: iron's spinok OR-gate (S1-locked OR manual mode)
+# gets the manual half here -- halui does not exist at iron-load time.
+net sig-mode-manual  halui.mode.is-manual
+
+# --- Probe Basic cycle timer (required by the PB screen) --------------------
+loadrt time
+addf time.0 servo-thread
+net prog-running  time.0.start <= halui.program.is-running
+net prog-paused   time.0.pause <= halui.program.is-paused
+net cycle-seconds qtpyvcp.timerseconds.in <= time.0.seconds
+net cycle-minutes qtpyvcp.timerminutes.in <= time.0.minutes
+net cycle-hours   qtpyvcp.timerhours.in   <= time.0.hours
+
+# --- HEAD READ / HOMING / RESUME BRAIN (ned_brain.py) -----------------------
+# Same pin roles the nedgui handler had (postgui_iron.hal lines 35-46):
+# sen-suppress HIGH -> SEN low (packs BB, primed); sen-force rising edge ->
+# absolute PSO burst; pso enable/reset gate the queued reader; r4-select picks
+# the pack on the single PktUART (1 = A) AND gates the 70 V rotary brick --
+# ned_brain parks it FALSE after every read.
+# -Wn: the component announces itself as 'brain', not 'ned_brain' -- plain -W
+# waits forever for a component named after the executable (halcmd hung here).
+loadusr -Wn brain /home/brains/Documents/ned/tools/live/ned_brain.py
+# (no tool-guard arming net any more -- the guard watches from HAL load;
+#  see the NO BOOT EXCUSE block in configs/ned5/ned5_iron.hal)
+# ---- ABSOLUTE ANGLE -> home_offset, IN HAL, EVERY SERVO CYCLE -------------
+# ini.N.home_offset is a HAL IN pin, so it can be DRIVEN rather than poked.
+# That is the whole fix: no `halcmd setp`, so no window between the write and
+# homing.c:1279 latching the destination, and nothing can wipe the pin to 0
+# and have a home adopt zero at a 124 deg head ("HOME C: adopted +0.0000",
+# 2026-08-10). A and C share one UART; r4-select says which pack is talking,
+# so pso_live latches each valid frame into its own output and both stay good.
+setp hm2_7i97.0.pktuart.0.ref-mt-a  [HEAD_ABS_ZERO]A_MULTITURN
+setp hm2_7i97.0.pktuart.0.ref-w-a   [HEAD_ABS_ZERO]A_WITHIN
+setp hm2_7i97.0.pktuart.0.ref-mt-c  [HEAD_ABS_ZERO]C_MULTITURN
+setp hm2_7i97.0.pktuart.0.ref-w-c   [HEAD_ABS_ZERO]C_WITHIN
+setp hm2_7i97.0.pktuart.0.gear-a    [HEAD_GEAR]A_GEAR
+setp hm2_7i97.0.pktuart.0.gear-c    [HEAD_GEAR]C_GEAR
+setp hm2_7i97.0.pktuart.0.sign-a    [HEAD_GEAR]A_SIGN
+setp hm2_7i97.0.pktuart.0.sign-c    [HEAD_GEAR]C_SIGN
+net sig-r4-select     =>  hm2_7i97.0.pktuart.0.sel-a
+net sig-abs-deg-a     hm2_7i97.0.pktuart.0.deg-a  =>  ini.4.home_offset
+net sig-abs-deg-c     hm2_7i97.0.pktuart.0.deg-c  =>  ini.5.home_offset
+
+# TOOL TABLE SERVED: the ONLY thing that releases the default motion lock.
+# FALSE until the brain sees a real entry in stat.tool_table.
+net sig-tool-table-ok  brain.tool-table-ok
+# the GUI greys CYCLE START / MDI off the SAME lock the motion controller
+# obeys, so a control is never live while HAL is refusing motion
+net sig-motion-lock    ned-tab.motion-lock-in
+# the TABLE half alone: the startup input gate opens only on homed AND this
+net sig-tool-table-ok  ned-tab.table-ok-in
+
+# HOMING STATE MACHINE, LIVE. homing.c exports joint.N.home-state and names
+# the enum at homing.c:76-100 (HOME_IDLE = 0 ... HOME_FINAL_MOVE_START = 20,
+# the state where homing.c:1279 latches the destination). The brain refuses
+# to write ini.N.home / ini.N.home_offset unless BOTH head joints read IDLE:
+# do_home_one_joint (homing.c:265-281) stamps HOME_START without checking
+# whether another joint is mid-cycle, so nothing else reports "joint 4 busy".
+net sig-hstate-4      joint.4.home-state => brain.hstate-4-in
+net sig-hstate-5      joint.5.home-state => brain.hstate-5-in
+# HEAD BUSY: TRUE while any head homing work is outstanding. Every homing
+# control in the GUI greys off this and re-enables when it clears.
+net sig-head-busy     brain.head-busy    => ned-tab.head-busy-in
+
+# MODE INTERLOCK (operator 2026-08-06): while the GUI runs an orchestrated
+# MDI chain it owns the task mode; the brain skips its MANUAL restore.
+# Heartbeat guards against a stale flag from a crashed GUI.
+net sig-seq-active   ned-tab.seq-active-out => brain.seq-active-in
+net sig-seq-hb       ned-tab.seq-hb-out     => brain.seq-hb-in
+# TOOL CHANGE IN PROGRESS (toolchange.ngc M64/M65 P1): brain suspends
+# its MANUAL/teleop restore while high (it aborted an M6 mid-return,
+# 2026-08-02 01:34)
+net sig-tc-active motion.digital-out-01 => brain.tcactive-in
+net sig-sen-suppress  <=  brain.sen-suppress
+net sig-sen-force     <=  brain.sen-force
+net sig-pso-enable    brain.pso-enable  =>  hm2_7i97.0.pktuart.0.enable
+net sig-pso-reset     brain.pso-reset   =>  hm2_7i97.0.pktuart.0.reset
+net sig-r4-select     brain.r4-select   =>  hm2_7i97.0.7i84.0.0.output-05
+# pso_live results feed brain's OWN pins (instance access, no global-mutex
+# hal.get_value -- a leaked mutex hung brain mid-verify 2026-07-31 14:31:39)
+net sig-pso-parsed    brain.parsed-in     <=  hm2_7i97.0.pktuart.0.parsed
+net sig-pso-mt        brain.multiturn-in  <=  hm2_7i97.0.pktuart.0.multiturn
+net sig-pso-within    brain.within-in     <=  hm2_7i97.0.pktuart.0.within
+# REF ALL announcement: the ned_controls tab pulses homeall-out after unhoming
+# A/C; brain arms the fresh head read in parallel with the XYZ switch dance.
+net sig-homeall       brain.homeall-in    <=  ned-tab.homeall-out
+net sig-anon-load     ned-tab.anon-load-out
+
+# per-axis REF A / REF C: unhome -> fresh read -> home that joint only
+net sig-refa          brain.ref-a-in      <=  ned-tab.refa-out
+net sig-refc          brain.ref-c-in      <=  ned-tab.refc-out
+
+# --- NED GUI components (created by our user tab + user DRO inside the PB
+# process via qtpyvcp.hal; pins exist once the GUI is up, before postgui).
+# All GUI-side reads are these netted pins -- never hal.get_value.
+# If the tab/DRO modules are ever removed, remove these nets too.
+net sol-ts-force          ned-tab.toolprobe-cmd  =>  sol.ts.in1
+net sig-air-pressure-ok   =>  ned-tab.air-ok-in
+net sig-toolsetter-deploy =>  ned-tab.probe-up-in
+# PB's probe LED (Probing tab) follows the REAL probe contact (input-28 chain);
+# in the sim this was fed by a fake on-screen probe button instead.
+net sig-tool-probe        =>  qtpyvcp.probe-led.on
+# CHIP BLOWER on the MIST control (operator request): PB's Mist toggle (menu)
+# and M7/M9 drive iocontrol coolant-mist -> OR'd into sol.blow alongside the
+# M64 P4 path (sol.blow.in0). Flood is unused (its menu entry is hidden).
+net sig-mist-blow   iocontrol.0.coolant-mist  =>  sol.blow.in1
+# (the pendant-fed nets sig-mpg-inc-index / sig-mpg-axis are below, AFTER
+#  the
+#  pendant loadusr -- its pins must exist first)
+
+# --- MPG PENDANT (ned_pendant.py drives the same signals nedgui did) --------
+loadusr -Wn pendant /home/brains/Documents/ned/tools/live/ned_pendant.py
+net sig-mpg-btn-raw  pendant.button-raw  <=  hm2_7i97.0.inmux.00.input-00
+net sig-mpg-counts   =>  pendant.wheel
+# pendant selections -> the GUI's own netted pins (highlight + increment sync).
+# BOTH pins live on ned-tab: user tabs load synchronously, but PB loads the
+# user DROs DEFERRED (after postgui!) so a DRO-owned pin here kills postgui.
+net sig-mpg-axis     ned-tab.axis-in      <=  pendant.sel-axis
+# jog-speed SLOT INDEX: one publisher (the pendant), many readers (PB, the
+# second-monitor DRO). Nobody keeps a private copy.
+net sig-mpg-inc-index ned-tab.inc-index-in <=  pendant.inc-index
+net sig-inc-set       ned-tab.inc-set-out => pendant.inc-set
+# MPG ZERO GESTURE -> the GUI zeroes the selected axis
+net sig-zero-axis     pendant.zero-axis-out => ned-tab.zero-axis-in
+net sig-zero-axis-idx pendant.zero-axis-idx => ned-tab.zero-axis-idx-in
+# MPG LOCK (pendant-owned, NOT the GUI lock) -> the standalone DRO
+net sig-mpg-lock-x    pendant.mpg-lock-x
+net sig-mpg-lock-y    pendant.mpg-lock-y
+net sig-mpg-lock-z    pendant.mpg-lock-z
+net sig-mpg-lock-a    pendant.mpg-lock-a
+net sig-mpg-lock-c    pendant.mpg-lock-c
+# LOCK A / LOCK C (DRO buttons): pendant skips locked axes in the cycle
+net sig-lock-a       pendant.lock-a       <=  ned-tab.lock-a-out
+net sig-lock-x       pendant.lock-x       <=  ned-tab.lock-x-out
+net sig-lock-y       pendant.lock-y       <=  ned-tab.lock-y-out
+net sig-lock-z       pendant.lock-z       <=  ned-tab.lock-z-out
+net sig-lock-c       pendant.lock-c       <=  ned-tab.lock-c-out
+net sig-mpg-jogspd   ned-tab.jogspeed-in  <=  pendant.jogspeed-out
+# axis (teleop, homed) jog pins: X/Y/Z enables + jogblock.sel come from
+# ned5_iron.hal section 7b via sig-mpg-sel-*; A/C wired here like postgui_iron.
+net sig-mpg-counts  =>  axis.a.jog-counts  axis.c.jog-counts
+net sig-mpg-sel-x   <=  pendant.jog-en-x
+net sig-mpg-sel-y   <=  pendant.jog-en-y
+net sig-mpg-sel-z   <=  pendant.jog-en-z
+net mpg-sel-a  pendant.jog-en-a  =>  axis.a.jog-enable
+net mpg-sel-c  pendant.jog-en-c  =>  axis.c.jog-enable
+net mpg-scale-lin  pendant.jog-scale-lin =>  axis.x.jog-scale axis.y.jog-scale
+# Z's jog scale comes from jogblock, NOT straight from the selector: inside
+# 5 detents of the clamp floor jogblock reinterprets each incoming detent at
+# the next step down the 5 / 1 / 0.1 / 0.01 ladder, and hands the operator's
+# own choice back rung by rung as they back away.
+net sig-zjog-scale jogblock.z.step-out => axis.z.jog-scale
+net mpg-scale-ang  pendant.jog-scale-ang =>  axis.a.jog-scale axis.c.jog-scale
+setp axis.y.jog-vel-mode 0
+setp axis.z.jog-vel-mode 0
+setp axis.a.jog-vel-mode 0
+setp axis.c.jog-vel-mode 0
+# JOINT-mode jog -- works UNHOMED (teleop is hard-gated on homing). Same
+# wheel/select/scale on the joint pins; X selection drives BOTH gantry joints.
+# X/Y/Z/W take the jogblock-GATED counts; A/C (no switches) take the raw wheel.
+net sig-jogc-x      =>  joint.0.jog-counts joint.3.jog-counts
+net sig-jogc-y      =>  joint.1.jog-counts
+net sig-jogc-z      =>  joint.2.jog-counts
+net sig-mpg-counts  =>  joint.4.jog-counts joint.5.jog-counts
+net sig-mpg-sel-x   =>  joint.0.jog-enable joint.3.jog-enable
+net sig-mpg-sel-y   =>  joint.1.jog-enable
+net sig-mpg-sel-z   =>  joint.2.jog-enable
+net mpg-sel-a       =>  joint.4.jog-enable
+net mpg-sel-c       =>  joint.5.jog-enable
+net mpg-scale-lin   =>  joint.0.jog-scale joint.1.jog-scale joint.2.jog-scale joint.3.jog-scale
+net mpg-scale-ang   =>  joint.4.jog-scale joint.5.jog-scale
+setp joint.0.jog-vel-mode 0
+setp joint.1.jog-vel-mode 0
+setp joint.2.jog-vel-mode 0
+setp joint.3.jog-vel-mode 0
+setp joint.4.jog-vel-mode 0
+setp joint.5.jog-vel-mode 0
+# ============================================================================
+
+# --- Z JOG CLAMP: GUI supplies arm state and the floor --------------------
+net sig-zclamp-en   ned-tab.zclamp-enable => jogblock.z.clamp-enable
+net sig-zclamp-low  ned-tab.zclamp-low    => jogblock.z.clamp-floor
+
+# live ladder step -> GUI red-dot indicator (mm per detent)
+net sig-zstep-mm jogblock.z.step-mm-out => ned-tab.stepmm-in
+
+
+# --- Z BREAKAWAY WINDOW: the half second Z gets to come unstuck -----------
+# Wired HERE and not in ned5_iron.hal because ini.N.* pins do not exist until
+# task is up; netting it earlier fails the whole load.
+# zferr.z (mux2, loaded in ned5_iron.hal) selects on the bottom limit switch:
+#   switch clear -> [JOINT_2]MIN_FERROR (2.54 mm, the normal guard)
+#   switch made  -> 25 mm, which is 0.5 s of stall at MAX_ACCELERATION 200
+# Why: homing Z up out of the stiff bottom of the leadscrew kept dying with
+# "joint 2 following error". Nothing gated the move -- HOME_IGNORE_LIMITS is
+# YES and limdir.2 asserts downward only. Allowed lag at the start of a move
+# is the MIN_FERROR floor, and a stalled axis eats 2.54 mm in
+# sqrt(2*2.54/200) = 0.16 s. The axis was not under-driven, it was
+# under-waited (operator 2026-08-03: "if lower limit is tripped, wait .5
+# seconds"). Relaxed ONLY while sitting on the bottom switch, where Z cannot
+# run away downward anyway; it snaps back the instant the switch releases.
+net sig-z-minferror zferr.z.out => ini.2.min_ferror
+
+# --- LOAD SPINDLE gate: the tab needs to see the drawbar sensor -----------
+# HQD S2 tool-released (7I84 TB2-16 *70). LOAD SPINDLE is only meaningful
+# while the drawbar is OPEN; before this the button took the click and ran
+# its whole 5 s countdown with the drawbar shut. Netted in postgui because
+# ned-tab is a GUI component and does not exist when the base HAL loads.
+net sig-tool-released => ned-tab.drawbar-released-in
+
+# --- tool record vs iron -> the tab (see ned5_iron.hal for the logic) -----
+net sig-tool-unrecorded => ned-tab.tool-unrecorded-in
+net sig-tool-phantom    => ned-tab.tool-phantom-in
+# ============================================================================
+# postgui_b.hal -- CONCATENATED AFTER postgui_pb.hal by run5.sh -xyzab.
+#
+# Operator 2026-08-11: "instead of controlling C, everything that used to
+# control C now controls the rotaries."
+#
+# Taken literally, and that is the cheapest correct implementation: the
+# pendant, the DRO lock buttons and the increment ladder all keep their
+# existing `c` pins and their existing angular behaviour, and the LAST HAL
+# file simply re-points those signals at axis.b / joint.6. No new pendant
+# pin, no new GUI button, no second code path to keep in step.
+#
+# `unlinkp` first, because postgui_pb.hal has already netted these to C and a
+# pin may have only one signal. Order matters: this file must load last.
+# ============================================================================
+
+# --- B power arbitration ----------------------------------------------------
+# brain.b-armed: R4 (7I84 output-05) has been on long enough for the 70 V
+# brick to be live. Steps before that are lost silently -- open loop, no
+# encoder. The brain drops it to borrow R4 for an A/C absolute read; the worm
+# is self-locking so B holds position while it is dark.
+net sig-b-armed       brain.b-armed
+
+# --- C's controls now drive B ----------------------------------------------
+# Teleop (axis) pins.
+unlinkp axis.c.jog-enable
+unlinkp axis.c.jog-counts
+unlinkp axis.c.jog-scale
+net mpg-sel-c        =>  axis.b.jog-enable
+net sig-mpg-counts   =>  axis.b.jog-counts
+net mpg-scale-ang    =>  axis.b.jog-scale
+setp axis.b.jog-vel-mode 0
+
+# Joint pins (jogging works unhomed; teleop is hard-gated on homing).
+unlinkp joint.5.jog-enable
+unlinkp joint.5.jog-counts
+unlinkp joint.5.jog-scale
+net mpg-sel-c        =>  joint.6.jog-enable
+net sig-mpg-counts   =>  joint.6.jog-counts
+net mpg-scale-ang    =>  joint.6.jog-scale
+setp joint.6.jog-vel-mode 0
+
+# C IS NOT LEFT FLOATING. Its jog pins are now unlinked, so nothing can jog
+# it by accident; the brain homes it to zero at launch and ned_brain's
+# apply_mode clamps its soft limits to +-0.001 deg, which is what every other
+# mode already does to an un-spelled rotary.
