@@ -1,0 +1,46 @@
+# ============================================================================
+# postgui_b.hal -- CONCATENATED AFTER postgui_pb.hal by run5.sh -xyzab.
+#
+# Operator 2026-08-11: "instead of controlling C, everything that used to
+# control C now controls the rotaries."
+#
+# Taken literally, and that is the cheapest correct implementation: the
+# pendant, the DRO lock buttons and the increment ladder all keep their
+# existing `c` pins and their existing angular behaviour, and the LAST HAL
+# file simply re-points those signals at axis.b / joint.6. No new pendant
+# pin, no new GUI button, no second code path to keep in step.
+#
+# `unlinkp` first, because postgui_pb.hal has already netted these to C and a
+# pin may have only one signal. Order matters: this file must load last.
+# ============================================================================
+
+# --- B power arbitration ----------------------------------------------------
+# brain.b-armed: R4 (7I84 output-05) has been on long enough for the 70 V
+# brick to be live. Steps before that are lost silently -- open loop, no
+# encoder. The brain drops it to borrow R4 for an A/C absolute read; the worm
+# is self-locking so B holds position while it is dark.
+net sig-b-armed       brain.b-armed
+
+# --- C's controls now drive B ----------------------------------------------
+# Teleop (axis) pins.
+unlinkp axis.c.jog-enable
+unlinkp axis.c.jog-counts
+unlinkp axis.c.jog-scale
+net mpg-sel-c        =>  axis.b.jog-enable
+net sig-mpg-counts   =>  axis.b.jog-counts
+net mpg-scale-ang    =>  axis.b.jog-scale
+setp axis.b.jog-vel-mode 0
+
+# Joint pins (jogging works unhomed; teleop is hard-gated on homing).
+unlinkp joint.5.jog-enable
+unlinkp joint.5.jog-counts
+unlinkp joint.5.jog-scale
+net mpg-sel-c        =>  joint.6.jog-enable
+net sig-mpg-counts   =>  joint.6.jog-counts
+net mpg-scale-ang    =>  joint.6.jog-scale
+setp joint.6.jog-vel-mode 0
+
+# C IS NOT LEFT FLOATING. Its jog pins are now unlinked, so nothing can jog
+# it by accident; the brain homes it to zero at launch and ned_brain's
+# apply_mode clamps its soft limits to +-0.001 deg, which is what every other
+# mode already does to an un-spelled rotary.

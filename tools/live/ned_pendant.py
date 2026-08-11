@@ -157,6 +157,12 @@ for _s in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT):
 atexit.register(lambda: print('ned_pendant exited (atexit; normal interpreter exit)', flush=True))
 
 
+# -xyzab: the workpiece rotary B is joint 6 and takes over C's controls
+# (operator 2026-08-11). Everything else about the wheel is unchanged --
+# same slot, same angular increment ladder, same lock pin.
+_XYZAB = (os.environ.get('NED_MODE', '') == 'xyzab')
+_ROT_JN = 6 if _XYZAB else 5
+_NJ = 7 if _XYZAB else 6
 _hstat = {'s': None, 't': 0.0, 'h4': False, 'h5': False}
 
 
@@ -175,9 +181,15 @@ def _head_homed(jn):
                 _hstat['s'] = linuxcnc.stat()
             _hstat['s'].poll()
             _hstat['h4'] = bool(_hstat['s'].homed[4])
-            _hstat['h5'] = bool(_hstat['s'].homed[5])
+            # ROTARY SLOT. In -xyzab the 5th wheel slot drives B (joint 6)
+            # -- postgui_b.hal re-points jog-en-c and the DRO row with it.
+            # The auto-lock has to follow, or the slot would be gated on
+            # joint 5's homed flag while it moves joint 6: unhome C for any
+            # reason and B silently drops out of the wheel cycle, and a B
+            # that was never homed would be jogged with the gate wide open.
+            _hstat['h5'] = bool(_hstat['s'].homed[_ROT_JN])
             _hstat['anyh'] = any(_hstat['s'].joint[j]['homing']
-                                 for j in range(6))
+                                 for j in range(_NJ))
         except Exception:
             _hstat['s'] = None
             _hstat['h4'] = _hstat['h5'] = False

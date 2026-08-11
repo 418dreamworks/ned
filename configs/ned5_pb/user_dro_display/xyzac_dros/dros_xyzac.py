@@ -13,6 +13,16 @@ from qtpyvcp.utilities.runtime_ui_loader import load_ui as load_runtime_ui
 
 LOG = logger.getLogger(__name__)
 
+# ---------------------------------------------------------------------------
+# JOINT COUNT. -xyzab adds the workpiece rotary B as joint 6 (operator
+# 2026-08-11), so every gate that means "all joints homed" or "any joint
+# homing" has to count seven, not six. These were written when six was the
+# only answer; a half-swept file is the dangerous state -- some gates would
+# release while B was still unhomed and the machine cannot enter teleop
+# without it, so world jogging would fail with the GUI showing ready.
+# ---------------------------------------------------------------------------
+NJ = 7 if os.environ.get('NED_MODE', '') == 'xyzab' else 6
+
 STATUS = getPlugin('status')
 TOOL_TABLE = getPlugin('tooltable')
 
@@ -143,6 +153,12 @@ class UserDRO(QWidget):
         self._banner_latch = False
         self._banner_state = None
         QTimer.singleShot(6000, self._add_banner)
+        # -xyzab: the C row is pointed at joint 6 / axis B (DRO_JOINT,
+        # AXIS_IDX below), so its letter has to say B. A row labelled C
+        # showing B's angle is worse than no row at all -- it is the
+        # one display on the machine the operator trusts blind.
+        if os.environ.get('NED_MODE', '') == 'xyzab':
+            QTimer.singleShot(1200, self._xyzab_relabel)
         # NO REF BUTTONS (operator 2026-08-01: "i really do not need the REF
         # buttons because those things are done very rarely") -- homing lives
         # in Settings > Homing (menu entries rebound to the safe ned cycles
@@ -259,7 +275,7 @@ class UserDRO(QWidget):
             import linuxcnc as _lc
             _s = _lc.stat(); _s.poll()
             busy = (abs(_s.current_vel) > 0.01
-                    or any(_s.joint[j]['homing'] for j in range(6))
+                    or any(_s.joint[j]['homing'] for j in range(NJ))
                     or _s.interp_state != _lc.INTERP_IDLE
                     or _s.task_state != _lc.STATE_ON)
         except Exception:
@@ -448,7 +464,7 @@ class UserDRO(QWidget):
             s.poll()
             busy = (s.task_state != linuxcnc.STATE_ON
                     or s.interp_state != linuxcnc.INTERP_IDLE
-                    or any(s.joint[j]['homing'] for j in range(6)))
+                    or any(s.joint[j]['homing'] for j in range(NJ)))
         except Exception:
             busy = True
         if busy:
@@ -468,7 +484,7 @@ class UserDRO(QWidget):
                s.interp_state != linuxcnc.INTERP_IDLE:
                 LOG.error('ZERO %s ignored: machine off or program running', axes)
                 return
-            if not all(s.homed[:6]):
+            if not all(s.homed[:NJ]):
                 c.error_msg('ZERO needs a HOMED machine: with gantry (non-identity) kinematics, LinuxCNC refuses MDI unhomed (motion command.c:584). Home All (Homing menu) first, or launch with run5.sh resume.')
                 return
             words = ' '.join(a + '0.0' for a in axes.split())
@@ -577,7 +593,7 @@ class UserDRO(QWidget):
                 tab = win.findChild(QWidget, 'ned_controls') if win else None
                 clicks = getattr(tab, '_homeall_clicks', 0) if tab else 0
                 homed = (self._stat is not None
-                         and all(self._stat.homed[j] for j in range(6)))
+                         and all(self._stat.homed[j] for j in range(NJ)))
                 if not homed:
                     # the A/C absolute read has not landed yet -- the DRO
                     # numbers are not a frame at all until it does
@@ -606,9 +622,37 @@ class UserDRO(QWidget):
     # joint is unhomed, write its live joint position into the cell; the frozen
     # world channel fires no updates, so the text sticks. Once homed, the
     # widget's own binding resumes and overwrites. NML status poll -- no HAL.
+    def _xyzab_relabel(self):
+        """Rename the C row to B (-xyzab). Both DRO copies carry the label."""
+        try:
+            from PySide6.QtWidgets import QLabel
+        except Exception:
+            from PyQt5.QtWidgets import QLabel
+        n = 0
+        win = self.window()
+        for root in (self, win):
+            if root is None:
+                continue
+            for lab in root.findChildren(QLabel, 'axis_label_c'):
+                if lab.text().strip().upper().startswith('C'):
+                    lab.setText(lab.text().replace('C', 'B').replace('c', 'b'))
+                    n += 1
+        LOG.info('XYZAB: relabelled %d C axis label(s) to B', n)
+
     DRO_JOINT = {'x': 0, 'y': 1, 'z': 2, 'a': 4, 'c': 5}
 
     AXIS_IDX = {'x': 0, 'y': 1, 'z': 2, 'a': 3, 'c': 5}
+
+    # -xyzab (operator 2026-08-11: "instead of controlling C, everything that
+    # used to control C now controls the rotaries"). The C ROW IS REUSED
+    # WHOLESALE -- same widget, same zero button, same lock, same angular
+    # increment ladder -- it is simply pointed at joint 6 / axis B. postgui_b
+    # .hal does exactly the same thing to the jog pins, so the row and the
+    # wheel stay describing the same axis. C itself is homed to zero at
+    # launch and clamped there, and has nothing left to show.
+    if os.environ.get('NED_MODE', '') == 'xyzab':
+        DRO_JOINT = dict(DRO_JOINT, c=6)
+        AXIS_IDX = dict(AXIS_IDX, c=4)      # LinuxCNC axis order X Y Z A B C
 
     def _unhomed_dro(self):
         # WORLD-FREEZE HONESTY (operator 2026-08-01: "A and C's position

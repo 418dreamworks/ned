@@ -1,0 +1,76 @@
+# ============================================================================
+# ned5_b.hal -- WORKPIECE ROTARY B (joint 6).  Loaded ONLY by -xyzab.
+#
+# Operator 2026-08-11: "instead of controlling C, everything that used to
+# control C now controls the rotaries."  C is still a joint (it gets homed to
+# zero and then held there); B is the axis the operator actually drives.
+#
+# ONE JOINT, TWO STEPPERS.  The two drives are mechanically mirrored on the
+# same worm, so they are not a gantry pair -- there is no second feedback to
+# square against.  joint.6's single position-cmd feeds both stepgens; the
+# scales carry opposite signs, which is the whole of the "twist".
+#
+#   stepgen.00  7I85S TB2-11/12 STEP+-, TB2-13/14 DIR+-   drive 1   scale +
+#   stepgen.01  7I85S TB2-19/20 STEP+-, TB2-21/22 DIR+-   drive 2   scale -
+#   (docs/mesa_7i85s_wiring.md:15-16)
+#
+# SCALE 22.222 steps/deg = 400 p/rev x 20 (worm) / 360  (docs/components.md:50).
+# The worm is SELF-LOCKING: B holds its position with the 70 V brick dead, so
+# dropping power is safe and costs nothing but the wake-up settle.
+#
+# POWER.  The brick has two gates in series (operator 2026-08-11): R11, whose
+# coil sits on the drive-enable node `*7` and therefore closes whenever the
+# machine is enabled (docs/components.md:89), and R4 = 7I84 output-05, which is
+# software-driven from brain.r4-select.  R4 is ALSO the PSO pack-select for the
+# A/C absolute reads, so B and a head read cannot both have it.  That is
+# accepted: a head read only happens while nothing else is moving, B holds
+# position unpowered, and the brain arbitrates.  brain.b-armed is the brain's
+# statement that R4 has been on long enough for the drives to be live; no step
+# may leave the FPGA before it, because an unpowered open-loop drive loses
+# position silently.
+# ============================================================================
+
+# and2 / timedelay are already loaded with fixed name lists in ned5_iron.hal,
+# and a realtime component cannot be loadrt'd twice. `logic` is a different
+# component, so the overlay can bring its own instance without editing iron.
+# personality 0x102 = 2 inputs, `and` output (logic.comp).
+loadrt logic names=b.pwr personality=0x102
+addf   b.pwr servo-thread
+
+# --- step/dir config --------------------------------------------------------
+# Timings mirror the head stepgens (ned5_iron.hal:685-688) -- UNVERIFIED for
+# these drives; they are conservative, not measured.
+setp hm2_7i97.0.stepgen.00.control-type   0
+setp hm2_7i97.0.stepgen.00.step_type      0
+setp hm2_7i97.0.stepgen.00.position-scale [JOINT_6]SCALE
+setp hm2_7i97.0.stepgen.00.maxvel         [JOINT_6]STEPGEN_MAXVEL
+setp hm2_7i97.0.stepgen.00.maxaccel       [JOINT_6]STEPGEN_MAXACCEL
+setp hm2_7i97.0.stepgen.00.steplen        2500
+setp hm2_7i97.0.stepgen.00.stepspace      2500
+setp hm2_7i97.0.stepgen.00.dirsetup       20000
+setp hm2_7i97.0.stepgen.00.dirhold        20000
+
+setp hm2_7i97.0.stepgen.01.control-type   0
+setp hm2_7i97.0.stepgen.01.step_type      0
+setp hm2_7i97.0.stepgen.01.position-scale [JOINT_6]SCALE_MIRROR
+setp hm2_7i97.0.stepgen.01.maxvel         [JOINT_6]STEPGEN_MAXVEL
+setp hm2_7i97.0.stepgen.01.maxaccel       [JOINT_6]STEPGEN_MAXACCEL
+setp hm2_7i97.0.stepgen.01.steplen        2500
+setp hm2_7i97.0.stepgen.01.stepspace      2500
+setp hm2_7i97.0.stepgen.01.dirsetup       20000
+setp hm2_7i97.0.stepgen.01.dirhold        20000
+
+# --- command / feedback -----------------------------------------------------
+# Open loop: feedback is the stepgen's own commanded position, exactly as the
+# head joints do it (ned5_iron.hal:279-282).  Only drive 1 reports; drive 2 is
+# the same command through an inverted scale and has nothing extra to say.
+net b-pos-cmd  joint.6.motor-pos-cmd             => hm2_7i97.0.stepgen.00.position-cmd \
+                                                    hm2_7i97.0.stepgen.01.position-cmd
+net b-pos-fb   hm2_7i97.0.stepgen.00.position-fb => joint.6.motor-pos-fb
+
+# --- enable -----------------------------------------------------------------
+# b.pwr = joint.6 wants the amp AND the brain says the brick has settled.
+net sig-b-amp-req  joint.6.amp-enable-out => b.pwr.in-00
+net sig-b-armed                           => b.pwr.in-01
+net sig-b-servo-on b.pwr.and              => hm2_7i97.0.stepgen.00.enable \
+                                             hm2_7i97.0.stepgen.01.enable

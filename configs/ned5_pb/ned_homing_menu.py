@@ -15,6 +15,7 @@ on-screen error and NO home command -- never a silent fallthrough.
 Config dir is on sys.path (qtpyvcp config_loader inserts it), so the
 provider string is simply 'ned_homing_menu:NedHomingMenu'.
 """
+import os
 import linuxcnc
 
 from PySide6.QtGui import QAction
@@ -25,6 +26,16 @@ from qtpyvcp.utilities import logger
 from qtpyvcp.utilities.qt_safety import safe_qt_callback
 
 LOG = logger.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# JOINT COUNT. -xyzab adds the workpiece rotary B as joint 6 (operator
+# 2026-08-11), so every gate that means "all joints homed" or "any joint
+# homing" has to count seven, not six. These were written when six was the
+# only answer; a half-swept file is the dangerous state -- some gates would
+# release while B was still unhomed and the machine cannot enter teleop
+# without it, so world jogging would fail with the GUI showing ready.
+# ---------------------------------------------------------------------------
+NJ = 7 if os.environ.get('NED_MODE', '') == 'xyzab' else 6
 
 
 class NedHomingMenu(QMenu):
@@ -46,6 +57,21 @@ class NedHomingMenu(QMenu):
         ('Home C', 'ac_to_zero', ('c',)),
         ('Home A&C', 'ac_to_zero_both', ()),
     ]
+    # -xyzab: C is driven to zero by the launch sequence and then clamped to
+    # +-0.001 deg, so a Home C entry would be a button that cannot do
+    # anything. The rotary takes its place, exactly as it takes its jog pins
+    # and its DRO row. Home A&C is dropped rather than reinterpreted: A and B
+    # are unrelated axes on unrelated iron, and pairing them in one click
+    # would be a sequence nobody asked for.
+    if os.environ.get('NED_MODE', '') == 'xyzab':
+        ENTRIES = [
+            ('Home &All', 'request_homeall', ()),
+            ('Home &X', 'home_x_pair', ()),
+            ('Home &Y', 'home_joint', ('Y', 1)),
+            ('Home &Z', 'home_joint', ('Z', 2)),
+            ('Home A', 'ac_to_zero', ('a',)),
+            ('Home B', 'home_b_inplace', ()),
+        ]
 
     def __init__(self, parent=None, axes=None):
         super(NedHomingMenu, self).__init__(parent)
@@ -105,7 +131,7 @@ class NedHomingMenu(QMenu):
                              and st.interp_state == linuxcnc.INTERP_IDLE
                              and not busy
                              and not any(st.joint[j]['homing']
-                                         for j in range(6)))
+                                         for j in range(NJ)))
                     # NAME THE BLOCKER. This used to log only ON /
                     # A-C-homed / head-busy, so a menu greyed by velocity,
                     # interp state or a homing joint looked identical to a
@@ -125,7 +151,7 @@ class NedHomingMenu(QMenu):
                         _why.append('interp not IDLE (%d)' % st.interp_state)
                     if busy:
                         _why.append('head busy')
-                    _hj = [j for j in range(6) if st.joint[j]['homing']]
+                    _hj = [j for j in range(NJ) if st.joint[j]['homing']]
                     if _hj:
                         _why.append('joint(s) %s homing' % _hj)
                     if ready != self.isEnabled():

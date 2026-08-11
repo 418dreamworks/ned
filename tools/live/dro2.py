@@ -57,6 +57,15 @@ NUM_INT = 4                # linear integer digits: 0000.00 .. -4042.72 (12 ft X
 NUM_INT_ROT = 3            # degrees need only 000.00 (operator 2026-08-05)
 
 
+# -xyzab (operator 2026-08-11): the workpiece rotary B takes over every
+# control that used to drive C -- including the pendant's 5th slot and its
+# lock. The pendant still publishes those on sig-mpg-lock-c / sig-lock-c
+# (one pin set, remapped in HAL), so the DRO has to bind them to the row
+# they now describe. Colouring C red while the operator locked B would be a
+# lie on the one display that is trusted at a glance.
+ROT = 'b' if os.environ.get('NED_MODE', '') == 'xyzab' else 'c'
+
+
 def ini_axes():
     """Axis letters from the RUNNING ini, duplicates dropped (gantry)."""
     path = os.environ.get('INI_FILE_NAME', '')
@@ -211,7 +220,7 @@ class Dro2(QWidget):
             # standalone dro when it is locked"). A locked axis is still
             # selectable -- it just does not jog until it is triple-tapped
             # unlocked -- so the screen has to say which ones are dead.
-            for _a in ('x', 'y', 'z', 'a', 'c'):
+            for _a in ('x', 'y', 'z', 'a', ROT):
                 self._hal.newpin('lock-%s-in' % _a, hal.HAL_BIT, hal.HAL_IN)
                 # ...and the GUI lock, which is a DIFFERENT thing: that axis
                 # is not selectable at all, so the WHOLE ROW goes red
@@ -225,12 +234,12 @@ class Dro2(QWidget):
                              ('sig-mpg-lock-y', 'dro2.lock-y-in'),
                              ('sig-mpg-lock-z', 'dro2.lock-z-in'),
                              ('sig-mpg-lock-a', 'dro2.lock-a-in'),
-                             ('sig-mpg-lock-c', 'dro2.lock-c-in'),
+                             ('sig-mpg-lock-c', 'dro2.lock-%s-in' % ROT),
                              ('sig-lock-x', 'dro2.gui-x-in'),
                              ('sig-lock-y', 'dro2.gui-y-in'),
                              ('sig-lock-z', 'dro2.gui-z-in'),
                              ('sig-lock-a', 'dro2.gui-a-in'),
-                             ('sig-lock-c', 'dro2.gui-c-in')):
+                             ('sig-lock-c', 'dro2.gui-%s-in' % ROT)):
                 subprocess.run(['halcmd', 'net', sig, pin],
                                capture_output=True, timeout=5)
         except Exception as e:
@@ -249,9 +258,9 @@ class Dro2(QWidget):
             self.slot = int(self._hal['inc-index-in'])
             self.probe = bool(self._hal['probe-in'])
             self.locks = {a: bool(self._hal['lock-%s-in' % a])
-                          for a in ('x', 'y', 'z', 'a', 'c')}
+                          for a in ('x', 'y', 'z', 'a', ROT)}
             self.guilocks = {a: bool(self._hal['gui-%s-in' % a])
-                             for a in ('x', 'y', 'z', 'a', 'c')}
+                             for a in ('x', 'y', 'z', 'a', ROT)}
         except Exception:
             pass
 

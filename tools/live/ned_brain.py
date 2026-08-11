@@ -102,7 +102,21 @@ for _p in ('sen-suppress', 'sen-force', 'pso-enable', 'pso-reset',
            # T0", 2026-08-07 09:47). The guard now watches from HAL load;
            # a boot mismatch locks motion and clears itself the moment
            # restore_spindle_tool reconciles the record.
-           'r4-select'):
+           'r4-select',
+           # -xyzab ONLY: the 70 V workpiece-rotary brick is live and settled.
+           # R4 (7I84 output-05) is ONE relay doing TWO jobs -- the PSO pack
+           # select for the A/C absolute read, and the brick's second gate in
+           # series with R11 (whose coil sits on the drive-enable node, so it
+           # closes whenever the machine is enabled). Operator 2026-08-11:
+           # "its fine because we can always turn the rotaries off to home A,
+           # since when homing, everything else isn't moving anyway."
+           # So the head read wins, always, and B simply goes dark for it.
+           # Costless: the worm is self-locking (docs/components.md:50), B
+           # holds its position with the brick dead, and B is open loop with
+           # no encoder -- which is exactly why no step may leave the FPGA
+           # before this pin is TRUE. A step into an unpowered drive is lost
+           # silently and every subsequent B coordinate is wrong.
+           'b-armed'):
     h.newpin(_p, hal.HAL_BIT, hal.HAL_OUT)
 # pso_live values arrive on OUR OWN netted pins (postgui_pb.hal) -- instance
 # access only. NEVER hal.get_value() here: it spins on the global HAL mutex,
@@ -190,6 +204,14 @@ class Brain(object):
         ini = os.path.basename(os.environ.get('INI_FILE_NAME', ''))
         self.resume_mode = 'resume' in ini
         self.resume_armed = False
+        # -xyzab: the workpiece rotary B is joint 6 and takes over every
+        # control that used to drive C (operator 2026-08-11). The ONLY thing
+        # the brain owes that mode is R4 arbitration -- the launch homing
+        # sequence lives in ned_controls, which already owns every motion
+        # command on this machine. The brain issues none, and that stays
+        # true here (memory: stale-home is a declaration, never a move).
+        self.b_mode = (os.environ.get('NED_MODE', '') == 'xyzab')
+        self.b_armed_at = None
         self.seq_hb_last = -1
         self.seq_hb_t = 0.0
         self.seq_was = False
@@ -340,6 +362,54 @@ class Brain(object):
                     or getattr(self, 'inplace_pending', False)
                     or any(self.home_state(j) not in (self.HOME_IDLE, None)
                            for j in self.HEAD_JN))
+
+    # ------------------------------------------------------------------
+    # B POWER ARBITER  (-xyzab only; a no-op in every other mode)
+    # ------------------------------------------------------------------
+    # One relay, two consumers, and a strict priority: the head read owns R4
+    # whenever it wants it, B gets whatever is left. This is safe in the one
+    # direction that matters -- losing power costs B nothing (self-locking
+    # worm, it just stops), whereas a head read that cannot select its pack
+    # returns the WRONG axis's frame, which is how a 66 deg head got declared
+    # as home on 2026-08-01.
+    #
+    # SETTLE. The brick's contactor and the drives' own supplies need time
+    # after R4 closes. b-armed is deliberately NOT the same edge as R4: it
+    # trails it by B_SETTLE, and HAL ANDs it into the stepgen enables
+    # (ned5_b.hal), so no step can be generated into a drive that is still
+    # coming up. Dropping is instant -- there is no reason to delay going
+    # dark, and every reason not to.
+    B_SETTLE = 0.25
+
+    def b_power(self):
+        if not self.b_mode:
+            return
+        now = time.time()
+        self.stat.poll()
+        on = (self.stat.task_state == linuxcnc.STATE_ON)
+        # The read machinery drives r4-select itself while it runs; do not
+        # fight it for the pin, just make sure B is dark for the duration.
+        if self.head_busy() or self.hr_step or not on:
+            if h['b-armed']:
+                log('B POWER: dark -- R4 borrowed by the head read '
+                    '(B holds position, self-locking worm)')
+            h['b-armed'] = False
+            self.b_armed_at = None
+            return
+        if not h['r4-select']:
+            h['r4-select'] = True
+            self.b_armed_at = now + self.B_SETTLE
+            log('B POWER: R4 on, %.2f s settle before steps are allowed'
+                % self.B_SETTLE)
+            return
+        if self.b_armed_at is None:
+            # R4 was already high (parked there by something else) -- still
+            # owe the settle, because we cannot know how long it has been up.
+            self.b_armed_at = now + self.B_SETTLE
+            return
+        if not h['b-armed'] and now >= self.b_armed_at:
+            h['b-armed'] = True
+            log('B POWER: brick live and settled -- B may move')
 
     def hr_start(self, axis, cb=None):
         if self.hr_step:
@@ -741,15 +811,58 @@ class Brain(object):
                 return                      # retry next tick until ready
             self._mode_applied = True
             def clamp(jn, ax):
-                for k, v in (('min_limit', -0.001), ('max_limit', 0.001)):
+                # idempotent: -xyzab re-enters this every tick while it waits
+                # for C to reach zero, and a clamp re-applied 4x a second
+                # would bury the log.
+                done = self.__dict__.setdefault('_clamped', set())
+                if jn in done:
+                    return
+                done.add(jn)
+                # THE WINDOW IS AROUND WHERE THE JOINT ACTUALLY IS, not
+                # around zero. A and C home by ADOPTING the absolute encoder
+                # (HOME_ABSOLUTE_ENCODER = 2), so a head parked at +102.6 deg
+                # homes to +102.6 -- and a +-0.001 window centred on zero
+                # would put the joint 102 deg OUTSIDE its own soft limits the
+                # instant it was applied. get_pos_cmds() tests those limits
+                # every servo cycle (control.c:1489-1510), so that is an
+                # immediate limit fault on a machine that has not moved.
+                # Centring on the live position expresses the actual intent:
+                # this rotary is frozen where it stands. Same 0.002 deg total
+                # width, so nothing can creep.
+                here = self.stat.joint[jn]['output']
+                for k, v in (('min_limit', here - 0.001),
+                             ('max_limit', here + 0.001)):
                     subprocess.run(['timeout', '5', 'halcmd', 'setp',
                                     'ini.%d.%s' % (jn, k), str(v)],
                                    capture_output=True)
-                log('MODE %s: %s CLAMPED (soft limits +-0.001)' %
-                    (mode, ax.upper()))
-            if 'a' not in mode.replace('xyz', '', 1).split('_')[0]:
+                log('MODE %s: %s CLAMPED at %+.4f (soft limits %+.4f .. '
+                    '%+.4f)' % (mode, ax.upper(), here,
+                                here - 0.001, here + 0.001))
+            live = mode.replace('xyz', '', 1).split('_')[0]
+            # -xyzab: C is un-spelled, so it gets clamped like any un-spelled
+            # rotary -- but NOT until it is actually AT zero. Clamping first
+            # would make the launch drive-to-zero refuse at the soft limit,
+            # and the machine would sit with C wherever it was, clamped
+            # there, which is the opposite of what the mode is for.
+            if 'a' not in live:
                 clamp(4, 'a')
-            if 'c' not in mode.replace('xyz', '', 1).split('_')[0]:
+            if 'c' not in live:
+                if mode == 'xyzab':
+                    # 'output' (commanded), NOT 'input': ned_controls' launch
+                    # sequence measures C the same way, and two
+                    # different fields could disagree forever --
+                    # controls declares C done, the brain never
+                    # clamps, and apply_mode spins for the session.
+                    cpos = self.stat.joint[5]['output']
+                    if abs(cpos) > 0.05:
+                        self._mode_applied = False   # retry next tick
+                        if not getattr(self, '_cwait_said', False):
+                            self._cwait_said = True
+                            log('MODE xyzab: C is at %+.4f -- holding the '
+                                'clamp until the launch sequence puts it at '
+                                'zero' % cpos)
+                        return
+                    log('MODE xyzab: C reached zero (%+.4f)' % cpos)
                 clamp(5, 'c')
             if kins == 'tooltip':
                 base = None
@@ -1309,6 +1422,7 @@ class Brain(object):
         self.tool_table_gate()
         self.restore_spindle_tool()
         self.apply_mode()
+        self.b_power()
         if self.teleop_at and now >= self.teleop_at:
             self.teleop_at = None
             self.ensure_teleop()

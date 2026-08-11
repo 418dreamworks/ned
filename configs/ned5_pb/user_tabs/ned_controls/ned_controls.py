@@ -34,6 +34,16 @@ from qtpyvcp.utilities.runtime_ui_loader import load_ui as load_runtime_ui
 
 LOG = logger.getLogger(__name__)
 
+# ---------------------------------------------------------------------------
+# JOINT COUNT. -xyzab adds the workpiece rotary B as joint 6 (operator
+# 2026-08-11), so every gate that means "all joints homed" or "any joint
+# homing" has to count seven, not six. These were written when six was the
+# only answer; a half-swept file is the dangerous state -- some gates would
+# release while B was still unhomed and the machine cannot enter teleop
+# without it, so world jogging would fail with the GUI showing ready.
+# ---------------------------------------------------------------------------
+NJ = 7 if os.environ.get('NED_MODE', '') == 'xyzab' else 6
+
 
 class _PreHomeInputGate(QObject):
     """Swallow every user input except the survivors.
@@ -616,6 +626,8 @@ class UserTab(QWidget):
         QTimer.singleShot(1700, self._start_homing_gate)
         QTimer.singleShot(1800, self._build_rack_table)
         QTimer.singleShot(2000, self._init_tool_safety)
+        # -xyzab only (self-checks the env and returns immediately otherwise).
+        QTimer.singleShot(4000, self.xyzab_launch_start)
 
         # SPINDLE SECTION (operator 2026-08-01): spindle load meter ->
         # chip-load-per-flute PLACEHOLDER; left RPM readout -> live
@@ -1768,7 +1780,7 @@ class UserTab(QWidget):
         c = linuxcnc.command()
         s = linuxcnc.stat()
         s.poll()
-        if s.task_state != linuxcnc.STATE_ON or not all(s.homed[:6]) \
+        if s.task_state != linuxcnc.STATE_ON or not all(s.homed[:NJ]) \
            or s.interp_state != linuxcnc.INTERP_IDLE or not s.inpos:
             c.error_msg('%s refused: machine must be ON, homed and idle' % label)
             LOG.error('%s refused: not ON/homed/idle', label)
@@ -1789,7 +1801,7 @@ class UserTab(QWidget):
                              'MANUAL)', label, attempt)
                 return c, s
             time.sleep(0.2)
-        why = ('not homed' if not all(s.homed[:6]) else
+        why = ('not homed' if not all(s.homed[:NJ]) else
                'task is not accepting commands')
         c.error_msg('%s refused: could not enter MDI after 5 tries (%s)'
                     % (label, why))
@@ -2073,7 +2085,7 @@ class UserTab(QWidget):
             import linuxcnc
             st = linuxcnc.stat()
             st.poll()
-            homed_all = all(st.homed[:6])
+            homed_all = all(st.homed[:NJ])
             if not homed_all:
                 # the REF has started -- from here, waiting for homed again
                 # is waiting for it to FINISH, not for a stale "still ready"
@@ -2859,7 +2871,7 @@ class UserTab(QWidget):
                 LOG.error('%s refused: machine is not ON', label)
                 return
             if s.interp_state != linuxcnc.INTERP_IDLE or not s.inpos \
-               or any(s.joint[j]['homing'] for j in range(6)):
+               or any(s.joint[j]['homing'] for j in range(NJ)):
                 c.error_msg('%s refused: machine is busy' % label)
                 LOG.error('%s refused: machine busy', label)
                 return
@@ -2961,14 +2973,14 @@ class UserTab(QWidget):
                 c.error_msg('%s refused: machine is not ON' % label)
                 LOG.error('%s refused: machine is not ON', label)
                 return
-            if not all(s.homed[:6]):
+            if not all(s.homed[:NJ]):
                 c.error_msg('%s refused: machine not fully homed -- Home All'
                             ' (Homing menu) first, or launch with run5.sh'
                             ' resume' % label)
                 LOG.error('%s refused: not fully homed', label)
                 return
             if s.interp_state != linuxcnc.INTERP_IDLE or not s.inpos \
-               or any(s.joint[j]['homing'] for j in range(6)):
+               or any(s.joint[j]['homing'] for j in range(NJ)):
                 c.error_msg('%s refused: machine is busy (program/MDI '
                             'running or homing)' % label)
                 LOG.error('%s refused: machine busy', label)
@@ -3040,7 +3052,7 @@ class UserTab(QWidget):
                     #    from LinuxCNC at all). Only a restart clears it.
                     try:
                         s.poll()
-                        homed = all(s.homed[:6])
+                        homed = all(s.homed[:NJ])
                         echo = s.echo_serial_number
                     except Exception:
                         homed, echo = None, None
@@ -3083,7 +3095,7 @@ class UserTab(QWidget):
                 self._jog_stat_nml = linuxcnc.stat()
             st = self._jog_stat_nml
             st.poll()
-            homing = any(st.joint[j]['homing'] for j in range(6))
+            homing = any(st.joint[j]['homing'] for j in range(NJ))
             moving = (st.interp_state != linuxcnc.INTERP_IDLE) \
                 or (not getattr(st, 'inpos', True)) \
                 or (getattr(st, 'current_vel', 0.0) > 1e-6)
@@ -3599,7 +3611,7 @@ class UserTab(QWidget):
             # lock a non-idle interpreter is frozen, not progressing, so
             # clear it here instead of deadlocking the operator.
             if (st.task_state == linuxcnc.STATE_ON
-                    and all(st.homed[:6])
+                    and all(st.homed[:NJ])
                     and st.interp_state != linuxcnc.INTERP_IDLE
                     and self._tool_state_locked()):
                 cc = linuxcnc.command()
@@ -3611,7 +3623,7 @@ class UserTab(QWidget):
                           'declaration can proceed')
             if (st.task_state != linuxcnc.STATE_ON
                     or st.interp_state != linuxcnc.INTERP_IDLE
-                    or not all(st.homed[:6])):
+                    or not all(st.homed[:NJ])):
                 LOG.error('SPINDLE EDITOR refused: machine must be ON, '
                           'homed and idle')
                 return
@@ -5199,7 +5211,7 @@ class UserTab(QWidget):
             st = linuxcnc.stat(); st.poll()
             if (st.task_state != linuxcnc.STATE_ON
                     or st.interp_state != linuxcnc.INTERP_IDLE
-                    or not all(st.homed[:6])):
+                    or not all(st.homed[:NJ])):
                 return
             con = sqlite3.connect(
                 'file:/home/brains/Documents/ned/configs/ned5_pb/'
@@ -5297,10 +5309,23 @@ class UserTab(QWidget):
                      'y': [0.01, 0.05, 0.1, 0.5, 1.0],
                      'z': [0.01, 0.05, 0.1, 0.5, 1.0],
                      'a': [0.01, 0.05, 0.1, 0.25, 0.5],
-                     'c': [0.01, 0.05, 0.1, 0.25, 0.5]}
+                     'c': [0.01, 0.05, 0.1, 0.25, 0.5],
+                     # B is the workpiece rotary (-xyzab). Same ladder
+                     # as the head rotaries -- also degrees, also a
+                     # worm drive. Defined in every mode so a lookup
+                     # can never KeyError on a mode switch.
+                     'b': [0.01, 0.05, 0.1, 0.25, 0.5]}
             self._inc_ladder_cache = t
         return t
-    _INC_AXES = ('x', 'y', 'z', 'a', 'c')
+    # Slot 4 is the second rotary. In -xyzab the wheel's 4th slot,
+    # its jog pins and its DRO row all point at B (postgui_b.hal,
+    # dros_xyzac.DRO_JOINT), so the increment row and the MPG zero
+    # must say B too -- otherwise a wheel-zero on the rotary would
+    # emit G10 L20 P0 C0 and set the offset of the axis that is
+    # parked and clamped, silently doing nothing the operator asked.
+    _INC_AXES = (('x', 'y', 'z', 'a', 'b')
+                 if os.environ.get('NED_MODE', '') == 'xyzab'
+                 else ('x', 'y', 'z', 'a', 'c'))
 
     def _sync_inc_row(self):
         try:
@@ -5681,7 +5706,7 @@ class UserTab(QWidget):
             import linuxcnc
             _st = linuxcnc.stat()
             _st.poll()
-            _declared = all(_st.homed[:6])
+            _declared = all(_st.homed[:NJ])
         except Exception:
             _declared = None        # unknown: neither engage nor strand
         # THE STARTUP WINDOW CLOSES ON TWO FACTS, NOT ONE (operator
@@ -5802,7 +5827,7 @@ class UserTab(QWidget):
             import linuxcnc
             st = linuxcnc.stat()
             st.poll()
-            homed = all(st.homed[:6])
+            homed = all(st.homed[:NJ])
         except Exception:
             homed = False            # unreadable -> assume NOT homed, refuse
         # DECLARED is the real home state and drives the pre-home sweep.
@@ -5822,7 +5847,7 @@ class UserTab(QWidget):
         # velocity has to be in the test too.
         try:
             if (abs(st.current_vel) > 0.01
-                    or any(st.joint[j]['homing'] for j in range(6))
+                    or any(st.joint[j]['homing'] for j in range(NJ))
                     or st.interp_state != linuxcnc.INTERP_IDLE):
                 homed = False
         except Exception:
@@ -5902,7 +5927,7 @@ class UserTab(QWidget):
             st.poll()
             if (st.task_state != linuxcnc.STATE_ON
                     or st.interp_state != linuxcnc.INTERP_IDLE
-                    or not all(st.homed[:6])):
+                    or not all(st.homed[:NJ])):
                 return
             con = sqlite3.connect(
                 'file:/home/brains/Documents/ned/configs/ned5_pb/'
@@ -6215,7 +6240,7 @@ class UserTab(QWidget):
             c.mode(linuxcnc.MODE_MANUAL)
             c.wait_complete()
             st.poll()
-            if all(st.homed[:6]):
+            if all(st.homed[:NJ]):
                 c.teleop_enable(1)
             msg = ('DRAWBAR RELEASED: no LOAD within %d s. Nothing was '
                    'loaded -- the solenoid is de-energised so it stops '
@@ -6406,7 +6431,7 @@ class UserTab(QWidget):
                s.interp_state != linuxcnc.INTERP_IDLE:
                 c.error_msg('UNLOAD SPINDLE ignored: machine off or program running')
                 return
-            if not all(s.homed[:6]):
+            if not all(s.homed[:NJ]):
                 c.error_msg('UNLOAD SPINDLE needs a HOMED machine (MDI is '
                             'homed-gated on gantry kinematics). Home All (Homing menu) or resume first.')
                 return
@@ -6419,7 +6444,7 @@ class UserTab(QWidget):
             c.mode(linuxcnc.MODE_MANUAL)
             c.wait_complete()
             s.poll()
-            if all(s.homed[:6]):
+            if all(s.homed[:NJ]):
                 c.teleop_enable(1)
             LOG.info('UNLOAD SPINDLE executed (drawbar released if sensors agreed)')
             self._drawbar_window_start()
@@ -6667,7 +6692,7 @@ class UserTab(QWidget):
             # A/C were blocked by a failed head read, so DECLARE fired into
             # "Must be in MDI mode" and still reported success. Say the real
             # reason instead of retrying something that cannot work.
-            if not all(st.homed[:6]):
+            if not all(st.homed[:NJ]):
                 self._declare_say(w, 'DECLARE refused: the machine is not '
                                      'fully homed, so LinuxCNC will not '
                                      'accept an MDI command. A/C must home '
@@ -6698,7 +6723,7 @@ class UserTab(QWidget):
             c.mode(linuxcnc.MODE_MANUAL)
             c.wait_complete()
             st.poll()
-            if all(st.homed[:6]):
+            if all(st.homed[:NJ]):
                 c.teleop_enable(1)
             st.poll()
             # VERIFY. The previous version printed "DECLARED T1" beside
@@ -6822,7 +6847,7 @@ class UserTab(QWidget):
             c.error_msg('%s refused: machine is not ON' % label)
             LOG.error('%s refused: not ON', label)
             return
-        if any(s.joint[j]['homing'] for j in range(6)):
+        if any(s.joint[j]['homing'] for j in range(NJ)):
             c.error_msg('%s refused: a homing cycle is running' % label)
             LOG.error('%s refused: homing in progress', label)
             return
@@ -6864,6 +6889,154 @@ class UserTab(QWidget):
         LOG.info('%s: joint jog %+.4f deg at %.1f deg/s issued',
                  label, -here, self.AC_ZERO_VEL)
 
+    # ==================================================================
+    # -xyzab LAUNCH SEQUENCE  (operator 2026-08-11)
+    # ==================================================================
+    # "if C is not already at zero, it automatically does the physical
+    #  homing for XYZ and C. XYZ so that we get to a safe place to home C
+    #  automatically. A is left where it is."
+    #
+    # It lives HERE and not in ned_brain on purpose: ned_controls already
+    # owns every motion command on this machine, and the brain's standing
+    # rule is that stale home is a declaration and the brain issues no
+    # motion at all. Moving C is motion, so it belongs to the GUI layer
+    # and goes out through the same ac_to_zero / request_homeall paths the
+    # buttons use -- no second, less-tested route to the same iron.
+    #
+    # A is untouched throughout. request_homeall unhomes A and C so the
+    # brain re-adopts both from the absolute encoder (HOME_ABSOLUTE_ENCODER
+    # = 2 -- sets the coordinate, no final move exists), and only C is then
+    # driven anywhere.
+    #
+    # Polled, never blocking: this runs on the GUI thread.
+    XYZAB_C_TOL = 0.05          # deg. Inside this, C counts as "at zero".
+
+    def xyzab_launch_start(self):
+        if os.environ.get('NED_MODE', '') != 'xyzab':
+            return
+        self._ab_step = 'wait_ready'
+        self._ab_t = QTimer(self)
+        self._ab_t.timeout.connect(self._ab_tick)
+        self._ab_t.start(500)
+        LOG.info('XYZAB: launch sequence armed (waiting for ON + homed + '
+                 'tool table)')
+
+    def _ab_done(self, why):
+        self._ab_step = 'done'
+        try:
+            self._ab_t.stop()
+        except Exception:
+            pass
+        LOG.info('XYZAB: launch sequence finished -- %s', why)
+
+    def _ab_tick(self):
+        import linuxcnc
+        s = linuxcnc.stat()
+        s.poll()
+        step = getattr(self, '_ab_step', 'done')
+        if step == 'done':
+            return
+        moving = (abs(s.current_vel) > 0.01
+                  or any(s.joint[j]['homing'] for j in range(NJ)))
+        if step == 'wait_ready':
+            # The same two gates the whole GUI waits on: the machine is ON
+            # and the stale-home declare has landed. Adding the tool table
+            # here would be redundant -- _PreHomeInputGate already holds
+            # every control shut until both are served.
+            # SIX, deliberately: B is homed by this sequence's last
+            # step, so waiting for seven here would deadlock on the
+            # thing this code exists to do.
+            if s.task_state != linuxcnc.STATE_ON or not all(s.homed[:6]):
+                return
+            if moving:
+                return
+            cpos = s.joint[5]['output']
+            if abs(cpos) <= self.XYZAB_C_TOL:
+                LOG.info('XYZAB: C is already at zero (%+.4f) -- no homing '
+                         'needed, going straight to B', cpos)
+                self._ab_step = 'home_b'
+                return
+            LOG.info('XYZAB: C reads %+.4f -- physical XYZ homing first so '
+                     'the head has room, then C to zero', cpos)
+            self.request_homeall()
+            self._ab_step = 'wait_xyz'
+            self._ab_deadline = time.time() + 180.0
+            return
+        if step == 'wait_xyz':
+            # XYZ is a real switch-seeking cycle: it takes as long as it
+            # takes. A deadline still exists because a sequence that never
+            # finishes must not leave this timer spinning in silence.
+            if time.time() > self._ab_deadline:
+                self._ab_done('TIMED OUT waiting for the XYZ home -- C was '
+                              'NOT moved, nothing is assumed')
+                return
+            if moving or not all(s.homed[:4]):
+                return
+            LOG.info('XYZAB: XYZ homed; driving C to zero from %+.4f',
+                     s.joint[5]['output'])
+            self.ac_to_zero('c')
+            self._ab_step = 'wait_c'
+            self._ab_deadline = time.time() + 120.0
+            return
+        if step == 'wait_c':
+            if time.time() > self._ab_deadline:
+                self._ab_done('TIMED OUT waiting for C to reach zero')
+                return
+            if moving:
+                return
+            cpos = s.joint[5]['output']
+            if abs(cpos) > self.XYZAB_C_TOL:
+                self._ab_done('C stopped at %+.4f, not zero -- NOT declaring '
+                              'B; check the head' % cpos)
+                return
+            LOG.info('XYZAB: C at %+.4f, at zero', cpos)
+            self._ab_step = 'home_b'
+            return
+        if step == 'home_b':
+            if moving:
+                return
+            self.home_b_inplace()
+            self._ab_done('C at zero, B declared')
+            return
+
+    def home_b_inplace(self):
+        """Declare B where it stands. -xyzab only.
+
+        B has no switch and no encoder. Its home is in-place: HOME_SEARCH_VEL
+        and HOME_LATCH_VEL are 0 and HOME == HOME_OFFSET == 0, so the cycle
+        sets the coordinate and the final move is zero length. Wherever the
+        chuck happens to be sitting becomes B0. This is the menu's Home B and
+        the last step of the launch sequence -- one implementation, so the
+        button and the automatic path cannot drift apart.
+        """
+        import linuxcnc
+        c, s = linuxcnc.command(), linuxcnc.stat()
+        s.poll()
+        if s.task_state != linuxcnc.STATE_ON:
+            c.error_msg('HOME B refused: machine is not ON')
+            return
+        if abs(s.current_vel) > 0.01 or any(s.joint[j]['homing']
+                                            for j in range(7)):
+            c.error_msg('HOME B refused: the machine is moving')
+            LOG.error('HOME B refused: moving')
+            return
+        try:
+            c.mode(linuxcnc.MODE_MANUAL)
+            c.wait_complete(2.0)
+            c.teleop_enable(0)
+            c.wait_complete(2.0)
+            # HOME_NO_REHOME is NOT implied here (B is not an absolute-encoder
+            # joint), but unhoming first keeps one code path for both the
+            # first home and every later re-declare.
+            if s.homed[6]:
+                c.unhome(6)
+                c.wait_complete(2.0)
+            c.home(6)
+            LOG.info('HOME B: joint 6 declared in place -- this chuck '
+                     'position is B0')
+        except Exception as e:
+            LOG.error('HOME B failed: %s', e)
+
     def ac_to_zero_both(self):
         """HOME AC: A to zero, then C, one after the other."""
         LOG.info('HOME AC: A first, then C')
@@ -6895,7 +7068,7 @@ class UserTab(QWidget):
             import linuxcnc
             s = linuxcnc.stat()
             s.poll()
-            if any(s.joint[j]['homing'] for j in range(6)):
+            if any(s.joint[j]['homing'] for j in range(NJ)):
                 linuxcnc.command().error_msg(
                     'REF %s ignored: homing already in progress' % ax.upper())
                 return
@@ -6920,7 +7093,7 @@ class UserTab(QWidget):
             c = linuxcnc.command()
             s = linuxcnc.stat()
             s.poll()
-            if any(s.joint[j]['homing'] for j in range(6)):
+            if any(s.joint[j]['homing'] for j in range(NJ)):
                 LOG.error('REF ALL ignored: homing already in progress')
                 return
             # X pair synchronized (-1). Y stays +1 in the same |1| phase and
@@ -6995,7 +7168,7 @@ class UserTab(QWidget):
         if (s.task_state != linuxcnc.STATE_ON
                 or s.interp_state != linuxcnc.INTERP_IDLE
                 or abs(s.current_vel) > 0.01
-                or any(s.joint[j]['homing'] for j in range(6))):
+                or any(s.joint[j]['homing'] for j in range(NJ))):
             c.error_msg('ZERO %s refused: machine is busy' % ax)
             LOG.error('MPG ZERO %s refused: busy', ax)
             return
@@ -7178,14 +7351,14 @@ class UserTab(QWidget):
             # True mid-declare (A/C are declared one at a time), and firing
             # in that window put the MDI in during the cycle: the drain
             # timed out and it logged FAILED (2026-08-10 17:1x).
-            if (not all(s.homed[:6])
-                    or any(s.joint[j]['homing'] for j in range(6))
+            if (not all(s.homed[:NJ])
+                    or any(s.joint[j]['homing'] for j in range(NJ))
                     or s.interp_state != linuxcnc.INTERP_IDLE):
                 n = getattr(self, '_wcs_wait', 0) + 1
                 self._wcs_wait = n
                 if n == 1 or n % 30 == 0:
                     LOG.error('WCS PUBLISH waiting: homed=%s interp=%d',
-                              all(s.homed[:6]), s.interp_state)
+                              all(s.homed[:NJ]), s.interp_state)
                 return
             if s.g5x_index != 0:
                 self._wcs_published = True
@@ -7392,7 +7565,7 @@ class UserTab(QWidget):
             c = linuxcnc.command()
             s = linuxcnc.stat()
             s.poll()
-            if any(s.joint[j]['homing'] for j in range(6)):
+            if any(s.joint[j]['homing'] for j in range(NJ)):
                 c.error_msg('Home X ignored: homing already in progress')
                 return
             if s.interp_state != linuxcnc.INTERP_IDLE or not s.inpos:
@@ -7415,7 +7588,7 @@ class UserTab(QWidget):
             c = linuxcnc.command()
             s = linuxcnc.stat()
             s.poll()
-            if any(s.joint[j]['homing'] for j in range(6)):
+            if any(s.joint[j]['homing'] for j in range(NJ)):
                 c.error_msg('Home %s ignored: homing already in progress' % label)
                 return
             if s.interp_state != linuxcnc.INTERP_IDLE or not s.inpos:
