@@ -149,7 +149,24 @@ JOG_SPEEDS = {
 
 # EMC 9-axis order XYZABCUVW -> stat.actual_position/g5x_offset/... index
 # (same map the archived ned_moves panel and dros_xyzac use).
-JOG_AXIS_IDX = {'x': 0, 'y': 1, 'z': 2, 'a': 3, 'c': 5}
+# THE ROTARY SLOT'S REAL AXIS LETTER. Internally the second rotary keeps the
+# key 'c' everywhere -- pins, dicts, lock signals, the pendant slot -- because
+# renaming it would touch a hundred call sites for no gain. What changes in
+# -xyzab is what that slot RESOLVES to: axis B, index 4, and the letter that
+# gets typed into g-code and painted on a button. Anything that turns the slot
+# key into a letter or an index must go through here, or the GUI says C and
+# the machine is handed a C word it will refuse (C is clamped in this mode).
+ROT = 'b' if os.environ.get('NED_MODE', '') == 'xyzab' else 'c'
+
+
+def _AXL(ax):
+    """Slot key -> the axis LETTER actually commanded. Upper case."""
+    return (ROT if ax == 'c' else ax).upper()
+
+
+# LinuxCNC axis order is X Y Z A B C, so the rotary slot is index 4 under
+# -xyzab and 5 otherwise.
+JOG_AXIS_IDX = {'x': 0, 'y': 1, 'z': 2, 'a': 3, 'c': 4 if ROT == 'b' else 5}
 
 
 # Core sections the operator wants GONE: the jog-button panel (the MPG owns
@@ -628,6 +645,8 @@ class UserTab(QWidget):
         QTimer.singleShot(2000, self._init_tool_safety)
         # -xyzab only (self-checks the env and returns immediately otherwise).
         QTimer.singleShot(4000, self.xyzab_launch_start)
+        if ROT == 'b':
+            QTimer.singleShot(7000, self._xyzab_relabel_gui)
 
         # SPINDLE SECTION (operator 2026-08-01): spindle load meter ->
         # chip-load-per-flute PLACEHOLDER; left RPM readout -> live
@@ -1512,8 +1531,9 @@ class UserTab(QWidget):
             chip = getattr(self, '_cal_lockchip', None)
             if chip is not None:
                 lk = getattr(self, '_ac_locked', {}) or {}
-                chip.setText('A %s   C %s'
+                chip.setText('A %s   %s %s'
                              % ('LOCKED' if lk.get('a') else '---',
+                                ROT.upper(),
                                 'LOCKED' if lk.get('c') else '---'))
             tw = getattr(self, '_cal_total', None)
             if tw is not None:
@@ -2530,7 +2550,8 @@ class UserTab(QWidget):
         ('jp_p_z0',     'Z0',        (('z', 0.0),),                         False),
         ('jp_p_zp10',   'Z10',       None,                                  True),
         ('jp_p_xy0z10', 'X0 Y0 Z10', (('x', 0.0), ('y', 0.0), ('z', 10.0)), False),
-        ('jp_p_a0c0',   'A0 C0',     (('a', 0.0), ('c', 0.0)),              False))
+        ('jp_p_a0c0',   'A0 ' + ROT.upper() + '0',
+         (('a', 0.0), ('c', 0.0)),                                      False))
 
     _JOG_MOVERS = ('jp_p_xy0', 'jp_p_xyz0', 'jp_p_z0', 'jp_p_zp10',
                    'jp_p_xy0z10', 'jp_p_a0c0')   # lock these while moving
@@ -2664,7 +2685,7 @@ class UserTab(QWidget):
             ini = linuxcnc.ini(ini_path)
             lims = {}
             for ax in 'xyzac':
-                sec = 'AXIS_' + ax.upper()
+                sec = 'AXIS_' + _AXL(ax)
                 lo = ini.find(sec, 'MIN_LIMIT')
                 hi = ini.find(sec, 'MAX_LIMIT')
                 if lo is None or hi is None:
@@ -2688,6 +2709,42 @@ class UserTab(QWidget):
             lbl.setText('F{:g} · {:g}°'.format(lin, ang))
         LOG.info('JOG speed -> %s (F%g mm/min, %g deg/min)',
                  key.upper(), lin, ang)
+
+    def _xyzab_relabel_gui(self):
+        """Every visible 'C' that now means B. -xyzab only.
+
+        The operator's words, 2026-08-11: "i see mistakes with gui saying C
+        everywhere". The slot is internally still 'c', so nothing renames
+        itself -- each caption has to be pointed at the axis it now drives.
+        """
+        from PySide6.QtWidgets import QLineEdit, QAbstractButton
+        win, n = self.window(), 0
+        for e in win.findChildren(QLineEdit, 'jp_in_c'):
+            e.setPlaceholderText('B \u00b7 deg'); n += 1
+        for b in win.findChildren(QAbstractButton, 'jp_p_a0c0'):
+            b.setText('A0 B0'); n += 1
+        LOG.info('XYZAB: %d jog-panel caption(s) repointed C -> B', n)
+        # HEAD-C CALIBRATION CANNOT ACT HERE. C is driven to zero at launch
+        # and clamped to +-0.001 deg, so every one of these would be refused
+        # at the soft limit. Standing law: grey out what cannot act rather
+        # than leave a button that swallows the click.
+        d = 0
+        for name in ('cal_c_cycle', 'cal_c_goto_left', 'cal_c_goto_right',
+                     'cal_ac_cycle'):
+            for b in win.findChildren(QAbstractButton, name):
+                b.setEnabled(False)
+                b.setToolTip('Disabled in -xyzab: C is parked at zero and '
+                             'clamped; the rotary is B.')
+                d += 1
+        for b in win.findChildren(QAbstractButton):
+            t = (b.text() or '').strip().upper()
+            if t in ('STARTC', 'START C', 'C LEFT', 'C RIGHT', 'STARTAC',
+                     'START AC', 'CLEAR C REF'):
+                b.setEnabled(False)
+                b.setToolTip('Disabled in -xyzab: C is parked at zero and '
+                             'clamped; the rotary is B.')
+                d += 1
+        LOG.info('XYZAB: %d head-C calibration control(s) disabled', d)
 
     def _jog_work_pos(self, s, ax):
         # current WORK coordinate of axis letter ax (house offset math)
@@ -3010,12 +3067,12 @@ class UserTab(QWidget):
                         c.error_msg(
                             '%s REJECTED: %s target %.3f (machine %.3f) '
                             'outside soft limits [%g .. %g]'
-                            % (label, ax.upper(), tw, mt, lo, hi))
+                            % (label, _AXL(ax), tw, mt, lo, hi))
                         LOG.error('%s REJECTED: %s work %.4f -> machine '
                                   '%.4f outside [%g .. %g]',
-                                  label, ax.upper(), tw, mt, lo, hi)
+                                  label, _AXL(ax), tw, mt, lo, hi)
                         return
-            words = ' '.join('{}{:.4f}'.format(ax.upper(), v)
+            words = ' '.join('{}{:.4f}'.format(_AXL(ax), v)
                              for ax, v in vals)
             lin, ang = JOG_SPEEDS[self._jog_speed]
             # pure-rotary line: LinuxCNC reads F as deg/min there; any
