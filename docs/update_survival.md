@@ -319,6 +319,31 @@ rack_atc.py/qml: fork circles = double-click record-only cycle
 filter in ned_controls). A PB/qtpyvcp update clobbers ALL of it — diff
 against the .pre-* backups and this section.
 
+**rack_atc.qml LOCATION COLOURS (2026-08-11).** Operator: "color ATC fork
+rack yellow for table, green for fork and red for spindle instead of white
+everything." The circle fill and both text colours now key off `c_word`,
+which `rack_atc.py::_ned_poll` already computes from the three stores (DB
+pocket = home, var map = occupancy, stat = spindle) -- the patch paints, it
+does not decide.
+
+| word | fill | number | sub-text |
+|---|---|---|---|
+| `TABLE` | `#f2c230` yellow | black | `#333333` |
+| `FORK` | `#4caf50` green | black | `#333333` |
+| `SPINDLE` | `#c62828` red | white | `#ffd9d5` |
+| `WAIT` | `#e8a635` amber (unchanged) | black | `#333333` |
+| `CONFLICT` | white + red border (unchanged) | black | `#c62828` |
+
+WAIT keeps amber because a commit in flight is not a location, and CONFLICT
+keeps white-with-red-border so it does not merge with the red SPINDLE fill --
+the whole point of CONFLICT is that it is NOT a location.
+
+Backup: `rack_atc.qml.pre-loccolor`. Four hunks, all inside the
+`circle_item` delegate: the three `c_fill`/`c_ink`/`c_sub` properties, the
+`home_circle` fill, and the two `Text.color` lines. A PB update restores the
+white circles silently -- there is no error, they just go plain, so CHECK
+THEM after every update rather than waiting to notice.
+
 ### A1c. qtpyvcp tool-database session leak (upstream fix, cherry-picked 2026-08-07)
 The fork carries UPSTREAM commit `9ac9f430` (kcjengr/qtpyvcp `pyside6`,
 cherry-picked as `2eb47b99`; our own inferior one-liner `2e9fbb02` was
