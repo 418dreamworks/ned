@@ -251,6 +251,13 @@
     never spend the budget on preamble. COUNT BEFORE SENDING.
     Repeatedly: "just talk less please. MUCH LESS", "you talk way too
     much", "you are breaking that hard rule a lot".
+    **EVERY reply ENDS WITH ITS OWN PROSE WORD COUNT** (operator
+    2026-08-12: "i want every message you write to have a word count from
+    now on. this way you are reminded of your biggest problem which is you
+    talk way the fuck too much"). Format: a final line reading
+    `words: N`. Count prose only -- tables, code blocks and command output
+    are exempt, same as the cap itself. The count is not decoration: it is
+    the check that the cap was actually applied, so COUNT, do not guess.
 
 24a. **NO VAGUE WORDS FOR GEOMETRY (operator 2026-08-12: "what the fuck is
     datum?").** Never name a position with a word when an expression will

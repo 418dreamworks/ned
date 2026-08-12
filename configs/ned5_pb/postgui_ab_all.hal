@@ -95,6 +95,13 @@ net sig-seq-hb       ned-tab.seq-hb-out     => brain.seq-hb-in
 net sig-tc-active motion.digital-out-01 => brain.tcactive-in
 net sig-sen-suppress  <=  brain.sen-suppress
 net sig-sen-force     <=  brain.sen-force
+
+# SPINDLE FAULT -> the brain, for the WORDS only. The STOP itself is in
+# ned5_iron.hal, where these same two signals gate iocontrol.0.emc-enable-in
+# with no userspace component in the path -- a python loop must never be the
+# thing standing between a hot spindle and a stop.
+net sig-vfd-fault        => brain.vfd-fault-in
+net sig-spindle-overtemp => brain.overtemp-in
 net sig-pso-enable    brain.pso-enable  =>  hm2_7i97.0.pktuart.0.enable
 net sig-pso-reset     brain.pso-reset   =>  hm2_7i97.0.pktuart.0.reset
 net sig-r4-select     brain.r4-select   =>  hm2_7i97.0.7i84.0.0.output-05

@@ -135,6 +135,13 @@ h.newpin('seq-active-in', hal.HAL_BIT, hal.HAL_IN)   # MODE INTERLOCK
 h.newpin('seq-hb-in', hal.HAL_U32, hal.HAL_IN)       # its liveness beat
 h.newpin('ref-a-in', hal.HAL_BIT, hal.HAL_IN)
 h.newpin('ref-c-in', hal.HAL_BIT, hal.HAL_IN)
+# SPINDLE FAULT ANNUNCIATION (operator 2026-08-12). ned5_iron.hal now drops
+# iocontrol.0.emc-enable-in on either of these, which e-stops the machine --
+# but e-stop's own banner says nothing about WHY, and "machine stopped" with
+# no reason is how an operator ends up power-cycling a VFD that is telling
+# them something. The stop is HAL's job; the sentence is this loop's.
+h.newpin('vfd-fault-in', hal.HAL_BIT, hal.HAL_IN)
+h.newpin('overtemp-in', hal.HAL_BIT, hal.HAL_IN)
 # THE HOMING STATE MACHINE ITSELF. homing.c exports joint.N.home-state (s32)
 # and names the enum at homing.c:76-100: HOME_IDLE = 0 ... HOME_FINAL_MOVE_
 # START = 20, which is the state where homing.c:1279 does
@@ -1280,6 +1287,22 @@ class Brain(object):
             log('TELEOP re-enter failed: {}'.format(e))
 
     # ---- main tick (0.25 s) --------------------------------------------------
+    def _fault_say(self, pin, flag, text):
+        """Post `text` once per rising edge of `pin`. Reading our own netted
+        pin costs nothing; hal.get_value() would spin the global HAL mutex,
+        which has hung this loop before (ned_brain.py:122-124)."""
+        try:
+            now_on = bool(h[pin])
+        except Exception:
+            return
+        if now_on and not getattr(self, flag, False):
+            log(text)
+            try:
+                self.cmd.error_msg(text)
+            except Exception:
+                pass
+        setattr(self, flag, now_on)
+
     def tick(self):
         try:
             self.stat.poll()
@@ -1287,6 +1310,20 @@ class Brain(object):
             return
         s = self.stat
         now = time.time()
+
+        # ---- SPINDLE FAULT ANNUNCIATION -------------------------------
+        # RISING EDGE ONLY. Both pins sit asserted for as long as the fault
+        # lasts, and a message every tick would bury the machine log and the
+        # notification area under the same line a hundred times a second.
+        self._fault_say('vfd-fault-in', 'vfd_said',
+                        'SPINDLE VFD FAULT -- machine stopped. The Mollom has '
+                        'tripped and is reporting a fault on 7I97 IN13. Clear '
+                        'it on the drive keypad, then reset e-stop.')
+        self._fault_say('overtemp-in', 'otemp_said',
+                        'SPINDLE OVERTEMP -- machine stopped. The spindle '
+                        'thermostat has opened. Drives and spindle are ALREADY '
+                        'dead in hardware: the thermostat is in series in the '
+                        'e-stop chain. Let the spindle cool before reset.')
 
         # HEAD HOMED EDGES -- TRACKED FIRST, BEFORE ANY EARLY RETURN.
         # This used to live at the bottom of the tick, below three `return`s.

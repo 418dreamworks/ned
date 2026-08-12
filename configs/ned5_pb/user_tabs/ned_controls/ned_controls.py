@@ -659,6 +659,7 @@ class UserTab(QWidget):
         QTimer.singleShot(1800, self._build_rack_table)
         QTimer.singleShot(1900, self._build_rotary_probe_tab)
         QTimer.singleShot(1950, self._build_rotary_face_tab)
+        QTimer.singleShot(1970, self._build_materials_tab)
         QTimer.singleShot(2100, self._wire_air_button)
         QTimer.singleShot(2000, self._init_tool_safety)
         # -xyzab only (self-checks the env and returns immediately otherwise).
@@ -6306,18 +6307,114 @@ class UserTab(QWidget):
             if ed.text() != txt:
                 ed.setText(txt)
 
+    # THE NORTH TAB-BAR RECIPE, LIFTED VERBATIM. probe_basic.ui ships the
+    # 'operation' strip as West, and its inline QSS is sized for that: a
+    # 35 x 100 px tab (tall and narrow, text on its side) with a 45 px
+    # margin-top on :first to clear the pane corner. Turning the strip North
+    # keeps that stylesheet, so every tab became 100 px TALL and the first
+    # one sat 45 px lower than the rest -- exactly the "too tall and
+    # completely irregular" the operator saw. This is the block probe_basic
+    # uses on its four North strips (tabWidget_3 / _7 / _8 / _9 in
+    # probe_basic.ui), copied without changes so the page reads as one UI.
+    OPERATION_NORTH_QSS = """QTabWidget::pane {
+    border: none;
+}
+
+QTabWidget QTabBar::tab {
+    margin-top: 5px;
+    margin-right: 0px;
+    min-width: 130px;
+    min-height: 23px;
+    font: 14pt "Probe Basic Bebas Mono";
+}
+
+QTabBar::tab:first {
+    margin-left: 300px;
+    border-left-width: 2px;
+    border-right-width: 1px;
+    border-bottom-width: 2px;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 0px;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 0px;
+}
+
+QTabBar::tab:last {
+    border-left-width: 1px;
+    border-right-width: 2px;
+    border-top-width: 2px;
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 4px;
+    border-top-left-radius: 0px;
+    border-top-right-radius: 4px;
+}
+
+QTabBar::tab:only-one {
+    border-width: 2px;
+    border-radius: 4px;
+}
+"""
+
     # names match the arg lines in rotary_face.ngc -- the name IS the binding
     ROTARY_FACE_FIELDS = (
-        ('rf_tool',   'TOOL',    '6'),
-        ('rf_dstart', 'D START', '38.15'),
-        ('rf_dend',   'D END',   '32.0'),
-        ('rf_len',    'LENGTH',  '100.0'),
+        ('rf_tool',   'TOOL',      '6',     False),
+        ('rf_dstart', 'D START',   '38.15', False),
+        ('rf_dend',   'D END',     '32.0',  False),
+        ('rf_len',    'LENGTH',    '100.0', False),
+        ('rf_chip',   'CHIP LOAD', '0.30',  False),
+        ('rf_flutes', 'FLUTES',    '2',     True),
+        ('rf_fdepth', 'FLUTE D',   '0',     True),
     )
+
+    def _rf_tool_lookup(self):
+        """Fill FLUTES / FLUTE D from the tool database for whatever tool
+        number is typed.
+
+        THE .NGC CANNOT READ THIS ITSELF. LinuxCNC's own tool table carries
+        no flute count, and the numbers live in tool_table.db as custom
+        fields. Probe Basic does ship a bridge that would publish them as
+        #<_current_tool_flutes> on M6 -- atc_sim/python/stdglue.py:177 --
+        but wiring that means editing the M6 remap epilog, and the M6 path
+        is the one piece of this machine that must not acquire new failure
+        modes for the sake of a conversational cycle. So the GUI reads the
+        row and hands the numbers over as ordinary named arguments, which is
+        the same mechanism every other field on this page already uses.
+        """
+        f = getattr(self, '_rf_fields', None)
+        if not f:
+            return
+        try:
+            tno = int(float(f['rf_tool'].text().strip() or 0))
+        except Exception:
+            tno = 0
+        vals = {'flutes': '', 'flute_depth': ''}
+        if tno > 0:
+            try:
+                import sqlite3
+                db = os.path.join(os.path.dirname(self.VAR_FILE), 'tool_table.db')
+                con = sqlite3.connect('file:%s?mode=ro' % db, uri=True)
+                try:
+                    for name, val, dflt in con.execute(
+                            "SELECT d.name, v.value, d.default_value"
+                            "  FROM custom_field_def d"
+                            "  LEFT JOIN tool t ON t.tool_no = ?"
+                            "  LEFT JOIN custom_field_value v"
+                            "         ON v.field_id = d.id AND v.tool_id = t.id"
+                            " WHERE d.name IN ('flutes','flute_depth')", (tno,)):
+                        raw = val if val not in (None, '') else dflt
+                        vals[name] = '' if raw in (None, '') else str(raw)
+                finally:
+                    con.close()
+            except Exception:
+                LOG.exception('ROTARY FACE: tool lookup failed for T%s', tno)
+        f['rf_flutes'].setText(vals['flutes'] or '2')
+        f['rf_fdepth'].setText(vals['flute_depth'] or '0')
 
     def _build_rotary_face_tab(self):
         """ROTARY FACING on the CONVERSATIONAL tab (operator 2026-08-12).
 
-        Also moves that tab strip from West to North, as asked.
+        Also moves that tab strip from West to North, as asked, and restyles
+        it -- see OPERATION_NORTH_QSS.
         """
         from PySide6.QtWidgets import (QTabWidget, QVBoxLayout, QHBoxLayout,
                                        QLabel, QLineEdit)
@@ -6329,6 +6426,7 @@ class UserTab(QWidget):
                           'not built. Nothing else is affected.')
                 return
             host.setTabPosition(QTabWidget.North)
+            host.setStyleSheet(self.OPERATION_NORTH_QSS)
             from qtpyvcp.widgets.button_widgets.subcall_button import (
                 SubCallButton)
             page = QWidget()
@@ -6336,7 +6434,7 @@ class UserTab(QWidget):
             lay.setContentsMargins(12, 12, 12, 12)
             lay.setSpacing(8)
             self._rf_fields = {}
-            for name, label, default in self.ROTARY_FACE_FIELDS:
+            for name, label, default, ro in self.ROTARY_FACE_FIELDS:
                 row = QHBoxLayout()
                 lb = QLabel(label)
                 lb.setFixedWidth(110)
@@ -6345,13 +6443,18 @@ class UserTab(QWidget):
                 ed.setObjectName(name)          # the binding
                 ed.setText(default)
                 ed.setFixedWidth(120)
-                ed.setStyleSheet(self.CAL_QSS['read'].replace(
-                    '#1B1F20', '#2A2F31'))      # editable: one shade lighter
+                ed.setReadOnly(ro)
+                # read-only fields keep the calibration readout shade so it
+                # is obvious at a glance which numbers the operator owns
+                ed.setStyleSheet(self.CAL_QSS['read'] if ro else
+                                 self.CAL_QSS['read'].replace('#1B1F20', '#2A2F31'))
                 row.addWidget(lb, 0)
                 row.addWidget(ed, 0)
                 row.addStretch(1)
                 lay.addLayout(row)
                 self._rf_fields[name] = ed
+            self._rf_fields['rf_tool'].textChanged.connect(self._rf_tool_lookup)
+            self._rf_tool_lookup()
             btn = SubCallButton(page, filename='rotary_face.ngc')
             btn.setObjectName('ned_rotary_face_button')
             btn.setText('ROTARY FACING')
@@ -6360,9 +6463,145 @@ class UserTab(QWidget):
             lay.addStretch(1)
             host.addTab(page, 'ROTARY FACING')
             LOG.info('ROTARY FACE: page added to operation (%d fields), tab '
-                     'strip moved North', len(self.ROTARY_FACE_FIELDS))
+                     'strip North + restyled', len(self.ROTARY_FACE_FIELDS))
         except Exception:
             LOG.exception('ROTARY FACE: page not built')
+
+    MATERIALS_FILE = ('/home/brains/Documents/ned/configs/ned5_pb/'
+                      'materials.json')
+
+    def _materials_load(self):
+        import json
+        try:
+            with open(self.MATERIALS_FILE) as f:
+                rows = json.load(f)
+            return [(str(a), str(b)) for a, b in rows]
+        except Exception:
+            # first run, or the file was hand-edited into nonsense: a
+            # reference table is not worth an exception on the way up
+            return [('Pine', '0.30')]
+
+    def _materials_save(self):
+        """Written on every cell edit.
+
+        NOT a qtpyvcp setting and NOT a numbered parameter, deliberately.
+        Both of those only reach disk on a clean shutdown -- the pickle on
+        Qt's closeEvent, the var file when task exits -- which is how the
+        ATC rapid rate kept reverting to 1000 after being set to 6000 six
+        times. A plain file written on edit survives a kill -9.
+        """
+        import json
+        t = getattr(self, '_mat_table', None)
+        if t is None:
+            return
+        rows = []
+        for r in range(t.rowCount()):
+            a = t.item(r, 0)
+            b = t.item(r, 1)
+            a = a.text().strip() if a else ''
+            b = b.text().strip() if b else ''
+            if a or b:
+                rows.append([a, b])
+        try:
+            with open(self.MATERIALS_FILE, 'w') as f:
+                json.dump(rows, f, indent=1)
+        except Exception:
+            LOG.exception('MATERIALS: save failed')
+
+    def _build_materials_tab(self):
+        """MATERIALS: a two-column scratch table of chip loads.
+
+        REFERENCE ONLY (operator 2026-08-12: "i add a row, write the
+        material, and can click and write in the chipload. its just a
+        reference. no use to the program"). Nothing reads it -- it does not
+        feed CHIP LOAD, it does not feed the .ngc. It is a notebook page
+        that happens to live where the number gets typed.
+        """
+        from PySide6.QtWidgets import (QTabWidget, QVBoxLayout, QHBoxLayout,
+                                       QTableWidget, QTableWidgetItem,
+                                       QPushButton, QHeaderView, QAbstractItemView)
+        try:
+            win = self.window()
+            host = win.findChild(QTabWidget, 'operation') if win else None
+            if host is None:
+                LOG.error('MATERIALS: operation tab widget not found -- page '
+                          'not built. Nothing else is affected.')
+                return
+            page = QWidget()
+            lay = QVBoxLayout(page)
+            lay.setContentsMargins(12, 12, 12, 12)
+            lay.setSpacing(8)
+            rows = self._materials_load()
+            t = QTableWidget(len(rows), 2)
+            t.setObjectName('ned_materials_table')
+            t.setHorizontalHeaderLabels(['MATERIAL', 'CHIP LOAD  mm/tooth'])
+            t.verticalHeader().setVisible(False)
+            t.setSelectionBehavior(QAbstractItemView.SelectRows)
+            t.horizontalHeader().setSectionResizeMode(0, QHeaderView.Fixed)
+            t.horizontalHeader().setSectionResizeMode(1, QHeaderView.Fixed)
+            t.setColumnWidth(0, 260)
+            t.setColumnWidth(1, 200)
+            t.setMaximumWidth(480)
+            for r, (a, b) in enumerate(rows):
+                t.setItem(r, 0, QTableWidgetItem(a))
+                t.setItem(r, 1, QTableWidgetItem(b))
+            # SAME SKIN AS THE TOOL TABLE. Values lifted from the design
+            # system's own ToolTable/MillToolTable/OffsetTable block,
+            # probe_basic_dark.qss:674-687, and its header rule at :667-672
+            # -- a stock QTableWidget renders white-on-white here and reads
+            # as a different application dropped into the page.
+            t.setAlternatingRowColors(True)
+            t.setStyleSheet(
+                'QTableWidget {'
+                ' border: 4px solid rgb(120,120,120); border-radius: 5px;'
+                ' background-color: rgb(120,120,120);'
+                ' gridline-color: rgb(203,203,203);'
+                ' alternate-background-color: rgb(90,90,90);'
+                ' color: white; font: 15pt "Probe Basic Bebas Mono"; }'
+                'QHeaderView::section {'
+                ' background-color: rgb(73,74,75); color: white; border: none;'
+                ' font: 13pt "Probe Basic Bebas Mono"; padding: 4px; }'
+                'QTableWidget::item:selected {'
+                ' background: rgb(85,85,238); color: white; }')
+            t.itemChanged.connect(lambda *_: self._materials_save())
+            self._mat_table = t
+            lay.addWidget(t)
+            bar = QHBoxLayout()
+            add = QPushButton('ADD ROW')
+            add.setObjectName('ned_materials_add')
+            add.setMinimumHeight(40)
+            add.setFixedWidth(160)
+            rem = QPushButton('DELETE ROW')
+            rem.setObjectName('ned_materials_del')
+            rem.setMinimumHeight(40)
+            rem.setFixedWidth(160)
+
+            def _add():
+                r = t.rowCount()
+                t.insertRow(r)
+                t.setItem(r, 0, QTableWidgetItem(''))
+                t.setItem(r, 1, QTableWidgetItem(''))
+                t.setCurrentCell(r, 0)
+                t.editItem(t.item(r, 0))
+
+            def _del():
+                r = t.currentRow()
+                if r >= 0:
+                    t.removeRow(r)
+                    self._materials_save()
+
+            add.clicked.connect(_add)
+            rem.clicked.connect(_del)
+            bar.addWidget(add)
+            bar.addWidget(rem)
+            bar.addStretch(1)
+            lay.addLayout(bar)
+            lay.addStretch(1)
+            host.addTab(page, 'MATERIALS')
+            LOG.info('MATERIALS: page added to operation with %d row(s) from %s',
+                     len(rows), self.MATERIALS_FILE)
+        except Exception:
+            LOG.exception('MATERIALS: page not built')
 
     def _build_rotary_probe_tab(self):
         """ROTARY page on the PROBING tab (operator 2026-08-11: "this should be
@@ -6399,7 +6638,7 @@ class UserTab(QWidget):
                                '"Probe Basic Bebas Mono";')
             lay.addWidget(head)
             why = QLabel('GO TO BAR  \u2192  jog to ~5 mm above  \u2192  '
-                         'ROTARY PROBE.   Datum: G55.')
+                         'ROTARY PROBE.   Sets G55 X0 Y0 Z0.')
             why.setStyleSheet('color: #E6E6E6; font: 10pt;')
             lay.addWidget(why)
             self._rp_fields = {}

@@ -39,7 +39,7 @@ loadrt pid names=pid.x,pid.y,pid.z,pid.w
 # Spindle + drawbar interlock gates, air interlock, and the head-enable gates.
 # (rotary.permit from ned.hal:86 dropped -- no B here.) head.a/c.enable AND the
 # per-axis amp-enable with the 3 s head-ready delay (see section 4).
-loadrt and2 names=spindle.permit,spindle.cw,spindle.ccw,air.permit,head.a.enable,head.c.enable,overtemp,toolrel.permit,sen.gate,tool.mm.unrecR,tool.mm.phanR,tool.mm.unrec,tool.mm.phan
+loadrt and2 names=spindle.permit,spindle.cw,spindle.ccw,air.permit,head.a.enable,head.c.enable,overtemp,toolrel.permit,sen.gate,tool.mm.unrecR,tool.mm.phanR,tool.mm.unrec,tool.mm.phan,fault.permit
 # air-dip debounce (operator 2026-08-02: drawbar release gulps air, the
 # pressure switch dips ~1 s and the interlock killed power MID-TOOL-CHANGE;
 # switch threshold stays as the operator's pressure-quality indicator)
@@ -49,7 +49,7 @@ loadrt timedelay names=air.debounce,head.ready,tool.mm.unrecdb,tool.mm.phandb
 # (head.ready instance loaded above with air.debounce -- ONE loadrt per comp.)
 # SEN gating: a GUI-requested LOW window locks A/C (pack drops to BB = cannot move) and
 # primes the pack; the following RISING edge makes it emit the absolute PSO frame.
-loadrt not names=sen.nsup,tool.mm.nexcuse,tool.mm.nrec,tool.mm.nlock,tool.mm.ntbl
+loadrt not names=sen.nsup,tool.mm.nexcuse,tool.mm.nrec,tool.mm.nlock,tool.mm.ntbl,mfault.n
 # live absolute reader -- QUEUED PktUART reads ONLY (tools/live/pso_live.comp).
 # pso_abs (direct llio->read from the servo thread) is BANNED on this hm2_eth board: at 1 kHz
 # it caused watchdog bites; decimated 1-in-20 it overran the RX count FIFO (RCFIFO Error) --
@@ -58,7 +58,7 @@ loadrt not names=sen.nsup,tool.mm.nexcuse,tool.mm.nrec,tool.mm.nlock,tool.mm.ntb
 # a read is in progress). ifdelay from [PSO]IFDELAY -- see the ini for the measured sweep.
 loadrt pso_live names=hm2_7i97.0.pktuart.0 ifdelay_p=[PSO]IFDELAY
 # limit-hit OR tree (6 hard-limit signals -> one indicator for the GUI LED).
-loadrt or2 names=limhit.0,limhit.1,limhit.2,limhit.3,limhit.4,sol.ts,sol.blow,sol.trel,sen.or,spinok,tool.mm.excuse,tool.mm.lock,tool.mm.lock2,tool.mm.excuse2,tool.mm.excuse3
+loadrt or2 names=limhit.0,limhit.1,limhit.2,limhit.3,limhit.4,sol.ts,sol.blow,sol.trel,sen.or,spinok,tool.mm.excuse,tool.mm.lock,tool.mm.lock2,tool.mm.excuse2,tool.mm.excuse3,mfault
 # directional limit handling (tools/live/limdir.comp + tools/live/jogblock.comp):
 # limdir.N passes joint N's limit switch to motion ONLY while commanded velocity
 # moves TOWARD it (parked/away = no fault -> POWER + jog work on a depressed
@@ -181,6 +181,9 @@ addf spindle.permit           servo-thread
 addf spindle.cw               servo-thread
 addf spindle.ccw              servo-thread
 addf air.debounce             servo-thread
+addf mfault                   servo-thread
+addf mfault.n                 servo-thread
+addf fault.permit             servo-thread
 addf air.permit               servo-thread
 addf overtemp                 servo-thread
 addf toolrel.permit           servo-thread
@@ -430,7 +433,26 @@ net sig-estop-released   => air.permit.in0
 setp air.debounce.off-delay 2.0
 net sig-air-pressure-ok  => air.debounce.in
 net sig-air-ok-debounced air.debounce.out => air.permit.in1
-net sig-emc-enable       air.permit.out => iocontrol.0.emc-enable-in
+# SOFTWARE STOP ON A SPINDLE FAULT (operator 2026-08-12). Until now
+# sig-vfd-fault and sig-spindle-overtemp were read off the Mesa and consumed
+# by NOTHING -- ned.hal:292 called them "monitored only" -- so a Mollom fault
+# or a hot thermostat left every axis feeding into a dead cutter.
+# OVERTEMP ALREADY KILLS THE IRON WITHOUT US: the NC thermostat sits in
+# series in the e-stop chain, so *6 drops, R2 releases into Mollom S3
+# ext-fault and R5A2 stops feeding *7, which drops R3 and opens RUN/STOP to
+# X/Y/Z/W -- docs/revert_to_fagor.md:8-12, docs/tracing/relays.md:109,227.
+# This gate is the SOFTWARE half of the same stop, and the only stop the VFD
+# fault has at all.
+# POLARITY, READ OFF THE LIVE MACHINE 2026-08-12, NOT ASSUMED: with the
+# spindle healthy inmux.00.input-13 is FALSE and overtemp.out is FALSE, so
+# both or2 inputs are low, mfault.n.out is TRUE and the gate passes. Getting
+# this backwards would leave the machine permanently unable to leave e-stop.
+net sig-vfd-fault        => mfault.in0
+net sig-spindle-overtemp => mfault.in1
+net sig-machine-fault    mfault.out => mfault.n.in
+net sig-machine-ok       mfault.n.out => fault.permit.in1
+net sig-air-estop-ok     air.permit.out => fault.permit.in0
+net sig-emc-enable       fault.permit.out => iocontrol.0.emc-enable-in
 net sig-drive-enable     motion.motion-enabled
 
 # NC / fail-safe limits: signal TRUE = AT limit (fed from -not pins in section 7).

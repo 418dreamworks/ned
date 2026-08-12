@@ -1,47 +1,67 @@
 (ned ROTARY FACING -- stock prep. Skim a bar down to a target diameter.)
-(Operator 2026-08-12: tool number, starting D, end D, and a length.)
+(Operator 2026-08-12: tool number, starting D, end D, a length, and ONE)
+(cutting number -- chip load. Everything else is solved from it.)
 
-(START AT G55 X0 Y0. Both are checked and the cycle refuses otherwise. That)
-(is what lets the operator give ONE positive number for the cut instead of a)
-(start and an end: Y0 is the start, and LENGTH runs +Y from it.)
+(START AT G55 X0 Y0. Within 0.1 mm the cycle moves there itself; further out)
+(it refuses, because G54 is 3.67 m away and the air offset is 1000 mm, so a)
+(big number is never a near miss. Y0 is the start and LENGTH runs +Y.)
 
-(DIAMETER IS Z. On the centreline the tool tip contacts the crown and nothing)
-(else, so tip at Z = D/2 IS diameter D. X is never commanded.)
+(DIAMETER IS Z. G55 Z0 sits on the B centreline, so the tool tip at Z = D/2)
+(IS diameter D. Every Z below is a RADIUS. X is never commanded.)
+
+(CHIP LOAD IS THE ONLY CUTTING INPUT. The bar turning under the cutter IS)
+(the feed, exactly like turning, and its speed is w * r -- linear in radius,)
+(so the same B speed is a different chip load on a fat bar and a thin one.)
+(Solved per pass at the UNCUT radius, the fastest-moving material in the)
+(cut, so the real chip load never exceeds what was asked for.)
+
+(  surface speed at r     v = wB * pi * r / 3        mm/min, wB in deg/s)
+(  chip load              fz = v / [S * N]           N = flutes)
+(  =>  S = wB * pi * r / [3 * fz * N])
+
+(B RUNS FLAT OUT and the SPINDLE is solved to match, because B is what sets)
+(the cycle time. If the answer lands above the spindle ceiling the spindle)
+(caps and B slows to keep the chip load. If it lands BELOW the spindle floor)
+(the machine cannot cut that heavy at all -- B is already maxed -- so the)
+(cycle aborts and reports the largest chip load it could actually deliver)
+(rather than quietly cutting something lighter than was asked for.)
 
 (THE TOOL COMPENSATION IS IN Y. The tool bottom is a disc: sweeping its)
-(CENTRE from 0 to LENGTH actually machines -R to LENGTH+R. To finish exactly)
-(between the two edges, the centre runs R to LENGTH-R. A length shorter than)
-(the tool is refused rather than fudged.)
-
-(Y FEED IS COMPUTED, NOT ACCEPTED. One turn of B advances Y by one pitch, so)
-(Y speed and B speed are the same fact twice. B tops out at 30 deg/s, capping)
-(Y at pitch times 30 over 360 times 60 mm/min -- 63 mm/min for a 12.7 tool at)
-(full pitch. Taking a bigger number would only mean LinuxCNC clamps B behind)
-(the operator's back. Chip load replaces this later.)
+(CENTRE from 0 to LENGTH machines -R to LENGTH+R. To finish exactly between)
+(the two edges the centre runs R to LENGTH-R.)
 
 (D START IS A PROMISE, NOT A MEASUREMENT. Nothing here can see the stock, so)
 (an optimistic number buries the tool on the first pass.)
 o<rotary_face> sub
+  (ARG LINES ARE A CONTRACT WITH THE GUI: SubCallButton parses this exact)
+  (shape and fills each one from the widget of the same name.)
   #<rf_tool>   = #1 (=0 tool number - required)
   #<rf_dstart> = #2 (=0 stock diameter now mm - required)
   #<rf_dend>   = #3 (=0 target diameter mm - required)
   #<rf_len>    = #4 (=0 length to face, +Y from zero - required)
-  #<rf_doc>    = #5 (=1.0 radial depth per pass mm)
-  #<rf_rpm>    = #6 (=9000 spindle rpm)
-  #<rf_step>   = #7 (=0.5 pitch as a fraction of tool diameter)
-  #<rf_bmax>   = #8 (=30.0 B max deg/s - JOINT_6 MAX_VELOCITY)
-  o1 if [#<rf_doc> LE 0]
-    #<rf_doc> = 1.0
+  #<rf_chip>   = #5 (=0 chip load mm per tooth - required)
+  #<rf_flutes> = #6 (=2 flutes - from the tool table)
+  #<rf_fdepth> = #7 (=0 flute depth mm - from the tool table, 0 = unknown)
+  #<rf_bmax>   = #8 (=48.0 B max deg/s - JOINT_6 MAX_VELOCITY)
+  #<rf_smin>   = #9 (=1000 spindle floor rpm - SPINDLE_0 MIN_FORWARD_VELOCITY)
+  #<rf_smax>   = #10 (=18000 spindle ceiling rpm - SPINDLE_0 MAX_FORWARD_VELOCITY)
+  #<rf_step>   = #11 (=0.5 Y advance per B turn as a fraction of tool diameter)
+  #<pi> = 3.14159265
+  o1 if [#<rf_flutes> LE 0]
+    #<rf_flutes> = 2
   o1 endif
-  o2 if [#<rf_rpm> LE 0]
-    #<rf_rpm> = 9000
+  o2 if [#<rf_bmax> LE 0]
+    #<rf_bmax> = 48.0
   o2 endif
-  o3 if [#<rf_step> LE 0]
-    #<rf_step> = 0.5
+  o3 if [#<rf_smin> LE 0]
+    #<rf_smin> = 1000
   o3 endif
-  o4 if [#<rf_bmax> LE 0]
-    #<rf_bmax> = 30.0
+  o4 if [#<rf_smax> LE 0]
+    #<rf_smax> = 18000
   o4 endif
+  o5 if [#<rf_step> LE 0]
+    #<rf_step> = 0.5
+  o5 endif
   o10 if [#<_metric> EQ 0]
     (abort, ROTARY FACE: switch to MM first)
   o10 endif
@@ -57,28 +77,31 @@ o<rotary_face> sub
   o14 if [#<rf_len> LE 0]
     (abort, ROTARY FACE: length must be positive - it runs +Y from zero)
   o14 endif
+  o19 if [#<rf_chip> LE 0]
+    (abort, ROTARY FACE: chip load is required - it is the only cutting number)
+  o19 endif
 
   (IN THE RIGHT FRAME FIRST. X0 and Y0 in G54 are somewhere else entirely, so)
   (the position checks below mean nothing without this one. 1 is G54, 2 G55.)
   o15 if [#5220 NE 2]
     (abort, ROTARY FACE: not in G55 - the rotary zero is G55 X0 Y0 Z0, G54 is scratch)
   o15 endif
-  (NEAR ZERO IS FINE - IT GETS MOVED THERE. Only a long way out is an error,)
-  (and that is what the check is for: the air offset is 1000 mm and G54 is)
-  (3.67 m away. Within 0.1 the operator has jogged to G55 X0 Y0 and simply)
-  (cannot land on it by hand, so snapping is the useful answer, not a refusal.)
   o16 if [ABS[#5420] GT 0.1]
     (abort, ROTARY FACE: X is #5420 - jog to G55 X0 before starting)
   o16 endif
   o17 if [ABS[#5421] GT 0.1]
     (abort, ROTARY FACE: Y is #5421 - jog to G55 Y0 before starting)
   o17 endif
+
+  (RADIUS FROM HERE DOWN. The operator types a DIAMETER; converted once here)
+  (so that nothing below can mix the two.)
+  #<rstart> = [#<rf_dstart> / 2.0]
+  #<rend>   = [#<rf_dend> / 2.0]
   (Z MUST ALREADY CLEAR THE STOCK, because the next move is LATERAL. Below)
-  (D/2 the tool is inside the swept envelope and going to X0 Y0 drives it)
-  (through the bar. This is checked before the spindle starts, so a refusal)
-  (costs nothing.)
-  o18 if [#5422 LE [#<rf_dstart> / 2.0]]
-    (abort, ROTARY FACE: Z is #5422 and the stock radius is half of #<rf_dstart> - raise Z clear first)
+  (rstart the tool is inside the swept envelope and going to X0 Y0 drives it)
+  (through the bar. Checked before the spindle starts, so a refusal is free.)
+  o18 if [#5422 LE #<rstart>]
+    (abort, ROTARY FACE: Z is #5422 and the stock radius is #<rstart> - raise Z clear first)
   o18 endif
 
   T#<rf_tool> M6
@@ -92,59 +115,105 @@ o<rotary_face> sub
   o21 endif
   #<trad> = [#<tdia> / 2.0]
 
+  (RADIAL DEPTH FROM THE TOOL, NOT FROM A GUESS. Operator 2026-08-12: half)
+  (the tool diameter or 6.35 mm -- 1/4 in -- whichever is smaller, and never)
+  (deeper than the flutes are long. A 12.7 mm tool takes 6.35 off the RADIUS,)
+  (12.7 off the diameter, per pass.)
+  #<doc> = #<trad>
+  o23 if [#<doc> GT 6.35]
+    #<doc> = 6.35
+  o23 endif
+  o24 if [#<rf_fdepth> GT 0 AND #<rf_fdepth> LT #<doc>]
+    #<doc> = #<rf_fdepth>
+  o24 endif
+
   #<ya> = #<trad>
   #<yb> = [#<rf_len> - #<trad>]
   o22 if [#<yb> LE #<ya>]
     (abort, ROTARY FACE: that length is shorter than the tool - nothing to sweep)
   o22 endif
 
+  (THE HELIX ADVANCES HALF A TOOL DIAMETER PER TURN OF B, so each turn cuts)
+  (into the wall the one before it left.)
   #<pitch> = [#<tdia> * #<rf_step>]
-  #<feed>  = [#<pitch> * #<rf_bmax> * 60.0 / 360.0]
-  #<zsafe> = [[#<rf_dstart> / 2.0] + 10.0]
-  (PRINT, ROTARY FACE: T#<rf_tool> dia #<tdia>, pitch #<pitch> mm/rev, Y feed #<feed> mm/min)
-  (PRINT, ROTARY FACE: facing 0 to #<rf_len> - tool centre sweeps #<ya> to #<yb>)
+  #<zsafe> = [#<rstart> + 10.0]
+  #<len>   = [#<yb> - #<ya>]
+  #<revs>  = [#<len> / #<pitch>]
+  (ONE STEP PER 10 DEG OF B: fine enough not to facet the helix, coarse)
+  (enough that a long pass is not tens of thousands of blocks.)
+  #<steps> = [FIX[#<revs> * 36.0] + 1]
+  #<dy>    = [#<len> / #<steps>]
+  #<db>    = [#<revs> * 360.0 / #<steps>]
+  (PRINT, ROTARY FACE: T#<rf_tool> dia #<tdia> with #<rf_flutes> flutes, chip load #<rf_chip> mm per tooth)
+  (PRINT, ROTARY FACE: radial depth #<doc> mm per pass, Y advance #<pitch> mm per turn, tool centre #<ya> to #<yb>)
 
   G90
-  (Z is already proven clear above, so it is safe to spin up and go to the)
-  (G55 X0 Y0 in one move before anything else happens.)
-  M3 S#<rf_rpm>
   G0 X0 Y0
   G0 Z[#<zsafe>]
   G0 Y[#<ya>]
   G0 B0
+  (DOWN TO 1 MM OVER THE PROMISED CROWN IN RAPID, ONCE. Every dive after this)
+  (is a G1 of exactly the radial depth, because the tool never comes back up.)
+  G0 Z[#<rstart> + 1.0]
+  M3 S#<rf_smin>
 
-  #<d> = #<rf_dstart>
+  (ZIG-ZAG, NO RETURN TRIP. Operator 2026-08-12: dive, spiral 0 to Yend,)
+  (dive, spiral back. The tool stays down and stays engaged; lifting and)
+  (rapiding back to Y0 every pass would spend most of the cycle in air.)
+  (B NEVER REVERSES -- only Y does. The worm is 1:20 and self-locking, so a)
+  (direction change there is backlash for nothing, and B is a continuous)
+  (rotary with no soft limits, so it can wind on forever.)
+  #<r>    = #<rstart>
   #<pass> = 0
-  o100 while [#<d> GT #<rf_dend>]
-    #<d> = [#<d> - #<rf_doc>]
-    o101 if [#<d> LT #<rf_dend>]
-      #<d> = #<rf_dend>
+  #<ycur> = #<ya>
+  #<ytgt> = #<yb>
+  #<dir>  = 1
+  #<bb>   = 0
+  o100 while [#<r> GT #<rend>]
+    #<rout> = #<r>
+    #<r> = [#<r> - #<doc>]
+    o101 if [#<r> LT #<rend>]
+      #<r> = #<rend>
     o101 endif
     #<pass> = [#<pass> + 1]
-    #<z> = [#<d> / 2.0]
-    (PRINT, ROTARY FACE: pass #<pass> to diameter #<d>, Z #<z>)
-    G0 Y[#<ya>]
-    G0 Z[#<z> + 2.0]
-    G1 Z[#<z>] F[#<feed>]
-    (ONE STEP PER 10 DEG OF B: fine enough not to facet the helix, coarse)
-    (enough that a 100 mm pass is not thousands of blocks.)
-    #<len>   = [#<yb> - #<ya>]
-    #<revs>  = [#<len> / #<pitch>]
-    #<steps> = [FIX[#<revs> * 36.0] + 1]
-    #<dy>    = [#<len> / #<steps>]
-    #<db>    = [#<revs> * 360.0 / #<steps>]
-    #<i>     = 0
-    #<yy>    = #<ya>
-    #<bb>    = 0
+    #<dnow> = [#<r> * 2.0]
+
+    (SOLVE THIS PASS AT THE UNCUT RADIUS.)
+    #<wb> = #<rf_bmax>
+    #<sp> = [#<wb> * #<pi> * #<rout> / [3.0 * #<rf_chip> * #<rf_flutes>]]
+    o30 if [#<sp> GT #<rf_smax>]
+      #<sp> = #<rf_smax>
+      #<wb> = [3.0 * #<rf_chip> * #<sp> * #<rf_flutes> / [#<pi> * #<rout>]]
+    o30 endif
+    o31 if [#<sp> LT #<rf_smin>]
+      #<fzmax> = [#<rf_bmax> * #<pi> * #<rout> / [3.0 * #<rf_smin> * #<rf_flutes>]]
+      (abort, ROTARY FACE: that chip load needs #<sp> rpm and the spindle floor is #<rf_smin>. At this diameter the most this machine can cut is #<fzmax> mm per tooth)
+    o31 endif
+    #<feed> = [#<pitch> * #<wb> / 6.0]
+
+    (PRINT, ROTARY FACE: pass #<pass> to diameter #<dnow> - Z #<r>, S #<sp>, B #<wb> deg per sec, F #<feed>)
+    S#<sp>
+    G1 Z[#<r>] F[#<feed>]
+    #<i>  = 0
+    #<yy> = #<ycur>
     o110 while [#<i> LT #<steps>]
-      #<yy> = [#<yy> + #<dy>]
+      #<yy> = [#<yy> + [#<dy> * #<dir>]]
       #<bb> = [#<bb> + #<db>]
       G1 Y[#<yy>] B[#<bb>] F[#<feed>]
       #<i> = [#<i> + 1]
     o110 endwhile
-    G0 Z[#<zsafe>]
+    (SWAP THE ENDS: this pass finished where the next one starts.)
+    #<ycur> = #<ytgt>
+    o102 if [#<dir> GT 0]
+      #<ytgt> = #<ya>
+      #<dir>  = -1
+    o102 else
+      #<ytgt> = #<yb>
+      #<dir>  = 1
+    o102 endif
   o100 endwhile
 
+  G0 Z[#<zsafe>]
   G0 Y[#<ya>]
   G0 G53 Z0
   M5
