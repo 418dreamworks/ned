@@ -5428,6 +5428,12 @@ class UserTab(QWidget):
                      # worm drive. Defined in every mode so a lookup
                      # can never KeyError on a mode switch.
                      'b': [0.01, 0.05, 0.1, 0.25, 0.5]}
+            # The rotary slot's letter is a launch-time fact, but the
+            # ladder is read from a file written for the XYZAC
+            # machine. If the mode's letter is missing, mirror the
+            # one it replaces rather than KeyError in a jog handler.
+            if ROT not in t and 'c' in t:
+                t = dict(t, **{ROT: list(t['c'])})
             self._inc_ladder_cache = t
         return t
     # Slot 4 is the second rotary. In -xyzab the wheel's 4th slot,

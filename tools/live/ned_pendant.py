@@ -34,6 +34,12 @@ INC_TABLE = {
     'z': [0.01, 0.05, 0.1, 0.5, 1.0],
     'a': [0.01, 0.05, 0.1, 0.25, 0.5],
     'c': [0.01, 0.05, 0.1, 0.25, 0.5],
+    # B, the workpiece rotary (-xyzab). Degrees and a worm drive like
+    # the head rotaries, so the same ladder. Defined in EVERY mode:
+    # ned_controls reads this table out of this file and looks the
+    # slot's letter up in it, so a missing key is a KeyError in the
+    # GUI, not a graceful fallback.
+    'b': [0.01, 0.05, 0.1, 0.25, 0.5],
 }
 N_INC = 5
 CPD = 4                  # counts per detent (tools/groundtruth/mpgjog.sh)
