@@ -21,8 +21,20 @@ o<rotary_goto_start> sub
   #<rp_sy>   = #2 (=-1365.0498 bar centre Y machine)
   #<rp_ztop> = #3 (=-196.1488 park height machine)
   #<rp_ftrav> = #4 (=2000.0 traverse mm/min)
+  (A MEASURED CENTRE BEATS A TYPED ONE. #3080/#3081 are written by)
+  (rotary_probe from the G55 offsets at the end of a good cycle, so once)
+  (the bar has been probed the park point is the real centre and not a number)
+  (somebody keyed in. The field is the fallback for the very first run, or)
+  (after the params are cleared.)
   #<sx>    = #<rp_sx>
   #<sy>    = #<rp_sy>
+  o30 if [#3080 NE 0]
+    #<sx> = #3080
+    #<sy> = #3081
+    (PRINT, ROTARY START: using the PROBED centre X #3080 Y #3081 machine, not the typed field.)
+  o30 else
+    (PRINT, ROTARY START: no probed centre stored yet - using the typed field.)
+  o30 endif
   #<ztop>  = #<rp_ztop>
   #<ftrav> = #<rp_ftrav>
   o1 if [#<ftrav> LE 0]
@@ -35,8 +47,18 @@ o<rotary_goto_start> sub
     (abort, ROTARY START: switch to MM first)
   o5 endif
   G90
-  G1 G53 Z[#<ztop>] F[#<ftrav>]
+  (MCS Z0 FIRST. Operator 2026-08-12. Z0 is the top of travel, so it is clear)
+  (of the bar, the chuck and the fixture no matter where the spindle started)
+  (or how long the probe is. A stored park height is not: it was recorded)
+  (with a different probe and could put the tip below the crown before the)
+  (lateral move even begins.)
+  G1 G53 Z0 F[#<ftrav>]
   G1 G53 X[#<sx>] Y[#<sy>] F[#<ftrav>]
+  (then down to the park, which is only ever a convenience -- the operator)
+  (sets the real height by jogging, because it belongs to the probe)
+  o40 if [#<ztop> LT 0]
+    G1 G53 Z[#<ztop>] F[#<ftrav>]
+  o40 endif
   (PRINT, ROTARY START: over the bar at X#<sx> Y#<sy> machine, parked at Z#<ztop>.)
   (PRINT, NEXT: jog Z down beside the bar, below the crown, then start the probe cycle.)
 o<rotary_goto_start> endsub

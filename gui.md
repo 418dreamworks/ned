@@ -3251,4 +3251,6 @@ Traceback (most recent call last):
            ^^^^^^^^^^^^^^^
 AttributeError: 'Brain' object has no attribute 'correcting'
 
-2026-08-12 01:37:39  B POWER: dark -- R4 borrowed by the head read (B holds position, self-locking worm)
+2026-08-12 10:54:55  ned_brain EXIT on signal 15 (SIGTERM)
+2026-08-12 10:54:55  ned_brain exited (atexit; normal interpreter exit)
+2026-08-12 10:54:55  stored_home.json final save at exit

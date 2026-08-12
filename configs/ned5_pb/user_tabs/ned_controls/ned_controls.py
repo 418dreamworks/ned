@@ -658,6 +658,7 @@ class UserTab(QWidget):
         QTimer.singleShot(1700, self._start_homing_gate)
         QTimer.singleShot(1800, self._build_rack_table)
         QTimer.singleShot(1900, self._build_rotary_probe_tab)
+        QTimer.singleShot(1950, self._build_rotary_face_tab)
         QTimer.singleShot(2100, self._wire_air_button)
         QTimer.singleShot(2000, self._init_tool_safety)
         # -xyzab only (self-checks the env and returns immediately otherwise).
@@ -6304,6 +6305,65 @@ class UserTab(QWidget):
             txt = '--' if v is None or v == 0.0 else '%.4f' % v
             if ed.text() != txt:
                 ed.setText(txt)
+
+    # names match the arg lines in rotary_face.ngc -- the name IS the binding
+    ROTARY_FACE_FIELDS = (
+        ('rf_tool',   'TOOL',    '6'),
+        ('rf_dstart', 'D START', '38.15'),
+        ('rf_dend',   'D END',   '32.0'),
+        ('rf_y1',     'Y START', '0.0'),
+        ('rf_y2',     'Y END',   '100.0'),
+    )
+
+    def _build_rotary_face_tab(self):
+        """ROTARY FACING on the CONVERSATIONAL tab (operator 2026-08-12).
+
+        Also moves that tab strip from West to North, as asked.
+        """
+        from PySide6.QtWidgets import (QTabWidget, QVBoxLayout, QHBoxLayout,
+                                       QLabel, QLineEdit)
+        try:
+            win = self.window()
+            host = win.findChild(QTabWidget, 'operation') if win else None
+            if host is None:
+                LOG.error('ROTARY FACE: operation tab widget not found -- page '
+                          'not built. Nothing else is affected.')
+                return
+            host.setTabPosition(QTabWidget.North)
+            from qtpyvcp.widgets.button_widgets.subcall_button import (
+                SubCallButton)
+            page = QWidget()
+            lay = QVBoxLayout(page)
+            lay.setContentsMargins(12, 12, 12, 12)
+            lay.setSpacing(8)
+            self._rf_fields = {}
+            for name, label, default in self.ROTARY_FACE_FIELDS:
+                row = QHBoxLayout()
+                lb = QLabel(label)
+                lb.setFixedWidth(110)
+                lb.setStyleSheet('color: #E6E6E6; font: 10pt;')
+                ed = QLineEdit()
+                ed.setObjectName(name)          # the binding
+                ed.setText(default)
+                ed.setFixedWidth(120)
+                ed.setStyleSheet(self.CAL_QSS['read'].replace(
+                    '#1B1F20', '#2A2F31'))      # editable: one shade lighter
+                row.addWidget(lb, 0)
+                row.addWidget(ed, 0)
+                row.addStretch(1)
+                lay.addLayout(row)
+                self._rf_fields[name] = ed
+            btn = SubCallButton(page, filename='rotary_face.ngc')
+            btn.setObjectName('ned_rotary_face_button')
+            btn.setText('ROTARY FACING')
+            btn.setMinimumHeight(52)
+            lay.addWidget(btn)
+            lay.addStretch(1)
+            host.addTab(page, 'ROTARY FACING')
+            LOG.info('ROTARY FACE: page added to operation (%d fields), tab '
+                     'strip moved North', len(self.ROTARY_FACE_FIELDS))
+        except Exception:
+            LOG.exception('ROTARY FACE: page not built')
 
     def _build_rotary_probe_tab(self):
         """ROTARY page on the PROBING tab (operator 2026-08-11: "this should be
