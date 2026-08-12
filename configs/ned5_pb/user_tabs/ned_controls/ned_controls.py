@@ -6277,11 +6277,33 @@ class UserTab(QWidget):
          'mm - moves only: step-off and drop. Never in the result.'),
         ('rp_gap',    'STATION GAP',    '304.8',
          'mm of Y to the 2nd station - 12 in. Gives yaw and droop.'),
-        ('rp_sx',     'BAR X  (MCS)',   '-3728.3650', 'machine'),
-        ('rp_sy',     'BAR Y  (MCS)',   '-1354.5257', 'machine'),
-        ('rp_ztop',   'PARK Z (MCS)',   '-189.7442',
+        ('rp_sx',     'BAR X  (MCS)',   '-3729.5550', 'machine'),
+        ('rp_sy',     'BAR Y  (MCS)',   '-1365.0498', 'machine'),
+        ('rp_ztop',   'PARK Z (MCS)',   '-196.1488',
          'machine - park ~5 mm above the bar'),
     )
+
+    def _rp_poll(self):
+        """Show the rotary result params. Written by rotary_probe.ngc into
+        #3090-3098; LinuxCNC flushes the var file when the cycle ends, which
+        is exactly when there is something new to show."""
+        out = getattr(self, '_rp_out', None)
+        if not out:
+            return
+        try:
+            vals = {}
+            with open(self.VAR_FILE) as f:
+                for line in f:
+                    b = line.split()
+                    if len(b) == 2 and b[0] in out:
+                        vals[b[0]] = float(b[1])
+        except Exception:
+            return
+        for k, ed in out.items():
+            v = vals.get(k)
+            txt = '--' if v is None or v == 0.0 else '%.4f' % v
+            if ed.text() != txt:
+                ed.setText(txt)
 
     def _build_rotary_probe_tab(self):
         """ROTARY page on the PROBING tab (operator 2026-08-11: "this should be
@@ -6317,14 +6339,9 @@ class UserTab(QWidget):
             head.setStyleSheet('color: rgb(238,238,236); font: 14pt '
                                '"Probe Basic Bebas Mono";')
             lay.addWidget(head)
-            why = QLabel(
-                'Park ABOVE the bar, roughly centred, then jog down ~10 mm '
-                'clear of it.\nFlanks first, then the crown at the found '
-                'centre: the bar diameter is DERIVED, never typed.\n'
-                'Second station +12 in gives yaw and droop. Datum is G55 '
-                '-- G54 is never written.\n'
-                'The bar must be on the toolsetter probe lead.')
-            why.setStyleSheet('color: rgb(200,200,200); font: 10pt;')
+            why = QLabel('GO TO BAR  \u2192  jog to ~5 mm above  \u2192  '
+                         'ROTARY PROBE.   Datum: G55.')
+            why.setStyleSheet('color: #E6E6E6; font: 10pt;')
             lay.addWidget(why)
             self._rp_fields = {}
             for name, label, default, hint in self.ROTARY_PROBE_FIELDS:
@@ -6359,6 +6376,36 @@ class UserTab(QWidget):
             btn.setMinimumHeight(56)
             lay.addWidget(btn)
             lay.addStretch(1)
+            # RESULTS ON THE PAGE. The log is not where the operator is
+            # looking (operator 2026-08-12). Same read-only field style as
+            # the calibration readouts so it reads as one UI, not two.
+            from PySide6.QtWidgets import QGridLayout
+            from PySide6.QtGui import QFont
+            rg = QGridLayout()
+            rg.setContentsMargins(0, 8, 0, 0)
+            rg.setHorizontalSpacing(8)
+            self._rp_out = {}
+            for r, (key, lab) in enumerate((
+                    ('3090', 'St1  X0  mm'), ('3091', 'St1  Z0  mm'),
+                    ('3096', 'St1  bar dia  mm'),
+                    ('3092', 'St2  X0  mm'), ('3093', 'St2  Z0  mm'),
+                    ('3097', 'St2  bar dia  mm'),
+                    ('3094', 'YAW   dX  mm'), ('3095', 'DROOP dZ  mm'))):
+                lw = QLabel(lab)
+                lw.setStyleSheet('color: #E6E6E6; font: 10pt;')
+                ed = QLineEdit()
+                ed.setReadOnly(True)
+                ed.setFont(QFont('DejaVu Sans Mono', 11))
+                ed.setFixedHeight(30)
+                ed.setStyleSheet(self.CAL_QSS['read'])
+                rg.addWidget(lw, r, 0)
+                rg.addWidget(ed, r, 1)
+                self._rp_out[key] = ed
+            lay.addLayout(rg)
+            self._rp_timer = QTimer(self)
+            self._rp_timer.timeout.connect(self._rp_poll)
+            self._rp_timer.start(1500)
+            self._rp_poll()
             host.addTab(page, 'ROTARY')
             self._rotary_probe_page = page
             LOG.info('ROTARY PROBE: page added to tabWidget_2 with %d field(s)'

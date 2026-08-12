@@ -72,7 +72,13 @@ _MODEFLAGS="-xyz"
 if [ -f "$NED/.last_run5_mode" ]; then
   . "$NED/.last_run5_mode"
   _MODEFLAGS="-${NED_MODE:-xyz}"
-  [ "${NED_KINS:-identity}" = "tooltip" ] && _MODEFLAGS="$_MODEFLAGS -tcp"
+  # ALWAYS SPELL THE KINS. run5 now refuses without it, and rightly: a
+  # default silently decides whether XYZ means the spindle or the tool tip.
+  if [ "${NED_KINS:-identity}" = "tooltip" ]; then
+    _MODEFLAGS="$_MODEFLAGS -tcp"
+  else
+    _MODEFLAGS="$_MODEFLAGS -notcp"
+  fi
 fi
 # shellcheck disable=SC2086
 # DETACH INTO ITS OWN SESSION (2026-08-05). Plain `nohup ... &` left the
@@ -83,6 +89,13 @@ fi
 # taking rtapi_app down with it (signal 11). Twice, both at ~t+104s, while
 # operator-launched sessions ran for many minutes. nohup only ignores
 # SIGHUP; setsid is what survives the group kill.
+# SAY WHICH CONFIGURATION IS ABOUT TO START. This script relaunches from
+# .last_run5_mode, NOT from whatever was actually running -- so if that file
+# is stale it will silently bring the machine up in a different machine.
+# That happened on 2026-08-12: the operator started -xyzab, a restart read a
+# stale xyzac and came back with no B axis at all, and the only symptom was a
+# program stopping dead on its first B word.
+echo "pb_restart: RELAUNCHING AS  $_MODEFLAGS   (from .last_run5_mode)"
 setsid nohup "$NED/tools/run5.sh" $_MODEFLAGS > "$OUT" 2>&1 < /dev/null &
 echo "pb_restart: launching (log: $OUT) -- waiting 60 s"
 sleep 60

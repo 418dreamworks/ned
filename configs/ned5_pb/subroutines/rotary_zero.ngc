@@ -78,10 +78,11 @@ o<rotary_zero> sub
   o23 if [#<h> LE 0]
     (abort, ROTARY ZERO: probe depth gives no material to touch)
   o23 endif
-  M66 P2 L0
-  o90 if [#5399 LT 0]
-    (abort, ROTARY ZERO: cannot read the probe input)
-  o90 endif
+  (NO M66 PRE-CHECK. M66 reads motion.digital-in-N, and the probe is not on)
+  (one: digital-in-02 is SHAFT STOPPED here - ned5_iron.hal:530.)
+  (The old guard therefore fired whenever the spindle was stopped, which is)
+  (always, and the cycle could never start. G38.2 refuses on its own if the)
+  (probe is tripped when it begins, so nothing is lost by dropping it.)
   G92.1
   G90
   #<y0> = #5421

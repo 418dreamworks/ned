@@ -3251,37 +3251,13 @@ Traceback (most recent call last):
            ^^^^^^^^^^^^^^^
 AttributeError: 'Brain' object has no attribute 'correcting'
 
-2026-08-12 00:07:46  ned_brain EXIT on signal 15 (SIGTERM)
-2026-08-12 00:07:46  ned_brain exited (atexit; normal interpreter exit)
-2026-08-12 00:07:46  stored_home.json final save at exit
-2026-08-12 00:11:09  ==== ned_brain start ==== (resume=False head_zero={'a': (36, 17081143), 'c': (-169, 59257275)} gears={'a': 128.25, 'c': 203.7471})
-2026-08-12 00:11:09  MACHINE ON -> fresh head read (A/C will home IN PLACE, no motion)
-2026-08-12 00:11:09  IN-PLACE HOME: standing by -- no armed head read
-2026-08-12 00:11:09  TOOL TABLE: served, 15 tools -- motion permitted
-2026-08-12 00:11:10  DECLARE: A held back -- no absolute read yet, banner stays UNHOMED until it lands
-2026-08-12 00:11:10  DECLARE: C held back -- no absolute read yet, banner stays UNHOMED until it lands
-2026-08-12 00:11:10  DECLARE: STALE frame from stored_home.json (saved 2026-08-12 00:07:46): {0: -3728.34, 1: -1354.5, 2: -189.7315, 3: -3728.3472}
-2026-08-12 00:11:12  DECLARE: A/C from the absolute read: A=NOT READ YET  C=NOT READ YET
-2026-08-12 00:11:12  DECLARED HOME (zero-motion, NML 112): joints [0, 1, 2, 3] where they stand; homed=(1, 1, 1, 1, 0, 0) all6=False (STALE HOME until menu Home All)
-2026-08-12 00:11:13  HOME PINS: joint 5 home wiped (offset is pso-driven) -- stateless read start
-2026-08-12 00:11:13  HEADREAD C start (blanked: hr_deg, lastraw, ini.5.home, ini.5.home_offset)
-2026-08-12 00:11:15  HEADREAD C: -0.000 deg  (mt=-169 w=59253681)
-2026-08-12 00:11:15  HEADREAD C: joint 5 measurement held in hr_deg, pins untouched until the home
-2026-08-12 00:11:15  HOME PINS: joint 4 home wiped (offset is pso-driven) -- stateless read start
-2026-08-12 00:11:15  HEADREAD A start (blanked: hr_deg, lastraw, ini.4.home, ini.4.home_offset)
-2026-08-12 00:11:17  HEADREAD A: -0.001 deg  (mt=36 w=17096603)
-2026-08-12 00:11:17  HEADREAD A: joint 4 measurement held in hr_deg, pins untouched until the home
-2026-08-12 00:11:18  HEAD READ armed: C=-0.000 A=-0.001
-2026-08-12 00:11:18  IN-PLACE HOME: proceeding (pending + armed read + no REF or verify outstanding)
-2026-08-12 00:11:18  HOME PINS: joint 4 armed home=-0.0006 home_offset=-0.0006 (both read back OK; home-state 4/5 = 0/0) -- declare in place
-2026-08-12 00:11:18  IN-PLACE HOME: joint 4 (A) declared at -0.001 deg, zero travel; nothing writes those pins until it is confirmed idle
-2026-08-12 00:11:18  DECLARE: joint 4 did not move (+0.0000 -> +0.0000) -- correct
-2026-08-12 00:11:18  HOME PINS: joint 4 home wiped (offset is pso-driven) -- consumed -- confirmed idle
-2026-08-12 00:11:20  HOME PINS: joint 5 armed home=-0.0001 home_offset=-0.0001 (both read back OK; home-state 4/5 = 0/0) -- declare in place
-2026-08-12 00:11:20  IN-PLACE HOME: joint 5 (C) declared at -0.000 deg, zero travel; nothing writes those pins until it is confirmed idle
-2026-08-12 00:11:20  MODE xyzac: TOOL-TIP kins (launched as type 0), pivot base 155.926 + live tool length. XYZ means the TOOL TIP.
-2026-08-12 00:11:20  DECLARE: joint 5 did not move (-0.0000 -> -0.0000) -- correct
-2026-08-12 00:11:20  HOME PINS: joint 5 home wiped (offset is pso-driven) -- consumed -- confirmed idle
-2026-08-12 00:11:20  IN-PLACE HOME: standing by -- nothing pending
-2026-08-12 00:11:23  SPINDLE RESTORE: T10 re-declared in spindle after reboot (sensor-confirmed clamped); tool_in_spindle=10
-2026-08-12 00:11:28  SPINDLE RESTORE: LinuxCNC already has T10 -- nothing to do
+2026-08-12 01:09:11  program/MDI done (motion complete) -> MANUAL + teleop (MPG live)
+2026-08-12 01:09:11  TELEOP re-entered (machine ON + homed) -> MPG live
+2026-08-12 01:09:12  SPINDLE RESTORE: LinuxCNC already has T6 -- nothing to do
+2026-08-12 01:10:17  SPINDLE RESTORE: no tool recorded in #3991 (0) -- nothing to restore
+2026-08-12 01:10:39  program/MDI done (motion complete) -> MANUAL + teleop (MPG live)
+2026-08-12 01:10:39  TELEOP re-entered (machine ON + homed) -> MPG live
+2026-08-12 01:10:43  SPINDLE RESTORE: LinuxCNC already has T6 -- nothing to do
+2026-08-12 01:12:05  ned_brain EXIT on signal 15 (SIGTERM)
+2026-08-12 01:12:05  ned_brain exited (atexit; normal interpreter exit)
+2026-08-12 01:12:05  stored_home.json final save at exit

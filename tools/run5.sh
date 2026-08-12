@@ -43,6 +43,7 @@ RESUME=0
 # until the module is installed AND a pivot length exists.
 NED_MODE=""
 NED_KINS=identity
+NED_KINS_SET=0   # set by -tcp/-notcp; unset is a REFUSAL, not a default
 for _a in "$@"; do
   case "$_a" in
     -nopower)  NOPOWER=1 ;;
@@ -51,15 +52,31 @@ for _a in "$@"; do
     -xyz_a|-xyz_b|-xyza_b|-xyzb_a)
       echo "run5: $_a refused -- superseded by -xyzab (task #25)"
       exit 1 ;;
-    -tcp)      NED_KINS=tooltip ;;
-    -notcp)    NED_KINS=identity ;;   # explicit; identity is also the default
-    -trivkins) NED_KINS=identity ;;   # old name, kept as alias for identity
+    -tcp)      NED_KINS=tooltip; NED_KINS_SET=1 ;;
+    -notcp)    NED_KINS=identity; NED_KINS_SET=1 ;;
+    -trivkins) NED_KINS=identity; NED_KINS_SET=1 ;;   # old alias
     *) echo "run5: unknown flag '$_a'"; exit 1 ;;
   esac
 done
 if [ -z "$NED_MODE" ]; then
   echo "run5: SPELL THE MODE. one of: -xyz  -xyza  -xyzac  -xyzab"
   echo "      (+ -tcp / -notcp, -nopower, resume)"
+  exit 1
+fi
+# SPELL THE KINS TOO -- no default. Operator 2026-08-12: "i didn't do -notcp
+# ... it should not have started anything, but instead did some default.
+# incorrect behaviour for run5."
+# A silent default is the worst of the options here: identity and tool-tip
+# move the machine differently for the same g-code, and nothing on screen
+# says which one is live. Refusing costs one word on the command line; being
+# wrong costs a part or a spindle.
+if [ "$NED_KINS_SET" != "1" ]; then
+  echo "run5: SPELL THE KINEMATICS. add -tcp or -notcp."
+  echo "      -notcp  identity: XYZ means the SPINDLE, the head does not"
+  echo "              compensate. This is what -xyzab wants."
+  echo "      -tcp    tool-tip: XYZ means the TOOL TIP and the linears chase"
+  echo "              it as the head rotates."
+  echo "      Nothing has been started."
   exit 1
 fi
 # -xyzab = workpiece rotary B instead of the head spin C (operator 2026-08-11).

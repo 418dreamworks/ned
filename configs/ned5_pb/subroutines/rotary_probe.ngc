@@ -74,10 +74,11 @@ o<rotary_probe> sub
   o10 if [#<_metric> EQ 0]
     (abort, ROTARY PROBE: switch to MM first)
   o10 endif
-  M66 P2 L0
-  o11 if [#5399 GT 0]
-    (abort, ROTARY PROBE: probe is already made before any move - check the lead)
-  o11 endif
+  (NO M66 PRE-CHECK. M66 reads motion.digital-in-N, and the probe is not on)
+  (one: digital-in-02 is SHAFT STOPPED here - ned5_iron.hal:530.)
+  (The old guard therefore fired whenever the spindle was stopped, which is)
+  (always, and the cycle could never start. G38.2 refuses on its own if the)
+  (probe is tripped when it begins, so nothing is lost by dropping it.)
 
   (the park height is wherever the operator left it: they lowered to suit)
   (whatever probe is in the spindle, and that is the only safe crossover Z)
@@ -89,7 +90,11 @@ o<rotary_probe> sub
   (about 5 mm above the bar, and the drop is bar/2 + 10 from there -- which)
   (puts the probe roughly 5 mm below the centreline, comfortably onto the)
   (flank. Still only the approximate diameter, still only a move.)
-  #<drop>  = [[#<approx> / 2.0] + 10.0]
+  (+20, not +10: another 10 mm of plunge. Operator 2026-08-12 - "just in case)
+  (it doesn't measure D correctly". Deeper flanks give a bigger half-width h,)
+  (and r = [h^2 + d^2] / 2d is better conditioned the further h and d get from)
+  (zero, so the derived diameter tightens up.)
+  #<drop>  = [[#<approx> / 2.0] + 20.0]
   #<step>  = [[#<approx> / 2.0] + #<pdia>]
   #<cross> = [#<approx> + [#<pdia> * 2.0]]
   #<st>    = 1
@@ -164,12 +169,29 @@ o<rotary_probe> sub
     o37 endif
     #<r>  = [[[#<h> * #<h>] + [#<d> * #<d>]] / [2.0 * #<d>]]
     #<z0> = [#<zc> - #<r>]
-    (PRINT, ROTARY station #<st>: X0 %.4f#<x0> Z0 %.4f#<z0> crown %.4f#<zc> h %.4f#<h> d %.4f#<d> derived dia %.4f#<r>)
+    (r IS THE RADIUS. It was labelled dia and it is not - the bar came out)
+    (32.71 across when it read 16.36, which is exactly a factor of two and)
+    (exactly the sort of thing that gets believed.)
+    (RESULTS GO INTO PARAMETERS so the page can show them: the log is not)
+    (where the operator is looking.)
+    o41 if [#<st> EQ 1]
+      #3090 = #<x0>
+      #3091 = #<z0>
+      #3096 = [#<r> * 2.0]
+    o41 else
+      #3092 = #<x0>
+      #3093 = #<z0>
+      #3097 = [#<r> * 2.0]
+    o41 endif
+    (PRINT, ROTARY station #<st>: X0 #<x0> Z0 #<z0> crown #<zc> h #<h> d #<d> radius #<r>)
     o40 if [#<st> EQ 1]
       #<x1> = #<x0>
       #<za> = #<z0>
       #<ya> = #<y0>
-      G1 Y[#<y0> + #<gap>] F[#<ftrav>]
+      (RAPID between stations. 12 in of empty air at the park height -- the)
+      (height the operator themselves stopped at, so it is known clear -- and)
+      (nothing is being measured on the way. Feeding it was just waiting.)
+      G0 Y[#<y0> + #<gap>]
     o40 else
       #<x2> = #<x0>
       #<zb> = #<z0>
@@ -180,13 +202,23 @@ o<rotary_probe> sub
   (--- 7. alignment, and the datum from station 1 ---------------------------)
   #<dx> = [#<x2> - #<x1>]
   #<dz> = [#<zb> - #<za>]
-  (PRINT, ROTARY ALIGNMENT over %.1f#<gap> mm: yaw dX %.4f#<dx> mm, droop dZ %.4f#<dz> mm)
+  #3094 = #<dx>
+  #3095 = #<dz>
+  #3098 = #<gap>
+  (PRINT, ROTARY ALIGNMENT over #<gap> mm: yaw dX #<dx> mm, droop dZ #<dz> mm)
   (PRINT, ROTARY: rotate B 180 and re-run - real misalignment keeps its sign, a bent bar flips it.)
   G1 Z[#<zpark>] F[#<ftrav>]
   G1 Y[#<ya>] F[#<ftrav>]
   G1 X[#<x1>] F[#<ftrav>]
   (G55 ONLY. G54 is the operator's scratch system and is never written here.)
-  G10 L20 P2 X0 Z0
+  (DEAD CENTRE OF STATION 1, in all three. G10 L20 makes the CURRENT position)
+  (read the value given -- and at this instant the spindle is back at the PARK)
+  (height, not on the centreline. X and Y are genuinely at the station 1)
+  (centre so they take 0 outright, but Z must be handed the distance from the)
+  (axis up to where the tool actually is. Writing Z0 here would have put the)
+  (datum a whole park-drop above the bar, and every depth after it would have)
+  (been wrong by that much with nothing to show for it.)
+  G10 L20 P2 X0 Y0 Z[#<zpark> - #<za>]
   (PRINT, ROTARY DONE: G55 X0 Z0 sits on the B centreline at station 1.)
 o<rotary_probe> endsub
 M2 (end program)
