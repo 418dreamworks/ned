@@ -3251,42 +3251,85 @@ Traceback (most recent call last):
            ^^^^^^^^^^^^^^^
 AttributeError: 'Brain' object has no attribute 'correcting'
 
-2026-08-11 22:52:07  ned_brain EXIT on signal 15 (SIGTERM)
-2026-08-11 22:52:07  ned_brain exited (atexit; normal interpreter exit)
-2026-08-11 22:52:07  stored_home.json final save at exit
-2026-08-11 22:52:23  ==== ned_brain start ==== (resume=False head_zero={'a': (36, 17081143), 'c': (-169, 59257275)} gears={'a': 128.25, 'c': 203.7471})
-2026-08-11 22:52:23  MACHINE ON -> fresh head read (A/C will home IN PLACE, no motion)
-2026-08-11 22:52:23  IN-PLACE HOME: standing by -- no armed head read
-2026-08-11 22:52:23  TOOL TABLE: served, 15 tools -- motion permitted
-2026-08-11 22:52:24  DECLARE: A held back -- no absolute read yet, banner stays UNHOMED until it lands
-2026-08-11 22:52:24  DECLARE: C held back -- no absolute read yet, banner stays UNHOMED until it lands
-2026-08-11 22:52:24  DECLARE: STALE frame from stored_home.json (saved 2026-08-11 22:52:07): {0: -81.035, 1: -1427.288, 2: -0.0063, 3: -81.0322}
-2026-08-11 22:52:26  DECLARE: A/C from the absolute read: A=NOT READ YET  C=NOT READ YET
-2026-08-11 22:52:26  DECLARED HOME (zero-motion, NML 112): joints [0, 1, 2, 3] where they stand; homed=(1, 1, 1, 1, 0, 0) all6=False (STALE HOME until menu Home All)
-2026-08-11 22:52:27  HOME PINS: joint 5 home wiped (offset is pso-driven) -- stateless read start
-2026-08-11 22:52:27  HEADREAD C start (blanked: hr_deg, lastraw, ini.5.home, ini.5.home_offset)
-2026-08-11 22:52:29  HEADREAD C: +0.000 deg  (mt=-169 w=59260175)
-2026-08-11 22:52:29  HEADREAD C: joint 5 measurement held in hr_deg, pins untouched until the home
-2026-08-11 22:52:29  HOME PINS: joint 4 home wiped (offset is pso-driven) -- stateless read start
-2026-08-11 22:52:29  HEADREAD A start (blanked: hr_deg, lastraw, ini.4.home, ini.4.home_offset)
-2026-08-11 22:52:31  HEADREAD A: -0.001 deg  (mt=36 w=17096285)
-2026-08-11 22:52:31  HEADREAD A: joint 4 measurement held in hr_deg, pins untouched until the home
-2026-08-11 22:52:32  HEAD READ armed: C=+0.000 A=-0.001
-2026-08-11 22:52:32  IN-PLACE HOME: proceeding (pending + armed read + no REF or verify outstanding)
-2026-08-11 22:52:32  HOME PINS: joint 4 armed home=-0.0006 home_offset=-0.0006 (both read back OK; home-state 4/5 = 0/0) -- declare in place
-2026-08-11 22:52:32  IN-PLACE HOME: joint 4 (A) declared at -0.001 deg, zero travel; nothing writes those pins until it is confirmed idle
-2026-08-11 22:52:32  DECLARE: joint 4 did not move (+0.0000 -> +0.0000) -- correct
-2026-08-11 22:52:32  HOME PINS: joint 4 home wiped (offset is pso-driven) -- consumed -- confirmed idle
-2026-08-11 22:52:34  HOME PINS: joint 5 armed home=+0.0001 home_offset=+0.0001 (both read back OK; home-state 4/5 = 0/0) -- declare in place
-2026-08-11 22:52:34  IN-PLACE HOME: joint 5 (C) declared at +0.000 deg, zero travel; nothing writes those pins until it is confirmed idle
-2026-08-11 22:52:34  MODE xyzab: C reached zero (+0.0001)
-2026-08-11 22:52:34  MODE xyzab: C CLAMPED at +0.0001 (soft limits -0.0009 .. +0.0011)
-2026-08-11 22:52:34  DECLARE: joint 5 did not move (-0.0000 -> -0.0000) -- correct
-2026-08-11 22:52:34  HOME PINS: joint 5 home wiped (offset is pso-driven) -- consumed -- confirmed idle
-2026-08-11 22:52:34  B POWER: R4 on, 0.25 s settle before steps are allowed
-2026-08-11 22:52:34  IN-PLACE HOME: standing by -- nothing pending
-2026-08-11 22:52:34  B POWER: brick live and settled -- B may move
-2026-08-11 22:52:37  SPINDLE RESTORE: no tool recorded in #3991 (0) -- nothing to restore
-2026-08-11 22:53:28  SPINDLE RESTORE: LinuxCNC already has T10 -- nothing to do
-2026-08-11 22:53:28  program/MDI done (motion complete) -> MANUAL + teleop (MPG live)
-2026-08-11 22:53:28  TELEOP re-entered (machine ON + homed) -> MPG live
+2026-08-11 22:55:44  program/MDI done (motion complete) -> MANUAL + teleop (MPG live)
+2026-08-11 22:55:44  TELEOP re-entered (machine ON + homed) -> MPG live
+2026-08-11 22:56:35  program/MDI done (motion complete) -> MANUAL + teleop (MPG live)
+2026-08-11 22:56:35  TELEOP re-entered (machine ON + homed) -> MPG live
+2026-08-11 22:57:13  ned_brain EXIT on signal 15 (SIGTERM)
+2026-08-11 22:57:13  ned_brain exited (atexit; normal interpreter exit)
+2026-08-11 22:57:13  stored_home.json final save at exit
+2026-08-11 22:57:28  ==== ned_brain start ==== (resume=False head_zero={'a': (36, 17081143), 'c': (-169, 59257275)} gears={'a': 128.25, 'c': 203.7471})
+2026-08-11 22:57:28  MACHINE ON -> fresh head read (A/C will home IN PLACE, no motion)
+2026-08-11 22:57:28  IN-PLACE HOME: standing by -- no armed head read
+2026-08-11 22:57:28  TOOL TABLE: served, 15 tools -- motion permitted
+2026-08-11 22:57:30  DECLARE: A held back -- no absolute read yet, banner stays UNHOMED until it lands
+2026-08-11 22:57:30  DECLARE: C held back -- no absolute read yet, banner stays UNHOMED until it lands
+2026-08-11 22:57:30  DECLARE: STALE frame from stored_home.json (saved 2026-08-11 22:57:13): {0: -61.095, 1: -1427.284, 2: -367.9518, 3: -61.0948}
+2026-08-11 22:57:32  DECLARE: A/C from the absolute read: A=NOT READ YET  C=NOT READ YET
+2026-08-11 22:57:32  DECLARED HOME (zero-motion, NML 112): joints [0, 1, 2, 3] where they stand; homed=(1, 1, 1, 1, 0, 0) all6=False (STALE HOME until menu Home All)
+2026-08-11 22:57:32  HOME PINS: joint 5 home wiped (offset is pso-driven) -- stateless read start
+2026-08-11 22:57:32  HEADREAD C start (blanked: hr_deg, lastraw, ini.5.home, ini.5.home_offset)
+2026-08-11 22:57:34  HEADREAD C: -0.000 deg  (mt=-169 w=59255419)
+2026-08-11 22:57:34  HEADREAD C: joint 5 measurement held in hr_deg, pins untouched until the home
+2026-08-11 22:57:34  HOME PINS: joint 4 home wiped (offset is pso-driven) -- stateless read start
+2026-08-11 22:57:34  HEADREAD A start (blanked: hr_deg, lastraw, ini.4.home, ini.4.home_offset)
+2026-08-11 22:57:36  HEADREAD A: -0.001 deg  (mt=36 w=17096353)
+2026-08-11 22:57:36  HEADREAD A: joint 4 measurement held in hr_deg, pins untouched until the home
+2026-08-11 22:57:37  HEAD READ armed: C=-0.000 A=-0.001
+2026-08-11 22:57:37  IN-PLACE HOME: proceeding (pending + armed read + no REF or verify outstanding)
+2026-08-11 22:57:37  HOME PINS: joint 4 armed home=-0.0006 home_offset=-0.0006 (both read back OK; home-state 4/5 = 0/0) -- declare in place
+2026-08-11 22:57:37  IN-PLACE HOME: joint 4 (A) declared at -0.001 deg, zero travel; nothing writes those pins until it is confirmed idle
+2026-08-11 22:57:37  DECLARE: joint 4 did not move (+0.0000 -> +0.0000) -- correct
+2026-08-11 22:57:37  HOME PINS: joint 4 home wiped (offset is pso-driven) -- consumed -- confirmed idle
+2026-08-11 22:57:39  HOME PINS: joint 5 armed home=-0.0000 home_offset=-0.0000 (both read back OK; home-state 4/5 = 0/0) -- declare in place
+2026-08-11 22:57:39  IN-PLACE HOME: joint 5 (C) declared at -0.000 deg, zero travel; nothing writes those pins until it is confirmed idle
+2026-08-11 22:57:39  MODE xyzab: C reached zero (-0.0000)
+2026-08-11 22:57:39  MODE xyzab: C CLAMPED at -0.0000 (soft limits -0.0010 .. +0.0010)
+2026-08-11 22:57:39  DECLARE: joint 5 did not move (-0.0000 -> -0.0000) -- correct
+2026-08-11 22:57:39  HOME PINS: joint 5 home wiped (offset is pso-driven) -- consumed -- confirmed idle
+2026-08-11 22:57:39  B POWER: R4 on, 0.25 s settle before steps are allowed
+2026-08-11 22:57:40  IN-PLACE HOME: standing by -- nothing pending
+2026-08-11 22:57:40  B POWER: brick live and settled -- B may move
+2026-08-11 22:57:42  SPINDLE RESTORE: no tool recorded in #3991 (0) -- nothing to restore
+2026-08-11 22:59:00  ned_brain EXIT on signal 15 (SIGTERM)
+2026-08-11 22:59:00  ned_brain exited (atexit; normal interpreter exit)
+2026-08-11 22:59:00  stored_home.json final save at exit
+2026-08-11 22:59:15  ==== ned_brain start ==== (resume=False head_zero={'a': (36, 17081143), 'c': (-169, 59257275)} gears={'a': 128.25, 'c': 203.7471})
+2026-08-11 22:59:16  MACHINE ON -> fresh head read (A/C will home IN PLACE, no motion)
+2026-08-11 22:59:16  IN-PLACE HOME: standing by -- no armed head read
+2026-08-11 22:59:16  TOOL TABLE: served, 15 tools -- motion permitted
+2026-08-11 22:59:17  DECLARE: A held back -- no absolute read yet, banner stays UNHOMED until it lands
+2026-08-11 22:59:17  DECLARE: C held back -- no absolute read yet, banner stays UNHOMED until it lands
+2026-08-11 22:59:17  DECLARE: STALE frame from stored_home.json (saved 2026-08-11 22:59:00): {0: -61.09, 1: -1427.28, 2: -367.9455, 3: -61.0874}
+2026-08-11 22:59:19  DECLARE: A/C from the absolute read: A=NOT READ YET  C=NOT READ YET
+2026-08-11 22:59:19  DECLARED HOME (zero-motion, NML 112): joints [0, 1, 2, 3] where they stand; homed=(1, 1, 1, 1, 0, 0) all6=False (STALE HOME until menu Home All)
+2026-08-11 22:59:19  HOME PINS: joint 5 home wiped (offset is pso-driven) -- stateless read start
+2026-08-11 22:59:19  HEADREAD C start (blanked: hr_deg, lastraw, ini.5.home, ini.5.home_offset)
+2026-08-11 22:59:21  HEADREAD C: -0.000 deg  (mt=-169 w=59255447)
+2026-08-11 22:59:21  HEADREAD C: joint 5 measurement held in hr_deg, pins untouched until the home
+2026-08-11 22:59:22  HOME PINS: joint 4 home wiped (offset is pso-driven) -- stateless read start
+2026-08-11 22:59:22  HEADREAD A start (blanked: hr_deg, lastraw, ini.4.home, ini.4.home_offset)
+2026-08-11 22:59:24  HEADREAD A: -0.001 deg  (mt=36 w=17096920)
+2026-08-11 22:59:24  HEADREAD A: joint 4 measurement held in hr_deg, pins untouched until the home
+2026-08-11 22:59:24  HEAD READ armed: C=-0.000 A=-0.001
+2026-08-11 22:59:24  IN-PLACE HOME: proceeding (pending + armed read + no REF or verify outstanding)
+2026-08-11 22:59:24  HOME PINS: joint 4 armed home=-0.0007 home_offset=-0.0007 (both read back OK; home-state 4/5 = 0/0) -- declare in place
+2026-08-11 22:59:24  IN-PLACE HOME: joint 4 (A) declared at -0.001 deg, zero travel; nothing writes those pins until it is confirmed idle
+2026-08-11 22:59:25  DECLARE: joint 4 did not move (+0.0000 -> +0.0000) -- correct
+2026-08-11 22:59:25  HOME PINS: joint 4 home wiped (offset is pso-driven) -- consumed -- confirmed idle
+2026-08-11 22:59:27  HOME PINS: joint 5 armed home=-0.0000 home_offset=-0.0000 (both read back OK; home-state 4/5 = 0/0) -- declare in place
+2026-08-11 22:59:27  IN-PLACE HOME: joint 5 (C) declared at -0.000 deg, zero travel; nothing writes those pins until it is confirmed idle
+2026-08-11 22:59:27  MODE xyzab: C reached zero (-0.0000)
+2026-08-11 22:59:27  MODE xyzab: C CLAMPED at -0.0000 (soft limits -0.0010 .. +0.0010)
+2026-08-11 22:59:27  DECLARE: joint 5 did not move (-0.0000 -> -0.0000) -- correct
+2026-08-11 22:59:27  HOME PINS: joint 5 home wiped (offset is pso-driven) -- consumed -- confirmed idle
+2026-08-11 22:59:27  B POWER: R4 on, 0.25 s settle before steps are allowed
+2026-08-11 22:59:27  IN-PLACE HOME: standing by -- nothing pending
+2026-08-11 22:59:27  B POWER: brick live and settled -- B may move
+2026-08-11 22:59:30  SPINDLE RESTORE: no tool recorded in #3991 (0) -- nothing to restore
+2026-08-11 23:00:38  program/MDI done (motion complete) -> MANUAL + teleop (MPG live)
+2026-08-11 23:00:38  TELEOP re-entered (machine ON + homed) -> MPG live
+2026-08-11 23:01:15  program/MDI done (motion complete) -> MANUAL + teleop (MPG live)
+2026-08-11 23:01:15  TELEOP re-entered (machine ON + homed) -> MPG live
+2026-08-11 23:01:20  program/MDI done (motion complete) -> MANUAL + teleop (MPG live)
+2026-08-11 23:01:20  TELEOP re-entered (machine ON + homed) -> MPG live

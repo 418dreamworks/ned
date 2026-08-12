@@ -901,9 +901,6 @@ class UserTab(QWidget):
             b3, b3l = _mkbox('3   SHOULDER')
             # "SHOULDER   spindle empty" read as one garbled phrase. The
             # requirement belongs in the box, not jammed into the label.
-            shint = QLabel('Last step. Take the tool out by hand first.')
-            shint.setStyleSheet('color: #C8CFCC; font: 10pt;')
-            b3l.addWidget(shint)
             # LIVE INSTRUCTION, above the four buttons (operator
             # 2026-08-11: "should update instructions as each step
             # passes"). It is derived from the MACHINE STATE, not from
@@ -1846,62 +1843,36 @@ class UserTab(QWidget):
 
     CAL_EXTRA = {'cleft': -1, 'cright': 1}
 
+    # FOUR STEPS, IN ORDER, ADVANCED BY THE CLICK. Operator 2026-08-11:
+    # "it should show 1/4, and then after you click the first button, it
+    # should show 2/4 and so on. take out that LAST STEP bullshit."
+    # An earlier version derived the step from machine state and was wrong
+    # on the very first read -- it saw stale tool lengths and announced 4/4
+    # before anything had been pressed. The click is the honest signal: it
+    # is the thing the operator actually did.
+    CAL_CHAIN_KEYS = ('shoulder', 'probeheight', 'storeresults', 'measureall')
     CAL_CHAIN_STEPS = (
-        ('1/4  REMOVE THE TOOL BY HAND, then press FIND NOSE. It probes the '
-         'nose face and parks 10 mm over the probe.'),
-        ('2/4  Put a tool in, jog UP to the height every probe should start '
-         'from, then press SET PROBE HEIGHT. It records G30 and the plunge; '
-         'it moves nothing.'),
-        ('3/4  Press STORE RESULTS. This CLEARS every tool length in the '
-         'rack -- they were measured against the old probe position.'),
-        ('4/4  Spindle EMPTY, all tools in the rack, then press MEASURE ALL '
-         'TOOLS. It fetches and touches off each one in turn.'),
-        ('DONE  every rack tool has a length again. Nothing further to press.'),
+        '1/4  Remove tool by hand  \u2192  FIND NOSE',
+        '2/4  Jog to probe height  \u2192  SET PROBE HEIGHT',
+        '3/4  STORE RESULTS  (clears all lengths)',
+        '4/4  Spindle empty  \u2192  MEASURE ALL TOOLS',
     )
 
-    def _cal_chain_step(self):
-        """Which step of the probing reset is outstanding, from live state.
-
-        Ordered by dependency, and each test is the same one the matching
-        subroutine refuses on -- so the instruction can never tell the
-        operator to press something that is about to be rejected.
-        """
-        v = getattr(self, '_cal_var_cache', None) or {}
-        if not v:
-            return 0
-        if not v.get('3010'):
-            return 0                       # no nose height yet
-        if not v.get('5183') or (v.get('3007') or 0) <= 0:
-            return 1                       # no probe height / no plunge
-        try:
-            import linuxcnc
-            st = linuxcnc.stat(); st.poll()
-            racked = set()
-            for f in range(1, self.RACK_TABLE_FORKS + 1):
-                t = int(v.get(str(4000 + f)) or 0)
-                if t > 0:
-                    racked.add(t)
-            if not racked:
-                return 3
-            zs = {e.id: e.zoffset for e in st.tool_table if e.id > 0}
-            unmeasured = [t for t in racked if abs(zs.get(t, 0.0)) < 1e-9]
-            if len(unmeasured) == len(racked):
-                return 3                   # all zeroed: ready to measure
-            if unmeasured:
-                return 3                   # part way through a measure-all
-        except Exception:
-            return 2
-        return 2                           # lengths still present: not stored
+    def _cal_chain_advance(self, which):
+        """A chain button fired: show the step AFTER it."""
+        if which not in self.CAL_CHAIN_KEYS:
+            return
+        i = self.CAL_CHAIN_KEYS.index(which) + 1
+        # the last step has no successor -- it simply stays up
+        self._cal_chain_i = min(i, len(self.CAL_CHAIN_STEPS) - 1)
+        self._cal_chain_tick()
 
     def _cal_chain_tick(self):
         lab = getattr(self, '_cal_next', None)
         if lab is None:
             return
-        try:
-            i = self._cal_chain_step()
-        except Exception:
-            return
-        txt = self.CAL_CHAIN_STEPS[min(i, len(self.CAL_CHAIN_STEPS) - 1)]
+        i = getattr(self, '_cal_chain_i', 0)
+        txt = self.CAL_CHAIN_STEPS[max(0, min(i, len(self.CAL_CHAIN_STEPS) - 1))]
         if txt != getattr(self, '_cal_next_txt', None):
             self._cal_next_txt = txt
             lab.setText(txt)
@@ -2027,6 +1998,10 @@ class UserTab(QWidget):
                 LOG.info('%s: %s issued with centre %.4f %.4f top %.4f',
                          label, sub, vals['3045'], vals['3046'], vals['3047'])
                 self.cal_say('>> %s' % label)
+                # advance AFTER the cycle is actually issued, never on the
+                # click: every refusal above returns without reaching here,
+                # so the instruction cannot walk past a step that did not run
+                self._cal_chain_advance(which)
             else:
                 # Some plain cycles still take one argument. The Z soft limit
                 # is READ FROM THE INI here rather than hardcoded in the sub,
@@ -2038,6 +2013,7 @@ class UserTab(QWidget):
                 elif which in ('storeresults', 'measureall'):
                     plain = ' [%d]' % self.RACK_TABLE_FORKS
                 c.mdi('o<%s> call%s' % (sub, plain))
+                self._cal_chain_advance(which)
                 LOG.info('%s: %s issued', label, sub)
             self._cal_lock_ac(label)
             self._cal_buttons_busy(True, running=which)
