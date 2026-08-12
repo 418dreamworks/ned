@@ -63,17 +63,23 @@ o<rotary_face> sub
   o15 if [#5220 NE 2]
     (abort, ROTARY FACE: not in G55 - the rotary datum lives there, G54 is scratch)
   o15 endif
-  (X AND Y BOTH ZEROED. X is never commanded, so a wrong X is never corrected)
-  (- it just quietly cuts the wrong thing. The failure this catches is being a)
-  (long way out: the air offset is 1000 mm and G54 is 3.67 m away. 0.1 mm is)
-  (deliberately loose, because depth error off centre is only dX squared over)
-  (2r -- half a mm off a 19 mm radius costs 7 microns.)
+  (NEAR ZERO IS FINE - IT GETS MOVED THERE. Only a long way out is an error,)
+  (and that is what the check is for: the air offset is 1000 mm and G54 is)
+  (3.67 m away. Within 0.1 the operator has jogged to the datum and simply)
+  (cannot land on it by hand, so snapping is the useful answer, not a refusal.)
   o16 if [ABS[#5420] GT 0.1]
-    (abort, ROTARY FACE: X is not zeroed - it reads #5420 and must be 0)
+    (abort, ROTARY FACE: X is #5420 - jog to the G55 datum before starting)
   o16 endif
   o17 if [ABS[#5421] GT 0.1]
-    (abort, ROTARY FACE: Y is not zeroed - it reads #5421 and must be 0)
+    (abort, ROTARY FACE: Y is #5421 - jog to the G55 datum before starting)
   o17 endif
+  (Z MUST ALREADY CLEAR THE STOCK, because the next move is LATERAL. Below)
+  (D/2 the tool is inside the swept envelope and going to X0 Y0 drives it)
+  (through the bar. This is checked before the spindle starts, so a refusal)
+  (costs nothing.)
+  o18 if [#5422 LE [#<rf_dstart> / 2.0]]
+    (abort, ROTARY FACE: Z is #5422 and the stock radius is half of #<rf_dstart> - raise Z clear first)
+  o18 endif
 
   T#<rf_tool> M6
   G43
@@ -99,8 +105,10 @@ o<rotary_face> sub
   (PRINT, ROTARY FACE: facing 0 to #<rf_len> - tool centre sweeps #<ya> to #<yb>)
 
   G90
-  G1 G53 Z0 F2000
+  (Z is already proven clear above, so it is safe to spin up and go to the)
+  (datum in one move before anything else happens.)
   M3 S#<rf_rpm>
+  G0 X0 Y0
   G0 Z[#<zsafe>]
   G0 Y[#<ya>]
   G0 B0
