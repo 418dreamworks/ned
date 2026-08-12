@@ -43,18 +43,17 @@ o<cal_store_results> sub
   o13 endif
   (PRINT, STORE RESULTS: PB has probe XY #5181 #5182, height #5183, nose #3010, plunge #3007 - all machine mm.)
 
-  (--- wipe every length the rack is holding -----------------------------)
-  #<n>     = 1
-  #<wiped> = 0
-  o20 while [#<n> LE #<forks>]
-    #<t> = #[4000 + #<n>]
-    o21 if [#<t> GT 0]
-      G10 L1 P#<t> Z0
-      #<wiped> = [#<wiped> + 1]
-    o21 endif
-    #<n> = [#<n> + 1]
-  o20 endwhile
-  (PRINT, STORE RESULTS: #<wiped> tool lengths cleared to zero - every one of them must be re-measured before it cuts.)
-  (DEBUG, STORE RESULTS: PB populated, #<wiped> lengths wiped)
+  (THE WIPE IS THE CALLER'S JOB AND IT COVERS EVERY TOOL IN THE TABLE, not)
+  (just the ones in forks. Operator 2026-08-11: "it has to zero ALL tools,)
+  (and only probe the ones in the rack".)
+  (The rack-only version bit immediately: T13 happened to be on the table)
+  (when STORE RESULTS ran, so it kept a 129.8096 length measured against the)
+  (OLD probe position -- and MEASURE ALL skips it too, because it is not in a)
+  (fork. A stale length that nothing re-measures and nothing flags is the)
+  (worst of the three states; zero is at least loud.)
+  (Only the caller knows which tools exist, so only the caller can zero them)
+  (all -- this file would have to guess a range and G10 L1 would invent the)
+  (gaps as new entries.)
+  (PRINT, STORE RESULTS: PB populated - every tool length zeroed by the caller. Fork tools get re-measured by MEASURE ALL; anything not in a fork stays at zero until it is done by hand.)
 o<cal_store_results> endsub
 M2 (end program)

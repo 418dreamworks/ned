@@ -1852,10 +1852,11 @@ class UserTab(QWidget):
     # is the thing the operator actually did.
     CAL_CHAIN_KEYS = ('shoulder', 'probeheight', 'storeresults', 'measureall')
     CAL_CHAIN_STEPS = (
-        '1/4  Remove tool by hand  \u2192  FIND NOSE',
-        '2/4  Jog to probe height  \u2192  SET PROBE HEIGHT',
-        '3/4  STORE RESULTS  (clears all lengths)',
-        '4/4  Spindle empty  \u2192  MEASURE ALL TOOLS',
+        '1/5  Remove tool by hand  \u2192  FIND NOSE',
+        '2/5  Jog to probe height  \u2192  SET PROBE HEIGHT',
+        '3/5  STORE RESULTS  (zeroes every tool length)',
+        '4/5  Spindle empty  \u2192  MEASURE ALL TOOLS',
+        '5/5  Check ATC',
     )
 
     def _cal_chain_advance(self, which):
@@ -2007,6 +2008,20 @@ class UserTab(QWidget):
                 # is READ FROM THE INI here rather than hardcoded in the sub,
                 # for the same reason the shoulder does it: the sub must not
                 # own a copy of a machine limit that can change.
+                if which == 'storeresults':
+                    # ZERO EVERY TOOL IN THE TABLE. Here and not in the sub
+                    # because only this side knows which tools actually
+                    # exist -- g-code would have to guess a range and G10 L1
+                    # would invent the gaps as new entries.
+                    n = 0
+                    for e in s.tool_table:
+                        if e.id > 0:
+                            c.mdi('G10 L1 P%d Z0' % e.id)
+                            n += 1
+                    LOG.info('STORE RESULTS: zeroed %d tool lengths - every '
+                             'tool in the table, not just the racked ones', n)
+                    self.cal_say('>> STORE RESULTS: %d tool lengths zeroed'
+                                 % n)
                 plain = ''
                 if which == 'probeheight':
                     plain = ' [%.4f]' % self._z_min_limit()
