@@ -48,7 +48,7 @@ o<rotary_face> sub
   #<rf_chip>   = #5 (=0 chip load mm per tooth - required)
   #<rf_flutes> = #6 (=2 flutes - from the tool table)
   #<rf_fdepth> = #7 (=0 flute depth mm - from the tool table, 0 = unknown)
-  #<rf_bmax>   = #8 (=90.0 B max deg/s - JOINT_6 MAX_VELOCITY, 15 rpm)
+  #<rf_bmax>   = #8 (=120.0 B max deg/s - JOINT_6 MAX_VELOCITY, 20 rpm)
   #<rf_smin>   = #9 (=1000 spindle floor rpm - SPINDLE_0 MIN_FORWARD_VELOCITY)
   #<rf_smax>   = #10 (=18000 spindle ceiling rpm - SPINDLE_0 MAX_FORWARD_VELOCITY)
   #<rf_step>   = #11 (=0.5 Y advance per B turn as a fraction of tool diameter)
@@ -63,7 +63,7 @@ o<rotary_face> sub
     #<rf_flutes> = 2
   o1 endif
   o2 if [#<rf_bmax> LE 0]
-    #<rf_bmax> = 90.0
+    #<rf_bmax> = 120.0
   o2 endif
   o3 if [#<rf_smin> LE 0]
     #<rf_smin> = 1000
@@ -138,9 +138,6 @@ o<rotary_face> sub
   (deeper than the flutes are long. A 12.7 mm tool takes 6.35 off the RADIUS,)
   (12.7 off the diameter, per pass.)
   #<doc> = #<trad>
-  o23 if [#<doc> GT 6.35]
-    #<doc> = 6.35
-  o23 endif
   o24 if [#<rf_fdepth> GT 0 AND #<rf_fdepth> LT #<doc>]
     #<doc> = #<rf_fdepth>
   o24 endif
@@ -185,6 +182,14 @@ o<rotary_face> sub
   (PRINT, ROTARY FACE: #<npass> passes, spindle #<sout> rpm held all cycle, B reaches its ceiling only on the last pass)
 
   G90
+  (BLEND THE CORNERS SO THE STOCK NEVER STOPS TURNING. Bare G64 -- what the
+  (machine defaults to -- only collapses collinear moves, so at the corner
+  (between the Y sweep and the Z dive the planner must arrive exactly on the
+  (corner point: Y decelerates to zero before Z starts, path velocity hits
+  (zero, and B stops with it. That is the pause seen between passes.
+  (P0.5 lets it miss the corner by half a millimetre and carry speed through
+  (an arc instead, so B keeps turning. Plain G64 is restored at the end.
+  G64 P0.5
   (SPINDLE FIRST, THEN TEN SECONDS, THEN MOVE. Operator 2026-08-12: "i want a)
   (10 second dwell after spindle before any movement ... to let it get to)
   (speed". The Mollom ramps a heavy tool holder over several seconds and)
@@ -317,6 +322,7 @@ o<rotary_face> sub
   G0 Y[#<ya>]
   G0 G53 Z0
   M5
+  G64
   (PRINT, ROTARY FACE DONE: #<pass> passes, stock now #<rf_dend> mm over #<rf_len> of length.)
 o<rotary_face> endsub
 M2 (end program)

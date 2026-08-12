@@ -6396,7 +6396,7 @@ QTabBar::tab:only-one {
         ('rf_c_pass',  'PASSES'),
         ('rf_c_time',  'CUT TIME (min)'),
     )
-    RF_BMAX = 90.0        # [JOINT_6]MAX_VELOCITY, tools/run5.sh -- 15 rpm
+    RF_BMAX = 120.0       # [JOINT_6]MAX_VELOCITY, tools/run5.sh -- 20 rpm
     RF_SMIN = 1000.0      # [SPINDLE_0]MIN_FORWARD_VELOCITY
     RF_SMAX = 18000.0     # [SPINDLE_0]MAX_FORWARD_VELOCITY
 
@@ -6489,7 +6489,7 @@ QTabBar::tab:only-one {
             self._rf_note.setText('')
             return
         trad = tdia / 2.0
-        doc = min(trad, 6.35)
+        doc = trad
         # FLUTE DOC 0 MEANS UNKNOWN, NOT ZERO. A tool whose row has never
         # been filled in cannot cap the depth, so the cap silently falls
         # back to half the diameter or 6.35 -- which is only safe if the
