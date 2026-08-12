@@ -1,36 +1,35 @@
 (ned ROTARY FACING -- stock prep. Skim a bar down to a target diameter.)
-(Operator 2026-08-12: tool number, starting D, end D, begin and end Y.)
+(Operator 2026-08-12: tool number, starting D, end D, and a length.)
 
-(ALWAYS AT G55 X0. The tool sits on the rotary centreline plane, so its tip)
-(contacts the crown and nothing else. Diameter therefore comes straight from)
-(Z: tip at Z = D/2 IS diameter D. No radial compensation, and none is)
-(wanted -- X is not an input and is never commanded.)
+(START AT G55 X0 Y0. Both are checked and the cycle refuses otherwise. That)
+(is what lets the operator give ONE positive number for the cut instead of a)
+(start and an end -- the datum is the start, and LENGTH runs +Y from it.)
 
-(THE COMPENSATION IS IN Y, BECAUSE THE Y VALUES ARE EDGES. The tool bottom is)
-(a disc: sweeping its CENTRE from y1 to y2 actually machines y1-R to y2+R. To)
-(finish exactly between the two edges the operator gave, the centre runs)
-(y1+R to y2-R. A cut narrower than the tool is refused rather than fudged.)
+(DIAMETER IS Z. On the centreline the tool tip contacts the crown and nothing)
+(else, so tip at Z = D/2 IS diameter D. X is never commanded.)
+
+(THE TOOL COMPENSATION IS IN Y. The tool bottom is a disc: sweeping its)
+(CENTRE from 0 to LENGTH actually machines -R to LENGTH+R. To finish exactly)
+(between the two edges, the centre runs R to LENGTH-R. A length shorter than)
+(the tool is refused rather than fudged.)
 
 (Y FEED IS COMPUTED, NOT ACCEPTED. One turn of B advances Y by one pitch, so)
-(Y speed and B speed are the same fact twice. B tops out at 30 deg/s, which)
-(caps Y at pitch * 30 / 360 * 60 mm/min -- 63 mm/min for a 12.7 tool at full)
-(pitch. Asking for more just means LinuxCNC clamps B and the real feed is)
-(whatever it was always going to be; better to say so than to pretend.)
-(Chip load will replace this later - operator: we will refactor.)
+(Y speed and B speed are the same fact twice. B tops out at 30 deg/s, capping)
+(Y at pitch times 30 over 360 times 60 mm/min -- 63 mm/min for a 12.7 tool at)
+(full pitch. Taking a bigger number would only mean LinuxCNC clamps B behind)
+(the operator's back. Chip load replaces this later.)
 
-(D_START IS A PROMISE, NOT A MEASUREMENT. The first pass is taken at)
-(D_START - DOC on the assumption nothing sticks out past D_START. Nothing)
-(here can see the stock, so an optimistic number buries the tool on move one.)
+(D START IS A PROMISE, NOT A MEASUREMENT. Nothing here can see the stock, so)
+(an optimistic number buries the tool on the first pass.)
 o<rotary_face> sub
   #<rf_tool>   = #1 (=0 tool number - required)
   #<rf_dstart> = #2 (=0 stock diameter now mm - required)
   #<rf_dend>   = #3 (=0 target diameter mm - required)
-  #<rf_y1>     = #4 (=0 Y begin - an EDGE of the cut)
-  #<rf_y2>     = #5 (=0 Y end - an EDGE of the cut)
-  #<rf_doc>    = #6 (=1.0 radial depth per pass mm)
-  #<rf_rpm>    = #7 (=9000 spindle rpm)
-  #<rf_step>   = #8 (=0.5 pitch as a fraction of tool diameter)
-  #<rf_bmax>   = #9 (=30.0 B max deg/s - JOINT_6 MAX_VELOCITY)
+  #<rf_len>    = #4 (=0 length to face, +Y from zero - required)
+  #<rf_doc>    = #5 (=1.0 radial depth per pass mm)
+  #<rf_rpm>    = #6 (=9000 spindle rpm)
+  #<rf_step>   = #7 (=0.5 pitch as a fraction of tool diameter)
+  #<rf_bmax>   = #8 (=30.0 B max deg/s - JOINT_6 MAX_VELOCITY)
   o1 if [#<rf_doc> LE 0]
     #<rf_doc> = 1.0
   o1 endif
@@ -55,9 +54,26 @@ o<rotary_face> sub
   o13 if [#<rf_dend> GE #<rf_dstart>]
     (abort, ROTARY FACE: end diameter must be SMALLER than the start diameter)
   o13 endif
-  o14 if [#<rf_y2> LE #<rf_y1>]
-    (abort, ROTARY FACE: Y end must be greater than Y begin)
+  o14 if [#<rf_len> LE 0]
+    (abort, ROTARY FACE: length must be positive - it runs +Y from zero)
   o14 endif
+
+  (IN THE RIGHT FRAME FIRST. X0 and Y0 in G54 are somewhere else entirely, so)
+  (the position checks below mean nothing without this one. 1 is G54, 2 G55.)
+  o15 if [#5220 NE 2]
+    (abort, ROTARY FACE: not in G55 - the rotary datum lives there, G54 is scratch)
+  o15 endif
+  (X AND Y BOTH ZEROED. X is never commanded, so a wrong X is never corrected)
+  (- it just quietly cuts the wrong thing. The failure this catches is being a)
+  (long way out: the air offset is 1000 mm and G54 is 3.67 m away. 0.1 mm is)
+  (deliberately loose, because depth error off centre is only dX squared over)
+  (2r -- half a mm off a 19 mm radius costs 7 microns.)
+  o16 if [ABS[#5420] GT 0.1]
+    (abort, ROTARY FACE: X is not zeroed - it reads #5420 and must be 0)
+  o16 endif
+  o17 if [ABS[#5421] GT 0.1]
+    (abort, ROTARY FACE: Y is not zeroed - it reads #5421 and must be 0)
+  o17 endif
 
   T#<rf_tool> M6
   G43
@@ -70,19 +86,17 @@ o<rotary_face> sub
   o21 endif
   #<trad> = [#<tdia> / 2.0]
 
-  (EDGE COMPENSATION)
-  #<ya> = [#<rf_y1> + #<trad>]
-  #<yb> = [#<rf_y2> - #<trad>]
+  #<ya> = #<trad>
+  #<yb> = [#<rf_len> - #<trad>]
   o22 if [#<yb> LE #<ya>]
-    (abort, ROTARY FACE: that span is narrower than the tool - nothing to sweep)
+    (abort, ROTARY FACE: that length is shorter than the tool - nothing to sweep)
   o22 endif
 
-  (PITCH AND THE FEED IT IMPLIES)
   #<pitch> = [#<tdia> * #<rf_step>]
   #<feed>  = [#<pitch> * #<rf_bmax> * 60.0 / 360.0]
   #<zsafe> = [[#<rf_dstart> / 2.0] + 10.0]
-  (PRINT, ROTARY FACE: T#<rf_tool> dia #<tdia>, pitch #<pitch> mm/rev, Y feed #<feed> mm/min at B #<rf_bmax> deg/s)
-  (PRINT, ROTARY FACE: sweeping Y #<ya> to #<yb> - tool centre, edges at #<rf_y1> and #<rf_y2>)
+  (PRINT, ROTARY FACE: T#<rf_tool> dia #<tdia>, pitch #<pitch> mm/rev, Y feed #<feed> mm/min)
+  (PRINT, ROTARY FACE: facing 0 to #<rf_len> - tool centre sweeps #<ya> to #<yb>)
 
   G90
   G1 G53 Z0 F2000
@@ -104,8 +118,8 @@ o<rotary_face> sub
     G0 Y[#<ya>]
     G0 Z[#<z> + 2.0]
     G1 Z[#<z>] F[#<feed>]
-    (ONE STEP PER 10 DEG OF B: fine enough that the helix is not faceted,)
-    (coarse enough that a 100 mm pass is not 3600 blocks.)
+    (ONE STEP PER 10 DEG OF B: fine enough not to facet the helix, coarse)
+    (enough that a 100 mm pass is not thousands of blocks.)
     #<len>   = [#<yb> - #<ya>]
     #<revs>  = [#<len> / #<pitch>]
     #<steps> = [FIX[#<revs> * 36.0] + 1]
@@ -123,8 +137,9 @@ o<rotary_face> sub
     G0 Z[#<zsafe>]
   o100 endwhile
 
+  G0 Y[#<ya>]
   G0 G53 Z0
   M5
-  (PRINT, ROTARY FACE DONE: #<pass> passes, stock now #<rf_dend> mm across the sweep.)
+  (PRINT, ROTARY FACE DONE: #<pass> passes, stock now #<rf_dend> mm over #<rf_len> of length.)
 o<rotary_face> endsub
 M2 (end program)

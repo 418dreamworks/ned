@@ -6311,8 +6311,7 @@ class UserTab(QWidget):
         ('rf_tool',   'TOOL',    '6'),
         ('rf_dstart', 'D START', '38.15'),
         ('rf_dend',   'D END',   '32.0'),
-        ('rf_y1',     'Y START', '0.0'),
-        ('rf_y2',     'Y END',   '100.0'),
+        ('rf_len',    'LENGTH',  '100.0'),
     )
 
     def _build_rotary_face_tab(self):
