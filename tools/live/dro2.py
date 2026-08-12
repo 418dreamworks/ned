@@ -243,7 +243,16 @@ class Dro2(QWidget):
         h_m = QLabel('MCS')
         h_w = QLabel('WCS')
         for _h in (h_m, h_w):
-            _h.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+            # RIGHT, not centre, and for the same reason the decimal point
+            # is column-locked: the numbers are right-aligned, so a centred
+            # header drifts away from its own column as the value changes
+            # width and the two stop reading as one column (operator
+            # 2026-08-11: "distribute the MCS and WCS columns evenly in the
+            # dro so they follow the G54 and MCS above"). Sharing the edge
+            # means they cannot drift at all. _resize_fonts then insets each
+            # header by the unit width so it sits over the DIGITS rather
+            # than over the trailing mm/deg.
+            _h.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
             _h.setStyleSheet('color: %s; background: transparent;' % WHITE)
         hrow.addWidget(self.hdr_pad, 0)
         hrow.addWidget(h_w, 5)
@@ -413,6 +422,14 @@ class Dro2(QWidget):
         lm = QFontMetrics(lf)
         lab_w = max([lm.horizontalAdvance(a) for a in self.axes] or [lab_px])
         self.hdr_pad.setFixedWidth(lab_w)   # headers align with the columns
+        # inset by the unit suffix so the header's right edge lands on the
+        # digits' right edge, not on the 'mm'/'deg' that follows them. Same
+        # 0.30 factor the unit span uses when the cell is rendered.
+        _unit_px = int(num_px * 0.30)
+        _um = QFontMetrics(QFont('DejaVu Sans Mono', _unit_px))
+        _pad = _um.horizontalAdvance('mm') + 6
+        for _h in self.hdr_labels:
+            _h.setContentsMargins(0, 0, _pad, 0)
         for lab, mach, work in self.rows:
             lab.setFont(lf)
             lab.setFixedWidth(lab_w)

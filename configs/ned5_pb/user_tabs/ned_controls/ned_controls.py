@@ -7213,15 +7213,36 @@ class UserTab(QWidget):
             c.wait_complete(2.0)
             c.teleop_enable(0)
             c.wait_complete(2.0)
-            # HOME_NO_REHOME is NOT implied here (B is not an absolute-encoder
-            # joint), but unhoming first keeps one code path for both the
-            # first home and every later re-declare.
+            # KEEP THE POSITION, DO NOT ZERO IT (operator 2026-08-11: "DO NOT
+            # home B. I rather keep the work coordinate if MCS is meaningless
+            # anyway"). [TRAJ]POSITION_FILE has already restored joint 6 by
+            # now, so whatever it reads IS last session's angle. Feed that
+            # straight back as the home offset: under HOME_ABSOLUTE_ENCODER=2
+            # the cycle sets position := ini.6.home_offset and jumps to
+            # HOME_FINISHED with no final move (homing.c:1139-1146), so the
+            # declare is exactly a no-op on the number and cannot turn the
+            # chuck. Homed still becomes true, which is the part MDI needs.
+            here = s.joint[6]['output']
+            # os.system, matching the other scripted halcmd in this file
+            # (subprocess is deliberately not imported here) -- and always
+            # timeout-wrapped: an unwrapped scripted halcmd is what deadlocked
+            # the boot on the qtpyvcp PIPE bug.
+            rc = os.system('timeout 3 halcmd setp ini.6.home_offset %.6f '
+                           '>/dev/null 2>&1' % here)
+            if rc != 0:
+                LOG.error('HOME B: could not set ini.6.home_offset (rc=%d) '
+                          '-- NOT homing; a declare against the wrong offset '
+                          'silently moves the coordinate', rc)
+                return
+            # HOME_NO_REHOME is implied by =2 (taskintf.cc:326-336), so an
+            # already-homed joint must be unhomed or home() is a silent no-op
+            # (homing.c:766-770).
             if s.homed[6]:
                 c.unhome(6)
                 c.wait_complete(2.0)
             c.home(6)
-            LOG.info('HOME B: joint 6 declared in place -- this chuck '
-                     'position is B0')
+            LOG.info('HOME B: joint 6 declared AT %+.4f (position kept, not '
+                     'zeroed -- the work offset stays meaningful)', here)
         except Exception as e:
             LOG.error('HOME B failed: %s', e)
 
