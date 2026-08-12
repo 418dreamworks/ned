@@ -1,0 +1,138 @@
+(ned MEASURE SHOULDER -- the second half of a tool's profile.)
+(Operator 2026-08-12: "it moves the bit so that the tool diameter is 1mm)
+(from the puck and probes down so that the shoulder makes contact. now, we)
+(will have a full profile of the bit.")
+
+(WHAT IT MEASURES: the height of the shoulder above the tool tip. The nose)
+(is already known -- MEASURE TOOL OFFSET wrote it into the tool table as the)
+(Z offset -- so probing the shoulder against the same puck top gives the)
+(distance between the two, which is what a collision check needs.)
+
+(THE GEOMETRY. The cutter must MISS the puck and the shoulder must LAND on)
+(it, so the spindle is offset sideways by:)
+(    puck radius + cutting radius + 1 mm)
+(The 1 mm is the operator's clearance between the cutter and the puck edge.)
+(The shoulder overhangs by shoulder radius minus that offset, so a shoulder)
+(wider than the cutter always finds the puck.)
+
+(PUCK GEOMETRY comes from the calibration block, not from a constant here:)
+(#3045/#3046 centre, #3047 top. Diameter measured 2026-08-03 as 25.27 mm)
+(-- cal_probe_center.ngc:27.)
+o<measure_shoulder> sub
+  #<ms_cutdia>  = #1 (=0 cutting diameter mm - 0 takes it from the tool table)
+  #<ms_shdia>   = #2 (=0 shoulder diameter mm - required, from the ER size)
+  #<ms_clear>   = #3 (=1.0 gap between the cutter and the puck edge mm)
+  #<ms_puckdia> = #4 (=25.27 puck diameter mm - measured 2026-08-03)
+  #<ms_start>   = #5 (=20.0 height above the puck to start the search mm)
+  #<ms_max>     = #6 (=40.0 max search down mm)
+  #<ms_ffast>   = #7 (=200.0 find feed mm per min)
+  #<ms_fslow>   = #8 (=20.0 latch feed mm per min)
+  #<ms_ftrav>   = #9 (=1000.0 traverse feed mm per min)
+  o1 if [#<ms_clear> LE 0]
+    #<ms_clear> = 1.0
+  o1 endif
+  o2 if [#<ms_puckdia> LE 0]
+    #<ms_puckdia> = 25.27
+  o2 endif
+  o3 if [#<ms_start> LE 0]
+    #<ms_start> = 20.0
+  o3 endif
+  o4 if [#<ms_max> LE 0]
+    #<ms_max> = 40.0
+  o4 endif
+  o5 if [#<ms_ffast> LE 0]
+    #<ms_ffast> = 200.0
+  o5 endif
+  o6 if [#<ms_fslow> LE 0]
+    #<ms_fslow> = 20.0
+  o6 endif
+  o7 if [#<ms_ftrav> LE 0]
+    #<ms_ftrav> = 1000.0
+  o7 endif
+  o10 if [#<_metric> EQ 0]
+    (abort, MEASURE SHOULDER: switch to MM first)
+  o10 endif
+  o11 if [#5400 LE 0]
+    (abort, MEASURE SHOULDER: no tool in the spindle - load the tool first, then press MEASURE TOOL OFFSET before this)
+  o11 endif
+  o12 if [#<ms_cutdia> LE 0]
+    #<ms_cutdia> = #5410
+  o12 endif
+  o13 if [#<ms_cutdia> LE 0]
+    (abort, MEASURE SHOULDER: that tool has no diameter in the table - fill DIAMETER in on the TOOL tab)
+  o13 endif
+  o14 if [#<ms_shdia> LE #<ms_cutdia>]
+    (abort, MEASURE SHOULDER: shoulder diameter must be LARGER than the cutter - pick the ER size on the TOOL tab)
+  o14 endif
+  o15 if [#3047 EQ 0]
+    (abort, MEASURE SHOULDER: the puck has never been calibrated - run FIND NOSE and the probing chain first)
+  o15 endif
+
+  (SIDESTEP. Negative X so the move is away from the operator side, matching)
+  (every other toolsetter approach on this machine.)
+  #<ms_off> = [[#<ms_puckdia> / 2.0] + [#<ms_cutdia> / 2.0] + #<ms_clear>]
+  #<ms_over> = [[#<ms_shdia> / 2.0] - #<ms_off>]
+  o16 if [#<ms_over> LE 0.5]
+    (abort, MEASURE SHOULDER: at this offset the shoulder would miss the puck - the cutter is too big for this ER nut)
+  o16 endif
+  (PRINT, MEASURE SHOULDER: cutter #<ms_cutdia> shoulder #<ms_shdia>, stepping #<ms_off> mm in -X, shoulder overhangs the puck by #<ms_over> mm)
+
+  G90
+  M5
+  M64 P3            (deploy the toolsetter puck)
+  G4 P1.5
+  (ALREADY AT G30? THEN DO NOT LIFT AND COME BACK -- same rule as)
+  (tool_touch_off. Machine position is not a parameter, so it is rebuilt)
+  (from the work position, the active G5x origin, G92 and the tool length.)
+  (G5x origins sit one 20-slot block apart from 5221, and #5220 says which)
+  (frame is live, so the base is 5201 + 20 times the frame number.)
+  #<gbase> = [5201 + [#5220 * 20]]
+  #<mach_x> = [#5420 + #[#<gbase>] + #5211]
+  #<mach_y> = [#5421 + #[#<gbase> + 1] + #5212]
+  #<mach_z> = [#5422 + #[#<gbase> + 2] + #5213 + #5403]
+  #<at_g30> = 0
+  o30 if [ABS[#<mach_x> - #5181] LT 0.1]
+    o31 if [ABS[#<mach_y> - #5182] LT 0.1]
+      o32 if [ABS[#<mach_z> - #5183] LT 0.1]
+        #<at_g30> = 1
+      o32 endif
+    o31 endif
+  o30 endif
+  o33 if [#<at_g30> GT 0]
+    (PRINT, MEASURE SHOULDER: already at G30 - stepping across and probing from here)
+    G53 G1 F[#<ms_ftrav>] X[#3045 - #<ms_off>] Y#3046
+  o33 else
+    G53 G1 F[#<ms_ftrav>] Z0
+    G53 G1 F[#<ms_ftrav>] X[#3045 - #<ms_off>] Y#3046
+    G53 G1 F[#<ms_ftrav>] Z[#3047 + #<ms_start>]
+  o33 endif
+
+  G38.2 Z[#3047 - 1.0] F[#<ms_ffast>]
+  o20 if [#5070 EQ 0]
+    G53 G1 F[#<ms_ftrav>] Z0
+    M65 P3
+    (abort, MEASURE SHOULDER: no contact - the shoulder never reached the puck. Check the ER size and that the tool is seated)
+  o20 endif
+  G91
+  G1 Z2.0 F[#<ms_ftrav>]
+  G90
+  G38.2 Z[#3047 - 1.0] F[#<ms_fslow>]
+  o21 if [#5070 EQ 0]
+    G53 G1 F[#<ms_ftrav>] Z0
+    M65 P3
+    (abort, MEASURE SHOULDER: slow latch found nothing - the first touch was not repeatable)
+  o21 endif
+
+  (#5063 is the probed Z in the CURRENT frame; #3047 is the puck top in)
+  (MACHINE terms, so the height is machine-minus-machine via #5183's frame.)
+  #3011 = [#5063 - #3010]
+  #3012 = #<ms_shdia>
+  (PRINT, MEASURE SHOULDER: shoulder sits #3011 mm above the tool tip, diameter #3012 mm - written to #3011 and #3012)
+
+  G53 G1 F[#<ms_ftrav>] Z0
+  M65 P3            (retract the puck)
+  (BACK TO G30, the same rest position every probing routine returns to.)
+  G53 G1 F[#<ms_ftrav>] X#5181 Y#5182
+  G53 G1 F[#<ms_ftrav>] Z#5183
+o<measure_shoulder> endsub
+M2 (end program)

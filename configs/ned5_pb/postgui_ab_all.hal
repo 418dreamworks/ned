@@ -62,6 +62,13 @@ net sig-abs-deg-c     hm2_7i97.0.pktuart.0.deg-c  =>  ini.5.home_offset
 # TOOL TABLE SERVED: the ONLY thing that releases the default motion lock.
 # FALSE until the brain sees a real entry in stat.tool_table.
 net sig-tool-table-ok  brain.tool-table-ok
+
+# PER-TOOL PROBE OFFSET -> g-code. ned_controls reads the OFFSET column of
+# the tool currently in the spindle and publishes it here; tool_touch_off
+# reads it with M66 E0 L0. The tool database is not visible to the
+# interpreter, and analog-in is the mechanism LinuxCNC provides for exactly
+# this rather than bolting another job onto the M6 remap.
+net sig-probe-offset   ned-tab.probe-offset-out => motion.analog-in-00
 # AIR PRESSURE -> the repurposed FLOOD button. Raw AND debounced: the
 # debounced one is what gates emc-enable, the raw one is what moves
 # when the operator pokes the switch, and seeing both apart is the

@@ -32,7 +32,12 @@ loadrt hm2_eth board_ip="10.10.10.10" config="num_encoders=6 num_pwmgens=6 num_s
 setp hm2_7i97.0.watchdog.timeout_ns 5000000
 
 loadrt [KINS]KINEMATICS
-loadrt [EMCMOT]EMCMOT servo_period_nsec=[EMCMOT]SERVO_PERIOD num_joints=[KINS]JOINTS num_spindles=[TRAJ]SPINDLES num_dio=8
+# num_aio=4 (2026-08-12): motion.analog-in-NN is the supported way to hand a
+# NUMBER from userspace into g-code -- M66 E<n> L0 reads it into #5399. The
+# tool table's per-tool OFFSET column needs exactly that, and the alternative
+# was teaching the M6 remap epilog to publish tool parameters, which is the
+# one path on this machine that must not grow new failure modes.
+loadrt [EMCMOT]EMCMOT servo_period_nsec=[EMCMOT]SERVO_PERIOD num_joints=[KINS]JOINTS num_spindles=[TRAJ]SPINDLES num_dio=8 num_aio=4
 
 # Per-joint position PID for the 4 analog servo axes (X/Y/Z/W). [ned.hal:83]
 loadrt pid names=pid.x,pid.y,pid.z,pid.w

@@ -49,9 +49,49 @@ o110 if [2 EQ 2]
 o110 endif
 
 G90    (set absolute coordinates)
-G53 G1 F[#<traverse_fr>] Z0    (move to z0 home position)
-G53 G1 F[#<traverse_fr>] X#<tool_touch_x_coords> Y#<tool_touch_y_coords>
-G53 G1 F[#<traverse_fr>] Z#<tool_touch_z_coords>
+(PER-TOOL PROBE OFFSET IN X. The tool table carries an OFFSET column and)
+(ned_controls publishes the value for the tool in the spindle on)
+(ned-tab.probe-offset-out, netted to motion.analog-in-00 -- the tool)
+(database is invisible to the interpreter, and M66 E is the mechanism)
+(LinuxCNC provides for handing it a number.)
+(THE MOVE IS ALWAYS -X, BY THE ABSOLUTE AMOUNT. The operator's rule is that)
+(the column holds 0 or a negative number; the GUI already republishes it as)
+(-abs, and the ABS below means a positive typo still steps the same way)
+(instead of driving the spindle across the table.)
+M66 E0 L0
+#<probe_dx> = ABS[#5399]
+(PRINT, TOOL TOUCH OFF: probe X offset #<probe_dx> mm in -X for T#5400)
+
+(ALREADY AT G30? THEN DO NOT LIFT AND COME BACK. Operator 2026-08-12: "if)
+(tool is at m30, just skip the move up and back down bullshit ... check if)
+(tool is within 0.1mm of m30 for all 3, if yes, just center it at m30 in xy)
+(and probe.")
+(MACHINE POSITION IS NOT A PARAMETER, so it is reconstructed: work position)
+(plus the active G5x origin plus G92 plus the tool length. The G5x origins)
+(sit at 5221, 5241, 5261 ... one block of 20 per frame, and #5220 says which)
+(is active, so the base address is 5201 + 20 times the frame number. The)
+(indirect form #[expr] is what makes that readable instead of a nine-way)
+(if-chain that would rot the first time a frame was added.)
+#<gbase> = [5201 + [#5220 * 20]]
+#<mach_x> = [#5420 + #[#<gbase>] + #5211]
+#<mach_y> = [#5421 + #[#<gbase> + 1] + #5212]
+#<mach_z> = [#5422 + #[#<gbase> + 2] + #5213 + #5403]
+#<at_g30> = 0
+o200 if [ABS[#<mach_x> - #5181] LT 0.1]
+  o201 if [ABS[#<mach_y> - #5182] LT 0.1]
+    o202 if [ABS[#<mach_z> - #5183] LT 0.1]
+      #<at_g30> = 1
+    o202 endif
+  o201 endif
+o200 endif
+o210 if [#<at_g30> GT 0]
+  (PRINT, TOOL TOUCH OFF: already at G30 - centring in XY and probing from here)
+  G53 G1 F[#<traverse_fr>] X[#<tool_touch_x_coords> - #<probe_dx>] Y#<tool_touch_y_coords>
+o210 else
+  G53 G1 F[#<traverse_fr>] Z0    (move to z0 home position)
+  G53 G1 F[#<traverse_fr>] X[#<tool_touch_x_coords> - #<probe_dx>] Y#<tool_touch_y_coords>
+  G53 G1 F[#<traverse_fr>] Z#<tool_touch_z_coords>
+o210 endif
 
 #<offset_z> = #5422         ;Stores the offset of the current Z coordinate.
 
@@ -93,6 +133,11 @@ o150 endif
 
 G90    (set absolute coordinates)
 G53 G1 F[#<traverse_fr>] Z0 (Send Spindle to home zero position)
+(BACK TO G30. Operator 2026-08-12: after touch-off the tool returns there.)
+(Z is already up from the line above, so XY crosses nothing, then Z drops to)
+(the G30 height.)
+G53 G1 F[#<traverse_fr>] X#5181 Y#5182
+G53 G1 F[#<traverse_fr>] Z#5183
 
 (define new tool length offset parameters)
 #<new_tool_length_offset> = [ABS[#<spindle_zero_height> + #5063 - #<offset_z>]]

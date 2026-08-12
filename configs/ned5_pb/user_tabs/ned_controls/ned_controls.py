@@ -515,6 +515,15 @@ class UserTab(QWidget):
             # the TABLE half on its own: the startup gate needs to know
             # "table served", not "locked for one of two reasons"
             self.comp.addPin('table-ok-in', 'bit', 'in')
+            self.comp.addPin('tool-settled-in', 'bit', 'in')
+            # PER-TOOL PROBE OFFSET -> g-code. The tool database is invisible
+            # to the interpreter, so the value of the OFFSET column for the
+            # tool currently in the spindle is published here and read with
+            # M66 E0 L0. analog-in is the mechanism LinuxCNC provides for
+            # this; the alternative was teaching the M6 remap epilog to
+            # publish tool parameters, and M6 is the one path on this machine
+            # that must not grow new failure modes.
+            self.comp.addPin('probe-offset-out', 'float', 'out')
             # AIR PRESSURE, for the repurposed FLOOD button. This
             # machine has no flood (operator 2026-08-11: "make the
             # flood button an indicator for air pressure instead.
@@ -660,6 +669,7 @@ class UserTab(QWidget):
         QTimer.singleShot(1900, self._build_rotary_probe_tab)
         QTimer.singleShot(1950, self._build_rotary_face_tab)
         QTimer.singleShot(2100, self._wire_air_button)
+        QTimer.singleShot(2200, self._build_shoulder_button)
         QTimer.singleShot(2000, self._init_tool_safety)
         # -xyzab only (self-checks the env and returns immediately otherwise).
         QTimer.singleShot(4000, self.xyzab_launch_start)
@@ -6053,9 +6063,24 @@ class UserTab(QWidget):
         # the handler was wiring. Read the pins every tick: the lock then
         # tracks the truth and can never latch on a boot transient.
         try:
+            self._publish_probe_offset()
             if self.comp is not None:
                 u = bool(self.comp.getPin('tool-unrecorded-in').value)
                 p = bool(self.comp.getPin('tool-phantom-in').value)
+                # NOT A VERDICT UNTIL THE RECORD IS DECIDED. iocontrol's tool
+                # number is 0 for the first seconds of every launch, so this
+                # comparison used to raise CHECK TOOL CONFIGURATION on every
+                # boot and then withdraw it -- 12 of 26 operator toasts in one
+                # day. brain.tool-settled goes TRUE the moment the brain's
+                # restore reaches ANY decision, including "nothing to restore".
+                # A fault that outlives boot is still caught: the pin latches
+                # TRUE and never goes back.
+                try:
+                    if not bool(self.comp.getPin('tool-settled-in').value):
+                        u = False
+                        p = False
+                except Exception:
+                    pass
                 self._tool_unrecorded = u
                 self._tool_phantom = p
                 # UNCONDITIONAL: recompute the lock from the pins every
@@ -6994,6 +7019,212 @@ QTabBar::tab:only-one {
         except Exception:
             LOG.exception('ROTARY PROBE: page not built')
 
+    RACK_REMARK_H = 40      # px of fixed space under the fork number
+
+    def _rack_pocket_cell(self, pocket):
+        """Fork number on the first line, that pocket's remark under it.
+
+        THE BOX IS FIXED AND THE FONT IS NOT (operator 2026-08-12: "make the
+        font a function of how much text is written so that if user writes a
+        lot, its fucking tiny font"). A remark that grows must not push the
+        row around, so the height is nailed and the point size is searched
+        down until the wrapped text fits. Floor of 5 pt: below that it is not
+        text any more, and it gets elided instead.
+        """
+        from PySide6.QtWidgets import QVBoxLayout, QLabel
+        from PySide6.QtCore import Qt
+        w = QWidget()
+        v = QVBoxLayout(w)
+        v.setContentsMargins(4, 2, 4, 2)
+        v.setSpacing(0)
+        top = QLabel('P%d' % pocket)
+        top.setAlignment(Qt.AlignCenter)
+        top.setStyleSheet('color: white; font: 12pt "Probe Basic Bebas Mono";'
+                          ' background: transparent;')
+        rem = QLabel('')
+        rem.setWordWrap(True)
+        rem.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
+        rem.setFixedHeight(self.RACK_REMARK_H)
+        rem.setStyleSheet('color: rgb(238,238,236); background: transparent;')
+        v.addWidget(top)
+        v.addWidget(rem)
+        w.setStyleSheet('background: rgb(128,128,128);')
+        self._rack_remarks[pocket] = rem
+        return w
+
+    def _fit_remark(self, label, text):
+        """Largest point size at which `text` wraps inside the fixed box."""
+        from PySide6.QtGui import QFont, QFontMetrics
+        from PySide6.QtCore import Qt
+        label.setText(text or '')
+        if not text:
+            return
+        wpx = max(40, label.width() or 170)
+        best = 5
+        for pt in range(11, 4, -1):
+            f = QFont('Probe Basic Bebas Mono', pt)
+            r = QFontMetrics(f).boundingRect(
+                0, 0, wpx, 10000, Qt.TextWordWrap, text)
+            if r.height() <= self.RACK_REMARK_H:
+                best = pt
+                break
+        f = QFont('Probe Basic Bebas Mono', best)
+        label.setFont(f)
+
+    def _rack_remark_poll(self):
+        """Pull each pocket's remark from the tool database.
+
+        POLLED BY QUERY, NOT BY MTIME. tool_table.db is in WAL mode, so the
+        main file's mtime does NOT move when a row is committed -- an mtime
+        gate here would show launch-time text for the rest of the session.
+        """
+        labels = getattr(self, '_rack_remarks', None)
+        if not labels:
+            return
+        try:
+            import sqlite3
+            db = os.path.join(os.path.dirname(self.VAR_FILE), 'tool_table.db')
+            con = sqlite3.connect('file:%s?mode=ro' % db, uri=True)
+            try:
+                rows = dict((int(p), (r or '').strip()) for p, r in con.execute(
+                    "SELECT pocket, remark FROM tool WHERE pocket > 0"))
+            finally:
+                con.close()
+        except Exception:
+            return
+        if rows == getattr(self, '_rack_remark_seen', None):
+            return
+        self._rack_remark_seen = rows
+        for pocket, lab in labels.items():
+            self._fit_remark(lab, rows.get(pocket, ''))
+        LOG.info('RACK TABLE: %d pocket remark(s) refreshed', len(rows))
+
+    # ER SIZE -> SHOULDER DIAMETER (operator 2026-08-12: "ER11-20, ER16-28,
+    # ER20-34 and ER32-51. the second number is what goes into the table.
+    # thats the shoulder diameter in MM, but when choosing, I just want to
+    # select the ERX number which I can tell from looking"). The label is
+    # what is legible on the nut; the number is what the probe move needs.
+    ER_SIZES = (('ER11-20', 20.0), ('ER16-28', 28.0),
+                ('ER20-34', 34.0), ('ER32-51', 51.0))
+
+    def _build_shoulder_button(self):
+        """MEASURE SHOULDER, directly under MEASURE TOOL OFFSET.
+
+        The ER picker sits beside it because the two belong together: the
+        shoulder diameter decides how far the spindle steps sideways, and
+        getting it wrong is the difference between the nut landing on the
+        puck and the cutter landing on it.
+        """
+        from PySide6.QtWidgets import (QComboBox, QHBoxLayout, QLabel,
+                                       QVBoxLayout, QPushButton)
+        try:
+            win = self.window()
+            ref = win.findChild(QWidget, 'tool_touch_off_button') if win else None
+            if ref is None:
+                LOG.error('MEASURE SHOULDER: tool_touch_off_button not found '
+                          '-- button NOT built. Nothing else is affected.')
+                return
+            parent = ref.parentWidget()
+            lay = parent.layout() if parent is not None else None
+            if lay is None:
+                LOG.error('MEASURE SHOULDER: %s has no layout -- button NOT '
+                          'built (a QGridLayout has no insertWidget, so this '
+                          'refuses rather than guess)', parent)
+                return
+            box = QWidget(parent)
+            v = QVBoxLayout(box)
+            v.setContentsMargins(0, 4, 0, 0)
+            v.setSpacing(4)
+            row = QHBoxLayout()
+            lb = QLabel('ER')
+            lb.setStyleSheet('color: rgb(238,238,236); font: 13pt '
+                             '"Probe Basic Bebas Mono";')
+            cb = QComboBox()
+            cb.setObjectName('ned_er_size')
+            for label, _dia in self.ER_SIZES:
+                cb.addItem(label)
+            cb.setStyleSheet('color: white; background: rgb(108,108,108);'
+                             ' font: 14pt "Probe Basic Bebas Mono";')
+            cb.currentIndexChanged.connect(self._er_changed)
+            row.addWidget(lb, 0)
+            row.addWidget(cb, 1)
+            v.addLayout(row)
+            # THE SHOULDER DIAMETER THE ER CHOICE IMPLIES. This is the
+            # widget SubCallButton binds to: it hunts the app for one whose
+            # objectName matches the .ngc's argument name and takes its TEXT,
+            # so it must hold the NUMBER and nothing else. The prose sits in
+            # a separate label beside it.
+            from PySide6.QtWidgets import QLineEdit
+            drow = QHBoxLayout()
+            dlb = QLabel('shoulder dia')
+            dlb.setStyleSheet('color: rgb(170,170,170); font: 10pt;')
+            self._er_dia = QLineEdit()
+            self._er_dia.setObjectName('ms_shdia')
+            self._er_dia.setReadOnly(True)
+            self._er_dia.setFixedWidth(70)
+            self._er_dia.setStyleSheet(self.CAL_QSS['read'])
+            drow.addWidget(dlb, 0)
+            drow.addWidget(self._er_dia, 0)
+            drow.addStretch(1)
+            v.addLayout(drow)
+            from qtpyvcp.widgets.button_widgets.subcall_button import (
+                SubCallButton)
+            btn = SubCallButton(box, filename='measure_shoulder.ngc')
+            btn.setObjectName('ned_measure_shoulder_button')
+            btn.setText('MEASURE SHOULDER')
+            btn.setMinimumHeight(max(40, ref.height()))
+            v.addWidget(btn)
+            idx = lay.indexOf(ref)
+            if hasattr(lay, 'insertWidget') and idx >= 0:
+                lay.insertWidget(idx + 1, box)
+            else:
+                lay.addWidget(box)
+            self._er_combo = cb
+            self._er_changed()
+            LOG.info('MEASURE SHOULDER: button + ER picker placed under %s',
+                     ref.objectName())
+        except Exception:
+            LOG.exception('MEASURE SHOULDER: button not built')
+
+    def _er_changed(self, *_):
+        """Write the chosen nut's diameter into the tool table."""
+        cb = getattr(self, '_er_combo', None)
+        if cb is None:
+            return
+        label, dia = self.ER_SIZES[max(0, cb.currentIndex())]
+        if getattr(self, '_er_dia', None) is not None:
+            self._er_dia.setText('%.1f' % dia)
+        try:
+            import linuxcnc as _lc, sqlite3
+            st = _lc.stat(); st.poll()
+            tno = int(st.tool_in_spindle or 0)
+            if tno <= 0:
+                return
+            db = os.path.join(os.path.dirname(self.VAR_FILE), 'tool_table.db')
+            con = sqlite3.connect(db, timeout=2.0)
+            try:
+                for name, val in (('er_size', label),
+                                  ('shoulder_dia', '%.1f' % dia)):
+                    row = con.execute(
+                        "SELECT t.id, d.id FROM tool t"
+                        "  JOIN custom_field_def d ON d.name = ?"
+                        " WHERE t.tool_no = ?", (name, tno)).fetchone()
+                    if row is None:
+                        continue
+                    con.execute(
+                        "INSERT INTO custom_field_value(tool_id, field_id,"
+                        " value) VALUES(?,?,?)"
+                        " ON CONFLICT(tool_id, field_id)"
+                        " DO UPDATE SET value = excluded.value",
+                        (row[0], row[1], val))
+                con.commit()
+            finally:
+                con.close()
+            LOG.info('ER SIZE: T%d -> %s, shoulder diameter %.1f mm',
+                     tno, label, dia)
+        except Exception:
+            LOG.exception('ER SIZE: could not store the choice')
+
     def _build_rack_table(self):
         """RACK TABLE page on the ATC tab: per-fork PosX / PosY (PosZ later).
 
@@ -7031,24 +7262,32 @@ QTabBar::tab:only-one {
                 ' QTableWidget::item { background: rgb(128,128,128);'
                 ' color: white; font: 12pt "Probe Basic Bebas Mono"; }')
             t.setHorizontalHeaderLabels(['P', 'POS X', 'POS Y', 'POS Z'])
+            # ROOM FOR THE REMARK UNDER THE FORK NUMBER (operator 2026-08-12).
+            # The P cell becomes two stacked lines: the fork number at a
+            # fixed size, and the remark of whatever tool sits in that pocket
+            # underneath, in a FIXED height box whose font shrinks to fit.
+            t.verticalHeader().setDefaultSectionSize(self.RACK_REMARK_H + 34)
             t.verticalHeader().setVisible(False)
             t.setEditTriggers(QAbstractItemView.NoEditTriggers)
             t.setSelectionMode(QAbstractItemView.NoSelection)
+            self._rack_remarks = {}
             for r in range(self.RACK_TABLE_FORKS):
-                it = QTableWidgetItem(str(r + 1))
-                it.setTextAlignment(Qt.AlignCenter)
-                t.setItem(r, 0, it)
+                t.setCellWidget(r, 0, self._rack_pocket_cell(r + 1))
                 for ccol in (1, 2, 3):
                     v = QTableWidgetItem('\u2014')
                     v.setTextAlignment(Qt.AlignVCenter | Qt.AlignRight)
                     t.setItem(r, ccol, v)
-            t.setColumnWidth(0, 60)
+            t.setColumnWidth(0, 190)
             for ccol in (1, 2, 3):
                 t.setColumnWidth(ccol, 150)
             lay.addWidget(t)
             host.addTab(page, 'RACK TABLE')
             self._rack_table = t
             self._rack_table_mtime = None
+            self._rack_remark_timer = QTimer(self)
+            self._rack_remark_timer.timeout.connect(self._rack_remark_poll)
+            self._rack_remark_timer.start(2000)
+            self._rack_remark_poll()
             self._rack_table_timer = QTimer(self)
             self._rack_table_timer.timeout.connect(self._rack_table_poll)
             self._rack_table_timer.start(2000)
@@ -7480,6 +7719,110 @@ QTabBar::tab:only-one {
                     'empty. Go to the TOOL tab and press UNLOAD SPINDLE.'
                     % have)
         return 'the tool table has not been served yet.'
+
+    def _publish_probe_offset(self):
+        """OFFSET column of the tool in the spindle -> ned-tab.probe-offset-out.
+
+        SIGN IS FORCED HERE, not trusted from the table. The operator's rule
+        is 0 or negative and the probe always steps in -X, so whatever is
+        entered is published as -abs(value): a positive typo cannot send the
+        spindle the wrong way across the table. A missing or blank cell
+        publishes 0, which means no offset rather than no probe.
+        """
+        # THIS FILE HAS NO self.status -- it polls linuxcnc.stat() directly
+        # everywhere else (lines 1735, 1909, 2085, 2242). The first version
+        # of this used self.status.stat, raised AttributeError inside its own
+        # except, and published nothing at all while looking fine: the pin
+        # existed, was netted, and sat at 0. Failing loudly instead.
+        try:
+            import linuxcnc as _lc
+            st = _lc.stat()
+            st.poll()
+            tno = int(st.tool_in_spindle or 0)
+        except Exception:
+            if not getattr(self, '_po_err', False):
+                self._po_err = True
+                LOG.exception('PROBE OFFSET: cannot read the current tool -- '
+                              'the offset will stay 0')
+            return
+        if tno == getattr(self, '_po_tool', None) and \
+                getattr(self, '_po_done', False):
+            return
+        val = 0.0
+        if tno > 0:
+            try:
+                import sqlite3
+                db = os.path.join(os.path.dirname(self.VAR_FILE),
+                                  'tool_table.db')
+                con = sqlite3.connect('file:%s?mode=ro' % db, uri=True)
+                try:
+                    r = con.execute(
+                        "SELECT v.value, d.default_value"
+                        "  FROM custom_field_def d"
+                        "  LEFT JOIN tool t ON t.tool_no = ?"
+                        "  LEFT JOIN custom_field_value v"
+                        "         ON v.field_id = d.id AND v.tool_id = t.id"
+                        " WHERE d.name = 'probe_offset'", (tno,)).fetchone()
+                finally:
+                    con.close()
+                if r:
+                    raw = r[0] if r[0] not in (None, '') else r[1]
+                    val = float(raw) if raw not in (None, '') else 0.0
+            except Exception:
+                LOG.exception('PROBE OFFSET: lookup failed for T%s', tno)
+                val = 0.0
+        val = -abs(val)
+        # NORMALISE THE STORED CELL TOO (operator 2026-08-12: "force entry to
+        # be 0 or negative. null or dash is not allowed"). The tool table
+        # editor is core qtpyvcp and is not ours to edit, so the rule is
+        # enforced where the value is read: a blank cell is written back as
+        # 0 and a positive one as its negative. The machine is safe either
+        # way because the published value is already -abs, but leaving a
+        # positive number on screen invites someone to trust it.
+        self._normalise_probe_offset(tno, val)
+        try:
+            self.comp.getPin('probe-offset-out').value = val
+            self._po_tool = tno
+            self._po_done = True
+            LOG.info('PROBE OFFSET: T%s -> %.4f mm in X (published on '
+                     'ned-tab.probe-offset-out, read by M66 E0)', tno, val)
+        except Exception:
+            LOG.exception('PROBE OFFSET: could not publish')
+
+    def _normalise_probe_offset(self, tno, val):
+        """Write the OFFSET cell back as 0 or negative, never blank."""
+        if tno <= 0:
+            return
+        try:
+            import sqlite3
+            db = os.path.join(os.path.dirname(self.VAR_FILE), 'tool_table.db')
+            con = sqlite3.connect(db, timeout=2.0)
+            try:
+                row = con.execute(
+                    "SELECT t.id, d.id, v.value FROM tool t"
+                    "  JOIN custom_field_def d ON d.name = 'probe_offset'"
+                    "  LEFT JOIN custom_field_value v"
+                    "         ON v.tool_id = t.id AND v.field_id = d.id"
+                    " WHERE t.tool_no = ?", (tno,)).fetchone()
+                if row is None:
+                    return
+                tool_id, field_id, cur = row
+                want = '%.4f' % val
+                if cur is not None and cur.strip() not in ('', '-') and \
+                        abs(float(cur) - val) < 5e-5:
+                    return
+                con.execute(
+                    "INSERT INTO custom_field_value(tool_id, field_id, value)"
+                    " VALUES(?,?,?) ON CONFLICT(tool_id, field_id)"
+                    " DO UPDATE SET value = excluded.value",
+                    (tool_id, field_id, want))
+                con.commit()
+                LOG.info('PROBE OFFSET: T%s cell normalised %r -> %s',
+                         tno, cur, want)
+            finally:
+                con.close()
+        except Exception:
+            LOG.exception('PROBE OFFSET: could not normalise T%s', tno)
 
     def _tool_alarm_repeat(self):
         """Say it again while the lock holds. A toast that self-dismisses
