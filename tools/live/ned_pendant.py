@@ -203,9 +203,23 @@ def _head_homed(jn):
     return _hstat['h4'] if jn == 4 else _hstat['h5']
 
 
+_homing_said = None
+
+
 def homing_active():
+    global _homing_said
     _head_homed(4)          # refresh the cache
-    return _hstat.get('anyh', True)
+    a = _hstat.get('anyh', True)
+    if a != _homing_said:
+        _homing_said = a
+        print('ned_pendant: wheel %s (a homing cycle is %s)' % (
+            'DEAD' if a else 'live', 'running' if a else 'not running'),
+            flush=True)
+    return a
+
+
+_UNSAID = object()       # 'never evaluated', distinct from 'no reason'
+_lock_said = {}          # last announced skip reason, per axis
 
 
 def locked(i):
@@ -221,13 +235,30 @@ def locked(i):
     # NOTE: locked axes are no longer skipped in the selection cycle
     # (operator 2026-08-11: "you can select the axis, just do nothing
     # except triple click") -- see the eviction block in the main loop.
+    why = None
     if ax in ('x', 'y', 'z') and h['lock-' + ax]:
-        return True
-    if ax == 'a' and (h['lock-a'] or not _head_homed(4)):
-        return True
-    if ax == 'c' and (h['lock-c'] or not _head_homed(5)):
-        return True
-    return False
+        why = 'GUI lock'
+    elif ax == 'a':
+        if h['lock-a']:
+            why = 'GUI lock'
+        elif not _head_homed(4):
+            why = 'joint 4 not homed'
+    elif ax == 'c':
+        if h['lock-c']:
+            why = 'GUI lock'
+        elif not _head_homed(_ROT_JN):
+            why = 'joint %d not homed' % _ROT_JN
+    # SAY WHY, ONCE PER CHANGE. A skipped slot is invisible: the wheel just
+    # steps past it and the operator is left tapping (2026-08-11 -- "i
+    # unlocked B axis in gui, and trying to reach it with mpg cycling button
+    # it doesn't work", which was TWO reasons at once, neither of them
+    # announced). Costs one line per transition.
+    if _lock_said.get(ax, _UNSAID) != why:
+        _lock_said[ax] = why
+        print('ned_pendant: %s is %s' % (
+            ax.upper(), ('SKIPPED in the cycle -- ' + why) if why
+            else 'selectable'), flush=True)
+    return why is not None
 
 
 def adv(i, step):

@@ -7074,12 +7074,33 @@ class UserTab(QWidget):
             # and the stale-home declare has landed. Adding the tool table
             # here would be redundant -- _PreHomeInputGate already holds
             # every control shut until both are served.
-            # SIX, deliberately: B is homed by this sequence's last
-            # step, so waiting for seven here would deadlock on the
-            # thing this code exists to do.
-            if s.task_state != linuxcnc.STATE_ON or not all(s.homed[:6]):
+            # B'S DECLARATION HAS NO PREREQUISITES AND MUST NOT WAIT FOR
+            # ONE. It used to sit behind all(homed[:6]) -- i.e. behind the
+            # A/C absolute read -- and on 2026-08-11 that read failed three
+            # times ("HEADREAD A NO NEW FRAME since the SEN rise"). A and C
+            # stayed unhomed, so B was never declared either; B unhomed
+            # means MDI refuses "all joints must be homed", so the brain
+            # could not re-declare the spindle tool, so tool.mm.lock2 held
+            # motion.jog-inhibit, and the wheel would not even select the
+            # rotary. One flaky serial frame took the whole machine down,
+            # including the one axis that needs nothing from it.
+            #
+            # So: B is declared the moment the machine is ON. It is a
+            # zero-length home on an axis with no switch and no encoder.
+            # Only the C decision waits for the head.
+            if s.task_state != linuxcnc.STATE_ON:
                 return
             if moving:
+                return
+            if not s.homed[6]:
+                self.home_b_inplace()
+                return                      # re-enter next tick to confirm
+            if not all(s.homed[:6]):
+                if not getattr(self, '_ab_head_said', False):
+                    self._ab_head_said = True
+                    LOG.error('XYZAB: B is declared and usable; still waiting '
+                              'on the A/C absolute read before C can be '
+                              'checked (homed=%s)', tuple(s.homed[:6]))
                 return
             # B IS DECLARED FIRST, and that ordering is load-bearing.
             # It used to be last, which deadlocked the whole launch
@@ -7093,7 +7114,6 @@ class UserTab(QWidget):
             # Declaring B first costs nothing -- it is a zero-length home
             # with no prerequisites -- and it makes the machine fully homed
             # before anything else is asked of it.
-            self.home_b_inplace()
             self._ab_step = 'check_c'
             self._ab_deadline = time.time() + 30.0
             return

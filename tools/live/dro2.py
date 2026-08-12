@@ -230,9 +230,11 @@ class Dro2(QWidget):
         root.addWidget(self.strip, 0)      # stretch 0: fixed strip
 
         # column headers (operator 2026-08-06: "i need to know WCS vs
-        # MCS") -- MCS over the left/machine column, WCS G5x over the
-        # right/work column, each centered on its column. Fixed height;
-        # the axis rows give up the space.
+        # MCS"). WORK on the LEFT, MCS on the RIGHT, so the two DROs read
+        # the same way round (operator 2026-08-11: "put work on left and
+        # MCS on right to line it up with guiDRO") -- reading a machine
+        # number as a work number is the kind of mistake that ends in a
+        # crash. Fixed height; the axis rows give up the space.
         hdr = QWidget()
         hrow = QHBoxLayout(hdr)
         hrow.setContentsMargins(14, 0, 14, 0)
@@ -244,8 +246,8 @@ class Dro2(QWidget):
             _h.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
             _h.setStyleSheet('color: %s; background: transparent;' % WHITE)
         hrow.addWidget(self.hdr_pad, 0)
-        hrow.addWidget(h_m, 5)
         hrow.addWidget(h_w, 5)
+        hrow.addWidget(h_m, 5)
         self.hdr = hdr
         self.hdr_labels = (h_m, h_w)
         self.hdr_wcs = h_w
@@ -274,8 +276,9 @@ class Dro2(QWidget):
                 _w.setStyleSheet('color: %s; background: transparent;'
                                  % WHITE)
             row.addWidget(lab, 0)
-            row.addWidget(mach, 5)
+            # work first: same order as the headers above and as PB
             row.addWidget(work, 5)
+            row.addWidget(mach, 5)
             # every axis row shares the remaining height equally
             root.addWidget(holder, 1)
             # the holder is kept so a row can be HIDDEN when its axis
@@ -439,8 +442,12 @@ class Dro2(QWidget):
             # this binding is 0-BASED: measured live, g5x_index reads 0
             # with G54 active (2026-08-06)
             g = int(self.stat.g5x_index)
+            # stat.g5x_index is ONE-BASED: G54 is 1, G59.3 is 9. Indexing
+            # the tuple with it directly read one system too far, so the
+            # standalone DRO said G55 while PB said G54 on the same machine
+            # (operator 2026-08-11).
             name = ('G54', 'G55', 'G56', 'G57', 'G58', 'G59', 'G59.1',
-                    'G59.2', 'G59.3')[g] if 0 <= g <= 8 else 'G5x'
+                    'G59.2', 'G59.3')[g - 1] if 1 <= g <= 9 else 'G5x'
             want = 'WCS ' + name
             if self.hdr_wcs.text() != want:
                 self.hdr_wcs.setText(want)

@@ -389,7 +389,16 @@ class Brain(object):
         on = (self.stat.task_state == linuxcnc.STATE_ON)
         # The read machinery drives r4-select itself while it runs; do not
         # fight it for the pin, just make sure B is dark for the duration.
-        if self.head_busy() or self.hr_step or not on:
+        # YIELD BETWEEN RETRIES TOO, not just during a read. hr_step drops
+        # to 0 in the gap between a failed read and its retry, and the old
+        # test let b_power slam r4-select TRUE in that window -- R4 is the
+        # PSO PACK SELECT, so the next read could start against the wrong
+        # pack and a settle time nobody granted. want_read is the honest
+        # "a read is owed" flag; read_armed False means none has landed yet,
+        # so on a boot whose read is failing B never takes the relay at all.
+        if (self.head_busy() or self.hr_step or not on
+                or getattr(self, 'want_read', False)
+                or not getattr(self, 'read_armed', False)):
             if h['b-armed']:
                 log('B POWER: dark -- R4 borrowed by the head read '
                     '(B holds position, self-locking worm)')

@@ -129,7 +129,10 @@ class UserDRO(QWidget):
     # the DRO widgets restyle themselves on state changes (e.g. homed) and
     # stomp our stylesheet -- an on-change-only highlight froze after homing.
     MPG_AXES = ['x', 'y', 'z', 'a', 'c']
-    MPG_COLS = ['dro_entry_main_', 'drolabel_dtg_', 'drolabel_machine_']
+    # DTG is GONE (operator 2026-08-11: "i don't use DTG at all. remove
+    # it completely"), so the MPG row highlight has one less column to
+    # paint. Leaving it here would just be a lookup that never matches.
+    MPG_COLS = ['dro_entry_main_', 'drolabel_machine_']
     MPG_HL = 'color: rgb(255, 220, 0);'
 
     def __init__(self, parent=None):
@@ -153,6 +156,11 @@ class UserDRO(QWidget):
         self._banner_latch = False
         self._banner_state = None
         QTimer.singleShot(6000, self._add_banner)
+        # DTG removed at RUNTIME rather than by cutting the .ui:
+        # a .ui edit here is 6 widgets across 5 grid rows and a
+        # header, and a mis-spliced layout is a dead DRO. Hiding
+        # is reversible by deleting one call.
+        QTimer.singleShot(1400, self._drop_dtg)
         # -xyzab: the C row is pointed at joint 6 / axis B (DRO_JOINT,
         # AXIS_IDX below), so its letter has to say B. A row labelled C
         # showing B's angle is worse than no row at all -- it is the
@@ -622,6 +630,31 @@ class UserDRO(QWidget):
     # joint is unhomed, write its live joint position into the cell; the frozen
     # world channel fires no updates, so the text sticks. Once homed, the
     # widget's own binding resumes and overwrites. NML status poll -- no HAL.
+    def _drop_dtg(self):
+        """Hide the DTG column, header and all (operator 2026-08-11)."""
+        names = ['dtg_column_header'] + ['drolabel_dtg_' + a
+                                         for a in ('x', 'y', 'z', 'a', 'c')]
+        gone, missing = 0, []
+        for n in names:
+            w = self.findChild(QWidget, n)
+            if w is None:
+                win = self.window()
+                w = win.findChild(QWidget, n) if win else None
+            if w is None:
+                missing.append(n)
+                continue
+            # zero the minimums too: these carry a fixed 100 px width, and a
+            # hidden widget with a minimum still reserves its grid column.
+            try:
+                w.setMinimumSize(0, 0)
+                w.setMaximumSize(0, 16777215)
+            except Exception:
+                pass
+            w.hide()
+            gone += 1
+        LOG.info('DTG: %d widget(s) hidden%s', gone,
+                 (' -- NOT FOUND: ' + ', '.join(missing)) if missing else '')
+
     def _xyzab_relabel(self):
         """Rename the C row to B (-xyzab). Both DRO copies carry the label."""
         try:
