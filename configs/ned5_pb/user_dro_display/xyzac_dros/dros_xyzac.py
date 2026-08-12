@@ -652,7 +652,36 @@ class UserDRO(QWidget):
                 pass
             w.hide()
             gone += 1
-        LOG.info('DTG: %d widget(s) hidden%s', gone,
+        # HIDING IS ONLY HALF OF IT. Every DRO column in this .ui is
+        # sizePolicy Fixed with min == max == 100, so removing one does not
+        # give its width to anybody -- it just leaves a 100 px hole and the
+        # two survivors stay exactly as narrow as they were (operator
+        # 2026-08-11: "after taking out the DTG, the 2 cols left should take
+        # up all the space").
+        # 2 x 150 == the 3 x 100 the row used to occupy, so the block keeps
+        # its overall footprint and the space is split evenly between the
+        # two columns that are left. Fixed stays Fixed on purpose: these sit
+        # in a hand-built grid alongside the axis letters and the ZERO
+        # buttons, and switching them to Expanding would let them fight the
+        # rest of the row for width.
+        WIDE = 150
+        grew = 0
+        for n in (['work_column_header', 'machine_column_header']
+                  + ['dro_entry_main_' + a for a in ('x', 'y', 'z', 'a', 'c')]
+                  + ['drolabel_machine_' + a
+                     for a in ('x', 'y', 'z', 'a', 'c')]):
+            w = self.findChild(QWidget, n)
+            if w is None:
+                win = self.window()
+                w = win.findChild(QWidget, n) if win else None
+            if w is None:
+                missing.append(n)
+                continue
+            w.setMinimumWidth(WIDE)
+            w.setMaximumWidth(WIDE)
+            grew += 1
+        LOG.info('DTG: %d widget(s) hidden, %d column widget(s) widened to '
+                 '%d px%s', gone, grew, WIDE,
                  (' -- NOT FOUND: ' + ', '.join(missing)) if missing else '')
 
     def _xyzab_relabel(self):

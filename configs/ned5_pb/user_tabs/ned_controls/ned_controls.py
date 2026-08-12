@@ -6706,25 +6706,6 @@ class UserTab(QWidget):
         except Exception:
             pass
         if getattr(self, '_tool_unrecorded', False):
-            # DO NOT SEND THEM SOMEWHERE THE GATE WILL NOT LET THEM GO.
-            # Before the home declaration lands, _PreHomeInputGate blocks the
-            # tab bar, so "go to the TOOL tab" is an instruction the machine
-            # itself refuses -- which is exactly what the operator hit on
-            # 2026-08-11 ("i get some error, but im locked out of everything
-            # in gui, so i can't do anything about it"). It also is not even
-            # needed then: the brain's restore_spindle_tool re-declares the
-            # clamped tool as soon as every joint is homed, so the honest
-            # message pre-home is that this clears itself.
-            try:
-                _s2 = linuxcnc.stat(); _s2.poll()
-                _homed = all(_s2.homed[:NJ])
-            except Exception:
-                _homed = False
-            if not _homed:
-                return ('T%d is clamped but LinuxCNC has no record of it yet '
-                        '(it says T%d). Nothing to press: the record is '
-                        'restored automatically once every joint is homed. '
-                        'Power on and let homing finish.' % (have, rec))
             return ('T%d is clamped but LinuxCNC has no record of it '
                     '(it says T%d). Go to the TOOL tab and press LOAD '
                     'SPINDLE for T%d.' % (rec, have, rec)) if rec else (
@@ -6744,36 +6725,27 @@ class UserTab(QWidget):
         if not self._motion_lock_on():
             self._tool_nag_at = 0.0
             return
-        # SAY IT ONCE WHEN IT CANNOT BE ACTED ON. The nag exists because a
-        # toast that self-dismisses after 1 s is not a message -- but that
-        # argument only holds while the operator can DO something. In E-STOP
-        # there is no acting on it: the record is restored automatically once
-        # homing lands, and homing needs the machine on. Repeating every 10 s
-        # then is noise on top of whatever is actually blocking them, and it
-        # buries the real fault (operator 2026-08-11, stuck on an air switch:
-        # "if air is the problem that error about the spindle shouldn't keep
-        # looping ... its annoying as shit"). One line, then quiet until the
-        # machine is live again.
-        try:
-            import linuxcnc as _lc
-            _st = _lc.stat(); _st.poll()
-            _live = (_st.task_state == _lc.STATE_ON)
-        except Exception:
-            _live = True                  # unreadable: keep the old behaviour
-        if not _live:
-            if getattr(self, '_tool_nag_dead', False):
-                return
-            self._tool_nag_dead = True
-            LOG.error('%s: %s (machine is not ON -- saying this once; it '
-                      'clears itself when homing lands)',
-                      self.TOOL_ALARM_MSG, self._tool_fault_detail())
-            return
-        self._tool_nag_dead = False
         if _t.time() < getattr(self, '_tool_nag_at', 0.0):
             return
         self._tool_nag_at = _t.time() + 10.0
         msg = '%s: %s' % (self.TOOL_ALARM_MSG, self._tool_fault_detail())
         LOG.error(msg)
+        # THROTTLE THE TOAST, NOT THE CHECK. The lock, the gate and the
+        # detection are untouched -- this only decides how many times the
+        # SAME sentence is put on screen. Three is enough to be seen by
+        # someone walking up to the machine (the reason the repeat exists at
+        # all: a toast that self-dismisses after 1 s is not a message), and
+        # after that it is noise sitting on top of whatever is really wrong
+        # (operator 2026-08-11: "its annoying as shit"). The counter is keyed
+        # to the message TEXT, so if the fault changes -- different tool,
+        # different cause -- it is a new message and gets its own three.
+        # The log line above is unconditional, so nothing is ever lost.
+        if msg != getattr(self, '_tool_nag_msg', None):
+            self._tool_nag_msg = msg
+            self._tool_nag_n = 0
+        self._tool_nag_n = getattr(self, '_tool_nag_n', 0) + 1
+        if self._tool_nag_n > 3:
+            return
         try:
             import linuxcnc
             linuxcnc.command().error_msg(msg)

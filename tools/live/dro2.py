@@ -417,12 +417,31 @@ class Dro2(QWidget):
         # become the binding constraint, which is the one that actually
         # fills the column. The width guard below is untouched, so the
         # 12 ft X reading still cannot overflow.
-        by_height = (avail / rows) * 0.92
+        by_height = (avail / rows) * 0.86
         # WIDTH BUDGET: NUM_W monospace glyphs per column, two columns, plus
         # the letter column. X on this machine reaches -4042.72 mm, so the
         # width is the binding constraint, not the height.
+        # MEASURE THE WIDTH, DO NOT GUESS IT. `NUM_W * 0.62` was a guess at
+        # how wide the rendered cell would be, and it is not what gets drawn:
+        # the cell is a sign at 0.84x, the digits at 1x, and the unit at
+        # 0.30x. Guessing low wastes the column; guessing high OVERFLOWS it,
+        # which is what raising the height factor exposed -- the mm ran off
+        # the right edge and the two columns touched.
+        # Width is linear in the pixel size, so measure the real string once
+        # at a reference size and scale. The widest thing this ever draws is
+        # a negative linear reading with its unit.
         per_col = (self.width() - 90) / 2.0
-        by_width = per_col / (NUM_W * 0.62)
+        REF = 100
+        _digits = '0' * NUM_INT + '.00'
+        _w_ref = (QFontMetrics(QFont('DejaVu Sans Mono', REF)
+                               ).horizontalAdvance(_digits)
+                  + QFontMetrics(QFont('DejaVu Sans Mono', int(REF * 0.84))
+                                 ).horizontalAdvance('-')
+                  + QFontMetrics(QFont('DejaVu Sans Mono', int(REF * 0.30))
+                                 ).horizontalAdvance('mm'))
+        # 0.94: leave a hair of breathing room so a rounding difference
+        # between measurement and render cannot clip the last glyph.
+        by_width = REF * (per_col * 0.94) / max(1.0, _w_ref)
         num_px = int(max(40, min(by_height, by_width)))
         # letters BOLD and +5 (operator 2026-08-06)
         lab_px = max(24, int(num_px * 0.42)) + 5
@@ -513,10 +532,18 @@ class Dro2(QWidget):
             # DECIMAL POINT IS COLUMN-LOCKED (operator 2026-08-05:
             # "deg has 3 digits left of decimal and 2 right; linear has
             # 4,2 in mm and 3,3 in inch; in all cases align the dot").
-            # Rows are RIGHT-aligned in a monospace face, so the dot lands
-            # in one column iff everything to its RIGHT is the same width
-            # on every row: same decimal count, same unit width. Integer
-            # digits differ freely -- they grow leftwards.
+            # THE DOT LANDS IN ONE COLUMN IFF EVERY ROW IS THE SAME TOTAL
+            # WIDTH. That used to be true for a weaker reason: the rows were
+            # RIGHT-aligned, so only everything to the RIGHT of the dot had
+            # to match and the integer digits could differ freely, growing
+            # leftwards. Centring the cells to spread them across the half
+            # killed that -- a rotary row is one integer digit narrower than
+            # a linear one, so centred it sits half a glyph over and its
+            # decimal misses the column.
+            # So pad the integer side as well and make every row identical
+            # in width. Then the dot is in the same place whether the cell
+            # is centred or right-aligned, and it cannot drift again the
+            # next time the alignment is touched.
             lin = letter in 'XYZUVW'
             dec = 3 if (lin and not self._mm) else 2
             int_w = 4 if (lin and self._mm) else 3
@@ -530,12 +557,18 @@ class Dro2(QWidget):
             unit = ('mm' if self._mm else 'in') if lin else 'deg'
             unit = unit.ljust(3, '\u00a0')           # 'mm.' == 'deg' == 'in.'
 
+            # widest integer field on screen in THIS unit mode: linear mm
+            # uses 4, everything else 3
+            int_pad = 4 if self._mm else 3
+
             def _field(v):
                 sign = '-' if v < 0 else '+'
                 body = '%.*f' % (dec, abs(v))
                 ip, _, fp = body.partition('.')
-                return '%s%s.%s%s' % (sign, ip.rjust(int_w, '0'), fp,
-                                      frac_pad)
+                # zero-fill to this row's own width, then NBSP-pad out to the
+                # widest row's width so all rows measure the same
+                ips = ip.rjust(int_w, '0').rjust(int_pad, '\u00a0')
+                return '%s%s.%s%s' % (sign, ips, fp, frac_pad)
             txt_m, txt_w = _field(m), _field(w)
             lab, mach, work = self.rows[i]
             # THE LETTER carries the lock, the NUMBERS carry the
