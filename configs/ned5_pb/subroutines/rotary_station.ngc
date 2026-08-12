@@ -1,0 +1,82 @@
+(ned ROTARY STATION -- the three touches at ONE Y, called by rotary_zero)
+(Its own file because rotary_zero runs it twice, 300mm apart, and a helper sub)
+(defined inside its caller is the CLAUDE.md rule 18 landmine that cost a)
+(session: the interpreter finds the wrong body. Results come back in GLOBAL)
+(named params, the same way rc_ztouch hands back _rc_ztop.)
+(  #<_rz_ztop>   crown of the bar, work Z)
+(  #<_rz_xleft>  left flank raw touch, work X)
+(  #<_rz_xright> right flank raw touch, work X)
+(THE TOOL RADIUS CANCELS: the left touch stops with the flank at x_left+R and)
+(the right at x_right-R, so the MEAN of the two raw touches is the axis for any)
+(tool. The caller does that arithmetic; this file only reports what it felt.)
+o<rotary_station> sub
+  #<t_dia>  = #1
+  #<depth>  = #2
+  #<h>      = #3
+  #<max_z>  = #4
+  #<max_x>  = #5
+  #<f_fast> = #6
+  #<f_slow> = #7
+  #<f_trav> = #8
+  #<clear>  = #9
+  G90
+  (1. CROWN. Fast find, lift, slow latch -- the slow number is the one kept.)
+  #<z0> = #5422
+  G38.2 Z[#<z0> - #<max_z>] F[#<f_fast>]
+  o30 if [#5070 EQ 0]
+    G1 Z[#<z0>] F[#<f_trav>]
+    (abort, ROTARY STATION: no contact going down - is the bar lead on *87?)
+  o30 endif
+  G91
+  G1 Z[#<clear>] F[#<f_trav>]
+  G38.2 Z[0.0 - [#<clear> * 2.0]] F[#<f_slow>]
+  G90
+  o31 if [#5070 EQ 0]
+    G1 Z[#<z0>] F[#<f_trav>]
+    (abort, ROTARY STATION: slow Z latch found nothing)
+  o31 endif
+  #<_rz_ztop> = #5063
+  G1 Z[#<_rz_ztop> + #<clear>] F[#<f_trav>]
+  (2. LEFT FLANK. Step X- a full tool diameter so the tool clears the crown on)
+  (the way down, then descend to the probe depth and come back at the bar.)
+  #<x_start> = #5420
+  G1 X[#<x_start> - #<t_dia>] F[#<f_trav>]
+  G1 Z[#<_rz_ztop> - #<depth>] F[#<f_trav>]
+  G38.2 X[#<x_start> + #<max_x>] F[#<f_fast>]
+  o40 if [#5070 EQ 0]
+    G1 Z[#<_rz_ztop> + #<clear>] F[#<f_trav>]
+    G1 X[#<x_start>] F[#<f_trav>]
+    (abort, ROTARY STATION: left flank never touched)
+  o40 endif
+  #<xl> = #5061
+  G1 X[#<xl> - #<clear>] F[#<f_trav>]
+  G38.2 X[#<xl> + [#<clear> * 2.0]] F[#<f_slow>]
+  o41 if [#5070 EQ 0]
+    G1 Z[#<_rz_ztop> + #<clear>] F[#<f_trav>]
+    (abort, ROTARY STATION: left flank slow latch found nothing)
+  o41 endif
+  #<_rz_xleft> = #5061
+  G1 X[#<_rz_xleft> - #<clear>] F[#<f_trav>]
+  (3. RIGHT FLANK. Cross ABOVE the bar, never through it.)
+  G1 Z[#<_rz_ztop> + #<clear>] F[#<f_trav>]
+  #<x_far> = [#<_rz_xleft> + #<t_dia> + [#<h> * 2.0] + #<clear>]
+  G1 X[#<x_far>] F[#<f_trav>]
+  G1 Z[#<_rz_ztop> - #<depth>] F[#<f_trav>]
+  G38.2 X[#<x_far> - #<max_x>] F[#<f_fast>]
+  o50 if [#5070 EQ 0]
+    G1 Z[#<_rz_ztop> + #<clear>] F[#<f_trav>]
+    (abort, ROTARY STATION: right flank never touched)
+  o50 endif
+  #<xr> = #5061
+  G1 X[#<xr> + #<clear>] F[#<f_trav>]
+  G38.2 X[#<xr> - [#<clear> * 2.0]] F[#<f_slow>]
+  o51 if [#5070 EQ 0]
+    G1 Z[#<_rz_ztop> + #<clear>] F[#<f_trav>]
+    (abort, ROTARY STATION: right flank slow latch found nothing)
+  o51 endif
+  #<_rz_xright> = #5061
+  G1 X[#<_rz_xright> + #<clear>] F[#<f_trav>]
+  G1 Z[#<_rz_ztop> + #<clear>] F[#<f_trav>]
+  (PRINT, ROTARY STATION: crown %.4f#<_rz_ztop>, flanks %.4f#<_rz_xleft> / %.4f#<_rz_xright>)
+o<rotary_station> endsub
+M2 (end program)
