@@ -497,7 +497,15 @@ class Dro2(QWidget):
             # selection (operator 2026-08-11: "lets just apply the red lock
             # to the letter only. that way, what is highlighted is always
             # clear"). Red on the whole row hid which axis the wheel was on.
-            _ax = self.axes[i].lower()
+            # `letter`, NOT self.axes[i]. i indexes the BUILD order
+            # (_all_axes) so it lines up with self.rows; self.axes is
+            # the filtered, visible set. Once the parked C was hidden
+            # the two diverged and self.axes[5] raised IndexError on
+            # the B row -- the paint threw, so B froze on whatever
+            # colour it last had and stopped following its lock
+            # (operator 2026-08-11: "when i unlock B in GUI, it stays
+            # locked ... on the standalone DRO").
+            _ax = letter.lower()
             if self.guilocks.get(_ax):
                 # GUI LOCK: the axis cannot even be SELECTED -- the whole
                 # row is red so that reads at a glance.
