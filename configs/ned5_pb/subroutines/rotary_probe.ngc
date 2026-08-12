@@ -1,0 +1,192 @@
+(ned ROTARY PROBE -- find the B axis centreline and set G55. Two stations.)
+(Operator 2026-08-12. Start ABOVE the bar, roughly over it, about 10 mm up.)
+
+(THE APPROX BAR DIAMETER IS A MOTION BOUND, NOT A MEASUREMENT. Operator:)
+(write in approx bar diameter, 1.25in, but it should not appear in any)
+(calculations. It only decides how far to step aside to clear the bar and how)
+(far to cross to the far side. It is never in the arithmetic that produces X0)
+(or Z0, so a wrong guess costs travel and nothing else. The real diameter is)
+(DERIVED below and reported.)
+
+(WHY THE FLANKS COME BEFORE THE CROWN. The crown is only the crown at the)
+(centre, and the centre is the unknown. Probing down first would measure some)
+(point on the cylinder and call it the top. So: two flanks give the centre,)
+(then the crown is probed AT that centre, where it is genuinely the highest)
+(point and no radius correction applies.)
+
+(THE PROBE RADIUS CANCELS IN X: the left touch stops with the flank at)
+(xl + R, the right at xr - R, so the mean is the axis for any probe. It does)
+(NOT cancel in the half-width, which is why the probe diameter is a real)
+(parameter: h = [[xr - xl] - D] / 2.)
+
+(THE GEOMETRY. With half-width h at depth d below the crown,)
+(  r^2 = h^2 + [r - d]^2   ->   r = [h^2 + d^2] / [2d])
+(so the radius, and hence the bar diameter, falls out of the measurement.)
+
+(DATUM IS G55. Operator: g54 is my fuck around system. Nothing here writes)
+(G54 - every offset goes to G10 L2 P2.)
+o<rotary_probe> sub
+  (ONLY THE FIRST THREE ARE ON SCREEN. The rest are travel limits and feeds:)
+  (they have no bearing on the answer, and a box the operator never changes is)
+  (a box that eventually gets changed by accident. Every one still carries a)
+  (default here, because SubCallButton refuses to call at all if an argument)
+  (has neither a widget nor one.)
+  #<rp_pdia>   = #1 (=9.1281 probe diameter mm - the one number the maths uses)
+  #<rp_approx> = #2 (=31.75 approx bar diameter - initial move only)
+  #<rp_gap>    = #3 (=304.8 Y to the second station mm - 12 in)
+  #<rp_maxx>   = #4 (=40.0 max X search)
+  #<rp_maxz>   = #5 (=40.0 max Z search)
+  #<rp_ffast>  = #6 (=100.0 find feed)
+  #<rp_fslow>  = #7 (=10.0 latch feed)
+  #<rp_ftrav>  = #8 (=1000.0 traverse feed)
+  #<pdia>  = #<rp_pdia>
+  #<approx> = #<rp_approx>
+  #<gap>   = #<rp_gap>
+  #<maxx>  = #<rp_maxx>
+  #<maxz>  = #<rp_maxz>
+  #<ffast> = #<rp_ffast>
+  #<fslow> = #<rp_fslow>
+  #<ftrav> = #<rp_ftrav>
+  o1 if [#<pdia> LE 0]
+    (abort, ROTARY PROBE: probe diameter is required - it is the one number the maths needs)
+  o1 endif
+  o2 if [#<approx> LE 0]
+    #<approx> = 31.75
+  o2 endif
+  o4 if [#<gap> EQ 0]
+    #<gap> = 304.8
+  o4 endif
+  o5 if [#<maxx> LE 0]
+    #<maxx> = 40.0
+  o5 endif
+  o6 if [#<maxz> LE 0]
+    #<maxz> = 40.0
+  o6 endif
+  o7 if [#<ffast> LE 0]
+    #<ffast> = 100.0
+  o7 endif
+  o8 if [#<fslow> LE 0]
+    #<fslow> = 10.0
+  o8 endif
+  o9 if [#<ftrav> LE 0]
+    #<ftrav> = 1000.0
+  o9 endif
+  o10 if [#<_metric> EQ 0]
+    (abort, ROTARY PROBE: switch to MM first)
+  o10 endif
+  M66 P2 L0
+  o11 if [#5399 GT 0]
+    (abort, ROTARY PROBE: probe is already made before any move - check the lead)
+  o11 endif
+
+  (the park height is wherever the operator left it: they lowered to suit)
+  (whatever probe is in the spindle, and that is the only safe crossover Z)
+  #<zpark> = #5422
+  (THE ONLY PLACE approx IS ALLOWED. Operator 2026-08-12: "don't use that)
+  (number for anything besides the initial move ... move it by D/2 + probe D".)
+  (Nothing downstream reads it - X0, h, r and Z0 are all measured.)
+  (DROP IS DERIVED FROM THE PARK, not typed. Operator 2026-08-12: parked)
+  (about 5 mm above the bar, and the drop is bar/2 + 10 from there -- which)
+  (puts the probe roughly 5 mm below the centreline, comfortably onto the)
+  (flank. Still only the approximate diameter, still only a move.)
+  #<drop>  = [[#<approx> / 2.0] + 10.0]
+  #<step>  = [[#<approx> / 2.0] + #<pdia>]
+  #<cross> = [#<approx> + [#<pdia> * 2.0]]
+  #<st>    = 1
+  o20 while [#<st> LE 2]
+    #<y0> = #5421
+    (--- 1. aside and down, clear of the bar --------------------------------)
+    G90
+    G1 X[#5420 - #<step>] F[#<ftrav>]
+    #<zp> = [#<zpark> - #<drop>]
+    G1 Z[#<zp>] F[#<ftrav>]
+    (--- 2. near flank ------------------------------------------------------)
+    G38.2 X[#5420 + #<maxx>] F[#<ffast>]
+    o30 if [#5070 EQ 0]
+      G1 Z[#<zpark>] F[#<ftrav>]
+      (abort, ROTARY PROBE: near flank never touched - is the drop deep enough to be beside the bar?)
+    o30 endif
+    #<xf> = #5061
+    G1 X[#<xf> - 2.0] F[#<ftrav>]
+    G38.2 X[#<xf> + 4.0] F[#<fslow>]
+    o31 if [#5070 EQ 0]
+      G1 Z[#<zpark>] F[#<ftrav>]
+      (abort, ROTARY PROBE: near flank slow latch found nothing)
+    o31 endif
+    #<xl> = #5061
+    (--- 3. cross ABOVE the bar, never through it ---------------------------)
+    G1 X[#<xl> - 2.0] F[#<ftrav>]
+    G1 Z[#<zpark>] F[#<ftrav>]
+    G1 X[#<xl> + #<cross>] F[#<ftrav>]
+    G1 Z[#<zp>] F[#<ftrav>]
+    (--- 4. far flank -------------------------------------------------------)
+    G38.2 X[#5420 - #<maxx>] F[#<ffast>]
+    o32 if [#5070 EQ 0]
+      G1 Z[#<zpark>] F[#<ftrav>]
+      (abort, ROTARY PROBE: far flank never touched - increase the approx bar diameter)
+    o32 endif
+    #<xg> = #5061
+    G1 X[#<xg> + 2.0] F[#<ftrav>]
+    G38.2 X[#<xg> - 4.0] F[#<fslow>]
+    o33 if [#5070 EQ 0]
+      G1 Z[#<zpark>] F[#<ftrav>]
+      (abort, ROTARY PROBE: far flank slow latch found nothing)
+    o33 endif
+    #<xr> = #5061
+    (--- 5. centre in X, then the crown AT that centre ----------------------)
+    #<x0> = [[#<xl> + #<xr>] / 2.0]
+    #<h>  = [[[#<xr> - #<xl>] - #<pdia>] / 2.0]
+    o34 if [#<h> LE 0]
+      G1 Z[#<zpark>] F[#<ftrav>]
+      (abort, ROTARY PROBE: flanks came out narrower than the probe - bad touch)
+    o34 endif
+    G1 X[#<xr> + 2.0] F[#<ftrav>]
+    G1 Z[#<zpark>] F[#<ftrav>]
+    G1 X[#<x0>] F[#<ftrav>]
+    G38.2 Z[#5422 - #<maxz>] F[#<ffast>]
+    o35 if [#5070 EQ 0]
+      G1 Z[#<zpark>] F[#<ftrav>]
+      (abort, ROTARY PROBE: crown never touched)
+    o35 endif
+    #<zc1> = #5063
+    G1 Z[#<zc1> + 2.0] F[#<ftrav>]
+    G38.2 Z[#<zc1> - 4.0] F[#<fslow>]
+    o36 if [#5070 EQ 0]
+      G1 Z[#<zpark>] F[#<ftrav>]
+      (abort, ROTARY PROBE: crown slow latch found nothing)
+    o36 endif
+    #<zc> = #5063
+    G1 Z[#<zpark>] F[#<ftrav>]
+    (--- 6. the answer ------------------------------------------------------)
+    #<d>  = [#<zc> - #<zp>]
+    o37 if [#<d> LE 0.001]
+      (abort, ROTARY PROBE: flanks were not below the crown - increase the drop)
+    o37 endif
+    #<r>  = [[[#<h> * #<h>] + [#<d> * #<d>]] / [2.0 * #<d>]]
+    #<z0> = [#<zc> - #<r>]
+    (PRINT, ROTARY station #<st>: X0 %.4f#<x0> Z0 %.4f#<z0> crown %.4f#<zc> h %.4f#<h> d %.4f#<d> derived dia %.4f#<r>)
+    o40 if [#<st> EQ 1]
+      #<x1> = #<x0>
+      #<za> = #<z0>
+      #<ya> = #<y0>
+      G1 Y[#<y0> + #<gap>] F[#<ftrav>]
+    o40 else
+      #<x2> = #<x0>
+      #<zb> = #<z0>
+    o40 endif
+    #<st> = [#<st> + 1]
+  o20 endwhile
+
+  (--- 7. alignment, and the datum from station 1 ---------------------------)
+  #<dx> = [#<x2> - #<x1>]
+  #<dz> = [#<zb> - #<za>]
+  (PRINT, ROTARY ALIGNMENT over %.1f#<gap> mm: yaw dX %.4f#<dx> mm, droop dZ %.4f#<dz> mm)
+  (PRINT, ROTARY: rotate B 180 and re-run - real misalignment keeps its sign, a bent bar flips it.)
+  G1 Z[#<zpark>] F[#<ftrav>]
+  G1 Y[#<ya>] F[#<ftrav>]
+  G1 X[#<x1>] F[#<ftrav>]
+  (G55 ONLY. G54 is the operator's scratch system and is never written here.)
+  G10 L20 P2 X0 Z0
+  (PRINT, ROTARY DONE: G55 X0 Z0 sits on the B centreline at station 1.)
+o<rotary_probe> endsub
+M2 (end program)

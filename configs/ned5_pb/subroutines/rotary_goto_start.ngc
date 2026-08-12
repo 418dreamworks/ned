@@ -1,0 +1,43 @@
+(ned ROTARY START -- park over the bar so the operator can lower the probe.)
+(Operator 2026-08-12: "have it go to that XY after a click but at Ztop so user)
+(can lower the probe in case its a different length probe".)
+
+(WHY THE HEIGHT IS NOT STORED WITH THE XY. The XY of the bar does not change)
+(- the fixture is bolted down - but the probe sticking out of the spindle does,)
+(every time a different one goes in. So the machine owns the XY and the)
+(operator owns the Z. Storing a Z here would be storing a property of a probe)
+(that may not be in the spindle next time.)
+
+(Z FIRST, THEN XY. Always: the spindle may be sitting anywhere, and a lateral)
+(move at an unknown depth is how a probe gets snapped off against the bar or)
+(the chuck. Going up first costs nothing and cannot hit anything.)
+
+(NO BAR DIAMETER ANYWHERE IN THIS CHAIN. It is derived later from the two)
+(flank touches and the crown, so it can never be typed in wrong.)
+o<rotary_goto_start> sub
+  (Arg names are the GUI binding: SubCallButton looks for a widget of the)
+  (same name and falls back to the bracketed default.)
+  #<rp_sx>   = #1 (=-3728.3650 bar centre X machine)
+  #<rp_sy>   = #2 (=-1354.5257 bar centre Y machine)
+  #<rp_ztop> = #3 (=-189.7442 park height machine)
+  #<rp_ftrav> = #4 (=2000.0 traverse mm/min)
+  #<sx>    = #<rp_sx>
+  #<sy>    = #<rp_sy>
+  #<ztop>  = #<rp_ztop>
+  #<ftrav> = #<rp_ftrav>
+  o1 if [#<ftrav> LE 0]
+    #<ftrav> = 2000.0
+  o1 endif
+  o2 if [#<sx> EQ 0 AND #<sy> EQ 0]
+    (abort, ROTARY START: no stored bar XY - teach it first)
+  o2 endif
+  o5 if [#<_metric> EQ 0]
+    (abort, ROTARY START: switch to MM first)
+  o5 endif
+  G90
+  G1 G53 Z[#<ztop>] F[#<ftrav>]
+  G1 G53 X[#<sx>] Y[#<sy>] F[#<ftrav>]
+  (PRINT, ROTARY START: over the bar at X#<sx> Y#<sy> machine, parked at Z#<ztop>.)
+  (PRINT, NEXT: jog Z down beside the bar, below the crown, then start the probe cycle.)
+o<rotary_goto_start> endsub
+M2 (end program)

@@ -6263,10 +6263,24 @@ class UserTab(QWidget):
         except Exception:
             LOG.exception('TOOL SAFETY: sync failed')
 
+    # Names match the arg lines in rotary_probe.ngc -- SubCallButton hunts the
+    # app for a widget of the same name, so the name IS the binding.
+    # Names match the arg lines in the .ngc -- SubCallButton hunts the app for
+    # a widget of the same name, so the name IS the binding. Only what the
+    # operator actually sets is here: travel limits and feeds keep their
+    # defaults in the sub, because a box nobody changes is a box that
+    # eventually gets changed by accident.
     ROTARY_PROBE_FIELDS = (
-        ('bar_dia', 'BAR DIA', '31.75', 'mm - the 1.25in calibration bar'),
-        ('depth',   'PROBE DEPTH', '25.4', 'mm below the crown for the flanks'),
-        ('yspan',   'STATION GAP', '300.0', 'mm of Y between the two stations'),
+        ('rp_pdia',   'PROBE DIA',      '9.1281',
+         'mm - 23/64 in. The only number in the maths.'),
+        ('rp_approx', 'APPROX BAR DIA', '31.75',
+         'mm - moves only: step-off and drop. Never in the result.'),
+        ('rp_gap',    'STATION GAP',    '304.8',
+         'mm of Y to the 2nd station - 12 in. Gives yaw and droop.'),
+        ('rp_sx',     'BAR X  (MCS)',   '-3728.3650', 'machine'),
+        ('rp_sy',     'BAR Y  (MCS)',   '-1354.5257', 'machine'),
+        ('rp_ztop',   'PARK Z (MCS)',   '-189.7442',
+         'machine - park ~5 mm above the bar'),
     )
 
     def _build_rotary_probe_tab(self):
@@ -6304,10 +6318,11 @@ class UserTab(QWidget):
                                '"Probe Basic Bebas Mono";')
             lay.addWidget(head)
             why = QLabel(
-                'Three touches here, then +Y to a second station and three '
-                'more.\nX zero is the midpoint of the flanks, Z zero is the '
-                'crown less one bar radius.\nThe two stations give the axis '
-                'yaw and droop -- printed to the log.\n'
+                'Park ABOVE the bar, roughly centred, then jog down ~10 mm '
+                'clear of it.\nFlanks first, then the crown at the found '
+                'centre: the bar diameter is DERIVED, never typed.\n'
+                'Second station +12 in gives yaw and droop. Datum is G55 '
+                '-- G54 is never written.\n'
                 'The bar must be on the toolsetter probe lead.')
             why.setStyleSheet('color: rgb(200,200,200); font: 10pt;')
             lay.addWidget(why)
@@ -6333,9 +6348,14 @@ class UserTab(QWidget):
                 row.addWidget(hn, 1)
                 lay.addLayout(row)
                 self._rp_fields[name] = ed
-            btn = SubCallButton(page, filename='rotary_zero.ngc')
-            btn.setObjectName('ned_rotary_zero_button')
-            btn.setText('ROTARY ZERO')
+            gob = SubCallButton(page, filename='rotary_goto_start.ngc')
+            gob.setObjectName('ned_rotary_goto_button')
+            gob.setText('GO TO BAR')
+            gob.setMinimumHeight(44)
+            lay.addWidget(gob)
+            btn = SubCallButton(page, filename='rotary_probe.ngc')
+            btn.setObjectName('ned_rotary_probe_button')
+            btn.setText('ROTARY PROBE  \u2192  G55')
             btn.setMinimumHeight(56)
             lay.addWidget(btn)
             lay.addStretch(1)
