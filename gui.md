@@ -3251,5 +3251,11 @@ Traceback (most recent call last):
            ^^^^^^^^^^^^^^^
 AttributeError: 'Brain' object has no attribute 'correcting'
 
-2026-08-11 22:24:06  SPINDLE RESTORE: LinuxCNC already has T9 -- nothing to do
-2026-08-11 22:25:46  SPINDLE RESTORE: LinuxCNC already has T10 -- nothing to do
+2026-08-11 22:30:33  program/MDI done (motion complete) -> MANUAL + teleop (MPG live)
+2026-08-11 22:30:33  TELEOP re-entered (machine ON + homed) -> MPG live
+2026-08-11 22:31:05  program/MDI done (motion complete) -> MANUAL + teleop (MPG live)
+2026-08-11 22:31:05  TELEOP re-entered (machine ON + homed) -> MPG live
+2026-08-11 22:31:15  program/MDI done (motion complete) -> MANUAL + teleop (MPG live)
+2026-08-11 22:31:15  TELEOP re-entered (machine ON + homed) -> MPG live
+2026-08-11 22:34:25  program/MDI done (motion complete) -> MANUAL + teleop (MPG live)
+2026-08-11 22:34:25  TELEOP re-entered (machine ON + homed) -> MPG live

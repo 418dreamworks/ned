@@ -47,7 +47,13 @@ o<probe_spindle_nose> sub
   o110 if [#5070 EQ 0]
       (back to start point and feed)
       G90
-      G1 F[#<probe_traverse_fr>] Z#<z>
+      (Use offset_z. The name z is assigned NOWHERE in this file -- line 29)
+      (puts the start height in offset_z and this recovery move meant to go)
+      (back to it. It sits in the o110 arm, so it only runs when the fast)
+      (probe MISSES: the interpreter then died on an undefined parameter at)
+      (exactly the moment it was trying to report that the probe found)
+      (nothing, replacing the real message with a confusing one.)
+      G1 F[#<probe_traverse_fr>] Z#<offset_z>
       F[#<probe_fast_fr>]
       M65 P3   (PUCK DOWN before bailing out)
       (abort, probe event failed to record point data, aborting)

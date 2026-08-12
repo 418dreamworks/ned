@@ -43,17 +43,22 @@ o<cal_shoulder> sub
   #<zclear>  = #3076
   #<xoff>    = #3078
 
-  (PLUNGE IS DERIVED, not guessed: everything the machine has, stopping 1 mm)
-  (above the Z soft limit. A fixed 215 only covered a rod shorter than 115 mm)
-  (-- with no tool the NOSE must descend BELOW the rod-tip touch Z by the)
-  (rod's protruding length, because the tip sat that far below the nose.)
-  (Operator 2026-08-03: take it to 1 mm before the limit.)
-  #<zstart>  = [#<top> + #<zclear>]
-  #<plunge>  = [#<zstart> - [#<zmin> + 1.0]]
-  #3077 = #<plunge>
-  o4 if [#<plunge> LE 0]
-    (abort, SHOULDER: no room to plunge - the start height is already at the Z soft limit.)
-  o4 endif
+  (PLUNGE IS COMPUTED AFTER G30.1, BELOW, AND NOT HERE. It used to be)
+  (worked out at this point as [top + zclear] - [zmin + 1], and those two)
+  (terms are in DIFFERENT FRAMES: `top` is a WORK Z handed in by the caller,)
+  (`zmin` is the MACHINE soft limit out of the INI. Subtracting one from the)
+  (other buries the active G54 Z offset in the answer.)
+  (2026-08-11, measured: top -272.698 work, offset -157.213, zmin -620.)
+  (  computed  [-272.698 + 100] - [-620 + 1] = 446.302)
+  (  available [-429.911 + 100] - [-620 + 1] = 289.089)
+  (  the 157.213 difference IS the offset.)
+  (So PB was told to drive 157 mm further than Z can go and the cycle died on)
+  (the soft limit instead of touching the shoulder -- and because the error is)
+  (a FUNCTION of the offset, it appeared the moment the puck was re-zeroed.)
+  (The header of this file already states the principle: #5181/2/3 are the)
+  (G30 position, machine, "no work-to-machine conversion to get wrong". G30.1)
+  (below records exactly the start height, so #5183 IS that height in machine)
+  (terms. Subtract the machine limit from it and both sides finally agree.)
   #<f_tr>    = 2000.0
 
   o5 if [#<_metric> EQ 0]
@@ -75,8 +80,18 @@ o<cal_shoulder> sub
   (PRINT, SHOULDER: tool-setter position recorded to G30 - X #5181 Y #5182 Z #5183 machine. That is the puck centre at top plus #<zclear> mm.)
 
   (--- 2. the plunge allowance PB will use ------------------------------)
+  (MACHINE MINUS MACHINE. #5183 was just written by G30.1 above and is the)
+  (start height in machine coordinates; zmin is the machine soft limit. Stop)
+  (1 mm short of it, so the plunge can never be the thing that trips the)
+  (limit. Operator 2026-08-11: just automatically go to the soft limit of Z)
+  (plus 1mm so that stupid soft limit does not arise.)
+  #<plunge> = [#5183 - [#<zmin> + 1.0]]
+  #3077 = #<plunge>
+  o4 if [#<plunge> LE 0]
+    (abort, SHOULDER: no room to plunge - the start height is already at the Z soft limit.)
+  o4 endif
   #3007 = #<plunge>
-  (PRINT, SHOULDER: max plunge #3007 mm sent to PB.)
+  (PRINT, SHOULDER: max plunge #3007 mm sent to PB - from G30 Z #5183 machine down to 1 mm above the #<zmin> soft limit.)
 
   (--- 3. over the shoulder probing point -------------------------------)
   G1 X[#<cx> + #<xoff>] Y#<cy> F[#<f_tr>]
