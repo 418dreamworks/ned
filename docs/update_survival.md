@@ -218,6 +218,9 @@ never uses Pi Connect.
 
 `~/qt_pb/qtpyvcp/src/qtpyvcp/lib/native_notification.py`
 Stock copy kept beside it as `native_notification.py.stock-20260803`.
+
+Messages self-dismiss after `NED_INFO_MS` -- **2000 ms** since 2026-08-12
+(operator: "make errors last 2 seonds instead of 1"); it was 1000 ms.
 **A PB update wipes ~/qt_pb -- re-apply after every update.**
 
 Two changes, both in `setNotify()`:

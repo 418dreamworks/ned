@@ -42,8 +42,23 @@ if [ -f "$NED/configs/ned5_pb/ned5_pb.ini.expanded" ]; then
       "$NED/configs/ned5_pb/ned5_pb.ini.expanded" >> "$WORK/test.ini"
 fi
 
+# LINT BEFORE PARSING (2026-08-12). rs274 does catch an unclosed comment,
+# but only at Cycle Start and its message names no line number -- the
+# operator got "Unclosed comment found" three times on this project, twice
+# in one afternoon, each time losing a run. The linter reads
+# docs/gcode_rules.md's mechanical rules and prints file:line.
+# NOTE: there is a SECOND lint() defined further down this file, and a shell
+# function defined later WINS. Call the linter by path, never by a name that
+# can be shadowed -- the first version of this hook silently did nothing for
+# exactly that reason.
 check() {
   local name=$1; shift
+  python3 "$NED/tools/live/gcode_lint.py" \
+      "$NED/configs/ned5_pb/subroutines/$name.ngc" >/tmp/gclint.$$ 2>&1 || {
+    echo "$name  LINT FAILED:"; sed 's/^/    /' /tmp/gclint.$$; rm -f /tmp/gclint.$$
+    return 1
+  }
+  rm -f /tmp/gclint.$$
   local args=""
   for a in "$@"; do args="$args [$a]"; done
   cp "$NED/configs/ned5_pb/ned5_pb.var" "$WORK/test.var"
@@ -123,6 +138,14 @@ PY
 
 rc=0
 if ! lint; then echo "LINT FAILED"; rc=1; fi
+# RULES SWEEP over EVERY subroutine, not just cal_*/cc_* (docs/gcode_rules.md)
+if ! python3 "$NED/tools/live/gcode_lint.py" \
+        "$NED"/configs/ned5_pb/subroutines/*.ngc >/tmp/gcrules.$$ 2>&1; then
+  echo "GCODE RULES: findings (docs/gcode_rules.md)"
+  sed 's/^/  /' /tmp/gcrules.$$
+  rc=1
+fi
+rm -f /tmp/gcrules.$$
 if [ "${1:-}" = "--all" ]; then
   C="-73.0519 -1429.3940 -462.0033"   # a plausible puck centre; geometry is not the point
   for n in cal_probe_center cal_a_zero cal_c_ref cal_c_zero cal_c_goto \

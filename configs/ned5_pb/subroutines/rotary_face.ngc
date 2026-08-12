@@ -182,13 +182,13 @@ o<rotary_face> sub
   (PRINT, ROTARY FACE: #<npass> passes, spindle #<sout> rpm held all cycle, B reaches its ceiling only on the last pass)
 
   G90
-  (BLEND THE CORNERS SO THE STOCK NEVER STOPS TURNING. Bare G64 -- what the
-  (machine defaults to -- only collapses collinear moves, so at the corner
-  (between the Y sweep and the Z dive the planner must arrive exactly on the
-  (corner point: Y decelerates to zero before Z starts, path velocity hits
-  (zero, and B stops with it. That is the pause seen between passes.
-  (P0.5 lets it miss the corner by half a millimetre and carry speed through
-  (an arc instead, so B keeps turning. Plain G64 is restored at the end.
+  (BLEND THE CORNERS SO THE STOCK NEVER STOPS TURNING. The default here is)
+  (G64 P0.001 -- a 1 micron tolerance, which cannot round anything -- so at)
+  (the corner between the Y sweep and the Z dive the planner must arrive)
+  (exactly on the corner point: Y decelerates to zero before Z starts, path)
+  (velocity hits zero, and B stops with it. That is the pause between passes.)
+  (P0.5 lets it miss the corner by half a millimetre and carry speed through)
+  (an arc instead, so B keeps turning. Plain G64 is restored at the end.)
   G64 P0.5
   (SPINDLE FIRST, THEN TEN SECONDS, THEN MOVE. Operator 2026-08-12: "i want a)
   (10 second dwell after spindle before any movement ... to let it get to)
@@ -258,45 +258,49 @@ o<rotary_face> sub
     (ONE REVOLUTION IS THE RIGHT AMOUNT: the tool is already engaged over)
     (the whole cut width, so the plunge spreads across a full turn instead)
     (of digging in at one angular position.)
-    (PLUNGE CAP, SCALED BY THE TOOL. Operator 2026-08-12: "max Z plunge is)
-    (3mm/s for this tool, and scales up and down appropriately". 3 mm/s is)
-    (180 mm/min and the tool in hand is 9.525 mm, so the rate per mm of tool)
-    (diameter is 18.9 mm/min: a 1/2 inch tool gets 4 mm/s, a 1/4 inch gets)
-    (2 mm/s. Bigger tools have more flute length and more room for the chip,)
-    (so a bigger tool plunging faster is the right direction.)
-    (IT IS A CEILING, NOT A TARGET. The sweep feed comes from the chip load)
-    (and is well under this at normal numbers, so the cap does nothing; it)
-    (exists so no combination of chip load, flute count and stock diameter)
-    (can turn the entry into a fast plunge. F governs Z on this block and B)
-    (is slaved to it, so a capped plunge simply turns the stock more slowly)
-    (through the entry.)
+    (RAMP IN, DO NOT PLUNGE. A separate Z-only dive is a 90 degree corner)
+    (in the path: the planner has to swing from pure Y to pure Z, and even)
+    (with G64 P0.5 there is only half a millimetre of arc to do it in, so B)
+    (crawled under 5 deg/s for about 0.8 s at every corner -- measured)
+    (2026-08-12, 4 samples under 5 and 19 under 40 out of 1336.)
+    (Descending DURING the sweep removes the corner entirely: Y, Z and B all)
+    (move together and nothing ever changes direction mid-pass. The only)
+    (slowdown left is the Y reversal at the ends, which the operator accepts.)
+    (ONE REVOLUTION OF STOCK PER RAMP. Y advances one pitch while Z drops the)
+    (full radial depth and B turns once, so the entry is a helix at the same)
+    (feed as the cut. Z rate works out at doc/pitch times the feed, which for)
+    (a half-diameter stepover is exactly the feed -- well under the plunge)
+    (ceiling below.)
     #<pmax>  = [#<tdia> * 18.9]
     #<pfeed> = #<feed>
     o106 if [#<pfeed> GT #<pmax>]
       #<pfeed> = #<pmax>
     o106 endif
-    #<dz> = [#<r> - #<rprev>]
+    #<dz>   = [#<r> - #<rprev>]
+    #<yrun> = #<len>
+    #<brun> = [#<revs> * 360.0]
     o105 if [#<dz> LT 0]
+      (SPINDLE UP THROUGH THE RAMP so the chip is lighter where the tool is)
+      (engaging axially as well as radially -- operator 2026-08-12: "spin up)
+      (spindle speed during the ramp to cut less". Same feed, twice the)
+      (teeth per minute, so half the chip load. Capped at the drive ceiling.)
+      #<sramp> = [#<sout> * 2.0]
+      o107 if [#<sramp> GT #<rf_smax>]
+        #<sramp> = #<rf_smax>
+      o107 endif
+      S#<sramp>
       G91
-      G1 Z[#<dz>] B[360.0] F[#<pfeed>]
+      G1 Y[#<pitch> * #<dir>] Z[#<dz>] B[360.0] F[#<pfeed>]
       G90
+      #<yrun> = [#<len> - #<pitch>]
+      #<brun> = [#<brun> - 360.0]
     o105 endif
-    (ONE BLOCK FOR THE WHOLE SWEEP. Y against B is a STRAIGHT LINE -- one)
-    (turn of the stock always advances Y by exactly one pitch -- so a single)
-    (G1 with both words in it IS the helix, exactly, not an approximation of)
-    (one. This used to be 1440 blocks of 10 degrees each, and that was what)
-    (made B crawl: inside a 10 degree block it can only reach the square)
-    (root of accel times distance, so at 15 deg/s squared it topped out near)
-    (12 deg/s and decelerated at every boundary, averaging 8.6 deg/s instead)
-    (of 48 -- measured on the machine 2026-08-12. One block means B ramps up)
-    (once and holds 8 rpm for the entire length. Operator: "it just needs to)
-    (get to 8rpm and STAY there only speeding up. never stopping or slowing)
-    (down".)
-    (B IS RELATIVE. Nothing in a facing cut refers to an absolute B angle,)
-    (and absolute words meant carrying a running total that grew without)
-    (limit. G90 is restored immediately so the dives stay absolute.)
+
+    (THE REST OF THE PASS AT DEPTH. One block, no corners: Y against B is a)
+    (straight line, so a single G1 with both words IS the helix exactly.)
+    S#<sout>
     G91
-    G1 Y[#<len> * #<dir>] B[#<revs> * 360.0] F[#<feed>]
+    G1 Y[#<yrun> * #<dir>] B[#<brun>] F[#<feed>]
     G90
     (SWAP THE ENDS: this pass finished where the next one starts.)
     #<ycur> = #<ytgt>

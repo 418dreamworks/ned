@@ -167,6 +167,23 @@ h.newpin('head-busy', hal.HAL_BIT, hal.HAL_OUT)
 # are so crucial, they must be positively verified before user can do
 # anything").
 h.newpin('tool-table-ok', hal.HAL_BIT, hal.HAL_OUT)
+# HAS THE TOOL RECORD BEEN SETTLED THIS SESSION? (2026-08-12)
+# The GUI's CHECK TOOL CONFIGURATION alarm compares the drawbar sensor with
+# iocontrol.0.tool-number, and for the first seconds of every launch that
+# number is 0 -- not because the record is missing, but because LinuxCNC has
+# not run its DB_PROGRAM handshake and this loop has not run its restore.
+# The guard cannot tell "no record" from "not asked yet", so it fired on
+# EVERY launch and withdrew itself moments later: 12 of today's 26 operator
+# toasts were this one message. An earlier attempt gated it on table-ok-in,
+# which is already TRUE by then and suppressed nothing.
+# THIS PIN IS THE FACT THAT WAS MISSING: it goes TRUE when restore_spindle_tool
+# has reached a decision -- restored, nothing to restore, already correct, or
+# refused because the sensor is empty. Before that the comparison is
+# meaningless; after it, a mismatch is real and the alarm should shout.
+# NOT A TIMER. The boot excuse that was deleted on operator instruction was a
+# window during which the guard was simply off; this is a state that the
+# guard itself produces, and it can never hide a fault that outlives boot.
+h.newpin('tool-settled', hal.HAL_BIT, hal.HAL_OUT)
 # REACHABILITY COUNTER. do_inplace() homes one joint per pass and re-arms
 # itself for the next, so it depends on being CALLED periodically -- and on
 # 2026-08-08 it wasn't: its only live caller was read_done(), joint 4 homed,
@@ -957,6 +974,17 @@ class Brain(object):
             self._restore_why = msg
             log('SPINDLE RESTORE: {}'.format(msg))
 
+    def tool_settled(self):
+        """The tool record has been decided this session -- from here on a
+        spindle/table mismatch is real and worth shouting about."""
+        try:
+            if not h['tool-settled']:
+                h['tool-settled'] = True
+                log('TOOL RECORD SETTLED: the spindle/table comparison is '
+                    'meaningful from here on')
+        except Exception:
+            pass
+
     def restore_spindle_tool(self):
         # BACKSTOP ONLY since 2026-08-05: the tool database now reports the
         # clamped tool as P0, so LinuxCNC knows it at load time and this
@@ -1002,10 +1030,12 @@ class Brain(object):
             if want <= 0:
                 self._restore_say('no tool recorded in #3991 (%r) -- nothing '
                                   'to restore' % want)
+                self.tool_settled()
                 return
             if self.stat.tool_in_spindle == want:
                 self._restore_say('LinuxCNC already has T%d -- nothing to do'
                                   % want)
+                self.tool_settled()
                 return
             locked = subprocess.run(
                 ['timeout', '5', 'halcmd', 'getp', 'motion.digital-in-00'],
@@ -1014,6 +1044,7 @@ class Brain(object):
                 log('SPINDLE RESTORE: #3991 says T{} but the drawbar sensor '
                     'reads empty -- NOT restoring (guard will flag if a tool '
                     'is really there)'.format(want))
+                self.tool_settled()
                 return
             self.cmd.mode(linuxcnc.MODE_MDI)
             self.cmd.wait_complete()
@@ -1042,6 +1073,7 @@ class Brain(object):
                 'tool_offset Z={:+.4f} (G43 applied - tip reference)'
                 .format(want, self.stat.tool_in_spindle,
                         self.stat.tool_offset[2]))
+            self.tool_settled()
         except Exception as e:
             log('SPINDLE RESTORE failed: {}'.format(e))
 
