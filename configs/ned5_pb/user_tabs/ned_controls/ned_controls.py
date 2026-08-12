@@ -6354,39 +6354,66 @@ QTabBar::tab:only-one {
 }
 """
 
-    # names match the arg lines in rotary_face.ngc -- the name IS the binding
-    ROTARY_FACE_FIELDS = (
-        ('rf_tool',   'TOOL',      '6',     False),
-        ('rf_dstart', 'D START',   '38.15', False),
-        ('rf_dend',   'D END',     '32.0',  False),
-        ('rf_len',    'LENGTH',    '100.0', False),
-        ('rf_chip',   'CHIP LOAD', '0.30',  False),
-        ('rf_flutes', 'FLUTES',    '2',     True),
-        ('rf_fdepth', 'FLUTE D',   '0',     True),
+    # names match the arg lines in rotary_face.ngc -- the name IS the binding.
+    # THREE SECTIONS, THREE OWNERS (operator 2026-08-12: "the only thing user
+    # choose is tool number ... separate the inputs"). What the operator
+    # decides, what the tool table decides, and what the machine works out
+    # are different KINDS of number, and mixing them in one column invites
+    # typing over a value that is about to be overwritten from the database.
+    ROTARY_FACE_INPUTS = (
+        ('rf_tool',   'TOOL',        '6'),
+        ('rf_dstart', 'D START (mm)', '38.15'),
+        ('rf_dend',   'D END (mm)',   '32.0'),
+        ('rf_len',    'LENGTH (mm)',  '100.0'),
+        ('rf_chip',   'CHIP LOAD (mm/tooth)', '0.30'),
     )
+    ROTARY_FACE_TOOL = (
+        ('rf_flutes', 'FLUTES',        '2'),
+        ('rf_fdepth', 'FLUTE DOC(mm)', '0'),
+        ('rf_tdia',   'DIAMETER (mm)', '0'),
+    )
+    # read-only, recomputed on every change -- these are OUTPUTS
+    ROTARY_FACE_CALC = (
+        ('rf_c_doc',   'RADIAL DOC (mm)'),
+        ('rf_c_rpm',   'SPINDLE (rpm)'),
+        ('rf_c_b',     'B SPEED (deg/s)'),
+        ('rf_c_feed',  'Y FEED (mm/min)'),
+        ('rf_c_pitch', 'Y PER TURN (mm)'),
+        ('rf_c_pass',  'PASSES'),
+        ('rf_c_time',  'CUT TIME (min)'),
+    )
+    RF_BMAX = 48.0        # [JOINT_6]MAX_VELOCITY, tools/run5.sh
+    RF_SMIN = 1000.0      # [SPINDLE_0]MIN_FORWARD_VELOCITY
+    RF_SMAX = 18000.0     # [SPINDLE_0]MAX_FORWARD_VELOCITY
 
     def _rf_tool_lookup(self):
-        """Fill FLUTES / FLUTE D from the tool database for whatever tool
-        number is typed.
+        """Fill the FROM TOOL TABLE section for whatever tool number is typed,
+        then recompute the calculated section.
 
-        THE .NGC CANNOT READ THIS ITSELF. LinuxCNC's own tool table carries
-        no flute count, and the numbers live in tool_table.db as custom
-        fields. Probe Basic does ship a bridge that would publish them as
-        #<_current_tool_flutes> on M6 -- atc_sim/python/stdglue.py:177 --
-        but wiring that means editing the M6 remap epilog, and the M6 path
-        is the one piece of this machine that must not acquire new failure
-        modes for the sake of a conversational cycle. So the GUI reads the
-        row and hands the numbers over as ordinary named arguments, which is
-        the same mechanism every other field on this page already uses.
+        THE .NGC CANNOT READ THIS ITSELF. LinuxCNC's own tool table carries no
+        flute count, and the numbers live in tool_table.db as custom fields.
+        Probe Basic does ship a bridge that would publish them as
+        #<_current_tool_flutes> on M6 -- atc_sim/python/stdglue.py:177 -- but
+        wiring that means editing the M6 remap epilog, and M6 is the one path
+        on this machine that must not acquire new failure modes for the sake
+        of a conversational cycle. The GUI reads the row and hands the numbers
+        over as ordinary named arguments, the same mechanism every other field
+        on this page already uses.
         """
         f = getattr(self, '_rf_fields', None)
         if not f:
+            return
+        # NEVER REWRITE A FIELD UNDER THE OPERATOR'S CURSOR: the poll runs
+        # every 2 s and would otherwise fight a half-typed tool number.
+        if any(f[k].hasFocus() for k in f if not f[k].isReadOnly()):
+            self._rf_recalc()
             return
         try:
             tno = int(float(f['rf_tool'].text().strip() or 0))
         except Exception:
             tno = 0
         vals = {'flutes': '', 'flute_depth': ''}
+        dia = 0.0
         if tno > 0:
             try:
                 import sqlite3
@@ -6402,12 +6429,97 @@ QTabBar::tab:only-one {
                             " WHERE d.name IN ('flutes','flute_depth')", (tno,)):
                         raw = val if val not in (None, '') else dflt
                         vals[name] = '' if raw in (None, '') else str(raw)
+                    r = con.execute("SELECT diameter FROM tool WHERE tool_no = ?",
+                                    (tno,)).fetchone()
+                    dia = float(r[0]) if r else 0.0
                 finally:
                     con.close()
             except Exception:
                 LOG.exception('ROTARY FACE: tool lookup failed for T%s', tno)
         f['rf_flutes'].setText(vals['flutes'] or '2')
         f['rf_fdepth'].setText(vals['flute_depth'] or '0')
+        f['rf_tdia'].setText('%.4f' % dia if dia else '--')
+        self._rf_recalc()
+
+    def _rf_recalc(self):
+        """Work the cycle out here exactly as rotary_face.ngc will.
+
+        SAME ARITHMETIC, DELIBERATELY DUPLICATED. The .ngc is the authority --
+        it is what runs -- but a number the operator cannot see until the
+        spindle is already turning is not a number they can sanity-check. If
+        these two ever disagree the .ngc wins and this display is the bug.
+        """
+        import math
+        f = getattr(self, '_rf_fields', None)
+        o = getattr(self, '_rf_out', None)
+        if not f or not o:
+            return
+
+        def num(k):
+            try:
+                return float(f[k].text().strip())
+            except Exception:
+                return 0.0
+        tdia = num('rf_tdia')
+        N = num('rf_flutes')
+        fdep = num('rf_fdepth')
+        fz = num('rf_chip')
+        dstart, dend, length = num('rf_dstart'), num('rf_dend'), num('rf_len')
+        blank = {k: '--' for k, _ in self.ROTARY_FACE_CALC}
+        note = ''
+        if tdia <= 0 or N <= 0 or fz <= 0 or dstart <= dend or length <= 0:
+            for k, v in blank.items():
+                o[k].setText(v)
+            self._rf_note.setText('')
+            return
+        trad = tdia / 2.0
+        doc = min(trad, 6.35)
+        if 0 < fdep < doc:
+            doc = fdep
+        pitch = trad
+        ya, yb = trad, length - trad
+        if yb <= ya:
+            for k, v in blank.items():
+                o[k].setText(v)
+            self._rf_note.setText('LENGTH is shorter than the tool')
+            return
+        r, rend = dstart / 2.0, dend / 2.0
+        npass, tmin, rpm_lo, rpm_hi, b_lo, b_hi, feed = 0, 0.0, None, None, None, None, 0.0
+        while r > rend:
+            rout = r
+            r = max(r - doc, rend)
+            npass += 1
+            wb = self.RF_BMAX
+            sp = wb * math.pi * rout / (3.0 * fz * N)
+            if sp > self.RF_SMAX:
+                sp = self.RF_SMAX
+                wb = 3.0 * fz * sp * N / (math.pi * rout)
+            if sp < self.RF_SMIN:
+                fzmax = self.RF_BMAX * math.pi * rout / (3.0 * self.RF_SMIN * N)
+                for k, v in blank.items():
+                    o[k].setText(v)
+                self._rf_note.setText(
+                    'REFUSED at D %.2f: needs %.0f rpm, floor is %.0f. '
+                    'Max chip load here is %.3f mm/tooth.'
+                    % (rout * 2, sp, self.RF_SMIN, fzmax))
+                return
+            feed = pitch * wb / 6.0
+            tmin += (yb - ya) / feed
+            rpm_lo = sp if rpm_lo is None else min(rpm_lo, sp)
+            rpm_hi = sp if rpm_hi is None else max(rpm_hi, sp)
+            b_lo = wb if b_lo is None else min(b_lo, wb)
+            b_hi = wb if b_hi is None else max(b_hi, wb)
+
+        def rng(lo, hi, fmt):
+            return (fmt % lo) if abs(hi - lo) < 5e-3 else ((fmt + ' - ' + fmt) % (hi, lo))
+        o['rf_c_doc'].setText('%.3f' % doc)
+        o['rf_c_rpm'].setText(rng(rpm_lo, rpm_hi, '%.0f'))
+        o['rf_c_b'].setText(rng(b_lo, b_hi, '%.2f'))
+        o['rf_c_feed'].setText('%.2f' % feed)
+        o['rf_c_pitch'].setText('%.3f' % pitch)
+        o['rf_c_pass'].setText('%d' % npass)
+        o['rf_c_time'].setText('%.1f' % tmin)
+        self._rf_note.setText(note)
 
     def _build_rotary_face_tab(self):
         """ROTARY FACING on the CONVERSATIONAL tab (operator 2026-08-12).
@@ -6416,7 +6528,7 @@ QTabBar::tab:only-one {
         it -- see OPERATION_NORTH_QSS.
         """
         from PySide6.QtWidgets import (QTabWidget, QVBoxLayout, QHBoxLayout,
-                                       QLabel, QLineEdit)
+                                       QLabel, QLineEdit, QFrame)
         try:
             win = self.window()
             host = win.findChild(QTabWidget, 'operation') if win else None
@@ -6430,47 +6542,100 @@ QTabBar::tab:only-one {
                 SubCallButton)
             page = QWidget()
             outer = QHBoxLayout(page)
-            outer.setContentsMargins(12, 12, 12, 12)
-            outer.setSpacing(24)
-            lay = QVBoxLayout()
-            lay.setSpacing(8)
-            outer.addLayout(lay, 0)
+            outer.setContentsMargins(12, 10, 12, 10)
+            outer.setSpacing(22)
             self._rf_fields = {}
-            for name, label, default, ro in self.ROTARY_FACE_FIELDS:
+            self._rf_out = {}
+
+            def heading(text):
+                h = QLabel(text)
+                h.setStyleSheet('color: rgb(238,238,236); font: 13pt '
+                                '"Probe Basic Bebas Mono";')
+                return h
+
+            def rule():
+                ln = QFrame()
+                ln.setFrameShape(QFrame.HLine)
+                ln.setStyleSheet('color: rgb(120,120,120);')
+                return ln
+
+            def field(box, name, label, default, ro):
                 row = QHBoxLayout()
                 lb = QLabel(label)
-                lb.setFixedWidth(110)
-                lb.setStyleSheet('color: #E6E6E6; font: 10pt;')
+                lb.setFixedWidth(170)
+                lb.setStyleSheet('color: %s; font: 10pt;'
+                                 % ('#AAAAAA' if ro else '#E6E6E6'))
                 ed = QLineEdit()
                 ed.setObjectName(name)          # the binding
                 ed.setText(default)
                 ed.setFixedWidth(120)
                 ed.setReadOnly(ro)
-                # read-only fields keep the calibration readout shade so it
-                # is obvious at a glance which numbers the operator owns
                 ed.setStyleSheet(self.CAL_QSS['read'] if ro else
                                  self.CAL_QSS['read'].replace('#1B1F20', '#2A2F31'))
                 row.addWidget(lb, 0)
                 row.addWidget(ed, 0)
                 row.addStretch(1)
-                lay.addLayout(row)
-                self._rf_fields[name] = ed
-            self._rf_fields['rf_tool'].textChanged.connect(self._rf_tool_lookup)
-            self._rf_tool_lookup()
+                box.addLayout(row)
+                return ed
+
+            # ---- column 1: what the OPERATOR decides ----------------------
+            col1 = QVBoxLayout()
+            col1.setSpacing(6)
+            outer.addLayout(col1, 0)
+            col1.addWidget(heading('OPERATOR'))
+            col1.addWidget(rule())
+            for name, label, default in self.ROTARY_FACE_INPUTS:
+                self._rf_fields[name] = field(col1, name, label, default, False)
+            col1.addSpacing(8)
             btn = SubCallButton(page, filename='rotary_face.ngc')
             btn.setObjectName('ned_rotary_face_button')
             btn.setText('ROTARY FACING')
             btn.setMinimumHeight(52)
-            btn.setFixedWidth(240)
-            lay.addWidget(btn)
-            lay.addStretch(1)
+            btn.setFixedWidth(300)
+            col1.addWidget(btn)
+            col1.addStretch(1)
+
+            # ---- column 2: what the TOOL TABLE decides, then the maths ----
+            col2 = QVBoxLayout()
+            col2.setSpacing(6)
+            outer.addLayout(col2, 0)
+            col2.addWidget(heading('FROM TOOL TABLE'))
+            col2.addWidget(rule())
+            for name, label, default in self.ROTARY_FACE_TOOL:
+                self._rf_fields[name] = field(col2, name, label, default, True)
+            col2.addSpacing(10)
+            col2.addWidget(heading('CALCULATED'))
+            col2.addWidget(rule())
+            for name, label in self.ROTARY_FACE_CALC:
+                self._rf_out[name] = field(col2, name, label, '--', True)
+            self._rf_note = QLabel('')
+            self._rf_note.setWordWrap(True)
+            self._rf_note.setFixedWidth(300)
+            self._rf_note.setStyleSheet('color: rgb(238,120,120); font: 10pt;')
+            col2.addWidget(self._rf_note)
+            col2.addStretch(1)
+
+            # ---- column 3: the crib sheet --------------------------------
             mat = self._materials_widget()
             if mat is not None:
                 outer.addWidget(mat, 0)
             outer.addStretch(1)
+
+            for name, _l, _d in self.ROTARY_FACE_INPUTS:
+                self._rf_fields[name].textChanged.connect(self._rf_recalc)
+            self._rf_fields['rf_tool'].textChanged.connect(self._rf_tool_lookup)
+            # AND ON A POLL. textChanged only fires when the operator retypes;
+            # the flute numbers live in the tool table, so editing them there
+            # would otherwise leave this page showing launch-time values.
+            self._rf_timer = QTimer(self)
+            self._rf_timer.timeout.connect(self._rf_tool_lookup)
+            self._rf_timer.start(2000)
+            self._rf_tool_lookup()
             host.addTab(page, 'ROTARY FACING')
-            LOG.info('ROTARY FACE: page added to operation (%d fields), tab '
-                     'strip North + restyled', len(self.ROTARY_FACE_FIELDS))
+            LOG.info('ROTARY FACE: page added to operation -- %d operator '
+                     'field(s), %d from the tool table, %d calculated',
+                     len(self.ROTARY_FACE_INPUTS), len(self.ROTARY_FACE_TOOL),
+                     len(self.ROTARY_FACE_CALC))
         except Exception:
             LOG.exception('ROTARY FACE: page not built')
 
