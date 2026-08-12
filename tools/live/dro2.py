@@ -409,7 +409,15 @@ class Dro2(QWidget):
         self.hdr.setFixedHeight(int(hdr_px * 1.5))
         # rows squeezed by the header height (operator: make space)
         avail = self.height() - STRIP_H - self.hdr.height()
-        by_height = (avail / rows) * 0.80
+        # 0.92, not 0.80. The font is sized by whichever of height or width
+        # binds first, and at 0.80 HEIGHT always won on this screen -- the
+        # digits ended up ~160 px narrower than their half, which is the
+        # empty space the operator kept pointing at ("both columns take up
+        # the space"). Letting the glyphs use more of the row lets WIDTH
+        # become the binding constraint, which is the one that actually
+        # fills the column. The width guard below is untouched, so the
+        # 12 ft X reading still cannot overflow.
+        by_height = (avail / rows) * 0.92
         # WIDTH BUDGET: NUM_W monospace glyphs per column, two columns, plus
         # the letter column. X on this machine reaches -4042.72 mm, so the
         # width is the binding constraint, not the height.
