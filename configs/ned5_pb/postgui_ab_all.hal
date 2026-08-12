@@ -62,6 +62,10 @@ net sig-abs-deg-c     hm2_7i97.0.pktuart.0.deg-c  =>  ini.5.home_offset
 # TOOL TABLE SERVED: the ONLY thing that releases the default motion lock.
 # FALSE until the brain sees a real entry in stat.tool_table.
 net sig-tool-table-ok  brain.tool-table-ok
+# AIR PRESSURE -> the repurposed FLOOD button. Raw AND debounced: the
+# debounced one is what gates emc-enable, the raw one is what moves
+# when the operator pokes the switch, and seeing both apart is the
+# difference between 'no air' and 'air, still settling'.
 # the GUI greys CYCLE START / MDI off the SAME lock the motion controller
 # obeys, so a control is never live while HAL is refusing motion
 net sig-motion-lock    ned-tab.motion-lock-in
@@ -121,7 +125,11 @@ net sig-tool-probe        =>  qtpyvcp.probe-led.on
 # CHIP BLOWER on the MIST control (operator request): PB's Mist toggle (menu)
 # and M7/M9 drive iocontrol coolant-mist -> OR'd into sol.blow alongside the
 # M64 P4 path (sol.blow.in0). Flood is unused (its menu entry is hidden).
-net sig-mist-blow   iocontrol.0.coolant-mist  =>  sol.blow.in1
+# THE BLOWER MOVES TO FLOOD (operator 2026-08-11). MIST is being replaced
+# by an air-pressure indicator, so the solenoid has to follow the button
+# that is still a button -- otherwise the machine's one working coolant
+# control is the one now labelled as a readout.
+net sig-blow-btn   iocontrol.0.coolant-flood  =>  sol.blow.in1
 # (the pendant-fed nets sig-mpg-inc-index / sig-mpg-axis are below, AFTER
 #  the
 #  pendant loadusr -- its pins must exist first)

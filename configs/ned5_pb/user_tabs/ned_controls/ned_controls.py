@@ -515,6 +515,15 @@ class UserTab(QWidget):
             # the TABLE half on its own: the startup gate needs to know
             # "table served", not "locked for one of two reasons"
             self.comp.addPin('table-ok-in', 'bit', 'in')
+            # AIR PRESSURE, for the repurposed FLOOD button. This
+            # machine has no flood (operator 2026-08-11: "make the
+            # flood button an indicator for air pressure instead.
+            # this machine has no flood"), and air is the one input
+            # that silently prevents the machine leaving E-STOP --
+            # air.permit = estop-released AND air-ok-debounced.
+            # RAW is shown, not debounced: the operator is looking at
+            # this while poking the switch, and a 0.5 s on-delay makes
+            # a good tap look like nothing happened.
             # MPG ZERO GESTURE: double-tap + hold + 100 detents on the wheel
             # (ned_pendant.zero-axis-out). Zeroes whatever axis the wheel has
             # selected -- replaces the jog-speed slider the operator never used.
@@ -649,6 +658,7 @@ class UserTab(QWidget):
         QTimer.singleShot(1700, self._start_homing_gate)
         QTimer.singleShot(1800, self._build_rack_table)
         QTimer.singleShot(1900, self._build_rotary_probe_tab)
+        QTimer.singleShot(2100, self._wire_air_button)
         QTimer.singleShot(2000, self._init_tool_safety)
         # -xyzab only (self-checks the env and returns immediately otherwise).
         QTimer.singleShot(4000, self.xyzab_launch_start)
@@ -6734,6 +6744,31 @@ class UserTab(QWidget):
         if not self._motion_lock_on():
             self._tool_nag_at = 0.0
             return
+        # SAY IT ONCE WHEN IT CANNOT BE ACTED ON. The nag exists because a
+        # toast that self-dismisses after 1 s is not a message -- but that
+        # argument only holds while the operator can DO something. In E-STOP
+        # there is no acting on it: the record is restored automatically once
+        # homing lands, and homing needs the machine on. Repeating every 10 s
+        # then is noise on top of whatever is actually blocking them, and it
+        # buries the real fault (operator 2026-08-11, stuck on an air switch:
+        # "if air is the problem that error about the spindle shouldn't keep
+        # looping ... its annoying as shit"). One line, then quiet until the
+        # machine is live again.
+        try:
+            import linuxcnc as _lc
+            _st = _lc.stat(); _st.poll()
+            _live = (_st.task_state == _lc.STATE_ON)
+        except Exception:
+            _live = True                  # unreadable: keep the old behaviour
+        if not _live:
+            if getattr(self, '_tool_nag_dead', False):
+                return
+            self._tool_nag_dead = True
+            LOG.error('%s: %s (machine is not ON -- saying this once; it '
+                      'clears itself when homing lands)',
+                      self.TOOL_ALARM_MSG, self._tool_fault_detail())
+            return
+        self._tool_nag_dead = False
         if _t.time() < getattr(self, '_tool_nag_at', 0.0):
             return
         self._tool_nag_at = _t.time() + 10.0
@@ -7491,6 +7526,88 @@ class UserTab(QWidget):
         LOG.error('MPG ZERO: %s set to 0 (G10 L20 P0 %s0) from the wheel',
                   ax, ax)
         self._hand_back_manual(c, 'MPG ZERO %s' % ax)
+
+    AIR_GOOD = ('background: rgb(40,150,60); color: white; '
+                'font: 12pt "Probe Basic Bebas Mono";')
+    AIR_BAD = ('background: rgb(190,45,35); color: white; '
+               'font: 12pt "Probe Basic Bebas Mono";')
+
+    def _wire_air_button(self):
+        """FLOOD -> AIR PRESSURE indicator (operator 2026-08-11: "make the
+        flood button an indicator for air pressure instead. this machine has
+        no flood").
+
+        mist_button lives in OUR config -- user_buttons/template_user_buttons
+        -- not in probe_basic.ui, so this touches nothing core. The operator
+        wants MIST replaced outright ("repale MIST button with an indicator.
+        so i can see if air is fine"): this machine has neither mist nor
+        flood, and air is the input that silently stops it leaving E-STOP.
+
+        NO NEW HAL PIN. ned-tab.air-ok-in already exists and is already netted
+        to sig-air-pressure-ok, the RAW switch. Adding a second pin for this
+        is what broke the previous attempt: a duplicate addPin aborts the
+        WHOLE component, every ned-tab pin disappears, and postgui then dies
+        on the first net that names one. Raw is also the right signal here --
+        the operator is watching this while adjusting the regulator, and the
+        0.5 s debounce on-delay would make a good adjustment look like
+        nothing happened.
+
+        Air matters more than any coolant button ever did on this machine:
+        air.permit = estop-released AND air-ok, so without it the machine
+        cannot leave E-STOP and every other symptom is downstream.
+        """
+        win = self.window()
+        b = win.findChild(QWidget, 'mist_button') if win else None
+        if b is None:
+            LOG.error('AIR BUTTON: mist_button not found -- indicator NOT '
+                      'built. Nothing else is affected.')
+            return
+        # FLOOD becomes CHIPBLOW in the same pass: the blower solenoid moves
+        # off coolant-mist onto coolant-flood in postgui, so the button that
+        # still DOES something keeps a label that matches what it does. Doing
+        # it here rather than in RELABEL keeps the pair together -- rename one
+        # without re-netting the other and the machine lies to the operator.
+        fb = win.findChild(QWidget, 'flood_button')
+        if fb is not None and hasattr(fb, 'setText'):
+            fb.setText('CHIPBLOW')
+            LOG.info('CHIPBLOW: flood_button relabelled; it drives '
+                     'sol.blow via iocontrol coolant-flood')
+        else:
+            LOG.error('CHIPBLOW: flood_button not found -- it still says '
+                      'FLOOD while driving the blower')
+        for sig in ('clicked', 'pressed', 'released', 'toggled'):
+            try:
+                getattr(b, sig).disconnect()
+            except Exception:
+                pass
+        try:
+            b.setCheckable(False)
+        except Exception:
+            pass
+        self._air_btn = b
+        self._air_shown = None
+        self._air_paint()
+        # repainted on a timer, not only on the pin edge: qtpyvcp restyles its
+        # own widgets on state changes and stomps the stylesheet, the same
+        # reason the MPG row highlight is reapplied rather than set once.
+        self._air_timer = QTimer(self)
+        self._air_timer.timeout.connect(self._air_paint)
+        self._air_timer.start(300)
+        LOG.info('AIR BUTTON: FLOOD is now the air-pressure indicator '
+                 '(reads ned-tab.air-ok-in = the raw switch)')
+
+    def _air_paint(self):
+        b = getattr(self, '_air_btn', None)
+        if b is None:
+            return
+        ok = bool(getattr(self, '_air', False))
+        want = ('AIR OK', self.AIR_GOOD) if ok else ('NO AIR', self.AIR_BAD)
+        if want == getattr(self, '_air_shown', None):
+            return
+        self._air_shown = want
+        b.setText(want[0])
+        b.setStyleSheet(want[1])
+        LOG.info('AIR: switch %s -> button reads %s', ok, want[0])
 
     def _on_head_busy(self, val):
         # One flag, one publisher (the brain). The homing menu polls
