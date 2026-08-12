@@ -142,6 +142,14 @@ h.newpin('ref-c-in', hal.HAL_BIT, hal.HAL_IN)
 # them something. The stop is HAL's job; the sentence is this loop's.
 h.newpin('vfd-fault-in', hal.HAL_BIT, hal.HAL_IN)
 h.newpin('overtemp-in', hal.HAL_BIT, hal.HAL_IN)
+# SPINDLE COMMANDED vs SPINDLE ACTUALLY RUNNING (operator 2026-08-12:
+# "that should be an error if the program commands the spindle spinning, but
+# gets no positive confirmation from mollom"). spin-cmd-in is what we SEND
+# (the permit that drives SPIN-CW/CCW and the 0-10 V), spin-run-in is the
+# VFD's own running contact coming back on 7I97 IN11 via R1. Comparing the
+# two is the only way to notice a spindle that was told to run and did not.
+h.newpin('spin-cmd-in', hal.HAL_BIT, hal.HAL_IN)
+h.newpin('spin-run-in', hal.HAL_BIT, hal.HAL_IN)
 # THE HOMING STATE MACHINE ITSELF. homing.c exports joint.N.home-state (s32)
 # and names the enum at homing.c:76-100: HOME_IDLE = 0 ... HOME_FINAL_MOVE_
 # START = 20, which is the state where homing.c:1279 does
@@ -1287,6 +1295,54 @@ class Brain(object):
             log('TELEOP re-enter failed: {}'.format(e))
 
     # ---- main tick (0.25 s) --------------------------------------------------
+    SPIN_CONFIRM_S = 3.0     # VFD accel + relay: generous, still catches a no-start
+
+    def _spindle_confirm(self, now):
+        """Abort if the spindle is commanded and the VFD never confirms.
+
+        WHY THIS IS NOT PARANOIA: on 2026-08-12 four rotary_face runs put a
+        cutter into a cut with the spindle stopped and nothing said a word --
+        the Mollom had no error because it had never been asked to run. A
+        feed into stationary flutes is how tools and workpieces get destroyed
+        quietly.
+
+        THE STOP IS AN ABORT, NOT A MESSAGE. A toast the operator reads
+        afterwards is not a guard. abort() drops the interpreter and the
+        queue, which is exactly what should happen when the cutter is dead.
+        """
+        try:
+            cmd = bool(h['spin-cmd-in'])
+            run = bool(h['spin-run-in'])
+        except Exception:
+            return
+        if not cmd:
+            self._spin_since = None
+            self._spin_faulted = False
+            return
+        if run:
+            self._spin_since = None
+            self._spin_faulted = False
+            return
+        if getattr(self, '_spin_since', None) is None:
+            self._spin_since = now
+            return
+        if self._spin_faulted or now - self._spin_since < self.SPIN_CONFIRM_S:
+            return
+        self._spin_faulted = True
+        text = ('SPINDLE NOT RUNNING -- commanded on %.1f s ago and the VFD '
+                'running contact on 7I97 IN11 never came back. Program '
+                'ABORTED before feeding into a stopped cutter. Check the '
+                'Mollom keypad and R1.' % (now - self._spin_since))
+        log(text)
+        try:
+            self.cmd.error_msg(text)
+        except Exception:
+            pass
+        try:
+            self.cmd.abort()
+        except Exception:
+            log('SPINDLE NOT RUNNING: abort() FAILED -- stop the machine by hand')
+
     def _fault_say(self, pin, flag, text):
         """Post `text` once per rising edge of `pin`. Reading our own netted
         pin costs nothing; hal.get_value() would spin the global HAL mutex,
@@ -1315,6 +1371,7 @@ class Brain(object):
         # RISING EDGE ONLY. Both pins sit asserted for as long as the fault
         # lasts, and a message every tick would bury the machine log and the
         # notification area under the same line a hundred times a second.
+        self._spindle_confirm(now)
         self._fault_say('vfd-fault-in', 'vfd_said',
                         'SPINDLE VFD FAULT -- machine stopped. The Mollom has '
                         'tripped and is reporting a fault on 7I97 IN13. Clear '
@@ -1613,7 +1670,24 @@ class Brain(object):
         # be in MDI mode' (2026-07-31 23:44).
         interp_busy = (s.interp_state != linuxcnc.INTERP_IDLE)
         try:
-            done = (not interp_busy) and bool(s.inpos) and s.current_vel < 1e-6
+            # THE MOTION QUEUE IS THE TERM THAT WAS MISSING (2026-08-12).
+            # interp_state goes IDLE as soon as the interpreter has READ the
+            # file -- for a short program that is a fraction of a second --
+            # while the trajectory planner is still executing everything it
+            # queued. inpos + current_vel~0 are then TRUE at every pause
+            # between blocks, so `done` went TRUE 18 s into a 5-minute
+            # rotary_face cycle, this flip stole MANUAL, and the mode switch
+            # ABORTED the rest of the program. Every PRINT had already been
+            # emitted, including ROTARY FACE DONE, so the log looked like a
+            # clean run while motion had executed only the opening rapids --
+            # the M3 was still in the queue and was thrown away with it, so
+            # the spindle never started and the VFD was never commanded.
+            # Four runs died at 18 s, 16 s, 7 s and 7 s.
+            # s.queue is the planner's queue depth and s.motion_type is 0
+            # only when nothing is executing; together they say "the machine
+            # has finished", which is what this flip actually needs.
+            done = ((not interp_busy) and s.queue == 0 and s.motion_type == 0
+                    and bool(s.inpos) and s.current_vel < 1e-6)
         except Exception:
             done = not interp_busy
         now = time.time()

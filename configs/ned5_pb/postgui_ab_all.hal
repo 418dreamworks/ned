@@ -102,6 +102,15 @@ net sig-sen-force     <=  brain.sen-force
 # thing standing between a hot spindle and a stop.
 net sig-vfd-fault        => brain.vfd-fault-in
 net sig-spindle-overtemp => brain.overtemp-in
+
+# SPINDLE COMMANDED vs SPINDLE RUNNING. sig-spindle-vel-enable is the permit
+# that drives SPIN-CW/SPIN-CCW and the 0-10 V, i.e. what we SEND the drive;
+# sig-spindle-running is the VFD's own running contact returning on 7I97 IN11
+# through R1 (ned5_iron.hal:628). The brain aborts the program if the first
+# is asserted and the second never follows -- 2026-08-12, four cycles fed a
+# cutter that was never switched on.
+net sig-spindle-vel-enable => brain.spin-cmd-in
+net sig-spindle-running    => brain.spin-run-in
 net sig-pso-enable    brain.pso-enable  =>  hm2_7i97.0.pktuart.0.enable
 net sig-pso-reset     brain.pso-reset   =>  hm2_7i97.0.pktuart.0.reset
 net sig-r4-select     brain.r4-select   =>  hm2_7i97.0.7i84.0.0.output-05
