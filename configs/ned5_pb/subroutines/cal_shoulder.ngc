@@ -104,8 +104,20 @@ o<cal_shoulder> sub
   o<probe_spindle_nose> call
   M65 P3
 
-  (PRINT, SHOULDER DONE: spindle zero height #3010 mm. PB now has the setter position, the plunge limit and the shoulder - ready for tool length probing.)
-  (DEBUG, SHOULDER DONE: #3010 mm - PB ready)
+  (--- 5. park 10 mm over the probe, centred ----------------------------)
+  (Operator 2026-08-11: "after hitting probe, it goes back to 10mm above)
+  (probe and centers. user jogs up to probe height and hits the SET probe)
+  (height". The next step in the chain is a JOG, so where this one stops is)
+  (where that one starts from -- leaving the head at X-20 off centre and)
+  (wherever the probe happened to trigger would make the operator set up the)
+  (shot before taking it. Z first, then XY: the nose has just been sitting)
+  (on the setter, so lift before moving laterally.)
+  G90
+  G1 Z[#<top> + 10.0] F[#<f_tr>]
+  G1 X#<cx> Y#<cy> F[#<f_tr>]
+  (PRINT, NOSE DONE: spindle zero height #3010 mm. PB now has the setter position, the plunge limit and the nose - ready for tool length probing.)
+  (PRINT, NEXT: parked 10 mm over the probe, centred. Put a tool in by hand, jog UP to the height every probe should start from, then press SET PROBE HEIGHT.)
+  (DEBUG, NOSE DONE: #3010 mm - jog up, then SET PROBE HEIGHT)
 
 o<cal_shoulder> endsub
 

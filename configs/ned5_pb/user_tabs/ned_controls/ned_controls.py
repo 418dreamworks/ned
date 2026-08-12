@@ -904,6 +904,19 @@ class UserTab(QWidget):
             shint = QLabel('Last step. Take the tool out by hand first.')
             shint.setStyleSheet('color: #C8CFCC; font: 10pt;')
             b3l.addWidget(shint)
+            # LIVE INSTRUCTION, above the four buttons (operator
+            # 2026-08-11: "should update instructions as each step
+            # passes"). It is derived from the MACHINE STATE, not from
+            # which button was last clicked: the chain spans jogging,
+            # a tool change by hand and possibly a restart, and a
+            # remembered click index would be wrong after any of them.
+            # Read the numbers, say what is still missing.
+            self._cal_next = QLabel('')
+            self._cal_next.setWordWrap(True)
+            self._cal_next.setStyleSheet(
+                'color: rgb(255,205,60); font: 11pt "Probe Basic Bebas'
+                ' Mono"; padding: 4px;')
+            b3l.addWidget(self._cal_next)
             b3l.addWidget(_mkbtn('shoulder', 'FIND NOSE', 'measure'))
             # the rest of the reset, top to bottom in the order they
             # are pressed -- the sequence IS the instruction
@@ -1475,6 +1488,12 @@ class UserTab(QWidget):
             if not fields:
                 return
             mt = os.path.getmtime(self.VAR_FILE)
+            # The chain instruction is re-evaluated on EVERY tick, not only
+            # when the var file changes: one of its inputs is the tool
+            # lengths, which live in the tool DB and never touch this file.
+            # Gating it on mtime would leave "press MEASURE ALL TOOLS" on
+            # screen for the whole cycle and long after it finished.
+            self._cal_chain_tick()
             if getattr(self, '_cal_var_mtime', None) == mt:
                 return
             self._cal_var_mtime = mt
@@ -1485,8 +1504,13 @@ class UserTab(QWidget):
                     if len(p) == 2 and p[0].isdigit() and (
                             3040 <= int(p[0]) <= 3078
                             or int(p[0]) == 3010
+                            or int(p[0]) == 3007
+                            or 4001 <= int(p[0]) <= 4024
                             or 5181 <= int(p[0]) <= 5183):
                         vals[p[0]] = float(p[1])
+            # kept for the chain instruction: 3007/3010/5183 say how far the
+            # calibration got, 4001-4024 say which tools the rack holds
+            self._cal_var_cache = vals
             seen = getattr(self, '_cal_last', None)
             if seen is None:
                 seen = self._cal_last = {}
@@ -1821,6 +1845,67 @@ class UserTab(QWidget):
     }
 
     CAL_EXTRA = {'cleft': -1, 'cright': 1}
+
+    CAL_CHAIN_STEPS = (
+        ('1/4  REMOVE THE TOOL BY HAND, then press FIND NOSE. It probes the '
+         'nose face and parks 10 mm over the probe.'),
+        ('2/4  Put a tool in, jog UP to the height every probe should start '
+         'from, then press SET PROBE HEIGHT. It records G30 and the plunge; '
+         'it moves nothing.'),
+        ('3/4  Press STORE RESULTS. This CLEARS every tool length in the '
+         'rack -- they were measured against the old probe position.'),
+        ('4/4  Spindle EMPTY, all tools in the rack, then press MEASURE ALL '
+         'TOOLS. It fetches and touches off each one in turn.'),
+        ('DONE  every rack tool has a length again. Nothing further to press.'),
+    )
+
+    def _cal_chain_step(self):
+        """Which step of the probing reset is outstanding, from live state.
+
+        Ordered by dependency, and each test is the same one the matching
+        subroutine refuses on -- so the instruction can never tell the
+        operator to press something that is about to be rejected.
+        """
+        v = getattr(self, '_cal_var_cache', None) or {}
+        if not v:
+            return 0
+        if not v.get('3010'):
+            return 0                       # no nose height yet
+        if not v.get('5183') or (v.get('3007') or 0) <= 0:
+            return 1                       # no probe height / no plunge
+        try:
+            import linuxcnc
+            st = linuxcnc.stat(); st.poll()
+            racked = set()
+            for f in range(1, self.RACK_TABLE_FORKS + 1):
+                t = int(v.get(str(4000 + f)) or 0)
+                if t > 0:
+                    racked.add(t)
+            if not racked:
+                return 3
+            zs = {e.id: e.zoffset for e in st.tool_table if e.id > 0}
+            unmeasured = [t for t in racked if abs(zs.get(t, 0.0)) < 1e-9]
+            if len(unmeasured) == len(racked):
+                return 3                   # all zeroed: ready to measure
+            if unmeasured:
+                return 3                   # part way through a measure-all
+        except Exception:
+            return 2
+        return 2                           # lengths still present: not stored
+
+    def _cal_chain_tick(self):
+        lab = getattr(self, '_cal_next', None)
+        if lab is None:
+            return
+        try:
+            i = self._cal_chain_step()
+        except Exception:
+            return
+        txt = self.CAL_CHAIN_STEPS[min(i, len(self.CAL_CHAIN_STEPS) - 1)]
+        if txt != getattr(self, '_cal_next_txt', None):
+            self._cal_next_txt = txt
+            lab.setText(txt)
+            LOG.info('CAL CHAIN: %s', txt)
 
     def _cal_gate(self, label):
         """Shared refusal gate for every calibration cycle. Returns the
