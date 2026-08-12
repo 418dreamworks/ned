@@ -19,12 +19,18 @@
 (  chip load              fz = v / [S * N]           N = flutes)
 (  =>  S = wB * pi * r / [3 * fz * N])
 
-(B RUNS FLAT OUT and the SPINDLE is solved to match, because B is what sets)
-(the cycle time. If the answer lands above the spindle ceiling the spindle)
-(caps and B slows to keep the chip load. If it lands BELOW the spindle floor)
-(the machine cannot cut that heavy at all -- B is already maxed -- so the)
-(cycle aborts and reports the largest chip load it could actually deliver)
-(rather than quietly cutting something lighter than was asked for.)
+(ONE SPINDLE SPEED FOR THE WHOLE CYCLE, B DOES THE VARYING. Operator)
+(2026-08-12: "make B end at 8rpm on the final pass, so that it never goes)
+(beyond that limit". Surface speed is w times r, so holding the chip load)
+(with a fixed spindle means B must RISE as the stock thins. Size the spindle)
+(off the SMALLEST uncut radius the cycle will ever see and B arrives at its)
+(ceiling exactly on the last pass and is below it everywhere before that.)
+(The spindle then never changes mid-cut, which is the sane way round: a)
+(re-solved S every pass had the drive chasing a new speed while engaged.)
+(If the answer lands above the drive ceiling the spindle caps and B simply)
+(runs slower still. If it lands BELOW the drive floor the machine cannot cut)
+(that heavy at all, so the cycle aborts and reports the largest chip load it)
+(could actually deliver rather than quietly cutting something lighter.)
 
 (THE TOOL COMPENSATION IS IN Y. The tool bottom is a disc: sweeping its)
 (CENTRE from 0 to LENGTH machines -R to LENGTH+R. To finish exactly between)
@@ -46,6 +52,12 @@ o<rotary_face> sub
   #<rf_smin>   = #9 (=1000 spindle floor rpm - SPINDLE_0 MIN_FORWARD_VELOCITY)
   #<rf_smax>   = #10 (=18000 spindle ceiling rpm - SPINDLE_0 MAX_FORWARD_VELOCITY)
   #<rf_step>   = #11 (=0.5 Y advance per B turn as a fraction of tool diameter)
+  (SPINDLE OVERRIDE. 0 means use the rpm solved from the chip load. Any)
+  (other value runs the spindle THERE and leaves B, the Y feed and the)
+  (depths exactly as solved -- so the chip load the tool actually sees is)
+  (no longer the one that was asked for. That is the point of an override)
+  (and it is the operator's call, but the page states the real chip load.)
+  #<rf_srpm>   = #12 (=0 spindle override rpm - 0 uses the calculated one)
   #<pi> = 3.14159265
   o1 if [#<rf_flutes> LE 0]
     #<rf_flutes> = 2
@@ -80,6 +92,12 @@ o<rotary_face> sub
   o19 if [#<rf_chip> LE 0]
     (abort, ROTARY FACE: chip load is required - it is the only cutting number)
   o19 endif
+  o25 if [#<rf_srpm> GT 0 AND #<rf_srpm> LT #<rf_smin>]
+    (abort, ROTARY FACE: spindle override #<rf_srpm> is below the drive floor #<rf_smin>)
+  o25 endif
+  o26 if [#<rf_srpm> GT #<rf_smax>]
+    (abort, ROTARY FACE: spindle override #<rf_srpm> is above the drive ceiling #<rf_smax>)
+  o26 endif
 
   (IN THE RIGHT FRAME FIRST. X0 and Y0 in G54 are somewhere else entirely, so)
   (the position checks below mean nothing without this one. 1 is G54, 2 G55.)
@@ -137,6 +155,30 @@ o<rotary_face> sub
   (into the wall the one before it left.)
   #<pitch> = [#<tdia> * #<rf_step>]
   #<zsafe> = [#<rstart> + 10.0]
+
+  (THE SMALLEST UNCUT RADIUS THE CYCLE WILL SEE. Passes step down by doc)
+  (from rstart until rend, so the last pass starts at rstart minus doc times)
+  (one less than the pass count. FIX truncates, hence the remainder test.)
+  #<npass> = FIX[[#<rstart> - #<rend>] / #<doc>]
+  o40 if [[#<rstart> - #<rend>] - [#<npass> * #<doc>] GT 0.0001]
+    #<npass> = [#<npass> + 1]
+  o40 endif
+  o41 if [#<npass> LT 1]
+    #<npass> = 1
+  o41 endif
+  #<routmin> = [#<rstart> - [[#<npass> - 1] * #<doc>]]
+  #<sp> = [#<rf_bmax> * #<pi> * #<routmin> / [3.0 * #<rf_chip> * #<rf_flutes>]]
+  o42 if [#<sp> GT #<rf_smax>]
+    #<sp> = #<rf_smax>
+  o42 endif
+  o43 if [#<sp> LT #<rf_smin>]
+    #<fzmax> = [#<rf_bmax> * #<pi> * #<routmin> / [3.0 * #<rf_smin> * #<rf_flutes>]]
+    (abort, ROTARY FACE: that chip load needs #<sp> rpm and the spindle floor is #<rf_smin>. The most this machine can cut at the final diameter is #<fzmax> mm per tooth)
+  o43 endif
+  #<sout> = #<sp>
+  o44 if [#<rf_srpm> GT 0]
+    #<sout> = #<rf_srpm>
+  o44 endif
   #<len>   = [#<yb> - #<ya>]
   #<revs>  = [#<len> / #<pitch>]
   (ONE STEP PER 10 DEG OF B: fine enough not to facet the helix, coarse)
@@ -146,6 +188,7 @@ o<rotary_face> sub
   #<db>    = [#<revs> * 360.0 / #<steps>]
   (PRINT, ROTARY FACE: T#<rf_tool> dia #<tdia> with #<rf_flutes> flutes, chip load #<rf_chip> mm per tooth)
   (PRINT, ROTARY FACE: radial depth #<doc> mm per pass, Y advance #<pitch> mm per turn, tool centre #<ya> to #<yb>)
+  (PRINT, ROTARY FACE: #<npass> passes, spindle #<sout> rpm held all cycle, B reaches its ceiling only on the last pass)
 
   G90
   G0 X0 Y0
@@ -155,7 +198,7 @@ o<rotary_face> sub
   (DOWN TO 1 MM OVER THE PROMISED CROWN IN RAPID, ONCE. Every dive after this)
   (is a G1 of exactly the radial depth, because the tool never comes back up.)
   G0 Z[#<rstart> + 1.0]
-  M3 S#<rf_smin>
+  M3 S#<sout>
 
   (ZIG-ZAG, NO RETURN TRIP. Operator 2026-08-12: dive, spiral 0 to Yend,)
   (dive, spiral back. The tool stays down and stays engaged; lifting and)
@@ -178,21 +221,19 @@ o<rotary_face> sub
     #<pass> = [#<pass> + 1]
     #<dnow> = [#<r> * 2.0]
 
-    (SOLVE THIS PASS AT THE UNCUT RADIUS.)
-    #<wb> = #<rf_bmax>
-    #<sp> = [#<wb> * #<pi> * #<rout> / [3.0 * #<rf_chip> * #<rf_flutes>]]
-    o30 if [#<sp> GT #<rf_smax>]
-      #<sp> = #<rf_smax>
-      #<wb> = [3.0 * #<rf_chip> * #<sp> * #<rf_flutes> / [#<pi> * #<rout>]]
+    (SOLVE B AT THE UNCUT RADIUS. The spindle is fixed, so this is the only)
+    (free variable left, and it is largest at the smallest radius -- which is)
+    (why routmin above sized the spindle.)
+    #<wb> = [3.0 * #<rf_chip> * #<sp> * #<rf_flutes> / [#<pi> * #<rout>]]
+    o30 if [#<wb> GT #<rf_bmax>]
+      #<wb> = #<rf_bmax>
     o30 endif
-    o31 if [#<sp> LT #<rf_smin>]
-      #<fzmax> = [#<rf_bmax> * #<pi> * #<rout> / [3.0 * #<rf_smin> * #<rf_flutes>]]
-      (abort, ROTARY FACE: that chip load needs #<sp> rpm and the spindle floor is #<rf_smin>. At this diameter the most this machine can cut is #<fzmax> mm per tooth)
-    o31 endif
     #<feed> = [#<pitch> * #<wb> / 6.0]
+    #<brpm> = [#<wb> / 6.0]
+    #<fzreal> = [#<wb> * #<pi> * #<rout> / [3.0 * #<sout> * #<rf_flutes>]]
 
-    (PRINT, ROTARY FACE: pass #<pass> to diameter #<dnow> - Z #<r>, S #<sp>, B #<wb> deg per sec, F #<feed>)
-    S#<sp>
+    (PRINT, ROTARY FACE: pass #<pass> to diameter #<dnow> - Z #<r>, B #<brpm> rpm, F #<feed>, chip load #<fzreal>)
+    S#<sout>
     G1 Z[#<r>] F[#<feed>]
     #<i>  = 0
     #<yy> = #<ycur>

@@ -6366,6 +6366,13 @@ QTabBar::tab:only-one {
         ('rf_dend',   'D END (mm)',   '32.0'),
         ('rf_len',    'LENGTH (mm)',  '100.0'),
         ('rf_chip',   'CHIP LOAD (mm/tooth)', '0.30'),
+        # PRE-FILLED WITH THE SOLVED RPM UNTIL THE OPERATOR TYPES IN IT. An
+        # override box that starts empty makes them copy a number off the
+        # screen beside it; one that keeps overwriting itself after they type
+        # is worse. textEdited fires ONLY on a human keystroke -- setText
+        # does not raise it -- so it is the exact signal for "this field now
+        # belongs to the operator".
+        ('rf_srpm',   'SPINDLE (rpm)', '0'),
     )
     ROTARY_FACE_TOOL = (
         ('rf_flutes', 'FLUTES',        '2'),
@@ -6373,12 +6380,19 @@ QTabBar::tab:only-one {
         ('rf_tdia',   'DIAMETER (mm)', '0'),
     )
     # read-only, recomputed on every change -- these are OUTPUTS
+    # ROTATION IN RPM, FEEDS IN mm/s (operator 2026-08-12: "use RPM for
+    # rotation, its just more sensible" ... "i want mm/sec for all feeds").
+    # DISPLAY ONLY -- g-code F words stay mm/min because that is what
+    # LinuxCNC's interpreter takes, and changing that would change what the
+    # machine does rather than what the page says.
     ROTARY_FACE_CALC = (
         ('rf_c_doc',   'RADIAL DOC (mm)'),
-        ('rf_c_rpm',   'SPINDLE (rpm)'),
-        ('rf_c_b',     'B SPEED (deg/s)'),
-        ('rf_c_feed',  'Y FEED (mm/min)'),
+        ('rf_c_rpm',   'SPINDLE SOLVED (rpm)'),
+        ('rf_c_b',     'B SPEED (rpm)'),
+        ('rf_c_surf',  'STOCK SURFACE (mm/s)'),
+        ('rf_c_feed',  'Y FEED (mm/s)'),
         ('rf_c_pitch', 'Y PER TURN (mm)'),
+        ('rf_c_fz',    'ACTUAL CHIP LOAD'),
         ('rf_c_pass',  'PASSES'),
         ('rf_c_time',  'CUT TIME (min)'),
     )
@@ -6403,11 +6417,13 @@ QTabBar::tab:only-one {
         f = getattr(self, '_rf_fields', None)
         if not f:
             return
-        # NEVER REWRITE A FIELD UNDER THE OPERATOR'S CURSOR: the poll runs
-        # every 2 s and would otherwise fight a half-typed tool number.
-        if any(f[k].hasFocus() for k in f if not f[k].isReadOnly()):
-            self._rf_recalc()
-            return
+        # NO FOCUS GUARD. There was one here and it WAS the bug: it skipped
+        # the lookup whenever a writable field held focus, which is precisely
+        # the moment the operator finishes typing a tool number, so T9 never
+        # pulled its row until something else stole focus. The guard was
+        # pointless as well as harmful -- this function writes ONLY the three
+        # read-only fields below, never anything the operator can type in, so
+        # there is no cursor to fight.
         try:
             tno = int(float(f['rf_tool'].text().strip() or 0))
         except Exception:
@@ -6474,8 +6490,16 @@ QTabBar::tab:only-one {
             return
         trad = tdia / 2.0
         doc = min(trad, 6.35)
+        # FLUTE DOC 0 MEANS UNKNOWN, NOT ZERO. A tool whose row has never
+        # been filled in cannot cap the depth, so the cap silently falls
+        # back to half the diameter or 6.35 -- which is only safe if the
+        # flutes happen to be that long. Say so on the page instead of
+        # letting a blank column read as "no limit needed".
         if 0 < fdep < doc:
             doc = fdep
+        elif fdep <= 0:
+            note = ('FLUTE DOC is not set for this tool -- depth is capped '
+                    'by the tool diameter only, not by the flute length.')
         pitch = trad
         ya, yb = trad, length - trad
         if yb <= ya:
@@ -6484,41 +6508,79 @@ QTabBar::tab:only-one {
             self._rf_note.setText('LENGTH is shorter than the tool')
             return
         r, rend = dstart / 2.0, dend / 2.0
-        npass, tmin, rpm_lo, rpm_hi, b_lo, b_hi, feed = 0, 0.0, None, None, None, None, 0.0
-        while r > rend:
-            rout = r
-            r = max(r - doc, rend)
+        # SAME SCHEDULE THE .NGC WALKS: step down by doc until rend, so the
+        # last pass starts at rstart - (npass-1)*doc. That smallest UNCUT
+        # radius sizes the spindle, because B is fastest there and must not
+        # exceed its ceiling anywhere.
+        span = r - rend
+        npass = int(span / doc)
+        if span - npass * doc > 1e-4:
             npass += 1
-            wb = self.RF_BMAX
-            sp = wb * math.pi * rout / (3.0 * fz * N)
-            if sp > self.RF_SMAX:
-                sp = self.RF_SMAX
-                wb = 3.0 * fz * sp * N / (math.pi * rout)
-            if sp < self.RF_SMIN:
-                fzmax = self.RF_BMAX * math.pi * rout / (3.0 * self.RF_SMIN * N)
-                for k, v in blank.items():
-                    o[k].setText(v)
-                self._rf_note.setText(
-                    'REFUSED at D %.2f: needs %.0f rpm, floor is %.0f. '
-                    'Max chip load here is %.3f mm/tooth.'
-                    % (rout * 2, sp, self.RF_SMIN, fzmax))
-                return
-            feed = pitch * wb / 6.0
+        npass = max(npass, 1)
+        routmin = r - (npass - 1) * doc
+        sp = self.RF_BMAX * math.pi * routmin / (3.0 * fz * N)
+        if sp > self.RF_SMAX:
+            sp = self.RF_SMAX
+        if sp < self.RF_SMIN:
+            fzmax = self.RF_BMAX * math.pi * routmin / (3.0 * self.RF_SMIN * N)
+            for k, v in blank.items():
+                o[k].setText(v)
+            self._rf_note.setStyleSheet('color: rgb(238,120,120); font: 10pt;')
+            self._rf_note.setText(
+                'REFUSED: needs %.0f rpm at the final diameter and the floor '
+                'is %.0f. Max chip load there is %.3f mm/tooth.'
+                % (sp, self.RF_SMIN, fzmax))
+            return
+        ovr = num('rf_srpm')
+        sout = ovr if ovr > 0 else sp
+        if ovr > 0 and not (self.RF_SMIN <= ovr <= self.RF_SMAX):
+            note = ('SPINDLE %.0f is outside the drive range %.0f - %.0f rpm.'
+                    % (ovr, self.RF_SMIN, self.RF_SMAX))
+        b_lo = b_hi = feed_lo = feed_hi = None
+        surf_lo = surf_hi = fz_lo = fz_hi = None
+        tmin = 0.0
+        rr = r
+        for _ in range(npass):
+            rout = rr
+            rr = max(rr - doc, rend)
+            wb = min(3.0 * fz * sp * N / (math.pi * rout), self.RF_BMAX)
+            feed = pitch * wb / 6.0                # mm/min, as the .ngc uses
+            surf = wb * math.pi * rout / 3.0       # mm/min
+            fzr = surf / (sout * N)
             tmin += (yb - ya) / feed
-            rpm_lo = sp if rpm_lo is None else min(rpm_lo, sp)
-            rpm_hi = sp if rpm_hi is None else max(rpm_hi, sp)
             b_lo = wb if b_lo is None else min(b_lo, wb)
             b_hi = wb if b_hi is None else max(b_hi, wb)
+            feed_lo = feed if feed_lo is None else min(feed_lo, feed)
+            feed_hi = feed if feed_hi is None else max(feed_hi, feed)
+            surf_lo = surf if surf_lo is None else min(surf_lo, surf)
+            surf_hi = surf if surf_hi is None else max(surf_hi, surf)
+            fz_lo = fzr if fz_lo is None else min(fz_lo, fzr)
+            fz_hi = fzr if fz_hi is None else max(fz_hi, fzr)
 
-        def rng(lo, hi, fmt):
-            return (fmt % lo) if abs(hi - lo) < 5e-3 else ((fmt + ' - ' + fmt) % (hi, lo))
+        def rng(lo, hi, fmt, scale=1.0):
+            lo, hi = lo * scale, hi * scale
+            return (fmt % lo) if abs(hi - lo) < 5e-3 else (
+                (fmt + ' - ' + fmt) % (lo, hi))
         o['rf_c_doc'].setText('%.3f' % doc)
-        o['rf_c_rpm'].setText(rng(rpm_lo, rpm_hi, '%.0f'))
-        o['rf_c_b'].setText(rng(b_lo, b_hi, '%.2f'))
-        o['rf_c_feed'].setText('%.2f' % feed)
+        o['rf_c_rpm'].setText('%.0f' % sp)
+        o['rf_c_b'].setText(rng(b_lo, b_hi, '%.2f', 1.0 / 6.0))
+        o['rf_c_surf'].setText(rng(surf_lo, surf_hi, '%.2f', 1.0 / 60.0))
+        o['rf_c_feed'].setText(rng(feed_lo, feed_hi, '%.3f', 1.0 / 60.0))
         o['rf_c_pitch'].setText('%.3f' % pitch)
+        o['rf_c_fz'].setText(rng(fz_lo, fz_hi, '%.4f'))
         o['rf_c_pass'].setText('%d' % npass)
         o['rf_c_time'].setText('%.1f' % tmin)
+        rpm_hi = sp
+        if not getattr(self, '_rf_srpm_touched', False):
+            box = f['rf_srpm']
+            want = '%.0f' % rpm_hi
+            if box.text() != want:
+                box.blockSignals(True)
+                box.setText(want)
+                box.blockSignals(False)
+        self._rf_note.setStyleSheet(
+            'color: %s; font: 10pt;' % ('rgb(238,180,120)' if note else
+                                        'rgb(238,120,120)'))
         self._rf_note.setText(note)
 
     def _build_rotary_face_tab(self):
@@ -6624,6 +6686,8 @@ QTabBar::tab:only-one {
             for name, _l, _d in self.ROTARY_FACE_INPUTS:
                 self._rf_fields[name].textChanged.connect(self._rf_recalc)
             self._rf_fields['rf_tool'].textChanged.connect(self._rf_tool_lookup)
+            self._rf_fields['rf_srpm'].textEdited.connect(
+                lambda *_: setattr(self, '_rf_srpm_touched', True))
             # AND ON A POLL. textChanged only fires when the operator retypes;
             # the flute numbers live in the tool table, so editing them there
             # would otherwise leave this page showing launch-time values.
