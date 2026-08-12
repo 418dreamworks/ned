@@ -3,7 +3,7 @@
 
 (START AT G55 X0 Y0. Both are checked and the cycle refuses otherwise. That)
 (is what lets the operator give ONE positive number for the cut instead of a)
-(start and an end -- the datum is the start, and LENGTH runs +Y from it.)
+(start and an end: Y0 is the start, and LENGTH runs +Y from it.)
 
 (DIAMETER IS Z. On the centreline the tool tip contacts the crown and nothing)
 (else, so tip at Z = D/2 IS diameter D. X is never commanded.)
@@ -61,17 +61,17 @@ o<rotary_face> sub
   (IN THE RIGHT FRAME FIRST. X0 and Y0 in G54 are somewhere else entirely, so)
   (the position checks below mean nothing without this one. 1 is G54, 2 G55.)
   o15 if [#5220 NE 2]
-    (abort, ROTARY FACE: not in G55 - the rotary datum lives there, G54 is scratch)
+    (abort, ROTARY FACE: not in G55 - the rotary zero is G55 X0 Y0 Z0, G54 is scratch)
   o15 endif
   (NEAR ZERO IS FINE - IT GETS MOVED THERE. Only a long way out is an error,)
   (and that is what the check is for: the air offset is 1000 mm and G54 is)
-  (3.67 m away. Within 0.1 the operator has jogged to the datum and simply)
+  (3.67 m away. Within 0.1 the operator has jogged to G55 X0 Y0 and simply)
   (cannot land on it by hand, so snapping is the useful answer, not a refusal.)
   o16 if [ABS[#5420] GT 0.1]
-    (abort, ROTARY FACE: X is #5420 - jog to the G55 datum before starting)
+    (abort, ROTARY FACE: X is #5420 - jog to G55 X0 before starting)
   o16 endif
   o17 if [ABS[#5421] GT 0.1]
-    (abort, ROTARY FACE: Y is #5421 - jog to the G55 datum before starting)
+    (abort, ROTARY FACE: Y is #5421 - jog to G55 Y0 before starting)
   o17 endif
   (Z MUST ALREADY CLEAR THE STOCK, because the next move is LATERAL. Below)
   (D/2 the tool is inside the swept envelope and going to X0 Y0 drives it)
@@ -106,7 +106,7 @@ o<rotary_face> sub
 
   G90
   (Z is already proven clear above, so it is safe to spin up and go to the)
-  (datum in one move before anything else happens.)
+  (G55 X0 Y0 in one move before anything else happens.)
   M3 S#<rf_rpm>
   G0 X0 Y0
   G0 Z[#<zsafe>]

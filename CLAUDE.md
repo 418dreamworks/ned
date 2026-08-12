@@ -241,9 +241,19 @@
       window still reported the right size). A GUI edit without a fit
       check is not finished.
 
-24. **100 WORDS. HARD CAP (operator 2026-08-10).** Every reply to the
-    operator is 100 words or fewer. Longer than that, ASK PERMISSION first
-    and wait. This outranks any urge to explain, caveat, enumerate or show
-    work. Tables and code blocks count. If the answer will not fit, give
-    the answer and offer the detail -- do not spend the budget on preamble.
-    Repeatedly: "just talk less please. MUCH LESS".
+24. **100 WORDS. HARD CAP (operator 2026-08-10, re-stated 2026-08-12 after
+    I kept breaking it).** Every reply to the operator is 100 words or
+    fewer of PROSE. Longer than that, ASK PERMISSION first and wait.
+    TABLES AND CODE BLOCKS DO NOT COUNT (operator 2026-08-12) -- they are
+    data, and data is what was asked for. Prose is what gets capped.
+    This outranks any urge to explain, caveat, enumerate or show work.
+    If the answer will not fit, give the answer and offer the detail --
+    never spend the budget on preamble. COUNT BEFORE SENDING.
+    Repeatedly: "just talk less please. MUCH LESS", "you talk way too
+    much", "you are breaking that hard rule a lot".
+
+24a. **NO VAGUE WORDS FOR GEOMETRY (operator 2026-08-12: "what the fuck is
+    datum?").** Never name a position with a word when an expression will
+    do. Write `G55 X0 Y0`, `machine Z0`, `#5420`. Not "the datum", not
+    "the reference", not "the origin". This applies to abort messages and
+    comments in g-code as much as to replies.
