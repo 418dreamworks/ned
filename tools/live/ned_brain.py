@@ -1019,12 +1019,29 @@ class Brain(object):
             self.cmd.wait_complete()
             self.cmd.mdi('M61 Q{}'.format(want))
             self.cmd.wait_complete(4.0)
+            # TIP REFERENCE, ALWAYS (operator 2026-08-12: "no nose reference.
+            # always tip reference"). This path restores the tool NUMBER but
+            # not its LENGTH: RS274NGC_STARTUP_CODE ends ... G40 G49 G54 ...
+            # and G49 cancels length compensation, so the machine came up
+            # holding T9 with tool_offset 0. That stayed invisible for as
+            # long as the tool left in the spindle across reboots happened to
+            # have zero length -- T9 did until it was touched off on
+            # 2026-08-12 -- because 0 applied and 0 not applied are the same
+            # number. The moment it had a real 127.3058 length, every work
+            # origin taken at the tip was out by exactly that.
+            # THE MANUAL PATH ALREADY DOES THIS: spindle_declare.ngc:28
+            # issues G43 H<n>, which is why LOAD SPINDLE never showed the
+            # fault. This is the automatic path catching up with it.
+            self.cmd.mdi('G43')
+            self.cmd.wait_complete(4.0)
             self.cmd.mode(linuxcnc.MODE_MANUAL)
             self.cmd.wait_complete()
             self.stat.poll()
             log('SPINDLE RESTORE: T{} re-declared in spindle after reboot '
-                '(sensor-confirmed clamped); tool_in_spindle={}'
-                .format(want, self.stat.tool_in_spindle))
+                '(sensor-confirmed clamped); tool_in_spindle={} '
+                'tool_offset Z={:+.4f} (G43 applied - tip reference)'
+                .format(want, self.stat.tool_in_spindle,
+                        self.stat.tool_offset[2]))
         except Exception as e:
             log('SPINDLE RESTORE failed: {}'.format(e))
 
