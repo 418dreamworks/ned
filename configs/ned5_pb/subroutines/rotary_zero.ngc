@@ -1,0 +1,164 @@
+(ned ROTARY ZERO -- find the B chuck axis with a round bar and the tool at hand)
+(Operator 2026-08-11: "i will always put the same stick of aluminum in for this)
+(purpose ... start close to the top ... find zero by touching Z with the tool at)
+(hand, then go X- by diameter of tool going down by 1in and probe X+, then repeat)
+(moving X+ and probing X-. centre in X is the midpoint. the bar is 1.25in.")
+(X CENTRE IS THE MIDPOINT AND THE TOOL RADIUS CANCELS: the left touch stops with)
+(the tool flank on the bar at x_left+R, the right touch at x_right-R, so the mean)
+(of the two RAW touches is the axis regardless of what tool is in the spindle.)
+(THE X MIDPOINT IS VALID AT ANY DEPTH -- a circle is symmetric about its centre)
+(line, so the side probes do not care that they are below the crown.)
+(Z IS NOT A MIDPOINT: only the crown is reachable, so the axis is one bar RADIUS)
+(below the top touch. That makes the bar diameter the one number this routine)
+(has to be told, and a wrong one puts Z0 wrong by half the error, silently.)
+(PROBE CIRCUIT. G38 senses motion.probe-input, which on ned is the toolsetter)
+(contact: 7I84 input-28 via R10, whose coil sits between +24V and node *87 -)
+(docs/tracing/relays.md:270-278. The return is chassis ground through the)
+(spindle, so the sensed thing must be ON *87 and insulated from the frame.)
+(Operator 2026-08-11: 'the bar will be electrically identical to the)
+(toolsetter' - so the bar is on *87 and this works as written. If the bar is)
+(ever left at chassis ground instead, tool-to-bar is ground-to-ground, the)
+(coil never sees current, and the tool drives in until a limit. The o90 gate)
+(proves the circuit is OPEN before committing, which catches a shorted or)
+(already-touching lead; it cannot prove the clip is on the right metal, so)
+(the first Z touch is still the one to stand ready on.)
+o<rotary_zero> sub
+  #<bar_dia>   = #1
+  #<depth>     = #2
+  #<max_z>     = #3
+  #<max_x>     = #4
+  #<f_fast>    = #5
+  #<f_slow>    = #6
+  #<f_trav>    = #7
+  #<clear>     = #8
+  o10 if [#<bar_dia> LE 0]
+    #<bar_dia> = 31.75
+  o10 endif
+  o11 if [#<depth> LE 0]
+    #<depth> = 25.4
+  o11 endif
+  o12 if [#<max_z> LE 0]
+    #<max_z> = 40.0
+  o12 endif
+  o13 if [#<max_x> LE 0]
+    #<max_x> = 40.0
+  o13 endif
+  o14 if [#<f_fast> LE 0]
+    #<f_fast> = 100.0
+  o14 endif
+  o15 if [#<f_slow> LE 0]
+    #<f_slow> = 10.0
+  o15 endif
+  o16 if [#<f_trav> LE 0]
+    #<f_trav> = 500.0
+  o16 endif
+  o17 if [#<clear> LE 0]
+    #<clear> = 3.0
+  o17 endif
+  #<r_bar> = [#<bar_dia> / 2.0]
+  (the tool must be a known one: the X clearance moves are its own diameter)
+  o20 if [#5400 LE 0]
+    (abort, ROTARY ZERO: no tool in the spindle - it is the probe here)
+  o20 endif
+  #<t_dia> = #5410
+  o21 if [#<t_dia> LE 0]
+    (abort, ROTARY ZERO: tool #5400 has no diameter in the table)
+  o21 endif
+  (the probe depth must actually be ON the bar, or the side probes miss it)
+  o22 if [#<depth> GE #<bar_dia>]
+    (abort, ROTARY ZERO: probe depth is at or below the bottom of the bar)
+  o22 endif
+  (HALF-WIDTH AT THE PROBE DEPTH, not the radius: the side probes land below the)
+  (crown, where the bar is narrower. h = sqrt of r^2 minus r-depth squared.)
+  #<h> = [SQRT[[#<r_bar> * #<r_bar>] - [[#<r_bar> - #<depth>] * [#<r_bar> - #<depth>]]]]
+  o23 if [#<h> LE 0]
+    (abort, ROTARY ZERO: probe depth gives no material to touch)
+  o23 endif
+  (CIRCUIT MUST BE OPEN BEFORE WE MOVE. A probe already made looks identical to)
+  (a probe that trips instantly, and G38.2 would return the start point as a)
+  (touch -- a silent wrong answer is worse than a refusal.)
+  M66 P2 L0
+  o90 if [#5399 LT 0]
+    (abort, ROTARY ZERO: cannot read the probe input)
+  o90 endif
+  G92.1
+  G90
+  (1. TOP OF THE BAR. Fast find, retract, slow latch -- the slow number is kept.)
+  #<z0> = #5422
+  G38.2 Z[#<z0> - #<max_z>] F[#<f_fast>]
+  o30 if [#5070 EQ 0]
+    G1 Z[#<z0>] F[#<f_trav>]
+    (abort, ROTARY ZERO: no contact on the way down - is *87 clipped to the bar?)
+  o30 endif
+  G91
+  G1 Z[#<clear>] F[#<f_trav>]
+  G38.2 Z[0.0 - [#<clear> * 2.0]] F[#<f_slow>]
+  G90
+  o31 if [#5070 EQ 0]
+    G1 Z[#<z0>] F[#<f_trav>]
+    (abort, ROTARY ZERO: slow Z latch found nothing)
+  o31 endif
+  #<z_top> = #5063
+  G1 Z[#<z_top> + #<clear>] F[#<f_trav>]
+  (2. LEFT FLANK. Step X- by a full tool diameter so the tool clears the crown on)
+  (the way down, then descend to the probe depth and come back at the bar.)
+  #<x_start> = #5420
+  G1 X[#<x_start> - #<t_dia>] F[#<f_trav>]
+  G1 Z[#<z_top> - #<depth>] F[#<f_trav>]
+  G38.2 X[#<x_start> + #<max_x>] F[#<f_fast>]
+  o40 if [#5070 EQ 0]
+    G1 Z[#<z_top> + #<clear>] F[#<f_trav>]
+    G1 X[#<x_start>] F[#<f_trav>]
+    (abort, ROTARY ZERO: left flank never touched)
+  o40 endif
+  #<xl_fast> = #5061
+  G90
+  G1 X[#<xl_fast> - #<clear>] F[#<f_trav>]
+  G38.2 X[#<xl_fast> + #<clear>] F[#<f_slow>]
+  o41 if [#5070 EQ 0]
+    G1 Z[#<z_top> + #<clear>] F[#<f_trav>]
+    (abort, ROTARY ZERO: left flank slow latch found nothing)
+  o41 endif
+  #<x_left> = #5061
+  G1 X[#<x_left> - #<clear>] F[#<f_trav>]
+  (3. RIGHT FLANK. Cross over ABOVE the bar, never through it: up to the crown)
+  (clearance, across, then back down to the same probe depth.)
+  G1 Z[#<z_top> + #<clear>] F[#<f_trav>]
+  #<x_far> = [#<x_left> + #<t_dia> + [#<h> * 2.0] + #<clear>]
+  G1 X[#<x_far>] F[#<f_trav>]
+  G1 Z[#<z_top> - #<depth>] F[#<f_trav>]
+  G38.2 X[#<x_far> - #<max_x>] F[#<f_fast>]
+  o50 if [#5070 EQ 0]
+    G1 Z[#<z_top> + #<clear>] F[#<f_trav>]
+    (abort, ROTARY ZERO: right flank never touched)
+  o50 endif
+  #<xr_fast> = #5061
+  G90
+  G1 X[#<xr_fast> + #<clear>] F[#<f_trav>]
+  G38.2 X[#<xr_fast> - #<clear>] F[#<f_slow>]
+  o51 if [#5070 EQ 0]
+    G1 Z[#<z_top> + #<clear>] F[#<f_trav>]
+    (abort, ROTARY ZERO: right flank slow latch found nothing)
+  o51 endif
+  #<x_right> = #5061
+  G1 X[#<x_right> + #<clear>] F[#<f_trav>]
+  G1 Z[#<z_top> + #<clear>] F[#<f_trav>]
+  (4. THE ANSWER. X is the mean of the two raw touches; Z is the crown less one)
+  (bar radius. Both are in the CURRENT work frame, which is what G10 L20 wants.)
+  #<x_axis> = [[#<x_left> + #<x_right>] / 2.0]
+  #<z_axis> = [#<z_top> - #<r_bar>]
+  (SANITY: the span the two touches saw must match the bar. Anything else means)
+  (a touch landed on a chuck jaw, the fixture, or a burr -- and a bad datum here)
+  (is silently wrong for every job after it.)
+  #<span> = [#<x_right> - #<x_left> - #<t_dia>]
+  #<span_err> = [ABS[#<span> - [#<h> * 2.0]]]
+  o60 if [#<span_err> GT 1.0]
+    (abort, ROTARY ZERO: flanks are %.3f#<span> apart, expected %.3f#<h> x2 - nothing set)
+  o60 endif
+  (5. SET IT. G10 L20 makes the CURRENT position read a value, so hand it the)
+  (current position measured FROM the axis we just found.)
+  G10 L20 P0 X[#5420 - #<x_axis>] Z[#5422 - #<z_axis>]
+  (PRINT, ROTARY ZERO: X axis at %.4f#<x_axis>, crown %.4f#<z_top>, Z axis %.4f#<z_axis>, span err %.4f#<span_err>)
+  (PRINT, ROTARY ZERO: X0 Z0 now sit on the B centreline - bar %.3f#<bar_dia> dia)
+o<rotary_zero> endsub
+M2 (end program)
