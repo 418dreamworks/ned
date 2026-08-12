@@ -1,0 +1,16 @@
+(TEMPORARY DIAGNOSTIC 2026-08-12 -- delete when the spindle question is closed.)
+(Reproduces ONLY the spindle line out of rotary_face: a named parameter fed)
+(to S inside a subroutine. No axis moves at all.)
+o<spin_test> sub
+  #<rpm> = #1 (=1200 rpm)
+  o1 if [#<rpm> LE 0]
+    #<rpm> = 1200
+  o1 endif
+  #<sout> = #<rpm>
+  (PRINT, SPIN TEST: about to command M3 S#<sout>)
+  M3 S#<sout>
+  G4 P3
+  M5
+  (PRINT, SPIN TEST: done)
+o<spin_test> endsub
+M2 (end program)

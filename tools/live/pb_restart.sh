@@ -40,6 +40,35 @@ fi
 P=$(pids)
 if [ -n "$P" ]; then
   echo "pb_restart: closing session: $(echo $P | tr '\n' ' ')"
+  # STEP 0: CLOSE THE WINDOW, DO NOT SIGNAL IT (operator 2026-08-12: "i said
+  # ALWAYS kill PB with exit command so that anything in GUI is saved").
+  # qtpyvcp writes .vcp_persistent_data.pickle from Qt's closeEvent ->
+  # terminate() -> terminatePlugins() (application.py:265). SIGTERM does not
+  # raise closeEvent, so every setting changed since launch was thrown away
+  # -- that is why the ATC rapid rate kept reverting to 1000 after being set
+  # to 6000 six times. windowclose sends WM_DELETE_WINDOW, which is the same
+  # thing the EXIT button does.
+  W=$(DISPLAY=:0 xdotool search --name "Probe Basic" 2>/dev/null | tail -1)
+  if [ -n "$W" ]; then
+    echo "pb_restart: sending WM close to window $W (saves GUI settings)"
+    DISPLAY=:0 xdotool windowclose "$W" 2>/dev/null
+    # 60 s, NOT 20 (2026-08-12). CONFIRM_EXIT = False here, so closeEvent
+    # goes straight to app.quit() with no dialog -- but tearing down
+    # linuxcncsvr, milltask and halui behind it takes longer than 20 s, and
+    # the short wait made this script kill -9 a shutdown that was working,
+    # throwing away the settings the clean close exists to save.
+    for _ in $(seq 1 60); do sleep 1; [ -z "$(pids)" ] && break; done
+    if [ -z "$(pids)" ]; then
+      echo "pb_restart: closed cleanly -- persistent settings written"
+    else
+      echo "pb_restart: window close did not finish in 60 s -- escalating"
+    fi
+  else
+    echo "pb_restart: no Probe Basic window found -- cannot close cleanly"
+  fi
+  P=$(pids)
+fi
+if [ -n "$P" ]; then
   # shellcheck disable=SC2086
   kill $P 2>/dev/null
   for _ in $(seq 1 10); do sleep 1; [ -z "$(pids)" ] && break; done

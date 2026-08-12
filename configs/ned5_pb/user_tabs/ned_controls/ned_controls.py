@@ -6396,7 +6396,7 @@ QTabBar::tab:only-one {
         ('rf_c_pass',  'PASSES'),
         ('rf_c_time',  'CUT TIME (min)'),
     )
-    RF_BMAX = 48.0        # [JOINT_6]MAX_VELOCITY, tools/run5.sh
+    RF_BMAX = 90.0        # [JOINT_6]MAX_VELOCITY, tools/run5.sh -- 15 rpm
     RF_SMIN = 1000.0      # [SPINDLE_0]MIN_FORWARD_VELOCITY
     RF_SMAX = 18000.0     # [SPINDLE_0]MAX_FORWARD_VELOCITY
 
@@ -6646,8 +6646,13 @@ QTabBar::tab:only-one {
             outer.addLayout(col1, 0)
             col1.addWidget(heading('OPERATOR'))
             col1.addWidget(rule())
+            saved = self._rf_load()
             for name, label, default in self.ROTARY_FACE_INPUTS:
-                self._rf_fields[name] = field(col1, name, label, default, False)
+                self._rf_fields[name] = field(col1, name, label,
+                                              saved.get(name, default), False)
+            # the override is only "the operator's" if they gave it one
+            if saved.get('rf_srpm', '0') not in ('', '0'):
+                self._rf_srpm_touched = True
             col1.addSpacing(8)
             btn = SubCallButton(page, filename='rotary_face.ngc')
             btn.setObjectName('ned_rotary_face_button')
@@ -6685,6 +6690,8 @@ QTabBar::tab:only-one {
 
             for name, _l, _d in self.ROTARY_FACE_INPUTS:
                 self._rf_fields[name].textChanged.connect(self._rf_recalc)
+                self._rf_fields[name].textEdited.connect(
+                    lambda *_: self._rf_save())
             self._rf_fields['rf_tool'].textChanged.connect(self._rf_tool_lookup)
             self._rf_fields['rf_srpm'].textEdited.connect(
                 lambda *_: setattr(self, '_rf_srpm_touched', True))
@@ -6702,6 +6709,40 @@ QTabBar::tab:only-one {
                      len(self.ROTARY_FACE_CALC))
         except Exception:
             LOG.exception('ROTARY FACE: page not built')
+
+    ROTARY_FACE_FILE = ('/home/brains/Documents/ned/configs/ned5_pb/'
+                        'rotary_face.json')
+
+    def _rf_load(self):
+        """Last-used operator inputs.
+
+        A PLAIN FILE WRITTEN ON EDIT, like materials.json and for the same
+        reason: the two stores PB already has both need a tidy shutdown. The
+        qtpyvcp pickle is written on Qt's closeEvent, which a kill never
+        reaches -- that is why the ATC rapid rate kept reverting to 1000 --
+        and the var file is flushed when task exits and only keeps params
+        that were already declared in it. Neither survives the way this
+        machine actually gets stopped.
+        """
+        import json
+        try:
+            with open(self.ROTARY_FACE_FILE) as fh:
+                d = json.load(fh)
+            return {str(k): str(v) for k, v in d.items()}
+        except Exception:
+            return {}
+
+    def _rf_save(self):
+        import json
+        f = getattr(self, '_rf_fields', None)
+        if not f:
+            return
+        keep = [n for n, _l, _d in self.ROTARY_FACE_INPUTS]
+        try:
+            with open(self.ROTARY_FACE_FILE, 'w') as fh:
+                json.dump({n: f[n].text() for n in keep}, fh, indent=1)
+        except Exception:
+            LOG.exception('ROTARY FACE: could not save the input values')
 
     MATERIALS_FILE = ('/home/brains/Documents/ned/configs/ned5_pb/'
                       'materials.json')

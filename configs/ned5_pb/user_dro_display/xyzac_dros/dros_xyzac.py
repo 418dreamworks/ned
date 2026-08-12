@@ -748,6 +748,24 @@ class UserDRO(QWidget):
                 # (operator 2026-08-05) -- 3 was noise, not information
                 fmt = '{:+.2f}'
                 if allh:
+                    # UNDER -xyzab THE ROTARY ROW NEVER GOES BACK TO THE
+                    # STOCK BINDING. That binding paints the letter the row
+                    # was built as -- C -- which is parked at 0.0000 here,
+                    # while the row is pointed at axis B. So once homed, PB
+                    # showed 0 and the standalone DRO showed the real B
+                    # angle, and they disagreed for the rest of the session
+                    # (operator 2026-08-12: "B in SDRO and PB DRO are not
+                    # aligned"). Repainting every tick from AXIS_IDX keeps
+                    # the row honest; AXIS_IDX['c'] is 4 in this mode.
+                    if NED_MODE == 'xyzab' and name == 'c':
+                        i = self.AXIS_IDX[name]
+                        if w is not None:
+                            w.setText(fmt.format(
+                                st.actual_position[i] - st.g5x_offset[i]
+                                - st.g92_offset[i]))
+                        if m is not None:
+                            m.setText(fmt.format(st.actual_position[i]))
+                        continue
                     if name in self._dro_overridden:
                         i = self.AXIS_IDX[name]
                         # machine cell only (advisor V6): the work value

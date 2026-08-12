@@ -142,14 +142,6 @@ h.newpin('ref-c-in', hal.HAL_BIT, hal.HAL_IN)
 # them something. The stop is HAL's job; the sentence is this loop's.
 h.newpin('vfd-fault-in', hal.HAL_BIT, hal.HAL_IN)
 h.newpin('overtemp-in', hal.HAL_BIT, hal.HAL_IN)
-# SPINDLE COMMANDED vs SPINDLE ACTUALLY RUNNING (operator 2026-08-12:
-# "that should be an error if the program commands the spindle spinning, but
-# gets no positive confirmation from mollom"). spin-cmd-in is what we SEND
-# (the permit that drives SPIN-CW/CCW and the 0-10 V), spin-run-in is the
-# VFD's own running contact coming back on 7I97 IN11 via R1. Comparing the
-# two is the only way to notice a spindle that was told to run and did not.
-h.newpin('spin-cmd-in', hal.HAL_BIT, hal.HAL_IN)
-h.newpin('spin-run-in', hal.HAL_BIT, hal.HAL_IN)
 # THE HOMING STATE MACHINE ITSELF. homing.c exports joint.N.home-state (s32)
 # and names the enum at homing.c:76-100: HOME_IDLE = 0 ... HOME_FINAL_MOVE_
 # START = 20, which is the state where homing.c:1279 does
@@ -1295,54 +1287,6 @@ class Brain(object):
             log('TELEOP re-enter failed: {}'.format(e))
 
     # ---- main tick (0.25 s) --------------------------------------------------
-    SPIN_CONFIRM_S = 3.0     # VFD accel + relay: generous, still catches a no-start
-
-    def _spindle_confirm(self, now):
-        """Abort if the spindle is commanded and the VFD never confirms.
-
-        WHY THIS IS NOT PARANOIA: on 2026-08-12 four rotary_face runs put a
-        cutter into a cut with the spindle stopped and nothing said a word --
-        the Mollom had no error because it had never been asked to run. A
-        feed into stationary flutes is how tools and workpieces get destroyed
-        quietly.
-
-        THE STOP IS AN ABORT, NOT A MESSAGE. A toast the operator reads
-        afterwards is not a guard. abort() drops the interpreter and the
-        queue, which is exactly what should happen when the cutter is dead.
-        """
-        try:
-            cmd = bool(h['spin-cmd-in'])
-            run = bool(h['spin-run-in'])
-        except Exception:
-            return
-        if not cmd:
-            self._spin_since = None
-            self._spin_faulted = False
-            return
-        if run:
-            self._spin_since = None
-            self._spin_faulted = False
-            return
-        if getattr(self, '_spin_since', None) is None:
-            self._spin_since = now
-            return
-        if self._spin_faulted or now - self._spin_since < self.SPIN_CONFIRM_S:
-            return
-        self._spin_faulted = True
-        text = ('SPINDLE NOT RUNNING -- commanded on %.1f s ago and the VFD '
-                'running contact on 7I97 IN11 never came back. Program '
-                'ABORTED before feeding into a stopped cutter. Check the '
-                'Mollom keypad and R1.' % (now - self._spin_since))
-        log(text)
-        try:
-            self.cmd.error_msg(text)
-        except Exception:
-            pass
-        try:
-            self.cmd.abort()
-        except Exception:
-            log('SPINDLE NOT RUNNING: abort() FAILED -- stop the machine by hand')
-
     def _fault_say(self, pin, flag, text):
         """Post `text` once per rising edge of `pin`. Reading our own netted
         pin costs nothing; hal.get_value() would spin the global HAL mutex,
@@ -1371,7 +1315,6 @@ class Brain(object):
         # RISING EDGE ONLY. Both pins sit asserted for as long as the fault
         # lasts, and a message every tick would bury the machine log and the
         # notification area under the same line a hundred times a second.
-        self._spindle_confirm(now)
         self._fault_say('vfd-fault-in', 'vfd_said',
                         'SPINDLE VFD FAULT -- machine stopped. The Mollom has '
                         'tripped and is reporting a fault on 7I97 IN13. Clear '
@@ -1701,7 +1644,19 @@ class Brain(object):
         else:
             if self.done_since is None:
                 self.done_since = now
-            if bool(h['tcactive-in']):
+            # A TOOL CHANGE CANNOT BE IN PROGRESS IF NOTHING IS RUNNING.
+            # motion.digital-out-01 is raised by M64 P1 in toolchange.ngc and
+            # cleared by M65 P1 at its end; on_abort.ngc clears it too, but
+            # that M65 is queued and an abort flushes the queue, so pressing
+            # STOP during a cycle that had run T M6 left the flag latched
+            # TRUE for the rest of the session. The brain then refused to
+            # restore MANUAL forever and the operator had no jogging with no
+            # explanation (2026-08-12). `done` already means interp idle,
+            # queue empty, no motion -- under which an M6 cannot be running,
+            # so the flag is stale by definition and is ignored. The guard
+            # still does its real job: while a change IS executing, `done`
+            # is false and this branch is never reached.
+            if bool(h['tcactive-in']) and not done:
                 # TOOL CHANGE IN PROGRESS: never steal the mode --
                 # the restore aborted an M6 mid-return (01:34).
                 self.flip_armed = False
@@ -1715,7 +1670,21 @@ class Brain(object):
                 # 5 s after the beat stops, normal restore returns.
                 self.flip_armed = False
                 self.done_since = now
-            if self.flip_armed and on \
+            # MANUAL IS THE RESTING STATE, UNCONDITIONALLY (operator
+            # 2026-08-12: "always go to manual. MDI is only after user
+            # expressly uses MDI commands. i hate that mode switching before
+            # doing something"). This used to require flip_armed -- proof
+            # that a program had actually run this episode -- so a cycle the
+            # operator STOPPED could leave the machine parked in MDI with no
+            # jogging and nothing to say why. Whether a program ran is not
+            # the question; whether anything is running NOW is, and `done`
+            # already answers it: interp idle, planner queue empty, no motion
+            # type, in position, zero velocity.
+            # THE RACE THIS GUARD USED TO COVER IS STILL COVERED: done_since
+            # resets on every task_mode change, so the GUI setting MDI just
+            # before issuing a command gets a full second of grace, and it
+            # issues within milliseconds (2026-07-31 23:44).
+            if on \
                and s.task_mode != linuxcnc.MODE_MANUAL \
                and now - self.done_since >= 1.0:
                 try:

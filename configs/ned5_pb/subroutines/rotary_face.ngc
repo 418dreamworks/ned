@@ -48,7 +48,7 @@ o<rotary_face> sub
   #<rf_chip>   = #5 (=0 chip load mm per tooth - required)
   #<rf_flutes> = #6 (=2 flutes - from the tool table)
   #<rf_fdepth> = #7 (=0 flute depth mm - from the tool table, 0 = unknown)
-  #<rf_bmax>   = #8 (=48.0 B max deg/s - JOINT_6 MAX_VELOCITY)
+  #<rf_bmax>   = #8 (=90.0 B max deg/s - JOINT_6 MAX_VELOCITY, 15 rpm)
   #<rf_smin>   = #9 (=1000 spindle floor rpm - SPINDLE_0 MIN_FORWARD_VELOCITY)
   #<rf_smax>   = #10 (=18000 spindle ceiling rpm - SPINDLE_0 MAX_FORWARD_VELOCITY)
   #<rf_step>   = #11 (=0.5 Y advance per B turn as a fraction of tool diameter)
@@ -63,7 +63,7 @@ o<rotary_face> sub
     #<rf_flutes> = 2
   o1 endif
   o2 if [#<rf_bmax> LE 0]
-    #<rf_bmax> = 48.0
+    #<rf_bmax> = 90.0
   o2 endif
   o3 if [#<rf_smin> LE 0]
     #<rf_smin> = 1000
@@ -154,7 +154,6 @@ o<rotary_face> sub
   (THE HELIX ADVANCES HALF A TOOL DIAMETER PER TURN OF B, so each turn cuts)
   (into the wall the one before it left.)
   #<pitch> = [#<tdia> * #<rf_step>]
-  #<zsafe> = [#<rstart> + 10.0]
 
   (THE SMALLEST UNCUT RADIUS THE CYCLE WILL SEE. Passes step down by doc)
   (from rstart until rend, so the last pass starts at rstart minus doc times)
@@ -181,24 +180,35 @@ o<rotary_face> sub
   o44 endif
   #<len>   = [#<yb> - #<ya>]
   #<revs>  = [#<len> / #<pitch>]
-  (ONE STEP PER 10 DEG OF B: fine enough not to facet the helix, coarse)
-  (enough that a long pass is not tens of thousands of blocks.)
-  #<steps> = [FIX[#<revs> * 36.0] + 1]
-  #<dy>    = [#<len> / #<steps>]
-  #<db>    = [#<revs> * 360.0 / #<steps>]
   (PRINT, ROTARY FACE: T#<rf_tool> dia #<tdia> with #<rf_flutes> flutes, chip load #<rf_chip> mm per tooth)
   (PRINT, ROTARY FACE: radial depth #<doc> mm per pass, Y advance #<pitch> mm per turn, tool centre #<ya> to #<yb>)
   (PRINT, ROTARY FACE: #<npass> passes, spindle #<sout> rpm held all cycle, B reaches its ceiling only on the last pass)
 
   G90
-  G0 X0 Y0
-  G0 Z[#<zsafe>]
-  G0 Y[#<ya>]
-  G0 B0
-  (DOWN TO 1 MM OVER THE PROMISED CROWN IN RAPID, ONCE. Every dive after this)
-  (is a G1 of exactly the radial depth, because the tool never comes back up.)
-  G0 Z[#<rstart> + 1.0]
+  (SPINDLE FIRST, THEN TEN SECONDS, THEN MOVE. Operator 2026-08-12: "i want a)
+  (10 second dwell after spindle before any movement ... to let it get to)
+  (speed". The Mollom ramps a heavy tool holder over several seconds and)
+  (there is no at-speed feedback wired, so the dwell IS the at-speed check.)
+  (M3 also sits AHEAD of every G0 now: it used to be the last thing before)
+  (the cutting loop, so anything that went wrong during the opening rapids)
+  (took the spindle command down with it and the cycle fed a dead cutter.)
   M3 S#<sout>
+  G4 P10
+  (Z IS NOT TOUCHED ON THE WAY IN. The one and only Z rule in this cycle is)
+  (the o18 gate above -- Z must already be above the stock radius -- and)
+  (parking it is the operator's job, not this file's. Every Z command here)
+  (after that point is a G1 dive of exactly the radial depth.)
+  G0 X0 Y0
+  (RAPID DOWN TO D START. Z = rstart is the crown of the promised stock, so)
+  (this is the last height that is still clear of it and the height every)
+  (pass dives from. The o18 gate above has already refused anything lower.)
+  G0 Z[#<rstart>]
+  G0 Y[#<ya>]
+  (NO G0 B0. B has no soft limits and winds on forever, so rapiding it back)
+  (to zero first meant several full turns of the stock with Y parked at ya)
+  (and nothing cut -- operator 2026-08-12: "its made like 4 or 5 rotations)
+  (and Y is still stuck at 4.76". A facing cut only needs a starting angle,)
+  (and wherever B is sitting is as good as any.)
 
   (ZIG-ZAG, NO RETURN TRIP. Operator 2026-08-12: dive, spiral 0 to Yend,)
   (dive, spiral back. The tool stays down and stays engaged; lifting and)
@@ -206,43 +216,83 @@ o<rotary_face> sub
   (B NEVER REVERSES -- only Y does. The worm is 1:20 and self-locking, so a)
   (direction change there is backlash for nothing, and B is a continuous)
   (rotary with no soft limits, so it can wind on forever.)
-  #<r>    = #<rstart>
-  #<pass> = 0
+  (THE FIRST PASS CUTS AT D START, IT DOES NOT DIVE FIRST. Operator)
+  (2026-08-12: "it should START at 70 finish a pass, then, go to 65". The)
+  (loop used to subtract the radial depth before the first sweep, so the)
+  (opening cut was already most of the way to the finished size and the)
+  (promised diameter was never skimmed.)
+  #<r>     = #<rstart>
+  #<rprev> = #<rstart>
+  #<pass>  = 0
+  #<more>  = 1
   #<ycur> = #<ya>
   #<ytgt> = #<yb>
   #<dir>  = 1
-  #<bb>   = 0
-  o100 while [#<r> GT #<rend>]
-    #<rout> = #<r>
-    #<r> = [#<r> - #<doc>]
-    o101 if [#<r> LT #<rend>]
-      #<r> = #<rend>
-    o101 endif
+  o100 while [#<more> GT 0]
     #<pass> = [#<pass> + 1]
     #<dnow> = [#<r> * 2.0]
 
-    (SOLVE B AT THE UNCUT RADIUS. The spindle is fixed, so this is the only)
-    (free variable left, and it is largest at the smallest radius -- which is)
-    (why routmin above sized the spindle.)
-    #<wb> = [3.0 * #<rf_chip> * #<sp> * #<rf_flutes> / [#<pi> * #<rout>]]
+    (SOLVE B AT THE UNCUT RADIUS -- the radius this pass is cutting FROM.)
+    (On the first pass that is D START itself.)
+    #<wb> = [3.0 * #<rf_chip> * #<sp> * #<rf_flutes> / [#<pi> * #<rprev>]]
     o30 if [#<wb> GT #<rf_bmax>]
       #<wb> = #<rf_bmax>
     o30 endif
     #<feed> = [#<pitch> * #<wb> / 6.0]
     #<brpm> = [#<wb> / 6.0]
-    #<fzreal> = [#<wb> * #<pi> * #<rout> / [3.0 * #<sout> * #<rf_flutes>]]
+    #<fzreal> = [#<wb> * #<pi> * #<rprev> / [3.0 * #<sout> * #<rf_flutes>]]
 
-    (PRINT, ROTARY FACE: pass #<pass> to diameter #<dnow> - Z #<r>, B #<brpm> rpm, F #<feed>, chip load #<fzreal>)
+    (PRINT, ROTARY FACE: pass #<pass> at diameter #<dnow> - Z #<r>, B #<brpm> rpm, F #<feed>, chip load #<fzreal>)
     S#<sout>
-    G1 Z[#<r>] F[#<feed>]
-    #<i>  = 0
-    #<yy> = #<ycur>
-    o110 while [#<i> LT #<steps>]
-      #<yy> = [#<yy> + [#<dy> * #<dir>]]
-      #<bb> = [#<bb> + #<db>]
-      G1 Y[#<yy>] B[#<bb>] F[#<feed>]
-      #<i> = [#<i> + 1]
-    o110 endwhile
+    (THE DIVE TURNS THE STOCK TOO, so B never stops. Operator 2026-08-12:)
+    ("B STOP at the end of a pass. it should never stop. just keep spining)
+    (and only adjust speed up as you go to the next pass". A Z-only block)
+    (parks B for the whole plunge; giving the block a full revolution of B)
+    (makes it a helical entry at the same B speed the sweep just used, so)
+    (the stock turns continuously from the first pass to the last.)
+    (ONE REVOLUTION IS THE RIGHT AMOUNT: the tool is already engaged over)
+    (the whole cut width, so the plunge spreads across a full turn instead)
+    (of digging in at one angular position.)
+    (PLUNGE CAP, SCALED BY THE TOOL. Operator 2026-08-12: "max Z plunge is)
+    (3mm/s for this tool, and scales up and down appropriately". 3 mm/s is)
+    (180 mm/min and the tool in hand is 9.525 mm, so the rate per mm of tool)
+    (diameter is 18.9 mm/min: a 1/2 inch tool gets 4 mm/s, a 1/4 inch gets)
+    (2 mm/s. Bigger tools have more flute length and more room for the chip,)
+    (so a bigger tool plunging faster is the right direction.)
+    (IT IS A CEILING, NOT A TARGET. The sweep feed comes from the chip load)
+    (and is well under this at normal numbers, so the cap does nothing; it)
+    (exists so no combination of chip load, flute count and stock diameter)
+    (can turn the entry into a fast plunge. F governs Z on this block and B)
+    (is slaved to it, so a capped plunge simply turns the stock more slowly)
+    (through the entry.)
+    #<pmax>  = [#<tdia> * 18.9]
+    #<pfeed> = #<feed>
+    o106 if [#<pfeed> GT #<pmax>]
+      #<pfeed> = #<pmax>
+    o106 endif
+    #<dz> = [#<r> - #<rprev>]
+    o105 if [#<dz> LT 0]
+      G91
+      G1 Z[#<dz>] B[360.0] F[#<pfeed>]
+      G90
+    o105 endif
+    (ONE BLOCK FOR THE WHOLE SWEEP. Y against B is a STRAIGHT LINE -- one)
+    (turn of the stock always advances Y by exactly one pitch -- so a single)
+    (G1 with both words in it IS the helix, exactly, not an approximation of)
+    (one. This used to be 1440 blocks of 10 degrees each, and that was what)
+    (made B crawl: inside a 10 degree block it can only reach the square)
+    (root of accel times distance, so at 15 deg/s squared it topped out near)
+    (12 deg/s and decelerated at every boundary, averaging 8.6 deg/s instead)
+    (of 48 -- measured on the machine 2026-08-12. One block means B ramps up)
+    (once and holds 8 rpm for the entire length. Operator: "it just needs to)
+    (get to 8rpm and STAY there only speeding up. never stopping or slowing)
+    (down".)
+    (B IS RELATIVE. Nothing in a facing cut refers to an absolute B angle,)
+    (and absolute words meant carrying a running total that grew without)
+    (limit. G90 is restored immediately so the dives stay absolute.)
+    G91
+    G1 Y[#<len> * #<dir>] B[#<revs> * 360.0] F[#<feed>]
+    G90
     (SWAP THE ENDS: this pass finished where the next one starts.)
     #<ycur> = #<ytgt>
     o102 if [#<dir> GT 0]
@@ -252,9 +302,18 @@ o<rotary_face> sub
       #<ytgt> = #<yb>
       #<dir>  = 1
     o102 endif
+    (STEP DOWN, OR STOP IF THIS PASS WAS ALREADY THE FINAL DIAMETER.)
+    o103 if [#<r> LE #<rend>]
+      #<more> = 0
+    o103 else
+      #<rprev> = #<r>
+      #<r> = [#<r> - #<doc>]
+      o104 if [#<r> LT #<rend>]
+        #<r> = #<rend>
+      o104 endif
+    o103 endif
   o100 endwhile
 
-  G0 Z[#<zsafe>]
   G0 Y[#<ya>]
   G0 G53 Z0
   M5

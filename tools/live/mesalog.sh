@@ -21,10 +21,21 @@ while true; do
   SNAP=$(halcmd show pin $P 2>/dev/null | awk '
     { for(i=1;i<=NF;i++) if($i ~ /^hm2_7i97\.0\./){ nm=$i; sub(/^hm2_7i97\.0\./,"",nm); printf "%s=%s ", nm, $(i-1); break } }
   ')
+  # THE SPINDLE CHAIN IS NOT ON THE MESA CARD (2026-08-12). On four rotary
+  # cycles the cutter fed with the spindle stopped, and the board dump could
+  # only prove the LAST link -- pwmgen.05.enable and 7i84 output-09 -- was
+  # dead. Whether motion ever asserted spindle.0.on was unrecorded, so the
+  # fault could not be placed either side of spindle.permit. These four pins
+  # are the whole chain, so the next run answers it without a rerun.
+  SPIN=$(halcmd show pin spindle.0 2>/dev/null | awk '
+    { for(i=1;i<=NF;i++) if($i ~ /^spindle\.0\./){ printf "%s=%s ", $i, $(i-1); break } }
+  '; halcmd show pin spindle.permit 2>/dev/null | awk '
+    { for(i=1;i<=NF;i++) if($i ~ /^spindle\.permit\./){ printf "%s=%s ", $i, $(i-1); break } }
+  ')
   if [ -z "$SNAP" ]; then
     printf '%s  --- no HAL session ---\n' "$TS" >> "$LOG"
   else
-    printf '%s  %s\n' "$TS" "$SNAP" >> "$LOG"
+    printf '%s  %s%s\n' "$TS" "$SNAP" "$SPIN" >> "$LOG"
   fi
   # prune to ~last hour (18000 snapshots @ 0.2s); rewrite every 2 min to spare the SD.
   n=$((n+1)); [ $((n % 600)) -eq 0 ] && { tail -n 18000 "$LOG" > "$LOG.tmp" 2>/dev/null && mv "$LOG.tmp" "$LOG"; }

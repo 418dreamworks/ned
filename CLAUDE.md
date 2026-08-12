@@ -13,7 +13,17 @@
     - **Machine notes** (tracing, components, wiring, params/quick-refs, calibration values) = FINAL/CURRENT STATE ONLY. NO origin stories ("originally", "was X → Y", "we tried", "turned out", "used to be", "reverted from", dated diagnostic narrative, superseded-plan context). Just what IS. The ONLY doc that references superseded/old (Fagor) wiring is `docs/revert_to_fagor.md` (the retrofit-delta + how-to-undo list). Redundancy across machine notes is DELIBERATE (same wiring fact in several docs = a cross-check): when copies diverge, surface it, the USER rules which is correct, fix the wrong copy — do NOT collapse wiring prose into one owner. (Parameters are the opposite — see rule 11.)
     - **Commissioning notes** = where ALL history/narrative/origin stories live, AND they give the PATH (links) to the relevant machine notes. History belongs here and nowhere else.
 11. **Single source of truth for parameters.** Any value stored in `tools/live/ned_params.sh` (gear ratios, drive PPR, microstep, and the derived SCALEs) lives THERE and nowhere else. Never restate that number in any other file — docs cite `tools/live/ned_params.sh` instead of copying it. Config files LinuxCNC must read (INIs, `configs/params/*.inc`) get the value ONLY by being generated from ned_params.sh (`ned_params.sh sync`), never hand-typed. Before writing any parameter value into any file, check ned_params.sh first; if it lives there, reference it — do not copy it.
-12. **Kill protocol (LinuxCNC/PB).** NEVER kill without asking the user
+12. **Kill protocol (LinuxCNC/PB). ALWAYS CLOSE, NEVER SIGNAL.** PB is
+    shut down by CLOSING ITS WINDOW -- the same thing the EXIT button does
+    (operator 2026-08-12: "i said ALWAYS kill PB with exit command so that
+    anything in GUI is saved"). qtpyvcp writes
+    `.vcp_persistent_data.pickle` from Qt's closeEvent -> terminate() ->
+    terminatePlugins() (`application.py:265`); SIGTERM never raises
+    closeEvent, so a signalled shutdown silently discards every GUI setting
+    changed since launch -- which is why the ATC rapid rate kept reverting
+    to 1000 after being set to 6000 six times. `tools/live/pb_restart.sh`
+    does the WM close first and escalates to signals only if the window
+    has not gone in 20 s. NEVER kill without asking the user
     first. Permission, when granted, is valid for EXACTLY ONE kill — the
     next kill needs a fresh ask. Never ask the USER to kill anything:
     if PB needs killing, ask for permission to do it yourself.
@@ -240,6 +250,27 @@
       2026-08-03 failure grew CHILDREN past 1920x1200 while the top-level
       window still reported the right size). A GUI edit without a fit
       check is not finished.
+
+25. **ONE FIX AT A TIME. REVERT BEFORE THE NEXT ONE (operator 2026-08-12:
+    "all coding commands have the 'fix, and revert before next fix' ...
+    GUI = coding").** Every code change -- .py, .ngc, .hal, .ini, QSS, .ui,
+    GUI builders, everything -- is a SINGLE hypothesis under test.
+    - Apply ONE fix. The operator tests it.
+    - If it does not work, REVERT IT COMPLETELY before proposing the next
+      one. Never stack a second attempt on an unproven first: the machine
+      must always return to the same known state between hypotheses, or
+      nothing that follows can be attributed to anything.
+    - Say plainly which change is being reverted and why it failed.
+    - A fix that "did nothing" is a FAILED fix and gets reverted too --
+      dead code that was never load-bearing is still noise in the next
+      diagnosis (see rule 20: layered patches are the signal to STOP).
+    - This is the rule that got broken repeatedly on 2026-08-12: the tool
+      guard, the spindle-confirm guard and the B speed change were all
+      left in place after they failed to fix what they were aimed at, and
+      each one became a suspect in the next investigation.
+    GUI CHANGES COUNT AS CODE. There is no "it is only the interface"
+    exemption -- a GUI edit can lock the operator out of the machine, and
+    on this project it has.
 
 24. **100 WORDS. HARD CAP (operator 2026-08-10, re-stated 2026-08-12 after
     I kept breaking it).** Every reply to the operator is 100 words or
