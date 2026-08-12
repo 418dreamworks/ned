@@ -659,7 +659,6 @@ class UserTab(QWidget):
         QTimer.singleShot(1800, self._build_rack_table)
         QTimer.singleShot(1900, self._build_rotary_probe_tab)
         QTimer.singleShot(1950, self._build_rotary_face_tab)
-        QTimer.singleShot(1970, self._build_materials_tab)
         QTimer.singleShot(2100, self._wire_air_button)
         QTimer.singleShot(2000, self._init_tool_safety)
         # -xyzab only (self-checks the env and returns immediately otherwise).
@@ -6430,9 +6429,12 @@ QTabBar::tab:only-one {
             from qtpyvcp.widgets.button_widgets.subcall_button import (
                 SubCallButton)
             page = QWidget()
-            lay = QVBoxLayout(page)
-            lay.setContentsMargins(12, 12, 12, 12)
+            outer = QHBoxLayout(page)
+            outer.setContentsMargins(12, 12, 12, 12)
+            outer.setSpacing(24)
+            lay = QVBoxLayout()
             lay.setSpacing(8)
+            outer.addLayout(lay, 0)
             self._rf_fields = {}
             for name, label, default, ro in self.ROTARY_FACE_FIELDS:
                 row = QHBoxLayout()
@@ -6459,8 +6461,13 @@ QTabBar::tab:only-one {
             btn.setObjectName('ned_rotary_face_button')
             btn.setText('ROTARY FACING')
             btn.setMinimumHeight(52)
+            btn.setFixedWidth(240)
             lay.addWidget(btn)
             lay.addStretch(1)
+            mat = self._materials_widget()
+            if mat is not None:
+                outer.addWidget(mat, 0)
+            outer.addStretch(1)
             host.addTab(page, 'ROTARY FACING')
             LOG.info('ROTARY FACE: page added to operation (%d fields), tab '
                      'strip North + restyled', len(self.ROTARY_FACE_FIELDS))
@@ -6508,8 +6515,13 @@ QTabBar::tab:only-one {
         except Exception:
             LOG.exception('MATERIALS: save failed')
 
-    def _build_materials_tab(self):
+    def _materials_widget(self):
         """MATERIALS: a two-column scratch table of chip loads.
+
+        LIVES ON THE ROTARY FACING PAGE, not a tab of its own (operator
+        2026-08-12: "materials table should be IN the rotary tab") -- it is
+        the crib sheet for the one field beside it, so putting it a tab away
+        meant looking up a number, changing tabs, and typing it from memory.
 
         REFERENCE ONLY (operator 2026-08-12: "i add a row, write the
         material, and can click and write in the chipload. its just a
@@ -6522,11 +6534,6 @@ QTabBar::tab:only-one {
                                        QPushButton, QHeaderView, QAbstractItemView)
         try:
             win = self.window()
-            host = win.findChild(QTabWidget, 'operation') if win else None
-            if host is None:
-                LOG.error('MATERIALS: operation tab widget not found -- page '
-                          'not built. Nothing else is affected.')
-                return
             page = QWidget()
             lay = QVBoxLayout(page)
             lay.setContentsMargins(12, 12, 12, 12)
@@ -6539,9 +6546,13 @@ QTabBar::tab:only-one {
             t.setSelectionBehavior(QAbstractItemView.SelectRows)
             t.horizontalHeader().setSectionResizeMode(0, QHeaderView.Fixed)
             t.horizontalHeader().setSectionResizeMode(1, QHeaderView.Fixed)
-            t.setColumnWidth(0, 260)
+            # WIDTH MUST COVER BOTH COLUMNS PLUS THE FRAME, or the second
+            # header clips and the table grows a horizontal scrollbar for
+            # two columns -- 220 + 200 + 4 px border either side + slack.
+            t.setColumnWidth(0, 220)
             t.setColumnWidth(1, 200)
-            t.setMaximumWidth(480)
+            t.setFixedWidth(438)
+            t.setMinimumHeight(220)
             for r, (a, b) in enumerate(rows):
                 t.setItem(r, 0, QTableWidgetItem(a))
                 t.setItem(r, 1, QTableWidgetItem(b))
@@ -6597,11 +6608,12 @@ QTabBar::tab:only-one {
             bar.addStretch(1)
             lay.addLayout(bar)
             lay.addStretch(1)
-            host.addTab(page, 'MATERIALS')
-            LOG.info('MATERIALS: page added to operation with %d row(s) from %s',
-                     len(rows), self.MATERIALS_FILE)
+            LOG.info('MATERIALS: table built inline on the ROTARY FACING '
+                     'page, %d row(s) from %s', len(rows), self.MATERIALS_FILE)
+            return page
         except Exception:
-            LOG.exception('MATERIALS: page not built')
+            LOG.exception('MATERIALS: table not built')
+            return None
 
     def _build_rotary_probe_tab(self):
         """ROTARY page on the PROBING tab (operator 2026-08-11: "this should be
