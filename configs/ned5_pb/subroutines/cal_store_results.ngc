@@ -1,0 +1,60 @@
+(ned STORE RESULTS -- step 3 of the probing reset. Operator 2026-08-11:)
+(this populates PB with the results, and clears all the tool lengths,)
+(forcing the user to redo them all.)
+
+(WHY CLEARING IS THE POINT, NOT A SIDE EFFECT. The whole chain exists for)
+(when the setter has been bumped. Every stored tool length was measured)
+(against where the setter USED TO BE, so the moment it moves they are all)
+(wrong by the same unknown amount -- and a wrong length is silent: the)
+(machine simply cuts at the wrong depth. Leaving them in place after a)
+(recalibration would be the most dangerous possible outcome of a button)
+(called STORE RESULTS. Wiping them makes the damage loud instead: every)
+(tool reads zero until it has been re-measured.)
+
+(IT CLEARS EXACTLY WHAT MEASURE ALL WILL RE-MEASURE -- the tools the rack)
+(map says are in forks. Clearing a tool that is not in the rack would zero)
+(something nobody is about to re-measure and nobody asked about.)
+
+(REFUSES UNLESS ALL FOUR NUMBERS ARE PRESENT. Storing a half-finished)
+(calibration and then wiping every length would leave the machine with no)
+(lengths AND no way to measure them.)
+o<cal_store_results> sub
+  #<forks> = #1
+  o1 if [#<forks> LE 0]
+    #<forks> = 14
+  o1 endif
+  o5 if [#<_metric> EQ 0]
+    (abort, STORE RESULTS: switch to MM first)
+  o5 endif
+  (a + b -- the setter position PB drives to)
+  o10 if [#5181 EQ 0 AND #5182 EQ 0]
+    (abort, STORE RESULTS: no probe XY in G30 - run FIND SHOULDER or SET PROBE HEIGHT first)
+  o10 endif
+  o11 if [#5183 EQ 0]
+    (abort, STORE RESULTS: no probe height in G30 - run SET PROBE HEIGHT first)
+  o11 endif
+  (c -- the nose)
+  o12 if [#3010 EQ 0]
+    (abort, STORE RESULTS: no spindle nose height - run FIND SHOULDER first)
+  o12 endif
+  (d -- the plunge)
+  o13 if [#3007 LE 0]
+    (abort, STORE RESULTS: no plunge allowance - run SET PROBE HEIGHT first)
+  o13 endif
+  (PRINT, STORE RESULTS: PB has probe XY #5181 #5182, height #5183, nose #3010, plunge #3007 - all machine mm.)
+
+  (--- wipe every length the rack is holding -----------------------------)
+  #<n>     = 1
+  #<wiped> = 0
+  o20 while [#<n> LE #<forks>]
+    #<t> = #[4000 + #<n>]
+    o21 if [#<t> GT 0]
+      G10 L1 P#<t> Z0
+      #<wiped> = [#<wiped> + 1]
+    o21 endif
+    #<n> = [#<n> + 1]
+  o20 endwhile
+  (PRINT, STORE RESULTS: #<wiped> tool lengths cleared to zero - every one of them must be re-measured before it cuts.)
+  (DEBUG, STORE RESULTS: PB populated, #<wiped> lengths wiped)
+o<cal_store_results> endsub
+M2 (end program)

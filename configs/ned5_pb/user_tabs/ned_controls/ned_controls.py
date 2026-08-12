@@ -904,7 +904,15 @@ class UserTab(QWidget):
             shint = QLabel('Last step. Take the tool out by hand first.')
             shint.setStyleSheet('color: #C8CFCC; font: 10pt;')
             b3l.addWidget(shint)
-            b3l.addWidget(_mkbtn('shoulder', 'FIND SHOULDER', 'measure'))
+            b3l.addWidget(_mkbtn('shoulder', 'FIND NOSE', 'measure'))
+            # the rest of the reset, top to bottom in the order they
+            # are pressed -- the sequence IS the instruction
+            b3l.addWidget(_mkbtn('probeheight', 'SET PROBE HEIGHT',
+                                 'measure'))
+            b3l.addWidget(_mkbtn('storeresults', 'STORE RESULTS',
+                                 'measure'))
+            b3l.addWidget(_mkbtn('measureall', 'MEASURE ALL TOOLS',
+                                 'measure'))
             c0.addWidget(b3)
             c0.addStretch(1)
             cg.addWidget(col0, 0, 0)
@@ -1791,7 +1799,20 @@ class UserTab(QWidget):
         # no 'ac' entry: StartAC is driven from Python (_ac_start), not by a
         # g-code sub.
         'goto': ('cal_goto_zero',    'ZERO',      True),
-        'shoulder': ('cal_shoulder', 'SHOULDER',  True),
+        # Called NOSE, not SHOULDER: what it measures is the spindle
+        # nose face, it hands off to probe_spindle_nose, and it writes
+        # #3010 whose own definition is the nose triggering point.
+        # (operator 2026-08-11: "find nose rather"). The sub file keeps
+        # its name -- cal_shoulder.ngc is what the registry, the help
+        # text and every past log line refer to.
+        'shoulder': ('cal_shoulder', 'FIND NOSE',  True),
+        # THE PROBING RESET, in the order it must be pressed (operator
+        # 2026-08-11, for when the setter gets bumped). Each step
+        # refuses unless the one before it has left its number behind,
+        # so the sequence cannot be run out of order by accident.
+        'probeheight':  ('cal_probe_height',  'SET PROBE HEIGHT', False),
+        'storeresults': ('cal_store_results', 'STORE RESULTS',    False),
+        'measureall':   ('cal_measure_all',   'MEASURE ALL TOOLS', False),
         'cleft':  ('cal_c_goto',     'C LEFT',    True),
         'cright': ('cal_c_goto',     'C RIGHT',   True),
         # RACK CAL takes no centre args -- the operator's start pose IS the
@@ -1922,7 +1943,16 @@ class UserTab(QWidget):
                          label, sub, vals['3045'], vals['3046'], vals['3047'])
                 self.cal_say('>> %s' % label)
             else:
-                c.mdi('o<%s> call' % sub)
+                # Some plain cycles still take one argument. The Z soft limit
+                # is READ FROM THE INI here rather than hardcoded in the sub,
+                # for the same reason the shoulder does it: the sub must not
+                # own a copy of a machine limit that can change.
+                plain = ''
+                if which == 'probeheight':
+                    plain = ' [%.4f]' % self._z_min_limit()
+                elif which in ('storeresults', 'measureall'):
+                    plain = ' [%d]' % self.RACK_TABLE_FORKS
+                c.mdi('o<%s> call%s' % (sub, plain))
                 LOG.info('%s: %s issued', label, sub)
             self._cal_lock_ac(label)
             self._cal_buttons_busy(True, running=which)
@@ -2357,6 +2387,17 @@ class UserTab(QWidget):
                 'each correction as it arrives so the next measurement starts '
                 'from a real zero. Stops on 4 consecutive discards.',
         'goto': 'ZERO: puck centre, tip 5 mm above the top, A and C straight.',
+        'probeheight': 'SET PROBE HEIGHT: jog the spindle to where every '
+            'tool probe should START, then press. Records G30 and '
+            'recomputes the plunge down to 1 mm above the Z limit. Any '
+            'tool may be in the spindle. Moves nothing.',
+        'storeresults': 'STORE RESULTS: checks PB has all four numbers -- '
+            'probe XY, probe height, nose, plunge -- then CLEARS every '
+            'tool length in the rack. They were measured against the old '
+            'setter position and are all wrong now.',
+        'measureall': 'MEASURE ALL TOOLS: fetches every tool the rack map '
+            'lists and touches it off, one at a time, then leaves the '
+            'spindle empty. Start empty. This one runs the changer.',
         'shoulder': 'SHOULDER: recording the setter position into G30 at puck '
                     'top +100, sending the 185 mm plunge limit, then running '
                     "PB's spindle-nose probe at X-20. Spindle must be EMPTY.",

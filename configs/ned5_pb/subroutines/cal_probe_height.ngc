@@ -1,0 +1,52 @@
+(ned SET PROBE HEIGHT -- step 2 of the probing reset, after FIND SHOULDER.)
+(Operator 2026-08-11: "have another button below that is SET PROBE height,)
+(user goes to height and just clicks".)
+
+(WHAT PB ENDS UP HOLDING, in the operator's own list:)
+(  a  XY of the probe          #5181 #5182   written by the G30.1 below)
+(  b  the G30 height           #5183         written by the G30.1 below)
+(  c  nose height              #3010         FIND SHOULDER writes it)
+(  d  plunge from G30, taken all the way to the Z limit plus 1 mm)
+(                              #3007         RECOMPUTED HERE)
+
+(d IS A FUNCTION OF b, WHICH IS WHY IT IS RECOMPUTED IN THE SAME CLICK.)
+(Move the probe height by hand and leave the old plunge behind and the two)
+(are out of step by exactly however far the height moved. That is the same)
+(class of stale-derived-value bug that had the shoulder driving 157 mm past)
+(the Z soft limit, and it is not worth repeating.)
+
+(G30.1 records the CURRENT position in MACHINE coordinates. That is the)
+(reason the shoulder step uses it too: no work-to-machine conversion to get)
+(wrong, which is precisely what broke the shoulder plunge.)
+
+(NO MOTION. The button only reads where the machine already is. Whatever the)
+(operator jogged to IS the answer, so moving first could only make the)
+(recorded number describe somewhere they did not choose.)
+
+(ANY TOOL MAY BE IN THE SPINDLE. Operator 2026-08-11: "the whole point is)
+(this calibration is done with an arbitrary tool". Nothing here measures the)
+(tool -- it records a height the operator picked and the travel left below)
+(it, and both are true whatever is in the taper. The NOSE height is step 1's)
+(job and that one does need an empty spindle.)
+o<cal_probe_height> sub
+  #<zmin> = #1        (Z soft limit, machine, passed by the caller)
+  o1 if [#<zmin> EQ 0]
+    (abort, SET PROBE HEIGHT: no Z soft limit passed - refusing to guess the plunge)
+  o1 endif
+  o5 if [#<_metric> EQ 0]
+    (abort, SET PROBE HEIGHT: switch to MM first)
+  o5 endif
+  G30.1
+  (MACHINE MINUS MACHINE: #5183 was just written by G30.1 and is the start)
+  (height in machine terms, zmin is the machine soft limit. Stop 1 mm short.)
+  #<plunge> = [#5183 - [#<zmin> + 1.0]]
+  o4 if [#<plunge> LE 0]
+    (abort, SET PROBE HEIGHT: this height is already at the Z soft limit - no room to probe)
+  o4 endif
+  #3007 = #<plunge>
+  #3077 = #<plunge>
+  (PRINT, SET PROBE HEIGHT: G30 recorded at X #5181 Y #5182 Z #5183 machine - PB starts every tool probe from here.)
+  (PRINT, SET PROBE HEIGHT: plunge #3007 mm - from that height down to 1 mm above the #<zmin> soft limit.)
+  (DEBUG, PROBE HEIGHT SET: Z #5183 plunge #3007)
+o<cal_probe_height> endsub
+M2 (end program)

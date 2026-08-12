@@ -1,0 +1,73 @@
+(ned MEASURE ALL TOOLS -- step 4, the last of the probing reset.)
+(Operator 2026-08-11: "it assumes all tools are in the rack, and it picks)
+(them up and touches them all off, one at a time".)
+
+(IT DRIVES THE RACK. This is the only step in the chain that moves the)
+(machine on its own for minutes at a time, once per tool, and it will run)
+(the changer as many times as the rack has tools. Nothing here is a probe)
+(trick: each pass is an ordinary M6 followed by PB's own tool_touch_off,)
+(the same routine the single-tool button uses, so a tool measured by this)
+(loop is measured exactly as it would have been by hand.)
+
+(THE RACK MAP IS THE TRUTH, not the tool table. #[4000+fork] is what the)
+(changer itself believes is sitting in each fork; a tool in the table but)
+(not in a fork cannot be fetched, and asking for it would drive the head to)
+(an empty pocket. So the loop walks forks, not tool numbers.)
+
+(THE SPINDLE MUST START EMPTY. If something is clamped, the first M6 puts)
+(it away -- which is fine -- but only if the rack has a home for it, and if)
+(it does not the changer has nowhere to go mid-cycle. Refusing up front is)
+(cheaper than discovering it with a tool in the air.)
+
+(EVERY LENGTH IS WRITTEN BY tool_touch_off ITSELF. This file deliberately)
+(does no arithmetic on lengths: one place computes them, and it is the one)
+(that already worked.)
+o<cal_measure_all> sub
+  #<forks> = #1
+  o1 if [#<forks> LE 0]
+    #<forks> = 14
+  o1 endif
+  o5 if [#<_metric> EQ 0]
+    (abort, MEASURE ALL: switch to MM first)
+  o5 endif
+  o10 if [#3010 EQ 0]
+    (abort, MEASURE ALL: no spindle nose height - run the calibration chain first)
+  o10 endif
+  o11 if [#3007 LE 0]
+    (abort, MEASURE ALL: no plunge allowance - run SET PROBE HEIGHT first)
+  o11 endif
+  o12 if [#5183 EQ 0]
+    (abort, MEASURE ALL: no probe height in G30 - run SET PROBE HEIGHT first)
+  o12 endif
+  o13 if [#5400 GT 0]
+    (abort, MEASURE ALL: put the spindle tool away first - this cycle starts and ends empty)
+  o13 endif
+
+  #<n>    = 1
+  #<done> = 0
+  o20 while [#<n> LE #<forks>]
+    #<t> = #[4000 + #<n>]
+    o21 if [#<t> GT 0]
+      (PRINT, MEASURE ALL: fork #<n> holds T#<t> - fetching it.)
+      M6 T#<t>
+      G43
+      (guard the fetch: if the changer did not end up holding what the rack)
+      (map promised, measuring would write the length onto the wrong tool)
+      o22 if [#5400 NE #<t>]
+        (abort, MEASURE ALL: asked for T#<t> but the spindle reports a different tool - stopping before a length is written to the wrong one)
+      o22 endif
+      o<tool_touch_off> call
+      #<done> = [#<done> + 1]
+      (PRINT, MEASURE ALL: T#<t> measured. #<done> so far.)
+    o21 endif
+    #<n> = [#<n> + 1]
+  o20 endwhile
+
+  (put the last one back so the cycle ends the way it started)
+  o30 if [#5400 GT 0]
+    M6 T0
+  o30 endif
+  (PRINT, MEASURE ALL DONE: #<done> tools measured and returned to the rack.)
+  (DEBUG, MEASURE ALL DONE: #<done> tools)
+o<cal_measure_all> endsub
+M2 (end program)
