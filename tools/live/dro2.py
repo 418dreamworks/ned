@@ -352,6 +352,17 @@ class Dro2(QWidget):
             holder.setVisible(letter in now)
         print('dro2: commandable axes %s -> %s' % (old, now), flush=True)
 
+    def _sel_letter(self):
+        """The axis letter the pendant has selected, or '' if unknown.
+
+        The pendant cycles x y z a <rotary>; the rotary slot is whichever
+        axis HAL says it drives (ROT), so this follows a mode change with
+        nothing hardcoded.
+        """
+        pend = ['X', 'Y', 'Z', 'A', ROT.upper()]
+        i = getattr(self, 'sel', 0)
+        return pend[i] if 0 <= i < len(pend) else ''
+
     def _hal_read(self):
         if self._hal is None:
             return
@@ -518,7 +529,17 @@ class Dro2(QWidget):
                 # row is red so that reads at a glance.
                 colour = lab_colour = LOCK_RED
             else:
-                colour = GREEN if i == self.sel else WHITE
+                # TWO DIFFERENT NUMBERINGS. pendant.sel-axis indexes the
+                # PENDANT's list -- x y z a <rotary>, five entries -- while
+                # i here indexes the DRO's rows, which come from
+                # [TRAJ]COORDINATES: X Y Z A C B, six. They agree for the
+                # first four and diverge after: the pendant selecting the
+                # rotary sends 4, and row 4 is C, not B. Under -xyzab the
+                # C row is also HIDDEN, so the highlight vanished entirely
+                # and the wheel looked like it had skipped straight back to
+                # X (operator 2026-08-11: "it hits Z and goes back to X").
+                # Compare LETTERS, never indices.
+                colour = GREEN if letter == self._sel_letter() else WHITE
                 # MPG LOCK: selectable, just will not jog -- letter only,
                 # so the green selection stays readable.
                 lab_colour = LOCK_RED if self.locks.get(_ax) else colour
