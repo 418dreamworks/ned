@@ -648,6 +648,7 @@ class UserTab(QWidget):
         QTimer.singleShot(1600, self._hide_spare_mdi)
         QTimer.singleShot(1700, self._start_homing_gate)
         QTimer.singleShot(1800, self._build_rack_table)
+        QTimer.singleShot(1900, self._build_rotary_probe_tab)
         QTimer.singleShot(2000, self._init_tool_safety)
         # -xyzab only (self-checks the env and returns immediately otherwise).
         QTimer.singleShot(4000, self.xyzab_launch_start)
@@ -6135,6 +6136,90 @@ class UserTab(QWidget):
         except Exception:
             LOG.exception('TOOL SAFETY: sync failed')
 
+    ROTARY_PROBE_FIELDS = (
+        ('bar_dia', 'BAR DIA', '31.75', 'mm - the 1.25in calibration bar'),
+        ('depth',   'PROBE DEPTH', '25.4', 'mm below the crown for the flanks'),
+        ('yspan',   'STATION GAP', '300.0', 'mm of Y between the two stations'),
+    )
+
+    def _build_rotary_probe_tab(self):
+        """ROTARY page on the PROBING tab (operator 2026-08-11: "this should be
+        written in the rotary axis tab under probing").
+
+        A PAGE, not a .ui edit. probe_basic.ui is core -- cutting a tab into it
+        is wiped by the next PB update and has to be re-applied from
+        update_survival, whereas addTab() at runtime survives untouched. Same
+        pattern as RACK TABLE on the ATC tab.
+
+        The button is a stock SubCallButton, so the call itself is qtpyvcp's
+        own tested path: it reads the arg lines out of rotary_zero.ngc, takes
+        each value from the field of the same name if one exists, and issues
+        the o-call. The three fields below are named to match those args --
+        that name IS the binding, there is no wiring to get wrong.
+        """
+        from PySide6.QtWidgets import (QTabWidget, QVBoxLayout, QHBoxLayout,
+                                       QLabel, QLineEdit)
+        try:
+            win = self.window()
+            host = win.findChild(QTabWidget, 'tabWidget_2') if win else None
+            if host is None:
+                LOG.error('ROTARY PROBE: tabWidget_2 not found -- page not '
+                          'built. Nothing else is affected.')
+                return
+            from qtpyvcp.widgets.button_widgets.subcall_button import (
+                SubCallButton)
+            page = QWidget()
+            lay = QVBoxLayout(page)
+            lay.setContentsMargins(12, 12, 12, 12)
+            lay.setSpacing(10)
+            head = QLabel('ROTARY AXIS ZERO  --  round bar, tool at hand')
+            head.setStyleSheet('color: rgb(238,238,236); font: 14pt '
+                               '"Probe Basic Bebas Mono";')
+            lay.addWidget(head)
+            why = QLabel(
+                'Three touches here, then +Y to a second station and three '
+                'more.\nX zero is the midpoint of the flanks, Z zero is the '
+                'crown less one bar radius.\nThe two stations give the axis '
+                'yaw and droop -- printed to the log.\n'
+                'The bar must be on the toolsetter probe lead.')
+            why.setStyleSheet('color: rgb(200,200,200); font: 10pt;')
+            lay.addWidget(why)
+            self._rp_fields = {}
+            for name, label, default, hint in self.ROTARY_PROBE_FIELDS:
+                row = QHBoxLayout()
+                lb = QLabel(label)
+                lb.setFixedWidth(150)
+                lb.setStyleSheet('color: rgb(238,238,236); font: 11pt '
+                                 '"Probe Basic Bebas Mono";')
+                ed = QLineEdit()
+                # THE NAME IS THE BINDING: SubCallButton searches every widget
+                # in the app for one matching the arg name in the .ngc.
+                ed.setObjectName(name)
+                ed.setText(default)
+                ed.setFixedWidth(120)
+                ed.setStyleSheet('background: rgb(128,128,128); color: white; '
+                                 'font: 12pt "Probe Basic Bebas Mono";')
+                hn = QLabel(hint)
+                hn.setStyleSheet('color: rgb(170,170,170); font: 10pt;')
+                row.addWidget(lb, 0)
+                row.addWidget(ed, 0)
+                row.addWidget(hn, 1)
+                lay.addLayout(row)
+                self._rp_fields[name] = ed
+            btn = SubCallButton(page, filename='rotary_zero.ngc')
+            btn.setObjectName('ned_rotary_zero_button')
+            btn.setText('ROTARY ZERO')
+            btn.setMinimumHeight(56)
+            lay.addWidget(btn)
+            lay.addStretch(1)
+            host.addTab(page, 'ROTARY')
+            self._rotary_probe_page = page
+            LOG.info('ROTARY PROBE: page added to tabWidget_2 with %d field(s)'
+                     ' bound by name to rotary_zero.ngc',
+                     len(self.ROTARY_PROBE_FIELDS))
+        except Exception:
+            LOG.exception('ROTARY PROBE: page not built')
+
     def _build_rack_table(self):
         """RACK TABLE page on the ATC tab: per-fork PosX / PosY (PosZ later).
 
@@ -6611,6 +6696,25 @@ class UserTab(QWidget):
         except Exception:
             pass
         if getattr(self, '_tool_unrecorded', False):
+            # DO NOT SEND THEM SOMEWHERE THE GATE WILL NOT LET THEM GO.
+            # Before the home declaration lands, _PreHomeInputGate blocks the
+            # tab bar, so "go to the TOOL tab" is an instruction the machine
+            # itself refuses -- which is exactly what the operator hit on
+            # 2026-08-11 ("i get some error, but im locked out of everything
+            # in gui, so i can't do anything about it"). It also is not even
+            # needed then: the brain's restore_spindle_tool re-declares the
+            # clamped tool as soon as every joint is homed, so the honest
+            # message pre-home is that this clears itself.
+            try:
+                _s2 = linuxcnc.stat(); _s2.poll()
+                _homed = all(_s2.homed[:NJ])
+            except Exception:
+                _homed = False
+            if not _homed:
+                return ('T%d is clamped but LinuxCNC has no record of it yet '
+                        '(it says T%d). Nothing to press: the record is '
+                        'restored automatically once every joint is homed. '
+                        'Power on and let homing finish.' % (have, rec))
             return ('T%d is clamped but LinuxCNC has no record of it '
                     '(it says T%d). Go to the TOOL tab and press LOAD '
                     'SPINDLE for T%d.' % (rec, have, rec)) if rec else (

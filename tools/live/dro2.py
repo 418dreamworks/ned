@@ -243,16 +243,12 @@ class Dro2(QWidget):
         h_m = QLabel('MCS')
         h_w = QLabel('WCS')
         for _h in (h_m, h_w):
-            # RIGHT, not centre, and for the same reason the decimal point
-            # is column-locked: the numbers are right-aligned, so a centred
-            # header drifts away from its own column as the value changes
-            # width and the two stop reading as one column (operator
-            # 2026-08-11: "distribute the MCS and WCS columns evenly in the
-            # dro so they follow the G54 and MCS above"). Sharing the edge
-            # means they cannot drift at all. _resize_fonts then insets each
-            # header by the unit width so it sits over the DIGITS rather
-            # than over the trailing mm/deg.
-            _h.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            # CENTRED, and the numbers below are centred too -- see the note
+            # on the row labels. Both halves then carry their content in the
+            # middle, so the header and its column cannot be out of step
+            # (operator 2026-08-11: "get the dro so that both columns take up
+            # the space ... following the banner above").
+            _h.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
             _h.setStyleSheet('color: %s; background: transparent;' % WHITE)
         hrow.addWidget(self.hdr_pad, 0)
         hrow.addWidget(h_w, 5)
@@ -273,12 +269,24 @@ class Dro2(QWidget):
             lab = QLabel(letter)
             # letters sit RIGHT, tucked against the machine number
             lab.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            # CENTRED IN THE HALF, not right-aligned. Right alignment pools
+            # every bit of slack on the LEFT of each column, which is what
+            # left a dead gap after the axis letter and another between the
+            # two columns while the far right sat hard against the edge. The
+            # slack is real and unavoidable -- with six rows the number font
+            # is limited by ROW HEIGHT, not by width, so it cannot grow to
+            # fill the half -- but centred it splits evenly either side and
+            # each column sits under its own banner.
+            # The decimal point stays column-locked WITHIN a scale, which is
+            # what it was always for: every linear row renders the same
+            # character count and every rotary row renders the same count, so
+            # each group still lines up with itself.
             mach = QLabel('0.00')
             mach.setTextFormat(Qt.RichText)
-            mach.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            mach.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
             work = QLabel('0.00')
             work.setTextFormat(Qt.RichText)
-            work.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            work.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
             # colour NOW, not only in the tick: before the first poll the
             # labels inherited the default palette and were black on black
             for _w in (lab, mach, work):
@@ -422,14 +430,8 @@ class Dro2(QWidget):
         lm = QFontMetrics(lf)
         lab_w = max([lm.horizontalAdvance(a) for a in self.axes] or [lab_px])
         self.hdr_pad.setFixedWidth(lab_w)   # headers align with the columns
-        # inset by the unit suffix so the header's right edge lands on the
-        # digits' right edge, not on the 'mm'/'deg' that follows them. Same
-        # 0.30 factor the unit span uses when the cell is rendered.
-        _unit_px = int(num_px * 0.30)
-        _um = QFontMetrics(QFont('DejaVu Sans Mono', _unit_px))
-        _pad = _um.horizontalAdvance('mm') + 6
         for _h in self.hdr_labels:
-            _h.setContentsMargins(0, 0, _pad, 0)
+            _h.setContentsMargins(0, 0, 0, 0)
         for lab, mach, work in self.rows:
             lab.setFont(lf)
             lab.setFixedWidth(lab_w)
