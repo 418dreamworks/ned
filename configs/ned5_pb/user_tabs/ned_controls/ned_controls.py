@@ -670,6 +670,7 @@ class UserTab(QWidget):
         QTimer.singleShot(1950, self._build_rotary_face_tab)
         QTimer.singleShot(2100, self._wire_air_button)
         QTimer.singleShot(2200, self._build_shoulder_button)
+        QTimer.singleShot(2300, self._wire_er_picker)
         QTimer.singleShot(2000, self._init_tool_safety)
         # -xyzab only (self-checks the env and returns immediately otherwise).
         QTimer.singleShot(4000, self.xyzab_launch_start)
@@ -6064,6 +6065,8 @@ class UserTab(QWidget):
         # tracks the truth and can never latch on a boot transient.
         try:
             self._publish_probe_offset()
+            self._harvest_shoulder()
+            self._er_refresh()
             if self.comp is not None:
                 u = bool(self.comp.getPin('tool-unrecorded-in').value)
                 p = bool(self.comp.getPin('tool-phantom-in').value)
@@ -7108,56 +7111,62 @@ QTabBar::tab:only-one {
                 ('ER20-34', 34.0), ('ER32-51', 51.0))
 
     def _build_shoulder_button(self):
-        """MEASURE SHOULDER, directly under MEASURE TOOL OFFSET.
+        """PROBE SHOULDER, inside the ELECTRONIC TOOL SETTER frame.
 
-        The ER picker sits beside it because the two belong together: the
-        shoulder diameter decides how far the spindle steps sideways, and
-        getting it wrong is the difference between the nut landing on the
-        puck and the cutter landing on it.
+        THE STOCK BUTTON SITS IN A **HORIZONTAL** LAYOUT (horizontalLayout_100
+        inside frame_18, template_rack_atc.ui). The first version of this
+        added the new button to that layout, so it went BESIDE the existing
+        one and was clipped off the edge of the frame -- the operator's
+        screenshot showed an empty box. It has to go into the frame's
+        VERTICAL stack (verticalLayout_53) instead, which is what puts it
+        underneath.
+
+        STYLE IS CLONED, NOT INVENTED: the same stylesheet string and the
+        same 145x45 minimum as tool_touch_off_button, so the pair reads as
+        one control group rather than as something bolted on.
         """
-        from PySide6.QtWidgets import (QComboBox, QHBoxLayout, QLabel,
-                                       QVBoxLayout, QPushButton)
+        from PySide6.QtWidgets import (QHBoxLayout, QLabel, QVBoxLayout,
+                                       QLineEdit, QBoxLayout)
         try:
             win = self.window()
             ref = win.findChild(QWidget, 'tool_touch_off_button') if win else None
             if ref is None:
-                LOG.error('MEASURE SHOULDER: tool_touch_off_button not found '
-                          '-- button NOT built. Nothing else is affected.')
+                LOG.error('PROBE SHOULDER: tool_touch_off_button not found -- '
+                          'button NOT built. Nothing else is affected.')
                 return
-            parent = ref.parentWidget()
-            lay = parent.layout() if parent is not None else None
+            # walk up to the first VERTICAL layout: that is the frame's stack
+            host, lay = ref.parentWidget(), None
+            while host is not None:
+                cand = host.layout()
+                if isinstance(cand, QBoxLayout) and \
+                        cand.direction() in (QBoxLayout.TopToBottom,
+                                             QBoxLayout.BottomToTop):
+                    lay = cand
+                    break
+                host = host.parentWidget()
             if lay is None:
-                LOG.error('MEASURE SHOULDER: %s has no layout -- button NOT '
-                          'built (a QGridLayout has no insertWidget, so this '
-                          'refuses rather than guess)', parent)
+                LOG.error('PROBE SHOULDER: no vertical layout above %s -- '
+                          'button NOT built rather than dropped somewhere it '
+                          'would be clipped', ref.objectName())
                 return
-            box = QWidget(parent)
+            from qtpyvcp.widgets.button_widgets.subcall_button import (
+                SubCallButton)
+            box = QWidget(host)
             v = QVBoxLayout(box)
-            v.setContentsMargins(0, 4, 0, 0)
-            v.setSpacing(4)
-            row = QHBoxLayout()
-            lb = QLabel('ER')
-            lb.setStyleSheet('color: rgb(238,238,236); font: 13pt '
-                             '"Probe Basic Bebas Mono";')
-            cb = QComboBox()
-            cb.setObjectName('ned_er_size')
-            for label, _dia in self.ER_SIZES:
-                cb.addItem(label)
-            cb.setStyleSheet('color: white; background: rgb(108,108,108);'
-                             ' font: 14pt "Probe Basic Bebas Mono";')
-            cb.currentIndexChanged.connect(self._er_changed)
-            row.addWidget(lb, 0)
-            row.addWidget(cb, 1)
-            v.addLayout(row)
-            # THE SHOULDER DIAMETER THE ER CHOICE IMPLIES. This is the
-            # widget SubCallButton binds to: it hunts the app for one whose
-            # objectName matches the .ngc's argument name and takes its TEXT,
-            # so it must hold the NUMBER and nothing else. The prose sits in
-            # a separate label beside it.
-            from PySide6.QtWidgets import QLineEdit
+            v.setContentsMargins(2, 2, 2, 2)
+            v.setSpacing(2)
+            btn = SubCallButton(box, filename='measure_shoulder.ngc')
+            btn.setObjectName('ned_measure_shoulder_button')
+            btn.setText('PROBE SHOULDER')
+            btn.setStyleSheet(ref.styleSheet())
+            btn.setMinimumSize(ref.minimumWidth() or 145,
+                               ref.minimumHeight() or 45)
+            v.addWidget(btn)
+            # the shoulder diameter the .ngc reads, bound BY NAME
             drow = QHBoxLayout()
-            dlb = QLabel('shoulder dia')
-            dlb.setStyleSheet('color: rgb(170,170,170); font: 10pt;')
+            dlb = QLabel('SHOULDER DIA')
+            dlb.setStyleSheet('color: rgb(238,238,236); font: 10pt '
+                              '"Probe Basic Bebas Mono";')
             self._er_dia = QLineEdit()
             self._er_dia.setObjectName('ms_shdia')
             self._er_dia.setReadOnly(True)
@@ -7167,33 +7176,42 @@ QTabBar::tab:only-one {
             drow.addWidget(self._er_dia, 0)
             drow.addStretch(1)
             v.addLayout(drow)
-            from qtpyvcp.widgets.button_widgets.subcall_button import (
-                SubCallButton)
-            btn = SubCallButton(box, filename='measure_shoulder.ngc')
-            btn.setObjectName('ned_measure_shoulder_button')
-            btn.setText('MEASURE SHOULDER')
-            btn.setMinimumHeight(max(40, ref.height()))
-            v.addWidget(btn)
-            idx = lay.indexOf(ref)
-            if hasattr(lay, 'insertWidget') and idx >= 0:
-                lay.insertWidget(idx + 1, box)
-            else:
-                lay.addWidget(box)
-            self._er_combo = cb
-            self._er_changed()
-            LOG.info('MEASURE SHOULDER: button + ER picker placed under %s',
-                     ref.objectName())
+            lay.addWidget(box)
+            self._er_refresh()
+            LOG.info('PROBE SHOULDER: placed in %s (a %s), under %s',
+                     host.objectName() or type(host).__name__,
+                     type(lay).__name__, ref.objectName())
         except Exception:
-            LOG.exception('MEASURE SHOULDER: button not built')
+            LOG.exception('PROBE SHOULDER: button not built')
 
-    def _er_changed(self, *_):
-        """Write the chosen nut's diameter into the tool table."""
-        cb = getattr(self, '_er_combo', None)
-        if cb is None:
+    def _er_row_h(self):
+        """Height the shoulder-diameter readout adds under the button."""
+        w = getattr(self, '_er_dia', None)
+        return (w.height() or 24) + 8 if w is not None else 32
+
+    def _harvest_shoulder(self):
+        """Move a fresh PROBE SHOULDER result into the tool table.
+
+        G-CODE CANNOT WRITE THE DATABASE, so measure_shoulder.ngc leaves the
+        answer in #3011 (height of the shoulder above the tool tip) and #3012
+        (its diameter), and this carries it across -- the same shape as the
+        rotary probing results, which land in #3090-#3098 and are read off
+        the var file. The var file only flushes when the interpreter
+        finishes, which is exactly when there is something new to collect.
+        """
+        try:
+            vals = {}
+            with open(self.VAR_FILE) as f:
+                for line in f:
+                    b = line.split()
+                    if len(b) == 2 and b[0] in ('3011', '3012'):
+                        vals[b[0]] = float(b[1])
+        except Exception:
             return
-        label, dia = self.ER_SIZES[max(0, cb.currentIndex())]
-        if getattr(self, '_er_dia', None) is not None:
-            self._er_dia.setText('%.1f' % dia)
+        h = vals.get('3011', 0.0)
+        d = vals.get('3012', 0.0)
+        if h <= 0 or (h, d) == getattr(self, '_sh_last', None):
+            return
         try:
             import linuxcnc as _lc, sqlite3
             st = _lc.stat(); st.poll()
@@ -7203,27 +7221,181 @@ QTabBar::tab:only-one {
             db = os.path.join(os.path.dirname(self.VAR_FILE), 'tool_table.db')
             con = sqlite3.connect(db, timeout=2.0)
             try:
-                for name, val in (('er_size', label),
-                                  ('shoulder_dia', '%.1f' % dia)):
-                    row = con.execute(
-                        "SELECT t.id, d.id FROM tool t"
-                        "  JOIN custom_field_def d ON d.name = ?"
+                for name, val in (('shoulder', '%.4f' % h),
+                                  ('shoulder_dia', '%.1f' % d)):
+                    if name == 'shoulder_dia' and d <= 0:
+                        continue
+                    r = con.execute(
+                        "SELECT t.id, f.id FROM tool t"
+                        "  JOIN custom_field_def f ON f.name = ?"
                         " WHERE t.tool_no = ?", (name, tno)).fetchone()
-                    if row is None:
+                    if r is None:
                         continue
                     con.execute(
                         "INSERT INTO custom_field_value(tool_id, field_id,"
                         " value) VALUES(?,?,?)"
                         " ON CONFLICT(tool_id, field_id)"
                         " DO UPDATE SET value = excluded.value",
-                        (row[0], row[1], val))
+                        (r[0], r[1], val))
                 con.commit()
             finally:
                 con.close()
-            LOG.info('ER SIZE: T%d -> %s, shoulder diameter %.1f mm',
-                     tno, label, dia)
+            self._sh_last = (h, d)
+            LOG.info('SHOULDER: T%d measured %.4f mm above the tip, diameter '
+                     '%.1f mm -- written to the tool table', tno, h, d)
         except Exception:
-            LOG.exception('ER SIZE: could not store the choice')
+            LOG.exception('SHOULDER: could not store the measurement')
+
+    def _er_refresh(self):
+        """Keep ms_shdia showing the spindle tool's shoulder diameter.
+
+        SubCallButton binds by widget name and reads the TEXT, so this field
+        IS what measure_shoulder.ngc receives as its shoulder diameter. It
+        follows the tool in the spindle rather than a picker, because the
+        picker now lives in the tool table where the value is stored.
+        """
+        w = getattr(self, '_er_dia', None)
+        if w is None:
+            return
+        dia = 0.0
+        try:
+            import linuxcnc as _lc, sqlite3
+            st = _lc.stat(); st.poll()
+            tno = int(st.tool_in_spindle or 0)
+            if tno > 0:
+                db = os.path.join(os.path.dirname(self.VAR_FILE),
+                                  'tool_table.db')
+                con = sqlite3.connect('file:%s?mode=ro' % db, uri=True)
+                try:
+                    r = con.execute(
+                        "SELECT v.value, d.default_value FROM custom_field_def d"
+                        "  LEFT JOIN tool t ON t.tool_no = ?"
+                        "  LEFT JOIN custom_field_value v"
+                        "         ON v.field_id = d.id AND v.tool_id = t.id"
+                        " WHERE d.name = 'shoulder_dia'", (tno,)).fetchone()
+                finally:
+                    con.close()
+                if r:
+                    raw = r[0] if r[0] not in (None, '') else r[1]
+                    dia = float(raw) if raw not in (None, '') else 0.0
+        except Exception:
+            pass
+        w.setText('%.1f' % dia)
+
+    # MATCHED ON THE HEADER TEXT, not on visibleColumns(). That method is
+    # not present on every build of the table widget, and when it is missing
+    # the old code returned an empty list and silently did nothing -- the
+    # double-click appeared dead (operator 2026-08-12). A header string is
+    # what the operator is actually clicking under, and it cannot be absent.
+    ER_HEADERS = ('SHOULDER DIA', 'SHOULDER')
+
+    def _wire_er_picker(self):
+        """Double-clicking a shoulder cell in the tool table offers the ER
+        sizes (operator 2026-08-12).
+
+        BOTH SHOULDER COLUMNS ARE LIVE, not just one: the operator calls the
+        pair "the SHOULDER column", and there is no reading of that where
+        offering the nut sizes is wrong. The ER cell answers too, since that
+        is literally what is being chosen.
+        """
+        from PySide6.QtWidgets import QTableView, QAbstractItemView
+        try:
+            win = self.window()
+            tbl = win.findChild(QWidget, 'tool_table') if win else None
+            if tbl is None:
+                LOG.error('ER PICKER: tool_table not found -- double-click '
+                          'picker NOT wired. Nothing else is affected.')
+                return
+            if not hasattr(tbl, 'doubleClicked'):
+                LOG.error('ER PICKER: tool_table is a %s with no '
+                          'doubleClicked signal -- NOT wired',
+                          type(tbl).__name__)
+                return
+            tbl.doubleClicked.connect(self._er_cell_double_clicked)
+            self._er_table = tbl
+            LOG.info('ER PICKER: armed on the tool table shoulder columns %s',
+                     ', '.join(self.ER_HEADERS))
+        except Exception:
+            LOG.exception('ER PICKER: not wired')
+
+    def _er_cell_double_clicked(self, index):
+        from PySide6.QtWidgets import QInputDialog
+        try:
+            tbl = getattr(self, '_er_table', None)
+            if tbl is None or not index.isValid():
+                return
+            hdr = ''
+            try:
+                m = tbl.model()
+                from PySide6.QtCore import Qt
+                hdr = str(m.headerData(index.column(), Qt.Horizontal) or '')
+            except Exception:
+                pass
+            if hdr.strip().upper() not in self.ER_HEADERS:
+                return
+            tno = self._er_row_tool(tbl, index.row())
+            if tno <= 0:
+                LOG.error('ER PICKER: could not tell which tool row %d is -- '
+                          'nothing written', index.row())
+                return
+            labels = [lbl for lbl, _d in self.ER_SIZES]
+            pick, ok = QInputDialog.getItem(
+                self, 'Shoulder diameter',
+                'ER collet nut for T%d:' % tno, labels, 2, False)
+            if not ok:
+                return
+            dia = dict(self.ER_SIZES)[pick]
+            self._er_store(tno, pick, dia)
+        except Exception:
+            LOG.exception('ER PICKER: double-click handling failed')
+
+    def _er_row_tool(self, tbl, row):
+        """Tool number for a table row, found by its header rather than by
+        a column index that shifts whenever a column is hidden."""
+        try:
+            from PySide6.QtCore import Qt
+            m = tbl.model()
+            tcol = 0
+            for c in range(m.columnCount()):
+                if str(m.headerData(c, Qt.Horizontal) or '').strip().upper() == 'T':
+                    tcol = c
+                    break
+            return int(float(m.data(m.index(row, tcol))))
+        except Exception:
+            return 0
+
+    def _er_store(self, tno, label, dia):
+        """Write the ER choice and the millimetres it means."""
+        try:
+            import sqlite3
+            db = os.path.join(os.path.dirname(self.VAR_FILE), 'tool_table.db')
+            con = sqlite3.connect(db, timeout=2.0)
+            try:
+                # ONE VALUE, NOT TWO (operator 2026-08-12: "i dont need
+                # shoulder diameter and ER> they are the same thing"). The
+                # picker shows the ER name because that is what is legible on
+                # the nut; the table keeps the millimetres the probe needs.
+                for name, val in (('shoulder_dia', '%.1f' % dia),):
+                    r = con.execute(
+                        "SELECT t.id, f.id FROM tool t"
+                        "  JOIN custom_field_def f ON f.name = ?"
+                        " WHERE t.tool_no = ?", (name, tno)).fetchone()
+                    if r is None:
+                        continue
+                    con.execute(
+                        "INSERT INTO custom_field_value(tool_id, field_id,"
+                        " value) VALUES(?,?,?)"
+                        " ON CONFLICT(tool_id, field_id)"
+                        " DO UPDATE SET value = excluded.value",
+                        (r[0], r[1], val))
+                con.commit()
+            finally:
+                con.close()
+            LOG.info('ER PICKER: T%d -> %s, shoulder diameter %.1f mm',
+                     tno, label, dia)
+            self._er_refresh()
+        except Exception:
+            LOG.exception('ER PICKER: could not store T%s', tno)
 
     def _build_rack_table(self):
         """RACK TABLE page on the ATC tab: per-fork PosX / PosY (PosZ later).
