@@ -8,6 +8,50 @@ The codes below are the ones this project's own schema already cites --
 `tool_lathe` carries `-- SIG`, `-- LCF/LB`, `-- SFDM` in its DDL, written
 before this document existed. Nothing here was invented for the mapping.
 
+## Direction of truth: ONE WAY
+
+**ned is the source. Fusion is downstream and never writes back.**
+Operator, 2026-08-13: *"fusion must only use information from ned. never the
+other way around."*
+
+That means:
+
+- Every tool value in a Fusion library is a COPY of ned's row. If the two
+  disagree, ned is right and the library is stale.
+- No export, post or sync may write into ned's tool table.
+- **If Fusion needs a number ned does not already publish, the number is
+  defined here first** -- operator: *"if fusion must have a number, we will
+  make it up in a table on ned."* Never let the CAM side invent one.
+
+The first such number is the length-offset index. See below.
+
+## LENGTH OFFSET (H) -- ned owns it
+
+`G43 H<n>` selects which row of tool lengths the control applies. **On ned,
+H is always the tool number.** T6 uses H6.
+
+Fusion does not do that on its own: its post writes `G43 H<lengthOffset>`,
+and `lengthOffset` defaults to the tool's position in Fusion's own library.
+On 2026-08-13 that produced, in `kakeya_D60_H120_FUSION.ngc`:
+
+| loaded | true length | H emitted | length actually applied | error at the tip |
+|---|---|---|---|---|
+| T6 | 112.9219 | H8 | 0.0000 | 112.92 mm too deep |
+| T13 | 114.7557 | H2 | 102.4531 | 12.30 mm too deep |
+| T12 | 109.0000 | H7 | 0.0000 | 109.00 mm too deep |
+
+The geometry in that file came from ned correctly. Only the H numbering was
+Fusion's own, and it was wrong on all 15 `G43` lines.
+
+The export now publishes the column so no post has to derive it:
+
+    LENGTH OFFSET (H)   /  field `length_offset`   -- equals the tool number
+
+In the post, set `tool.lengthOffset = tool.number`, or read the column. A
+post that omits `G43` entirely is not a fix: ned's
+`RS274NGC_STARTUP_CODE` runs `G49`, so a program with no `G43` applies no
+tool length at all.
+
 ## Where the data is
 
 | file | what it is |

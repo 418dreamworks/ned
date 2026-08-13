@@ -45,9 +45,21 @@ CORE = [
      'short label, hard-capped at 10 characters'),
 ]
 # Shown on the TOOL tab but not stored: derived for display only.
+#
+# LENGTH OFFSET (H) IS PUBLISHED HERE ON PURPOSE. Operator 2026-08-13:
+# "fusion must only use information from ned. never the other way around ...
+# if fusion must have a number, we will make it up in a table on ned."
+# Fusion's post writes G43 H<lengthOffset>, and left to itself it numbers
+# that from the tool's position in ITS library -- which is how T6 got H8,
+# T13 got H2 and T12 got H7 in kakeya_D60_H120_FUSION.ngc, each one applying
+# a different tool's length. On ned the H number IS the tool number, always.
+# Publishing it as a column means the post reads it instead of inventing it.
 DERIVED = [
     ('diameter_in', 'DIAMETER IN', 'float', 'in',
      'display only, 2 dp -- derived from DIAMETER MM, never stored'),
+    ('length_offset', 'LENGTH OFFSET (H)', 'int', None,
+     'the H number for G43. ALWAYS equals the tool number on this machine. '
+     'A post must read this, never derive it from its own library order'),
 ]
 SKIP_FIELDS = ('safety_x', 'safety_y')   # defined, never populated, not shown
 
@@ -71,6 +83,7 @@ def read(db=DB):
             t = {'tool_no': tno, 'pocket': pocket, 'z_offset': z,
                  'diameter': dia, 'remark': remark or '',
                  'diameter_in': round(dia / 25.4, 4) if dia else 0.0,
+                 'length_offset': tno,
                  'in_spindle': bool(in_use)}
             vals = dict(con.execute(
                 'SELECT f.name, v.value FROM custom_field_value v'
