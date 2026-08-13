@@ -2691,13 +2691,20 @@ class UserTab(QWidget):
     # panel is redundant"). Kept wired so nothing else has to change.
 
     # preset -> (label, ((axis, work-target), ...) or None, zlift?)
-    # All presets are ABSOLUTE work-coordinate targets except Z +10, which
-    # is computed from the CURRENT work Z at click time (zlift=True).
+    # EVERY preset here is an ABSOLUTE work-coordinate target. Operator
+    # 2026-08-13: "all those should be absolute moves except the custom
+    # buttons under" -- ABS CUSTOM's GO REL is the only relative control on
+    # this panel.
+    # jp_p_zp10 used to carry zlift=True, which read the CURRENT machine Z
+    # and commanded G53 Z[that + 10]. At work Z-70 the button labelled Z10
+    # moved up by 10 instead of going to Z10, while jp_p_xy0z10 one row
+    # below -- same heading, same-looking label -- went to work Z10. The
+    # zlift machinery in _jog_preset is now unused by any preset.
     _JOG_PRESETS = (
         ('jp_p_xy0',    'X0 Y0',     (('x', 0.0), ('y', 0.0)),              False),
         ('jp_p_xyz0',   'X0 Y0 Z0',  (('x', 0.0), ('y', 0.0), ('z', 0.0)),  False),
         ('jp_p_z0',     'Z0',        (('z', 0.0),),                         False),
-        ('jp_p_zp10',   'Z10',       None,                                  True),
+        ('jp_p_zp10',   'Z10',       (('z', 10.0),),                        False),
         ('jp_p_xy0z10', 'X0 Y0 Z10', (('x', 0.0), ('y', 0.0), ('z', 10.0)), False),
         ('jp_p_a0c0',   'A0 ' + ROT.upper() + '0',
          (('a', 0.0), ('c', 0.0)),                                      False))
@@ -7210,31 +7217,95 @@ QTabBar::tab:only-one {
                 return
             from qtpyvcp.widgets.button_widgets.subcall_button import (
                 SubCallButton)
-            box = QWidget(host)
-            v = QVBoxLayout(box)
-            v.setContentsMargins(2, 2, 2, 2)
-            v.setSpacing(2)
-            btn = SubCallButton(box, filename='measure_shoulder.ngc')
+            # THE FRAME IS FIXED 250x150 and cannot grow (template_rack_atc
+            # .ui: geometry rect 250x150 AND sizePolicy Fixed/Fixed). Inside
+            # the 2px border that is 146 px of room, and the header plus one
+            # 45 px button already spent 118 of it -- so a second button plus
+            # a value field landed ON TOP of the first, which is what the
+            # operator's screenshot showed.
+            # A design review measured a budget that fits in 138:
+            #   top 2 + header 36 + 4 + button 45 + 4 + button 45 + bottom 2
+            # The 9 px comes off the HEADER, whose text needs 25 px at 17pt,
+            # not the 45 it was given.
+            for _h in host.findChildren(QWidget):
+                if _h.objectName().startswith('machine_column_header'):
+                    _h.setMinimumHeight(36)
+                    _h.setMaximumHeight(36)
+                    # 1 px of top padding centres the CAPS. QLabel centres
+                    # the 25 px line box, not the cap box, and this face's
+                    # descent (5) exceeds ascent-minus-capHeight (4) -- so
+                    # the text sits 1 px high. Invisible in the 45 px header
+                    # above, visible once this one is 32.
+                    _h.setStyleSheet((_h.styleSheet() or '')
+                                     + ' padding-top: 1px;')
+                    break
+            # SIDE MARGINS MATCH THE BOX ABOVE. Measured on screen: the
+            # TOOL CHANGE PANEL's contents span 214 px, this box's spanned
+            # 226 -- 6 px too wide each side, because zeroing the button
+            # row's margins removed the inset that kept the stock button
+            # clear of the frame. Only the VERTICAL margins are trimmed, and
+            # only enough to fit the second button in a fixed 150 px frame.
+            # 6 px sides, matching verticalLayout_49 in the box above
+            # (template_rack_atc.ui:1277/1281).
+            # THE PREVIOUS VERSION CLOBBERED ITSELF. It then fetched
+            # ref.parentWidget().layout() as "the button row" and zeroed it --
+            # but a QHBoxLayout is not a widget, so
+            # tool_touch_off_button.parentWidget() is frame_18 and that
+            # layout IS this one. The second call overwrote the first and
+            # left the box at 0/0: 226 px of contents against the upper
+            # box's 214, which is what the operator measured.
+            # TOUCH OFF's real row is horizontalLayout_100 and already
+            # carries the correct 2/2, so it is left alone.
+            # GROW THE FRAME UPWARD FOR VERTICAL AIR. Fitting a second
+            # button in the stock 150 px left 4 px above and below the
+            # buttons where the box above has 14 and 16 -- the buttons
+            # crowded the frame border, which is what the operator saw.
+            # frame_17 ends at y 268 and frame_18 starts at 298, so there
+            # are 30 px of empty gap between them. Taking 24 of it moves
+            # this frame UP and grows it to 174, leaving its BOTTOM edge
+            # exactly where it was (448) so nothing below shifts, and a 6 px
+            # gap between the two frames.
+            _g = host.geometry()
+            if _g.height() < 174:
+                host.setMinimumHeight(174)
+                host.setMaximumHeight(174)
+                host.setGeometry(_g.x(), _g.y() - 24, _g.width(), 174)
+            # 6 px sides matches verticalLayout_49 above; 14/16 top and
+            # bottom now match its vertical air too.
+            lay.setContentsMargins(6, 14, 6, 14)
+            lay.setSpacing(5)
+            from qtpyvcp.widgets.button_widgets.subcall_button import (
+                SubCallButton)
+            btn = SubCallButton(host, filename='measure_shoulder.ngc')
             btn.setObjectName('ned_measure_shoulder_button')
-            btn.setText('PROBE SHOULDER')
             btn.setStyleSheet(ref.styleSheet())
-            btn.setMinimumSize(ref.minimumWidth() or 145,
-                               ref.minimumHeight() or 45)
-            v.addWidget(btn)
+            btn.setMinimumSize(ref.minimumWidth() or 145, 45)
+            btn.setMaximumHeight(45)
+            btn.setSizePolicy(ref.sizePolicy())
+            # the stock button has no maximumSize while its siblings in the
+            # box above cap at 45, so slack made it taller than this one
+            ref.setMaximumHeight(45)
             self._ms_button = btn
-            # the shoulder diameter the .ngc reads, bound BY NAME
-            # NO CAPTION. The number is already under a column called
-            # SHOULDER DIA in the table it comes from, and a word beside a
-            # number is the "tonne of words" the operator objected to. The
-            # field wears the design system's own data-field look
-            # (probe_basic_dark.qss:142-187) instead of a hand-rolled one.
-            self._er_dia = QLineEdit()
+            # THE NUMBER GOES IN THE CAPTION -- "PROBE SHOULDER  D50.8" is
+            # 164 px at 16pt against 214 available, and it belongs on the
+            # control that consumes it. There is no vertical room for a field.
+            # ms_shdia STILL EXISTS, hidden: SubCallButton walks
+            # QApplication.allWidgets() matching objectName and reads .text(),
+            # and hidden widgets are in that list. It is the g-code binding.
+            self._er_dia = QLineEdit(host)
             self._er_dia.setObjectName('ms_shdia')
             self._er_dia.setReadOnly(True)
-            self._er_dia.setFixedWidth(70)
-            self._er_dia.setProperty('styleSet', 'dataField14')
-            v.addWidget(self._er_dia)
-            lay.addWidget(box)
+            self._er_dia.setVisible(False)
+            # ITS OWN ROW, cloning horizontalLayout_80_rerack's 2/2 margins,
+            # so it lands on the same x as the buttons in the box above
+            # instead of spanning the full layout width.
+            from PySide6.QtWidgets import QHBoxLayout as _QH
+            _row = _QH()
+            _row.setSpacing(0)
+            _row.setContentsMargins(2, 2, 2, 2)
+            _row.addWidget(btn)
+            lay.addLayout(_row)
+            lay.addStretch(1)
             self._er_refresh()
             LOG.info('PROBE SHOULDER: placed in %s (a %s), under %s',
                      host.objectName() or type(host).__name__,
@@ -7251,24 +7322,50 @@ QTabBar::tab:only-one {
         """Move a fresh PROBE SHOULDER result into the tool table.
 
         G-CODE CANNOT WRITE THE DATABASE, so measure_shoulder.ngc leaves the
-        answer in #3011 (height of the shoulder above the tool tip) and #3012
-        (its diameter), and this carries it across -- the same shape as the
-        rotary probing results, which land in #3090-#3098 and are read off
-        the var file. The var file only flushes when the interpreter
-        finishes, which is exactly when there is something new to collect.
+        answer in #3100 (distance from the SPINDLE NOSE down to the nut
+        face) and this carries it across -- the same
+        shape as the rotary probing results, which land in #3090-#3098 and
+        are read off the var file. The var file only flushes when the
+        interpreter finishes, which is exactly when there is something new
+        to collect.
+
+        THE DIAMETER IS NEVER WRITTEN HERE. Operator 2026-08-13: "no one but
+        user should touch shoulder diameter" ... "code can only touch
+        shoulder length offset. nothing else". It is the ER selection from
+        the tool table cell; this routine only ever reads past it.
+
+        WHY #3100 (2026-08-13): #3011/#3012 are tool_touch_off's
+        tool_diameter_probe_mode and tool_diameter_offset_mode. The 303x
+        pair tried next was worse -- Probe Basic binds those to probe SCREEN
+        WIDGETS (probe_basic_ui.py:8048 breakage_tolerance, :8128
+        user_setter_1), so they carried live values 2.0 and 0.001; this
+        routine harvested a shoulder of tool-length-minus-2.0 and wrote
+        "0.0" over the operator's ER16-28. #3100 is outside Probe Basic's
+        entire 3000-3098 block.
+
+        WHY NOSE-REFERENCED: the probe measures to the spindle nose by the
+        same cancelling formula tool_touch_off uses for the tip, so it needs
+        no coordinate frame. Height above the TIP is that subtracted from
+        the tool's own length -- which lives in the tool table, readable
+        here and not from g-code. A tool with no measured length yet cannot
+        produce a shoulder height, and is skipped rather than guessed at.
         """
         try:
             vals = {}
             with open(self.VAR_FILE) as f:
                 for line in f:
                     b = line.split()
-                    if len(b) == 2 and b[0] in ('3011', '3012'):
+                    if len(b) == 2 and b[0] == '3100':
                         vals[b[0]] = float(b[1])
         except Exception:
             return
-        h = vals.get('3011', 0.0)
-        d = vals.get('3012', 0.0)
-        if h <= 0 or (h, d) == getattr(self, '_sh_last', None):
+        nose_to_nut = vals.get('3100', 0.0)
+        # 0 = never measured. NEGATIVE = measured, and the answer is that the
+        # cutter is at least as wide as the nut, so there is no nut in the
+        # way at all -- the shoulder sits AT the spindle nose and the whole
+        # tool length is stickout (operator 2026-08-13: "effectively cutter
+        # is a solid shaft at cutting diameter all the way up").
+        if nose_to_nut == 0 or nose_to_nut == getattr(self, '_sh_last', None):
             return
         try:
             import linuxcnc as _lc, sqlite3
@@ -7278,11 +7375,37 @@ QTabBar::tab:only-one {
                 return
             db = os.path.join(os.path.dirname(self.VAR_FILE), 'tool_table.db')
             con = sqlite3.connect(db, timeout=2.0)
+            row = con.execute(
+                "SELECT z_offset FROM tool WHERE tool_no = ?", (tno,)).fetchone()
+            tool_len = float(row[0]) if row and row[0] else 0.0
+            if tool_len <= 0:
+                LOG.error('PROBE SHOULDER: T%d has no measured length in the '
+                          'tool table, so the shoulder cannot be placed '
+                          'against the tip -- press TOUCH OFF CURRENT TOOL '
+                          'first, then this', tno)
+                con.close()
+                return
+            solid = nose_to_nut < 0
+            h = tool_len if solid else tool_len - nose_to_nut
+            if h <= 0:
+                LOG.error('PROBE SHOULDER: nut face measured %.4f mm below '
+                          'the nose but T%d is only %.4f mm long -- that '
+                          'puts the shoulder at or below the tip. Nothing '
+                          'stored.', nose_to_nut, tno, tool_len)
+                con.close()
+                return
+            if solid:
+                LOG.info('PROBE SHOULDER: T%d is a solid shaft to the nose '
+                         '- shoulder = the whole tool length, %.4f mm. '
+                         'Not probed.', tno, h)
+            else:
+                LOG.info('PROBE SHOULDER: T%d length %.4f - nose-to-nut '
+                         '%.4f = shoulder %.4f mm above the tip', tno,
+                         tool_len, nose_to_nut, h)
             try:
-                for name, val in (('shoulder', '%.4f' % h),
-                                  ('shoulder_dia', '%.1f' % d)):
-                    if name == 'shoulder_dia' and d <= 0:
-                        continue
+                # ONE FIELD, EVER. The diameter cell belongs to the
+                # operator and nothing here may write it.
+                for name, val in (('shoulder', '%.4f' % h),):
                     r = con.execute(
                         "SELECT t.id, f.id FROM tool t"
                         "  JOIN custom_field_def f ON f.name = ?"
@@ -7298,9 +7421,14 @@ QTabBar::tab:only-one {
                 con.commit()
             finally:
                 con.close()
-            self._sh_last = (h, d)
-            LOG.info('SHOULDER: T%d measured %.4f mm above the tip, diameter '
-                     '%.1f mm -- written to the tool table', tno, h, d)
+            # DEDUPE ON WHAT WAS READ, not on what was derived: the guard
+            # above compares the raw #3036/#3037 pair, so storing the
+            # derived height here would never match and every poll would
+            # rewrite the same row.
+            self._sh_last = nose_to_nut
+            LOG.info('SHOULDER: T%d measured %.4f mm above the tip -- '
+                     'written to the tool table. Diameter untouched.',
+                     tno, h)
         except Exception:
             LOG.exception('SHOULDER: could not store the measurement')
 
@@ -7352,15 +7480,16 @@ QTabBar::tab:only-one {
         w.setText('%.1f' % dia)
         btn = getattr(self, '_ms_button', None)
         if btn is not None:
-            ok = dia > 0
-            if btn.isEnabled() != ok:
-                btn.setEnabled(ok)
-                btn.setToolTip('' if ok else
-                               'Pick an ER size in the tool table first -- '
-                               'the shoulder diameter sets how far the '
-                               'spindle steps off the puck')
-                LOG.info('PROBE SHOULDER: %s (shoulder diameter %.1f mm)',
-                         'enabled' if ok else 'DISABLED', dia)
+            # THE CAPTION IS JUST THE VERB (operator 2026-08-13: "i don't
+            # want that button to display the 28mm. it should be clean and
+            # simple, and refuse loudly if anything is missing").
+            # AND IT STAYS ENABLED. The general rule here is that a control
+            # which cannot act is greyed -- but a grey button says only
+            # "no", and the operator asked to be TOLD WHICH number is
+            # missing. measure_shoulder.ngc aborts by name for every one of
+            # them, so pressing it is the fastest way to find out.
+            btn.setText('PROBE SHOULDER')
+            btn.setToolTip('')
 
     def _build_rack_table(self):
         """RACK TABLE page on the ATC tab: per-fork PosX / PosY (PosZ later).

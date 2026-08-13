@@ -58,6 +58,17 @@ fi
 # edit (2026-08-03). A verification that can say "nothing happened" when
 # something did is worse than none.
 BEFORE=$(cd "$NED" && git diff --stat configs/ | md5sum)
+# SNAPSHOT FOR ROLLBACK -- TEXT CONFIGS ONLY. configs/ is 4.5 GB (backplot
+# caches and nc_files), so copying all of it per edit is out of the
+# question; the 215 files this gate actually protects are 2.2 MB. A plain
+# copy is the least clever thing that works and cannot disturb the git index
+# the way a stash or a checkout would -- there is uncommitted work here.
+SNAP=$(mktemp -d /tmp/cfg_edit_snap.XXXXXX)
+(cd "$NED/configs" && find . -type f \( -name '*.ngc' -o -name '*.hal' \
+    -o -name '*.ini' -o -name '*.py' -o -name '*.var' -o -name '*.inc' \
+    -o -name '*.yml' -o -name '*.qss' -o -name '*.ui' \) \
+    -exec cp -a --parents {} "$SNAP"/ \; ) 2>/dev/null || true
+trap 'rm -rf "$SNAP"' EXIT
 python3 -
 RC=$?
 [ $RC -ne 0 ] && { echo "edit script failed (rc=$RC) -- check the tree" >&2; exit $RC; }
@@ -170,8 +181,26 @@ if ! "$NED/tools/gcode_check.sh" --all >/tmp/cfg_edit_check.$$ 2>&1; then
     echo "=== SCANNER FAILED AFTER THE EDIT ===" >&2
     grep -E 'LINT|FAULT' /tmp/cfg_edit_check.$$ >&2 || cat /tmp/cfg_edit_check.$$ >&2
     rm -f /tmp/cfg_edit_check.$$
+    # ROLL THE EDIT BACK (2026-08-13). This used to print the failure and
+    # exit 1 while LEAVING THE BROKEN FILE ON DISK. .ngc is re-read on every
+    # call, so a refused edit still reached the operator: they pressed the
+    # button and got "Nested comment found" from a file the gate had already
+    # rejected. Reporting without reverting is not a gate.
+    if [ -d "$SNAP" ]; then
+        (cd "$SNAP" && find . -type f) | while read -r f; do
+            if ! cmp -s "$SNAP/$f" "$NED/configs/$f"; then
+                cp -a "$SNAP/$f" "$NED/configs/$f"
+                echo "  reverted: configs/${f#./}" >&2
+            fi
+        done
+        rm -rf "$SNAP"
+        echo "EDIT ROLLED BACK -- the tree is as it was before this call" >&2
+    else
+        echo "NO SNAPSHOT -- the broken edit is STILL ON DISK, fix it by hand" >&2
+    fi
     exit 1
 fi
+rm -rf "$SNAP"
 rm -f /tmp/cfg_edit_check.$$
 AFTER=$(cd "$NED" && git diff --stat configs/ | md5sum)
 [ "$BEFORE" = "$AFTER" ] && echo "(no files changed)" || echo "OK: gate passed, edit applied, scanner green"

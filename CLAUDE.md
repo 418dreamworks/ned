@@ -272,6 +272,24 @@
     exemption -- a GUI edit can lock the operator out of the machine, and
     on this project it has.
 
+26. **SHOW ME WHAT YOU THINK I SEE (operator 2026-08-13: "wheever user
+    discusses something on screen, you must always reproduce what you think
+    the user sees so there is no confusion. for GUI related stuff,
+    screenshot and show it on artifact").** The moment the operator refers
+    to anything on screen -- an error message, a button, a number, a
+    column -- SCREENSHOT IT AND SHOW IT BACK before answering. Do not
+    reason from a log line and assume it is the same thing they are
+    looking at.
+    - GUI: take the screenshot, publish it as an artifact, and point at the
+      thing in it.
+    - A log line is NOT the screen. On 2026-08-13 the operator said "explain
+      the error message" and I answered about a message from the log that
+      they were not looking at, then explained it at length. The whole
+      exchange was wasted because I never checked what was actually on the
+      display.
+    - If the screenshot does not show what they described, say so and ask
+      which screen -- do not guess.
+
 24. **100 WORDS. HARD CAP (operator 2026-08-10, re-stated 2026-08-12 after
     I kept breaking it).** Every reply to the operator is 100 words or
     fewer of PROSE. Longer than that, ASK PERMISSION first and wait.

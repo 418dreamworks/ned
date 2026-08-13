@@ -60,6 +60,16 @@ G90    (set absolute coordinates)
 (instead of driving the spindle across the table.)
 M66 E0 L0
 #<probe_dx> = ABS[#5399]
+(OFF-CENTRE PROBES GO AT 75 PERCENT. Operator 2026-08-13: "the plunge should)
+(be 75% of the regular plunge speed for ALL plunges that are not centered)
+(because we are not contacting the probe dead center and it bends it some".)
+(A puck touched off its axis takes a moment about that axis as well as a)
+(load along it, so the plate deflects before it trips and the reading walks)
+(with the feed. Slower approach, smaller deflection.)
+#<off_centre> = 1.0
+o220 if [#<probe_dx> GT 0.001]
+  #<off_centre> = 0.75
+o220 endif
 (PRINT, TOOL TOUCH OFF: probe X offset #<probe_dx> mm in -X for T#5400)
 
 (ALREADY AT G30? THEN DO NOT LIFT AND COME BACK. Operator 2026-08-12: "if)
@@ -100,7 +110,7 @@ M64 P3
 G4 P1.5
 
 G91
-F #<fast_probe_fr>
+F [#<fast_probe_fr> * #<off_centre>]
 G38.2 Z-[#<z_max_travel>]    (fast tool probe)
 #<z_fast_probe> = #5063    (save probe result of fast probe to parameters)
 G1 F[#<traverse_fr>] Z[#<retract_distance>]    (retract tool retract distance amount)
@@ -109,7 +119,7 @@ G1 F[#<traverse_fr>] Z[#<retract_distance>]    (retract tool retract distance am
 o120 if [#<slow_probe_fr> GT 0]
     (Initiate Slow Z- Probe)
     G91
-    F[#<slow_probe_fr>]    (set probe slow feedrate)
+    F[#<slow_probe_fr> * #<off_centre>]    (set probe slow feedrate)
     G38.2 Z-[#<retract_distance> * 2]    (slow tool probe)
     #<z_slow_probe> = #5063
     G90
@@ -132,12 +142,23 @@ o150 if [3 EQ 3]
 o150 endif
 
 G90    (set absolute coordinates)
-G53 G1 F[#<traverse_fr>] Z0 (Send Spindle to home zero position)
-(BACK TO G30. Operator 2026-08-12: after touch-off the tool returns there.)
-(Z is already up from the line above, so XY crosses nothing, then Z drops to)
-(the G30 height.)
-G53 G1 F[#<traverse_fr>] X#5181 Y#5182
-G53 G1 F[#<traverse_fr>] Z#5183
+(BACK TO G30, DIRECT. Operator 2026-08-13: "DO NOT GO TO TOP AND THEN BACK)
+(DOWN TO M30" ... "from anywhere else, going to m30 should go up first. but)
+(if we are starting from after tool probe, a linear move to the m30 location)
+(is fine". THIS IS THE ONLY PLACE THAT RULE APPLIES -- the GO TO G30 control)
+(still lifts to machine Z0 first and is not touched.)
+(WHY THE OLD LIFT WAS A ROUND TRIP TO NOWHERE: the probe leaves the tool at)
+(G30 XY give or take the probe offset, and G30 Z is #5183 = -344.572 while)
+(the puck top is -272.733 -- so G30 is 71.8 mm BELOW where the tool already)
+(is. Going up to machine Z0 first climbed 344 mm to come back down 344 mm and)
+(arrive under the starting point.)
+(PUCK DOWN BEFORE ANYTHING DESCENDS. Retracting it used to be the last line)
+(of this sub, which was safe only because the tool never went down here. Now)
+(it does, and the puck is the one thing between the tool and G30 Z, so it is)
+(dropped first and given the same 1.5 s the deploy gets.)
+M65 P3
+G4 P1.5
+G53 G1 F[#<traverse_fr>] X#5181 Y#5182 Z#5183
 
 (define new tool length offset parameters)
 #<new_tool_length_offset> = [ABS[#<spindle_zero_height> + #5063 - #<offset_z>]]
@@ -153,13 +174,12 @@ o160 else
     G43.1 Z [#<new_tool_length_offset>]  (temporary - not saved anywhere)
 o160 endif
 
-; PUCK DOWN. Stock raises it with M64 P3 and never lowers it, so it stayed
-; up after every touch-off until an abort or a calibration routine happened
-; to drop it (on_abort.ngc and the cal_* subs all pair up with down; these
-; two did not). Operator caught it 2026-08-04: "the puck stayed up long after
-; the last time we used it". Same class as a solenoid left energised.
-; Placed AFTER the retract to G53 Z0, so the tool is clear before it moves.
-M65 P3
+; PUCK DOWN moved UP, above the return move (2026-08-13). Stock raises it
+; with M64 P3 and never lowers it, so it stayed up after every touch-off
+; until an abort or a calibration routine happened to drop it. Operator
+; caught it 2026-08-04: "the puck stayed up long after the last time we used
+; it". It still always comes down -- just before the descent to G30 now
+; instead of after the sub's last line.
 
 M50 P1  (reinstate feedrate override)
 

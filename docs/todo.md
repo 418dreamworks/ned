@@ -138,3 +138,26 @@ next stripe, repeat. Keep the current B-driven helix for finishing, where
 the depth -- and therefore the torque -- is small.
 
 NOT BUILT. rotary_face is helix-only today.
+
+## Collet engagement warning from OAL and SHOULDER (2026-08-13)
+Operator: "if i have OAL and shoulder, i have a warning system if collet
+engagement is insufficient".
+
+    engagement = OAL - SHOULDER
+
+SHOULDER is measured by PROBE SHOULDER against the same puck as the nose, so
+it is the tip-to-nut-face distance: everything below the nut. OAL is the whole
+tool. The difference is what the collet actually grips, and NO machine
+constant is needed -- an earlier sketch needed the gauge-line-to-collet-face
+distance and this does not.
+
+THE RULE: collet makers want roughly 3 x shank diameter of engagement, and
+SHANK IN is now a column, so the threshold is computable per tool rather than
+a single number for the whole machine.
+
+WHERE IT BELONGS: at touch-off time, not mid-cut. The tool is in the spindle
+and stationary, and that is the last moment before it is trusted.
+
+CATCHES THE OPPOSITE MISTAKE TOO: a tool so short it cannot reach the work.
+
+NOT BUILT. Columns exist; nothing computes the difference yet.

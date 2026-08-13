@@ -50,18 +50,30 @@ if [ -n "$P" ]; then
   # thing the EXIT button does.
   W=$(DISPLAY=:0 xdotool search --name "Probe Basic" 2>/dev/null | tail -1)
   if [ -n "$W" ]; then
-    echo "pb_restart: sending WM close to window $W (saves GUI settings)"
-    DISPLAY=:0 xdotool windowclose "$W" 2>/dev/null
+    # CTRL+Q, NOT windowclose (2026-08-13). FILE -> EXIT is bound to Ctrl+Q,
+    # and that menu action is the path the operator uses and the one that
+    # actually exits. windowclose sends WM_DELETE_WINDOW, which never
+    # completed here -- every close this session sat through the full wait
+    # and escalated to kill -9, which is precisely the case where qtpyvcp
+    # does NOT write .vcp_persistent_data.pickle. So the "graceful" path was
+    # discarding the settings it existed to save.
+    echo "pb_restart: sending CTRL+Q to window $W (FILE -> EXIT, saves GUI settings)"
+    DISPLAY=:0 xdotool windowactivate "$W" 2>/dev/null
+    sleep 1
+    DISPLAY=:0 xdotool key --window "$W" ctrl+q 2>/dev/null
     # 60 s, NOT 20 (2026-08-12). CONFIRM_EXIT = False here, so closeEvent
     # goes straight to app.quit() with no dialog -- but tearing down
     # linuxcncsvr, milltask and halui behind it takes longer than 20 s, and
     # the short wait made this script kill -9 a shutdown that was working,
     # throwing away the settings the clean close exists to save.
-    for _ in $(seq 1 60); do sleep 1; [ -z "$(pids)" ] && break; done
+    # 120 s. 60 was still not enough -- every close this session timed out
+    # and escalated to kill -9, which is exactly the case where the GUI
+    # settings are NOT written, so the wait defeated its own purpose.
+    for _ in $(seq 1 120); do sleep 1; [ -z "$(pids)" ] && break; done
     if [ -z "$(pids)" ]; then
       echo "pb_restart: closed cleanly -- persistent settings written"
     else
-      echo "pb_restart: window close did not finish in 60 s -- escalating"
+      echo "pb_restart: window close did not finish in 120 s -- escalating"
     fi
   else
     echo "pb_restart: no Probe Basic window found -- cannot close cleanly"

@@ -55,13 +55,24 @@ def check(path):
                         'names no line'))
             continue
 
-        # RULE 1.2 -- no parens inside a comment
-        for m in re.finditer(r'\(([^()]*)\)', code):
-            inner = m.group(1)
-            if '(' in inner or ')' in inner:
-                bad.append((n, 'NESTED PAREN',
-                            'rule 1.2: the first ) ends the comment and the '
-                            'rest of the line becomes g-code'))
+        # RULE 1.2 -- no parens inside a comment.
+        # DEPTH-COUNTED, not pair-matched (2026-08-13). The old version
+        # scanned for innermost (...) pairs, so "(A (B) C)" -- balanced
+        # counts, genuinely nested -- passed clean and reached the machine,
+        # where LinuxCNC answered "Nested comment found". Any '(' seen while
+        # already inside a comment is the fault, whatever the totals say.
+        depth = 0
+        for ch in code:
+            if ch == '(':
+                if depth > 0:
+                    bad.append((n, 'NESTED PAREN',
+                                'rule 1.2: a ( inside a comment -- the first '
+                                ') ends the comment and the rest of the line '
+                                'becomes g-code'))
+                    break
+                depth += 1
+            elif ch == ')':
+                depth = max(0, depth - 1)
 
         # RULE 2.1 -- % truncates an operator message
         for m in re.finditer(r'\((?:PRINT|DEBUG|abort|msg)\s*,([^)]*)\)',
