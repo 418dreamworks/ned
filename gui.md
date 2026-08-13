@@ -3286,3 +3286,22 @@ AttributeError: 'Brain' object has no attribute 'correcting'
 2026-08-12 20:09:47  SPINDLE RESTORE: T5 re-declared in spindle after reboot (sensor-confirmed clamped); tool_in_spindle=5 tool_offset Z=+76.9581 (G43 applied - tip reference)
 2026-08-12 20:09:47  TOOL RECORD SETTLED: the spindle/table comparison is meaningful from here on
 2026-08-12 20:09:52  SPINDLE RESTORE: LinuxCNC already has T5 -- nothing to do
+2026-08-12 20:13:55  B POWER: dark -- R4 borrowed by the head read (B holds position, self-locking worm)
+2026-08-12 20:14:09  MACHINE ON -> fresh head read (A/C will home IN PLACE, no motion)
+2026-08-12 20:14:09  IN-PLACE HOME: standing by -- no armed head read
+2026-08-12 20:14:09  program/MDI done (motion complete) -> MANUAL + teleop (MPG live)
+2026-08-12 20:14:09  TELEOP re-entered (machine ON + homed) -> MPG live
+2026-08-12 20:14:10  TELEOP re-entered (machine ON + homed) -> MPG live
+2026-08-12 20:14:12  HOME PINS: joint 5 home wiped (offset is pso-driven) -- stateless read start
+2026-08-12 20:14:12  HEADREAD C start (blanked: hr_deg, lastraw, ini.5.home, ini.5.home_offset)
+2026-08-12 20:14:14  HEADREAD C: -0.000 deg  (mt=-169 w=59255266)
+2026-08-12 20:14:14  HEADREAD C: joint 5 measurement held in hr_deg, pins untouched until the home
+2026-08-12 20:14:15  HOME PINS: joint 4 home wiped (offset is pso-driven) -- stateless read start
+2026-08-12 20:14:15  HEADREAD A start (blanked: hr_deg, lastraw, ini.4.home, ini.4.home_offset)
+2026-08-12 20:14:17  HEADREAD A: -0.001 deg  (mt=36 w=17106460)
+2026-08-12 20:14:17  HEADREAD A: joint 4 measurement held in hr_deg, pins untouched until the home
+2026-08-12 20:14:18  HEAD READ armed: C=-0.000 A=-0.001
+2026-08-12 20:14:18  IN-PLACE HOME: proceeding (pending + armed read + no REF or verify outstanding)
+2026-08-12 20:14:18  IN-PLACE HOME: standing by -- nothing pending
+2026-08-12 20:14:18  B POWER: R4 on, 0.25 s settle before steps are allowed
+2026-08-12 20:14:18  B POWER: brick live and settled -- B may move

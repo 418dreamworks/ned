@@ -6535,6 +6535,19 @@ QTabBar::tab:only-one {
                     'by the tool diameter only, not by the flute length.')
         pitch = trad
         ya, yb = trad, length - trad
+        # NO-PLUNGE RAMP: 3 tool diameters of Y per half-diameter of Z, i.e.
+        # 6x the radial depth. Mirrors the .ngc so the page refuses the same
+        # jobs the cycle does, instead of promising a cut that will abort.
+        ramp = 6.0 * doc
+        if length - 2 * trad <= ramp:
+            for k, v in blank.items():
+                o[k].setText(v)
+            self._rf_note.setStyleSheet('color: rgb(238,120,120); font: 12pt "Probe Basic Bebas Mono";')
+            self._rf_note.setText(
+                'REFUSED: a no-plunge ramp needs %.1f mm and the cut is only '
+                '%.1f mm. Shorter tool, shallower depth, or longer length.'
+                % (ramp, max(0.0, length - 2 * trad)))
+            return
         if yb <= ya:
             for k, v in blank.items():
                 o[k].setText(v)
@@ -6597,6 +6610,7 @@ QTabBar::tab:only-one {
             rr = max(rr - doc, rend)
             wb = min(3.0 * fz * sp * N / (math.pi * rout), self.RF_BMAX)
             feed = pitch * wb / 6.0                # mm/min, as the .ngc uses
+            # the ramp travels at the same feed, so it simply adds its length
             surf = wb * math.pi * rout / 3.0       # mm/min
             fzr = surf / (sout * N)
             tmin += (yb - ya) / feed

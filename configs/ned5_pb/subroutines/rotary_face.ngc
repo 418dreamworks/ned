@@ -198,6 +198,20 @@ o<rotary_face> sub
     #<sout> = #<rf_srpm>
   o44 endif
   #<len>   = [#<yb> - #<ya>]
+  (NEVER PLUNGE. Operator 2026-08-12: "i am using a fly cutter that doesn't)
+  (cut in the middle and as it goes it with a plunge, i get rubbing. ensure)
+  (that you always take at least 3 cutter diameters to ramp half cutter)
+  (diameter of plunge".)
+  (A cutter with no centre cutting edge has nothing to remove material with)
+  (at its axis, so any descent steeper than the flutes can shear turns into)
+  (the dead centre rubbing the bottom of the cut.)
+  (THE GRADIENT: 3 tool diameters of Y for half a tool diameter of Z. Since)
+  (the radial depth IS half the diameter, that is 6 times the depth of Y)
+  (travel per descent, which holds whatever the depth is capped to.)
+  #<ramp> = [6.0 * #<doc>]
+  o47 if [#<ramp> GE #<len>]
+    (abort, ROTARY FACE: the cut is #<len> mm long and a no-plunge ramp for this cutter needs #<ramp> mm. Use a shorter tool, a shallower depth, or face a longer length)
+  o47 endif
   #<revs>  = [#<len> / #<pitch>]
   (PRINT, ROTARY FACE: T#<rf_tool> dia #<tdia> with #<rf_flutes> flutes, chip load #<rf_chip> mm per tooth)
   (PRINT, ROTARY FACE: radial depth #<doc> mm per pass, Y advance #<pitch> mm per turn, tool centre #<ya> to #<yb>)
@@ -318,11 +332,15 @@ o<rotary_face> sub
         #<sramp> = #<rf_smax>
       o107 endif
       S#<sramp>
+      (THE RAMP IS 6 x THE DEPTH OF Y, not one pitch. One pitch descended the)
+      (whole radial depth in a single turn of the stock -- a plunge in all)
+      (but name, and exactly what makes a fly cutter rub.)
+      #<rrevs> = [#<ramp> / #<pitch>]
       G91
-      G1 Y[#<pitch> * #<dir>] Z[#<dz>] B[360.0] F[#<pfeed>]
+      G1 Y[#<ramp> * #<dir>] Z[#<dz>] B[#<rrevs> * 360.0] F[#<pfeed>]
       G90
-      #<yrun> = [#<len> - #<pitch>]
-      #<brun> = [#<brun> - 360.0]
+      #<yrun> = [#<len> - #<ramp>]
+      #<brun> = [#<brun> - [#<rrevs> * 360.0]]
     o105 endif
 
     (THE REST OF THE PASS AT DEPTH. One block, no corners: Y against B is a)
