@@ -52,6 +52,39 @@ post that omits `G43` entirely is not a fix: ned's
 `RS274NGC_STARTUP_CODE` runs `G49`, so a program with no `G43` applies no
 tool length at all.
 
+## Feeds and speeds are decided on ned. Fusion emits PLACEHOLDERS.
+
+Operator, 2026-08-13: *"for feeds and speed, we will determine them on ned.
+tell the other fusion to use placeholders. i don't want them to think about
+it. they need to focus on toolpaths and nothing else."*
+
+The CAM side does not choose, calculate or reason about feeds or speeds. It
+emits a fixed placeholder per ROLE and ned rewrites them.
+
+| role | placeholder | why this value |
+|---|---|---|
+| spindle | `S1000` | the machine minimum. If it ever escapes unrewritten it is slow, not fast |
+| cutting feed | `F200` | ditto -- safe if unrewritten |
+| plunge feed | `F100` | ditto |
+| lead-in / ramp, if the post has one | `F150` | ditto |
+
+**Every placeholder must be safe if it is never rewritten.** A placeholder
+that is too FAST turns a missed rewrite into a crash; too slow only wastes
+time. That is the whole reason these numbers are small.
+
+The post must also emit this header line so the rewrite is deterministic and
+can assert it found what it expected:
+
+    (NED-FEEDS PLACEHOLDER: SPINDLE=S1000 CUT=F200 PLUNGE=F100 LEAD=F150)
+
+ned computes the real numbers from the operator's CHIP LOAD and the tool
+table, which already carries FLUTES for every tool:
+
+    F = S x flutes x chipload
+
+so a role only needs to be identifiable, never correct, in the CAM output.
+Do not vary the placeholder per tool -- one value per role, every time.
+
 ## Where the data is
 
 | file | what it is |
