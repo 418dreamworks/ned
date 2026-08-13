@@ -58,32 +58,31 @@ Operator, 2026-08-13: *"for feeds and speed, we will determine them on ned.
 tell the other fusion to use placeholders. i don't want them to think about
 it. they need to focus on toolpaths and nothing else."*
 
-The CAM side does not choose, calculate or reason about feeds or speeds. It
-emits a fixed placeholder per ROLE and ned rewrites them.
+The CAM side does not choose, calculate or reason about feeds or speeds.
+Whatever it emits is overwritten here.
 
-| role | placeholder | why this value |
+**The only requirement: plunge and cutting must be DISTINCT, CONSISTENT
+values, so the rewrite can tell the two roles apart.** Nothing else about
+them matters.
+
+That is how both files were rewritten on 2026-08-13 -- the plunge:cut ratio
+in each was preserved and the cutting feed set to the operator's chip load:
+
+| file | was | became |
 |---|---|---|
-| spindle | `S1000` | the machine minimum. If it ever escapes unrewritten it is slow, not fast |
-| cutting feed | `F200` | ditto -- safe if unrewritten |
-| plunge feed | `F100` | ditto |
-| lead-in / ramp, if the post has one | `F150` | ditto |
-
-**Every placeholder must be safe if it is never rewritten.** A placeholder
-that is too FAST turns a missed rewrite into a crash; too slow only wastes
-time. That is the whole reason these numbers are small.
-
-The post must also emit this header line so the rewrite is deterministic and
-can assert it found what it expected:
-
-    (NED-FEEDS PLACEHOLDER: SPINDLE=S1000 CUT=F200 PLUNGE=F100 LEAD=F150)
+| `kakeya_D60_H120_FUSION.ngc` | S5000, cut F1000, plunge F333.33 | S9000, cut F3600, plunge F1200 |
+| `kakeya_D60_H120_CLAUDE.ngc` | S12000, cut F2000, plunge F600 | S9000, cut F3600, plunge F1080 |
 
 ned computes the real numbers from the operator's CHIP LOAD and the tool
 table, which already carries FLUTES for every tool:
 
     F = S x flutes x chipload
 
-so a role only needs to be identifiable, never correct, in the CAM output.
-Do not vary the placeholder per tool -- one value per role, every time.
+## Validation happens on ned, not on the CAM side
+
+The CAM side has no LinuxCNC, so it cannot run `rs274` and is not asked to.
+Every program is parsed here, against ned's real tool table, before it is
+run. What the CAM side owes is a correct toolpath and a collision check.
 
 ## Where the data is
 
