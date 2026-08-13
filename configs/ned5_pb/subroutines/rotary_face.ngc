@@ -46,6 +46,7 @@ o<rotary_face> sub
   #<rf_dend>   = #3 (=0 target diameter mm - required)
   #<rf_len>    = #4 (=0 length to face, +Y from zero - required)
   #<rf_chip>   = #5 (=0 chip load mm per tooth - required)
+  #<rf_vc>     = #13 (=0 surface speed m per min - 0 keeps the old behaviour)
   #<rf_flutes> = #6 (=2 flutes - from the tool table)
   #<rf_fdepth> = #7 (=0 flute depth mm - from the tool table, 0 = unknown)
   #<rf_bmax>   = #8 (=120.0 B max deg/s - JOINT_6 MAX_VELOCITY, 20 rpm)
@@ -163,14 +164,35 @@ o<rotary_face> sub
     #<npass> = 1
   o41 endif
   #<routmin> = [#<rstart> - [[#<npass> - 1] * #<doc>]]
-  #<sp> = [#<rf_bmax> * #<pi> * #<routmin> / [3.0 * #<rf_chip> * #<rf_flutes>]]
+  (SURFACE SPEED SETS THE SPINDLE, CHIP LOAD SETS THE ROTATION.)
+  (Operator 2026-08-12: "why is it a limit and not something that is)
+  (functionally related". It was not related at all -- the tool diameter)
+  (appeared nowhere in the spindle solve, so a 1.5 inch cutter would have)
+  (been handed the same rpm as a 3/8 and run at 1077 m per min.)
+  (  S  = Vc * 1000 / [pi * D]        the cutter and the material)
+  (  wB = 3 * fz * S * N / [pi * r]   the chip load, at the uncut radius)
+  (Change the tool and the rpm follows, because D is in the equation now.)
+  (WITH NO Vc GIVEN the old behaviour is kept: solve the spindle from the)
+  (chip load at the smallest uncut radius so B lands exactly on its ceiling)
+  (on the last pass.)
+  o45 if [#<rf_vc> GT 0]
+    #<sp> = [#<rf_vc> * 1000.0 / [#<pi> * #<tdia>]]
+  o45 else
+    #<sp> = [#<rf_bmax> * #<pi> * #<routmin> / [3.0 * #<rf_chip> * #<rf_flutes>]]
+  o45 endif
   o42 if [#<sp> GT #<rf_smax>]
     #<sp> = #<rf_smax>
   o42 endif
   o43 if [#<sp> LT #<rf_smin>]
-    #<fzmax> = [#<rf_bmax> * #<pi> * #<routmin> / [3.0 * #<rf_smin> * #<rf_flutes>]]
-    (abort, ROTARY FACE: that chip load needs #<sp> rpm and the spindle floor is #<rf_smin>. The most this machine can cut at the final diameter is #<fzmax> mm per tooth)
+    #<vcmin> = [#<rf_smin> * #<pi> * #<tdia> / 1000.0]
+    (abort, ROTARY FACE: that needs #<sp> rpm and the spindle floor is #<rf_smin>. With this cutter the slowest surface speed the machine can hold is #<vcmin> m per min)
   o43 endif
+  (SANITY: B must be able to deliver the chip load at this spindle speed.)
+  #<wbneed> = [3.0 * #<rf_chip> * #<sp> * #<rf_flutes> / [#<pi> * #<routmin>]]
+  o46 if [#<wbneed> GT #<rf_bmax>]
+    #<fzmax> = [#<rf_bmax> * #<pi> * #<routmin> / [3.0 * #<sp> * #<rf_flutes>]]
+    (abort, ROTARY FACE: B would need #<wbneed> deg per sec to hold that chip load at #<sp> rpm and its ceiling is #<rf_bmax>. Either drop the chip load to #<fzmax> mm per tooth or lower the surface speed)
+  o46 endif
   #<sout> = #<sp>
   o44 if [#<rf_srpm> GT 0]
     #<sout> = #<rf_srpm>
@@ -179,7 +201,8 @@ o<rotary_face> sub
   #<revs>  = [#<len> / #<pitch>]
   (PRINT, ROTARY FACE: T#<rf_tool> dia #<tdia> with #<rf_flutes> flutes, chip load #<rf_chip> mm per tooth)
   (PRINT, ROTARY FACE: radial depth #<doc> mm per pass, Y advance #<pitch> mm per turn, tool centre #<ya> to #<yb>)
-  (PRINT, ROTARY FACE: #<npass> passes, spindle #<sout> rpm held all cycle, B reaches its ceiling only on the last pass)
+  #<vcnow> = [#<sout> * #<pi> * #<tdia> / 1000.0]
+  (PRINT, ROTARY FACE: #<npass> passes, spindle #<sout> rpm held all cycle, surface speed #<vcnow> m per min)
 
   G90
   (BLEND THE CORNERS SO THE STOCK NEVER STOPS TURNING. The default here is)

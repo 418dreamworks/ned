@@ -71,6 +71,17 @@ def check(path):
                             'rule 2.1: PRINT/DEBUG substitute #<var> only; a '
                             '%% ends the message at that point'))
 
+        # RULE 3.5 -- an o-word is oNNN or o<name>, never a digit-letter mix
+        # (2026-08-12: o41a reached the machine and LinuxCNC answered
+        # "Unknown control command in o", which names neither the line nor
+        # the word. It parses o41, then chokes on the a.)
+        m = re.match(r'\s*o(\d+[A-Za-z_]\w*)\b', code)
+        if m:
+            bad.append((n, 'MALFORMED O-WORD',
+                        'rule 3.5: "o%s" is neither oNNN nor o<name> -- '
+                        'LinuxCNC says "Unknown control command in o" and '
+                        'names no line' % m.group(1)))
+
         # RULE 3.2 -- o-word numbers unique per file
         m = re.match(r'\s*o(\d+)\s+(if|while|sub|repeat|do)\b', code, re.I)
         if m:
@@ -105,6 +116,7 @@ def check(path):
 # Split because a whole-tree sweep that fails on every legacy style finding
 # blocks every edit and gets switched off, which is worse than no linter.
 HARD = {'UNCLOSED COMMENT', 'NESTED PAREN', 'DUPLICATE O-WORD',
+        'MALFORMED O-WORD',
         'SECOND SUB IN FILE', 'UNREADABLE'}
 
 

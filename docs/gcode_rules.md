@@ -71,6 +71,11 @@ with `EOF in file ... seeking o-word`.
 A repeated number pairs the wrong `endif`, and the interpreter does not
 complain — it just executes the wrong branch. Silent and expensive.
 
+### 3.5 An o-word is `oNNN` or `o<name>` -- never a digit-letter mix
+`o41a` reached the machine on 2026-08-12. LinuxCNC parsed `o41`, choked on
+the `a`, and answered `Unknown control command in o` -- naming neither the
+line nor the word. Enforced.
+
 ### 3.3 Named parameters are LOCAL to the sub that assigns them
 Pass `#1..#30`, or use a global `#<_name>`.
 

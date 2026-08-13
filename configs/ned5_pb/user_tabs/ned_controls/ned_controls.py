@@ -670,7 +670,6 @@ class UserTab(QWidget):
         QTimer.singleShot(1950, self._build_rotary_face_tab)
         QTimer.singleShot(2100, self._wire_air_button)
         QTimer.singleShot(2200, self._build_shoulder_button)
-        QTimer.singleShot(2300, self._wire_er_picker)
         QTimer.singleShot(2000, self._init_tool_safety)
         # -xyzab only (self-checks the env and returns immediately otherwise).
         QTimer.singleShot(4000, self.xyzab_launch_start)
@@ -970,7 +969,7 @@ class UserTab(QWidget):
             def _readout(key, lab, prev=True):
                 nonlocal row
                 lw = QLabel(lab)
-                lw.setStyleSheet('color: #E6E6E6; font: 10pt;')
+                lw.setStyleSheet('color: #E6E6E6; font: 12pt "Probe Basic Bebas Mono";')
                 gl.addWidget(lw, row, 0)
                 cur = QLineEdit(); prv = QLineEdit()
                 for e in (cur, prv):
@@ -1090,7 +1089,7 @@ class UserTab(QWidget):
                            'steps Y- to the next fork. Every descent is a '
                            'probe move; wrong anything = loud abort.')
             rnote.setWordWrap(True)
-            rnote.setStyleSheet('color: rgb(160,160,160); font: 10pt;')
+            rnote.setStyleSheet('color: rgb(160,160,160); font: 12pt "Probe Basic Bebas Mono";')
             rbl.addWidget(rnote)
             rl.addWidget(rbox)
             rl.addStretch(1)
@@ -1273,7 +1272,7 @@ class UserTab(QWidget):
     def _zclamp_say(self, msg, err=False):
         w = self._zclamp_widgets.get('status')
         if w is not None:
-            w.setStyleSheet('color: rgb(235,90,90); font: 10pt; font-weight: bold;'
+            w.setStyleSheet('color: rgb(235,90,90); font: 12pt "Probe Basic Bebas Mono"; font-weight: bold;'
                             if err else 'color: rgb(160,160,160); font: 9pt;')
             w.setText(msg)
 
@@ -6394,6 +6393,11 @@ QTabBar::tab:only-one {
         ('rf_dend',   'D END (mm)',   '32.0'),
         ('rf_len',    'LENGTH (mm)',  '100.0'),
         ('rf_chip',   'CHIP LOAD (mm/tooth)', '0.30'),
+        # SURFACE SPEED SETS THE SPINDLE (2026-08-12). With it the cutter
+        # diameter finally appears in the rpm: S = Vc*1000/(pi*D). Left at 0
+        # the cycle keeps the old behaviour and solves the spindle from the
+        # chip load instead.
+        ('rf_vc',     'SURFACE (m/min)', '250'),
         # PRE-FILLED WITH THE SOLVED RPM UNTIL THE OPERATOR TYPES IN IT. An
         # override box that starts empty makes them copy a number off the
         # screen beside it; one that keeps overwriting itself after they type
@@ -6416,6 +6420,7 @@ QTabBar::tab:only-one {
     ROTARY_FACE_CALC = (
         ('rf_c_doc',   'RADIAL DOC (mm)'),
         ('rf_c_rpm',   'SPINDLE SOLVED (rpm)'),
+        ('rf_c_vc',    'TOOL SURFACE (m/min)'),
         ('rf_c_b',     'B SPEED (rpm)'),
         ('rf_c_surf',  'STOCK SURFACE (mm/s)'),
         ('rf_c_feed',  'Y FEED (mm/s)'),
@@ -6546,18 +6551,37 @@ QTabBar::tab:only-one {
             npass += 1
         npass = max(npass, 1)
         routmin = r - (npass - 1) * doc
-        sp = self.RF_BMAX * math.pi * routmin / (3.0 * fz * N)
+        # SAME ORDER THE .NGC USES: surface speed and the cutter give the
+        # spindle, then chip load gives B. With no Vc the old behaviour
+        # stands and the spindle comes from the chip load instead.
+        vc = num('rf_vc')
+        if vc > 0:
+            sp = vc * 1000.0 / (math.pi * tdia)
+        else:
+            sp = self.RF_BMAX * math.pi * routmin / (3.0 * fz * N)
         if sp > self.RF_SMAX:
             sp = self.RF_SMAX
         if sp < self.RF_SMIN:
-            fzmax = self.RF_BMAX * math.pi * routmin / (3.0 * self.RF_SMIN * N)
+            vcmin = self.RF_SMIN * math.pi * tdia / 1000.0
             for k, v in blank.items():
                 o[k].setText(v)
-            self._rf_note.setStyleSheet('color: rgb(238,120,120); font: 10pt;')
+            self._rf_note.setStyleSheet('color: rgb(238,120,120); font: 12pt "Probe Basic Bebas Mono";')
             self._rf_note.setText(
-                'REFUSED: needs %.0f rpm at the final diameter and the floor '
-                'is %.0f. Max chip load there is %.3f mm/tooth.'
-                % (sp, self.RF_SMIN, fzmax))
+                'REFUSED: needs %.0f rpm, floor is %.0f. Slowest surface '
+                'speed this cutter can hold is %.0f m/min.'
+                % (sp, self.RF_SMIN, vcmin))
+            return
+        wb_need = 3.0 * fz * sp * N / (math.pi * routmin)
+        if wb_need > self.RF_BMAX:
+            fzmax = self.RF_BMAX * math.pi * routmin / (3.0 * sp * N)
+            for k, v in blank.items():
+                o[k].setText(v)
+            self._rf_note.setStyleSheet('color: rgb(238,120,120); font: 12pt "Probe Basic Bebas Mono";')
+            self._rf_note.setText(
+                'REFUSED: B needs %.1f rpm to hold that chip load at %.0f '
+                'rpm; ceiling is %.1f. Drop the chip load to %.3f or the '
+                'surface speed.'
+                % (wb_need / 6.0, sp, self.RF_BMAX / 6.0, fzmax))
             return
         ovr = num('rf_srpm')
         sout = ovr if ovr > 0 else sp
@@ -6591,6 +6615,7 @@ QTabBar::tab:only-one {
                 (fmt + ' - ' + fmt) % (lo, hi))
         o['rf_c_doc'].setText('%.3f' % doc)
         o['rf_c_rpm'].setText('%.0f' % sp)
+        o['rf_c_vc'].setText('%.0f' % (sout * math.pi * tdia / 1000.0))
         o['rf_c_b'].setText(rng(b_lo, b_hi, '%.2f', 1.0 / 6.0))
         o['rf_c_surf'].setText(rng(surf_lo, surf_hi, '%.2f', 1.0 / 60.0))
         o['rf_c_feed'].setText(rng(feed_lo, feed_hi, '%.3f', 1.0 / 60.0))
@@ -6607,7 +6632,7 @@ QTabBar::tab:only-one {
                 box.setText(want)
                 box.blockSignals(False)
         self._rf_note.setStyleSheet(
-            'color: %s; font: 10pt;' % ('rgb(238,180,120)' if note else
+            'color: %s; font: 12pt "Probe Basic Bebas Mono";' % ('rgb(238,180,120)' if note else
                                         'rgb(238,120,120)'))
         self._rf_note.setText(note)
 
@@ -6653,7 +6678,7 @@ QTabBar::tab:only-one {
                 row = QHBoxLayout()
                 lb = QLabel(label)
                 lb.setFixedWidth(170)
-                lb.setStyleSheet('color: %s; font: 10pt;'
+                lb.setStyleSheet('color: %s; font: 12pt "Probe Basic Bebas Mono";'
                                  % ('#AAAAAA' if ro else '#E6E6E6'))
                 ed = QLineEdit()
                 ed.setObjectName(name)          # the binding
@@ -6706,7 +6731,7 @@ QTabBar::tab:only-one {
             self._rf_note = QLabel('')
             self._rf_note.setWordWrap(True)
             self._rf_note.setFixedWidth(300)
-            self._rf_note.setStyleSheet('color: rgb(238,120,120); font: 10pt;')
+            self._rf_note.setStyleSheet('color: rgb(238,120,120); font: 12pt "Probe Basic Bebas Mono";')
             col2.addWidget(self._rf_note)
             col2.addStretch(1)
 
@@ -6780,11 +6805,11 @@ QTabBar::tab:only-one {
         try:
             with open(self.MATERIALS_FILE) as f:
                 rows = json.load(f)
-            return [(str(a), str(b)) for a, b in rows]
+            return [[str(c) for c in row] for row in rows]
         except Exception:
             # first run, or the file was hand-edited into nonsense: a
             # reference table is not worth an exception on the way up
-            return [('Pine', '0.30')]
+            return [['Pine', '0.30', '250']]
 
     def _materials_save(self):
         """Written on every cell edit.
@@ -6800,13 +6825,16 @@ QTabBar::tab:only-one {
         if t is None:
             return
         rows = []
+        # WIDTH-AGNOSTIC: walk whatever columns the table has, so adding one
+        # does not need this loop rewritten (it did, on the day the surface
+        # speed column arrived).
         for r in range(t.rowCount()):
-            a = t.item(r, 0)
-            b = t.item(r, 1)
-            a = a.text().strip() if a else ''
-            b = b.text().strip() if b else ''
-            if a or b:
-                rows.append([a, b])
+            vals = []
+            for col in range(t.columnCount()):
+                it = t.item(r, col)
+                vals.append(it.text().strip() if it else '')
+            if any(vals):
+                rows.append(vals)
         try:
             with open(self.MATERIALS_FILE, 'w') as f:
                 json.dump(rows, f, indent=1)
@@ -6837,23 +6865,28 @@ QTabBar::tab:only-one {
             lay.setContentsMargins(12, 12, 12, 12)
             lay.setSpacing(8)
             rows = self._materials_load()
-            t = QTableWidget(len(rows), 2)
+            t = QTableWidget(len(rows), 3)
             t.setObjectName('ned_materials_table')
-            t.setHorizontalHeaderLabels(['MATERIAL', 'CHIP LOAD  mm/tooth'])
+            # TWO NUMBERS PER MATERIAL, because the cycle needs both now:
+            # surface speed sets the spindle, chip load sets the rotation.
+            t.setHorizontalHeaderLabels(['MATERIAL', 'CHIP LOAD  mm/tooth',
+                                         'SURFACE  m/min'])
             t.verticalHeader().setVisible(False)
             t.setSelectionBehavior(QAbstractItemView.SelectRows)
-            t.horizontalHeader().setSectionResizeMode(0, QHeaderView.Fixed)
-            t.horizontalHeader().setSectionResizeMode(1, QHeaderView.Fixed)
+            for _c in range(3):
+                t.horizontalHeader().setSectionResizeMode(_c, QHeaderView.Fixed)
             # WIDTH MUST COVER BOTH COLUMNS PLUS THE FRAME, or the second
             # header clips and the table grows a horizontal scrollbar for
             # two columns -- 220 + 200 + 4 px border either side + slack.
-            t.setColumnWidth(0, 220)
-            t.setColumnWidth(1, 200)
-            t.setFixedWidth(438)
+            t.setColumnWidth(0, 200)
+            t.setColumnWidth(1, 190)
+            t.setColumnWidth(2, 160)
+            t.setFixedWidth(568)
             t.setMinimumHeight(220)
-            for r, (a, b) in enumerate(rows):
-                t.setItem(r, 0, QTableWidgetItem(a))
-                t.setItem(r, 1, QTableWidgetItem(b))
+            for r, cells in enumerate(rows):
+                for col in range(3):
+                    t.setItem(r, col, QTableWidgetItem(
+                        cells[col] if col < len(cells) else ''))
             # SAME SKIN AS THE TOOL TABLE. Values lifted from the design
             # system's own ToolTable/MillToolTable/OffsetTable block,
             # probe_basic_dark.qss:674-687, and its header rule at :667-672
@@ -6888,8 +6921,8 @@ QTabBar::tab:only-one {
             def _add():
                 r = t.rowCount()
                 t.insertRow(r)
-                t.setItem(r, 0, QTableWidgetItem(''))
-                t.setItem(r, 1, QTableWidgetItem(''))
+                for col in range(t.columnCount()):
+                    t.setItem(r, col, QTableWidgetItem(''))
                 t.setCurrentCell(r, 0)
                 t.editItem(t.item(r, 0))
 
@@ -6949,7 +6982,7 @@ QTabBar::tab:only-one {
             lay.addWidget(head)
             why = QLabel('GO TO BAR  \u2192  jog to ~5 mm above  \u2192  '
                          'ROTARY PROBE.   Sets G55 X0 Y0 Z0.')
-            why.setStyleSheet('color: #E6E6E6; font: 10pt;')
+            why.setStyleSheet('color: #E6E6E6; font: 12pt "Probe Basic Bebas Mono";')
             lay.addWidget(why)
             self._rp_fields = {}
             for name, label, default, hint in self.ROTARY_PROBE_FIELDS:
@@ -6967,7 +7000,7 @@ QTabBar::tab:only-one {
                 ed.setStyleSheet('background: rgb(128,128,128); color: white; '
                                  'font: 12pt "Probe Basic Bebas Mono";')
                 hn = QLabel(hint)
-                hn.setStyleSheet('color: rgb(170,170,170); font: 10pt;')
+                hn.setStyleSheet('color: rgb(170,170,170); font: 12pt "Probe Basic Bebas Mono";')
                 row.addWidget(lb, 0)
                 row.addWidget(ed, 0)
                 row.addWidget(hn, 1)
@@ -7000,10 +7033,10 @@ QTabBar::tab:only-one {
                     ('3097', 'St2  bar dia  mm'),
                     ('3094', 'YAW   dX  mm'), ('3095', 'DROOP dZ  mm'))):
                 lw = QLabel(lab)
-                lw.setStyleSheet('color: #E6E6E6; font: 10pt;')
+                lw.setStyleSheet('color: #E6E6E6; font: 12pt "Probe Basic Bebas Mono";')
                 ed = QLineEdit()
                 ed.setReadOnly(True)
-                ed.setFont(QFont('DejaVu Sans Mono', 11))
+                ed.setProperty('styleSet', 'dataField14')
                 ed.setFixedHeight(30)
                 ed.setStyleSheet(self.CAL_QSS['read'])
                 rg.addWidget(lw, r, 0)
@@ -7048,10 +7081,11 @@ QTabBar::tab:only-one {
         rem.setWordWrap(True)
         rem.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
         rem.setFixedHeight(self.RACK_REMARK_H)
-        rem.setStyleSheet('color: rgb(238,238,236); background: transparent;')
+        rem.setStyleSheet('color: rgb(238,238,236); background: transparent;'
+                          ' font-family: \'Probe Basic Bebas Mono\';')
         v.addWidget(top)
         v.addWidget(rem)
-        w.setStyleSheet('background: rgb(128,128,128);')
+        w.setStyleSheet('background: rgb(120,120,120);')
         self._rack_remarks[pocket] = rem
         return w
 
@@ -7063,8 +7097,11 @@ QTabBar::tab:only-one {
         if not text:
             return
         wpx = max(40, label.width() or 170)
-        best = 5
-        for pt in range(11, 4, -1):
+        best = 9
+        # FLOOR AT 9 pt, not 5. The old range bottomed out at 5 pt, which
+        # is not text at machine standing distance, and the docstring claimed
+        # it elided instead while nothing elided.
+        for pt in range(13, 8, -1):
             f = QFont('Probe Basic Bebas Mono', pt)
             r = QFontMetrics(f).boundingRect(
                 0, 0, wpx, 10000, Qt.TextWordWrap, text)
@@ -7073,6 +7110,11 @@ QTabBar::tab:only-one {
                 break
         f = QFont('Probe Basic Bebas Mono', best)
         label.setFont(f)
+        # anything still too tall is CUT, not shrunk into illegibility
+        fm = QFontMetrics(f)
+        if fm.boundingRect(0, 0, wpx, 10000, Qt.TextWordWrap,
+                           text).height() > self.RACK_REMARK_H:
+            label.setText(fm.elidedText(text, Qt.ElideRight, wpx * 2))
 
     def _rack_remark_poll(self):
         """Pull each pocket's remark from the tool database.
@@ -7162,20 +7204,19 @@ QTabBar::tab:only-one {
             btn.setMinimumSize(ref.minimumWidth() or 145,
                                ref.minimumHeight() or 45)
             v.addWidget(btn)
+            self._ms_button = btn
             # the shoulder diameter the .ngc reads, bound BY NAME
-            drow = QHBoxLayout()
-            dlb = QLabel('SHOULDER DIA')
-            dlb.setStyleSheet('color: rgb(238,238,236); font: 10pt '
-                              '"Probe Basic Bebas Mono";')
+            # NO CAPTION. The number is already under a column called
+            # SHOULDER DIA in the table it comes from, and a word beside a
+            # number is the "tonne of words" the operator objected to. The
+            # field wears the design system's own data-field look
+            # (probe_basic_dark.qss:142-187) instead of a hand-rolled one.
             self._er_dia = QLineEdit()
             self._er_dia.setObjectName('ms_shdia')
             self._er_dia.setReadOnly(True)
             self._er_dia.setFixedWidth(70)
-            self._er_dia.setStyleSheet(self.CAL_QSS['read'])
-            drow.addWidget(dlb, 0)
-            drow.addWidget(self._er_dia, 0)
-            drow.addStretch(1)
-            v.addLayout(drow)
+            self._er_dia.setProperty('styleSet', 'dataField14')
+            v.addWidget(self._er_dia)
             lay.addWidget(box)
             self._er_refresh()
             LOG.info('PROBE SHOULDER: placed in %s (a %s), under %s',
@@ -7246,13 +7287,24 @@ QTabBar::tab:only-one {
         except Exception:
             LOG.exception('SHOULDER: could not store the measurement')
 
+    # ER label -> millimetres. The table stores the whole label because the
+    # operator reads the nut, not a number; the mm is the half after the
+    # dash, which is what the probe move needs.
+    @staticmethod
+    def _er_mm(label):
+        try:
+            return float(str(label).split('-')[-1])
+        except Exception:
+            return 0.0
+
     def _er_refresh(self):
-        """Keep ms_shdia showing the spindle tool's shoulder diameter.
+        """Keep ms_shdia holding the spindle tool's shoulder diameter in mm.
 
         SubCallButton binds by widget name and reads the TEXT, so this field
-        IS what measure_shoulder.ngc receives as its shoulder diameter. It
-        follows the tool in the spindle rather than a picker, because the
-        picker now lives in the tool table where the value is stored.
+        IS what measure_shoulder.ngc receives. It also decides whether PROBE
+        SHOULDER may be pressed at all: a zero diameter would send the sub
+        stepping the wrong distance, so the button is DISABLED rather than
+        left lit -- a control that cannot act must be greyed, not ignored.
         """
         w = getattr(self, '_er_dia', None)
         if w is None:
@@ -7277,125 +7329,21 @@ QTabBar::tab:only-one {
                     con.close()
                 if r:
                     raw = r[0] if r[0] not in (None, '') else r[1]
-                    dia = float(raw) if raw not in (None, '') else 0.0
+                    dia = self._er_mm(raw)
         except Exception:
             pass
         w.setText('%.1f' % dia)
-
-    # MATCHED ON THE HEADER TEXT, not on visibleColumns(). That method is
-    # not present on every build of the table widget, and when it is missing
-    # the old code returned an empty list and silently did nothing -- the
-    # double-click appeared dead (operator 2026-08-12). A header string is
-    # what the operator is actually clicking under, and it cannot be absent.
-    ER_HEADERS = ('SHOULDER DIA', 'SHOULDER')
-
-    def _wire_er_picker(self):
-        """Double-clicking a shoulder cell in the tool table offers the ER
-        sizes (operator 2026-08-12).
-
-        BOTH SHOULDER COLUMNS ARE LIVE, not just one: the operator calls the
-        pair "the SHOULDER column", and there is no reading of that where
-        offering the nut sizes is wrong. The ER cell answers too, since that
-        is literally what is being chosen.
-        """
-        from PySide6.QtWidgets import QTableView, QAbstractItemView
-        try:
-            win = self.window()
-            tbl = win.findChild(QWidget, 'tool_table') if win else None
-            if tbl is None:
-                LOG.error('ER PICKER: tool_table not found -- double-click '
-                          'picker NOT wired. Nothing else is affected.')
-                return
-            if not hasattr(tbl, 'doubleClicked'):
-                LOG.error('ER PICKER: tool_table is a %s with no '
-                          'doubleClicked signal -- NOT wired',
-                          type(tbl).__name__)
-                return
-            tbl.doubleClicked.connect(self._er_cell_double_clicked)
-            self._er_table = tbl
-            LOG.info('ER PICKER: armed on the tool table shoulder columns %s',
-                     ', '.join(self.ER_HEADERS))
-        except Exception:
-            LOG.exception('ER PICKER: not wired')
-
-    def _er_cell_double_clicked(self, index):
-        from PySide6.QtWidgets import QInputDialog
-        try:
-            tbl = getattr(self, '_er_table', None)
-            if tbl is None or not index.isValid():
-                return
-            hdr = ''
-            try:
-                m = tbl.model()
-                from PySide6.QtCore import Qt
-                hdr = str(m.headerData(index.column(), Qt.Horizontal) or '')
-            except Exception:
-                pass
-            if hdr.strip().upper() not in self.ER_HEADERS:
-                return
-            tno = self._er_row_tool(tbl, index.row())
-            if tno <= 0:
-                LOG.error('ER PICKER: could not tell which tool row %d is -- '
-                          'nothing written', index.row())
-                return
-            labels = [lbl for lbl, _d in self.ER_SIZES]
-            pick, ok = QInputDialog.getItem(
-                self, 'Shoulder diameter',
-                'ER collet nut for T%d:' % tno, labels, 2, False)
-            if not ok:
-                return
-            dia = dict(self.ER_SIZES)[pick]
-            self._er_store(tno, pick, dia)
-        except Exception:
-            LOG.exception('ER PICKER: double-click handling failed')
-
-    def _er_row_tool(self, tbl, row):
-        """Tool number for a table row, found by its header rather than by
-        a column index that shifts whenever a column is hidden."""
-        try:
-            from PySide6.QtCore import Qt
-            m = tbl.model()
-            tcol = 0
-            for c in range(m.columnCount()):
-                if str(m.headerData(c, Qt.Horizontal) or '').strip().upper() == 'T':
-                    tcol = c
-                    break
-            return int(float(m.data(m.index(row, tcol))))
-        except Exception:
-            return 0
-
-    def _er_store(self, tno, label, dia):
-        """Write the ER choice and the millimetres it means."""
-        try:
-            import sqlite3
-            db = os.path.join(os.path.dirname(self.VAR_FILE), 'tool_table.db')
-            con = sqlite3.connect(db, timeout=2.0)
-            try:
-                # ONE VALUE, NOT TWO (operator 2026-08-12: "i dont need
-                # shoulder diameter and ER> they are the same thing"). The
-                # picker shows the ER name because that is what is legible on
-                # the nut; the table keeps the millimetres the probe needs.
-                for name, val in (('shoulder_dia', '%.1f' % dia),):
-                    r = con.execute(
-                        "SELECT t.id, f.id FROM tool t"
-                        "  JOIN custom_field_def f ON f.name = ?"
-                        " WHERE t.tool_no = ?", (name, tno)).fetchone()
-                    if r is None:
-                        continue
-                    con.execute(
-                        "INSERT INTO custom_field_value(tool_id, field_id,"
-                        " value) VALUES(?,?,?)"
-                        " ON CONFLICT(tool_id, field_id)"
-                        " DO UPDATE SET value = excluded.value",
-                        (r[0], r[1], val))
-                con.commit()
-            finally:
-                con.close()
-            LOG.info('ER PICKER: T%d -> %s, shoulder diameter %.1f mm',
-                     tno, label, dia)
-            self._er_refresh()
-        except Exception:
-            LOG.exception('ER PICKER: could not store T%s', tno)
+        btn = getattr(self, '_ms_button', None)
+        if btn is not None:
+            ok = dia > 0
+            if btn.isEnabled() != ok:
+                btn.setEnabled(ok)
+                btn.setToolTip('' if ok else
+                               'Pick an ER size in the tool table first -- '
+                               'the shoulder diameter sets how far the '
+                               'spindle steps off the puck')
+                LOG.info('PROBE SHOULDER: %s (shoulder diameter %.1f mm)',
+                         'enabled' if ok else 'DISABLED', dia)
 
     def _build_rack_table(self):
         """RACK TABLE page on the ATC tab: per-fork PosX / PosY (PosZ later).
@@ -7428,11 +7376,22 @@ QTabBar::tab:only-one {
             # match the TOOL tab table: grey cells, white figures, dark grid
             # (the app QSS styles the headers but leaves a plain
             # QTableWidget's body light)
+            # LIFTED FROM probe_basic_dark.qss:674-687 and :666-672, the
+            # block the stock ToolTable/MillToolTable/OffsetTable wear. The
+            # previous values were rgb(60,63,65)/rgb(40,42,44)/rgb(128,128,128)
+            # at 12pt -- close enough to look deliberate, wrong enough to read
+            # as a different application. 128 is eight units off the system's
+            # 120.
             t.setStyleSheet(
-                'QTableWidget { background: rgb(60,63,65);'
-                ' gridline-color: rgb(40,42,44); }'
-                ' QTableWidget::item { background: rgb(128,128,128);'
-                ' color: white; font: 12pt "Probe Basic Bebas Mono"; }')
+                'QTableWidget { border: 4px solid rgb(120,120,120);'
+                ' border-radius: 5px; background-color: rgb(120,120,120);'
+                ' gridline-color: rgb(203,203,203);'
+                ' alternate-background-color: rgb(90,90,90);'
+                ' color: white; font: 15pt "Probe Basic Bebas Mono"; }'
+                'QHeaderView::section { background-color: rgb(73,74,75);'
+                ' color: white; border: none;'
+                ' font: 13pt "Probe Basic Bebas Mono"; padding: 4px; }')
+            t.setAlternatingRowColors(True)
             t.setHorizontalHeaderLabels(['P', 'POS X', 'POS Y', 'POS Z'])
             # ROOM FOR THE REMARK UNDER THE FORK NUMBER (operator 2026-08-12).
             # The P cell becomes two stacked lines: the fork number at a
