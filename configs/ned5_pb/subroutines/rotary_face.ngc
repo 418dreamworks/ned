@@ -205,10 +205,11 @@ o<rotary_face> sub
   (A cutter with no centre cutting edge has nothing to remove material with)
   (at its axis, so any descent steeper than the flutes can shear turns into)
   (the dead centre rubbing the bottom of the cut.)
-  (THE GRADIENT: 3 tool diameters of Y for half a tool diameter of Z. Since)
-  (the radial depth IS half the diameter, that is 6 times the depth of Y)
-  (travel per descent, which holds whatever the depth is capped to.)
-  #<ramp> = [6.0 * #<doc>]
+  (THE GRADIENT IS 15 TO 1 -- 15 mm of Y for every 1 mm of Z. Operator)
+  (2026-08-12: "ramp it 15x use 15mm to go down 1mm". The first attempt was)
+  (6 to 1, taken from 3 tool diameters per half diameter; that is still)
+  (steeper than a cutter with no centre edge can shear.)
+  #<ramp> = [15.0 * #<doc>]
   o47 if [#<ramp> GE #<len>]
     (abort, ROTARY FACE: the cut is #<len> mm long and a no-plunge ramp for this cutter needs #<ramp> mm. Use a shorter tool, a shallower depth, or face a longer length)
   o47 endif
@@ -248,10 +249,16 @@ o<rotary_face> sub
   (first Y at which the whole cutter is over material -- so the order is X,)
   (then Y, and only then Z.)
   G0 X0 Y[#<ya>]
-  (RAPID DOWN TO D START. Z = rstart is the crown of the promised stock, so)
-  (this is the last height that is still clear of it and the height every)
-  (pass dives from. The o18 gate above has already refused anything lower.)
-  G0 Z[#<rstart>]
+  (RAPID TO ONE DEPTH ABOVE D START, NOT TO IT. Operator 2026-08-12: "if you)
+  (do that, we do get a plunge in pass 1". Rapiding to rstart is a vertical)
+  (descent at a single Y, which for a cutter with no centre edge is the very)
+  (plunge the ramp exists to avoid -- the first pass had no dz, so it had no)
+  (ramp either.)
+  (STARTING ONE RADIAL DEPTH HIGH gives pass 1 the same dz as every other)
+  (pass, so it ramps in over 6 x the depth of Y like the rest. If the stock)
+  (really is D START that first pass cuts air on the way in, which costs one)
+  (ramp length of travel and removes the last vertical entry in the cycle.)
+  G0 Z[#<rstart> + #<doc>]
   (NO G0 B0. B has no soft limits and winds on forever, so rapiding it back)
   (to zero first meant several full turns of the stock with Y parked at ya)
   (and nothing cut -- operator 2026-08-12: "its made like 4 or 5 rotations)
@@ -269,8 +276,9 @@ o<rotary_face> sub
   (loop used to subtract the radial depth before the first sweep, so the)
   (opening cut was already most of the way to the finished size and the)
   (promised diameter was never skimmed.)
+  (rprev STARTS ONE DEPTH HIGH so pass 1 has a descent to ramp through.)
   #<r>     = #<rstart>
-  #<rprev> = #<rstart>
+  #<rprev> = [#<rstart> + #<doc>]
   #<pass>  = 0
   #<more>  = 1
   #<ycur> = #<ya>
@@ -332,9 +340,9 @@ o<rotary_face> sub
         #<sramp> = #<rf_smax>
       o107 endif
       S#<sramp>
-      (THE RAMP IS 6 x THE DEPTH OF Y, not one pitch. One pitch descended the)
-      (whole radial depth in a single turn of the stock -- a plunge in all)
-      (but name, and exactly what makes a fly cutter rub.)
+      (THE RAMP IS 15 x THE DEPTH OF Y. One pitch descended the whole radial)
+      (depth in a single turn of the stock -- a plunge in all but name, and)
+      (exactly what makes a fly cutter rub.)
       #<rrevs> = [#<ramp> / #<pitch>]
       G91
       G1 Y[#<ramp> * #<dir>] Z[#<dz>] B[#<rrevs> * 360.0] F[#<pfeed>]

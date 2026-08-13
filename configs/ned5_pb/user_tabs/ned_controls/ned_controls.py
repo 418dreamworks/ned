@@ -6535,10 +6535,10 @@ QTabBar::tab:only-one {
                     'by the tool diameter only, not by the flute length.')
         pitch = trad
         ya, yb = trad, length - trad
-        # NO-PLUNGE RAMP: 3 tool diameters of Y per half-diameter of Z, i.e.
-        # 6x the radial depth. Mirrors the .ngc so the page refuses the same
-        # jobs the cycle does, instead of promising a cut that will abort.
-        ramp = 6.0 * doc
+        # NO-PLUNGE RAMP, 15 TO 1 -- 15 mm of Y per 1 mm of Z (operator
+        # 2026-08-12). Mirrors the .ngc so the page refuses the same jobs the
+        # cycle does, instead of promising a cut that will abort.
+        ramp = 15.0 * doc
         if length - 2 * trad <= ramp:
             for k, v in blank.items():
                 o[k].setText(v)
