@@ -6429,7 +6429,10 @@ QTabBar::tab:only-one {
         ('rf_c_pass',  'PASSES'),
         ('rf_c_time',  'CUT TIME (min)'),
     )
-    RF_BMAX = 120.0       # [JOINT_6]MAX_VELOCITY, tools/run5.sh -- 20 rpm
+    # 15 rpm. The steppers stall on TORQUE, not on speed (operator
+    # 2026-08-12: "its chip load that is killing it, not RPM"), so the
+    # rotation stays up and the chip load comes down instead.
+    RF_BMAX = 90.0        # [JOINT_6]MAX_VELOCITY, tools/run5.sh -- 15 rpm
     RF_SMIN = 1000.0      # [SPINDLE_0]MIN_FORWARD_VELOCITY
     RF_SMAX = 18000.0     # [SPINDLE_0]MAX_FORWARD_VELOCITY
 

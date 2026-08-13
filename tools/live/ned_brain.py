@@ -403,7 +403,16 @@ class Brain(object):
     # (ned5_b.hal), so no step can be generated into a drive that is still
     # coming up. Dropping is instant -- there is no reason to delay going
     # dark, and every reason not to.
-    B_SETTLE = 0.25
+    # 2.0 s, NOT 0.25 (2026-08-12). The drive spec transcribed in
+    # docs/components.md:52 says "2 s init": that is how long these drives
+    # take to be ready after their 70 V arrives. The old 0.25 s declared B
+    # movable roughly eight times sooner, so step pulses could land while the
+    # drive was still booting -- and R4 is dropped and restored on EVERY head
+    # read, so it happened many times a session. Both drives then showed the
+    # same fault at once, which two independent windings never would.
+    # THE COST IS 1.75 s ONCE PER POWER-UP, against an open-loop axis that
+    # silently loses position when its drive faults.
+    B_SETTLE = 2.0
 
     def b_power(self):
         if not self.b_mode:

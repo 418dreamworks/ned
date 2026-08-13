@@ -115,3 +115,26 @@
 ## Misc
 - ✓ DONE 2026-07-22 (user-confirmed): 5 V brick ratings recorded.
 - ✓ DONE 2026-07-22 (user-confirmed): CN8 safety jumper installed.
+
+## Rotary roughing strategy -- parallel passes, not driven rotation (2026-08-12)
+Operator, after the 2in fly cutter stalled the B steppers repeatedly:
+"i think its a mistake to ask the stepper to power through the flycutter.
+for rough cuts, it should be parallel cuts. this lets the spindle do the
+work against the wormgears. the steppers turning rapidly should be for final
+finishing passes".
+
+WHY IT MATTERS. rotary_face drives the cut with B: the stock's rotation IS
+the feed, so every newton of cutting force is reacted by the steppers
+through a 1:20 worm. Open loop, they stall silently and the position is
+lost with nothing in software the wiser. Measured that evening: the fly
+cutter asked for 2.40 mm^2 of chip per tooth against the 3/8's 1.43, with
+3 teeth instead of 2, and the chip load the operator wanted needed
+147.8 deg/s of B against a 90 deg/s ceiling.
+
+THE SHAPE OF THE FIX. Rough with Y traverse at a fixed B index: the spindle
+cuts along the bar, the worm merely HOLDS, and its self-locking geometry is
+carrying a static load instead of a driven one. Index B by a step, cut the
+next stripe, repeat. Keep the current B-driven helix for finishing, where
+the depth -- and therefore the torque -- is small.
+
+NOT BUILT. rotary_face is helix-only today.
