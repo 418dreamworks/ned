@@ -70,7 +70,11 @@ class NedHomingMenu(QMenu):
             ('Home &Y', 'home_joint', ('Y', 1)),
             ('Home &Z', 'home_joint', ('Z', 2)),
             ('Home A', 'ac_to_zero', ('a',)),
-            ('Home B', 'home_b_inplace', ()),
+            # zero=True: the menu is the ONLY way B gets zeroed. The
+            # launch declare calls the same method with no argument and
+            # keeps whatever the position file restored (operator
+            # 2026-08-13).
+            ('Home B', 'home_b_inplace', (True,)),
         ]
 
     def __init__(self, parent=None, axes=None):

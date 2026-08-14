@@ -22,6 +22,7 @@ Pins (nets in postgui_pb.hal):
   ned-tab.inc-index-in   s32   in  <- pendant.inc-index (the SLOT, not the value)
 """
 import os
+import math
 import re
 import time
 
@@ -664,6 +665,8 @@ class UserTab(QWidget):
         # after the UI settles -- it inserts into a core layout it must find
         QTimer.singleShot(1500, self._build_declaration)
         QTimer.singleShot(1600, self._hide_spare_mdi)
+        QTimer.singleShot(1600, self._hide_usb_pane)
+        QTimer.singleShot(1600, self._centre_readouts)
         QTimer.singleShot(1700, self._start_homing_gate)
         QTimer.singleShot(1800, self._build_rack_table)
         QTimer.singleShot(1900, self._build_rotary_probe_tab)
@@ -2947,6 +2950,78 @@ class UserTab(QWidget):
                 d += 1
         LOG.info('AXIS RELABEL: %d head-C control(s) pinned and disabled', d)
         self._relabel_axis_letters()
+        self._repoint_rotary_dros()
+
+    # The rotary DRO row is bound to C. In -xyzab the rotary is B.
+    _ROTARY_DRO_WIDGETS = ('dro_entry_main_c', 'drolabel_machine_c',
+                           'drolabel_dtg_c', 'dro_entry_offset_c',
+                           'drolabel_work_c')
+
+    def _repoint_rotary_dros(self, _retry=True):
+        """Point the rotary DRO row at the axis it is labelled with.
+
+        WHY (operator 2026-08-13, twice: "SDRO and PBDRO are not aligned for
+        B"): DRO_DISPLAY is XYZAC in every ini, so probe_basic.py:529 loads
+        user_dro_display/xyzac_dros whatever mode we launched in. That set
+        binds its rotary row to axisNumber 5. With COORDINATES = X Y Z X A C
+        B, index 5 is C and index 4 is B -- so after homing B the row sat at
+        C's -0.0000 while the standalone DRO, reading the status channel,
+        showed the true 333192.0047.
+
+        _relabel_axis_letters ran first and renamed the CAPTION from C to B.
+        Its docstring says "repoint every visible C at the axis the rotary
+        slot really is", but its body only rewrites text properties -- the
+        binding was never touched, so the row promised B and delivered C.
+
+        WHY NOT JUST SET DRO_DISPLAY = XYZAB: that set exists and binds b to
+        4 correctly, but dros_xyzab.py is 46 lines with no HOME banner at
+        all, against dros_xyzac.py's 784 lines and eight banner hooks. It
+        would trade a wrong B for losing the STALE/SESSION HOME column.
+
+        axisNumber is a Qt property on DROBaseWidget whose setter assigns
+        _anum, switches to the angular format and calls updateValue(), so
+        this takes effect on the spot.
+        """
+        if ROT.upper() != 'B':
+            return 0
+        win = self.window()
+        if win is None:
+            return 0
+        n, missing = 0, []
+        for name in self._ROTARY_DRO_WIDGETS:
+            w = win.findChild(QWidget, name)
+            if w is None:
+                missing.append(name)
+                continue
+            try:
+                before = w.property('axisNumber')
+                w.setProperty('axisNumber', 4)
+                LOG.info('ROTARY DRO: %s axisNumber %s -> 4 (C -> B)',
+                         name, before)
+                n += 1
+            except Exception as e:
+                LOG.error('ROTARY DRO: %s would not repoint: %s', name, e)
+        if missing:
+            # LOUD, NOT SILENT. If the user DROs load after this tab, the
+            # findChild misses and the row would quietly keep showing C --
+            # exactly the failure this method exists to end. One retry, then
+            # an error naming every widget that never appeared.
+            if _retry:
+                LOG.error('ROTARY DRO: %d widget(s) not found yet (%s) -- '
+                          'retrying in 2 s', len(missing), ', '.join(missing))
+                try:
+                    from PySide6.QtCore import QTimer
+                    QTimer.singleShot(
+                        2000, lambda: self._repoint_rotary_dros(_retry=False))
+                except Exception:
+                    pass
+            else:
+                LOG.error('ROTARY DRO: %d widget(s) NEVER found (%s) -- those '
+                          'rows are still bound to C and will not follow B',
+                          len(missing), ', '.join(missing))
+        LOG.info('ROTARY DRO: %d of %d row(s) now read axis 4 (B)',
+                 n, len(self._ROTARY_DRO_WIDGETS))
+        return n
 
     def _jog_work_pos(self, s, ax):
         # current WORK coordinate of axis letter ax (house offset math)
@@ -3474,12 +3549,16 @@ class UserTab(QWidget):
                 # wire it in with other stuff later on") -- the tool table
                 # carries NO flute count today (columns: tool/tool_mill,
                 # checked 2026-08-02), so nothing real can be computed yet.
-                lbl = QLabel('CHIP LOAD\nTBD mm/flute\nTBD in/flute')
+                lbl = QLabel('CHIP LOAD  --\nSURFACE    --')
                 lbl.setObjectName('ned_chipload')
-                lbl.setStyleSheet('color: rgb(160,160,160); font: 9pt;')
+                lbl.setStyleSheet('color: rgb(200,200,200); font: 9pt;')
                 m.parentWidget().layout().replaceWidget(m, lbl)
                 m.hide()
                 self._chipload_lbl = lbl
+                # ITS OWN TIMER, house rule: one timer, one job.
+                self._chipload_timer = QTimer(self)
+                self._chipload_timer.timeout.connect(self._chipload_refresh)
+                self._chipload_timer.start(500)
             # left RPM readout: keep the STOCK labels and their format --
             # only the NUMBER changes ("keep the same old format, just
             # change the displayed number"). Drive every label inside the
@@ -3495,6 +3574,90 @@ class UserTab(QWidget):
                      len(self._rpm_labels))
         except Exception as e:
             LOG.error('spindle restyle failed: %s', e)
+
+    # Cache of tool_no -> (diameter mm, flutes). The DB is not read every
+    # 500 ms; the tool only changes on an M6.
+    _cl_tool = (None, 0.0, 0)
+
+    def _chipload_tool(self, tno):
+        """(diameter, flutes) for a tool number, cached."""
+        if self._cl_tool[0] == tno:
+            return self._cl_tool[1], self._cl_tool[2]
+        dia, fl = 0.0, 0
+        try:
+            import sqlite3
+            db = os.path.join(os.path.dirname(self.VAR_FILE), 'tool_table.db')
+            con = sqlite3.connect('file:%s?mode=ro' % db, uri=True, timeout=2.0)
+            try:
+                r = con.execute('SELECT diameter FROM tool WHERE tool_no = ?',
+                                (tno,)).fetchone()
+                dia = float(r[0]) if r and r[0] else 0.0
+                r = con.execute(
+                    "SELECT v.value FROM custom_field_value v"
+                    "  JOIN custom_field_def f ON f.id = v.field_id"
+                    "  JOIN tool t ON t.id = v.tool_id"
+                    " WHERE t.tool_no = ? AND f.name = 'flutes'",
+                    (tno,)).fetchone()
+                fl = int(float(r[0])) if r and r[0] else 0
+            finally:
+                con.close()
+        except Exception:
+            pass
+        type(self)._cl_tool = (tno, dia, fl)
+        return dia, fl
+
+    def _chipload_refresh(self):
+        """ACTUAL chip load and surface speed -- overrides included.
+
+        Operator 2026-08-13: "display chip load and surface speed in metric
+        units above all the numbers and make that the actual calculated
+        number based on the overrides" ... "so make it the 'actual' and not
+        the 'gcode intended'".
+
+        WHY THE OVERRIDES MATTER: mid-job the operator was holding 150 %
+        feed on a program posted for 0.15 mm/tooth, so the cutter was
+        actually taking 0.225. The g-code number was never what the tool
+        was doing.
+
+            chip load = F x feed_ovr / (S x spindle_ovr x flutes)
+            surface   = pi x D x S x spindle_ovr / 1000
+
+        Chip load is per tooth and diameter-blind; SURFACE SPEED is not,
+        which is why a 1/4 in at the same rpm as a 1/2 in rubs where the
+        big tool cuts. Both are shown so that is visible.
+        """
+        lbl = getattr(self, '_chipload_lbl', None)
+        if lbl is None:
+            return
+        try:
+            import linuxcnc as _lc
+            st = _lc.stat(); st.poll()
+            f_cmd = float(st.settings[1] or 0.0)          # F word, mm/min
+            s_cmd = float(st.settings[2] or 0.0)          # S word, rpm
+            f_ovr = float(st.feedrate or 0.0)
+            s_ovr = float(st.spindle[0]['override'] or 0.0)
+            tno = int(st.tool_in_spindle or 0)
+        except Exception:
+            lbl.setText('CHIP LOAD  --\nSURFACE    --')
+            return
+        dia, flutes = self._chipload_tool(tno) if tno > 0 else (0.0, 0)
+        s_eff = s_cmd * s_ovr
+        f_eff = f_cmd * f_ovr
+        # Each line says WHY it cannot be computed rather than showing a
+        # zero that looks like a measurement.
+        if flutes <= 0:
+            cl = 'CHIP LOAD  no flute count for T%d' % tno
+        elif s_eff <= 0:
+            cl = 'CHIP LOAD  spindle stopped'
+        else:
+            cl = 'CHIP LOAD  %.3f mm/tooth' % (f_eff / (s_eff * flutes))
+        if dia <= 0:
+            sf = 'SURFACE    no diameter for T%d' % tno
+        elif s_eff <= 0:
+            sf = 'SURFACE    spindle stopped'
+        else:
+            sf = 'SURFACE    %.0f m/min' % (math.pi * dia * s_eff / 1000.0)
+        lbl.setText(cl + '\n' + sf)
 
     def _wire_spindle_check(self):
         win = self.window()
@@ -3643,6 +3806,65 @@ class UserTab(QWidget):
                 # RACK ATC page at operator request 2026-08-04 evening --
                 # they are no longer spares)
                 )
+
+    # THE WHOLE USB SIDE OF THE FILE TAB. Operator 2026-08-13: "i don't
+    # want the USB file option to show up at all. get rid of it, and get rid
+    # of that show/hide USB button" ... "useless to me". Everything lives on
+    # this machine; nothing is ever copied to or from a stick.
+    #   usb_file_frame        the entire right-hand pane -- its own table,
+    #                         FOLDER UP, EJECT USB, DELETE, RENAME, TO PC
+    #   hide_show_usb_button  the toggle that brought it back
+    #   copy_to_usb_2         "TO USB" -- sits in the LEFT pane, and is
+    #                         meaningless with nowhere to copy to
+    # The left pane is untouched: it is the machine's own program directory
+    # and it owns the only LOAD G-CODE button there is.
+    USB_WIDGETS = ('usb_file_frame', 'hide_show_usb_button', 'copy_to_usb_2')
+
+    def _hide_usb_pane(self):
+        win = self.window()
+        gone, missing = [], []
+        for name in self.USB_WIDGETS:
+            w = win.findChild(QWidget, name) if win else None
+            if w is None:
+                missing.append(name)
+                continue
+            w.hide()
+            gone.append(name)
+        if gone:
+            LOG.info('USB PANE: %d control(s) hidden: %s',
+                     len(gone), ', '.join(gone))
+        if missing:
+            # Deliberately NOT the "STOCK SPARE RESURRECTED" wording used
+            # below -- that means a PB update put something back. This just
+            # means the .ui renamed or dropped them, and it must be loud
+            # either way or a silent miss reads as a successful purge.
+            LOG.error('USB PANE: %d control(s) NOT FOUND (%s) -- if the USB '
+                      'pane is still on screen, the .ui renamed them',
+                      len(missing), ', '.join(missing))
+
+    # CENTRE THE NUMBERS. Operator 2026-08-13: "lets center the spindle and
+    # feedrate numbers instead of right justify". The stock .ui right-aligns
+    # the two rpm readouts and left-aligns the feed value, so the row reads
+    # ragged against its centred caption.
+    CENTRE_READOUTS = ('spindle_stat_rpm', 'spindle_encoder_rpm',
+                       'feedrate_label_2')
+
+    def _centre_readouts(self):
+        from PySide6.QtCore import Qt as _Qt
+        win = self.window()
+        done, missing = [], []
+        for name in self.CENTRE_READOUTS:
+            w = win.findChild(QWidget, name) if win else None
+            if w is None or not hasattr(w, 'setAlignment'):
+                missing.append(name)
+                continue
+            w.setAlignment(_Qt.AlignmentFlag.AlignCenter)
+            done.append(name)
+        if done:
+            LOG.info('READOUTS CENTRED: %s', ', '.join(done))
+        if missing:
+            LOG.error('READOUTS: %d not found or not alignable: %s',
+                      len(missing), ', '.join(missing))
 
     def _hide_spare_mdi(self):
         win = self.window()
@@ -8682,15 +8904,25 @@ QTabBar::tab:only-one {
                            'before the cycle' % cpos)
             return
 
-    def home_b_inplace(self):
-        """Declare B where it stands. -xyzab only.
+    def home_b_inplace(self, zero=False):
+        """Declare B. -xyzab only. zero=False keeps the number, True sets 0.
 
-        B has no switch and no encoder. Its home is in-place: HOME_SEARCH_VEL
-        and HOME_LATCH_VEL are 0 and HOME == HOME_OFFSET == 0, so the cycle
-        sets the coordinate and the final move is zero length. Wherever the
-        chuck happens to be sitting becomes B0. This is the menu's Home B and
-        the last step of the launch sequence -- one implementation, so the
-        button and the automatic path cannot drift apart.
+        TWO CALLERS, TWO OUTCOMES (operator 2026-08-13): "when we start up in
+        stale home, leave it at whatever value it is. but if we want to zero
+        it, we use home B for that purpose since there isn't such a thing as
+        a home position for a continous axis."
+
+          zero=False -- the LAUNCH path. B is declared where it stands so
+                        the restored work coordinate keeps meaning. This is
+                        the 2026-08-11 ruling and it stands.
+          zero=True  -- the MENU's Home B. An explicit operator action, and
+                        the only way to zero a continuous axis.
+
+        B has no switch and no encoder, so there is no home position to
+        find; declaring is all there is. HOME_SEARCH_VEL and HOME_LATCH_VEL
+        are 0, and under HOME_ABSOLUTE_ENCODER = 2 the cycle takes position
+        from ini.6.home_offset and finishes with no final move -- so both
+        outcomes are a renumbering, never a rotation.
         """
         import linuxcnc
         c, s = linuxcnc.command(), linuxcnc.stat()
@@ -8708,16 +8940,12 @@ QTabBar::tab:only-one {
             c.wait_complete(2.0)
             c.teleop_enable(0)
             c.wait_complete(2.0)
-            # KEEP THE POSITION, DO NOT ZERO IT (operator 2026-08-11: "DO NOT
-            # home B. I rather keep the work coordinate if MCS is meaningless
-            # anyway"). [TRAJ]POSITION_FILE has already restored joint 6 by
-            # now, so whatever it reads IS last session's angle. Feed that
-            # straight back as the home offset: under HOME_ABSOLUTE_ENCODER=2
-            # the cycle sets position := ini.6.home_offset and jumps to
-            # HOME_FINISHED with no final move (homing.c:1139-1146), so the
-            # declare is exactly a no-op on the number and cannot turn the
-            # chuck. Homed still becomes true, which is the part MDI needs.
-            here = s.joint[6]['output']
+            # THE ONE LINE THAT DIFFERS. Feeding joint 6's own output back
+            # as the home offset makes the declare a no-op on the number
+            # (the launch path); feeding 0 renames it to zero (the menu's
+            # Home B). [TRAJ]POSITION_FILE has already restored joint 6, so
+            # its output IS last session's angle.
+            here = 0.0 if zero else s.joint[6]['output']
             # os.system, matching the other scripted halcmd in this file
             # (subprocess is deliberately not imported here) -- and always
             # timeout-wrapped: an unwrapped scripted halcmd is what deadlocked
@@ -8736,8 +8964,10 @@ QTabBar::tab:only-one {
                 c.unhome(6)
                 c.wait_complete(2.0)
             c.home(6)
-            LOG.info('HOME B: joint 6 declared AT %+.4f (position kept, not '
-                     'zeroed -- the work offset stays meaningful)', here)
+            LOG.info('HOME B: joint 6 was %+.4f, declared AT %+.4f (%s)',
+                     s.joint[6]['output'], here,
+                     'ZEROED by the menu' if zero
+                     else 'position kept -- launch declare')
         except Exception as e:
             LOG.error('HOME B failed: %s', e)
 

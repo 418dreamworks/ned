@@ -6,7 +6,9 @@
 CYCLE_TIME = 0.05
 POSITION_OFFSET = RELATIVE
 POSITION_FEEDBACK = ACTUAL
-MAX_FEED_OVERRIDE = 1.5
+# 200%: the operator ran out of override on the kakeya groove and the log
+# shows it pinned -- "OVR F: 150 -> 150" over and over (2026-08-13).
+MAX_FEED_OVERRIDE = 2.0
 MAX_SPINDLE_OVERRIDE = 2.0
 MIN_SPINDLE_OVERRIDE = 0.2
 INTRO_GRAPHIC = linuxcnc.gif

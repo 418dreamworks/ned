@@ -4,6 +4,21 @@
 
 o<toolchange> sub
 
+(SPINDLE OFF, FIRST LINE, UNCONDITIONALLY. Operator 2026-08-13: "when a tool)
+(change is issued, the spindle continues spinning all the way as it moves from)
+(the work area to the tool change area. this is not acceptable. the first thing)
+(that happens is stopping the tool BEFORE the tool change".)
+(HERE, NOT IN THE POST. ini:144 REMAP=M6 ... ngc=toolchange makes this sub the)
+(one place every M6 arrives -- program, MDI, and the GUI tool-change buttons,)
+(which no post can reach. Before this line the file contained no M5 at all: the)
+(posted kakeya FUSION file happened to emit one, the CLAUDE file did not, and)
+(nothing downstream would have caught it.)
+(IT IS BEFORE EVERY GUARD AND EVERY RETURN. Even the already-loaded early exit)
+(below leaves the spindle stopped -- a tool change that decides to do nothing)
+(is still a tool change as far as the operator standing next to it is concerned.)
+M5
+
+
 ; Parameter #3989 is used to track if the rack is homed (M13) (volatile)
 ; Parameter #3990 is used to track the current tool pocket (persistently)
 ; Parameter #3991 is used to track the current tool loaded it in the spindle (persistently)

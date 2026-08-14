@@ -117,3 +117,34 @@ abort. That is the guard proving it works, not a failure.
 ### 5.3 Never write a file the machine is running
 `.ngc` is re-read on EVERY call. All edits under `configs/` go through
 `tools/cfg_edit.sh`, which refuses while a cycle is in flight.
+
+---
+
+## 6. The spindle at a tool change
+
+### 6.1 The spindle is STOPPED before any M6
+Operator 2026-08-13: *"when a tool change is issued, the spindle continues
+spinning all the way as it moves from the work area to the tool change area.
+this is not acceptable. the first thing that happens is stopping the tool
+BEFORE the tool change"* ... *"i also want it as part of the final lint checked
+here. before m6, there must be a stop spindle command"*.
+
+The scanner tracks M3/M4/M5 through the file. An `M6` reached while a spindle
+start is still in force is a HARD failure naming the line that started it.
+
+```gcode
+S9000 M3
+G1 X10 F600
+M5              (RIGHT: its own line, before the change)
+T13 M6
+```
+
+**An `M5` in the same block as the `M6` is also a failure.** Within one block
+the interpreter runs the words in its own order, not left to right, and the
+manual shipped on this machine does not state where `M6` sits in that order --
+so `M5 T13 M6` does not demonstrably stop the spindle first. Put the `M5` on
+its own earlier line, where the sequencing is not in question.
+
+`toolchange.ngc` carries no `M5` of its own, so today nothing stops the
+spindle if the program does not. That is why this rule is HARD rather than a
+warning.

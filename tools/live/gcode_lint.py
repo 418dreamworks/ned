@@ -44,6 +44,8 @@ def check(path):
 
     owords = {}
     subs = []
+    # RULE 6.1 state: has an M3/M4 been issued with no M5 since?
+    spin_on = 0          # line number that started it, 0 = stopped
     for n, raw in enumerate(lines, 1):
         code = strip_semicolon_comment(raw)
 
@@ -109,6 +111,39 @@ def check(path):
             else:
                 owords[num] = (kind, n)
 
+        # RULE 6.1 -- THE SPINDLE IS STOPPED BEFORE ANY M6.
+        # Operator 2026-08-13: "when a tool change is issued, the spindle
+        # continues spinning all the way as it moves from the work area to
+        # the tool change area. this is not acceptable. the first thing that
+        # happens is stopping the tool BEFORE the tool change" ... "i also
+        # want it as part of the final lint checked here. before m6, there
+        # must be a stop spindle command".
+        bare = re.sub(r'\([^)]*\)', '', code)
+        spin = re.findall(r'(?<![A-Za-z0-9.])M0?([345])(?![0-9])', bare, re.I)
+        has_m6 = re.search(r'(?<![A-Za-z0-9.])M0?6(?![0-9])', bare, re.I)
+        if has_m6:
+            # SAME-BLOCK FIRST: it is the more precise diagnosis, and the M5
+            # on this line has not been consumed yet so spin_on still reads
+            # as running. Checking spin_on first reported the wrong fault.
+            if '5' in spin:
+                # An M5 in the SAME block is not "the first thing that
+                # happens": within one line the interpreter runs the block's
+                # words in ITS order, not left-to-right, and the shipped
+                # manual on this machine does not state where M6 sits in
+                # that order. Put the M5 on its own earlier line, where the
+                # sequencing is not in question.
+                bad.append((n, 'M5 IN THE SAME BLOCK AS M6',
+                            'rule 6.1: M5 and M6 share this line -- their '
+                            'order within one block is not left-to-right. '
+                            'Put the M5 on its own line before it.'))
+            elif spin_on:
+                bad.append((n, 'SPINDLE RUNNING AT M6',
+                            'rule 6.1: M3/M4 at line %d has no M5 before this '
+                            'tool change -- the spindle keeps turning all the '
+                            'way to the rack' % spin_on))
+        for d in spin:
+            spin_on = 0 if d == '5' else n
+
         m = re.match(r'\s*o<([^>]+)>\s+sub\b', code, re.I)
         if m:
             subs.append((m.group(1), n))
@@ -127,7 +162,8 @@ def check(path):
 # Split because a whole-tree sweep that fails on every legacy style finding
 # blocks every edit and gets switched off, which is worse than no linter.
 HARD = {'UNCLOSED COMMENT', 'NESTED PAREN', 'DUPLICATE O-WORD',
-        'MALFORMED O-WORD',
+        'MALFORMED O-WORD', 'SPINDLE RUNNING AT M6',
+        'M5 IN THE SAME BLOCK AS M6',
         'SECOND SUB IN FILE', 'UNREADABLE'}
 
 
