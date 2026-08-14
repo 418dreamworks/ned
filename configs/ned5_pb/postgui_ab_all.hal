@@ -304,3 +304,15 @@ setp joint.6.jog-vel-mode 0
 # it by accident; the brain homes it to zero at launch and ned_brain's
 # apply_mode clamps its soft limits to +-0.001 deg, which is what every other
 # mode already does to an un-spelled rotary.
+
+# --- B SIDE SELECT ----------------------------------------------------------
+# The GUI toggle opposite LOCK B: 0 = BOTH, 1 = LEFT only, 2 = RIGHT only.
+# ned5_b.hal loads bsplit and leaves sel unconnected (= BOTH); this is the
+# only writer.
+net sig-b-side  ned-tab.b-side-out => bsplit.0.sel
+
+# --- B SIDE SELECT ----------------------------------------------------------
+# The GUI toggle opposite LOCK B: 0 = BOTH, 1 = LEFT only, 2 = RIGHT only.
+# ned5_b.hal loads bsplit and leaves sel unconnected (reads 0 = BOTH), so a
+# GUI that fails to build cannot leave the two drives split.
+net sig-b-side  ned-tab.b-side-out => bsplit.0.sel

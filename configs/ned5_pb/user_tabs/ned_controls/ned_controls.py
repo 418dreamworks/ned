@@ -26,9 +26,13 @@ import math
 import re
 import time
 
-from PySide6.QtCore import QTimer, QObject, QEvent
-from PySide6.QtGui import QWindow
-from PySide6.QtWidgets import QWidget, QApplication
+from array import array
+from bisect import bisect_right
+
+from PySide6.QtCore import QTimer, QObject, QEvent, Qt, QPointF
+from PySide6.QtGui import (QWindow, QColor, QPainter, QPainterPath,
+                           QPen, QPixmap, QFont, QBrush)
+from PySide6.QtWidgets import QWidget, QApplication, QSizePolicy
 
 from qtpyvcp import hal as qhal
 from qtpyvcp.utilities import logger
@@ -493,6 +497,15 @@ class UserTab(QWidget):
             # the slot the operator clicks on the increment row; -1 until
             # they actually click (the pendant ignores the startup value)
             self.comp.addPin('inc-set-out', 's32', 'out')
+            # B SIDE SELECT -> bsplit.0.sel (postgui_b.hal).
+            # 0 = BOTH, 1 = LEFT only, 2 = RIGHT only. Two steppers sit on
+            # one worm; driving one against the other is how the lash gets
+            # preloaded out (operator 2026-08-14). 0 on startup, always.
+            self.comp.addPin('b-side-out', 's32', 'out')
+            try:
+                self.comp.getPin('b-side-out').value = 0
+            except Exception:
+                pass
             try:
                 self.comp.getPin('inc-set-out').value = -1
             except Exception:
@@ -667,12 +680,20 @@ class UserTab(QWidget):
         QTimer.singleShot(1600, self._hide_spare_mdi)
         QTimer.singleShot(1600, self._hide_usb_pane)
         QTimer.singleShot(1600, self._centre_readouts)
+        QTimer.singleShot(1800, self._split_toolchange_panel)
         QTimer.singleShot(1700, self._start_homing_gate)
         QTimer.singleShot(1800, self._build_rack_table)
         QTimer.singleShot(1900, self._build_rotary_probe_tab)
         QTimer.singleShot(1950, self._build_rotary_face_tab)
         QTimer.singleShot(2100, self._wire_air_button)
         QTimer.singleShot(2200, self._build_shoulder_button)
+        # 2D PROGRAM TRACER in the MAIN tab (operator 2026-08-14:
+        # "something i must have is a program tracer ... i really want
+        # to be able to see what i am doing in the MAIN tab after
+        # loading a file"). Late enough that widget_7/vtk are settled
+        # and nothing else is mid-repaint; see _build_program_tracer.
+        self._tracer = None
+        QTimer.singleShot(2400, self._build_program_tracer)
         QTimer.singleShot(2000, self._init_tool_safety)
         # -xyzab only (self-checks the env and returns immediately otherwise).
         QTimer.singleShot(4000, self.xyzab_launch_start)
@@ -2864,8 +2885,11 @@ class UserTab(QWidget):
         lin, ang = JOG_SPEEDS[key]
         lbl = self._jp_w.get('jp_feed_readout')
         if lbl is not None:
-            # short face: 14pt Bebas clipped the long form at 200 px
-            lbl.setText('F{:g} · {:g}°'.format(lin, ang))
+            # short face: 14pt Bebas clipped the long form at 200 px.
+            # DISPLAYED IN mm/s (operator 2026-08-13: "change all feedrates
+            # to MM/S"). JOG_SPEEDS stays authored in mm/min because that is
+            # what goes out as the F word -- only the face converts.
+            lbl.setText('{:g}mm/s · {:g}°'.format(lin / 60.0, ang))
         LOG.info('JOG speed -> %s (F%g mm/min, %g deg/min)',
                  key.upper(), lin, ang)
 
@@ -2951,11 +2975,133 @@ class UserTab(QWidget):
         LOG.info('AXIS RELABEL: %d head-C control(s) pinned and disabled', d)
         self._relabel_axis_letters()
         self._repoint_rotary_dros()
+        self._build_b_side_toggle()
 
     # The rotary DRO row is bound to C. In -xyzab the rotary is B.
     _ROTARY_DRO_WIDGETS = ('dro_entry_main_c', 'drolabel_machine_c',
                            'drolabel_dtg_c', 'dro_entry_offset_c',
                            'drolabel_work_c')
+
+    B_SIDES = ((0, 'BOTH'), (1, 'LEFT'), (2, 'RIGHT'))
+
+    def _build_b_side_toggle(self):
+        """BOTH / LEFT / RIGHT, opposite LOCK B.
+
+        Operator 2026-08-14: "I want in the UI an option to lock either side
+        of the B joint. Do this button on the right side opposite the lock B
+        button ... if unlocked, selecting LEFT or RIGHT JOGS one or the other
+        ... this lets me preload and helps align shit."
+
+        B is two steppers on one self-locking worm. Driving one against the
+        other takes the lash up; driving them apart and back is how they get
+        squared. The routing is done in HAL by bsplit -- this only writes
+        which side is live.
+
+        LOCK STILL WINS. This does not unlock anything: if LOCK B is on,
+        nothing moves whichever side is selected. The two controls are
+        independent on purpose.
+
+        THE RIGHT-HAND DRO READS ZERO while RIGHT is selected, because the
+        joint position then describes the master and says nothing about the
+        side actually turning (operator: "the DRO reading goes to ZERO for
+        RIGHT ... because its meaningless"). LEFT is the master, so LEFT and
+        BOTH both show the real number.
+        """
+        from PySide6.QtWidgets import QPushButton, QBoxLayout
+        try:
+            win = self.window()
+            if win is None:
+                return
+            if ROT.upper() != 'B':
+                return                      # -xyzac has no second rotary side
+            # BUILD ONCE. _xyzab_relabel_gui can run more than once (the
+            # repoint carries a retry), and the first version appended a
+            # button every time -- two BOTH buttons on screen.
+            if getattr(self, '_b_side_btn', None) is not None:
+                return
+            ref = win.findChild(QWidget, 'drolabel_machine_c')
+            lock = win.findChild(QWidget, 'zero_c_button')
+            if ref is None or lock is None:
+                LOG.error('B SIDE: drolabel_machine_c / zero_c_button not '
+                          'found -- toggle NOT built, nothing else affected')
+                return
+            # FIND THE ROW BY NAME. c_axis_dro_layout is a QHBoxLayout
+            # NESTED inside another layout (dros_xyzac.ui), and a nested
+            # layout has no parentWidget of its own -- so
+            # drolabel_machine_c.parentWidget().layout() returns the OUTER
+            # layout, not the row. Walking up that way put the button in the
+            # panel's outer column, level with the Z row. Layouts are
+            # QObjects with objectNames, so ask for it directly.
+            # ASK THE LAYOUTS, NOT THE NAMES. Two earlier attempts failed:
+            # ref.parentWidget().layout() returns the OUTER layout because
+            # c_axis_dro_layout is NESTED and a nested layout has no
+            # parentWidget of its own; and findChild by objectName misses it
+            # because the loader does not always carry layout names through.
+            # The one thing that is always true is that the row layout is the
+            # layout that CONTAINS this widget -- so scan for it.
+            from PySide6.QtWidgets import QHBoxLayout
+            lay = None
+            for cand in win.findChildren(QHBoxLayout):
+                if cand.indexOf(ref) >= 0:
+                    lay = cand
+                    break
+            if lay is None:
+                LOG.error('B SIDE: no QHBoxLayout contains drolabel_machine_c '
+                          '-- toggle NOT built rather than dropped somewhere '
+                          'it does not belong')
+                return
+            LOG.info('B SIDE: row layout found by containment: %s',
+                     lay.objectName() or '(unnamed)')
+            btn = QPushButton('BOTH')
+            btn.setObjectName('ned_b_side')
+            # cloned from the lock button so the row keeps one visual language
+            btn.setStyleSheet(lock.styleSheet())
+            btn.setMinimumSize(lock.minimumWidth() or 60,
+                               lock.minimumHeight() or 34)
+            btn.setMaximumHeight(lock.maximumHeight() or 40)
+            btn.clicked.connect(self._b_side_next)
+            btn.setMaximumWidth(78)
+            lay.addWidget(btn)
+            self._b_side_btn = btn
+            self._b_side = 0
+            self._b_side_apply()
+            LOG.info('B SIDE: toggle built opposite LOCK B (BOTH/LEFT/RIGHT)')
+
+            # ZERO THE DRO ON RIGHT by wrapping the widget's own update, not
+            # by writing text on a timer: these are rule-driven widgets and a
+            # timer would fight the binding every cycle (the same trap the
+            # mm/s change hit). Wrapping updateValue keeps one writer.
+            for nm in ('dro_entry_main_c', 'drolabel_machine_c'):
+                w = win.findChild(QWidget, nm)
+                if w is None or not hasattr(w, 'updateValue'):
+                    continue
+                orig = w.updateValue
+                def wrapped(pos=None, _w=w, _orig=orig):
+                    if getattr(self, '_b_side', 0) == 2:
+                        _w.setText('0.00')
+                        return
+                    return _orig(pos) if pos is not None else _orig()
+                w.updateValue = wrapped
+            LOG.info('B SIDE: DRO zeroing wired on the rotary row')
+        except Exception:
+            LOG.exception('B SIDE: toggle build failed')
+
+    def _b_side_next(self):
+        self._b_side = (getattr(self, '_b_side', 0) + 1) % 3
+        self._b_side_apply()
+
+    def _b_side_apply(self):
+        val = getattr(self, '_b_side', 0)
+        name = dict(self.B_SIDES).get(val, 'BOTH')
+        btn = getattr(self, '_b_side_btn', None)
+        if btn is not None:
+            btn.setText(name)
+        try:
+            self.comp.getPin('b-side-out').value = val
+            LOG.info('B SIDE -> %s (bsplit.0.sel = %d)', name, val)
+        except Exception as e:
+            LOG.error('B SIDE: could not write b-side-out (%s) -- the button '
+                      'moved but HAL did not; sides are still BOTH', e)
 
     def _repoint_rotary_dros(self, _retry=True):
         """Point the rotary DRO row at the axis it is labelled with.
@@ -3819,6 +3965,187 @@ class UserTab(QWidget):
     # The left pane is untouched: it is the machine's own program directory
     # and it owns the only LOAD G-CODE button there is.
     USB_WIDGETS = ('usb_file_frame', 'hide_show_usb_button', 'copy_to_usb_2')
+
+    def _split_toolchange_panel(self):
+        """TOOL CHANGE PANEL -> two boxes: MANUAL, and GET TOOL.
+
+        Operator 2026-08-13: "I want the tool change panel split into two
+        boxes. one box (rename what it is now) is MANUAL and in it are the
+        two load and unload buttons. move the rerack button and the T x M6
+        G43 to a second [group] and remove the M6 G43 from the main panel.
+        Instead of M6 G43, call it GET TOOL".
+
+        WHAT SEPARATES THEM: the MANUAL box is you moving a tool by hand and
+        telling the machine what you did -- no rack motion. The GET TOOL box
+        is the machine driving the rack.
+
+        WIDGETS ARE MOVED, NOT REBUILT. SubCallButton binds its g-code
+        arguments by widget objectName and reads .text() off whatever it
+        finds, so reparenting keeps every binding intact --
+        m6_tool_call_button_main_panel still reads
+        tool_number_entry_main_panel. Building a fresh button would mean
+        re-creating that contract by hand, and moving it out of
+        tool_info_qframe is exactly the "remove it from the main panel" half
+        of the request.
+
+        The second box lives inside frame_17's own verticalLayout_49, after
+        the unload row. frame_17 is positioned by geometry, not by a parent
+        layout (checked in template_rack_atc.ui), so there is nowhere
+        outside it to add a sibling frame without hardcoding coordinates.
+        """
+        from PySide6.QtWidgets import (QFrame, QVBoxLayout, QHBoxLayout,
+                                       QLabel, QBoxLayout)
+        try:
+            win = self.window()
+            if win is None:
+                return
+            hdr = win.findChild(QWidget, 'machine_column_header_7')
+            rerack = win.findChild(QWidget, 'ned_rerack_button')
+            entry = win.findChild(QWidget, 'tool_number_entry_main_panel')
+            call = win.findChild(QWidget, 'm6_tool_call_button_main_panel')
+            missing = [n for n, w in (('machine_column_header_7', hdr),
+                                      ('ned_rerack_button', rerack),
+                                      ('tool_number_entry_main_panel', entry),
+                                      ('m6_tool_call_button_main_panel', call))
+                       if w is None]
+            if missing:
+                LOG.error('TOOLCHANGE SPLIT: %s not found -- panel left '
+                          'exactly as it was, nothing half-moved',
+                          ', '.join(missing))
+                return
+
+            # the column that holds the header and the two manual buttons
+            host, col = hdr.parentWidget(), None
+            while host is not None:
+                cand = host.layout()
+                if isinstance(cand, QBoxLayout) and cand.direction() in (
+                        QBoxLayout.TopToBottom, QBoxLayout.BottomToTop):
+                    col = cand
+                    break
+                host = host.parentWidget()
+            if col is None:
+                LOG.error('TOOLCHANGE SPLIT: no vertical layout above the '
+                          'header -- nothing moved')
+                return
+
+            hdr.setText('MANUAL')
+
+            # STYLE IS CLONED, NOT INVENTED: the new box copies the frame it
+            # is splitting off from, and the new header copies the one above
+            # it, so the pair reads as one control group.
+            src = hdr.parentWidget()
+            while src is not None and not isinstance(src, QFrame):
+                src = src.parentWidget()
+            box = QFrame(host)
+            box.setObjectName('ned_gettool_box')
+            if src is not None:
+                box.setStyleSheet(src.styleSheet())
+                box.setFrameShape(src.frameShape())
+                box.setFrameShadow(src.frameShadow())
+            bl = QVBoxLayout(box)
+            bl.setContentsMargins(2, 1, 2, 1)
+            bl.setSpacing(2)
+
+            # EVERY ROW IS CAPPED. frame_17 is pinned to exactly 250x250 in
+            # template_rack_atc.ui (minimumSize == maximumSize == geometry),
+            # so the second box cannot make the frame taller -- it has to fit
+            # in what the MANUAL half leaves. The first attempt used default
+            # heights and the box collapsed into a 40 px strip with GET TOOL,
+            # RERACK and the T field drawn on top of each other.
+            # 22, not 16: the cloned header style is a Bebas face whose
+            # ascenders were being sliced off by the box border at 16.
+            HDR_H, ROW_H = 22, 34
+
+            cap = QLabel('GET TOOL')
+            cap.setObjectName('ned_gettool_header')
+            cap.setStyleSheet(hdr.styleSheet())
+            cap.setAlignment(hdr.alignment())
+            cap.setFixedHeight(HDR_H)
+            bl.addWidget(cap)
+
+            for w in (rerack, entry, call):
+                w.setMinimumHeight(ROW_H)
+                w.setMaximumHeight(ROW_H)
+            # ONE ROW, not two. Two rows plus a header needed ~94 px and the
+            # MANUAL half leaves about 75 inside frame_17's fixed 250, so the
+            # box clipped and drew its three children on top of each other.
+            r1 = QHBoxLayout(); r1.setSpacing(2); r1.addWidget(rerack)
+            bl.addLayout(r1)
+            r2 = QHBoxLayout(); r2.setSpacing(2)
+            # THE "T" LABEL TRAVELS WITH ITS FIELD. Operator 2026-08-13:
+            # "the box to input T should be gone. that whole row is now the
+            # GETTOOL section in ATC." Moving the entry alone left frame_27
+            # on the main panel holding a bare "T" against empty space, and
+            # the field would have arrived in the new box unlabelled.
+            tlab = win.findChild(QWidget, 'ref_coilumn_header_3')
+            if tlab is not None:
+                r2.addWidget(tlab)
+            r2.addWidget(entry); r2.addWidget(call)
+            bl.addLayout(r2)
+
+            # THE CAPTION IS THE VERB, not the g-code. Operator: "Instead of
+            # M6 G43, call it GET TOOL".
+            call.setText('GET TOOL')
+            # the T field is a number, not a sentence -- keep it narrow so
+            # the button beside it keeps a readable width
+            entry.setMaximumWidth(70)
+            if tlab is not None:
+                tlab.setFixedWidth(18)
+                tlab.setFixedHeight(ROW_H)
+            box.setMaximumHeight(HDR_H + 2 * ROW_H + 12)
+            rerack.setMinimumWidth(0)
+            call.setMinimumWidth(0)
+            # LOUD GEOMETRY, so the next person does not guess at pixels the
+            # way I did: what the frame gives, and what each row took.
+            QTimer.singleShot(2500, lambda: LOG.info(
+                'TOOLCHANGE SPLIT geometry: frame=%s manual_col=%s box=%s '
+                'rerack=%s entry=%s call=%s',
+                src.geometry() if src is not None else None,
+                host.geometry(), box.geometry(), rerack.geometry(),
+                entry.geometry(), call.geometry()))
+
+            # MAKE ROOM RATHER THAN CLIP. frame_17 is pinned to exactly
+            # 250x250 in template_rack_atc.ui (minimumSize == maximumSize),
+            # so the second box had nowhere to go and drew its header,
+            # RERACK and the T field on top of each other. Grow the frame by
+            # the box's height and slide the tool-setter frame below it down
+            # by the same amount, so nothing overlaps and nothing is clipped.
+            GROW = HDR_H + 2 * ROW_H + 18
+            if src is not None:
+                g = src.geometry()
+                src.setMinimumHeight(g.height() + GROW)
+                src.setMaximumHeight(g.height() + GROW)
+                src.resize(g.width(), g.height() + GROW)
+                sib = win.findChild(QWidget, 'frame_18')
+                if sib is not None:
+                    sg = sib.geometry()
+                    sib.move(sg.x(), sg.y() + GROW)
+                    LOG.info('TOOLCHANGE SPLIT: frame_17 %d -> %d px, '
+                             'frame_18 moved down %d px to y=%d',
+                             g.height(), g.height() + GROW, GROW,
+                             sg.y() + GROW)
+                else:
+                    LOG.error('TOOLCHANGE SPLIT: frame_18 not found -- '
+                              'frame_17 grew and may now overlap it')
+            col.addWidget(box)
+            # THE ROW IS GONE FROM THE MAIN PANEL, not just emptied: frame_27
+            # is the container that held the T label and its field, and an
+            # empty framed strip reads as a broken control.
+            row = win.findChild(QWidget, 'frame_27')
+            if row is not None:
+                row.hide()
+                LOG.info('TOOLCHANGE SPLIT: frame_27 (the main panel T row) '
+                         'hidden -- its label and field now live in GET TOOL')
+            else:
+                LOG.error('TOOLCHANGE SPLIT: frame_27 not found -- the main '
+                          'panel may still show an empty T row')
+            LOG.info('TOOLCHANGE SPLIT: MANUAL keeps load/unload; GET TOOL '
+                     'box built with ned_rerack_button + '
+                     'm6_tool_call_button_main_panel (moved off the main '
+                     'panel, caption now GET TOOL)')
+        except Exception:
+            LOG.exception('TOOLCHANGE SPLIT failed -- panel may be partly '
+                          'moved, check the ATC tab')
 
     def _hide_usb_pane(self):
         win = self.window()
@@ -7713,6 +8040,136 @@ QTabBar::tab:only-one {
             btn.setText('PROBE SHOULDER')
             btn.setToolTip('')
 
+    # ---- 2D PROGRAM TRACER (MAIN tab) -----------------------------------
+
+    def _build_program_tracer(self):
+        """Put the QPainter tracer where the dead VTK backplot is.
+
+        Operator 2026-08-14: "something i must have is a program tracer ...
+        i really want to be able to see what i am doing in the MAIN tab
+        after loading a file".
+
+        FULL-STACK, in the order CLAUDE.md rule 14 asks for:
+        (a) TARGET. probe_basic.ui:4608 declares VTKBackPlot objectName
+            "vtk" inside widget_7 (ui:4080) on main_tab (ui:379). Found by
+            objectName from self.window(), and if it is not there this
+            method builds NOTHING and says so -- a tracer dropped into the
+            wrong parent is worse than no tracer.
+        (b) BINDING. The thirteen buttons in vtk_control_buttons are
+            connected in the .ui's <connections> straight to the VTK slots
+            (probe_basic_ui.py:13041-13085). Every one of them is
+            disconnect()ed before it is given a tracer action, so the old
+            binding is severed and not merely shadowed.
+        (c) LAYOUT TYPE. widget_7's layout is horizontalLayout_10, a
+            QHBoxLayout (ui:4092). replaceWidget is used, not insertWidget,
+            because it is a QLayout method and works for box and grid
+            layouts alike -- QGridLayout has no insertWidget at all.
+        (d) LOAD ORDER. widget_7/vtk exist at window construction, so a
+            2400 ms singleShot is late enough; it sits after the other
+            builders so nothing contends for the same repaint.
+        (e) PROVABLY RUNS. One LOG line on success naming the host and the
+            layout class, one LOG.error per missing piece, one
+            LOG.exception around the whole thing. No silent path.
+
+        The window cannot grow from this: the tracer carries the same
+        Expanding/Expanding size policy the VTK widget had (ui:4610) and a
+        zero minimum size, so it takes whatever widget_7 already gives.
+        """
+        try:
+            from PySide6.QtWidgets import (QWidget as _QW, QAbstractButton,
+                                           QButtonGroup)
+            win = self.window()
+            vtk = win.findChild(_QW, 'vtk') if win is not None else None
+            if vtk is None:
+                LOG.error('TRACER: no widget named "vtk" found from %s -- '
+                          'NOTHING BUILT, the MAIN tab keeps the blank '
+                          'backplot pane', win)
+                return
+            host = vtk.parentWidget()
+            lay = host.layout() if host is not None else None
+            if lay is None or not hasattr(lay, 'replaceWidget'):
+                LOG.error('TRACER: vtk parent %r has layout %r -- refusing '
+                          'to guess a position; NOTHING BUILT',
+                          host.objectName() if host is not None else None,
+                          lay.__class__.__name__ if lay is not None else None)
+                return
+
+            tracer = NedProgramTracer(host)
+            lay.replaceWidget(vtk, tracer)
+            vtk.hide()
+            tracer.show()
+            self._tracer = tracer
+            LOG.info('TRACER: QPainter 2D tracer is IN -- replaced '
+                     'VTKBackPlot "vtk" inside %s (%s). The stock backplot '
+                     'draws nothing here: VTK needs OpenGL core 3.2 and this '
+                     "Pi's Broadcom V3D stops at 3.1.",
+                     host.objectName(), lay.__class__.__name__)
+
+            # -- the button column, repurposed --------------------------
+            grp = QButtonGroup(self)
+            grp.setExclusive(True)
+            self._tracer_grp = grp        # a QButtonGroup that nobody keeps
+                                          # is collected and the exclusivity
+                                          # quietly stops working
+            views, wired, missing = {}, [], []
+            for name, face, kind, arg in TR_BUTTON_MAP:
+                b = win.findChild(QAbstractButton, name)
+                if b is None:
+                    missing.append(name)
+                    continue
+                try:
+                    b.clicked.disconnect()
+                except (RuntimeError, TypeError):
+                    pass                  # nothing was connected: fine
+                if face:
+                    b.setText(face)
+                if kind == 'view':
+                    b.setCheckable(True)
+                    grp.addButton(b)
+                    views[arg] = b
+                    b.clicked.connect(
+                        lambda _c=False, v=arg: tracer.setViewName(v))
+                elif kind == 'zoom':
+                    b.clicked.connect(
+                        lambda _c=False, f=arg: tracer.zoomBy(f))
+                elif kind == 'fit':
+                    b.clicked.connect(lambda _c=False: tracer.fit())
+                elif kind == 'clear':
+                    b.clicked.connect(lambda _c=False: tracer.clearProgress())
+                else:
+                    # nothing this control can do to a 2D drawing. Disabled,
+                    # not left looking live (operator's standing rule: grey
+                    # out what cannot act).
+                    b.setEnabled(False)
+                wired.append('%s=%s' % (name, kind))
+            tracer.bindViewButtons(views)
+            if missing:
+                LOG.error('TRACER: %d VTK column buttons NOT found (%s) -- '
+                          'those stay wired to the hidden VTK widget and do '
+                          'nothing', len(missing), ', '.join(missing))
+            LOG.info('TRACER: %d/%d VTK column buttons rebound [%s]',
+                     len(wired), len(TR_BUTTON_MAP), ' '.join(wired))
+
+            # -- draw whatever is already loaded, now -------------------
+            # Without this the panel stays empty until the 400 ms poll
+            # happens to run, which reads like a build that failed.
+            try:
+                import linuxcnc
+                st = linuxcnc.stat()
+                st.poll()
+                if st.file:
+                    tracer.loadFile(st.file)
+                else:
+                    LOG.info('TRACER: no program loaded yet -- the panel '
+                             'picks one up within %d ms of a load',
+                             tracer.POLL_MS)
+            except Exception as e:
+                LOG.error('TRACER: could not read stat.file at build time '
+                          '(%s) -- the poll timer will still pick it up', e)
+        except Exception:
+            LOG.exception('TRACER: build FAILED -- the MAIN tab is left with '
+                          'the stock VTK backplot, which is blank on this Pi')
+
     def _build_rack_table(self):
         """RACK TABLE page on the ATC tab: per-fork PosX / PosY (PosZ later).
 
@@ -8963,7 +9420,27 @@ QTabBar::tab:only-one {
             if s.homed[6]:
                 c.unhome(6)
                 c.wait_complete(2.0)
+            # INSTRUMENTED (2026-08-14). The launch declare logs "position
+            # kept" and yet B comes up at 0 with ini.6.home_offset reading 0
+            # -- a plain setp at idle holds fine, so something in the homing
+            # transition itself is putting HOME_OFFSET back. Read the pin on
+            # both sides of the home() so the reset is caught rather than
+            # inferred.
+            def _off():
+                return os.popen('timeout 3 halcmd getp ini.6.home_offset '
+                                '2>/dev/null').read().strip()
+            before = _off()
             c.home(6)
+            c.wait_complete(2.0)
+            after = _off()
+            s.poll()
+            LOG.info('HOME B pins: offset before home()=%s after=%s ; '
+                     'joint 6 now %+.4f (wanted %+.4f)',
+                     before, after, s.joint[6]['output'], here)
+            if before != after:
+                LOG.error('HOME B: ini.6.home_offset CHANGED across home() '
+                          '(%s -> %s) -- that is what resets B, not the setp',
+                          before, after)
             LOG.info('HOME B: joint 6 was %+.4f, declared AT %+.4f (%s)',
                      s.joint[6]['output'], here,
                      'ZEROED by the menu' if zero
@@ -9618,3 +10095,1297 @@ QTabBar::tab:only-one {
             LOG.info('Home %s -> home joint %d only', label, jn)
         except Exception as e:
             LOG.error('Home %s failed: %s', label, e)
+
+
+# ==========================================================================
+# 2D PROGRAM TRACER -- the MAIN tab backplot, in QPainter.
+#
+# Operator 2026-08-14: "something i must have is a program tracer ... i
+# really want to be able to see what i am doing in the MAIN tab after
+# loading a file".
+#
+# WHY IT IS NOT THE STOCK WIDGET. probe_basic.ui:4608 puts a VTKBackPlot
+# named "vtk" in the MAIN tab and it renders NOTHING on this machine:
+#   lcnc.log    vtkOpenGLRenderWindow.c:929 WARN| Unable to find a valid
+#               OpenGL 3.2 or later implementation. (3.1 found)
+#   glxinfo -B  Broadcom V3D 7.1.7.0, Max core profile version 3.1
+# VTK wants 3.2 and the Pi's GPU driver stops at 3.1. That is a driver
+# ceiling, not a configuration fault, so there is nothing to fix in the
+# .ui or the ini and no point trying. QPainter's raster engine uses no
+# OpenGL at all, which is the whole reason this is written by hand.
+#
+# In order below: palette, expression evaluator, parsed-path container,
+# resumable scanner, projections, widget.
+# ==========================================================================
+# --------------------------------------------------------------------------
+# PALETTE. Taken from what is already on this screen: the dead VTKBackPlot's
+# own backgroundColor (probe_basic.ui:4614-4618 = 32,36,37) so the panel does
+# not change tone, and the ned accents already used in this file --
+# rgb(232,166,53) amber, rgb(160,160,160) grey, rgb(238,120,120) alarm red.
+# --------------------------------------------------------------------------
+TR_BG      = QColor(32, 36, 37)
+TR_GRID    = QColor(58, 63, 65)
+TR_AXIS    = QColor(84, 90, 92)
+TR_RAPID   = QColor(108, 106, 122)
+TR_FEED    = QColor(126, 176, 208)
+TR_DONE    = QColor(232, 166, 53)
+TR_MARK    = QColor(255, 255, 255)   # the live position. WHITE, not the
+                                     # amber accent: the executed path is
+                                     # amber, and on a rotary part the
+                                     # SIDE view goes solid amber early on
+                                     # (every B index projects onto the
+                                     # same Y-Z profile), which swallowed
+                                     # an amber marker whole.
+TR_MARK_HALO = QColor(18, 20, 21)    # drawn under it, so it reads on the
+                                     # background, the blue path and the
+                                     # amber path alike
+TR_TEXT    = QColor(160, 160, 160)
+TR_HOT     = QColor(238, 120, 120)
+
+# flag bits carried per parsed point
+TR_RAPID_BIT = 1        # the segment ARRIVING at this point was G0
+TR_BREAK_BIT = 2        # pen UP before this point (start a new polyline)
+
+# UNROLL wraps B at 360 deg, so a step bigger than half a turn is the SEAM,
+# not a move. Draw loops lift the pen there instead of ruling a line across
+# the whole picture.
+TR_WRAP_V = {'UNROLL': 360.0}
+
+_WORD_RE = re.compile(r'([A-Z])\s*([-+]?(?:\d+\.?\d*|\.\d+))')
+_PAREN_RE = re.compile(r'\([^)]*\)')
+_NUM_RE = re.compile(r'[-+]?(?:\d+\.?\d*|\.\d+)')
+_ASSIGN_RE = re.compile(r'^\s*#(<[^>]*>|\d+)\s*=\s*(.+?)\s*$')
+_AXIS_LETTERS = ('X', 'Y', 'Z', 'A', 'B', 'C')
+_WORD_LETTERS = frozenset('XYZABCIJKRGFSTPQHLDMNO')
+
+
+class _Unknown(Exception):
+    """A value this scanner is not entitled to guess. Fails the whole block."""
+
+
+# --------------------------------------------------------------------------
+# TINY EXPRESSION EVALUATOR -- numbers, [ ], + - * /, ** and #params, NOTHING
+# ELSE. It exists because half the .ngc in this repo is written with named
+# parameters (tnut_slot_holes.ngc: "G1 Z[0 - #<cb_depth>]"), and a scanner
+# that silently ignored the brackets drew a picture of moves the machine will
+# never make -- worse than drawing nothing. Anything it cannot evaluate
+# raises _Unknown and the BLOCK IS DROPPED and counted, so the caption can
+# say how much of the file is not on screen.
+#
+# NO eval(). This walks operator characters by hand; a g-code file is input,
+# and input never becomes python here.
+# --------------------------------------------------------------------------
+def _tr_eval(expr, params):
+    toks = _tr_tokens(expr, params)
+    val, i = _tr_sum(toks, 0)
+    if i != len(toks):
+        raise _Unknown()
+    return val
+
+
+def _tr_tokens(s, params):
+    out = []
+    i, n = 0, len(s)
+    while i < n:
+        c = s[i]
+        if c in ' \t':
+            i += 1
+        elif c in '[]+-*/':
+            if c == '*' and i + 1 < n and s[i + 1] == '*':
+                out.append('**')
+                i += 2
+            else:
+                out.append(c)
+                i += 1
+        elif c == '#':
+            j = i + 1
+            if j < n and s[j] == '<':
+                k = s.find('>', j)
+                if k < 0:
+                    raise _Unknown()
+                key = s[j:k + 1].strip().lower()
+                i = k + 1
+            else:
+                m = re.match(r'\d+', s[j:])
+                if not m:
+                    raise _Unknown()
+                key = m.group(0)
+                i = j + len(key)
+            if key not in params:
+                raise _Unknown()
+            out.append(params[key])
+        else:
+            m = _NUM_RE.match(s, i)
+            if not m:
+                raise _Unknown()          # a word, a function, a comparison
+            out.append(float(m.group(0)))
+            i = m.end()
+    return out
+
+
+def _tr_atom(t, i):
+    if i >= len(t):
+        raise _Unknown()
+    x = t[i]
+    if x == '-':
+        v, i = _tr_atom(t, i + 1)
+        return -v, i
+    if x == '+':
+        return _tr_atom(t, i + 1)
+    if x == '[':
+        v, i = _tr_sum(t, i + 1)
+        if i >= len(t) or t[i] != ']':
+            raise _Unknown()
+        return v, i + 1
+    if isinstance(x, float):
+        return x, i + 1
+    raise _Unknown()
+
+
+def _tr_pow(t, i):
+    v, i = _tr_atom(t, i)
+    while i < len(t) and t[i] == '**':
+        r, i = _tr_atom(t, i + 1)
+        v = v ** r
+    return v, i
+
+
+def _tr_prod(t, i):
+    v, i = _tr_pow(t, i)
+    while i < len(t) and t[i] in ('*', '/'):
+        op = t[i]
+        r, i = _tr_pow(t, i + 1)
+        if op == '/':
+            if abs(r) < 1e-12:
+                raise _Unknown()
+            v /= r
+        else:
+            v *= r
+    return v, i
+
+
+def _tr_sum(t, i):
+    v, i = _tr_prod(t, i)
+    while i < len(t) and t[i] in ('+', '-'):
+        op = t[i]
+        r, i = _tr_prod(t, i + 1)
+        v = v + r if op == '+' else v - r
+    return v, i
+
+
+class TracePath(object):
+    """Parsed program geometry: flat arrays, one entry per path point.
+
+    Flat arrays and not a list of tuples on purpose -- kakeya_D73_H180 is
+    125 000 blocks and a python tuple per point costs ~15 MB plus allocator
+    churn on a Pi. array('f') is 4 bytes each.
+    """
+
+    def __init__(self, path=''):
+        self.path = path
+        self.mtime = 0.0
+        self.size = 0
+        self.xs = array('f')
+        self.ys = array('f')
+        self.zs = array('f')
+        self.bs = array('f')
+        self.flags = bytearray()
+        self.lns = array('i')       # source line number, non-decreasing
+        self.rng = {}               # letter -> (lo, hi)
+        self.rotary = False
+        self.owords = 0             # O-word blocks (subs/loops) NOT expanded
+        self.unknown = 0            # motion blocks whose words would not solve
+        self.g53 = 0
+        self.arcs = 0
+        self.lines_seen = 0
+        self.done = False
+        self._proj = {}             # view -> (us, vs), built on demand
+
+    def __len__(self):
+        return len(self.xs)
+
+    def index_for_line(self, ln):
+        """First point index past source line `ln`."""
+        if not self.lns:
+            return 0
+        return bisect_right(self.lns, ln)
+
+    def projected(self, view):
+        """(us, vs) arrays for one view, cached.
+
+        Cached because the pixmap is rebuilt on every zoom, pan and resize
+        and re-projecting 125 000 points each time is the difference between
+        a snappy panel and a visible stall.
+        """
+        got = self._proj.get(view)
+        if got is not None:
+            return got
+        us, vs = array('f'), array('f')
+        xs, ys, zs, bs = self.xs, self.ys, self.zs, self.bs
+        n = len(xs)
+        if view == 'TOP':
+            us, vs = xs, ys
+        elif view == 'SIDE':
+            us, vs = ys, zs
+        elif view == 'UNROLL':
+            # B MODULO 360. kakeya_5in_preview winds B to 1888 deg, and an
+            # unwrapped axis turns the developed surface into a diagonal
+            # ramp five revolutions tall -- every pass in its own empty
+            # band. Wrapped, each revolution lands on the same map of the
+            # cylinder, which is the whole point of the view. The seam is
+            # handled at draw time (TR_WRAP_V): a step over 180 deg is a
+            # pen lift, never a line straight down the picture.
+            us = ys
+            for i in range(n):
+                vs.append(bs[i] % 360.0)
+        elif self.rotary:
+            rad = math.radians
+            sin, cos = math.sin, math.cos
+            for i in range(n):
+                a = rad(bs[i])
+                us.append(zs[i] * sin(a))
+                vs.append(zs[i] * cos(a))
+        else:
+            us, vs = xs, zs
+        self._proj[view] = (us, vs)
+        return us, vs
+
+
+class NgcScanner(object):
+    """Resumable g-code scanner. Chews `budget` lines per call and returns.
+
+    RESUMABLE ON PURPOSE. A 3.2 MB / 125 k line file is ~0.9 s of straight
+    python on this Pi; doing that in one go blocks the Qt event loop, and
+    this box already prints "Unexpected realtime delay on task 0". The
+    widget drives this from a QTimer in small slices instead, so neither the
+    GUI nor the RT thread ever waits on the parser.
+
+    NOT LinuxCNC's own `gcode` module / rs274, deliberately. rs274 O_TRUNCs
+    $HOME/.tool.mmap before it even parses its options, and a scanner run
+    beside a live session has already clobbered the live tool table and
+    SIGBUS-crashed milltask on this machine (2026-08-06 root cause; it is
+    why tools/gcode_check.sh sandboxes HOME). A read-only regex scan cannot
+    touch the running interpreter at all.
+
+    What it does NOT do, and does not pretend to: O-word subroutines and
+    loops, cutter compensation, G43 tool length, canned cycles, and any
+    parameter it was not shown a literal value for. Those blocks are COUNTED
+    and reported in the caption, never guessed.
+    """
+
+    def __init__(self, filename, arc_seg_deg=6.0):
+        self.fh = open(filename, 'r', errors='replace')
+        self.tp = TracePath(filename)
+        try:
+            st = os.stat(filename)
+            self.tp.mtime, self.tp.size = st.st_mtime, st.st_size
+        except OSError:
+            pass
+        self.arc_seg = max(1.0, float(arc_seg_deg))
+        self.pos = {'X': 0.0, 'Y': 0.0, 'Z': 0.0,
+                    'A': 0.0, 'B': 0.0, 'C': 0.0}
+        self.params = {}
+        self.motion = 0
+        self.units = 1.0            # G21 mm; G20 sets 25.4
+        self.absolute = True        # G90
+        self.plane = 17
+        self.arc_abs = False        # G91.1 arc distance mode is the default
+        self.lineno = 0
+        # NO SYNTHETIC START POINT. Emitting one at program 0,0,0 put a
+        # phantom vertex in the extents -- kakeya_D73_H180 fitted to
+        # Z 0..65 when the path only ever reaches down to Z 18.8, so the
+        # part sat in the top half of a panel that looked broken. The first
+        # real move starts the first polyline instead.
+        self.pending_break = True
+        self.lo = {}
+        self.hi = {}
+
+    # -- emit ------------------------------------------------------------
+    def _emit(self, flag_rapid, ln):
+        tp = self.tp
+        p = self.pos
+        f = (TR_RAPID_BIT if flag_rapid else 0)
+        if self.pending_break:
+            f |= TR_BREAK_BIT
+            self.pending_break = False
+        tp.xs.append(p['X'])
+        tp.ys.append(p['Y'])
+        tp.zs.append(p['Z'])
+        tp.bs.append(p['B'])
+        tp.flags.append(f)
+        tp.lns.append(ln)
+        if len(tp.xs) == 1:
+            # THE FIRST POINT IS NOT GEOMETRY. Whatever the first block does
+            # not name keeps the scanner's 0.0 start, so kakeya's opening
+            # "G0 X0. Y0." lands at Z0 -- 18 mm below anything the program
+            # actually cuts -- and the SIDE fit then reserved a third of the
+            # panel for a move that does not exist. Draw it, do not measure
+            # it. (LinuxCNC's own preview has the same blind spot; here it
+            # only costs one point.)
+            return
+        lo, hi = self.lo, self.hi
+        for k in _AXIS_LETTERS:
+            v = p[k]
+            if k not in lo or v < lo[k]:
+                lo[k] = v
+            if k not in hi or v > hi[k]:
+                hi[k] = v
+
+    # -- block word extraction -------------------------------------------
+    def _words(self, s):
+        """{letter: value} for one cleaned, upper-cased block.
+
+        FAST PATH FIRST: a block with no '#' and no '[' is 99.9 % of a CAM
+        file (kakeya_D73_H180 has not one of either in 125 k lines), and one
+        regex findall over it is many times cheaper than walking characters.
+        """
+        if '#' not in s and '[' not in s:
+            w = {}
+            for letter, num in _WORD_RE.findall(s):
+                if letter in _WORD_LETTERS:
+                    try:
+                        w[letter] = float(num)
+                    except ValueError:
+                        pass
+            return w
+        w = {}
+        i, n = 0, len(s)
+        while i < n:
+            c = s[i]
+            if c not in _WORD_LETTERS:
+                i += 1
+                continue
+            letter = c
+            i += 1
+            while i < n and s[i] in ' \t':
+                i += 1
+            if i >= n:
+                break
+            if s[i] == '[':
+                depth, j = 0, i
+                while j < n:
+                    if s[j] == '[':
+                        depth += 1
+                    elif s[j] == ']':
+                        depth -= 1
+                        if depth == 0:
+                            j += 1
+                            break
+                    j += 1
+                w[letter] = _tr_eval(s[i:j], self.params)
+                i = j
+            elif s[i] == '#':
+                j = i + 1
+                if j < n and s[j] == '<':
+                    k = s.find('>', j)
+                    if k < 0:
+                        raise _Unknown()
+                    j = k + 1
+                else:
+                    m = re.match(r'\d+', s[j:])
+                    if not m:
+                        raise _Unknown()
+                    j += len(m.group(0))
+                w[letter] = _tr_eval(s[i:j], self.params)
+                i = j
+            else:
+                m = _NUM_RE.match(s, i)
+                if not m:
+                    continue          # a bare letter (M6 style words differ)
+                w[letter] = float(m.group(0))
+                i = m.end()
+        return w
+
+    # -- arcs ------------------------------------------------------------
+    def _arc(self, g2, w, ln):
+        """Expand G2/G3 into chords in the active plane.
+
+        Plane pairs, LinuxCNC order: G17 -> X/Y about Z (I,J), G18 -> Z/X
+        about Y (K,I), G19 -> Y/Z about X (J,K). The centre offsets are
+        INCREMENTAL from the start point (G91.1, the default); an R word is
+        the radius form, its sign choosing the >180 deg arc.
+        """
+        if self.plane == 18:
+            a1, a2, i1, i2 = 'Z', 'X', 'K', 'I'
+        elif self.plane == 19:
+            a1, a2, i1, i2 = 'Y', 'Z', 'J', 'K'
+        else:
+            a1, a2, i1, i2 = 'X', 'Y', 'I', 'J'
+        s1, s2 = self.pos[a1], self.pos[a2]
+        e1 = self._target(a1, w)
+        e2 = self._target(a2, w)
+        if i1 in w or i2 in w:
+            if self.arc_abs:
+                c1 = w.get(i1, s1 / self.units) * self.units
+                c2 = w.get(i2, s2 / self.units) * self.units
+            else:
+                c1 = s1 + w.get(i1, 0.0) * self.units
+                c2 = s2 + w.get(i2, 0.0) * self.units
+        elif 'R' in w:
+            r = w['R'] * self.units
+            d1, d2 = e1 - s1, e2 - s2
+            d = math.hypot(d1, d2)
+            if d < 1e-9 or abs(r) < d / 2.0:
+                return False
+            h = math.sqrt(max(0.0, r * r - d * d / 4.0))
+            sgn = 1.0 if ((r > 0) == bool(g2)) else -1.0
+            c1 = (s1 + e1) / 2.0 + sgn * h * (d2 / d)
+            c2 = (s2 + e2) / 2.0 - sgn * h * (d1 / d)
+        else:
+            return False
+        r1 = math.hypot(s1 - c1, s2 - c2)
+        if r1 < 1e-9:
+            return False
+        a_s = math.atan2(s2 - c2, s1 - c1)
+        a_e = math.atan2(e2 - c2, e1 - c1)
+        sweep = a_e - a_s
+        if g2:                              # CW = decreasing angle
+            while sweep >= 0:
+                sweep -= 2 * math.pi
+            if sweep < -2 * math.pi:
+                sweep += 2 * math.pi
+        else:
+            while sweep <= 0:
+                sweep += 2 * math.pi
+            if sweep > 2 * math.pi:
+                sweep -= 2 * math.pi
+        if abs(sweep) < 1e-9:
+            # start == end: a full circle, which is how every bore in this
+            # repo is cut (tnut_slot_holes.ngc "G3 I[0 - #<r1>] J0.0")
+            sweep = -2 * math.pi if g2 else 2 * math.pi
+        n = max(2, int(abs(sweep) / math.radians(self.arc_seg)) + 1)
+        others = [k for k in _AXIS_LETTERS if k not in (a1, a2)]
+        o_s = dict((k, self.pos[k]) for k in others)
+        o_e = dict((k, self._target(k, w)) for k in others)
+        for i in range(1, n + 1):
+            t = float(i) / n
+            ang = a_s + sweep * t
+            self.pos[a1] = c1 + r1 * math.cos(ang)
+            self.pos[a2] = c2 + r1 * math.sin(ang)
+            for k in others:
+                self.pos[k] = o_s[k] + (o_e[k] - o_s[k]) * t
+            self._emit(0, ln)
+        self.pos[a1], self.pos[a2] = e1, e2
+        self.tp.arcs += 1
+        return True
+
+    def _target(self, letter, w):
+        """Endpoint of `letter` for this block, honouring G90/G91 + G20/G21.
+
+        Rotary words are DEGREES and are never scaled by G20 -- scaling B by
+        25.4 would fold a 360 deg index into 9144 and make END and UNROLL
+        nonsense.
+        """
+        if letter not in w:
+            return self.pos[letter]
+        v = w[letter]
+        if letter in ('A', 'B', 'C'):
+            return v if self.absolute else (self.pos[letter] + v)
+        v *= self.units
+        return v if self.absolute else (self.pos[letter] + v)
+
+    # -- main loop -------------------------------------------------------
+    def step(self, budget=3000):
+        """Parse up to `budget` lines. Returns True when the file is done."""
+        tp = self.tp
+        n = 0
+        pos = self.pos
+        while n < budget:
+            line = self.fh.readline()
+            if not line:
+                self.finish()
+                return True
+            n += 1
+            self.lineno += 1
+            s = line
+            if '(' in s:
+                s = _PAREN_RE.sub(' ', s)
+            i = s.find(';')
+            if i >= 0:
+                s = s[:i]
+            s = s.upper()
+            st = s.lstrip()
+            if not st:
+                continue
+            if st[0] == 'O':
+                # O<sub>/o100 while/if: control flow this scanner does not
+                # run. Counted so the caption can say the picture is partial.
+                tp.owords += 1
+                continue
+            if st[0] == '#':
+                m = _ASSIGN_RE.match(s)
+                if m:
+                    key = m.group(1).strip().lower()
+                    try:
+                        self.params[key] = _tr_eval(m.group(2), self.params)
+                    except Exception:
+                        # a value we cannot solve must not leave a STALE one
+                        # behind for the next block to use
+                        self.params.pop(key, None)
+                continue
+            try:
+                w = self._words(s)
+            except Exception:
+                if any(k in s for k in 'XYZABC'):
+                    tp.unknown += 1
+                    self.pending_break = True
+                continue
+            if not w:
+                continue
+            g53 = False
+            if 'G' in w:
+                # A DICT HOLDS ONE G PER BLOCK; a block holds several
+                # ("N10 G90 G94 G17 G91.1"), so re-scan the text for all.
+                for gm in re.finditer(r'G\s*(\d+(?:\.\d)?)', s):
+                    # TENTHS, NOT int(). G91.1 is ARC DISTANCE MODE and
+                    # int(float('91.1')) is 91 -- which set the whole
+                    # program INCREMENTAL. 1ftface.ngc opens with
+                    # "N10 G90 G94 G17 G91.1" and every X summed from
+                    # there: 4187 mm of travel on a 1.2 m machine, and
+                    # Untitled.ngc drew to X -267991. Compare in tenths so
+                    # 90, 90.1, 91 and 91.1 stay four different codes.
+                    try:
+                        g = int(round(float(gm.group(1)) * 10))
+                    except ValueError:
+                        continue
+                    if g in (0, 10, 20, 30):
+                        self.motion = g // 10
+                    elif 380 <= g <= 389:
+                        self.motion = 1         # G38.x probe = a feed move
+                    elif g == 530:
+                        g53 = True
+                    elif g == 200:
+                        self.units = 25.4
+                    elif g == 210:
+                        self.units = 1.0
+                    elif g == 900:
+                        self.absolute = True
+                    elif g == 910:
+                        self.absolute = False
+                    elif g == 901:
+                        self.arc_abs = True     # I/J/K are absolute centres
+                    elif g == 911:
+                        self.arc_abs = False    # incremental: the default
+                    elif g in (170, 180, 190):
+                        self.plane = g // 10
+                    elif g in (800, 810, 820, 830, 840, 850, 860, 880, 890):
+                        self.motion = None      # canned cycle: not drawn
+            if not any(k in w for k in _AXIS_LETTERS):
+                continue
+            if g53:
+                # G53 names MACHINE coordinates. Every other block here is in
+                # program (G5x) coordinates and the two cannot share a
+                # polyline -- joining them would draw a diagonal across the
+                # part that the machine never cuts. Count it, lift the pen,
+                # let the next programmed block start a new polyline.
+                tp.g53 += 1
+                self.pending_break = True
+                continue
+            if self.motion in (2, 3):
+                if self._arc(self.motion == 2, w, self.lineno):
+                    continue
+                # degenerate (no I/J/K, no R): fall through and draw a chord
+            if self.motion is None:
+                continue
+            for k in _AXIS_LETTERS:
+                if k in w:
+                    pos[k] = self._target(k, w)
+            self._emit(1 if self.motion == 0 else 0, self.lineno)
+        return False
+
+    def finish(self):
+        tp = self.tp
+        tp.lines_seen = self.lineno
+        for k in _AXIS_LETTERS:
+            tp.rng[k] = (self.lo.get(k, 0.0), self.hi.get(k, 0.0))
+        blo, bhi = tp.rng['B']
+        tp.rotary = (bhi - blo) > 1.0
+        tp.done = True
+        try:
+            self.fh.close()
+        except Exception:
+            pass
+
+
+# --------------------------------------------------------------------------
+# PROJECTIONS. THE REASON THIS WIDGET EXISTS IN THIS SHAPE.
+#
+# The real jobs on this machine are 4-axis rotary. kakeya_D73_H180_CLAUDE.ngc
+# has 120 518 Y words, 121 227 Z words, 4 306 B words -- and THREE X words in
+# 125 000 lines. Its own header says so: "B indexes the part. X stays 0 - the
+# tool works in the YZ plane." A conventional XY top view of that program is
+# a single dot. The views that actually carry the part are
+#   SIDE    Y across, Z up             the lathe-style length profile
+#   END     polar, radius Z at angle B the CROSS SECTION in the part's frame
+#   UNROLL  Y across, B up             the cylinder surface developed flat
+# TOP and END fall back to plain X-Y / X-Z orthographics when the program
+# never turns B, which is what tnut_slot_holes.ngc and the facing files want.
+# --------------------------------------------------------------------------
+TR_VIEWS = ('SIDE', 'END', 'TOP', 'UNROLL')
+
+# THE VTK BUTTON COLUMN, REPURPOSED (probe_basic.ui:4110-4600). Those
+# thirteen buttons are wired in the .ui's <connections> straight to
+# vtk.setViewX / setViewProgram / enable_panning
+# (probe_basic_ui.py:13041-13085), so with the VTK widget hidden they are
+# thirteen dead controls sitting next to a live drawing. They get the
+# tracer's own actions instead -- no second visual language, no new chrome,
+# and every old connection is severed first (CLAUDE.md rule 14b).
+#
+# 'off' = there is no 2D meaning for it, so it is DISABLED, not left
+# looking live. A control that cannot act must not look like it can.
+#   name, face, kind, argument
+TR_BUTTON_MAP = (
+    ('x_view_button',       'SIDE',    'view',  'SIDE'),
+    ('y_view_button',       'END',     'view',  'END'),
+    ('z_view_button',       'TOP',     'view',  'TOP'),
+    ('iso_view_button',     'UNROLL',  'view',  'UNROLL'),
+    ('zoom_in_button',      None,      'zoom',  1.25),
+    ('zoom_out_button',     None,      'zoom',  0.8),
+    ('program_zoom_button', 'FIT',     'fit',   None),
+    ('clear_button',        None,      'clear', None),
+    ('machine_zoom_button', None,      'off',   None),
+    ('pan_button',          None,      'off',   None),
+    ('path_button',         None,      'off',   None),
+    ('ortho_button',        None,      'off',   None),
+    ('perspective_button',  None,      'off',   None),
+)
+
+TR_AXIS_LABELS = {
+    'TOP':    ('X', 'Y', 'mm'),
+    'SIDE':   ('Y', 'Z', 'mm'),
+    'UNROLL': ('Y', 'B', 'mm'),   # the SCALE BAR is horizontal, and u is Y mm in every view
+    'END':    ('Z sinB', 'Z cosB', 'mm'),
+}
+
+
+def tr_project(view, x, y, z, b, rotary):
+    """(u, v) in model units for ONE point -- used for the live marker only.
+
+    The program itself goes through TracePath.projected(), which does the
+    same arithmetic over whole arrays.
+    """
+    if view == 'TOP':
+        return x, y
+    if view == 'SIDE':
+        return y, z
+    if view == 'UNROLL':
+        return y, b % 360.0
+    if rotary:
+        # Z is radial from the rotary centreline and the tool sits on +Z, so
+        # its machine angle is 90 deg. The part has turned by B, so in the
+        # PART's own frame the cut point is at 90-B: u = Z sinB, v = Z cosB.
+        r = math.radians(b)
+        return z * math.sin(r), z * math.cos(r)
+    return x, z
+
+
+class NedProgramTracer(QWidget):
+    """2D QPainter toolpath tracer -- the MAIN tab backplot replacement.
+
+    Operator 2026-08-14: "something i must have is a program tracer ... i
+    really want to be able to see what i am doing in the MAIN tab after
+    loading a file".
+
+    WHY QPainter AND NOT THE STOCK VTKBackPlot: the Pi's Broadcom V3D tops
+    out at OpenGL core profile 3.1 (glxinfo -B) and VTK refuses anything
+    below 3.2 -- lcnc.log: "vtkOpenGLRenderWindow ... Unable to find a valid
+    OpenGL 3.2 or later implementation. (3.1 found)". The stock widget
+    therefore paints NOTHING on this machine and no configuration fixes it;
+    it is a driver ceiling. QPainter uses the raster engine and no GL at all.
+
+    Three costs are kept off the hot path deliberately:
+      * PARSING is sliced by QTimer (NgcScanner.step) -- never one blocking
+        pass over a 125 k line file.
+      * THE PROGRAM is drawn ONCE into a QPixmap per view/zoom/pan/size.
+        paintEvent blits that pixmap and never walks the point arrays.
+      * PROGRESS is a second, transparent pixmap that only ever gets the NEW
+        segments drawn on it as the executed line number advances.
+    Only the marker and the caption are painted per frame, and the poll timer
+    stops entirely while the MAIN tab is not the visible one.
+    """
+
+    POLL_MS = 400            # marker + current_line. The RT thread on this
+                             # Pi already complains; 400 ms is plenty.
+    PARSE_MS = 25            # slice period while a file is being scanned
+    PARSE_LINES = 3000       # lines per slice (~20 ms each on this Pi)
+
+    def __init__(self, parent=None):
+        super(NedProgramTracer, self).__init__(parent)
+        self.setObjectName('ned_tracer')
+        sp = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        sp.setHorizontalStretch(1)
+        sp.setVerticalStretch(1)
+        self.setSizePolicy(sp)
+        self.setMinimumSize(0, 0)
+        self.setAutoFillBackground(False)
+        self.tp = None                 # finished TracePath
+        self._scan = None              # NgcScanner in flight
+        self._file = ''
+        self._sig = None               # (path, mtime, size) behind self.tp
+        self.view = 'SIDE'
+        self._base = None              # QPixmap: whole program
+        self._prog = None              # QPixmap: executed so far
+        self._su = 1.0                 # px per model unit, u
+        self._sv = 1.0                 # px per model unit, v (differs ONLY
+                                       # in UNROLL, where mm and deg share
+                                       # no scale and locking them would
+                                       # squeeze the picture into a ribbon)
+        self._cu = 0.0
+        self._cv = 0.0
+        self._zoom = 1.0
+        # geometry the CURRENT pixmaps were drawn at. Pan and zoom blit the
+        # existing pixmap through the transform between these and the live
+        # values instead of redrawing 125 000 segments per mouse event
+        # (0.26 s each on this Pi -- dragging was unusable), and a 250 ms
+        # quiet timer then redraws it crisp.
+        self._base_su = self._base_sv = 1.0
+        self._base_cu = self._base_cv = 0.0
+        self._refresh = QTimer(self)
+        self._refresh.setSingleShot(True)
+        self._refresh.timeout.connect(self._invalidate)
+        self._fit_pending = True
+        self._kept = 0
+        self._idx_done = 0
+        self._last_line = -1
+        self._mark_xyz = (0.0, 0.0, 0.0, 0.0)
+        self._mark_seen = None        # last marker actually painted
+        self._note = 'no program loaded'
+        self._drag = None
+        self._stat = None
+        self._parse_timer = QTimer(self)
+        self._parse_timer.timeout.connect(self._parse_slice)
+        self._view_btns = {}
+        self._poll = QTimer(self)
+        self._poll.timeout.connect(self._tick)
+        # STARTED HERE, not only in showEvent. If the MAIN tab is not the
+        # current page when this is built the widget never gets a showEvent,
+        # and a tracer that waits for one sits blank until the operator
+        # happens to click MAIN -- which reads exactly like a build that
+        # failed. hideEvent still stops it, showEvent still restarts it.
+        self._poll.start(self.POLL_MS)
+
+    # ---- public API, called by the rebound VTK button column ------------
+    def setViewName(self, name):
+        if name not in TR_VIEWS:
+            return
+        if name == 'UNROLL' and not (self.tp is not None and self.tp.rotary):
+            return
+        self.view = name
+        self._zoom = 1.0
+        self._fit_pending = True
+        self._sync_buttons()
+        self._invalidate()
+        LOG.info('TRACER: view -> %s', name)
+
+    def zoomBy(self, f):
+        self._zoom *= f
+        self._su *= f
+        self._sv *= f
+        self._soft_invalidate()
+
+    def fit(self):
+        self._zoom = 1.0
+        self._fit_pending = True
+        self._invalidate()
+
+    def clearProgress(self):
+        self._prog = None
+        self._idx_done = 0
+        self._last_line = -1
+        self.update()
+
+    def viewName(self):
+        return self.view
+
+    def bindViewButtons(self, mapping):
+        """{view name: QAbstractButton}, so the column shows the live view
+        and UNROLL greys out on a program that never turns B."""
+        self._view_btns = dict(mapping)
+        self._sync_buttons()
+
+    def _sync_buttons(self):
+        rot = self.tp is not None and self.tp.rotary
+        for v, b in self._view_btns.items():
+            try:
+                if v == 'UNROLL':
+                    b.setEnabled(bool(rot))
+                if b.isCheckable():
+                    b.setChecked(v == self.view)
+            except RuntimeError:
+                pass          # button destroyed under us: nothing to sync
+
+    def hasRotary(self):
+        return self.tp is not None and self.tp.rotary
+
+    # ---- file / parse ---------------------------------------------------
+    def loadFile(self, path):
+        """Start (or restart) a sliced scan of `path`. No-op if unchanged."""
+        if not path or not os.path.isfile(path):
+            self.tp = None
+            self._sig = None
+            self._file = path or ''
+            self._scan = None
+            self._parse_timer.stop()
+            self._note = 'no program loaded'
+            self._invalidate()
+            return
+        try:
+            st = os.stat(path)
+            sig = (path, st.st_mtime, st.st_size)
+        except OSError:
+            return
+        if sig == self._sig:
+            return
+        self._sig = sig
+        self._file = path
+        try:
+            self._scan = NgcScanner(path)
+        except Exception:
+            self._scan = None
+            self._note = 'cannot read %s' % os.path.basename(path)
+            self._invalidate()
+            return
+        self.tp = None
+        self.clearProgress()
+        self._note = 'reading %s' % os.path.basename(path)
+        self._parse_timer.start(self.PARSE_MS)
+        self._invalidate()
+        LOG.info('TRACER: scanning %s (%.1f kB) in %d-line slices',
+                 path, st.st_size / 1024.0, self.PARSE_LINES)
+
+    def _parse_slice(self):
+        if self._scan is None:
+            self._parse_timer.stop()
+            return
+        try:
+            done = self._scan.step(self.PARSE_LINES)
+        except Exception:
+            self._parse_timer.stop()
+            self._scan = None
+            self._note = 'parse failed -- see lcnc.log'
+            self._invalidate()
+            LOG.exception('TRACER: scan of %s FAILED -- panel left empty',
+                          self._file)
+            return
+        if done:
+            self._parse_timer.stop()
+            self.tp = self._scan.tp
+            self._scan = None
+            # A rotary program in TOP view is one dot (X never moves), so
+            # land on the view that shows the part.
+            if self.tp.rotary and self.view == 'TOP':
+                self.view = 'SIDE'
+            if not self.tp.rotary and self.view == 'UNROLL':
+                self.view = 'TOP'
+            self._zoom = 1.0
+            self._fit_pending = True
+            self._note = ''
+            self._sync_buttons()
+            self._invalidate()
+            tp = self.tp
+            LOG.info('TRACER: %s parsed -- %d lines, %d path points, '
+                     'rotary=%s (B %.1f..%.1f), %d arcs, %d G53 breaks, '
+                     '%d O-word blocks skipped, %d blocks unsolved; view %s',
+                     os.path.basename(tp.path), tp.lines_seen, len(tp),
+                     tp.rotary, tp.rng['B'][0], tp.rng['B'][1], tp.arcs,
+                     tp.g53, tp.owords, tp.unknown, self.view)
+            if tp.owords or tp.unknown:
+                LOG.warning('TRACER: %s is NOT fully drawn -- %d O-word '
+                            'blocks (subs/loops are not executed) and %d '
+                            'blocks whose words need a value this scanner '
+                            'was never given. The caption says so on screen.',
+                            os.path.basename(tp.path), tp.owords, tp.unknown)
+        else:
+            self._note = 'reading %s -- %d blocks' % (
+                os.path.basename(self._file), len(self._scan.tp))
+            self.update()
+
+    # ---- geometry -------------------------------------------------------
+    def _do_fit(self):
+        w, h = max(1, self.width()), max(1, self.height())
+        tp = self.tp
+        self._fit_pending = False
+        # A NEW FIT INVALIDATES THE PIXMAP, ALWAYS. Leaving that to the
+        # caller is how the offline harness silently blitted the empty
+        # pixmap built before a file was loaded and reported an empty
+        # drawing as a successful render.
+        self._base = None
+        if tp is None or len(tp) < 2:
+            self._su = self._sv = 1.0
+            self._cu = self._cv = 0.0
+            return
+        us, vs = tp.projected(self.view)
+        n = len(us)
+        stride = max(1, n // 4000)      # extents off a sample: exact enough
+        lo_u = hi_u = us[0]
+        lo_v = hi_v = vs[0]
+        for i in range(0, n, stride):
+            u, v = us[i], vs[i]
+            if u < lo_u:
+                lo_u = u
+            elif u > hi_u:
+                hi_u = u
+            if v < lo_v:
+                lo_v = v
+            elif v > hi_v:
+                hi_v = v
+        du = max(1e-6, hi_u - lo_u)
+        dv = max(1e-6, hi_v - lo_v)
+        fu = (w - 76) / du
+        fv = (h - 52) / dv
+        if self.view == 'UNROLL':
+            # mm across, DEGREES up. There is no true aspect ratio between
+            # them, so filling both axes is the honest choice; every other
+            # view is real geometry and stays locked 1:1.
+            self._su, self._sv = fu, fv
+        else:
+            self._su = self._sv = min(fu, fv)
+        self._su *= self._zoom
+        self._sv *= self._zoom
+        self._cu = (lo_u + hi_u) / 2.0
+        self._cv = (lo_v + hi_v) / 2.0
+
+    def _to_screen(self, u, v):
+        return (self.width() / 2.0 + (u - self._cu) * self._su,
+                self.height() / 2.0 - (v - self._cv) * self._sv)
+
+    def _soft_invalidate(self):
+        """Pan/zoom: repaint NOW from the transformed pixmap, redraw later."""
+        self._refresh.start(250)
+        self.update()
+
+    def _invalidate(self):
+        self._refresh.stop()
+        self._base = None
+        self._prog = None
+        self._idx_done = 0
+        self._last_line = -1
+        self.update()
+
+    # ---- the one heavy draw ---------------------------------------------
+    def _build_base(self):
+        """Whole program into a QPixmap. Once per view/zoom/pan/size."""
+        w, h = max(1, self.width()), max(1, self.height())
+        pm = QPixmap(w, h)
+        pm.fill(Qt.transparent)
+        tp = self.tp
+        self._base_su, self._base_sv = self._su, self._sv
+        self._base_cu, self._base_cv = self._cu, self._cv
+        p = QPainter(pm)
+        self._draw_grid(p, w, h)
+        if tp is None or len(tp) < 2:
+            p.end()
+            self._base = pm
+            return
+        p.setRenderHint(QPainter.Antialiasing, len(tp) < 40000)
+        rap = QPainterPath()
+        cut = QPainterPath()
+        us, vs = tp.projected(self.view)
+        fl = tp.flags
+        cx, cy = w / 2.0, h / 2.0
+        su, sv, cu, cv = self._su, self._sv, self._cu, self._cv
+        px = py = 0.0
+        started = False
+        kind = None                  # kind of the subpath currently open
+        kept = 0
+        n = len(us)
+        # DECIMATE AT DRAW TIME, not at parse time: 125 k blocks across a
+        # ~900 px panel is well over a hundred points per pixel and
+        # QPainterPath charges for every one. A point landing inside 0.6 px
+        # of the last one KEPT cannot change the picture, so it is dropped
+        # -- but never across a pen lift or a rapid/feed change, because
+        # that would recolour the path or join two unrelated polylines.
+        wrap = TR_WRAP_V.get(self.view, 0.0)
+        pv = 0.0
+        for i in range(n):
+            f = fl[i]
+            v = vs[i]
+            sx = cx + (us[i] - cu) * su
+            sy = cy - (v - cv) * sv
+            if not started or (f & TR_BREAK_BIT) \
+                    or (wrap and abs(v - pv) > wrap * 0.5):
+                px, py, pv, kind, started = sx, sy, v, None, True
+                continue
+            pv = v
+            rapid = f & TR_RAPID_BIT
+            if kind == rapid and -0.6 < sx - px < 0.6 and -0.6 < sy - py < 0.6:
+                continue
+            tgt = rap if rapid else cut
+            if kind != rapid:
+                tgt.moveTo(px, py)
+                kind = rapid
+            tgt.lineTo(sx, sy)
+            px, py = sx, sy
+            kept += 1
+        self._kept = kept
+        p.setPen(QPen(TR_RAPID, 1.0, Qt.DotLine))
+        p.drawPath(rap)
+        p.setPen(QPen(TR_FEED, 1.4))
+        p.drawPath(cut)
+        p.end()
+        self._base = pm
+
+    def _draw_grid(self, p, w, h):
+        """The two model-zero lines and, in END, the outermost cut radius.
+        Nothing more -- a full grid under a 125 k segment path is noise."""
+        ox, oy = self._to_screen(0.0, 0.0)
+        p.setPen(QPen(TR_AXIS, 1.0))
+        if 0 <= oy <= h:
+            p.drawLine(0, int(oy), w, int(oy))
+        if 0 <= ox <= w:
+            p.drawLine(int(ox), 0, int(ox), h)
+        if self.view == 'END' and self.tp is not None and self.tp.rotary:
+            # the rotary centreline is a point in this view; a ring at the
+            # largest cut radius gives the stock envelope at a glance
+            r = self.tp.rng.get('Z', (0.0, 0.0))[1] * self._su
+            if r > 4:
+                p.setPen(QPen(TR_GRID, 1.0, Qt.DashLine))
+                p.drawEllipse(QPointF(ox, oy), r, r)
+
+    def _build_progress_to(self, idx):
+        """Draw executed segments onto the overlay INCREMENTALLY."""
+        tp = self.tp
+        if tp is None:
+            return
+        if self._prog is None:
+            pm = QPixmap(max(1, self.width()), max(1, self.height()))
+            pm.fill(Qt.transparent)
+            self._prog = pm
+            self._idx_done = 0
+        if idx <= self._idx_done:
+            return
+        us, vs = tp.projected(self.view)
+        fl = tp.flags
+        p = QPainter(self._prog)
+        p.setRenderHint(QPainter.Antialiasing, True)
+        p.setPen(QPen(TR_DONE, 2.0))
+        path = QPainterPath()
+        px = py = 0.0
+        started = opened = False
+        # Rapids are left out on purpose: an amber rapid crossing the part
+        # would read as material removed that was not.
+        wrap = TR_WRAP_V.get(self.view, 0.0)
+        pv = 0.0
+        for i in range(max(1, self._idx_done) - 1, min(idx, len(us))):
+            v = vs[i]
+            sx, sy = self._to_screen(us[i], v)
+            f = fl[i]
+            if not started or (f & TR_BREAK_BIT) or (f & TR_RAPID_BIT) \
+                    or (wrap and abs(v - pv) > wrap * 0.5):
+                px, py, pv, started, opened = sx, sy, v, True, False
+                continue
+            pv = v
+            if opened and -0.6 < sx - px < 0.6 and -0.6 < sy - py < 0.6:
+                continue
+            if not opened:
+                path.moveTo(px, py)
+                opened = True
+            path.lineTo(sx, sy)
+            px, py = sx, sy
+        p.drawPath(path)
+        p.end()
+        self._idx_done = min(idx, len(us))
+
+    # ---- live position ---------------------------------------------------
+    def _tick(self):
+        """400 ms: loaded file, machine position, executed line.
+
+        Its OWN linuxcnc.stat channel -- never hal.get_value() from GUI code
+        (this module's header: that spins the global HAL mutex from the UI
+        thread and one leaked mutex freezes the whole GUI).
+        """
+        try:
+            import linuxcnc
+            if self._stat is None:
+                self._stat = linuxcnc.stat()
+            s = self._stat
+            s.poll()
+        except Exception:
+            return
+        try:
+            f = s.file or ''
+        except Exception:
+            f = ''
+        if f != self._file:
+            self.loadFile(f)
+        try:
+            # PROGRAM (G5x) coordinates: the number the DRO shows and the
+            # frame the file is written in. stat.position is indexed
+            # XYZABCUVW, so B is [4].
+            pos = s.position
+            rel = [pos[i] - s.g5x_offset[i] - s.g92_offset[i]
+                   - s.tool_offset[i] for i in range(6)]
+            self._mark_xyz = (rel[0], rel[1], rel[2], rel[4])
+        except Exception:
+            pass
+        try:
+            ln = int(s.current_line or 0)
+        except Exception:
+            ln = 0
+        moved = self._mark_xyz != self._mark_seen
+        self._mark_seen = self._mark_xyz
+        if self.tp is not None and ln != self._last_line:
+            if ln < self._last_line:
+                self.clearProgress()      # rewound / restarted
+            self._last_line = ln
+            if ln > 0:
+                self._build_progress_to(self.tp.index_for_line(ln))
+            moved = True
+        if moved:
+            self.update()
+
+    # ---- Qt ---------------------------------------------------------------
+    def showEvent(self, ev):
+        super(NedProgramTracer, self).showEvent(ev)
+        if not self._poll.isActive():
+            self._poll.start(self.POLL_MS)
+
+    def hideEvent(self, ev):
+        # A tab nobody is looking at costs nothing. Cheapest realtime saving
+        # in the whole widget.
+        self._poll.stop()
+        super(NedProgramTracer, self).hideEvent(ev)
+
+    def resizeEvent(self, ev):
+        super(NedProgramTracer, self).resizeEvent(ev)
+        self._fit_pending = True
+        self._invalidate()
+
+    def wheelEvent(self, ev):
+        d = ev.angleDelta().y()
+        if d:
+            self.zoomBy(1.15 if d > 0 else 1 / 1.15)
+        ev.accept()
+
+    def mousePressEvent(self, ev):
+        self._drag = ev.position()
+        ev.accept()
+
+    def mouseMoveEvent(self, ev):
+        if self._drag is None:
+            return
+        q = ev.position()
+        dx, dy = q.x() - self._drag.x(), q.y() - self._drag.y()
+        self._drag = q
+        if self._su and self._sv:
+            self._cu -= dx / self._su
+            self._cv += dy / self._sv
+        self._soft_invalidate()
+
+    def mouseReleaseEvent(self, ev):
+        self._drag = None
+
+    def mouseDoubleClickEvent(self, ev):
+        self.fit()
+
+    def paintEvent(self, ev):
+        p = QPainter(self)
+        p.fillRect(self.rect(), TR_BG)
+        if self._fit_pending:
+            self._do_fit()
+            self._base = None
+        if self._base is None:
+            self._build_base()
+        self._blit(p, self._base)
+        self._blit(p, self._prog)
+        self._paint_marker(p)
+        self._paint_caption(p)
+        p.end()
+
+    def _blit(self, p, pm):
+        """Draw a pixmap built at (_base_su/_sv, _base_cu/_cv) as if it had
+        been built at the current values.
+
+        Derivation, u only (v is the same with the screen y flip): a model
+        point sits at xb = cx + (u - bcu)*bsu in the pixmap and must land at
+        xc = cx + (u - cu)*su. Scaling the pixmap about cx by ku = su/bsu
+        and drawing it at dx gives cx + (u-bcu)*su + ku*dx, so
+        dx = (bcu - cu)*bsu and, with the flip, dy = (cv - bcv)*bsv.
+        """
+        if pm is None or not self._base_su or not self._base_sv:
+            return
+        ku = self._su / self._base_su
+        kv = self._sv / self._base_sv
+        dx = (self._base_cu - self._cu) * self._base_su
+        dy = (self._cv - self._base_cv) * self._base_sv
+        cx, cy = self.width() / 2.0, self.height() / 2.0
+        p.save()
+        if ku != 1.0 or kv != 1.0:
+            p.translate(cx, cy)
+            p.scale(ku, kv)
+            p.translate(-cx, -cy)
+        p.drawPixmap(QPointF(dx, dy), pm)
+        p.restore()
+
+    def _paint_marker(self, p):
+        if self.tp is None:
+            return
+        x, y, z, b = self._mark_xyz
+        u, v = tr_project(self.view, x, y, z, b, self.tp.rotary)
+        sx, sy = self._to_screen(u, v)
+        if not (-40 < sx < self.width() + 40 and -40 < sy < self.height() + 40):
+            return
+        p.setRenderHint(QPainter.Antialiasing, True)
+        x0, y0 = int(sx), int(sy)
+        for pen in (QPen(TR_MARK_HALO, 3.6), QPen(TR_MARK, 1.4)):
+            p.setPen(pen)
+            p.drawLine(x0 - 12, y0, x0 + 12, y0)
+            p.drawLine(x0, y0 - 12, x0, y0 + 12)
+        p.setPen(QPen(TR_MARK_HALO, 1.4))
+        p.setBrush(QBrush(TR_MARK))
+        p.drawEllipse(QPointF(sx, sy), 4.0, 4.0)
+        p.setBrush(Qt.NoBrush)
+
+    def _paint_caption(self, p):
+        f = QFont()
+        f.setPointSize(9)
+        p.setFont(f)
+        p.setPen(TR_TEXT)
+        tp = self.tp
+        au, av, unit = TR_AXIS_LABELS.get(self.view, ('', '', 'mm'))
+        head = '%s   %s across   %s up' % (self.view, au, av)
+        if tp is not None:
+            head = '%s   %s' % (head, os.path.basename(tp.path))
+        p.drawText(9, 16, head)
+        foot = self._note
+        hot = bool(foot)
+        if not foot and tp is not None:
+            bits = ['%d blocks' % len(tp)]
+            if tp.rotary:
+                lo, hi = tp.rng['B']
+                bits.append('B %.0f..%.0f deg' % (lo, hi))
+            if tp.arcs:
+                bits.append('%d arcs' % tp.arcs)
+            # SAY WHAT IS NOT ON SCREEN. A partial picture presented as a
+            # whole one is how an operator drives into something that was
+            # never drawn.
+            if tp.owords:
+                bits.append('%d O-word blocks NOT expanded' % tp.owords)
+                hot = True
+            if tp.unknown:
+                bits.append('%d blocks unsolved' % tp.unknown)
+                hot = True
+            foot = '   '.join(bits)
+        if foot:
+            p.setPen(TR_HOT if hot else TR_TEXT)
+            p.drawText(9, self.height() - 9, foot)
+            p.setPen(TR_TEXT)
+        # scale bar: one round number, bottom right
+        if self._su > 0:
+            target = 130.0 / self._su
+            mag = 10.0 ** math.floor(math.log10(max(target, 1e-9)))
+            step = 10 * mag
+            for m in (1, 2, 5):
+                if m * mag >= target:
+                    step = m * mag
+                    break
+            px = step * self._su
+            x1 = self.width() - 16
+            x0 = x1 - px
+            yb = self.height() - 13
+            if x0 > 80:
+                p.setPen(QPen(TR_TEXT, 1.0))
+                p.drawLine(int(x0), yb, int(x1), yb)
+                p.drawLine(int(x0), yb - 4, int(x0), yb + 4)
+                p.drawLine(int(x1), yb - 4, int(x1), yb + 4)
+                p.drawText(int(x0), yb - 7, '%g %s' % (step, unit))

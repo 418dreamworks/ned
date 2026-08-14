@@ -80,7 +80,18 @@ MAX_ANGULAR_VELOCITY = 45
 # revert the moment that count rises.
 ARC_BLEND_ENABLE = 1
 ARC_BLEND_FALLBACK_ENABLE = 0
-ARC_BLEND_OPTIMIZATION_DEPTH = 500
+# MEASURED 2026-08-14, AND IT IS NOT THE LEVER. b_rate_test.ngc drives four
+# 180 deg sweeps that differ only in block size. Result, deg/s, commanded 45:
+#     depth  500 -> 2deg 5.45   1deg 3.87   10deg 11.95   one-move 28.18
+#     depth 1500 -> 2deg 5.46   1deg 3.87   10deg 11.96   one-move 28.29
+# Identical, and 1500 added ZERO "Unexpected realtime delay" lines, so CPU was
+# never the constraint either. Every short-block figure is almost exactly half
+# of sqrt(2*a*d) -- the average of a triangular accelerate-then-decelerate
+# profile -- which is what a full STOP at every block boundary looks like.
+# The planner is not blending these rotary-only moves at all, whatever the
+# lookahead depth. Back to the shipped default; the number stays written down
+# so nobody re-runs this experiment.
+ARC_BLEND_OPTIMIZATION_DEPTH = 50
 ARC_BLEND_GAP_CYCLES = 4
 ARC_BLEND_RAMP_FREQ = 100
 NO_FORCE_HOMING = 0

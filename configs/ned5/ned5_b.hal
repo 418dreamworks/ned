@@ -64,8 +64,33 @@ setp hm2_7i97.0.stepgen.01.dirhold        20000
 # Open loop: feedback is the stepgen's own commanded position, exactly as the
 # head joints do it (ned5_iron.hal:279-282).  Only drive 1 reports; drive 2 is
 # the same command through an inverted scale and has nothing extra to say.
-net b-pos-cmd  joint.6.motor-pos-cmd             => hm2_7i97.0.stepgen.00.position-cmd \
-                                                    hm2_7i97.0.stepgen.01.position-cmd
+# --- SIDE SPLIT (bsplit) ----------------------------------------------------
+# The two drives sit on the same worm and normally take the same command.
+# bsplit lets ONE of them be jogged while the other is held still, which is
+# how the lash gets preloaded out and how the pair gets squared to each other
+# (operator 2026-08-14: "selecting LEFT or RIGHT JOGS one or the other ...
+# this lets me preload and helps align shit").
+#
+# NOT BY GATING THE ENABLES. A disabled stepgen whose position-cmd keeps
+# moving slews at max velocity the moment it is re-enabled. bsplit instead
+# HOLDS the deselected side's output and keeps its offset true, so the sum
+# already equals where it stands when it comes back -- no jump, and the
+# divergence built up in between is kept. That divergence IS the preload.
+#
+# sel: 0 = BOTH, 1 = LEFT only, 2 = RIGHT only. Driven from the GUI toggle
+# via ned-tab.b-side-out (postgui_b.hal). Unconnected it reads 0 = BOTH,
+# which is the stock behaviour, so a GUI that fails to load cannot leave the
+# drives split.
+#
+# max-split bounds the wind-up in joint degrees; bsplit refuses to increase
+# |split| past it but always allows unwinding. 0 disables the bound.
+loadrt bsplit
+addf   bsplit.0 servo-thread
+setp   bsplit.0.max-split 5.0
+
+net b-pos-cmd  joint.6.motor-pos-cmd             => bsplit.0.cmd
+net b-cmd-l    bsplit.0.cmd-l                    => hm2_7i97.0.stepgen.00.position-cmd
+net b-cmd-r    bsplit.0.cmd-r                    => hm2_7i97.0.stepgen.01.position-cmd
 net b-pos-fb   hm2_7i97.0.stepgen.00.position-fb => joint.6.motor-pos-fb
 
 # --- enable -----------------------------------------------------------------

@@ -1,0 +1,97 @@
+component bsplit """Split B's single joint command into two stepgen commands.
+
+B is one joint driving TWO steppers on the same self-locking worm, mirrored
+(stepgen.00 scale +22.2414, stepgen.01 scale -22.2414, ned5_b.hal:44-63).
+Both normally take joint.6.motor-pos-cmd unchanged, so they always turn
+together.
+
+WHY THIS EXISTS. Operator 2026-08-14: "I want in the UI an option to lock
+either side of the B joint ... if unlocked, selecting LEFT or RIGHT JOGS one
+or the other ... this lets me preload and helps align shit." Turning one
+motor against the other is how the lash in a worm gets taken up, and it is
+also how the two drives get squared to each other in the first place.
+
+HOW IT AVOIDS A JUMP. The deselected side is not disabled -- disabling a
+stepgen while its position-cmd keeps moving means it slews at max velocity
+the instant it is re-enabled, which on a preloaded worm is exactly the
+wrong surprise. Instead the deselected side's OUTPUT is held still, and its
+offset is continuously rewritten so that
+
+    cmd + off  ==  the held output
+
+remains true every cycle. When it is reselected the sum is already equal to
+where it stands, so it resumes from there and the divergence built up in
+the meantime is kept -- which is the preload.
+
+SPLIT IS THE PRELOAD. `split` is how far the two sides have been driven
+apart, in degrees at the joint. `max_split` bounds it: past that limit the
+moving side stops diverging rather than winding the worm up indefinitely.
+Set it to 0 to disable the bound.""";
+
+pin in float cmd "joint.6.motor-pos-cmd -- the single command LinuxCNC issues";
+pin in signed sel = 0 "0 = BOTH, 1 = LEFT only, 2 = RIGHT only; anything else = BOTH";
+pin in float max_split = 0.0 "degrees of divergence allowed, 0 = no bound";
+
+pin out float cmd_l "-> hm2_7i97.0.stepgen.00.position-cmd (LEFT, the master)";
+pin out float cmd_r "-> hm2_7i97.0.stepgen.01.position-cmd (RIGHT, the slave)";
+pin out float split "cmd_l - cmd_r, the accumulated preload in joint degrees";
+pin out bit at_limit "true while max_split is holding the divergence back";
+
+variable double off_l = 0.0;
+variable double off_r = 0.0;
+variable int started = 0;
+
+function _ "Route the joint command to one or both stepgens";
+license "GPL";
+;;
+
+/* rtapi_math.h, not math.h: this is realtime kernel space and libm is not
+   linked here. fabs() came up undeclared without it. */
+#include <rtapi_math.h>
+
+FUNCTION(_) {
+    double want_l, want_r;
+    int left_live, right_live;
+
+    /* First pass: both outputs start exactly where the command is, so
+       inserting this component into a running machine cannot move anything. */
+    if (!started) {
+        off_l = 0.0;
+        off_r = 0.0;
+        cmd_l = cmd;
+        cmd_r = cmd;
+        split = 0.0;
+        at_limit = 0;
+        started = 1;
+        return;
+    }
+
+    left_live  = (sel != 2);        /* RIGHT-only is the only case LEFT sits out  */
+    right_live = (sel != 1);        /* LEFT-only is the only case RIGHT sits out  */
+
+    want_l = left_live  ? (cmd + off_l) : cmd_l;
+    want_r = right_live ? (cmd + off_r) : cmd_r;
+
+    /* Bound the wind-up. Only ever refuse to increase |split|; letting it
+       come back is always allowed, or the operator could not unwind. */
+    at_limit = 0;
+    if (max_split > 0.0) {
+        double now  = cmd_l - cmd_r;
+        double next = want_l - want_r;
+        if (fabs(next) > max_split && fabs(next) > fabs(now)) {
+            want_l = cmd_l;
+            want_r = cmd_r;
+            at_limit = 1;
+        }
+    }
+
+    cmd_l = want_l;
+    cmd_r = want_r;
+
+    /* Keep the frozen side's offset true, so cmd + off == its held output
+       and reselecting it resumes without a step. */
+    if (!left_live)  off_l = cmd_l - cmd;
+    if (!right_live) off_r = cmd_r - cmd;
+
+    split = cmd_l - cmd_r;
+}
