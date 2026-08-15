@@ -304,6 +304,9 @@ class Dro2(QWidget):
             self.rows.append((lab, mach, work))
             self._holders[letter] = holder
 
+        # flash state: frames left, and the last flash-in value seen
+        self._flash_left = 0
+        self._flash_seen = None
         self.t = QTimer(self)
         self.t.timeout.connect(self.tick)
         self.t.start(80)
@@ -322,6 +325,15 @@ class Dro2(QWidget):
             # sig-tool-probe is 7i84.0.0.input-28 (TB2-13, *54, via R10),
             # the same signal that feeds motion.probe-input.
             self._hal.newpin('probe-in', hal.HAL_BIT, hal.HAL_IN)
+            # COUNTDOWN FLASH (operator 2026-08-14: "have the code make the
+            # SDRO flash white 3 times right before the steppers are asked
+            # to move, that way i know what to expect"). B is open loop:
+            # nothing on this machine can tell a turning motor from a
+            # stalled one, so the ONLY instrument is the operator's eyes and
+            # they have to be looking at the right moment. Any change to
+            # this number -- not a particular value -- fires the flash, so a
+            # caller just increments it.
+            self._hal.newpin('flash-in', hal.HAL_S32, hal.HAL_IN)
             # PER-AXIS MPG LOCK -- the PENDANT's lock (triple tap), NOT the GUI
             # lock. GUI-locked axes are unselectable and never reach the
             # wheel at all. (operator 2026-08-11: "color it red on the
@@ -470,7 +482,38 @@ class Dro2(QWidget):
         self._resize_fonts()
         super().resizeEvent(ev)
 
+    FLASH_TICKS_PER_HALF = 2      # 2 x 80 ms = 160 ms lit, 160 ms dark
+    FLASH_COUNT = 3               # three white flashes
+
+    def _flash_step(self):
+        """Run the countdown flash. Called first thing every tick.
+
+        The whole window goes white and back, three times, in about a
+        second. Every child widget already paints on a transparent
+        background, so repainting the window is enough and nothing has to
+        know about the individual rows.
+        """
+        h = getattr(self, '_hal', None)
+        if h is not None:
+            try:
+                v = h['flash-in']
+                if self._flash_seen is None:
+                    self._flash_seen = v          # do not flash on startup
+                elif v != self._flash_seen:
+                    self._flash_seen = v
+                    self._flash_left = self.FLASH_COUNT * 2 * self.FLASH_TICKS_PER_HALF
+            except Exception:
+                pass
+        if self._flash_left > 0:
+            self._flash_left -= 1
+            half = self._flash_left // self.FLASH_TICKS_PER_HALF
+            self.setStyleSheet('background: %s;'
+                               % (WHITE if half % 2 else BLACK))
+            if self._flash_left == 0:
+                self.setStyleSheet('background: %s;' % BLACK)
+
     def tick(self):
+        self._flash_step()
         n = getattr(self, '_beats', 0) + 1
         self._beats = n
         if n == 1 or n % 250 == 0:
