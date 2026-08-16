@@ -427,6 +427,109 @@ ABGEN
   echo "      self-locking so B holds position while it is dark."
 fi
 
+# EVERY trivkins LAUNCH NEEDS THE AXIS LIMITS PINNED, NOT JUST -xyzab.
+# check_config.tcl:226-230 runs its limit validation ONLY for trivkins, and
+# configs/params/axis_*.inc carries limits widened deliberately for tool-tip
+# mode (under ned_ac_kins an axis limit bounds the TOOL TIP, and a
+# joint-sized number there refuses most of Z). So any identity launch that is
+# NOT -xyzab meets a check the wide limits cannot pass:
+#
+#   [JOINT_0]MIN_LIMIT > [AXIS_X]MIN_LIMIT (-4042.725 > -5042.725)
+#   check_config validation failed
+#
+# -xyz -notcp, -xyz -tcp (downgraded to identity) and -xyzac -notcp were ALL
+# unlaunchable because of it, found by tools/stress.py on 2026-08-16. It went
+# unnoticed because every launch since 2026-08-07 was -xyzab or -tcp. The
+# -xyzab generator already solved this; it just never covered the other
+# identity modes, so the same pinning is applied here from the ini's OWN
+# coordinate string. Identical behaviour: under identity kins axis and joint
+# ARE the same travel.
+if [ "$NED_KINS" = "identity" ] && [ "$NED_MODE" != "xyzab" ]; then
+  GEN_LIM="$NED/configs/ned5_pb/ned5_pb_lim_gen.ini"
+  python3 - "$INI" "$GEN_LIM" <<'LIMGEN' || { echo "run5: limit ini generation FAILED"; exit 1; }
+import io, os, re, sys
+src, dst = sys.argv[1], sys.argv[2]
+
+def expand(path, depth=0):
+    out = []
+    for ln in io.open(path, encoding='utf-8'):
+        m = re.match(r'\s*#INCLUDE\s+(\S+)', ln)
+        if m and depth < 6:
+            inc = os.path.normpath(os.path.join(os.path.dirname(path), m.group(1)))
+            if os.path.exists(inc):
+                out += expand(inc, depth + 1)
+                continue
+        out.append(ln)
+    return out
+
+flat, sec, vals = expand(src), None, {}
+for ln in flat:
+    h = re.match(r'\s*\[([A-Z0-9_]+)\]\s*$', ln)
+    if h:
+        sec = h.group(1); continue
+    kv = re.match(r'\s*([A-Z0-9_]+)\s*=\s*(\S+)', ln)
+    if kv and sec:
+        vals.setdefault(sec, {}).setdefault(kv.group(1), kv.group(2))
+
+# the coordinate string this ini actually declares -- never hardcoded
+COORD = ''
+for ln in flat:
+    m = re.match(r'\s*KINEMATICS\s*=.*coordinates=([A-Z]+)', ln)
+    if m:
+        COORD = m.group(1); break
+if not COORD:
+    sys.stderr.write('run5: no coordinates= in the ini -- cannot pin limits\n')
+    sys.exit(1)
+
+bound = {}
+for jn, letter in enumerate(COORD):
+    j = vals.get('JOINT_%d' % jn, {})
+    if 'MIN_LIMIT' not in j or 'MAX_LIMIT' not in j:
+        continue
+    lo, hi = float(j['MIN_LIMIT']), float(j['MAX_LIMIT'])
+    if letter in bound:      # gantry X: the pair's INTERSECTION, never the union
+        lo = max(lo, bound[letter][0]); hi = min(hi, bound[letter][1])
+    bound[letter] = (lo, hi)
+
+out, axis_sec = [], None
+for ln in io.open(src, encoding='utf-8'):
+    st = ln.rstrip('\n')
+    a = re.match(r'\[AXIS_([A-Z])\]\s*$', st)
+    if a and a.group(1) in bound:
+        axis_sec = a.group(1)
+        lo, hi = bound[axis_sec]
+        out.append(st)
+        out.append('# MIN_LIMIT/MAX_LIMIT pinned to the driving joint(s) by run5.sh --')
+        out.append('# trivkins rejects an axis wider than its joints (check_config.tcl).')
+        out.append('MIN_LIMIT = %g' % lo)
+        out.append('MAX_LIMIT = %g' % hi)
+        continue
+    # SHADOWING IS NOT ENOUGH -- the same lesson the -xyzab generator
+    # records. check_config.tcl reads EVERY value and compares the whole
+    # list, so a second MIN_LIMIT arriving from the section's #INCLUDE
+    # produces "Unexpected multiple values". The old value has to be GONE,
+    # which means inlining the include here with its limits filtered out.
+    if axis_sec:
+        if re.match(r'\s*\[', st):
+            axis_sec = None                    # next section, stop filtering
+        else:
+            inc = re.match(r'\s*#INCLUDE\s+(\S+)', st)
+            body = ([l.rstrip('\n') for l in
+                     expand(os.path.normpath(os.path.join(
+                         os.path.dirname(src), inc.group(1))))]
+                    if inc else [st])
+            for b in body:
+                if not re.match(r'\s*(MIN|MAX)_LIMIT\s*=', b):
+                    out.append(b)
+            continue
+    out.append(st)
+
+io.open(dst, 'w', encoding='utf-8').write('\n'.join(out) + '\n')
+LIMGEN
+  INI="$GEN_LIM"
+  echo "run5: axis limits pinned to their joints for this identity launch"
+fi
+
 # cores ON: rtapi_app said "dumping core" on the 2026-07-31 SIGSEGV but ulimit -c
 # was 0, so there was no core to autopsy. Next time there will be.
 # TOOL-TIP LAUNCHES DIRECTLY IN TYPE 0 (2026-08-05): switching switchkins
