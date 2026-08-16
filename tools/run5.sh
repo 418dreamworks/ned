@@ -47,6 +47,7 @@ NED_KINS_SET=0   # set by -tcp/-notcp; unset is a REFUSAL, not a default
 for _a in "$@"; do
   case "$_a" in
     -nopower)  NOPOWER=1 ;;
+    -nolimits) NOLIMITS=1 ;;
     resume)    RESUME=1 ;;
     -xyz|-xyza|-xyzac|-xyzab) NED_MODE="${_a#-}" ;;
     -xyz_a|-xyz_b|-xyza_b|-xyzb_a)
@@ -60,7 +61,7 @@ for _a in "$@"; do
 done
 if [ -z "$NED_MODE" ]; then
   echo "run5: SPELL THE MODE. one of: -xyz  -xyza  -xyzac  -xyzab"
-  echo "      (+ -tcp / -notcp, -nopower, resume)"
+  echo "      (+ -tcp / -notcp, -nopower, -nolimits, resume)"
   exit 1
 fi
 # SPELL THE KINS TOO -- no default. Operator 2026-08-12: "i didn't do -notcp
@@ -79,16 +80,23 @@ if [ "$NED_KINS_SET" != "1" ]; then
   echo "      Nothing has been started."
   exit 1
 fi
-# -xyzab = workpiece rotary B instead of the head spin C (operator 2026-08-11).
-# There is no A-head + B-table kinematics module on this machine -- ned_ac_kins
-# models the swivel head and would compensate XYZ for a C that is parked. So
-# the table mode is identity-only, and the refusal is loud rather than a
-# silent downgrade.
-if [ "$NED_MODE" = "xyzab" ] && [ "$NED_KINS" = "tooltip" ]; then
-  echo "run5: -tcp refused in -xyzab -- ned_ab_kins does not exist (task #24)."
-  echo "      relaunch as: run5.sh -xyzab -notcp"
-  exit 1
-fi
+# -tcp IS AVAILABLE IN -xyzab (2026-08-15). It used to be refused here on the
+# grounds that "ned_ab_kins does not exist", which was over-cautious: no such
+# module is needed.
+#
+#   * -xyzab is NOT a C-less machine. Its ini is coordinates=XYZXACB, JOINTS=7
+#     -- C is still joint 5, clamped to +-0.001 deg, and B is joint 6. So
+#     ned_ac_kins finds the JC it requires and the azimuth term is simply
+#     constant at the parked C, which is exactly right.
+#   * B IS A WORKPIECE ROTARY AND NEEDS NO COMPENSATION. It turns the part,
+#     not the tool, so it contributes nothing to a tool-tip offset.
+#     ned_ac_kins already passes it straight through, forward and inverse
+#     (ned_ac_kins.c:77 and :99).
+#
+# WHAT THIS DOES NOT DO: it does not rotate the work frame as B turns. XYZ
+# stay in the world frame, so this is tool-tip compensation for the TILTING
+# HEAD only, not full table-rotary RTCP. Programming for B still has to place
+# the part itself.
 if [ "$NED_KINS" = "tooltip" ] && [ "$NED_MODE" = "xyz" ]; then
   echo "run5: note -- -tcp is inert in -xyz (no rotary can move); launching identity"
   NED_KINS=identity
@@ -438,9 +446,28 @@ if [ "$NED_KINS" = "tooltip" ]; then
   # its 250 mm DEFAULT placeholder while the GUI reported "kins=tcp".
   # Silent, and it makes every tool-tip number wrong.
   GEN_PG="$NED/configs/ned5_pb/postgui_tcp_all.hal"
+  # THE MODE'S OWN POSTGUI GOES IN TOO. This concat was written when -tcp
+  # only existed in -xyzac, so it was postgui_pb + postgui_tcp. Enabling
+  # -tcp for -xyzab without adding postgui_b.hal silently dropped every B
+  # netting -- bsplit.0.sel, B's MPG jog pins, the whole file -- because the
+  # identity path builds postgui_ab_all.hal as postgui_pb + postgui_b and
+  # the tcp path never learned that. Same rule, one list.
+  _PG_EXTRA=""
+  if [ "$NED_MODE" = "xyzab" ]; then
+    _PG_EXTRA="$NED/configs/ned5_pb/postgui_b.hal"
+    [ -f "$_PG_EXTRA" ] || { echo "run5: postgui_b.hal missing -- tcp refused"; exit 1; }
+  fi
   cat "$NED/configs/ned5_pb/postgui_pb.hal" \
+      $_PG_EXTRA \
       "$NED/configs/ned5_pb/postgui_tcp.hal" > "$GEN_PG" \
       || { echo "run5: tcp postgui concat FAILED"; exit 1; }
+  echo "run5: tcp postgui = postgui_pb${_PG_EXTRA:+ + postgui_b} + postgui_tcp"
+  # PROVE IT, do not assume: -xyzab without a bsplit netting means B's side
+  # select is dead and the joint has no feedback path.
+  if [ "$NED_MODE" = "xyzab" ] && ! grep -q "bsplit.0.sel" "$GEN_PG"; then
+    echo "run5: tcp postgui has no bsplit.0.sel -- refusing to launch B blind"
+    exit 1
+  fi
   # PIVOT AT LOAD TIME, NOT INTO A LIVE SERVO LOOP (2026-08-05).
   # ned_brain used to setp arm.in0 after the machine was enabled, so
   # pivot-length stepped 0 -> 157 in ONE servo period. Pivot length is a
@@ -452,7 +479,19 @@ if [ "$NED_KINS" = "tooltip" ]; then
   [ -n "$_PIV" ] || { echo "run5: no PIVOT_LENGTH in head_pivot.inc"; exit 1; }
   echo "setp arm.in0 $_PIV" >> "$GEN_PG"
   echo "run5: pivot arm.in0 = $_PIV set at HAL load (no live-loop write)" 
-  sed -e 's|^KINEMATICS = .*|KINEMATICS = ned_ac_kins coordinates=XYZXAC|' \
+  # COORDINATES COME FROM THE INI BEING REPLACED, never a literal: -xyzac is
+  # XYZXAC (6 joints) and -xyzab is XYZXACB (7). Hardcoding XYZXAC here would
+  # have silently dropped B out of the kinematics in table mode -- the module
+  # would map 6 joints for a 7-joint machine and B would stop being driven.
+  _COORD=$(sed -n 's|^KINEMATICS = .*coordinates=\([A-Z][A-Z]*\).*|\1|p' "$INI" | head -1)
+  [ -n "$_COORD" ] || { echo "run5: no coordinates= in $INI -- tcp refused"; exit 1; }
+  _NJ=$(sed -n 's|^JOINTS = *\([0-9][0-9]*\).*|\1|p' "$INI" | head -1)
+  if [ -n "$_NJ" ] && [ "${#_COORD}" -ne "$_NJ" ]; then
+    echo "run5: coordinates=$_COORD is ${#_COORD} letters but JOINTS = $_NJ -- refusing"
+    exit 1
+  fi
+  echo "run5: tool-tip kins coordinates=$_COORD (${#_COORD} joints)"
+  sed -e "s|^KINEMATICS = .*|KINEMATICS = ned_ac_kins coordinates=$_COORD|" \
       -e 's|^POSTGUI_HALFILE = .*|POSTGUI_HALFILE = postgui_tcp_all.hal|' \
       "$INI" > "$GEN_TCP" || { echo "run5: tcp ini generation FAILED"; exit 1; }
   INI="$GEN_TCP"
@@ -549,6 +588,64 @@ try:
 except Exception as e:
     print('run5: AUTO-POWER: no status buffer (%s)' % e, flush=True)
 AUTOPOWER2
+  ) >> "$LOG" 2>&1 &
+fi
+
+# -nolimits: BOTH KINDS OF LIMIT OFF, FOR ONE SESSION ONLY.
+# Operator 2026-08-14: "lets disable the hard limits and soft limits
+# completely. i need to drill a few holes where i will trip these limits.
+# i'll just jog manually."
+#
+# NOTHING IS EDITED TO DO THIS. Every limit on this machine is a live HAL
+# pin, so the flag is a runtime act and the next launch WITHOUT the flag is
+# fully protected again -- there is no file left in a dangerous state and
+# nothing to remember to put back.
+#
+#   SOFT  ini.<n>.min_limit / max_limit, per joint AND per axis letter.
+#   HARD  joint.<n>.neg-lim-sw-in / pos-lim-sw-in, fed by limdir.
+#         unlinkp LEAVES THE PIN AT ITS LAST VALUE, so a switch that is
+#         currently depressed would latch the joint at "on the limit"
+#         forever. Every unlink is therefore followed by setp FALSE.
+#   MPG   jogblock.<axis>.lim-neg / lim-pos gate the handwheel separately.
+#         Leaving these connected means the pendant still refuses to jog off
+#         a tripped switch, which is exactly the case this flag exists for.
+#
+# THE MACHINE CAN NOW RUN INTO ITS OWN ENDS. It is jog-by-hand only.
+if [ "$NOLIMITS" = "1" ]; then
+  (
+    for _i in $(seq 1 90); do
+      sleep 1
+      timeout 3 halcmd show pin joint.0.pos-lim-sw-in >/dev/null 2>&1 && break
+    done
+    _wide=1000000
+    for _j in 0 1 2 3 4 5; do
+      timeout 3 halcmd setp "ini.$_j.min_limit" "-$_wide" >/dev/null 2>&1
+      timeout 3 halcmd setp "ini.$_j.max_limit" "$_wide"  >/dev/null 2>&1
+    done
+    for _x in x y z a c; do
+      timeout 3 halcmd setp "ini.$_x.min_limit" "-$_wide" >/dev/null 2>&1
+      timeout 3 halcmd setp "ini.$_x.max_limit" "$_wide"  >/dev/null 2>&1
+    done
+    for _j in 0 1 2 3; do
+      for _d in neg pos; do
+        timeout 3 halcmd unlinkp "joint.$_j.$_d-lim-sw-in" >/dev/null 2>&1
+        timeout 3 halcmd setp    "joint.$_j.$_d-lim-sw-in" 0 >/dev/null 2>&1
+      done
+    done
+    for _x in x y z; do
+      for _d in neg pos; do
+        timeout 3 halcmd unlinkp "jogblock.$_x.lim-$_d" >/dev/null 2>&1
+        timeout 3 halcmd setp    "jogblock.$_x.lim-$_d" 0 >/dev/null 2>&1
+      done
+    done
+    echo "run5: ================= NO LIMITS THIS SESSION =================" 
+    echo "run5: soft limits widened to +-$_wide on joints 0-5 and x y z a c"
+    echo "run5: hard limit switches UNLINKED from joints 0-3 and forced FALSE"
+    echo "run5: MPG limit gates UNLINKED on x y z"
+    echo "run5: THE MACHINE WILL NOT STOP ITSELF AT EITHER END. Jog by hand."
+    echo "run5: relaunch WITHOUT -nolimits to get every limit back."
+    timeout 3 halcmd show pin joint.0.pos-lim-sw-in
+    timeout 3 halcmd getp ini.2.min_limit
   ) >> "$LOG" 2>&1 &
 fi
 

@@ -47,18 +47,22 @@ commissioning runbook `docs/commissioning/probe_basic_migration.md`
 
 ### A2. Our halcompile-installed components live in the SAME directory
 
-`pso_live`, `jogblock`, `limdir` (sources in `ned/tools/live/*.comp`) are
-installed into `/usr/lib/linuxcnc/modules/` by halcompile. A package
-upgrade can remove or orphan them → the session then DIES AT LOAD
-("pso_live: module not found" or similar in term/lcnc logs).
+`pso_live`, `jogblock`, `limdir`, `bsplit` (sources in
+`ned/tools/live/*.comp`) are installed into `/usr/lib/linuxcnc/modules/` by
+halcompile. A package upgrade can remove or orphan them → the session then
+DIES AT LOAD ("pso_live: module not found" or similar in term/lcnc logs).
 
-- **Detect:** launch fails in iron HAL at `loadrt pso_live|jogblock|limdir`.
+- **Detect:** launch fails in iron HAL at
+  `loadrt pso_live|jogblock|limdir|bsplit`.
 - **Restore:** for each comp:
   ```
   sudo halcompile --install ned/tools/live/pso_live.comp
   sudo halcompile --install ned/tools/live/jogblock.comp
   sudo halcompile --install ned/tools/live/limdir.comp
+  sudo halcompile --install ned/tools/live/bsplit.comp
   ```
+  `bsplit` carries B's feedback path (`ned5_b.hal:104-105`), not just the
+  side split — B faults on a following error the moment it is missing.
 
 ### A3. Version-sensitive knowledge
 

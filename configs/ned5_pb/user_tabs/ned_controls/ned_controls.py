@@ -158,6 +158,25 @@ JOG_SPEEDS = {
     'fast':   (8000.0, 180.0),
 }
 
+# ANGULAR JOG IS PER AXIS LETTER, NOT ONE NUMBER FOR EVERY ROTARY.
+# The angular column above is shared, so raising it would have moved B as
+# well -- and B is the workpiece rotary, deliberately left alone (operator
+# 2026-08-13: "leave A and C as is, change it for B"). A and C are the HEAD
+# rotaries and are what this table triples.
+#
+# Operator 2026-08-15: "i want the fast jog for A and C to be triple the
+# speed it currently is. make sure this is specific to A and C" -- so FAST
+# only, 180 -> 540 deg/min (9 deg/s). SLOW and MEDIUM are untouched.
+#
+# Headroom: [AXIS_A] and [AXIS_C] MAX_VELOCITY are 30 deg/s = 1800 deg/min,
+# so 540 is well inside the limit and the planner never has to clamp it.
+# Anything missing from this table falls back to the shared column above.
+JOG_ANG_SPEEDS = {
+    'A': {'slow': 15.0, 'medium': 60.0, 'fast': 540.0},
+    'C': {'slow': 15.0, 'medium': 60.0, 'fast': 540.0},
+    'B': {'slow': 15.0, 'medium': 60.0, 'fast': 180.0},
+}
+
 # EMC 9-axis order XYZABCUVW -> stat.actual_position/g5x_offset/... index
 # (same map the archived ned_moves panel and dros_xyzac use).
 # THE ROTARY SLOT'S REAL AXIS LETTER. Internally the second rotary keeps the
@@ -2889,9 +2908,14 @@ class UserTab(QWidget):
             # DISPLAYED IN mm/s (operator 2026-08-13: "change all feedrates
             # to MM/S"). JOG_SPEEDS stays authored in mm/min because that is
             # what goes out as the F word -- only the face converts.
-            lbl.setText('{:g}mm/s · {:g}°'.format(lin / 60.0, ang))
-        LOG.info('JOG speed -> %s (F%g mm/min, %g deg/min)',
-                 key.upper(), lin, ang)
+            # the face shows the HEAD rate: A and C are what these buttons
+            # move most, and the readout has room for one angular number
+            head = JOG_ANG_SPEEDS.get('A', {}).get(key, ang)
+            lbl.setText('{:g}mm/s · {:g}°'.format(lin / 60.0, head))
+        LOG.info('JOG speed -> %s (F%g mm/min; A/C %g deg/min, %s %g deg/min)',
+                 key.upper(), lin,
+                 JOG_ANG_SPEEDS.get('A', {}).get(key, ang),
+                 _AXL('c'), JOG_ANG_SPEEDS.get(_AXL('c'), {}).get(key, ang))
 
     # ==================================================================
     # AXIS-LETTER RELABEL  (generic; no widget list, no hardcoded captions)
@@ -2982,7 +3006,13 @@ class UserTab(QWidget):
                            'drolabel_dtg_c', 'dro_entry_offset_c',
                            'drolabel_work_c')
 
-    B_SIDES = ((0, 'BOTH'), (1, 'LEFT'), (2, 'RIGHT'))
+    # CAPTIONS ARE THREE CHARACTERS BECAUSE THE COLUMN SAYS SO. The button
+    # occupies whatever the A row's DRO columns leave over -- 39 px -- and
+    # "RIGHT" measured 37 px of glyphs plus padding, which clips. The columns
+    # are the fixed thing (operator 2026-08-14: "follow the columns above"),
+    # so the words give way, not the geometry. L+R / L / R reads correctly on
+    # a rotary with two drives, and the tooltip carries the full meaning.
+    B_SIDES = ((0, 'L+R'), (1, 'L'), (2, 'R'))
 
     def _build_b_side_toggle(self):
         """BOTH / LEFT / RIGHT, opposite LOCK B.
@@ -3052,7 +3082,7 @@ class UserTab(QWidget):
                 return
             LOG.info('B SIDE: row layout found by containment: %s',
                      lay.objectName() or '(unnamed)')
-            btn = QPushButton('BOTH')
+            btn = QPushButton('L+R')
             btn.setObjectName('ned_b_side')
             # cloned from the lock button so the row keeps one visual language
             btn.setStyleSheet(lock.styleSheet())
@@ -3066,6 +3096,15 @@ class UserTab(QWidget):
             self._b_side = 0
             self._b_side_apply()
             LOG.info('B SIDE: toggle built opposite LOCK B (BOTH/LEFT/RIGHT)')
+            # MATCH THE GAP THE ROW ALREADY USES. addWidget only applies the
+            # layout spacing, but the two DRO boxes are also inset by their
+            # own margins, so the button ended up flush against the right-hand
+            # box while every other seam in the row had visible air (operator
+            # 2026-08-14: "the gap between the boxes on the left should be
+            # replicated on the right"). Measure the real gap once the row has
+            # been laid out and insert the difference -- no hardcoded pixels,
+            # so it stays right if the DRO widgets are restyled.
+            QTimer.singleShot(2500, self._b_side_match_gap)
 
             # ZERO THE DRO ON RIGHT by wrapping the widget's own update, not
             # by writing text on a timer: these are rule-driven widgets and a
@@ -3085,6 +3124,283 @@ class UserTab(QWidget):
             LOG.info('B SIDE: DRO zeroing wired on the rotary row')
         except Exception:
             LOG.exception('B SIDE: toggle build failed')
+
+    def _b_side_gate_tick(self):
+        """Grey the side toggle when splitting the drives would be refused,
+        and show the accumulated preload on its face.
+
+        WHY IT IS GATED. Selecting LEFT or RIGHT freezes one stepgen while
+        the joint keeps being commanded -- that is the whole point, it is how
+        the worm gets preloaded. Doing it DURING a program silently machines
+        the part with the two drives wound apart. A control that must not be
+        used right now is greyed, never merely ignored.
+
+        WHY IT DOES NOT SNAP BACK TO BOTH. Forcing sel to 0 would command the
+        frozen side to catch up: up to max-split degrees at full velocity
+        into a loaded worm. Unwinding a preload is a MOTION and stays the
+        operator's, on the same toggle that built it.
+        """
+        btn = getattr(self, '_b_side_btn', None)
+        if btn is None:
+            return
+        import linuxcnc
+        st = getattr(self, '_b_side_stat', None)
+        if st is None:
+            st = self._b_side_stat = linuxcnc.stat()
+        st.poll()
+        ok = (st.task_state == linuxcnc.STATE_ON
+              and st.interp_state == linuxcnc.INTERP_IDLE)
+        was = getattr(self, '_b_side_gate_last', None)
+        if ok != was:
+            btn.setEnabled(ok)
+            self._b_side_gate_last = ok
+            LOG.info('B SIDE GATE: toggle %s (machine %s, interp %s)',
+                     'ENABLED' if ok else 'DISABLED',
+                     'ON' if st.task_state == linuxcnc.STATE_ON else 'not ON',
+                     'IDLE' if st.interp_state == linuxcnc.INTERP_IDLE
+                     else 'busy')
+        # THE PRELOAD IS A REAL MACHINE STATE, so it gets a number rather
+        # than living invisibly inside a realtime component. Blank while it
+        # is zero -- a permanent "0.00" on the button is noise.
+        try:
+            import hal
+            split = float(hal.get_value('bsplit.0.split'))
+        except Exception:
+            return
+        # THE FACE STAYS ONE WORD. The button is sized to the space the A
+        # row's columns leave over, so a number on it would either clip or
+        # push the row wider and collapse the seams again. The preload goes in
+        # the tooltip, where it costs no width.
+        name = dict(self.B_SIDES).get(getattr(self, '_b_side', 0), 'BOTH')
+        if btn.text() != name:
+            btn.setText(name)
+        LONG = {0: 'both drives', 1: 'LEFT drive only', 2: 'RIGHT drive only'}
+        which = LONG.get(getattr(self, '_b_side', 0), 'both drives')
+        tip = (which if abs(split) < 0.005
+               else '%s -- preload %+.3f deg between the two drives'
+                    % (which, split))
+        if btn.toolTip() != tip:
+            btn.setToolTip(tip)
+            if abs(split) >= 0.005:
+                LOG.info('B SIDE: %s, split %+.3f deg', name, split)
+
+    def _b_side_match_gap(self):
+        """Make the B row use the SAME columns as the A row above it.
+
+        WHAT WENT WRONG. The button was simply added to the row layout, and
+        the two DRO widgets are expanding, so the layout took the width out of
+        THEM: measured off the operator's screenshot, the A row reads
+        60 | 7 | 150 | 7 | 150 and the B row collapsed to 60 | 7 | 295 | 3 | 55
+        -- the seam between the two B boxes vanished entirely and the row ran
+        46 px past the A row's right edge. Operator 2026-08-14: "you screwed
+        up the BOTH edit ... follow the columns above."
+
+        THE FIX IS TO STOP THE SQUEEZE, not to insert spacing. Pin the two B
+        widgets to the widths their A-row counterparts already have; the
+        layout then has nothing to take, the seams come back on their own, and
+        the button occupies the space to the right that the A row leaves
+        empty.
+        """
+        from PySide6.QtWidgets import QHBoxLayout
+        btn = getattr(self, '_b_side_btn', None)
+        if btn is None:
+            return
+        try:
+            win = self.window()
+            # A row is the reference; the rotary row is C's in the xyzac set
+            # (DRO_DISPLAY is XYZAC in every ini -- see _repoint_rotary_dros).
+            PAIRS = (('dro_entry_main_a', 'dro_entry_main_c'),
+                     ('drolabel_machine_a', 'drolabel_machine_c'))
+            fixed, missing = [], []
+            for ref_name, tgt_name in PAIRS:
+                ref = win.findChild(QWidget, ref_name)
+                tgt = win.findChild(QWidget, tgt_name)
+                if ref is None or tgt is None:
+                    missing.append('%s/%s' % (ref_name, tgt_name))
+                    continue
+                wpx = ref.width()
+                if wpx <= 0:
+                    missing.append('%s width=0' % ref_name)
+                    continue
+                tgt.setFixedWidth(wpx)
+                fixed.append('%s -> %d px (from %s)' % (tgt_name, wpx, ref_name))
+            if missing:
+                LOG.error('B SIDE COLUMNS: could not match %s -- the B row may '
+                          'still be wider than the A row above it',
+                          ', '.join(missing))
+            if not fixed:
+                return
+            # the seam the A row uses, taken from its own layout
+            aref = win.findChild(QWidget, 'dro_entry_main_a')
+            alay = None
+            for cand in win.findChildren(QHBoxLayout):
+                if aref is not None and cand.indexOf(aref) >= 0:
+                    alay = cand
+                    break
+            blay = None
+            for cand in win.findChildren(QHBoxLayout):
+                if cand.indexOf(btn) >= 0:
+                    blay = cand
+                    break
+            if alay is not None and blay is not None:
+                blay.setSpacing(alay.spacing())
+                LOG.info('B SIDE COLUMNS: row spacing set to the A row\'s %d px',
+                         alay.spacing())
+            # THE BUTTON GETS WHAT IS LEFT, NOT A NUMBER I LIKE. At 50 px the
+            # row needed 432 px in a 421 px space, so Qt paid for it out of
+            # the SPACING and the seams collapsed to 1 and 2 px. Derive the
+            # width from the space remaining after A's columns and one full
+            # seam, so the seams are what survives and the button absorbs the
+            # shortfall.
+            gap = alay.spacing() if alay is not None else 7
+            # MEASURE THE ROW, NOT THE BUTTON. Using btn.geometry() is
+            # circular -- it returns the width the LAST pass produced, so the
+            # seams never converged (7 px asked, 3 px delivered, twice).
+            # The layout's own rectangle is the fixed quantity; work back from
+            # it through A's columns and two full seams.
+            first = win.findChild(QWidget, 'dro_entry_main_c')
+            last = win.findChild(QWidget, 'drolabel_machine_c')
+            row_right = blay.geometry().right() if blay is not None else 0
+            if first is not None and last is not None and row_right > 0:
+                content_end = (first.geometry().left()
+                               + first.width() + gap + last.width())
+                avail = row_right - content_end - gap
+            else:
+                avail = 50
+            if avail < 34:
+                LOG.error('B SIDE COLUMNS: only %d px left for the button '
+                          'after A\'s columns and a %d px seam -- it will be '
+                          'cramped; the row is too narrow for both', avail, gap)
+                avail = max(avail, 30)
+            btn.setFixedWidth(int(avail))
+            LOG.info('B SIDE COLUMNS: %s; BOTH given the %d px that remain '
+                     'after a %d px seam', '; '.join(fixed), int(avail), gap)
+            QTimer.singleShot(1500, self._b_side_trim_button)
+        except Exception:
+            LOG.exception('B SIDE COLUMNS: could not match the A row -- the '
+                          'button is still live, only its spacing is off')
+
+    def _b_side_trim_button(self):
+        """Correct the button width by the seam deficit actually measured.
+
+        Working the width out from the layout rectangle was still 8 px out --
+        the rect reports more than the widgets occupy, and chasing that offset
+        analytically produced 47 px twice with 3 px seams both times. So stop
+        predicting: lay it out, measure the seam that resulted, and take the
+        shortfall off the button. One corrective pass, and it is verifiable
+        because the next report prints both rows.
+        """
+        try:
+            win = self.window()
+            btn = getattr(self, '_b_side_btn', None)
+            a1 = win.findChild(QWidget, 'dro_entry_main_a')
+            a2 = win.findChild(QWidget, 'drolabel_machine_a')
+            b1 = win.findChild(QWidget, 'dro_entry_main_c')
+            b2 = win.findChild(QWidget, 'drolabel_machine_c')
+            if not all((btn, a1, a2, b1, b2)):
+                LOG.error('B SIDE TRIM: a DRO widget is missing -- button '
+                          'left at %s px', btn.width() if btn else '?')
+                return
+            want = a2.geometry().left() - a1.geometry().right() - 1
+            got_mid = b2.geometry().left() - b1.geometry().right() - 1
+            got_end = btn.geometry().left() - b2.geometry().right() - 1
+            deficit = (want - got_mid) + (want - got_end)
+            if deficit <= 0:
+                LOG.info('B SIDE TRIM: seams already %d and %d px against the '
+                         'A row\'s %d px -- nothing trimmed',
+                         got_mid, got_end, want)
+                return
+            new_w = max(30, btn.width() - deficit)
+            btn.setFixedWidth(new_w)
+            LOG.info('B SIDE TRIM: A row seam is %d px, B row had %d and %d '
+                     '-- BOTH trimmed %d px to %d so both seams can be %d',
+                     want, got_mid, got_end, deficit, new_w, want)
+            # DOES THE WORD STILL FIT? The width is dictated by the A row's
+            # columns, so if the longest caption needs more than that, the
+            # captions have to get shorter -- the columns do not move. Ask Qt
+            # rather than guessing, and say so loudly if it clips.
+            try:
+                fm = btn.fontMetrics()
+                pad = 14   # the button's own border + padding, both sides
+                widest, wpx = '', 0
+                for _v, _n in self.B_SIDES:
+                    _w = fm.horizontalAdvance(_n)
+                    if _w > wpx:
+                        widest, wpx = _n, _w
+                if wpx + pad > new_w:
+                    LOG.error('B SIDE TRIM: "%s" needs %d px + %d padding but '
+                              'the A columns leave only %d -- the caption WILL '
+                              'clip; shorten the captions, do not widen the '
+                              'button', widest, wpx, pad, new_w)
+                else:
+                    LOG.info('B SIDE TRIM: widest caption "%s" is %d px + %d '
+                             'padding, fits in %d', widest, wpx, pad, new_w)
+            except Exception:
+                LOG.exception('B SIDE TRIM: could not measure the caption')
+            QTimer.singleShot(1200, self._b_side_match_header)
+            QTimer.singleShot(1900, self._b_side_report_columns)
+        except Exception:
+            LOG.exception('B SIDE TRIM: failed -- seams left as laid out')
+
+    def _b_side_match_header(self):
+        """Stop the DRO header overhanging the value columns.
+
+        The header row (header_layout in dros_xyzac.ui) holds ZERO ALL, a
+        QFrame carrying WORK / MACHINE / DTG, and REF ALL. That frame is
+        expanding, so when the B row grew a button the whole block got wider
+        and the frame swallowed the extra: measured off the operator's
+        screenshot, every value row runs 15..321 while the header ran 15..328
+        (operator 2026-08-15: "now the top isn't aligned").
+
+        Pin the frame to the span the value columns actually occupy. The gap
+        that opens on its right is correct -- that is the button's column, and
+        the header has nothing to put there.
+        """
+        try:
+            win = self.window()
+            mc = win.findChild(QWidget, 'machine_column_header')
+            first = win.findChild(QWidget, 'dro_entry_main_x')
+            last = win.findChild(QWidget, 'drolabel_machine_x')
+            if mc is None or first is None or last is None:
+                LOG.error('B SIDE HEADER: machine_column_header / X DRO row '
+                          'not found -- header left as laid out')
+                return
+            frame = mc.parentWidget()
+            if frame is None:
+                LOG.error('B SIDE HEADER: no parent frame above '
+                          'machine_column_header -- header left as laid out')
+                return
+            want = last.geometry().right() - first.geometry().left() + 1
+            have = frame.width()
+            if want <= 0 or abs(want - have) < 2:
+                LOG.info('B SIDE HEADER: frame %s already %d px against the '
+                         'columns %d px -- nothing changed',
+                         frame.objectName() or '(unnamed)', have, want)
+                return
+            frame.setFixedWidth(want)
+            LOG.info('B SIDE HEADER: frame %s %d -> %d px so it ends where '
+                     'the value columns end (x=%d..%d)',
+                     frame.objectName() or '(unnamed)', have, want,
+                     first.geometry().left(), last.geometry().right())
+        except Exception:
+            LOG.exception('B SIDE HEADER: could not match the header width')
+
+    def _b_side_report_columns(self):
+        """Print both rows' real geometry so the match can be checked, not
+        assumed -- a GUI edit that only looks right is not verified."""
+        try:
+            win = self.window()
+            for tag, names in (('A', ('zero_a_button', 'dro_entry_main_a',
+                                      'drolabel_machine_a')),
+                               ('B', ('zero_c_button', 'dro_entry_main_c',
+                                      'drolabel_machine_c', 'ned_b_side'))):
+                parts = []
+                for n in names:
+                    w = win.findChild(QWidget, n)
+                    parts.append('%s=%s' % (n, w.geometry() if w else 'MISSING'))
+                LOG.info('B SIDE COLUMNS %s row: %s', tag, '  '.join(parts))
+        except Exception:
+            LOG.exception('B SIDE COLUMNS: report failed')
 
     def _b_side_next(self):
         self._b_side = (getattr(self, '_b_side', 0) + 1) % 3
@@ -3500,7 +3816,17 @@ class UserTab(QWidget):
             lin, ang = JOG_SPEEDS[self._jog_speed]
             # pure-rotary line: LinuxCNC reads F as deg/min there; any
             # linear word present -> F is mm/min on the linear path
-            feed = ang if all(ax in 'ac' for ax, _ in vals) else lin
+            if all(ax in 'ac' for ax, _ in vals):
+                # PER LETTER, and the SLOWEST of the letters in this move --
+                # a block carrying both A and B must not run A's rate at B.
+                # _AXL resolves the 'c' slot to the letter actually commanded
+                # (C in -xyzac, B in -xyzab), which is the whole point: the
+                # head keeps the fast rate, the workpiece rotary does not.
+                rates = [JOG_ANG_SPEEDS.get(_AXL(ax), {}).get(
+                             self._jog_speed, ang) for ax, _ in vals]
+                feed = min(rates) if rates else ang
+            else:
+                feed = lin
             c.mode(linuxcnc.MODE_MDI)
             c.wait_complete()
             # CONFIRM the mode actually landed: ned_brain hands MANUAL back
@@ -3988,10 +4314,11 @@ class UserTab(QWidget):
         tool_info_qframe is exactly the "remove it from the main panel" half
         of the request.
 
-        The second box lives inside frame_17's own verticalLayout_49, after
-        the unload row. frame_17 is positioned by geometry, not by a parent
-        layout (checked in template_rack_atc.ui), so there is nowhere
-        outside it to add a sibling frame without hardcoding coordinates.
+        THE TWO BOXES ARE SIBLINGS. frame_17 is positioned by geometry
+        inside widget_spacer_sb_2 (template_rack_atc.ui), so the GET TOOL box
+        is created in that SAME parent and placed to the right of frame_17,
+        at the same level. It used to be added to frame_17's own
+        verticalLayout_49, which drew a box inside a box.
         """
         from PySide6.QtWidgets import (QFrame, QVBoxLayout, QHBoxLayout,
                                        QLabel, QBoxLayout)
@@ -4029,6 +4356,18 @@ class UserTab(QWidget):
                 return
 
             hdr.setText('MANUAL')
+            # ELECTRONIC IS REDUNDANT -- there is only one tool setter on this
+            # machine and nobody is reaching for a mechanical one (operator
+            # 2026-08-14). Same stylesheet, same 45 px height as every other
+            # box header; only the words change.
+            setter_hdr = win.findChild(QWidget, 'machine_column_header_8')
+            if setter_hdr is not None:
+                setter_hdr.setText('TOOL SETTER')
+                LOG.info('TOOLCHANGE SPLIT: tool setter header -> TOOL SETTER')
+            else:
+                LOG.error('TOOLCHANGE SPLIT: machine_column_header_8 not '
+                          'found -- the tool setter box still reads '
+                          'ELECTRONIC TOOL SETTER')
 
             # STYLE IS CLONED, NOT INVENTED: the new box copies the frame it
             # is splitting off from, and the new header copies the one above
@@ -4036,25 +4375,38 @@ class UserTab(QWidget):
             src = hdr.parentWidget()
             while src is not None and not isinstance(src, QFrame):
                 src = src.parentWidget()
-            box = QFrame(host)
+            if src is None:
+                LOG.error('TOOLCHANGE SPLIT: no QFrame above the header -- '
+                          'GET TOOL box NOT built, panel left as it was')
+                return
+            # SIBLING, NOT CHILD. The first version added this box to
+            # frame_17's own vertical layout, which drew a box inside a box
+            # (operator 2026-08-14: "you stuck the Auto Tool Change as a box
+            # inside the manual tool change ... i want it as its old box at
+            # the same hierarchy as manual tool change, and located to the
+            # right of manual tool change"). frame_17's parent positions its
+            # children by geometry, so the box goes THERE, beside frame_17.
+            box = QFrame(src.parentWidget())
             box.setObjectName('ned_gettool_box')
             if src is not None:
                 box.setStyleSheet(src.styleSheet())
                 box.setFrameShape(src.frameShape())
                 box.setFrameShadow(src.frameShadow())
             bl = QVBoxLayout(box)
-            bl.setContentsMargins(2, 1, 2, 1)
-            bl.setSpacing(2)
+            bl.setContentsMargins(6, 9, 6, 7)   # frame_17's own margins
+            bl.setSpacing(5)                    # frame_17's own spacing
 
-            # EVERY ROW IS CAPPED. frame_17 is pinned to exactly 250x250 in
-            # template_rack_atc.ui (minimumSize == maximumSize == geometry),
-            # so the second box cannot make the frame taller -- it has to fit
-            # in what the MANUAL half leaves. The first attempt used default
-            # heights and the box collapsed into a 40 px strip with GET TOOL,
-            # RERACK and the T field drawn on top of each other.
-            # 22, not 16: the cloned header style is a Bebas face whose
-            # ascenders were being sliced off by the box border at 16.
-            HDR_H, ROW_H = 22, 34
+            # THE PANEL'S OWN METRICS, READ OUT OF template_rack_atc.ui.
+            # Both stock boxes set every header AND every button to 45 px,
+            # with QVBoxLayout spacing 5 and margins 6/6 left/right. This box
+            # was built at 22/34 with spacing 2, so it read as a denser
+            # control than its neighbours (operator 2026-08-14: "each of
+            # these have a title and 2 buttons (rows) make them all the same
+            # size and box spacing and UI look and feel").
+            HDR_H, ROW_H = 45, 45
+            # title + two rows on those metrics:
+            #   9 top + 45 + 5 + 45 + 5 + 45 + 7 bottom = 161 -> 160
+            BOX_H, GUTTER = 160, 30
 
             cap = QLabel('GET TOOL')
             cap.setObjectName('ned_gettool_header')
@@ -4086,13 +4438,19 @@ class UserTab(QWidget):
             # THE CAPTION IS THE VERB, not the g-code. Operator: "Instead of
             # M6 G43, call it GET TOOL".
             call.setText('GET TOOL')
-            # the T field is a number, not a sentence -- keep it narrow so
-            # the button beside it keeps a readable width
-            entry.setMaximumWidth(70)
+            # THE T FIELD HOLDS AT MOST TWO DIGITS. 70 px was wider than the
+            # 45 px row is tall, which read as a disproportionately large box
+            # for a number that never exceeds 14 (operator 2026-08-14: "make
+            # the box for T (x) that x, it can be smaller"). 44 px fits "14"
+            # with the same air the stock fields keep, and hands the width
+            # back to the GET TOOL button beside it.
+            entry.setMaximumWidth(44)
+            entry.setMinimumWidth(44)
             if tlab is not None:
                 tlab.setFixedWidth(18)
                 tlab.setFixedHeight(ROW_H)
-            box.setMaximumHeight(HDR_H + 2 * ROW_H + 12)
+            box.setMinimumHeight(BOX_H)
+            box.setMaximumHeight(BOX_H)
             rerack.setMinimumWidth(0)
             call.setMinimumWidth(0)
             # LOUD GEOMETRY, so the next person does not guess at pixels the
@@ -4104,30 +4462,56 @@ class UserTab(QWidget):
                 host.geometry(), box.geometry(), rerack.geometry(),
                 entry.geometry(), call.geometry()))
 
-            # MAKE ROOM RATHER THAN CLIP. frame_17 is pinned to exactly
-            # 250x250 in template_rack_atc.ui (minimumSize == maximumSize),
-            # so the second box had nowhere to go and drew its header,
-            # RERACK and the T field on top of each other. Grow the frame by
-            # the box's height and slide the tool-setter frame below it down
-            # by the same amount, so nothing overlaps and nothing is clipped.
-            GROW = HDR_H + 2 * ROW_H + 18
-            if src is not None:
-                g = src.geometry()
-                src.setMinimumHeight(g.height() + GROW)
-                src.setMaximumHeight(g.height() + GROW)
-                src.resize(g.width(), g.height() + GROW)
-                sib = win.findChild(QWidget, 'frame_18')
-                if sib is not None:
-                    sg = sib.geometry()
-                    sib.move(sg.x(), sg.y() + GROW)
-                    LOG.info('TOOLCHANGE SPLIT: frame_17 %d -> %d px, '
-                             'frame_18 moved down %d px to y=%d',
-                             g.height(), g.height() + GROW, GROW,
-                             sg.y() + GROW)
-                else:
-                    LOG.error('TOOLCHANGE SPLIT: frame_18 not found -- '
-                              'frame_17 grew and may now overlap it')
-            col.addWidget(box)
+            # BESIDE frame_17, NOT INSIDE IT. frame_17 keeps its stock
+            # 250x250 from template_rack_atc.ui and frame_18 keeps its stock
+            # y=298 -- neither is touched any more.
+            #
+            # THE GUTTER IS THE PANEL'S OWN, not a number I picked: frame_17
+            # ends at y=268 and frame_18 starts at y=298, so this panel
+            # already spaces its boxes 30 px apart. Same width as frame_17 so
+            # the two read as a matched pair.
+            # ONE GRID. frame_17 was 250x250 because it was authored for a
+            # title and THREE buttons; RERACK TOOL has moved into this box, so
+            # all three boxes now hold a title and two controls and all three
+            # take the same 160 px. frame_18 slides up to keep the gutter the
+            # panel already uses (frame_17 ended at y=268, frame_18 began at
+            # y=298).
+            g = src.geometry()
+            for f, h in ((src, BOX_H),):
+                f.setMinimumHeight(h)
+                f.setMaximumHeight(h)
+                f.resize(f.width(), h)
+            box.setGeometry(g.x() + g.width() + GUTTER, g.y(), g.width(), BOX_H)
+            sib = win.findChild(QWidget, 'frame_18')
+            if sib is not None:
+                sib.setMinimumHeight(BOX_H)
+                sib.setMaximumHeight(BOX_H)
+                sib.setGeometry(g.x(), g.y() + BOX_H + GUTTER,
+                                g.width(), BOX_H)
+                LOG.info('TOOLCHANGE SPLIT: frame_18 -> %s (same 250x%d, '
+                         '%d px gutter under MANUAL)',
+                         sib.geometry(), BOX_H, GUTTER)
+            else:
+                LOG.error('TOOLCHANGE SPLIT: frame_18 not found -- the tool '
+                          'setter box keeps its old size and position, so the '
+                          'panel will look uneven')
+            # THE PARENT MUST BE WIDE ENOUGH OR THE BOX IS SIMPLY NOT DRAWN.
+            # widget_spacer_sb_2 carries minimumSize width 580 in the .ui,
+            # which is exactly frame_17's right edge -- so the parent has to
+            # be told to make room, or a geometry-positioned child past 580
+            # is clipped away with no error anywhere.
+            par = src.parentWidget()
+            need = box.geometry().right() + 4
+            if par is not None and par.width() < need:
+                par.setMinimumWidth(need)
+                LOG.info('TOOLCHANGE SPLIT: parent %s widened %d -> %d px to '
+                         'hold the GET TOOL box', par.objectName() or '?',
+                         par.width(), need)
+            box.show()
+            LOG.info('TOOLCHANGE SPLIT: GET TOOL placed beside MANUAL -- '
+                     'frame_17 %s, box %s, gutter %d px, same parent (%s)',
+                     g, box.geometry(), GUTTER,
+                     par.objectName() if par is not None else '?')
             # THE ROW IS GONE FROM THE MAIN PANEL, not just emptied: frame_27
             # is the container that held the T label and its field, and an
             # empty framed strip reads as a broken control.
@@ -6714,6 +7098,13 @@ class UserTab(QWidget):
             LOG.error('HOMING GATE: %d button(s) NOT found, still live on an '
                       'unhomed machine: %s', len(missing), ', '.join(missing))
         self._sync_load_enabled()
+        # LAST, AND WRAPPED. The homing gate above must never be starved by
+        # anything that raises (that is why it runs first and alone), so the
+        # B side gate goes at the very end inside its own guard.
+        try:
+            self._b_side_gate_tick()
+        except Exception:
+            LOG.exception('B SIDE GATE: tick failed -- toggle left as it was')
 
     RACK_TABLE_FORKS = 14
 

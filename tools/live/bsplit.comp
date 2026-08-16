@@ -32,13 +32,20 @@ pin in float cmd "joint.6.motor-pos-cmd -- the single command LinuxCNC issues";
 pin in signed sel = 0 "0 = BOTH, 1 = LEFT only, 2 = RIGHT only; anything else = BOTH";
 pin in float max_split = 0.0 "degrees of divergence allowed, 0 = no bound";
 
+pin in float fb_l "hm2_7i97.0.stepgen.00.position-fb -- steps the FPGA SENT";
+
 pin out float cmd_l "-> hm2_7i97.0.stepgen.00.position-cmd (LEFT, the master)";
 pin out float cmd_r "-> hm2_7i97.0.stepgen.01.position-cmd (RIGHT, the slave)";
+pin out float fb "-> joint.6.motor-pos-fb, with the DELIBERATE split removed";
 pin out float split "cmd_l - cmd_r, the accumulated preload in joint degrees";
+pin out float off_l "accumulated LEFT divergence, joint degrees";
+pin out float off_r "accumulated RIGHT divergence, joint degrees";
 pin out bit at_limit "true while max_split is holding the divergence back";
 
-variable double off_l = 0.0;
-variable double off_r = 0.0;
+/* acc_l / acc_r are the working values; off_l / off_r are their OUT pins, so
+   the preload is a number on screen instead of invisible component state. */
+variable double acc_l = 0.0;
+variable double acc_r = 0.0;
 variable int started = 0;
 
 function _ "Route the joint command to one or both stepgens";
@@ -56,10 +63,13 @@ FUNCTION(_) {
     /* First pass: both outputs start exactly where the command is, so
        inserting this component into a running machine cannot move anything. */
     if (!started) {
-        off_l = 0.0;
-        off_r = 0.0;
+        acc_l = 0.0;
+        acc_r = 0.0;
         cmd_l = cmd;
         cmd_r = cmd;
+        fb = fb_l;
+        off_l = 0.0;
+        off_r = 0.0;
         split = 0.0;
         at_limit = 0;
         started = 1;
@@ -69,8 +79,8 @@ FUNCTION(_) {
     left_live  = (sel != 2);        /* RIGHT-only is the only case LEFT sits out  */
     right_live = (sel != 1);        /* LEFT-only is the only case RIGHT sits out  */
 
-    want_l = left_live  ? (cmd + off_l) : cmd_l;
-    want_r = right_live ? (cmd + off_r) : cmd_r;
+    want_l = left_live  ? (cmd + acc_l) : cmd_l;
+    want_r = right_live ? (cmd + acc_r) : cmd_r;
 
     /* Bound the wind-up. Only ever refuse to increase |split|; letting it
        come back is always allowed, or the operator could not unwind. */
@@ -88,10 +98,36 @@ FUNCTION(_) {
     cmd_l = want_l;
     cmd_r = want_r;
 
-    /* Keep the frozen side's offset true, so cmd + off == its held output
+    /* Keep the frozen side's offset true, so cmd + acc == its held output
        and reselecting it resumes without a step. */
-    if (!left_live)  off_l = cmd_l - cmd;
-    if (!right_live) off_r = cmd_r - cmd;
+    if (!left_live)  acc_l = cmd_l - cmd;
+    if (!right_live) acc_r = cmd_r - cmd;
 
     split = cmd_l - cmd_r;
+    off_l = acc_l;
+    off_r = acc_r;
+
+    /* THE DELIBERATE SPLIT IS NOT A FOLLOWING ERROR.
+       joint.6.motor-pos-fb used to come straight off stepgen.00.position-fb,
+       which is the LEFT side only. Jog RIGHT on its own and the LEFT output
+       is held still by design, so the feedback stopped dead while
+       joint.6.motor-pos-cmd kept moving: [JOINT_6] FERROR = 5.0 was passed in
+       about 0.06 s and the machine faulted. Worse, acc_l persists, so once
+       any preload existed the feedback stayed offset from the command by that
+       amount FOREVER -- the machine re-faulted the instant it was enabled,
+       through machine-off, through e-stop, through killing R4 and the 70 V
+       brick, because none of those touch a variable inside a realtime
+       component. Only unloading it (a relaunch) cleared it.
+
+       Subtracting acc_l removes exactly the part of the divergence we asked
+       for and leaves everything we did not:
+
+           left frozen   fb_l ~= cmd_l, acc_l = cmd_l - cmd  ->  fb = cmd
+           preloaded     fb_l ~= cmd + acc_l                 ->  fb = cmd
+           stepgen clip  fb_l LAGS cmd_l                     ->  fb LAGS cmd
+
+       The last line is the one worth keeping: STEPGEN_MAXACCEL / MAXVEL
+       clipping still raises a real following error, which is the only check
+       an axis with no encoder and no drive alarm line has. */
+    fb = fb_l - acc_l;
 }

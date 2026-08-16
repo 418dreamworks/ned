@@ -91,7 +91,18 @@ setp   bsplit.0.max-split 5.0
 net b-pos-cmd  joint.6.motor-pos-cmd             => bsplit.0.cmd
 net b-cmd-l    bsplit.0.cmd-l                    => hm2_7i97.0.stepgen.00.position-cmd
 net b-cmd-r    bsplit.0.cmd-r                    => hm2_7i97.0.stepgen.01.position-cmd
-net b-pos-fb   hm2_7i97.0.stepgen.00.position-fb => joint.6.motor-pos-fb
+# FEEDBACK GOES THROUGH bsplit, NOT STRAIGHT OFF THE LEFT STEPGEN.
+# stepgen.00.position-fb is the LEFT side alone. Jogging RIGHT on its own
+# holds the LEFT output still BY DESIGN, so that feedback stopped dead
+# while joint.6.motor-pos-cmd kept moving and [JOINT_6] FERROR = 5.0 was
+# passed in about 0.06 s. The accumulated offset then persisted inside the
+# component, so the machine re-faulted on every enable -- through machine
+# off, through e-stop, through killing R4 and the 70 V brick -- until
+# LinuxCNC was relaunched and the component unloaded.
+# bsplit.0.fb is that same feedback with the DELIBERATE split subtracted:
+# a preload reads as zero error, a real stepgen clip still reads as error.
+net b-fb-l     hm2_7i97.0.stepgen.00.position-fb => bsplit.0.fb-l
+net b-pos-fb   bsplit.0.fb                       => joint.6.motor-pos-fb
 
 # --- enable -----------------------------------------------------------------
 # b.pwr = joint.6 wants the amp AND the brain says the brick has settled.
