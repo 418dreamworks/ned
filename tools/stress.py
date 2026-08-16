@@ -127,33 +127,81 @@ class BoxGuard(threading.Thread):
 
 # --------------------------------------------------------------- lifecycle
 def close_pb():
-    """Close by the WINDOW, never a signal (CLAUDE.md rule 12)."""
+    """Close by the WINDOW first, then escalate -- same ladder pb_restart.sh
+    uses. Closing the GUI window does NOT take linuxcncsvr/milltask with it,
+    so a window-only close leaves the session alive, run5 then refuses to
+    launch on top of it, and the next iteration measures the previous mode."""
     sh("DISPLAY=:0 bash -c 'for w in $(xdotool search --name \"Probe Basic\" "
        "2>/dev/null); do xdotool windowclose $w; done'", secs=15)
+    for _ in range(20):
+        time.sleep(1)
+        if stat() is None:
+            return True
+    log('close: window gone but the stack is alive -- escalating')
+    for pat in ('probe_basic', 'milltask', 'linuxcncsvr', 'halui',
+                'rtapi_app'):
+        sh("pgrep -f %s | while read q; do kill -TERM $q 2>/dev/null; done"
+           % pat, secs=10)
+    time.sleep(5)
+    for pat in ('probe_basic', 'milltask', 'linuxcncsvr', 'halui',
+                'rtapi_app'):
+        sh("pgrep -f %s | while read q; do kill -KILL $q 2>/dev/null; done"
+           % pat, secs=10)
+    sh("timeout 20 halrun -U >/dev/null 2>&1", secs=25)
     for _ in range(40):
         time.sleep(1)
         if stat() is None:
             return True
+    # STILL UP. Measuring the next iteration against a session that refused
+    # to close is how an -xyz session got tested for bsplit pins and reported
+    # them missing. Say so; the caller aborts the iteration.
+    log('CLOSE FAILED: a session is still up (%s)' % live_ini())
     return False
 
 
 def launch(mode, kins):
     cmd = "%s/tools/run5.sh -%s -%s" % (NED, mode, kins)
     log('LAUNCH  %s' % cmd)
+    # DISPLAY IS NOT INHERITED. This harness runs from a shell that has none,
+    # and PB is a Qt application: without it every launch died with "no
+    # display name and no $DISPLAY", the session never came up, and the
+    # iterations that appeared to succeed were measuring a session started by
+    # hand earlier.
     out = os.path.join(SP, 'stress_launch.out')
     # KEEP THE OUTPUT. The first run sent it to /dev/null and the failure
     # ("check_config validation failed") was invisible -- the harness only
     # knew "never came up".
-    subprocess.Popen("nohup %s >>%s 2>&1 &" % (cmd, out), shell=True)
-    for _ in range(120):
-        time.sleep(1)
-        s = stat()
-        if s is not None:
+    subprocess.Popen("DISPLAY=%s nohup %s >>%s 2>&1 &"
+                     % (os.environ.get('DISPLAY') or ':0', cmd, out),
+                     shell=True)
+    # A LAUNCH ON THIS PI TAKES LONGER THAN TWO MINUTES. HAL, the GUI build,
+    # the sub-tab timers and the tool table all have to land. At 120 s the
+    # harness gave up on iteration 1 about ten seconds before the session
+    # actually came up, then reported "never came up" while the machine sat
+    # there running. Poll every 5 s for four minutes.
+    for _ in range(48):
+        time.sleep(5)
+        if stat() is not None:
             return True
     return False
 
 
-def wait_ready(secs=90):
+def live_ini():
+    """Which ini the RUNNING session was started from, from the process."""
+    r = sh("ps -eo args | grep -m1 'milltask -ini' | sed 's/.*-ini //'")
+    return os.path.basename(r.stdout.strip())
+
+
+def expect_ini(mode, kins):
+    """The ini run5 generates for this pair."""
+    if kins == 'tcp':
+        return 'ned5_pb_tcp_gen.ini.expanded'
+    if mode == 'xyzab':
+        return 'ned5_pb_ab_gen.ini.expanded'
+    return 'ned5_pb_lim_gen.ini.expanded'
+
+
+def wait_ready(secs=180):
     """ON, tool table served, GUI built."""
     end = time.time() + secs
     while time.time() < end:
@@ -386,6 +434,19 @@ def main():
             close_pb()
             continue
         time.sleep(25)                      # let the GUI finish building
+        # PROVE IT IS THE SESSION WE ASKED FOR. run5 refuses to launch on top
+        # of a live session, so a failed close leaves the PREVIOUS mode
+        # running and every check below silently measures the wrong machine.
+        got, want = live_ini(), expect_ini(mode, kins)
+        if got != want:
+            fails.append('%s: WRONG SESSION -- running %s, expected %s. '
+                         'Checks skipped rather than measured against it.'
+                         % (tag, got or '(none)', want))
+            record(tag=tag, mode=mode, kins=kins, fails=fails)
+            all_fails += fails
+            close_pb()
+            continue
+        log('SESSION  %s (as requested)' % got)
 
         check_pins(fails, tag, mode, kins)
         check_tooltable(fails, tag)
