@@ -521,6 +521,13 @@ class UserTab(QWidget):
             # one worm; driving one against the other is how the lash gets
             # preloaded out (operator 2026-08-14). 0 on startup, always.
             self.comp.addPin('b-side-out', 's32', 'out')
+            # THE PRELOAD ARRIVES ON A PIN, NOT VIA hal.get_value(). The
+            # tooltip used to call hal.get_value('bsplit.0.split') from the
+            # GUI thread at 2 Hz, which is exactly what line 12 of this file
+            # forbids: it takes the global HAL mutex, and mutex spin on this
+            # box is the documented road to a watchdog bite and homing dying.
+            # postgui_b.hal nets bsplit.0.split into this pin instead.
+            self.comp.addPin('b-split-in', 'float', 'in')
             try:
                 self.comp.getPin('b-side-out').value = 0
             except Exception:
@@ -1336,8 +1343,22 @@ class UserTab(QWidget):
         # (no HAL pin: an ARMED clamp writes ini.2.min_limit directly, and the
         #  field is read-only while armed, so nothing to push here)
         if self._zclamp_on:
-            os.system('timeout 3 halcmd setp ini.2.min_limit %.4f '
-                      '>/dev/null 2>&1' % self._zclamp_low)
+            # SAME FLOOR THE ARM PATH WRITES. This used to send Zlow RAW,
+            # dropping ZCLAMP_BACKSTOP -- so editing Zlow while armed put the
+            # soft limit 1 mm higher than arming it would, and a small
+            # overshoot then stranded the machine against its own limit. It
+            # was also the one halcmd write whose result was never checked,
+            # and it logged success either way.
+            backstop = self._zclamp_low - self.ZCLAMP_BACKSTOP
+            if backstop < self._zclamp_floor_default:
+                backstop = self._zclamp_floor_default
+            if os.system('timeout 3 halcmd setp ini.2.min_limit %.4f '
+                         '>/dev/null 2>&1' % backstop) != 0:
+                self._zclamp_disable('could not write ini.2.min_limit while '
+                                     'changing Zlow', err=True)
+                return
+            LOG.info('ZCLAMP: Zlow %.4f, soft floor written %.4f (machine)',
+                     self._zclamp_low, backstop)
         LOG.info('ZCLAMP: Zlow set to %.4f (machine)', self._zclamp_low)
         self._zclamp_say('Zlow = %.3f, ceiling %.3f' %
                          (self._zclamp_low, self._zclamp_high))
@@ -1426,9 +1447,6 @@ class UserTab(QWidget):
     MPG_CPS_NORMAL = 800         # 2 wheel turns/s (operator-specified cap)
 
     ZCLAMP_MAX_STEP = 0.1        # mm/detent -- coarser steps are locked out
-    ZCLAMP_MARGIN = 0.02         # mm: engage the gate this far ABOVE Zlow so
-                                 # the servo settle lands AT Zlow, never under
-                                 # (operator: "it shouldn't go under at all")
     ZCLAMP_BACKSTOP = 1.0        # mm BELOW Zlow where the soft limit parks;
                                  # the gate stops you at Zlow, this only
                                  # catches a runaway, and keeps a small
@@ -2030,6 +2048,12 @@ class UserTab(QWidget):
                     self.cal_say('!! %s' % msg)
                     if getattr(self, '_cal_status', None) is not None:
                         self._cal_status.setText(msg)
+                    # _cal_gate already forced MDI; returning without handing
+                    # it back left the machine in MDI with the wheel dead and
+                    # the StartAC sequencer still flagged active with no timer
+                    # armed.
+                    self._hand_back_manual(c, label)
+                    self._cal_issue_failed(label.lower())
                     return
                 self.cal_say('>> SHOULDER: spindle empty, proceeding')
             if need_centre:
@@ -2040,6 +2064,8 @@ class UserTab(QWidget):
                         c.error_msg('%s refused: no puck centre yet -- run '
                                     'StartPuck first' % label)
                         LOG.error('%s refused: field %s empty', label, k)
+                        self._hand_back_manual(c, label)
+                        self._cal_issue_failed(label.lower())
                         return
                     vals[k] = float(t)
                 extra = self.CAL_EXTRA.get(which)
@@ -2398,12 +2424,37 @@ class UserTab(QWidget):
                          '%s.bak-%s' % (self.HEAD_ZERO_INC, stamp))
             with open(self.HEAD_ZERO_INC) as f:
                 txt = f.read()
-            txt = _re.sub(r'^%s_MULTITURN\s*=.*$' % ax,
-                          '%s_MULTITURN = %d' % (ax, mt_new), txt, flags=_re.M)
-            txt = _re.sub(r'^%s_WITHIN\s*=.*$' % ax,
-                          '%s_WITHIN    = %d' % (ax, wi_new), txt, flags=_re.M)
-            with open(self.HEAD_ZERO_INC, 'w') as f:
+            # COUNT THE SUBSTITUTIONS. These were plain re.sub with no check,
+            # followed by a truncating write and a success log -- so a pattern
+            # that stopped matching (a rename, a comment, a stray space) wrote
+            # the file back unchanged while the code cleared #3069 and pulsed
+            # REF, silently discarding the measurement this whole cycle exists
+            # to produce.
+            txt, n_mt = _re.subn(r'^%s_MULTITURN\s*=.*$' % ax,
+                                 '%s_MULTITURN = %d' % (ax, mt_new),
+                                 txt, flags=_re.M)
+            txt, n_wi = _re.subn(r'^%s_WITHIN\s*=.*$' % ax,
+                                 '%s_WITHIN    = %d' % (ax, wi_new),
+                                 txt, flags=_re.M)
+            if n_mt != 1 or n_wi != 1:
+                LOG.error('%s ABORTED: head_zero.inc pattern matched '
+                          '%d MULTITURN / %d WITHIN line(s), expected 1 each. '
+                          'File NOT written, backup kept at %s.bak-%s. The '
+                          'measurement is not banked -- fix the file first.',
+                          label, n_mt, n_wi, self.HEAD_ZERO_INC, stamp)
+                self.cal_say('!! %s FAILED: head_zero.inc has no %s_MULTITURN '
+                             '/ %s_WITHIN line to update. Nothing written.'
+                             % (label, ax, ax))
+                return False
+            # ATOMIC. A truncating write that dies half way leaves the head
+            # zero destroyed with no copy but the .bak taken seconds earlier.
+            import os as _os
+            tmp = '%s.tmp-%s' % (self.HEAD_ZERO_INC, stamp)
+            with open(tmp, 'w') as f:
                 f.write(txt)
+                f.flush()
+                _os.fsync(f.fileno())
+            _os.replace(tmp, self.HEAD_ZERO_INC)
             LOG.info('%s: %+.4f mm -> %+.4f mm, %s corrected %+.6f deg, '
                      'head_zero.inc %s = %d / %d (was %d counts, now %d)',
                      label, before, after, ax, corr, ax, mt_new, wi_new,
@@ -2609,10 +2660,10 @@ class UserTab(QWidget):
             self._zclamp_disable('could not write ini.2.min_limit', err=True)
             return
         try:
-            # feed the comparator Zlow + margin: blocking starts just above
-            # the floor so the few um of servo settle still lands at or above
-            # the number the operator typed
-            # the profile decelerates onto this number, so send it raw
+            # Send Zlow RAW. The profile decelerates onto this number, so
+            # no margin is added here -- ZCLAMP_MARGIN was removed because it
+            # was never applied and the comment claiming it was contradicted
+            # the line below it.
             self.comp.getPin('zclamp-low').value = self._zclamp_low
             self.comp.getPin('zclamp-enable').value = True
         except Exception as e:
@@ -3163,8 +3214,7 @@ class UserTab(QWidget):
         # than living invisibly inside a realtime component. Blank while it
         # is zero -- a permanent "0.00" on the button is noise.
         try:
-            import hal
-            split = float(hal.get_value('bsplit.0.split'))
+            split = float(self.comp.getPin('b-split-in').value)
         except Exception:
             return
         # THE FACE STAYS ONE WORD. The button is sized to the space the A
@@ -4653,6 +4703,9 @@ class UserTab(QWidget):
             # has to keep looking.
             off = getattr(self, '_prehome_off', None) or []
             known = set(id(b) for b in off)
+            revive = []          # survivors an EARLIER sweep had already greyed
+            n_added = 0          # counted as we go: len() arithmetic breaks
+                                 # once survivors are dropped from the list
             for b in win.findChildren(QPushButton) + win.findChildren(
                     QToolButton):
                 n = b.objectName()
@@ -4669,6 +4722,19 @@ class UserTab(QWidget):
                             break
                         _w = _w.parentWidget()
                     if _skip:
+                        # SKIPPING IS NOT ENOUGH. The boot sweep runs before
+                        # any keep= is known, so it has already greyed these
+                        # and recorded them. Merely declining to grey them
+                        # again leaves the TOOL GATE's advertised way out --
+                        # the ATC and TOOL tabs -- unclickable, and the
+                        # machine stays motion-locked with no route to fix
+                        # the inconsistency. A survivor must be made USABLE.
+                        if not b.isEnabled():
+                            try:
+                                b.setEnabled(True)
+                                revive.append(b)
+                            except RuntimeError:
+                                pass
                         continue
                 if id(b) in known:
                     # Its owner may have re-enabled it (qtpyvcp bindOk runs
@@ -4682,7 +4748,15 @@ class UserTab(QWidget):
                     continue                # already off; not ours to restore
                 b.setEnabled(False)
                 off.append(b)
-            n_new = len(off) - len(known)
+                n_added += 1
+            if revive:
+                # stop tracking them: they are deliberately live now, and
+                # the release pass must not claim to have restored them
+                _rev = set(id(b) for b in revive)
+                off = [b for b in off if id(b) not in _rev]
+                LOG.error('PRE-HOME GATE: %d survivor control(s) RE-ENABLED '
+                          '-- the escape route stays clickable', len(revive))
+            n_new = n_added
             self._prehome_off = off
             if n_new:
                 LOG.error('PRE-HOME GATE: %d new control(s) DISABLED (%d '
@@ -5113,15 +5187,27 @@ class UserTab(QWidget):
         The lock drives motion.jog-inhibit AND motion.feed-inhibit
         (ned5_iron.hal:383), so a move issued under it does not fail -- it
         STALLS at zero feed and the interpreter never returns to IDLE."""
+        # UNREADABLE = LOCKED, the same rule _motion_lock_on states outright.
+        # This used to return False on the exception AND on the empty stdout a
+        # `timeout 5` kill leaves behind, so a failed read read as "not
+        # locked" and callers started a cycle under a live feed-inhibit --
+        # which does not error, it stalls at zero feed and never returns to
+        # IDLE. Refusing on a failed read is the only safe direction.
         try:
             import subprocess
             r = subprocess.run(['timeout', '5', 'halcmd', 'getp',
                                 'tool.mm.lock.out'],
                                capture_output=True, text=True)
-            return r.stdout.strip().upper().startswith('TRUE')
+            out = r.stdout.strip().upper()
+            if not out:
+                LOG.error('tool-state lock UNREADABLE (rc=%s, no output) -- '
+                          'treating as LOCKED', r.returncode)
+                return True
+            return out.startswith('TRUE')
         except Exception:
-            LOG.exception('could not read the tool-state lock')
-            return False
+            LOG.exception('could not read the tool-state lock -- treating as '
+                          'LOCKED')
+            return True
 
     def _tcp_work(self, s, i):
         """Work-frame coordinate -- the frame #5063/#5064 report in."""
@@ -5224,11 +5310,18 @@ class UserTab(QWidget):
                 LOG.error('TCP SURVEY: G43 H%d applied (tool length %.3f)',
                           s0.tool_in_spindle, self._tcp_tooloff())
         except Exception:
+            # HAND MDI BACK. _cal_gate took MDI above, and this path returned
+            # without releasing it -- so a failure here (a ValueError on the
+            # empty stdout a killed halcmd leaves is the usual trigger) parked
+            # the machine in MDI with the wheel dead. Every sibling path in
+            # this file hands back; this one did not.
             LOG.exception('TCP SURVEY: G43 check failed')
             self._seq_flag(False)
+            self._hand_back_manual(c0, 'TCP SURVEY G43')
             return
         import random, time as _t
         self._tcp_auto_on = True
+        self._tcp_cleanup_tries = 0
         self._tcp_auto_phase = 'survey'
         self._svy = {'n': 0, 'step': 'ref-issue', 'z0': None, 'zp': None,
                      'best_L': 0.0, 'best_sum': None,
@@ -5802,6 +5895,32 @@ class UserTab(QWidget):
                 self._puck_sync(False)
                 self._tcp_manual_pending = True
                 self._tcp_manual_t0 = time.time()
+            else:
+                # THE GATE REFUSING IS NOT A REASON TO SKIP THE CLEANUP.
+                # _cal_gate refuses on `not s.inpos` -- precisely the state a
+                # mid-cycle stop guarantees -- and every restore lived inside
+                # the `if gate:` above. So a stop mid-move left the feed
+                # override pinned at 0 by the sub's M50 P0, the puck solenoid
+                # energised and bleeding air, and arm.in0 unrestored, with
+                # nothing logged. Say so, drop the puck flag that needs no
+                # MDI, and keep trying for the parts that do.
+                LOG.error('TCP AUTO: park gate REFUSED -- feed override may '
+                          'still be pinned (M50 P0) and the puck may still be '
+                          'up. Retrying the cleanup.')
+                try:
+                    self._puck_sync(False)
+                except Exception:
+                    LOG.exception('TCP AUTO: puck flag clear failed')
+                n = getattr(self, '_tcp_cleanup_tries', 0)
+                if n < self.TCP_CLEANUP_TRIES:
+                    self._tcp_cleanup_tries = n + 1
+                    QTimer.singleShot(1000,
+                                      lambda w=why: self._tcp_auto_stop(w))
+                else:
+                    self._tcp_cleanup_tries = 0
+                    LOG.error('TCP AUTO: cleanup still refused after %d '
+                              'attempts -- issue M50 P1 and M65 P3 by hand; '
+                              'the feed override is NOT restored.', n)
         except Exception:
             LOG.exception('TCP AUTO: final park failed')
 
@@ -5940,7 +6059,12 @@ class UserTab(QWidget):
         # "Probe move on line 44 would exceed Z's negative limit", no
         # movement at all. The sub is incremental now; G91 has no frame to
         # get wrong, and every absolute it does use is derived from #5063.
-        plunge = self._tcp_field(self._tcp_plunge, 30.0, 2.0, 80.0)
+        # getattr: _tcp_plunge has no assignment anywhere in this file, so
+        # a bare self._tcp_plunge raised AttributeError BEFORE _tcp_field
+        # could apply its default -- and _tcp_park swallowed it and still
+        # repainted 'idle', leaving the probe at contact height.
+        plunge = self._tcp_field(getattr(self, '_tcp_plunge', None),
+                                 30.0, 2.0, 80.0)
         if which == 1:
             self._tcp_pts = []
             self._tcp_result.setText('L = ---')
@@ -6036,7 +6160,9 @@ class UserTab(QWidget):
                 return
             c, s = gate
             s.poll()
-            clear = self._tcp_field(self._tcp_clear, 30.0, 10.0, 150.0)
+            # getattr for the same reason as _tcp_plunge above: never assigned
+            clear = self._tcp_field(getattr(self, '_tcp_clear', None),
+                                    30.0, 10.0, 150.0)
             # z1 IS #5063, the interpreter's own reading, so a clearance
             # measured from it lands in the same frame no matter which WCS
             # is live. Do NOT re-introduce a stat-derived limit here: that
@@ -6411,9 +6537,18 @@ class UserTab(QWidget):
             homes = {}
             for tno, pk in con.execute('SELECT tool_no, pocket FROM tool'):
                 try:
-                    homes[int(tno)] = int(float(pk))
+                    pk = int(float(pk))
                 except (TypeError, ValueError):
                     continue
+                # POCKET 0 IS THE SPINDLE, NOT A HOME FORK. The same
+                # misreading was fixed in _sync_tool_safety (see the pk <= 0
+                # skip there) and never propagated here. Left in, a tool
+                # that is clamped has pocket 0, matches no fork, and the
+                # loop below declares it to TABLE -- destroying a correct
+                # live rack entry for a tool that is simply in the spindle.
+                if pk <= 0:
+                    continue
+                homes[int(tno)] = pk
             con.close()
             occ = {}
             with open('/home/brains/Documents/ned/configs/ned5_pb/'
@@ -6428,7 +6563,15 @@ class UserTab(QWidget):
                         if 4001 <= p <= 4024 and v:
                             occ[p - 4000] = v
             for fork, tool in occ.items():
-                if homes.get(tool) != fork:
+                # NO KNOWN HOME IS NOT GROUNDS TO ERASE A LIVE RECORD.
+                # Skipping pocket 0 above is not enough on its own: the tool
+                # then falls out of `homes`, .get() returns None, and
+                # `None != fork` would still evict it. The var file is
+                # saying the fork physically holds this tool; only a home
+                # that DISAGREES justifies overriding that.
+                if tool not in homes:
+                    continue
+                if homes[tool] != fork:
                     LOG.error('AMBIGUOUS LOC: T%d recorded in fork %d but '
                               'its home is %s -- dropping to TABLE (the '
                               'table is the ground truth)', tool, fork,
@@ -8786,12 +8929,18 @@ QTabBar::tab:only-one {
             c = linuxcnc.command()
             st = linuxcnc.stat()
             st.poll()
+            # RETRY, DO NOT FORFEIT. Both of these used to return for good:
+            # one busy check or one failed _take_mdi and the release was lost
+            # with nothing re-arming it, so the solenoid stayed energised and
+            # kept bleeding air. Refusing to touch the solenoid while the
+            # machine is moving is right; giving up on it is not.
             if st.interp_state != linuxcnc.INTERP_IDLE or not st.inpos:
-                LOG.error('DRAWBAR: window expired but the machine is busy -- '
-                          'NOT touching the solenoid')
+                self._drawbar_retry('machine busy')
                 return
             if not self._take_mdi(c, 'DRAWBAR'):
+                self._drawbar_retry('could not take MDI')
                 return
+            self._drawbar_tries = 0
             # o<clamptool> = M65 P0 PLUS M66 P0 L3 Q2, which waits up to 2 s
             # for the tool-LOCKED sensor and aborts if it never confirms. A
             # bare M65 P0 de-energises the solenoid and assumes it worked.
@@ -8806,13 +8955,32 @@ QTabBar::tab:only-one {
             st.poll()
             if all(st.homed[:NJ]):
                 c.teleop_enable(1)
-            msg = ('DRAWBAR RELEASED: no LOAD within %d s. Nothing was '
-                   'loaded -- the solenoid is de-energised so it stops '
-                   'bleeding air.' % self.DRAWBAR_WINDOW_S)
+            # ISSUED, not proven. o<clamptool> carries its own M66 P0 L3 Q2
+            # wait and aborts if the tool-LOCKED sensor never confirms, so the
+            # abort is the real verdict -- this message must not pre-empt it.
+            msg = ('DRAWBAR RELEASE ISSUED: no LOAD within %d s. Nothing was '
+                   'loaded. Watch for an abort from o<clamptool> -- if none '
+                   'comes, the solenoid is de-energised.'
+                   % self.DRAWBAR_WINDOW_S)
             LOG.info(msg)
             c.error_msg(msg)
         except Exception as e:
             LOG.error('DRAWBAR: could not release: %s', e)
+            self._drawbar_retry('exception: %s' % e)
+
+    def _drawbar_retry(self, why):
+        """Re-arm the release attempt instead of losing it."""
+        n = getattr(self, '_drawbar_tries', 0) + 1
+        self._drawbar_tries = n
+        if n > self.DRAWBAR_TRIES:
+            self._drawbar_tries = 0
+            LOG.error('DRAWBAR: release STILL not issued after %d attempts '
+                      '(%s). The solenoid may be energised and bleeding air '
+                      '-- release it by hand.', n, why)
+            return
+        LOG.error('DRAWBAR: release deferred (%s), retry %d of %d',
+                  why, n, self.DRAWBAR_TRIES)
+        QTimer.singleShot(1500, self._drawbar_window_tick)
 
     # Faces a countdown writes, which must NEVER be adopted as a base label.
     _TRANSIENT_FACES = ('CANCEL', 'LOAD?')
@@ -8898,14 +9066,21 @@ QTabBar::tab:only-one {
             except Exception:
                 pass
             return
-        self._drawbar_window_cancel('LOAD pressed')
+        # CANCEL FIRST, AND CANCEL ONLY. _drawbar_window_cancel used to run
+        # here, ABOVE this branch, so the second press -- the one that means
+        # "never mind" -- also tore down the drawbar release window. Nothing
+        # re-arms that window, so the solenoid stayed energised and the air
+        # kept bleeding until something else happened to reset it. A cancel
+        # must undo the countdown it was aimed at and nothing else.
         pend = self._load_pend.get(b)
         if pend is not None:                     # second click = cancel
             pend['timer'].stop()
             b.setText(self._btn_base_label(b, 'LOAD SPINDLE'))
             self._load_pend.pop(b, None)
-            LOG.info('LOAD SPINDLE cancelled')
+            LOG.info('LOAD SPINDLE cancelled (drawbar window left alone)')
             return
+        # A real LOAD press: the window has served its purpose, close it.
+        self._drawbar_window_cancel('LOAD pressed')
         base = self._btn_base_label(b, 'LOAD SPINDLE')
         pend = {'text': base, 'left': 5}
         timer = QTimer(self)
@@ -9530,11 +9705,11 @@ QTabBar::tab:only-one {
         if s.task_state != linuxcnc.STATE_ON:
             c.error_msg('%s refused: machine is not ON' % label)
             LOG.error('%s refused: not ON', label)
-            return
+            return False
         if any(s.joint[j]['homing'] for j in range(NJ)):
             c.error_msg('%s refused: a homing cycle is running' % label)
             LOG.error('%s refused: homing in progress', label)
-            return
+            return False
         # motion.jog-inhibit SWALLOWS JOGS SILENTLY. command.c reads it in
         # every jog handler and simply returns -- no error, no NML reply, the
         # caller cannot tell a completed jog from a discarded one. So this
@@ -9546,7 +9721,7 @@ QTabBar::tab:only-one {
             c.error_msg('%s refused: motion is locked (%s)'
                         % (label, self._tool_fault_detail()))
             LOG.error('%s refused: motion.jog-inhibit is set', label)
-            return
+            return False
         # (the 2026-08-10 stale-offset guard is gone: pso_live drives
         #  ini.N.home_offset every servo cycle now, so there is no wiped pin
         #  left to adopt. Nothing writes it, so nothing can blank it.)
@@ -9581,18 +9756,19 @@ QTabBar::tab:only-one {
             c.error_msg('%s: joint %d did not adopt the encoder -- NOT '
                         'moving' % (label, jn))
             LOG.error('%s: adopt failed, joint %d still unhomed', label, jn)
-            return
+            return False
         here = s.joint[jn]['output']
         LOG.info('%s: adopted %+.4f deg (no motion); now joint-jogging to 0',
                  label, here)
         if abs(here) < 0.001:
             LOG.info('%s: already at zero, nothing to move', label)
-            return
+            return True
         # 2. move. Joint mode was already asserted above and must NOT be
         #    handed back before the jog finishes.
         c.jog(linuxcnc.JOG_INCREMENT, True, jn, self.AC_ZERO_VEL, -here)
         LOG.info('%s: joint jog %+.4f deg at %.1f deg/s issued',
                  label, -here, self.AC_ZERO_VEL)
+        return True
 
     # ==================================================================
     # -xyzab LAUNCH SEQUENCE  (operator 2026-08-11)
@@ -9667,6 +9843,21 @@ QTabBar::tab:only-one {
             if moving:
                 return
             if not s.homed[6]:
+                # BOUNDED. This is the only step in the sequence that set no
+                # _ab_deadline, so a B declare that never takes was retried
+                # every 500 ms forever -- and each pass blocks the GUI on an
+                # os.system plus two os.popen, each up to 3 s. Give it a
+                # fixed budget, then say so once and stop hammering.
+                n = getattr(self, '_ab_b_tries', 0) + 1
+                self._ab_b_tries = n
+                if n > self.AB_B_TRIES:
+                    if not getattr(self, '_ab_b_gave_up', False):
+                        self._ab_b_gave_up = True
+                        LOG.error('XYZAB: B still not declared after %d '
+                                  'attempts -- STOPPING the retry. Declare it '
+                                  'from the homing menu (Home B). The rest of '
+                                  'the launch sequence is not blocked.', n)
+                    return
                 self.home_b_inplace()
                 return                      # re-enter next tick to confirm
             if not all(s.homed[:6]):
@@ -9966,8 +10157,21 @@ QTabBar::tab:only-one {
     # No second, less-tested route.
     HA_SETTLE = 0.01        # deg/s or mm/s -- "stopped"
     HA_DEADLINE = 300.0     # s for the whole chain; homing is slow but finite
+    HA_ARRIVED = 0.05       # deg; closer than a stepper step, so arrival is real
+    AB_B_TRIES = 10         # 500 ms ticks -- 5 s of trying to declare B
+    TCP_CLEANUP_TRIES = 8   # 1 s apart -- long enough for a stop to settle
+    DRAWBAR_TRIES = 6       # 1.5 s apart; the solenoid must not stay energised
 
     def _homeall_chain_start(self):
+        # ONE CHAIN AT A TIME. request_homeall's own guard only covers the
+        # dispatch, not the minutes this chain then runs for, so a second
+        # Home All (or Home A&C) could start while the first was mid-jog and
+        # the two would share one _ha_stage -- commanding A and C together.
+        if getattr(self, '_ha_stage', None) is not None:
+            LOG.error('HOME ALL CHAIN: refused -- a chain is already running '
+                      '(stage %s). Wait for it to finish or fail.',
+                      self._ha_stage)
+            return
         self._ha_stage = 'wait'
         self._ha_deadline = time.time() + self.HA_DEADLINE
         LOG.info('HOME ALL CHAIN: armed -- will send A to zero, then C, then '
@@ -9999,24 +10203,49 @@ QTabBar::tab:only-one {
                          '(A=%+.4f C=%+.4f) -- sending A to zero',
                          s.joint[4]['output'], s.joint[5]['output'])
                 self._ha_stage = 'jog_a'
-                self.ac_to_zero('a')
+                if not self.ac_to_zero('a'):
+                    LOG.error('HOME ALL CHAIN: A refused -- chain STOPPED. '
+                              'A is at %+.4f, not zero. Nothing further sent.',
+                              s.joint[4]['output'])
+                    self._ha_stage = None
+                    return
                 QTimer.singleShot(700, self._homeall_chain_tick)
                 return
             if stage == 'jog_a':
                 if moving:
                     QTimer.singleShot(400, self._homeall_chain_tick)
                     return
-                LOG.info('HOME ALL CHAIN: A stopped at %+.4f -- sending C to '
-                         'zero', s.joint[4]['output'])
+                # ARRIVAL IS THE TEST, NOT STILLNESS. "not moving" is also
+                # true when the jog was never issued -- ac_to_zero returns
+                # early on a refusal (not ON, motion locked, adopt failed),
+                # and the chain used to sail past that and log "finished"
+                # with A untouched.
+                apos = s.joint[4]['output']
+                if abs(apos) > self.HA_ARRIVED:
+                    LOG.error('HOME ALL CHAIN: A stopped at %+.4f, not zero '
+                              '-- chain STOPPED, C and B not touched', apos)
+                    self._ha_stage = None
+                    return
+                LOG.info('HOME ALL CHAIN: A at %+.4f -- sending C to zero', apos)
                 self._ha_stage = 'jog_c'
-                self.ac_to_zero('c')
+                if not self.ac_to_zero('c'):
+                    LOG.error('HOME ALL CHAIN: C refused -- chain STOPPED. '
+                              'C is at %+.4f', s.joint[5]['output'])
+                    self._ha_stage = None
+                    return
                 QTimer.singleShot(700, self._homeall_chain_tick)
                 return
             if stage == 'jog_c':
                 if moving:
                     QTimer.singleShot(400, self._homeall_chain_tick)
                     return
-                LOG.info('HOME ALL CHAIN: C stopped at %+.4f', s.joint[5]['output'])
+                cpos = s.joint[5]['output']
+                if abs(cpos) > self.HA_ARRIVED:
+                    LOG.error('HOME ALL CHAIN: C stopped at %+.4f, not zero '
+                              '-- chain STOPPED, B not declared', cpos)
+                    self._ha_stage = None
+                    return
+                LOG.info('HOME ALL CHAIN: C at %+.4f', cpos)
                 self._ha_stage = 'zero_b'
                 QTimer.singleShot(300, self._homeall_chain_tick)
                 return
@@ -11722,7 +11951,12 @@ class NedProgramTracer(QWidget):
         except Exception:
             pass
         try:
-            ln = int(s.current_line or 0)
+            # motion_line, NOT current_line. current_line is where the
+            # INTERPRETER has read to, which runs ahead of the tool by the
+            # whole lookahead queue, so the amber done-trail was drawn over
+            # blocks the machine had not cut yet. motion_line is the block
+            # actually executing.
+            ln = int(getattr(s, 'motion_line', 0) or s.current_line or 0)
         except Exception:
             ln = 0
         moved = self._mark_xyz != self._mark_seen

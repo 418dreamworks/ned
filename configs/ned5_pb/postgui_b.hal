@@ -50,3 +50,9 @@ setp joint.6.jog-vel-mode 0
 # ned5_b.hal loads bsplit and leaves sel unconnected (reads 0 = BOTH), so a
 # GUI that fails to build cannot leave the two drives split.
 net sig-b-side  ned-tab.b-side-out => bsplit.0.sel
+
+# THE PRELOAD READOUT ARRIVES ON A PIN. The GUI tooltip used to call
+# hal.get_value('bsplit.0.split') at 2 Hz from the Qt thread, which takes the
+# global HAL mutex; mutex spin on this box is the documented cause of a
+# watchdog bite and homing dying. Netting it makes it an ordinary pin read.
+net sig-b-split  bsplit.0.split => ned-tab.b-split-in
