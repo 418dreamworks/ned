@@ -64,6 +64,42 @@ DIES AT LOAD ("pso_live: module not found" or similar in term/lcnc logs).
   `bsplit` carries B's feedback path (`ned5_b.hal:104-105`), not just the
   side split — B faults on a following error the moment it is missing.
 
+### A2b. /usr/bin/rs274 is DIVERTED, and must stay diverted (2026-08-16)
+
+`rs274` calls `tool_mmap_creator()` at `sai/driver.cc:570`, **before** `getopt()`
+at `:578`. That opens `$HOME/.tool.mmap` with `O_RDWR|O_CREAT|O_TRUNC`
+(`tooldata_mmap.cc:33,:134-135`) and, with no `-t`, loads the compiled-in sample
+table `common/tool.tbl` -- `T1/T2/T3/T99999 P123`. It happens on EVERY
+invocation, including `--help`.
+
+That file IS the live tool table: `io`, `milltask`, `halui`, Probe Basic and
+`ned_brain` all hold the same inode `MAP_SHARED`. `O_TRUNC` preserves the inode,
+so nothing re-maps and nothing is notified -- the RUNNING machine silently adopts
+the sample table. Observed consequences: `G43` applies 0.0000, `tool_in_spindle`
+stops matching `#3991`, the tool guard inhibits jog and feed, and there are ZERO
+`GET tool` lines because `tooldata_load()` reads a `.tbl` directly and never
+consults `DB_PROGRAM`. `DB_PROGRAM` is no protection: `ioControl.cc:762` creates
+the mmap before the `DB_ACTIVE` branch at `:768`, and io never re-reads.
+
+The fix is a diversion, so `/usr/bin/rs274` is a wrapper that forces a throwaway
+`HOME` and logs every call to `ned/rs274_calls.txt`:
+
+- **Detect:** `dpkg-divert --list rs274` prints nothing, or `/usr/bin/rs274` is
+  a 798 kB ELF instead of a ~1.2 kB shell script.
+- **Restore:**
+  ```
+  sudo dpkg-divert --divert /usr/bin/rs274.real --rename /usr/bin/rs274
+  # then re-create the wrapper (see git history of this file / the commit
+  # that added this section) and: sudo chmod 755 /usr/bin/rs274
+  ```
+- A `linuxcnc-uspace` upgrade is SAFE -- dpkg honours the diversion and the new
+  binary lands on `rs274.real`. Re-verify anyway, because a reinstall that
+  removes the diversion silently restores the hazard.
+- `tools/gcode_check.sh` already sets its own `HOME`; the double sandbox is
+  harmless and it still passes.
+- Do NOT rely on an inode+size watcher to catch this: `O_TRUNC` keeps the inode
+  and the file is immediately re-extended to the same 112129 bytes.
+
 ### A3. Version-sensitive knowledge
 
 - Source cites in docs/memory (homing.c line numbers, command.c:584 MDI
