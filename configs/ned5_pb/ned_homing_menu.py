@@ -57,12 +57,14 @@ class NedHomingMenu(QMenu):
         ('Home C', 'ac_to_zero', ('c',)),
         ('Home A&C', 'ac_to_zero_both', ()),
     ]
-    # -xyzab: C is driven to zero by the launch sequence and then clamped to
-    # +-0.001 deg, so a Home C entry would be a button that cannot do
-    # anything. The rotary takes its place, exactly as it takes its jog pins
-    # and its DRO row. Home A&C is dropped rather than reinterpreted: A and B
-    # are unrelated axes on unrelated iron, and pairing them in one click
-    # would be a sequence nobody asked for.
+    # -xyzab: HOME C STAYS. It was dropped here on the grounds that C is
+    # clamped to +-0.001 deg so the button "cannot do anything" -- but homing
+    # C is an ADOPT of the absolute encoder first and a jog second, and the
+    # adopt is exactly what you want after the machine has been bumped.
+    # Operator 2026-08-15: "in all kins, all xyzabc homing is allowed
+    # (regardless what is showed in the DROs)". Home A&C is still dropped:
+    # A and B are unrelated axes on unrelated iron, and pairing them in one
+    # click would be a sequence nobody asked for.
     if os.environ.get('NED_MODE', '') == 'xyzab':
         ENTRIES = [
             ('Home &All', 'request_homeall', ()),
@@ -70,6 +72,7 @@ class NedHomingMenu(QMenu):
             ('Home &Y', 'home_joint', ('Y', 1)),
             ('Home &Z', 'home_joint', ('Z', 2)),
             ('Home A', 'ac_to_zero', ('a',)),
+            ('Home C', 'ac_to_zero', ('c',)),
             # zero=True: the menu is the ONLY way B gets zeroed. The
             # launch declare calls the same method with no argument and
             # keeps whatever the position file restored (operator

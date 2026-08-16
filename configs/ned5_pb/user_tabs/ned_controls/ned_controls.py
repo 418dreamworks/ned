@@ -9556,6 +9556,16 @@ QTabBar::tab:only-one {
         #    silent no-op (homing.c:766-770).
         c.mode(linuxcnc.MODE_MANUAL)
         c.wait_complete(2.0)
+        # TCP OFF BEFORE THE ADOPT, NOT JUST BEFORE THE MOVE. unhome() and
+        # home() both require joint mode, and this used to leave teleop on
+        # until step 2 -- so under ned_ac_kins the adopt itself was refused
+        # with "must be in joint mode or disabled to unhome" / "must be in
+        # joint mode to home" (seen 2026-08-15 21:5x). Operator: "in all kins
+        # TCP must be disabled for homing." Joint mode IS that: the kins
+        # module is untouched, the controller simply stops holding the tool
+        # tip still while the head swings.
+        c.teleop_enable(0)
+        c.wait_complete(2.0)
         if s.homed[jn]:
             c.unhome(jn)
             c.wait_complete(2.0)
@@ -9578,9 +9588,8 @@ QTabBar::tab:only-one {
         if abs(here) < 0.001:
             LOG.info('%s: already at zero, nothing to move', label)
             return
-        # 2. move, in JOINT mode so XYZ is not dragged into it
-        c.teleop_enable(0)
-        c.wait_complete(2.0)
+        # 2. move. Joint mode was already asserted above and must NOT be
+        #    handed back before the jog finishes.
         c.jog(linuxcnc.JOG_INCREMENT, True, jn, self.AC_ZERO_VEL, -here)
         LOG.info('%s: joint jog %+.4f deg at %.1f deg/s issued',
                  label, -here, self.AC_ZERO_VEL)
@@ -9927,11 +9936,114 @@ QTabBar::tab:only-one {
             # it -- CLAUDE.md rule 17 binds my scripted motion, not the
             # operator's buttons.
             self._homeall_clicks = getattr(self, '_homeall_clicks', 0) + 1
+            # HOME ALL MUST HOME EVERYTHING (operator 2026-08-15: "homeall
+            # physically homes XYZAC and sets B to zero"). The brain ADOPTS
+            # A/C off the encoder once XYZ finishes, which is a renumbering,
+            # not a move -- so A sat at +89.99 and read as "not homed" while
+            # a separate Home A, which adopts AND jogs to zero, looked like
+            # it worked. The jog was the whole difference. This chain adds
+            # it: wait for every joint to be adopted and the machine to stop,
+            # then send A to zero, then C, then declare B zero.
+            self._homeall_chain_start()
             LOG.info('REF ALL: XYZ sequences dispatched (Z 0, Y 1, X pair '
                      '-2); A/C brain-homed read-gated after XYZ; '
                      'homeall_clicks=%d', self._homeall_clicks)
         except Exception as e:
             LOG.error('REF ALL failed: %s', e)
+
+    # ==================================================================
+    # HOME ALL CHAIN -- adopt is not homing, the move is
+    # ==================================================================
+    # Runs AFTER request_homeall has dispatched XYZ and pulsed the brain.
+    # Stages, each gated on the machine actually being stopped:
+    #   wait   every joint adopted (homed) and current_vel ~ 0
+    #   jog_a  ac_to_zero('a')      -- the same path Home A uses
+    #   jog_c  ac_to_zero('c')      -- serialized; a second head cycle
+    #                                  mid-jog corrupted the C DRO once
+    #   zero_b home_b_inplace(True) -- B has no reference; zero is all
+    #                                  "home B" can mean
+    # ONE PATH TO THE IRON: this calls the same methods the buttons call.
+    # No second, less-tested route.
+    HA_SETTLE = 0.01        # deg/s or mm/s -- "stopped"
+    HA_DEADLINE = 300.0     # s for the whole chain; homing is slow but finite
+
+    def _homeall_chain_start(self):
+        self._ha_stage = 'wait'
+        self._ha_deadline = time.time() + self.HA_DEADLINE
+        LOG.info('HOME ALL CHAIN: armed -- will send A to zero, then C, then '
+                 'declare B zero, once every joint is adopted and stopped')
+        QTimer.singleShot(700, self._homeall_chain_tick)
+
+    def _homeall_chain_tick(self):
+        import linuxcnc
+        stage = getattr(self, '_ha_stage', None)
+        if stage is None:
+            return
+        try:
+            s = linuxcnc.stat()
+            s.poll()
+            if time.time() > getattr(self, '_ha_deadline', 0):
+                LOG.error('HOME ALL CHAIN: DEADLINE at stage %s -- stopping. '
+                          'A=%.4f C=%.4f homed=%s', stage,
+                          s.joint[4]['output'], s.joint[5]['output'],
+                          [s.joint[j]['homed'] for j in range(NJ)])
+                self._ha_stage = None
+                return
+            moving = (abs(s.current_vel) > self.HA_SETTLE
+                      or any(s.joint[j]['homing'] for j in range(NJ)))
+            if stage == 'wait':
+                if moving or not all(s.joint[j]['homed'] for j in range(6)):
+                    QTimer.singleShot(400, self._homeall_chain_tick)
+                    return
+                LOG.info('HOME ALL CHAIN: XYZ + A/C adopted and stopped '
+                         '(A=%+.4f C=%+.4f) -- sending A to zero',
+                         s.joint[4]['output'], s.joint[5]['output'])
+                self._ha_stage = 'jog_a'
+                self.ac_to_zero('a')
+                QTimer.singleShot(700, self._homeall_chain_tick)
+                return
+            if stage == 'jog_a':
+                if moving:
+                    QTimer.singleShot(400, self._homeall_chain_tick)
+                    return
+                LOG.info('HOME ALL CHAIN: A stopped at %+.4f -- sending C to '
+                         'zero', s.joint[4]['output'])
+                self._ha_stage = 'jog_c'
+                self.ac_to_zero('c')
+                QTimer.singleShot(700, self._homeall_chain_tick)
+                return
+            if stage == 'jog_c':
+                if moving:
+                    QTimer.singleShot(400, self._homeall_chain_tick)
+                    return
+                LOG.info('HOME ALL CHAIN: C stopped at %+.4f', s.joint[5]['output'])
+                self._ha_stage = 'zero_b'
+                QTimer.singleShot(300, self._homeall_chain_tick)
+                return
+            if stage == 'zero_b':
+                self._ha_stage = None
+                if ROT != 'b':
+                    LOG.info('HOME ALL CHAIN: done (no B in this mode)')
+                    return
+                LOG.info('HOME ALL CHAIN: declaring B zero')
+                self.home_b_inplace(True)
+                QTimer.singleShot(1200, self._homeall_chain_report)
+                return
+        except Exception:
+            self._ha_stage = None
+            LOG.exception('HOME ALL CHAIN: failed -- nothing further sent')
+
+    def _homeall_chain_report(self):
+        import linuxcnc
+        try:
+            s = linuxcnc.stat()
+            s.poll()
+            LOG.info('HOME ALL CHAIN: finished -- A=%+.4f C=%+.4f B=%+.4f '
+                     'homed=%s', s.joint[4]['output'], s.joint[5]['output'],
+                     s.joint[6]['output'] if NJ > 6 else 0.0,
+                     [s.joint[j]['homed'] for j in range(NJ)])
+        except Exception:
+            LOG.exception('HOME ALL CHAIN: report failed')
 
     def _homeall_pin_off(self):
         try:
