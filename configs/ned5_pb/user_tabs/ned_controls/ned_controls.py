@@ -5178,6 +5178,35 @@ class UserTab(QWidget):
             c.mode(linuxcnc.MODE_MDI)
             time.sleep(0.15)
 
+    @staticmethod
+    def _wait_for(pred, secs, label, poll=0.05):
+        """Wait until pred() is true. Returns True, or False on timeout.
+
+        ONE SHAPE FOR EVERY PREDICATE WAIT. This file grew six of them, each
+        with its own timeout, its own poll interval and its own idea of what
+        to do when it expires -- range(40)+sleep(0.1), while True+sleep(0.15),
+        while time()-t0 < 0.5+sleep(0.02), and so on. They also all used
+        time.time(), which is wall-clock and jumps when the clock is set;
+        monotonic cannot.
+
+        NOT for retry loops. _take_mdi and _cal_gate RE-ISSUE a command on
+        every pass -- that is a retry, not a wait, and folding it in here
+        would quietly change what they do.
+        """
+        import time as _t
+        end = _t.monotonic() + secs
+        while True:
+            try:
+                if pred():
+                    return True
+            except Exception:
+                LOG.exception('%s: predicate raised', label)
+                return False
+            if _t.monotonic() >= end:
+                LOG.error('%s: timed out after %.1fs', label, secs)
+                return False
+            _t.sleep(poll)
+
     def _hand_back_manual(self, c, label, wait=2.0):
         """Return the machine to MANUAL after a BOOKKEEPING MDI.
 
@@ -9763,11 +9792,10 @@ QTabBar::tab:only-one {
             c.wait_complete(2.0)
         c.home(jn)
         c.wait_complete(2.0)
-        for _ in range(40):                 # <=4 s for homed to latch
+        def _adopted():
             s.poll()
-            if s.homed[jn] and not s.joint[jn]['homing']:
-                break
-            time.sleep(0.1)
+            return s.homed[jn] and not s.joint[jn]['homing']
+        self._wait_for(_adopted, 4.0, '%s adopt' % label, poll=0.1)
         s.poll()
         if not s.homed[jn]:
             c.error_msg('%s: joint %d did not adopt the encoder -- NOT '
@@ -11844,6 +11872,14 @@ class NedProgramTracer(QWidget):
 
     def _soft_invalidate(self):
         """Pan/zoom: repaint NOW from the transformed pixmap, redraw later."""
+        # DROP THE PROGRESS OVERLAY. _build_progress_to appends segments using
+        # the LIVE _su/_cu, while _blit re-transforms the whole pixmap by
+        # _base_su/_base_cu. A pan changes the former and not the latter, so
+        # anything appended between the drag and the 250 ms rebuild was drawn
+        # in one frame and blitted in another -- the done-trail kinked
+        # mid-drag. Rebuilding it costs one pass and cannot be inconsistent.
+        self._prog = None
+        self._idx_done = 0
         self._refresh.start(250)
         self.update()
 
