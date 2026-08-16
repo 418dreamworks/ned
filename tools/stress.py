@@ -140,7 +140,11 @@ def close_pb():
 def launch(mode, kins):
     cmd = "%s/tools/run5.sh -%s -%s" % (NED, mode, kins)
     log('LAUNCH  %s' % cmd)
-    subprocess.Popen("nohup %s >/dev/null 2>&1 &" % cmd, shell=True)
+    out = os.path.join(SP, 'stress_launch.out')
+    # KEEP THE OUTPUT. The first run sent it to /dev/null and the failure
+    # ("check_config validation failed") was invisible -- the harness only
+    # knew "never came up".
+    subprocess.Popen("nohup %s >>%s 2>&1 &" % (cmd, out), shell=True)
     for _ in range(120):
         time.sleep(1)
         s = stat()
@@ -178,13 +182,19 @@ def home_all(fails, tag):
     while time.time() < end:
         time.sleep(1)
         s.poll()
-        if not any(s.joint[j]['homing'] for j in range(6)) and \
+        # JOINTS 0-3 ONLY. A and C are deliberately outside the task home
+        # sequence (home_sequence = 999) and the brain declares them on its
+        # own schedule, so waiting for THEM to stop homing never finishes and
+        # the harness called a successful XYZ home a failure.
+        if not any(s.joint[j]['homing'] for j in range(4)) and \
                 all(s.homed[:4]):
             break
     s.poll()
     if not all(s.homed[:4]):
-        fails.append('%s: XYZ did not home (homed=%s)'
-                     % (tag, [s.homed[j] for j in range(4)]))
+        fails.append('%s: XYZ did not home (homed=%s, pos X%+.2f Y%+.2f '
+                     'Z%+.2f)' % (tag, [s.homed[j] for j in range(4)],
+                                  s.actual_position[0], s.actual_position[1],
+                                  s.actual_position[2]))
         return False
     log('HOMED  XYZ ok')
     return True
@@ -204,7 +214,14 @@ def jog_box(base, guard, fails, tag, axis):
                      % (tag, axis, [s.homed[j] for j in range(4)]))
         return
     if s.task_state != linuxcnc.STATE_ON:
-        fails.append('%s: REFUSED to jog %s -- machine is not ON' % (tag, axis))
+        c0 = linuxcnc.command()             # an earlier check may have left
+        c0.state(linuxcnc.STATE_ESTOP_RESET)  # it down; try once, then refuse
+        c0.state(linuxcnc.STATE_ON)
+        time.sleep(10)
+        s.poll()
+    if s.task_state != linuxcnc.STATE_ON:
+        fails.append('%s: REFUSED to jog %s -- machine is not ON (%d)'
+                     % (tag, axis, s.task_state))
         return
     here = s.actual_position[idx]
     d = random.choice([JOG_MM, -JOG_MM])
@@ -224,13 +241,18 @@ def jog_box(base, guard, fails, tag, axis):
     c.teleop_enable(1)
     c.wait_complete(2)
     c.jog(linuxcnc.JOG_INCREMENT, False, jn, JOG_VEL, d)
-    end = time.time() + 20
-    while time.time() < end:
-        time.sleep(0.2)
+    # POSITION IS THE ONLY WITNESS (operator 2026-08-16: "all waits need to
+    # be position. you check every 10 seconds for something. NEVER wait for
+    # PB or linuxcnc to report back"). A jog that is silently discarded --
+    # motion.jog-inhibit does exactly that, no error and no NML reply -- is
+    # indistinguishable from a slow one if you wait on a report.
+    for _ in range(3):                      # 3 x 10 s
+        time.sleep(10)
         s.poll()
-        if abs(s.actual_position[idx] - target) < 0.05 and \
-                abs(s.current_vel) < 0.01:
+        if abs(s.actual_position[idx] - target) < 0.05:
             return
+        log('   %s at %+.3f, want %+.3f -- still waiting'
+            % (axis, s.actual_position[idx], target))
     s.poll()
     fails.append('%s: jog %s did not arrive (%.3f vs %.3f)'
                  % (tag, axis, s.actual_position[idx], target))
@@ -300,11 +322,17 @@ def check_estop_cycle(fails, tag):
     if s.task_state != linuxcnc.STATE_ESTOP:
         fails.append('%s: STATE_ESTOP refused (task_state=%d)'
                      % (tag, s.task_state))
-    c.state(linuxcnc.STATE_ESTOP_RESET)
-    c.wait_complete(3)
-    c.state(linuxcnc.STATE_ON)
-    c.wait_complete(3)
-    time.sleep(0.5)
+    # RESTORE, AND PROVE IT. Leaving the machine at ESTOP_RESET poisoned
+    # every later check in the iteration: jogs were silently discarded and
+    # reported as "did not arrive", and MDI never landed. A check hands the
+    # machine back in the state it borrowed it in.
+    for attempt in range(3):
+        c.state(linuxcnc.STATE_ESTOP_RESET)
+        c.state(linuxcnc.STATE_ON)
+        time.sleep(10)
+        s.poll()
+        if s.task_state == linuxcnc.STATE_ON:
+            break
     s.poll()
     if s.task_state != linuxcnc.STATE_ON:
         fails.append('%s: could not power back ON after E-stop '
@@ -344,7 +372,10 @@ def main():
         if stat() is not None:
             close_pb()
         if not launch(mode, kins):
-            fails.append('%s: never came up' % tag)
+            why = sh("tail -25 %s/stress_launch.out | grep -iE "
+                     "'refus|failed|error|check_config' | head -4" % SP)
+            fails.append('%s: never came up -- %s'
+                         % (tag, why.stdout.strip().replace('\n', ' | ')))
             record(tag=tag, fails=fails)
             all_fails += fails
             continue
@@ -372,6 +403,7 @@ def main():
                 % (base['X'], base['Y'], base['Z'], BOX_MM))
             guard = BoxGuard(base)
             guard.start()
+            estop_check = lambda: check_estop_cycle(fails, tag)
             checks = [lambda: jog_box(base, guard, fails, tag, 'X'),
                       lambda: jog_box(base, guard, fails, tag, 'Y'),
                       lambda: jog_box(base, guard, fails, tag, 'Z'),
@@ -380,9 +412,15 @@ def main():
                       lambda: check_tooltable(fails, tag),
                       lambda: check_zclamp(fails, tag),
                       lambda: check_pins(fails, tag, mode, kins),
-                      lambda: check_estop_cycle(fails, tag),
+                      estop_check,
                       lambda: check_log(fails, tag)]
             random.shuffle(checks)
+            # E-STOP GOES LAST, ALWAYS. Dropping to E-stop UNHOMES every
+            # joint (LinuxCNC invalidates homing on estop), so any motion
+            # check that follows it must refuse -- and the harness then
+            # reported five failures that were nothing but its own ordering.
+            # The order within the rest stays random; only this one is pinned.
+            checks = [f for f in checks if f is not estop_check] + [estop_check]
             for fn in checks[:10]:
                 if guard.tripped:
                     fails.append('%s: BOX GUARD TRIPPED -- %s'
