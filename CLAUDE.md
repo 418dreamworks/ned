@@ -49,7 +49,10 @@
     one-sided Home X live and RACKED the gantry, 2026-08-01); (f) verify
     the log line on the next launch. GUI widget references: use the badge
     numbers in `ned/gui_map.txt` (regenerated every launch).
-15. **Never post to GitHub on the user's behalf.** No PR/issue comments, no review replies, no PR titles or bodies published or edited under their name. Draft the text, show it in chat, and the USER posts it. Pushing a branch or opening/updating a PR happens only when the user asks for that specific action in their current message.
+15. **GitHub: PRs on explicit permission, COMMENTS never (operator 2026-08-16: "i want to be able to give explicit permission to POST a pr. but never for commenting").**
+    - **NEVER, no exception, no permission:** PR comments, issue comments, review replies, reactions, or editing anyone's existing text. Conversation under the user's name is theirs alone. Draft it, show it in chat, the USER posts it.
+    - **ALLOWED with explicit permission in the CURRENT message:** pushing a branch, and opening or updating a pull request. "Do it", "push it", "open the PR" counts; a general goal or an earlier session's approval does not. Permission is for ONE action — the next one needs asking again.
+    - Show the title and body in chat before opening, so what goes out under their name is what they read.
 16. **MOTION PRECONDITIONS — the most serious rule here. A violation of this
     is a crash, not a bug.** On 2026-08-02 21:15 I commanded a continuous
     full-speed Z jog "into a clamp" that was NOT ARMED, with the box guard

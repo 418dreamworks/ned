@@ -4937,6 +4937,13 @@ class UserTab(QWidget):
                     out.append(tw.tabBar())
             except Exception:
                 LOG.exception('GATE: could not add the tab bar as a survivor')
+        # COUNT THE NAMED ONES SEPARATELY. The tab bars above are seeded
+        # before this loop, so `out` is non-empty even when NOT ONE named
+        # survivor resolved -- which made _arm_input_gate's "never leave the
+        # operator without E-stop" refusal unreachable on this path. Missing
+        # names were also dropped silently, so a renamed widget upstream
+        # would quietly remove the escape route with nothing logged.
+        found, missing = 0, []
         for name in names:
             try:
                 w = win.findChild(QWidget, name)
@@ -4944,6 +4951,15 @@ class UserTab(QWidget):
                 w = None
             if w is not None:
                 out.append(w)
+                found += 1
+            else:
+                missing.append(name)
+        self._gate_named_found = found
+        if missing and missing != getattr(self, '_gate_missing_said', None):
+            self._gate_missing_said = missing
+            LOG.error('GATE: %d survivor name(s) did NOT resolve: %s -- those '
+                      'controls will be swallowed', len(missing),
+                      ', '.join(missing))
         return out
 
     def _arm_input_gate(self, names=None):
@@ -4952,7 +4968,8 @@ class UserTab(QWidget):
         if gate is None:
             gate = self._input_gate = _PreHomeInputGate(self)
         surv = self._gate_survivor_widgets(names)
-        if not surv:
+        # judge on the NAMED survivors, not on the tab bars this helper adds
+        if not surv or not getattr(self, '_gate_named_found', 0):
             # NEVER leave the operator without E-stop. If not one survivor
             # resolves, refuse to arm -- loudly -- rather than lock them out.
             if not getattr(self, '_gate_nosurv_logged', False):
@@ -11122,6 +11139,14 @@ class NgcScanner(object):
         self.absolute = True        # G90
         self.plane = 17
         self.arc_abs = False        # G91.1 arc distance mode is the default
+        # G92 OFFSET. Without this a G92 emitted a phantom straight segment
+        # (its words look like an endpoint) and every later coordinate stayed
+        # in the UNSHIFTED frame, so the rest of the program was drawn in the
+        # wrong place. G92 moves nothing: it renames where the tool already
+        # is, so the offset is (position now) - (what G92 calls it), and every
+        # later absolute word is read through it.
+        self.g92 = {'X': 0.0, 'Y': 0.0, 'Z': 0.0,
+                    'A': 0.0, 'B': 0.0, 'C': 0.0}
         self.lineno = 0
         # NO SYNTHETIC START POINT. Emitting one at program 0,0,0 put a
         # phantom vertex in the extents -- kakeya_D73_H180 fitted to
@@ -11311,10 +11336,13 @@ class NgcScanner(object):
         if letter not in w:
             return self.pos[letter]
         v = w[letter]
+        # G92 SHIFTS THE FRAME, so an ABSOLUTE word means a different point
+        # after one. Incremental words are deltas and are unaffected.
+        off = self.g92.get(letter, 0.0)
         if letter in ('A', 'B', 'C'):
-            return v if self.absolute else (self.pos[letter] + v)
+            return (v + off) if self.absolute else (self.pos[letter] + v)
         v *= self.units
-        return v if self.absolute else (self.pos[letter] + v)
+        return (v + off) if self.absolute else (self.pos[letter] + v)
 
     # -- main loop -------------------------------------------------------
     def step(self, budget=3000):
@@ -11365,6 +11393,7 @@ class NgcScanner(object):
             if not w:
                 continue
             g53 = False
+            g92_set = g92_none = g10_set = False
             if 'G' in w:
                 # A DICT HOLDS ONE G PER BLOCK; a block holds several
                 # ("N10 G90 G94 G17 G91.1"), so re-scan the text for all.
@@ -11402,8 +11431,40 @@ class NgcScanner(object):
                         self.plane = g // 10
                     elif g in (800, 810, 820, 830, 840, 850, 860, 880, 890):
                         self.motion = None      # canned cycle: not drawn
-            if not any(k in w for k in _AXIS_LETTERS):
+                    elif g == 920:
+                        g92_set = True          # handled after the words parse
+                    elif g in (921, 922):
+                        # G92.1 clears the offset, G92.2 suspends it; for
+                        # drawing purposes both mean "stop applying it"
+                        for _k in self.g92:
+                            self.g92[_k] = 0.0
+                        g92_none = True
+                    elif g == 923:
+                        g92_none = True         # restore: nothing stored to restore
+                    elif g == 100:
+                        g10_set = True          # sets a work offset, moves nothing
+            if g92_set:
+                # position now stays put; the WORDS say what to call it
+                for k in _AXIS_LETTERS:
+                    if k in w:
+                        v = w[k] if k in ('A', 'B', 'C') else w[k] * self.units
+                        self.g92[k] = self.pos[k] - v
+                continue                        # NOT a move
+            if g92_none or g10_set:
+                # G92.1/2/3 and G10 L2/L20 change the frame, not the tool
+                # position. Drawing them as motion put a straight line across
+                # the part that the machine never cuts.
+                self.pending_break = True
                 continue
+            # ARC-ONLY BLOCKS ARE REAL MOTION. A full circle ends where it
+            # started, so it carries NO axis word at all -- only I/J/K (or R).
+            # This guard dropped every one of them before _arc could run, so
+            # every bore drawn as a complete circle was missing from the
+            # backplot and uncounted.
+            if not any(k in w for k in _AXIS_LETTERS):
+                if not (self.motion in (2, 3)
+                        and any(k in w for k in ('I', 'J', 'K', 'R'))):
+                    continue
             if g53:
                 # G53 names MACHINE coordinates. Every other block here is in
                 # program (G5x) coordinates and the two cannot share a
