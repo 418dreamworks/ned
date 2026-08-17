@@ -1,0 +1,90 @@
+<title>RotaryFixturePlate</title>
+<style>
+:root{--bg:#F4F2EE;--fg:#16191C;--dim:#6B7178;--line:#D6D2CA;--box:#FFF;--acc:#B8721E}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#15181B;--fg:#E9E7E2;--dim:#9AA1A8;--line:#2E343A;--box:#1C2024;--acc:#D98A2B}}
+:root[data-theme="dark"]{--bg:#15181B;--fg:#E9E7E2;--dim:#9AA1A8;--line:#2E343A;--box:#1C2024;--acc:#D98A2B}
+:root[data-theme="light"]{--bg:#F4F2EE;--fg:#16191C;--dim:#6B7178;--line:#D6D2CA;--box:#FFF;--acc:#B8721E}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+ font:15px/1.5 ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+.w{max-width:680px;margin:0 auto;padding:30px 20px 56px;display:flex;flex-direction:column;gap:20px}
+h1{margin:0;font-size:19px;font-weight:600}
+h2{margin:0;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);font-weight:600}
+section{display:flex;flex-direction:column;gap:9px}
+.fig{background:var(--box);border:1px solid var(--line);padding:12px;overflow-x:auto}
+.fig svg{display:block;min-width:380px;width:100%;height:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+td,th{text-align:left;padding:6px 16px 6px 0;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);font-weight:600}
+tbody tr:last-child td{border-bottom:none}
+</style>
+<div class="w">
+
+<h1>RotaryFixturePlate</h1>
+
+<section>
+  <div class="fig">
+    <svg id="p" viewBox="0 0 420 380" role="img" aria-label="Four M6 holes on an 81.7796 square"></svg>
+  </div>
+</section>
+
+<section>
+  <h2>Holes — 4 × M6 × 1.0, through</h2>
+  <table>
+    <thead><tr><th></th><th>from lower-left corner</th><th>from centre</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>6.7352, 6.7352</td><td>−40.8898, −40.8898</td></tr>
+      <tr><td>2</td><td>88.5148, 6.7352</td><td>+40.8898, −40.8898</td></tr>
+      <tr><td>3</td><td>88.5148, 88.5148</td><td>+40.8898, +40.8898</td></tr>
+      <tr><td>4</td><td>6.7352, 88.5148</td><td>−40.8898, +40.8898</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Part</h2>
+  <table>
+    <tbody>
+      <tr><td>Walls</td><td>95.250 sq</td></tr>
+      <tr><td>Corners</td><td>R6.350 external</td></tr>
+      <tr><td>Thickness</td><td>19.050 (3/4 in)</td></tr>
+      <tr><td>Spacing</td><td>81.7796 both axes</td></tr>
+      <tr><td>Centre</td><td>47.625, 47.625</td></tr>
+    </tbody>
+  </table>
+</section>
+
+</div>
+<script>
+const NS="http://www.w3.org/2000/svg",el=(n,a={})=>{const e=document.createElementNS(NS,n);
+  for(const k in a)e.setAttribute(k,a[k]);return e;};
+const P=95.250,R=6.350,HD=5.0,H=[[6.7352,6.7352],[88.5148,6.7352],[88.5148,88.5148],[6.7352,88.5148]];
+const svg=document.getElementById("p"),g=el("g");svg.appendChild(g);
+const pad=48,span=380-pad*2,s=span/P;
+const X=v=>pad+v*s, Y=v=>(380-pad)-v*s;
+const T=(x,y,t,c,a)=>{const e=el("text",{x,y,fill:c||"var(--dim)","font-family":"ui-monospace,monospace",
+  "font-size":11,"text-anchor":a||"start"});e.textContent=t;g.appendChild(e);};
+
+g.appendChild(el("rect",{x:X(0),y:Y(P),width:P*s,height:P*s,rx:R*s,ry:R*s,
+  fill:"none",stroke:"var(--fg)","stroke-width":1.4}));
+
+H.forEach(([hx,hy],i)=>{
+  g.appendChild(el("circle",{cx:X(hx),cy:Y(hy),r:(HD/2)*s,fill:"none",stroke:"var(--acc)","stroke-width":1.6}));
+  const c=9;
+  g.appendChild(el("line",{x1:X(hx)-c,y1:Y(hy),x2:X(hx)+c,y2:Y(hy),stroke:"var(--acc)","stroke-width":.9}));
+  g.appendChild(el("line",{x1:X(hx),y1:Y(hy)-c,x2:X(hx),y2:Y(hy)+c,stroke:"var(--acc)","stroke-width":.9}));
+  T(X(hx)+(hx<48?-13:13),Y(hy)+(hy<48?20:-13),String(i+1),"var(--acc)",hx<48?"end":"start");
+});
+
+g.appendChild(el("line",{x1:X(0),y1:Y(0),x2:X(0)+20,y2:Y(0),stroke:"var(--acc)","stroke-width":1.5}));
+g.appendChild(el("line",{x1:X(0),y1:Y(0),x2:X(0),y2:Y(0)-20,stroke:"var(--acc)","stroke-width":1.5}));
+T(X(0)+4,Y(0)+16,"0, 0","var(--acc)");
+
+g.appendChild(el("line",{x1:X(H[0][0]),y1:Y(-7),x2:X(H[1][0]),y2:Y(-7),stroke:"var(--dim)","stroke-width":1}));
+T((X(H[0][0])+X(H[1][0]))/2,Y(-7)+15,"81.7796","var(--dim)","middle");
+g.appendChild(el("line",{x1:X(-7),y1:Y(H[0][1]),x2:X(-7),y2:Y(H[3][1]),stroke:"var(--dim)","stroke-width":1}));
+T(X(-7)-5,(Y(H[0][1])+Y(H[3][1]))/2,"81.7796","var(--dim)","end");
+T(X(P/2),Y(P)-11,"95.250 sq · R6.350 · 19.050 thk","var(--fg)","middle");
+T(X(P)+6,Y(H[1][1])+4,"M6 × 1.0","var(--acc)");
+</script>
