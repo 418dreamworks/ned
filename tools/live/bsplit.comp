@@ -1,126 +1,99 @@
-component bsplit """Split B's single joint command into two stepgen commands.
+component bsplit """Fan B's single joint command out to two stepgens, and gate one.
 
-B is one joint driving TWO steppers on the same self-locking worm, mirrored
-(stepgen.00 scale +22.2414, stepgen.01 scale -22.2414, ned5_b.hal:44-63).
-Both normally take joint.6.motor-pos-cmd unchanged, so they always turn
-together.
+B is TWO CHUCKS. Each has its own worm gear and its own stepper (operator
+2026-08-17). They are mirrored in the scales -- stepgen.00 scale +, stepgen.01
+scale - (ned5_b.hal:45,55) -- so one command turns both the same way. What
+couples them is the WORKPIECE held between them, nothing else.
 
 WHY THIS EXISTS. Operator 2026-08-14: "I want in the UI an option to lock
 either side of the B joint ... if unlocked, selecting LEFT or RIGHT JOGS one
-or the other ... this lets me preload and helps align shit." Turning one
-motor against the other is how the lash in a worm gets taken up, and it is
-also how the two drives get squared to each other in the first place.
+or the other ... this lets me preload and helps align shit."
 
-HOW IT AVOIDS A JUMP. The deselected side is not disabled -- disabling a
-stepgen while its position-cmd keeps moving means it slews at max velocity
-the instant it is re-enabled, which on a preloaded worm is exactly the
-wrong surprise. Instead the deselected side's OUTPUT is held still, and its
-offset is continuously rewritten so that
+HOW ONE SIDE SITS OUT. By stopping its STEPS, not by moving its command.
+Both cmd_l and cmd_r are ALWAYS equal to cmd; the deselected side is gated at
+hm2_7i97.0.stepgen.NN.enable instead. A disabled hostmot2 stepgen zeroes its
+step rate and ADOPTS position-cmd every cycle (stepgen.c:334-337), so it emits
+nothing while gated and has nothing pending when it comes back -- there is no
+jump and no slew to protect against.
 
-    cmd + off  ==  the held output
+The drive itself never sees that pin: ENA+- is left open, so it stays
+energised and holding whatever the stepgen does (mesa_7i85s_wiring.md).
 
-remains true every cycle. When it is reselected the sum is already equal to
-where it stands, so it resumes from there and the divergence built up in
-the meantime is kept -- which is the preload.
+WHY NOT AN OFFSET. It used to hold the deselected side's OUTPUT still and
+carry the difference in a realtime variable. That variable survives e-stop,
+machine-off, R4 and drive power -- nothing clears a realtime variable except
+unloading the component. So the two chucks stayed commanded apart forever, and
+on 2026-08-17 that reached 22 deg at the joint (1.22 turns at the motor). With
+a bar clamped in both chucks they twist against each other and stall, the
+drives fault, and only a PB restart cleared it. The preload does not need
+software's memory: each worm is self-locking and holds its own chuck with the
+70 V brick dead (components.md:50).
 
-SPLIT IS THE PRELOAD. `split` is how far the two sides have been driven
-apart, in degrees at the joint, and it is a READOUT ONLY -- nothing here
-bounds it.
+SPLIT IS ACCOUNTING, NOT A COMMAND. `split` accumulates the joint motion the
+gated side did not receive. It feeds nothing -- no command, no feedback, no
+limit -- so it cannot fault anything, and zeroing or keeping it has no
+mechanical consequence. There is no encoder on either chuck; this is a tally of
+steps withheld, not a measurement.
 
-THERE IS NO LIMIT, BY DECISION. A max_split pin used to stop the moving side
-diverging past a set number of degrees. Operator 2026-08-16, after the 5.0
-bound silently stopped a one-sided alignment jog and made the axis look dead:
-"delete that compeltely. user will decide how much is too much." Nothing in
-here measures anything anyway -- fb_l is stepgen.00.position-fb, the count of
-steps SENT, and B is a continuous rotary with no encoder and no absolute
-reference -- so a software ceiling was guarding a number, not the iron.""";
+ONLY THE RIGHT IS EVER GATED. The GUI toggle is two-state, L+R and L
+(ned_controls.py B_SIDES), so joint.6.motor-pos-fb always comes off a live
+stepgen and a real STEPGEN_MAXACCEL/MAXVEL clip still raises a genuine
+following error -- the only check an axis with no encoder and no drive alarm
+line has.""";
 
 pin in float cmd "joint.6.motor-pos-cmd -- the single command LinuxCNC issues";
-pin in signed sel = 0 "0 = BOTH, 1 = LEFT only, 2 = RIGHT only; anything else = BOTH";
+pin in signed sel = 0 "1 = LEFT only (RIGHT gated); anything else = BOTH";
+pin in bit power "sig-b-servo-on -- b.pwr.and, the brick is live and settled";
 
 pin in float fb_l "hm2_7i97.0.stepgen.00.position-fb -- steps the FPGA SENT";
 
-pin out float cmd_l "-> hm2_7i97.0.stepgen.00.position-cmd (LEFT, the master)";
-pin out float cmd_r "-> hm2_7i97.0.stepgen.01.position-cmd (RIGHT, the slave)";
-pin out float fb "-> joint.6.motor-pos-fb, with the DELIBERATE split removed";
-pin out float split "cmd_l - cmd_r, the accumulated preload in joint degrees";
-pin out float off_l "accumulated LEFT divergence, joint degrees";
-pin out float off_r "accumulated RIGHT divergence, joint degrees";
+pin out float cmd_l "-> hm2_7i97.0.stepgen.00.position-cmd (LEFT)";
+pin out float cmd_r "-> hm2_7i97.0.stepgen.01.position-cmd (RIGHT), always == cmd_l";
+pin out bit en_l "-> hm2_7i97.0.stepgen.00.enable";
+pin out bit en_r "-> hm2_7i97.0.stepgen.01.enable -- FALSE while LEFT-only";
+pin out float fb "-> joint.6.motor-pos-fb";
+pin out float split "joint degrees the gated side did not receive -- READOUT ONLY";
 
-/* acc_l / acc_r are the working values; off_l / off_r are their OUT pins, so
-   the preload is a number on screen instead of invisible component state. */
-variable double acc_l = 0.0;
-variable double acc_r = 0.0;
+/* prev is last cycle's cmd, used only to tally what the gated side missed. */
+variable double prev = 0.0;
 variable int started = 0;
 
-function _ "Route the joint command to one or both stepgens";
+function _ "Fan the joint command to both stepgens; gate the deselected one";
 license "GPL";
 ;;
 
-/* rtapi_math.h, not math.h: this is realtime kernel space and libm is not
-   linked here. fabs() came up undeclared without it. */
-#include <rtapi_math.h>
-
 FUNCTION(_) {
-    double want_l, want_r;
-    int left_live, right_live;
-
-    /* First pass: both outputs start exactly where the command is, so
-       inserting this component into a running machine cannot move anything. */
+    /* First pass: outputs start exactly where the command is and both sides
+       start gated, so inserting this component into a running machine cannot
+       move anything. */
     if (!started) {
-        acc_l = 0.0;
-        acc_r = 0.0;
         cmd_l = cmd;
         cmd_r = cmd;
+        en_l = 0;
+        en_r = 0;
         fb = fb_l;
-        off_l = 0.0;
-        off_r = 0.0;
         split = 0.0;
+        prev = cmd;
         started = 1;
         return;
     }
 
-    left_live  = (sel != 2);        /* RIGHT-only is the only case LEFT sits out  */
-    right_live = (sel != 1);        /* LEFT-only is the only case RIGHT sits out  */
+    /* THE COMMANDS NEVER DIVERGE. This is the whole fix: there is no offset
+       to accumulate, so there is nothing to persist and nothing to reconcile
+       when the gated side is reselected. */
+    cmd_l = cmd;
+    cmd_r = cmd;
 
-    want_l = left_live  ? (cmd + acc_l) : cmd_l;
-    want_r = right_live ? (cmd + acc_r) : cmd_r;
+    en_l = power;
+    en_r = power && (sel != 1);
 
-    /* Bound the wind-up. Only ever refuse to increase |split|; letting it
-       come back is always allowed, or the operator could not unwind. */
-    cmd_l = want_l;
-    cmd_r = want_r;
+    /* Accounting only. Tally while the RIGHT is gated BY SELECTION -- when
+       power is down both sides are dead and neither chuck moves, so there is
+       nothing to withhold. */
+    if (power && sel == 1) {
+        split += (cmd - prev);
+    }
+    prev = cmd;
 
-    /* Keep the frozen side's offset true, so cmd + acc == its held output
-       and reselecting it resumes without a step. */
-    if (!left_live)  acc_l = cmd_l - cmd;
-    if (!right_live) acc_r = cmd_r - cmd;
-
-    split = cmd_l - cmd_r;
-    off_l = acc_l;
-    off_r = acc_r;
-
-    /* THE DELIBERATE SPLIT IS NOT A FOLLOWING ERROR.
-       joint.6.motor-pos-fb used to come straight off stepgen.00.position-fb,
-       which is the LEFT side only. Jog RIGHT on its own and the LEFT output
-       is held still by design, so the feedback stopped dead while
-       joint.6.motor-pos-cmd kept moving: [JOINT_6] FERROR = 5.0 was passed in
-       about 0.06 s and the machine faulted. Worse, acc_l persists, so once
-       any preload existed the feedback stayed offset from the command by that
-       amount FOREVER -- the machine re-faulted the instant it was enabled,
-       through machine-off, through e-stop, through killing R4 and the 70 V
-       brick, because none of those touch a variable inside a realtime
-       component. Only unloading it (a relaunch) cleared it.
-
-       Subtracting acc_l removes exactly the part of the divergence we asked
-       for and leaves everything we did not:
-
-           left frozen   fb_l ~= cmd_l, acc_l = cmd_l - cmd  ->  fb = cmd
-           preloaded     fb_l ~= cmd + acc_l                 ->  fb = cmd
-           stepgen clip  fb_l LAGS cmd_l                     ->  fb LAGS cmd
-
-       The last line is the one worth keeping: STEPGEN_MAXACCEL / MAXVEL
-       clipping still raises a real following error, which is the only check
-       an axis with no encoder and no drive alarm line has. */
-    fb = fb_l - acc_l;
+    fb = fb_l;
 }

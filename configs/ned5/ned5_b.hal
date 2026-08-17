@@ -5,8 +5,9 @@
 # control C now controls the rotaries."  C is still a joint (it gets homed to
 # zero and then held there); B is the axis the operator actually drives.
 #
-# ONE JOINT, TWO STEPPERS.  The two drives are mechanically mirrored on the
-# same worm, so they are not a gantry pair -- there is no second feedback to
+# ONE JOINT, TWO CHUCKS.  Each chuck has its OWN worm gear and its OWN stepper
+# (operator 2026-08-17).  What couples them is the workpiece held between them,
+# nothing else.  They are not a gantry pair -- there is no second feedback to
 # square against.  joint.6's single position-cmd feeds both stepgens; the
 # scales carry opposite signs, which is the whole of the "twist".
 #
@@ -65,44 +66,52 @@ setp hm2_7i97.0.stepgen.01.dirhold        20000
 # head joints do it (ned5_iron.hal:279-282).  Only drive 1 reports; drive 2 is
 # the same command through an inverted scale and has nothing extra to say.
 # --- SIDE SPLIT (bsplit) ----------------------------------------------------
-# The two drives sit on the same worm and normally take the same command.
-# bsplit lets ONE of them be jogged while the other is held still, which is
-# how the lash gets preloaded out and how the pair gets squared to each other
-# (operator 2026-08-14: "selecting LEFT or RIGHT JOGS one or the other ...
-# this lets me preload and helps align shit").
+# Both chucks normally take the same command.  bsplit lets ONE of them be
+# jogged while the other stands still, which is how the lash gets preloaded
+# out and how the pair gets squared to each other (operator 2026-08-14:
+# "selecting LEFT or RIGHT JOGS one or the other ... this lets me preload and
+# helps align shit").
 #
-# NOT BY GATING THE ENABLES. A disabled stepgen whose position-cmd keeps
-# moving slews at max velocity the moment it is re-enabled. bsplit instead
-# HOLDS the deselected side's output and keeps its offset true, so the sum
-# already equals where it stands when it comes back -- no jump, and the
-# divergence built up in between is kept. That divergence IS the preload.
+# BY GATING THE STEPS, NOT BY MOVING THE COMMAND.  cmd-l and cmd-r are ALWAYS
+# equal to joint.6.motor-pos-cmd.  The deselected side is stopped at its
+# stepgen enable instead.  A disabled hostmot2 stepgen zeroes its step rate
+# and ADOPTS position-cmd every cycle (stepgen.c:334-337), so it emits nothing
+# while gated and has nothing pending when it returns -- no jump, no slew.
+# The drive stays energised throughout: ENA+- is left open, so it never sees
+# that pin (docs/mesa_7i85s_wiring.md).
 #
-# sel: 0 = BOTH, 1 = LEFT only, 2 = RIGHT only. Driven from the GUI toggle
-# via ned-tab.b-side-out (postgui_b.hal). Unconnected it reads 0 = BOTH,
-# which is the stock behaviour, so a GUI that fails to load cannot leave the
-# drives split.
+# WHY NOT AN OFFSET.  bsplit used to hold the deselected side's OUTPUT still
+# and carry the difference in a realtime variable.  Nothing clears a realtime
+# variable except unloading the component, so the two chucks stayed commanded
+# apart through e-stop, machine-off, R4 and drive power.  On 2026-08-17 that
+# reached 22 deg at the joint -- 1.22 turns at the motor -- and with a bar
+# clamped in both chucks they twisted against each other and stalled.  Only a
+# PB restart cleared it.  Software never needed that memory: each worm is
+# self-locking and holds its own chuck with the 70 V brick dead
+# (docs/components.md:50).
 #
-# THERE IS NO BOUND ON THE SPLIT. Operator 2026-08-16: "delete that
-# compeltely. user will decide how much is too much." The bound pin and
-# its at-limit output are GONE from bsplit.comp, so a setp for either
-# here would now ABORT the whole HAL load on a pin that does not exist.
-# `split` survives as a readout, netted to ned-tab.b-split-in.
+# sel: 1 = LEFT only (RIGHT gated), anything else = BOTH.  Driven from the GUI
+# toggle via ned-tab.b-side-out (postgui_b.hal).  Unconnected it reads 0 =
+# BOTH, which is the stock behaviour, so a GUI that fails to load cannot leave
+# a side gated.
+#
+# `split` is ACCOUNTING ONLY -- the joint degrees the gated side did not
+# receive, netted to ned-tab.b-split-in.  It feeds no command, no feedback and
+# no limit, so it cannot fault anything.  There is no bound on it (operator
+# 2026-08-16: "delete that compeltely. user will decide how much is too
+# much."), and no bound pin exists in bsplit.comp -- a setp for one here would
+# ABORT the whole HAL load.
 loadrt bsplit
 addf   bsplit.0 servo-thread
 
 net b-pos-cmd  joint.6.motor-pos-cmd             => bsplit.0.cmd
 net b-cmd-l    bsplit.0.cmd-l                    => hm2_7i97.0.stepgen.00.position-cmd
 net b-cmd-r    bsplit.0.cmd-r                    => hm2_7i97.0.stepgen.01.position-cmd
-# FEEDBACK GOES THROUGH bsplit, NOT STRAIGHT OFF THE LEFT STEPGEN.
-# stepgen.00.position-fb is the LEFT side alone. Jogging RIGHT on its own
-# holds the LEFT output still BY DESIGN, so that feedback stopped dead
-# while joint.6.motor-pos-cmd kept moving and [JOINT_6] FERROR = 5.0 was
-# passed in about 0.06 s. The accumulated offset then persisted inside the
-# component, so the machine re-faulted on every enable -- through machine
-# off, through e-stop, through killing R4 and the 70 V brick -- until
-# LinuxCNC was relaunched and the component unloaded.
-# bsplit.0.fb is that same feedback with the DELIBERATE split subtracted:
-# a preload reads as zero error, a real stepgen clip still reads as error.
+# FEEDBACK IS THE LEFT STEPGEN, PASSED THROUGH bsplit.
+# Only the RIGHT is ever gated, so stepgen.00 is always live and its
+# position-fb always tracks the command.  A real STEPGEN_MAXACCEL/MAXVEL clip
+# still shows up as a genuine following error -- the only check an axis with
+# no encoder and no drive alarm line has.
 net b-fb-l     hm2_7i97.0.stepgen.00.position-fb => bsplit.0.fb-l
 net b-pos-fb   bsplit.0.fb                       => joint.6.motor-pos-fb
 
@@ -110,5 +119,9 @@ net b-pos-fb   bsplit.0.fb                       => joint.6.motor-pos-fb
 # b.pwr = joint.6 wants the amp AND the brain says the brick has settled.
 net sig-b-amp-req  joint.6.amp-enable-out => b.pwr.in-00
 net sig-b-armed                           => b.pwr.in-01
-net sig-b-servo-on b.pwr.and              => hm2_7i97.0.stepgen.00.enable \
-                                             hm2_7i97.0.stepgen.01.enable
+# The enables come from bsplit, not straight off b.pwr: bsplit ANDs the brick
+# state with the side selection, so LEFT-only gates the RIGHT stepgen's steps
+# without touching its command.
+net sig-b-servo-on b.pwr.and     => bsplit.0.power
+net b-en-l         bsplit.0.en-l => hm2_7i97.0.stepgen.00.enable
+net b-en-r         bsplit.0.en-r => hm2_7i97.0.stepgen.01.enable

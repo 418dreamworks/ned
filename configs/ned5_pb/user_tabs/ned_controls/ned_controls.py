@@ -10068,6 +10068,31 @@ QTabBar::tab:only-one {
             c.wait_complete(2.0)
             c.teleop_enable(0)
             c.wait_complete(2.0)
+            # VERIFY THE MODE, DO NOT ASSUME IT CHANGED. teleop_enable is
+            # honoured by motion on a LATER servo cycle, so wait_complete()
+            # returning proves the command was ACCEPTED, not that the mode
+            # moved. Once every joint is homed, c.mode(MANUAL) above puts
+            # motion straight back into TELEOP (emctask.cc:277) -- and in
+            # TELEOP BOTH calls below are refused: "must be in joint mode or
+            # disabled to unhome" (command.c:1400) and "must be in joint mode
+            # to home" (command.c:1376). Measured 2026-08-17 19:01: Home B set
+            # ini.6.home and ini.6.home_offset to 0, logged "declared AT
+            # +0.0000", and joint 6 stayed at -1.2300. Twice.
+            # Same check, same reason, as ac_to_zero.
+            # The launch declare is unaffected: B is still unhomed when it
+            # runs, so all_homed() is false, motion is already in joint mode
+            # and this returns on the first poll.
+            def _joint_mode():
+                s.poll()
+                return s.motion_mode != linuxcnc.TRAJ_MODE_TELEOP
+            if not self._wait_for(_joint_mode, 2.0, 'HOME B joint mode',
+                                  poll=0.05):
+                c.error_msg('HOME B refused: motion stayed in TELEOP, so the '
+                            'declaration cannot land')
+                LOG.error('HOME B refused: motion stayed in TELEOP after '
+                          'teleop_enable(0) -- unhome and home would both be '
+                          'rejected, so nothing was declared')
+                return
             # THE ONE LINE THAT DIFFERS. Feeding joint 6's own output back
             # as the home offset makes the declare a no-op on the number
             # (the launch path); feeding 0 renames it to zero (the menu's
