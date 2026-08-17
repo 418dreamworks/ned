@@ -152,6 +152,36 @@ if [ "${1:-}" = "--all" ]; then
            cal_goto_zero cal_shoulder cal_a_cycle cal_c_cycle; do
     if [ "$n" = cal_probe_center ]; then check "$n" || rc=1; else check "$n" $C || rc=1; fi
   done
+elif [ -f "${1:-}" ]; then
+  # A WHOLE PROGRAM, BY PATH -- not a subroutine name. Operator 2026-08-16
+  # put the g-code generator under docs/gcode_rules.md and told it to run
+  # this script on what it writes, so it has to accept
+  # `gcode_check.sh /home/brains/linuxcnc/nc_files/part.ngc`. Before this the
+  # argument was ALWAYS pasted into configs/ned5_pb/subroutines/<arg>.ngc, so
+  # a real path became .../subroutines//home/brains/.../part.ngc.ngc and the
+  # answer was UNREADABLE -- which reads like a lint failure, not like "you
+  # called it wrong".
+  #
+  # A program is run as itself, not called as a sub: no o<name> call wrapper
+  # and no argument list.
+  prog=$1
+  if ! python3 "$NED/tools/live/gcode_lint.py" "$prog" >/tmp/gclint.$$ 2>&1; then
+    echo "$prog  LINT FAILED:"; sed 's/^/    /' /tmp/gclint.$$
+    rm -f /tmp/gclint.$$
+    exit 1
+  fi
+  rm -f /tmp/gclint.$$
+  cp "$NED/configs/ned5_pb/ned5_pb.var" "$WORK/test.var"
+  out=$(cd "$WORK" && HOME="$WORK" TMPDIR="$WORK" timeout 120 \
+        rs274 -g -i "$WORK/test.ini" -v "$WORK/test.var" "$prog" 2>&1)
+  if printf '%s\n' "$out" | grep -qiE '^[^(]*(error|unclosed|nested|unknown word|bad number)'; then
+    echo "$prog  PARSE FAULT:"
+    printf '%s\n' "$out" | grep -viE '^ *[0-9]+ N\.\.\.\.\.' | head -5 | sed 's/^/    /'
+    rc=1
+  else
+    printf '%-40s %5s lines  parses clean\n' "$(basename "$prog")" "$(wc -l < "$prog")"
+    printf '%s\n' "$out" | grep -iE '^ *(abort|.*abort,)' | head -2 | sed 's/^/    stopped on its own guard: /'
+  fi
 else
   check "$@" || rc=1
 fi

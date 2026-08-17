@@ -18,6 +18,26 @@ o<toolchange> sub
 (is still a tool change as far as the operator standing next to it is concerned.)
 M5
 
+(HEAD SQUARE, OR NO TOOL CHANGE. Operator 2026-08-16: "refuse the tool change)
+(altoghter if A and C are not at zero within tolerance. we will deal with this)
+(problem later".)
+(WHY IT MATTERS: nothing in m21, m22 or the rest of this file contains a single)
+(A or C word. The whole rack path assumes the spindle axis is vertical, and it)
+(neither checks that nor corrects it -- so with the head tilted the fork plunge)
+(goes in at an angle onto a holder that is standing straight up.)
+(WHY NOT JUST SWING IT TO ZERO HERE: holding the tool tip still while A unwinds)
+(needs the carrier to travel the negative of the tip's arc -- up to 156 mm in XY)
+(and 222 mm in Z at the joint limits, from PIVOT_LENGTH 155.9256 in)
+(configs/params/head_pivot.inc. That only exists under ned_ac_kins, and this)
+(machine fixes its kinematics at launch: a -notcp session is trivkins and has no)
+(motion.switchkins-type pin to change it. So the swing is a separate job, and)
+(refusing is the honest thing until it is built.)
+(0.05 deg is the tolerance already used for "at zero" on this machine --)
+(HA_ARRIVED and XYZAB_C_TOL in ned_controls.py.)
+o90 if [[ABS[#<_abs_a>] GT 0.05] OR [ABS[#<_abs_c>] GT 0.05]]
+  (abort, toolchange: head is not square - A#<_abs_a> C#<_abs_c> must both be within 0.05 deg of zero before a tool change - run Home A and Home C)
+o90 endif
+
 
 ; Parameter #3989 is used to track if the rack is homed (M13) (volatile)
 ; Parameter #3990 is used to track the current tool pocket (persistently)

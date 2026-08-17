@@ -286,9 +286,16 @@ def jog_box(base, guard, fails, tag, axis):
     c = linuxcnc.command()
     c.mode(linuxcnc.MODE_MANUAL)
     c.wait_complete(2)
-    c.teleop_enable(1)
+    # JOINT JOG, NOT AXIS JOG. teleop_enable(1) only succeeds once EVERY
+    # joint is homed, and A/C often are not (they sit outside the task home
+    # sequence and the brain declares them on its own schedule). With teleop
+    # refused the machine stays in FREE mode, where an axis jog is discarded
+    # with no error at all -- three axes reported "did not arrive" while the
+    # machine was healthy, idle and un-inhibited. A joint jog works with
+    # partial homing, which is the state this harness actually runs in.
+    c.teleop_enable(0)
     c.wait_complete(2)
-    c.jog(linuxcnc.JOG_INCREMENT, False, jn, JOG_VEL, d)
+    c.jog(linuxcnc.JOG_INCREMENT, True, jn, JOG_VEL, d)
     # POSITION IS THE ONLY WITNESS (operator 2026-08-16: "all waits need to
     # be position. you check every 10 seconds for something. NEVER wait for
     # PB or linuxcnc to report back"). A jog that is silently discarded --

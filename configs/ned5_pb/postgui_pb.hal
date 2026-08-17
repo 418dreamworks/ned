@@ -198,9 +198,21 @@ net mpg-scale-lin  pendant.jog-scale-lin =>  axis.x.jog-scale axis.y.jog-scale
 # own choice back rung by rung as they back away.
 net sig-zjog-scale jogblock.z.step-out => axis.z.jog-scale
 net mpg-scale-ang  pendant.jog-scale-ang =>  axis.a.jog-scale axis.c.jog-scale
+# A DOES NOT BANK DETENTS. Operator 2026-08-16: "the speed of jogging A is
+# fine, but we need to make sure that we do not store more detents so that it
+# keeps running long after user has stopped."
+# WHY A AND NOT X/Y/Z: X, Y and Z reach motion through jogblock, which caps the
+# wheel at max-cps 400 and banks at most burst-counts 8. A and B take
+# sig-mpg-counts RAW off encoder.04 -- no rate cap, no burst cap -- so with
+# vel-mode 0 every count spun is banked as committed travel and pays out after
+# the hand stops.
+# WHAT VEL MODE DOES: axis.c clamps the wheel target to actual + stopping
+# distance, and ONLY when the wheel is already outrunning the axis. A slow,
+# deliberate detent still travels exactly its increment, so the jog feel the
+# operator just approved is unchanged; only the runaway case is clipped.
 setp axis.y.jog-vel-mode 0
 setp axis.z.jog-vel-mode 0
-setp axis.a.jog-vel-mode 0
+setp axis.a.jog-vel-mode 1
 setp axis.c.jog-vel-mode 0
 # JOINT-mode jog -- works UNHOMED (teleop is hard-gated on homing). Same
 # wheel/select/scale on the joint pins; X selection drives BOTH gantry joints.
@@ -220,7 +232,7 @@ setp joint.0.jog-vel-mode 0
 setp joint.1.jog-vel-mode 0
 setp joint.2.jog-vel-mode 0
 setp joint.3.jog-vel-mode 0
-setp joint.4.jog-vel-mode 0
+setp joint.4.jog-vel-mode 1
 setp joint.5.jog-vel-mode 0
 # ============================================================================
 

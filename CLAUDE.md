@@ -254,6 +254,46 @@
       window still reported the right size). A GUI edit without a fit
       check is not finished.
 
+28. **NEVER BLOCKQUOTE TEXT THE OPERATOR HAS TO COPY.** Operator
+    2026-08-17: "do not use the | thing to format replys. its annoying to
+    copy and paste. use *************************** above and below so i can
+    copy without issue."
+    - A blockquote renders with a vertical bar down the left, and that bar
+      comes along when the text is selected -- so every draft has to be
+      cleaned by hand before it can be pasted anywhere.
+    - Anything meant to be COPIED -- a PR reply, a comment, a message, a
+      commit body -- goes between two lines of asterisks:
+
+        ***************************
+        the text to copy
+        ***************************
+
+    - Applies to prose meant for copying. Code and commands still go in
+      fenced blocks; those already copy cleanly.
+
+27. **GUI: USE PB STOCK FORMATTING. NOTHING ELSE MAY CHANGE.** Operator
+    2026-08-17: "for UI, add a rule. YOU MUST USE FORMATTING FROM PB stock.
+    no other changes are allowed besides the wiring and text in buttons."
+    - A new control is a STOCK widget, added to a layout, and NOTHING more.
+      The only two things this side decides are **what the button says** and
+      **what its click is wired to**.
+    - FORBIDDEN on anything new: `setStyleSheet`, `setMinimumHeight`,
+      `setFixedWidth`, fonts, colours, margins, spacing, extra explanatory
+      labels, status lines, icons. Formatting comes from
+      `probe_basic_dark.qss` and the stock QSS, exactly as it does for every
+      PB control.
+    - State is shown the way stock shows it -- a checkable button's
+      `:checked` styling, already in the QSS. Do not paint it by hand.
+    - The precedent when a style MUST be matched is to CLONE a neighbour's,
+      never to author one: `btn.setStyleSheet(lock.styleSheet())`
+      (B SIDE SELECT). Cloning is allowed; inventing is not.
+    - This overrides the older habit of reaching for `CAL_QSS`. Those
+      dictionaries exist for panels already built; they are not licence to
+      style new controls.
+    - I built the TWIST control with custom QSS, a fixed height, an
+      explanatory label and a status line. All of it was unasked-for and all
+      of it was wrong.
+
 25. **ONE FIX AT A TIME. REVERT BEFORE THE NEXT ONE (operator 2026-08-12:
     "all coding commands have the 'fix, and revert before next fix' ...
     GUI = coding").** Every code change -- .py, .ngc, .hal, .ini, QSS, .ui,

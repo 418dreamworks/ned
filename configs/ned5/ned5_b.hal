@@ -82,11 +82,13 @@ setp hm2_7i97.0.stepgen.01.dirhold        20000
 # which is the stock behaviour, so a GUI that fails to load cannot leave the
 # drives split.
 #
-# max-split bounds the wind-up in joint degrees; bsplit refuses to increase
-# |split| past it but always allows unwinding. 0 disables the bound.
+# THERE IS NO BOUND ON THE SPLIT. Operator 2026-08-16: "delete that
+# compeltely. user will decide how much is too much." The bound pin and
+# its at-limit output are GONE from bsplit.comp, so a setp for either
+# here would now ABORT the whole HAL load on a pin that does not exist.
+# `split` survives as a readout, netted to ned-tab.b-split-in.
 loadrt bsplit
 addf   bsplit.0 servo-thread
-setp   bsplit.0.max-split 5.0
 
 net b-pos-cmd  joint.6.motor-pos-cmd             => bsplit.0.cmd
 net b-cmd-l    bsplit.0.cmd-l                    => hm2_7i97.0.stepgen.00.position-cmd

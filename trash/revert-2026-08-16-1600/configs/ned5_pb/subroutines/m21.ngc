@@ -1,0 +1,131 @@
+(ned m21 -- per-fork PUT AWAY from the RACK CAL table.deployed 2026-08-04)
+(Pocket N: seat X=#[4100+4N] Y=+1 Ztop=+2 flag=+3. Operator dials #3981)
+(load Z and #3982 approach Z AT P1; other forks apply Ztop_N - Ztop_1.)
+(Safety framework carried from the live m21: traverse at #3974 0=top,)
+(sensor gates around the release, drawbar dwell in clamp/unclamp subs.)
+o<m21> sub
+#<p> = #1
+(FORK COUNT IS #3973, NOT A LITERAL. Operator 2026-08-16 added T15 and)
+(could not GET TOOL: the guard below refused pocket 15 outright. #3973 is)
+(the count [ATC]POCKETS carries and the GUI reads. Fallback 14 only if the)
+(var is unset, which would otherwise refuse EVERY pocket.)
+#<nmax> = #3973
+o100 if [#<nmax> LT 1]
+  #<nmax> = 14
+o100 endif
+o101 if [[#<p> LT 1] OR [#<p> GT #<nmax>]]
+  (abort, m21: pocket #<p> outside 1..#<nmax>)
+o101 endif
+#<base>  = [4100 + [#<p> * 4]]
+o102 if [[#[#<base> + 3] NE 1] OR [ABS[#[#<base> + 2]] LT 0.001]]
+  (abort, m21: fork #<p> has no complete RACK CAL data - run RACK CALIBRATION)
+o102 endif
+o103 if [[#[4107] NE 1] OR [ABS[#[4106]] LT 0.001]]
+  (abort, m21: P1 has no RACK CAL data - Z heights are defined relative to P1)
+o103 endif
+#<sx>  = #[#<base>]
+#<sy>  = #[#<base> + 1]
+#<dz>  = [#[#<base> + 2] - #[4106]]
+#<zload> = [#3981 + #<dz>]
+#<zappr> = [#3982 + #<dz>]
+(entry clearance: the stowed tool's SAFETY X when set - big tools need a)
+(wider berth - else the global clearance offset. #[4200+2T] mirrored from)
+(the tool table's SAFETY X column. SAFETY Y is stored and mirrored but not)
+(yet consumed: entry on this rack is X-only, and inventing a Y move without)
+(an operator-specified direction would guess at which neighbour to avoid.)
+#<tnow> = #3991
+#<tsx> = 0
+o106 if [[#<tnow> GE 1] AND [#<tnow> LE #<nmax>]]
+  #<tsx> = #[4200 + [2 * #<tnow>]]
+o106 endif
+o107 if [#<tsx> GT 0.01]
+  #<cx> = [#<sx> - #<tsx>]
+o107 else
+  #<cx> = [#<sx> + [#3987 - #3983]]
+o107 endif
+#<ztrav> = #3974
+(TRAVERSE RATE IS SET HERE, IN THE FILE, NOT ON THE RACK PAGE. Operator)
+(2026-08-16: "i want m6 to go at 80pct of max speed between work and the)
+(tool rack" ... "it needs to be something we change on files before we run)
+(them. i don't want the production team to be concerned with exact feeds and)
+(speeds. that's our job". #3976 is PB's unlabelled ATC USER 3 spare on the)
+(rack setup page, so anyone could dial the tool change faster or slower; it)
+(is no longer read at all. 80 percent of each axis's OWN ini limit, so this)
+(tracks the machine rather than a re-typed number, and Z is not held to X/Y's)
+(ceiling nor the reverse.)
+(Feed override still applies - operator: "the feed override should touch it".)
+(REVERTED TO 0.64 on 2026-08-16. Raising this to 0.80 at 15:11:44 put Z at)
+(135 mm/s, and joint 2 following errors followed at 15:13 and 15:53, one of)
+(them alongside an rtapi_app SIGSEGV. Correlation, not proof -- but a speed)
+(change followed by a servo fault gets reverted before anything else is)
+(tried, so the machine returns to a known state. 0.64 is what it ran at)
+(before today, via the old #3976 LE 0 fallback.)
+#<ftravxy> = #<_ini[axis_x]max_velocity>
+o150 if [#<_ini[axis_y]max_velocity> LT #<ftravxy>]
+  #<ftravxy> = #<_ini[axis_y]max_velocity>
+o150 endif
+#<ftravxy> = [0.64 * #<ftravxy> * 60]
+#<ftrav>   = [0.64 * #<_ini[axis_z]max_velocity> * 60]
+o105 if [#<ztrav> LT #<zappr>]
+  (abort, m21: traverse Z is below the approach height for fork #<p>)
+o105 endif
+M66 P0 L0
+o80 if [#5399 LT 1]
+  (abort, m21: no tool is clamped - refusing a put-away with an empty spindle)
+o80 endif
+G90
+G1 G53 F[#<ftrav>] Z[#<ztrav>]
+G1 G53 F[#<ftravxy>] X[#<cx>] Y[#<sy>]
+(SPINDLE GATE. Operator 2026-08-11: "you have to do the check when you get to)
+(the unload XY before even descending to the safeZ" -- the old check lived in)
+(unload_spindle, which is reached with the tool already down in the fork, so a)
+(still-spinning shaft aborted while sitting in the plastic and melted it.)
+(M5 first, then WAIT for digital-in-02; abort here, at traverse Z, clear of)
+(the rack. Q30 because the spindle coasts down -- there is no brake.)
+M5
+M66 P2 L3 Q30
+o83 if [#5399 LT 0]
+  (abort, m21: spindle still turning at the fork XY - NOT descending)
+o83 endif
+G1 G53 F[#3980] Z[#<zload>]
+G4 P1
+G1 G53 F[#3980] X[#<sx>]
+M24
+M66 P1 L0
+o81 if [#5399 LT 1]
+  (abort, m21: tool-RELEASED never asserted - NOT lifting, tool still gripped)
+o81 endif
+M66 P0 L0
+o82 if [#5399 GT 0]
+  (abort, m21: tool-LOCKED still asserted after release - NOT lifting)
+o82 endif
+(BOOKKEEPING HERE, not in the calling script: the M66 gates above are queue)
+(busters, so this point is only reached once the release physically)
+(happened. A stop after this line finds every record already true --)
+(operator 2026-08-04: "data updated as the atomic actions are completed")
+#<was> = #3991
+#[4000 + #<p>] = #<was>
+#3991 = 0
+M61 Q0
+G49
+(DEBUG, EVAL[vcp.getWidget{"rackatc"}.store_tool{#<p>, #<was>}])
+(exit lift. operator 2026-08-04: between tools with a PROVEN-empty spindle)
+(the full climb to traverse Z is wasted time - lift only to approach+50 and)
+(tell m22 via #<_rack_between>. Caller passes #2=1 only when a fetch follows;)
+(unload-only paths lift to full traverse Z as before.)
+#<fetch_next> = 0
+o90 if [EXISTS[#2]]
+  #<fetch_next> = #2
+o90 endif
+o91 if [#<fetch_next> GT 0]
+  #<zbetween> = [#<zappr> + 50.0]
+  o92 if [#<zbetween> GT 0]
+    #<zbetween> = 0
+  o92 endif
+  #<_rack_between> = 1
+  G1 G53 F[#<ftrav>] Z[#<zbetween>]
+o91 else
+  G1 G53 F[#<ftrav>] Z[#<ztrav>]
+o91 endif
+o<m21> endsub
+M2

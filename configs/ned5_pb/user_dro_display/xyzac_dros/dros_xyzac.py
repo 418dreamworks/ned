@@ -185,7 +185,6 @@ class UserDRO(QWidget):
         # ZERO buttons: deterministic + a 3 s countdown, second click cancels
         # (operator spec). At zero: switch to MDI, run G10 L20, wait, back to
         # MANUAL -- no mode preconditions.
-        self._zero_pending = {}
         # A/C are NOT zeroable (operator 2026-08-01: "i can't imagine ever
         # needing to zero A and C other than at its regular zero" -- REF
         # owns the A/C datum). Their buttons become LOCK toggles below, and
@@ -368,9 +367,6 @@ class UserDRO(QWidget):
     def _xyz_click(self, btn, axes):
         from PySide6.QtCore import QTimer
         from PySide6.QtWidgets import QApplication
-        if btn.objectName() in self._zero_pending:
-            self._zero_click(btn, axes)      # countdown running: cancel it
-            return
         # PER-BUTTON pending (advisor A2: one shared slot let an X timer
         # fire after a Y click stole the slot) and the REAL double-click
         # interval (advisor A1: 260 ms < Qt's 400 ms default meant a slow
@@ -419,39 +415,19 @@ class UserDRO(QWidget):
                  'ON' if on else 'OFF')
 
     def _zero_click(self, btn, axes):
-        # Countdowns are per-button and fully PARALLEL; expiries feed a merge
-        # queue so simultaneous zeros become ONE G10 and never interleave MDI
-        # sequences (KeyError + "Can't set mode while machine is running"
-        # when buttons were pressed without waiting for each other).
-        from PySide6.QtCore import QTimer
-        key = btn.objectName()
-        pend = self._zero_pending.pop(key, None)
-        if pend is not None:                      # second click = cancel
-            pend['timer'].stop()
-            btn.setText(pend['text'])
-            LOG.info('ZERO %s cancelled', axes)
-            return
-        pend = {'text': btn.text(), 'left': 3, 'axes': axes}
-        timer = QTimer(self)
-        pend['timer'] = timer
-        self._zero_pending[key] = pend
+        """Zero NOW. Operator 2026-08-17: "im finding the countdowns too long.
+        remove the countdown for zeroing. the double click is enough."
 
-        def tick():
-            if self._zero_pending.get(key) is not pend:
-                timer.stop()          # cancelled/superseded -- nothing to do
-                return
-            pend['left'] -= 1
-            if pend['left'] > 0:
-                btn.setText(str(pend['left']))
-                return
-            timer.stop()
-            btn.setText(pend['text'])
-            self._zero_pending.pop(key, None)
-            self._zero_enqueue(pend['axes'])
+        This used to arm a 3 s per-button countdown, paint 3/2/1 on the face,
+        and take a second click as a cancel. The double click IS the
+        confirmation, so the countdown only added three seconds to every zero.
 
-        timer.timeout.connect(tick)
-        btn.setText('3')
-        timer.start(1000)
+        The merge queue stays: _zero_enqueue still collects axes and fires one
+        G10 on the next event-loop turn, so two buttons pressed together are
+        still a single MDI and cannot interleave.
+        """
+        LOG.info('ZERO %s (double click)', axes)
+        self._zero_enqueue(axes)
 
     def _zero_enqueue(self, axes):
         from PySide6.QtCore import QTimer

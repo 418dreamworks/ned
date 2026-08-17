@@ -12,7 +12,13 @@
 #   The value below is the current derived SCALE_A, hand-placed. See docs/gui.md.
 TYPE = ANGULAR
 MAX_VELOCITY = 30
-MAX_ACCELERATION = 2
+# 2026-08-16: 2 -> 4 deg/s2, operator: "lets double it to 4". A's G0 was
+# slow and ACCELERATION was the cap, not top speed -- at 2 deg/s2 it needed
+# 225 deg to reach MAX_VELOCITY 30 and A only has 230 deg of travel, so the
+# 30 was never once reached and every move was a triangular profile.
+# Move time scales as 1/sqrt(a): a 90 deg move goes 13.4 s -> 9.5 s.
+# STEPGEN_MAXACCEL is 450, so the stepgen is nowhere near limiting.
+MAX_ACCELERATION = 4
 STEPGEN_MAXVEL = 36
 STEPGEN_MAXACCEL = 450
 # SCALE sign = A motion direction. POSITIVE (paired with pso_home.sh A sign=-1) so A+ = right-hand-rule

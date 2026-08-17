@@ -3063,7 +3063,15 @@ class UserTab(QWidget):
     # are the fixed thing (operator 2026-08-14: "follow the columns above"),
     # so the words give way, not the geometry. L+R / L / R reads correctly on
     # a rotary with two drives, and the tooltip carries the full meaning.
-    B_SIDES = ((0, 'L+R'), (1, 'L'), (2, 'R'))
+    # TWO STATES, NOT THREE. Operator 2026-08-17: "instead of L+R, L and R,
+    # do L+R, L. so both times, you always keep track of the counter" ...
+    # "the only difference is with L, you just turn one side the normal way
+    # instead of both" ... "that way, it keeps everything really really
+    # simple".
+    # RIGHT-only is gone. bsplit still understands sel = 2, so nothing in
+    # the component changed -- the GUI simply never asks for it, which keeps
+    # one accounting path instead of two mirror-image ones.
+    B_SIDES = ((0, 'L+R'), (1, 'L'))
 
     def _build_b_side_toggle(self):
         """BOTH / LEFT / RIGHT, opposite LOCK B.
@@ -3453,7 +3461,7 @@ class UserTab(QWidget):
             LOG.exception('B SIDE COLUMNS: report failed')
 
     def _b_side_next(self):
-        self._b_side = (getattr(self, '_b_side', 0) + 1) % 3
+        self._b_side = (getattr(self, '_b_side', 0) + 1) % len(self.B_SIDES)
         self._b_side_apply()
 
     def _b_side_apply(self):
@@ -9808,8 +9816,35 @@ QTabBar::tab:only-one {
         if abs(here) < 0.001:
             LOG.info('%s: already at zero, nothing to move', label)
             return True
-        # 2. move. Joint mode was already asserted above and must NOT be
-        #    handed back before the jog finishes.
+        # 2. move. RE-ASSERT JOINT MODE HERE -- THE ADOPT ITSELF UNDID IT.
+        #    Completing a home while motion is in FREE makes motion switch
+        #    itself to teleop (control.c:261-263 -> switch_to_teleop_mode,
+        #    motion.c:163-181). That is deliberate upstream: it is how the MPG
+        #    goes live the instant homing finishes. But it means the
+        #    teleop_enable(0) above, issued BEFORE c.home(jn), cannot survive
+        #    c.home(jn), and the joint jog below is then refused outright --
+        #    command.c:425 "Mode is TELEOP, cannot jog joint". The refusal is
+        #    an operator-error message, not a return code, so this returned
+        #    True and the caller saw only that the axis never arrived.
+        #    Applies to A and C alike: one function, jn = 4 or 5.
+        c.teleop_enable(0)
+        c.wait_complete(2.0)
+        # VERIFY, do not assume: teleop_enable is honoured by motion on a
+        # later servo cycle, so wait_complete() returning proves the command
+        # was accepted, not that the mode changed. Measured 2026-08-16:
+        # FREE -> unhome -> home -> TELEOP.
+        def _joint_mode():
+            s.poll()
+            return s.motion_mode != linuxcnc.TRAJ_MODE_TELEOP
+        if not self._wait_for(_joint_mode, 2.0, '%s joint mode' % label,
+                              poll=0.05):
+            c.error_msg('%s refused: motion stayed in TELEOP after the adopt '
+                        '-- a joint jog would be discarded, so nothing was '
+                        'sent. %s is still at %+.4f'
+                        % (label, ax.upper(), here))
+            LOG.error('%s: motion_mode still TELEOP after the adopt -- NOT '
+                      'jogging joint %d, still at %+.4f', label, jn, here)
+            return False
         c.jog(linuxcnc.JOG_INCREMENT, True, jn, self.AC_ZERO_VEL, -here)
         LOG.info('%s: joint jog %+.4f deg at %.1f deg/s issued',
                  label, -here, self.AC_ZERO_VEL)
@@ -10043,12 +10078,21 @@ QTabBar::tab:only-one {
             # (subprocess is deliberately not imported here) -- and always
             # timeout-wrapped: an unwrapped scripted halcmd is what deadlocked
             # the boot on the qtpyvcp PIPE bug.
-            rc = os.system('timeout 3 halcmd setp ini.6.home_offset %.6f '
+            # BOTH PINS, NOT ONE. Only ini.6.home_offset was written here, so
+            # the declare landed against whatever ini.6.home happened to hold
+            # and Home B did not zero B. Every A/C declare in this file writes
+            # the pair and says why: HOME == home_offset -> travel = HOME -
+            # home_offset = 0, i.e. a pure renumbering with no motion. Same
+            # value into both, so `here` is what B reads afterwards -- 0 from
+            # the menu and from Home All, the standing angle at launch.
+            rc = os.system('timeout 3 halcmd setp ini.6.home %.6f '
                            '>/dev/null 2>&1' % here)
+            rc |= os.system('timeout 3 halcmd setp ini.6.home_offset %.6f '
+                            '>/dev/null 2>&1' % here)
             if rc != 0:
-                LOG.error('HOME B: could not set ini.6.home_offset (rc=%d) '
-                          '-- NOT homing; a declare against the wrong offset '
-                          'silently moves the coordinate', rc)
+                LOG.error('HOME B: could not set ini.6.home / home_offset '
+                          '(rc=%d) -- NOT homing; a declare against the wrong '
+                          'pair silently moves the coordinate', rc)
                 return
             # HOME_NO_REHOME is implied by =2 (taskintf.cc:326-336), so an
             # already-homed joint must be unhomed or home() is a silent no-op

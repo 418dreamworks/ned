@@ -1,0 +1,82 @@
+(ned RACK CAL -- ONE FORK, wherever it is. Park the spindle centred about)
+(10 mm above THAT holder's top, then call this with the fork number.)
+(  #1 = fork number, 1 .. #3973)
+()
+(WHY THIS EXISTS. rack_cal walks the rack fork to fork by a FIXED pitch --)
+(_rc_cy = previous - 92.0 -- and probes at the predicted centre. A holder)
+(that is not on that pitch is unreachable that way: the prediction lands in)
+(air and, since every move there is a probe, the cycle aborts clean without)
+(ever measuring it. Operator 2026-08-16: "its situated further away, so how)
+(do i probe it? its not in the linear pattern".)
+()
+(This calls the SAME rc_locate the walk calls, with the predicted centre)
+(taken from where the operator parked instead of from the pitch. rc_locate)
+(does the whole sequence -- plunge over the taper, 4-side centre, re-centre,)
+(verify deeper, retract, shoulder touch -- and stores X, Y, Ztop and the)
+(complete flag into 4100 + fork*4, that fork and no other.)
+()
+(Requires, exactly as rack_cal does: EMPTY spindle, holders energized onto)
+(the toolsetter input, machine homed, probe feeds 3004-3006 set, and work)
+(XYZ zeroed AT the parked pose so the Z search depths mean what they say.)
+
+o<rack_cal_one> sub
+  #<i> = #1
+
+  o5 if [[#<i> LT 1] OR [#<i> GT #3973]]
+    (abort, RACK CAL ONE: fork number must be 1 to the pocket count in 3973)
+  o5 endif
+  o7 if [#<_metric> EQ 0]
+    (abort, RACK CAL ONE: switch to MM first)
+  o7 endif
+
+  (THE PARKED POSE IS THE DATUM, and it must be a clean one. The Z search)
+  (depths below are measured FROM here, so a stale work offset would send)
+  (the plunge somewhere it was never meant to go.)
+  o9 if [[ABS[#<_x>] GT 0.001] OR [ABS[#<_y>] GT 0.001] OR [ABS[#<_z>] GT 0.001]]
+    (abort, RACK CAL ONE: work XYZ is not zero here - zero all three at the parked pose first, centred 10 mm above this fork - NOT starting)
+  o9 endif
+
+  (predicted centre = where we are. This is the ONLY difference from the)
+  (walk, and it is the whole point: no pitch, no interpolation.)
+  #<_rc_cx>   = #<_x>
+  #<_rc_cy>   = #<_y>
+  #<_rc_safe> = #<_z>
+  (find 20 mm below the parked pose - operator 2026-08-16. One fork has no)
+  (previous tool top to work from, so it always uses the parked -20 rule.)
+  #<_rc_pfind> = [#<_z> - 20.0]
+  (VERIFY DEPTH 60, operator 2026-08-16: at 70 it was reaching the)
+  (drawbar inside the spindle bore, not the taper. Same failure mode)
+  (as the 75 -> 70 change on 2026-08-04, one step further out.)
+  (This is also the bottom end of the fast-probe ramp, so the ramp)
+  (now spans 20..60 rather than 20..70 and reaches #3005 at 60.)
+  #<_rc_p60>  = [#<_z> - 60.0]
+  (REACH FOLLOWS THE FIND LEVEL. 8.0 was sized for the old -50)
+  (descent. The find now happens at -20, 30 mm higher, and the)
+  (spindle taper is ISO-30 -- 7:24 per docs/components.md -- so its)
+  (radius shrinks 0.14583 mm per mm of Z: 30 * 3.5/24 = 4.375 mm)
+  (more bore-to-taper gap on every side. The 8.0 probe ran out of)
+  (travel before the taper and G38.2 raised its own no-contact)
+  (error, which fires before rc_touch's guard can say anything.)
+  (12.4 is the geometric floor; 14.0 was still short on the iron,)
+  (so the operator called 18.0 on 2026-08-16. A longer reach costs)
+  (nothing when the taper is there -- contact stops the probe.)
+  #<_rc_reach> = 18.0
+  #<_rc_ftr>  = #3006
+  #<_rc_fpr>  = #3004
+  (_rc_fpr0 is the UNSCALED fast probe and _rc_ptop the Z at which it)
+  (is used in full. rc_locate overwrites _rc_fpr per find level, so the)
+  (original has to survive somewhere or every fork after the first)
+  (would inherit the previous fork's reduced feed.)
+  #<_rc_fpr0> = #3004
+  #<_rc_ptop> = [#<_z> - 20.0]
+  #<_rc_fla>  = #3005
+  #<_rc_fck>  = #3004
+  o8 if [[#<_rc_ftr> LE 0] OR [#<_rc_fpr> LE 0] OR [#<_rc_fla> LE 0]]
+    (abort, RACK CAL ONE: probe feeds 3004-3006 are not set - set them on the probe screen first)
+  o8 endif
+
+  (PRINT, RACK CAL ONE: locating fork #<i> from the parked pose)
+  o<rc_locate> call [#<i>]
+  (PRINT, RACK CAL ONE: fork #<i> stored - no other fork was touched)
+
+o<rack_cal_one> endsub

@@ -1,8 +1,16 @@
 (ned m22 -- per-fork FETCH from the RACK CAL table.deployed 2026-08-04)
 o<m22> sub
 #<p> = #1
-o101 if [[#<p> LT 1] OR [#<p> GT 14]]
-  (abort, m22: pocket #<p> outside 1..14)
+(FORK COUNT IS #3973, NOT A LITERAL. Operator 2026-08-16 added T15 and)
+(could not GET TOOL: the guard below refused pocket 15 outright. #3973 is)
+(the count [ATC]POCKETS carries and the GUI reads. Fallback 14 only if the)
+(var is unset, which would otherwise refuse EVERY pocket.)
+#<nmax> = #3973
+o100 if [#<nmax> LT 1]
+  #<nmax> = 14
+o100 endif
+o101 if [[#<p> LT 1] OR [#<p> GT #<nmax>]]
+  (abort, m22: pocket #<p> outside 1..#<nmax>)
 o101 endif
 #<base>  = [4100 + [#<p> * 4]]
 o102 if [[#[#<base> + 3] NE 1] OR [ABS[#[#<base> + 2]] LT 0.001]]
@@ -19,7 +27,7 @@ o103 endif
 (exit clearance: the INCOMING tool's SAFETY X when set; see m21 note)
 #<tin> = #[4000 + #<p>]
 #<tsx> = 0
-o106 if [[#<tin> GE 1] AND [#<tin> LE 14]]
+o106 if [[#<tin> GE 1] AND [#<tin> LE #<nmax>]]
   #<tsx> = #[4200 + [2 * #<tin>]]
 o106 endif
 o107 if [#<tsx> GT 0.01]
@@ -28,10 +36,18 @@ o107 else
   #<cx> = [#<sx> + [#3987 - #3983]]
 o107 endif
 #<ztrav> = #3974
-#<ftrav> = #3976
-o104 if [#<ftrav> LE 0]
-  #<ftrav> = [0.64 * #<_ini[axis_z]max_velocity> * 60]
-o104 endif
+(TRAVERSE = 8000 mm/min, operator 2026-08-16: "when i use the ATC tool)
+(change, the traverse is too slow. it can be 8000mm/min". Set HERE, in the)
+(file, not on the rack page -- #3976 is PB's ATC USER 3 spare and the)
+(production team must not be dialling tool-change feeds.)
+(HEADROOM: AXIS_Z max is 10158 mm/min and AXIS_X/Y 12000, so 8000 clears)
+(both. Feed override still scales it, as asked.)
+(HISTORY: this briefly ran at 0.80 of axis max and was reverted when joint)
+(following errors appeared. The second rtapi_app SIGSEGV then happened with)
+(the revert already in place, so the speed was not the cause -- the crash)
+(signature is the hm2_eth packet loss documented in ned_brain.py:1478.)
+#<ftravxy> = 8000
+#<ftrav>   = 8000
 o105 if [#<ztrav> LT #<zappr>]
   (abort, m22: traverse Z is below the approach height for fork #<p>)
 o105 endif
@@ -56,7 +72,7 @@ o88 if [EXISTS[#<_rack_between>]]
 o88 endif
 #<_rack_between> = 0
 G1 G53 F[#<ftrav>] Z[#<zin>]
-G1 G53 F[#<ftrav>] X[#<sx>] Y[#<sy>]
+G1 G53 F[#<ftravxy>] X[#<sx>] Y[#<sy>]
 G1 G53 F[#<ftrav>] Z[#<zappr>]
 M24
 G1 G53 F[#3980] Z[#<zload>]

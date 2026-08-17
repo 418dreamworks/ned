@@ -148,3 +148,79 @@ its own earlier line, where the sequencing is not in question.
 `toolchange.ngc` carries no `M5` of its own, so today nothing stops the
 spindle if the program does not. That is why this rule is HARD rather than a
 warning.
+
+### 6.2 Every M6 is BRACKETED
+Operator 2026-08-16, standing rule. Before the change, retract to machine
+Z0. After it, the return to the cut is **three separate blocks**:
+
+```gcode
+G53 G0 Z0          (before the change: machine Z0, nothing else in the block)
+M5
+T12 M6
+G53 G0 Z0          (1. machine Z0, nothing else)
+G0 X.. Y..         (2. the resume point in the work frame, still at machine Z0)
+G0 Z..             (3. straight down to the resume height)
+```
+
+No diagonal, and no combined XYZ move anywhere near the work after a tool
+change: a single `G0 X Y Z` out of the rack cuts the corner and can drag the
+tool through the part, a clamp or the fixture on the way in.
+
+Only MOTION blocks count toward the three steps. `S`, `M3`, `G4` and comments
+between them are irrelevant to the geometry and are not violations.
+
+HARD. `gcode_lint.py` checks both sides: the move immediately before the M6
+must be `G53` + Z only, and the first three moves after it must match the
+three steps above.
+
+---
+
+## 7. Who owns these rules
+
+**This file is the only source of the rules.** Operator 2026-08-16: "set it
+up so that YOU control the rules that the gcode genrator follows. gcode
+genrator should not be wriitng its own rukes."
+
+Rule 6.2 arrived as a verbal instruction to the g-code generator, which
+recorded it in the header comment of the one program it was writing
+(`alu_square.ngc:15-20`). A rule that lives in an output file governs that
+file and nothing else, and nobody checks it.
+
+So:
+
+- Rules are written **here**, by the controls side, and nowhere else.
+- The generator READS this file. It does not author, extend or reinterpret
+  it, and `nc_files/.claude/settings.json` denies it write access to this
+  repo so it cannot.
+- A rule is not finished until `gcode_lint.py` enforces it or this file says
+  in the rule text that it is judgement-only.
+- Every program is linted before it runs, generator-written or not:
+  `tools/gcode_check.sh <file.ngc>`.
+
+### 6.3 The spindle starts at the XY resume, never before it
+Operator 2026-08-16, from watching a change run: *"the spindle was turned on
+after a new tool was picked up while the tool was on the way back. it should
+not happen. i should only spin up when it is at XY resume."*
+
+```gcode
+G53 G0 Z0          (1. machine Z0)
+G0 X.. Y..         (2. the resume point -- STILL STOPPED)
+S6000 M3           (3. spindle up, now that XY is where the cut resumes)
+G4 P3.0
+G0 Z..             (4. down to the cut)
+```
+
+The wrong order puts a spinning cutter on a full-speed traverse across the
+table from the rack. It was in `alu_square.ngc` at both changes: `S M3` sat
+immediately after `G53 G0 Z0`, before the `G0 X Y`.
+
+HARD.
+
+### 6.4 Every spin-up from zero dwells 3 s
+Operator 2026-08-16: *"there should be a 3 second dwell whever the spindle is
+spinning up from zero."* `G4 P3` or longer, before the next move. Checked at
+every start from stopped, not only after a tool change.
+
+A `G4` whose `P` is a parameter (`G4 P#<spinup>`) cannot be evaluated by the
+linter. That is reported as SPIN-UP DWELL NOT CHECKABLE — a warning, not a
+failure, because failing a compliant file is how a linter gets switched off.
