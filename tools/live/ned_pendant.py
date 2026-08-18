@@ -278,6 +278,58 @@ inc_i = 2
 _inc_seen = None        # startup value of inc-set, never adopted
 spd_i = 2                       # start at MAX = the machine's boot reality
 jcmd = linuxcnc.command()       # NML maxvel = the V slider = the wheel cap
+
+# CLEAR THE BANK WHEN THE SLOT CHANGES.
+# jog-enable does NOT gate motion -- it gates the wheel INPUT and nothing else.
+# axis.c reads it in exactly one place, axis.c:394, inside the wheel-count
+# handler, and the check is a `continue`: "skip ADDING counts to this axis".
+# Counts already accepted have become axis->teleop_tp.pos_cmd, a TARGET, with
+# its own axis->teleop_tp.enable = 1 set at axis.c:425 and never cleared there.
+# The trajectory planner owns the move from that point and never looks at
+# jog-enable again, so dropping the slot stops the axis being FED and does
+# nothing about what it was already fed.
+# Measured 2026-08-17 at 16 Hz: switching Z -> X let Z run on -21.1 mm, and
+# switching X -> Y let X run on +28.0 mm, both a decaying ramp with the wheel
+# already still. Operator: "the previously selection axis moves a little ...
+# that's really dangerous".
+# jog-vel-mode 1 does NOT bound this and was reverted: axis.c:409 clamps to
+# the AXIS max velocity, so stop_dist = 200^2/(2*200) = 100 mm on X and Y --
+# the 28 mm overrun never came near it.
+# axis_jog_abort() (axis.c:321-333) is the only thing that drops
+# teleop_tp.enable, and JOG_STOP is how it is reached from here. Operator:
+# "just clear the bank".
+_AX_IDX = {'x': 0, 'y': 1, 'z': 2, 'a': 3, 'c': (4 if _XYZAB else 5)}
+# X IS A GANTRY PAIR: joint 0 and joint 3 both take the wheel, so both must be
+# stopped. The rotary slot follows _ROT_JN, 6 in -xyzab and 5 otherwise.
+_JN_OF = {'x': (0, 3), 'y': (1,), 'z': (2,), 'a': (4,), 'c': (_ROT_JN,)}
+
+
+def stop_jog(i):
+    """Cancel whatever the slot being LEFT still has banked."""
+    ax = AXES[i]
+    try:
+        st = _hstat['s']
+        if st is None:
+            st = _hstat['s'] = linuxcnc.stat()
+        st.poll()
+        if st.motion_mode == linuxcnc.TRAJ_MODE_TELEOP:
+            jcmd.jog(linuxcnc.JOG_STOP, False, _AX_IDX[ax])
+        else:
+            # JOINT mode: the wheel is on the joint pins, so the abort has to
+            # be too. Both gantry joints, or the stopped half fights the other.
+            for jn in _JN_OF[ax]:
+                jcmd.jog(linuxcnc.JOG_STOP, True, jn)
+        print('ned_pendant: %s deselected -- jog stopped, bank cleared'
+              % ax.upper(), flush=True)
+    except Exception as e:
+        print('ned_pendant: JOG STOP FAILED for %s (%s) -- that axis may still '
+              'be running on a banked target' % (ax.upper(), e), flush=True)
+
+
+_last_ax = None
+# Slots owed a JOG_STOP. Drained at the END of apply(), never before -- see the
+# comment there.
+_pending_stop = set()
 btn_prev = False
 press_t = 0.0
 double_hold = False             # this press is the double-tap-and-hold (zero)
@@ -312,6 +364,13 @@ def apply(gate_off):
     except Exception:
         pass
     inc = INC_TABLE[AXES[ax_i]][inc_i]
+    # STOP THE SLOT WE ARE LEAVING BEFORE ENABLING THE NEW ONE. Tracked here
+    # rather than in adv() so that EVERY route that moves ax_i is covered, not
+    # just the tap.
+    global _last_ax
+    if _last_ax is not None and _last_ax != ax_i:
+        _pending_stop.add(_last_ax)
+    _last_ax = ax_i
     for i, ax in enumerate(AXES):
         # locked() covers the homing interlock too: the enable pin itself
         # drops for EVERY axis the moment any homing cycle starts
@@ -327,6 +386,17 @@ def apply(gate_off):
     # speed control, which is the one the operator actually uses.
     h['jogspeed-out'] = 100.0
 
+    # NOW stop, not earlier. ORDER IS THE WHOLE FIX: the enable pins above have
+    # just gone false, so no further wheel count can be attributed to the axis
+    # being stopped. Firing the JOG_STOP BEFORE them cleared teleop_tp.enable
+    # and then the very next count set it straight back (axis.c:425), which is
+    # why the stop logged success 43 times and changed nothing.
+    # Proven with no motion 2026-08-17: JOG_STOP on a stationary X took
+    # axis.x.teleop-tp-enable TRUE -> FALSE and it stayed false, so the command
+    # itself was always reaching axis_jog_abort.
+    while _pending_stop:
+        stop_jog(_pending_stop.pop())
+
 
 apply(False)
 print('ned_pendant: ready -- increments {} (from [DISPLAY]INCREMENTS), '
@@ -339,6 +409,25 @@ try:
         pressed = not h['button-raw']
         wheel = h['wheel']
         now = time.time()
+
+        # DRAIN THE BANK ON THE PRESS ITSELF -- ANY press, whatever gesture it
+        # turns out to be (tap, double-tap, hold, lock, zero, or one swallowed
+        # by the refractory below). Operator 2026-08-17: "the event is the
+        # press of the button ... irrelevant of hold or double click or
+        # anything".
+        # WHY HERE AND NOT ON THE SLOT CHANGE: the press is what drops the jog
+        # gate -- apply(pressed) disables every axis while the button is down,
+        # and the slot only advances later, once the gesture has been decoded.
+        # That gap is the window the residual escapes through. Measured
+        # 2026-08-17: switching straight into a move let X run +28.0 mm and Z
+        # -21.1 mm; pausing first let the bank drain and left nothing, which
+        # is what pointed at the press rather than the switch.
+        # jog-enable does NOT stop motion (axis.c:394 is a `continue` in the
+        # wheel-count handler, and the ONLY read of that pin), so the axis has
+        # to be stopped explicitly: JOG_STOP reaches axis_jog_abort(), which
+        # is the one thing that clears teleop_tp.enable (axis.c:321-333).
+        if pressed and not btn_prev:
+            _pending_stop.add(ax_i)
 
         # GUI LOCK = COMPLETELY NOT SELECTABLE (operator 2026-08-11: "The
         # GUI lock means an axis is completely not selectable"). Flipped on

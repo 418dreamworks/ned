@@ -104,6 +104,25 @@ Check reachability before commanding, not after.
 
 ---
 
+### 4.4 I/J/K need an arc mode -- on the line or already in effect
+
+`I`, `J` and `K` are only consumed by **G2, G3, G5, G5.1, G10, G33.1, G76
+and G87**. Emitting them while the modal motion mode is G0 or G1 is refused:
+
+    I word with no G2, G3, G5, G5.1, G10, G33.1, G76, or G87 to use it
+
+Write the arc word on **every** arc block rather than relying on the modal
+state carried from the block before. A post that emits the motion code once
+and then a run of bare `X.. Y.. I.. J..` blocks produces a file that parses
+as far as the first arc and stops there.
+
+    N440 G1 X-9.15 Y36.952 Z157.799        modal mode is now G1
+    N445    X2.915         Z157.137 I6.033 J0.     REFUSED
+    N445 G3 X2.915         Z157.137 I6.033 J0.     correct
+
+Found 2026-08-17: `cusp_w5_substrate.ngc` stopped at line 95 after the
+operator had already started the cycle.
+
 ## 5. Verification
 
 ### 5.1 Nothing ships unparsed
@@ -224,3 +243,22 @@ every start from stopped, not only after a tool change.
 A `G4` whose `P` is a parameter (`G4 P#<spinup>`) cannot be evaluated by the
 linter. That is reported as SPIN-UP DWELL NOT CHECKABLE — a warning, not a
 failure, because failing a compliant file is how a linter gets switched off.
+
+### 6.5 A program NEVER stops to ask
+
+No `M0`, no `M1`, no dialog, no confirm-to-continue -- anywhere in a program.
+
+    N9210 G53 G0 Z0.
+    N9215 M1          <- the run halts here and waits for RESUME
+    N9220 T7 M6
+
+With optional stop enabled that reads as the ATC refusing to fire; the
+operator is left holding a prompt with the machine parked mid-sequence. `M0`
+does it unconditionally.
+
+If a precondition is not met, **abort** with a message that says what is
+wrong. Refusing is fine. Asking permission mid-cycle is not.
+
+Operator 2026-08-17: *"it stopped to ask me to make it continue instead of
+ATC. never do that."* Recorded as rule 29 in `ned/CLAUDE.md`; enforced as a
+HARD finding by `tools/live/gcode_check.sh`.

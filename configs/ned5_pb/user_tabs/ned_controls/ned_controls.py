@@ -9809,12 +9809,14 @@ QTabBar::tab:only-one {
             c.error_msg('%s: joint %d did not adopt the encoder -- NOT '
                         'moving' % (label, jn))
             LOG.error('%s: adopt failed, joint %d still unhomed', label, jn)
+            self._teleop_restore_when_still(label)
             return False
         here = s.joint[jn]['output']
         LOG.info('%s: adopted %+.4f deg (no motion); now joint-jogging to 0',
                  label, here)
         if abs(here) < 0.001:
             LOG.info('%s: already at zero, nothing to move', label)
+            self._teleop_restore_when_still(label)
             return True
         # 2. move. RE-ASSERT JOINT MODE HERE -- THE ADOPT ITSELF UNDID IT.
         #    Completing a home while motion is in FREE makes motion switch
@@ -9844,11 +9846,76 @@ QTabBar::tab:only-one {
                         % (label, ax.upper(), here))
             LOG.error('%s: motion_mode still TELEOP after the adopt -- NOT '
                       'jogging joint %d, still at %+.4f', label, jn, here)
+            self._teleop_restore_when_still(label)
             return False
         c.jog(linuxcnc.JOG_INCREMENT, True, jn, self.AC_ZERO_VEL, -here)
         LOG.info('%s: joint jog %+.4f deg at %.1f deg/s issued',
                  label, -here, self.AC_ZERO_VEL)
+        self._teleop_restore_when_still(label)
         return True
+
+    def _teleop_restore_when_still(self, label):
+        """Put motion back in TELEOP once the joint jog has finished.
+
+        WHY THIS EXISTS. ac_to_zero drops teleop so it can issue a JOINT jog,
+        and nothing put it back. control.c:261-263 only restores teleop when a
+        HOME COMPLETES in FREE mode -- a jog is not a home, so it never fired.
+        The machine then sat in joint mode with every joint homed, and the next
+        MPG detent addressed joints 0 and 3, the synchronised gantry pair,
+        which LinuxCNC refuses outright: "Cannot wheel jog joint 0".
+
+        Measured 2026-08-17: Home A at 19:59:39 stranded the mode; the wheel
+        started refusing at 20:06:29, six and a half minutes later, with
+        nothing in between to connect the two. The operator had no way to see
+        which action caused it.
+
+        NOT IMMEDIATELY. The jog needs joint mode until it finishes, so this
+        polls until motion is still and no joint is homing, then restores.
+        Every exit path of ac_to_zero after its first teleop_enable(0) calls
+        this, including the failure paths -- a function that drops the mode
+        owns putting it back on every way out, not just the happy one.
+        """
+        import linuxcnc
+        st = linuxcnc.stat()
+        t = QTimer(self)
+        t.setInterval(200)
+        deadline = time.monotonic() + 15.0
+
+        def _tick():
+            try:
+                st.poll()
+                if time.monotonic() > deadline:
+                    t.stop()
+                    LOG.error('%s: TELEOP NOT RESTORED -- motion never went '
+                              'still within 15 s. The machine is left in '
+                              'joint mode and the MPG will refuse joints '
+                              '0 and 3.', label)
+                    return
+                if abs(st.current_vel) > 0.01:
+                    return
+                if any(st.joint[j]['homing'] for j in range(st.joints)):
+                    return
+                t.stop()
+                if not all(st.homed[:st.joints]):
+                    LOG.info('%s: not all joints homed -- leaving motion in '
+                             'joint mode, which is correct there', label)
+                    return
+                c2 = linuxcnc.command()
+                c2.mode(linuxcnc.MODE_MANUAL)
+                c2.wait_complete(2.0)
+                c2.teleop_enable(1)
+                c2.wait_complete(2.0)
+                st.poll()
+                LOG.info('%s: TELEOP RESTORED -- motion_mode %d (3 = TELEOP)',
+                         label, st.motion_mode)
+            except Exception as e:
+                t.stop()
+                LOG.error('%s: teleop restore FAILED: %s -- the machine may '
+                          'be left in joint mode', label, e)
+
+        t.timeout.connect(_tick)
+        self._teleop_restore_timer = t
+        t.start()
 
     # ==================================================================
     # -xyzab LAUNCH SEQUENCE  (operator 2026-08-11)

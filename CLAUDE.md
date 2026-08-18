@@ -356,3 +356,20 @@
     do. Write `G55 X0 Y0`, `machine Z0`, `#5420`. Not "the datum", not
     "the reference", not "the origin". This applies to abort messages and
     comments in g-code as much as to replies.
+
+29. **THE MACHINE NEVER STOPS TO ASK. NO CONFIRM-TO-CONTINUE.** Operator
+    2026-08-17: "it stopped to ask me to make it continue instead of ATC.
+    never do that."
+    - A tool change RUNS. It does not pause for a confirmation, a "continue"
+      button, an `M0`/`M1`, or a dialog. If a precondition is not met,
+      **ABORT** with a message that says what is wrong -- never wait for the
+      operator to acknowledge and then resume.
+    - This covers every automatic sequence, not only M6: probing, homing,
+      rack calibration, load/unload, the launch sequences.
+    - The only legitimate stops are an ABORT, the E-stop, and a countdown the
+      operator explicitly asked for (the 5 s LOAD/UNLOAD confirmations).
+    - Refusing is fine and is often right. Asking permission mid-cycle is not:
+      it strands the machine halfway through a sequence with the operator
+      holding a dialog, which is exactly the state that has to be recovered
+      from afterwards.
+    - Applies to g-code, to the GUI, and to anything I add to either.

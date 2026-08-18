@@ -16,6 +16,14 @@ import re
 import sys
 
 
+# RULE 4.4 tables. MOTION_G = modal group 1; IJK_G = the codes LinuxCNC
+# will actually consume an I/J/K with (its own error message lists them).
+MOTION_G = {'0', '1', '2', '3', '33', '38.2', '38.3', '38.4', '38.5',
+            '73', '76', '80', '81', '82', '83', '84', '85', '86', '87',
+            '88', '89'}
+IJK_G = {'2', '3', '5', '5.1', '10', '33.1', '76', '87'}
+
+
 def strip_semicolon_comment(line):
     """Remove a `;` comment, but only when the `;` is not inside parens.
 
@@ -58,6 +66,9 @@ def check(path):
     subs = []
     # RULE 6.1 state: has an M3/M4 been issued with no M5 since?
     spin_on = 0          # line number that started it, 0 = stopped
+    # RULE 4.4 state: the modal motion code in effect. G0 at file start,
+    # which is what the interpreter assumes too.
+    motion_mode = '0'
     for n, raw in enumerate(lines, 1):
         code = strip_semicolon_comment(raw)
 
@@ -131,6 +142,26 @@ def check(path):
         # want it as part of the final lint checked here. before m6, there
         # must be a stop spindle command".
         bare = re.sub(r'\([^)]*\)', '', code)
+
+        # RULE 4.4 -- I/J/K NEEDS AN ARC MODE, ON THE LINE OR IN EFFECT.
+        # 2026-08-17: cusp_w5_substrate.ngc stopped at its first arc,
+        # "N445 X2.915 Z157.137 I6.033 J0." -- the post emitted arc offsets
+        # while the modal motion mode was still G1 from the line above.
+        # LinuxCNC answers "I word with no G2, G3, G5, G5.1, G10, G33.1,
+        # G76, or G87 to use it". It does name the line, but only after the
+        # operator has already pressed cycle start on a program that looked
+        # fine, so the whole run is spent before anyone learns of it.
+        _g = re.findall(r'(?<![A-Za-z0-9.])G0*(\d+(?:\.\d+)?)', bare, re.I)
+        for _w in _g:
+            if _w in MOTION_G:
+                motion_mode = _w
+        if re.search(r'(?<![A-Za-z0-9.#<_])[IJK][-+0-9.\[]', bare, re.I):
+            if not any(_w in IJK_G for _w in _g) and motion_mode not in IJK_G:
+                bad.append((n, 'ARC WORD WITH NO ARC MODE',
+                            'rule 4.4: I/J/K on this line but the motion mode '
+                            'is G%s -- LinuxCNC says "I word with no G2, G3, '
+                            'G5, G5.1, G10, G33.1, G76, or G87 to use it"'
+                            % motion_mode))
         spin = re.findall(r'(?<![A-Za-z0-9.])M0?([345])(?![0-9])', bare, re.I)
         has_m6 = re.search(r'(?<![A-Za-z0-9.])M0?6(?![0-9])', bare, re.I)
         if has_m6:
@@ -191,6 +222,28 @@ def check(path):
     motions = []          # (line, has_g53, axes set)
     if subs:
         return _finish(bad, subs)
+
+    # RULE 6.5 -- A PROGRAM NEVER STOPS TO ASK (ned CLAUDE.md rule 29).
+    # Operator 2026-08-17: "it stopped to ask me to make it continue instead
+    # of ATC. never do that." cusp_w5_substrate.ngc carried
+    #     N9215 M1
+    #     N9220 T7 M6
+    # -- an optional stop sitting immediately in front of the tool change. With
+    # optional stop enabled the run halts there and waits for RESUME, which
+    # reads as the ATC refusing to fire. M0 does it unconditionally.
+    # A precondition that is not met must ABORT with a message saying what is
+    # wrong; it must never park the machine mid-sequence behind a dialog.
+    # PROGRAMS ONLY, same reason as rule 6.2: toolsetter_wco.ngc:90 has a
+    # deliberate `M0 (replace the dust boot)` and a HARD finding on a
+    # subroutine locks cfg_edit.sh out of the whole repo.
+    for n, raw in enumerate(lines, 1):
+        c = re.sub(r'\([^)]*\)', '', strip_semicolon_comment(raw))
+        m = re.search(r'(?<![A-Za-z0-9.])M0*([01])(?![0-9.])', c, re.I)
+        if m:
+            bad.append((n, 'PROGRAM STOPS TO ASK',
+                        'rule 6.5: M%s halts the run and waits for the '
+                        'operator to resume -- CLAUDE.md rule 29. Abort with '
+                        'a message instead, or drop it.' % m.group(1)))
     for n, raw in enumerate(lines, 1):
         c = re.sub(r'\([^)]*\)', '', strip_semicolon_comment(raw))
         ax = set(re.findall(r'(?<![A-Za-z0-9.])([XYZ])\s*[-+0-9.#\[]', c, re.I))
@@ -317,6 +370,8 @@ def check(path):
 # Split because a whole-tree sweep that fails on every legacy style finding
 # blocks every edit and gets switched off, which is worse than no linter.
 HARD = {'UNCLOSED COMMENT', 'NESTED PAREN', 'DUPLICATE O-WORD',
+        'PROGRAM STOPS TO ASK',
+        'ARC WORD WITH NO ARC MODE',
         'M6 NOT BRACKETED', 'SPINDLE UP BEFORE XY RESUME',
         'NO SPIN-UP DWELL',
         'MALFORMED O-WORD', 'SPINDLE RUNNING AT M6',
