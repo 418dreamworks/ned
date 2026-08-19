@@ -11,9 +11,12 @@ Sources:
   configs/params/joint_*.inc   joint travel and maxima (the real stops)
   configs/params/axis_*.inc    axis soft limits (DISABLED -- see limits.json)
   configs/ned5_pb/ned5_pb_ab_gen.ini   B axis / JOINT_6
-  configs/ned5_pb/ned5_pb.var  work offsets, written by LinuxCNC at shutdown
   docs/tool_library/tool_table.json    exported by tools/live/export_tool_library.py
   docs/fixtures/*.json         named fixtures
+
+Work offsets are NOT published. The numeric origin of a WCS stays on ned in
+configs/ned5_pb/ned5_pb.var; Production names an offset and never needs to know
+where it is. Which WCS is for what lives in 418ops/safety/machining-rules.md R5.
 """
 import json, os, re, sys, hashlib, datetime
 
@@ -50,16 +53,6 @@ def ini_values(relpath, section=None):
 def num(s):
     f = float(s)
     return int(f) if f == int(f) else f
-
-
-def var_file(relpath):
-    """LinuxCNC .var -- '<number> <value>' per line."""
-    out = {}
-    for line in open(os.path.join(NED, relpath)):
-        parts = line.split()
-        if len(parts) == 2 and parts[0].isdigit():
-            out[int(parts[0])] = float(parts[1])
-    return out
 
 
 def write(name, obj):
@@ -143,69 +136,6 @@ write("limits.json", {
     "kinematics": "ned_ac_kins -- 5 axis, A tilt about X, C spin about Z, plus an "
                   "independent B rotary on JOINT_6",
     "joints": joints, "axes": axes,
-})
-
-# --------------------------------------------------------- work_offsets.json
-VAR = "configs/ned5_pb/ned5_pb.var"
-v = var_file(VAR)
-NAMES = [("G54", 5221), ("G55", 5241), ("G56", 5261), ("G57", 5281),
-         ("G58", 5301), ("G59", 5321), ("G59.1", 5341), ("G59.2", 5361), ("G59.3", 5381)]
-PURPOSE = {
-    "G54": "the operator's manual jogging space. Holds whatever was last set by "
-           "hand. Flat work may legitimately use it; a rotary setup must not. "
-           "The rule that owns this is safety/machining-rules.md R5.",
-    "G55": "the rotary work offset. A rotary program must name it -- "
-           "safety/machining-rules.md R5.",
-}
-zj = next(j for j in joints if j["axis"] == "Z")
-z_min, z_max = zj["min_limit"], zj["max_limit"]
-
-offsets = []
-for name, base in NAMES:
-    xyz = [v.get(base + i, 0.0) for i in range(3)]
-    rec = {"name": name, "x": xyz[0], "y": xyz[1], "z": xyz[2],
-           "a": v.get(base + 3, 0.0), "b": v.get(base + 4, 0.0), "c": v.get(base + 5, 0.0),
-           "set": any(abs(n) > 0 for n in xyz)}
-    if name in PURPOSE:
-        rec["purpose"] = PURPOSE[name]
-    if rec["set"]:
-        # Where does this offset's Z0 sit relative to the Z joint travel?
-        rec["z0_in_machine_z"] = xyz[2]
-        rec["z0_reachable"] = z_min <= xyz[2] <= z_max
-        if not rec["z0_reachable"]:
-            rec["z0_note"] = ("Z0 of %s is %.3f mm below the Z joint travel minimum "
-                              "%.3f. Any G-code that commands Z0 in %s is out of "
-                              "travel." % (name, z_min - xyz[2], z_min, name))
-    offsets.append(rec)
-
-write("work_offsets.json", {
-    "machine": "ned", "units": "mm and degrees",
-    "read_by": "Machining only. NOT a Production input.",
-    "why_not_production": [
-        "Production names a work offset. It never needs to know where that offset "
-        "is -- that is what a work offset is for. If a generator needed the numeric "
-        "origin, the offset would not be doing its job.",
-        "What Production needs is the rule about WHICH offset to name, and that is "
-        "a safety rule, not a measurement: 418ops/safety/machining-rules.md R5. It "
-        "is checked by tools/gcode-lint/lint_ngc.py:238 (W1/W2/W3).",
-        "These origins change whenever ned is homed or re-set. A number copied out "
-        "of here into a generator is wrong the next time the machine is homed.",
-    ],
-    "frame": "machine coordinates, relative to the physically homed position",
-    "generated_by": "ned:tools/publish_machine_facts.py",
-    "source": "ned:" + VAR, "verified": verified(VAR),
-    "read_this_first": [
-        "These are the values LinuxCNC last wrote to its var file, at the last "
-        "clean shutdown. They mean nothing unless the machine has been PHYSICALLY "
-        "homed -- every launch declares home wherever the machine is sitting.",
-        "Machining republishes after any home, re-set or re-measure. If the "
-        "verified date is older than the last home, ask before using it.",
-        "G92 offsets are #5211-#5219; G92 is active only when #5210 is 1.",
-    ],
-    "g92_active": bool(v.get(5210, 0.0)),
-    "g92": [v.get(5211 + i, 0.0) for i in range(9)],
-    "active_at_last_shutdown": NAMES[int(v.get(5220, 1.0)) - 1][0],
-    "offsets": offsets,
 })
 
 # ------------------------------------------------------------ fixtures.json
