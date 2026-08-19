@@ -13,6 +13,7 @@ Layout (operator, 2026-08-01):
 | File | Why it lives at root |
 |---|---|
 | `run5.sh` | THE launcher (USER runs it; never Claude). Starts PB via the qt_pb venv, resume y/N consent, auto-starts the live/ loggers. |
+| `publish_machine_facts.py` | Publishes ned's machine facts to `~/418ops/machine/` per `418ops/contracts/machine-facts.md` -- `limits.json`, `work_offsets.json`, `fixtures.json`, `tool_table.json`. Nothing is hand-typed: every number is read from the file that owns it (`configs/params/*.inc`, `configs/ned5_pb/ned5_pb.var`, `docs/fixtures/*.json`, `docs/tool_library/tool_table.json`) and carries that file's path and mtime, so a stale fact shows as a stale date. Run it after any home, re-measure, new fixture or tool re-probe. `--dry-run` prints the md5s without writing. |
 | `brain_harness.py` | Execs `live/ned_brain.py`'s OWN text with the driver loop cut and hal/linuxcnc/GUI_LOG stubbed, so `do_inplace()` and friends can be triggered with fabricated state -- no machine, no motion. Point `REAL` at `git show <sha>:tools/live/ned_brain.py` to A/B a fix against the code it replaced; that is what separated real defects from guesses on 2026-08-08. |
 
 Everything else belongs in live/ or groundtruth/ — if something new lands
