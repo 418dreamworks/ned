@@ -607,7 +607,21 @@ class UserDRO(QWidget):
     # world channel fires no updates, so the text sticks. Once homed, the
     # widget's own binding resumes and overwrites. NML status poll -- no HAL.
     def _drop_dtg(self):
-        """Hide the DTG column, header and all (operator 2026-08-11)."""
+        """The old DTG column becomes the TARGET column.
+
+        Operator 2026-08-18: "you can look up the formatting on github when we
+        had DTG column and just use that. don't make it up. in fact, the DTG
+        column is loaded at startup before disappearing. use that."
+
+        That is exactly right and it replaced a worse plan. Cloning
+        drolabel_machine_<a> and inserting the copy failed five times out of
+        five -- the labels are not direct children of widget_xyzac's
+        QVBoxLayout, so indexOf() returned -1 and nothing landed. The DTG
+        widgets are already in the .ui, already in the right cell of the right
+        nested layout, and already carry the column's exact formatting. They
+        were only ever hidden. So they are kept, the header is retyped, and
+        _target_refresh paints them.
+        """
         names = ['dtg_column_header'] + ['drolabel_dtg_' + a
                                          for a in ('x', 'y', 'z', 'a', 'c')]
         gone, missing = 0, []
@@ -619,14 +633,12 @@ class UserDRO(QWidget):
             if w is None:
                 missing.append(n)
                 continue
-            # zero the minimums too: these carry a fixed 100 px width, and a
-            # hidden widget with a minimum still reserves its grid column.
-            try:
-                w.setMinimumSize(0, 0)
-                w.setMaximumSize(0, 16777215)
-            except Exception:
-                pass
-            w.hide()
+            if n == 'dtg_column_header':
+                try:
+                    w.setText('TARGET')
+                except Exception:
+                    pass
+            w.show()
             gone += 1
         # HIDING IS ONLY HALF OF IT. Every DRO column in this .ui is
         # sizePolicy Fixed with min == max == 100, so removing one does not
@@ -659,6 +671,38 @@ class UserDRO(QWidget):
         LOG.info('DTG: %d widget(s) hidden, %d column widget(s) widened to '
                  '%d px%s', gone, grew, WIDE,
                  (' -- NOT FOUND: ' + ', '.join(missing)) if missing else '')
+
+    # jt.<slot>.target is MACHINE coords; the DRO letter -> jogtarget instance.
+    # The rotary row uses jt.r, which postgui wires to axis.c normally and
+    # axis.b under -xyzab -- the same choice the row itself follows.
+    TARGET_SLOT = {'x': 'x', 'y': 'y', 'z': 'z', 'a': 'a', 'c': 'r'}
+
+    def _target_refresh(self):
+        """Paint the third column, in the ACTIVE WCS.
+
+        Operator 2026-08-18: "not just for G54. the selected WCS". Same
+        arithmetic the work column already uses -- actual minus g5x minus g92
+        -- so whichever WCS is live, both columns agree.
+        """
+        st = self._stat
+        try:
+            import hal as _hal
+        except Exception:
+            return
+        for name, slot in self.TARGET_SLOT.items():
+            lab = self.findChild(QWidget, 'drolabel_dtg_' + name)
+            if lab is None:
+                win = self.window()
+                lab = win.findChild(QWidget, 'drolabel_dtg_' + name) if win else None
+            if lab is None:
+                continue
+            try:
+                i = self.AXIS_IDX[name]
+                mach = float(_hal.get_value('jt.%s.target' % slot))
+                lab.setText('{:+.2f}'.format(
+                    mach - st.g5x_offset[i] - st.g92_offset[i]))
+            except Exception:
+                lab.setText('--')
 
     def _xyzab_relabel(self):
         """Rename the C row to B (-xyzab). Both DRO copies carry the label."""
@@ -759,3 +803,4 @@ class UserDRO(QWidget):
                 self._dro_overridden.add(name)
             except Exception:
                 pass
+        self._target_refresh()

@@ -127,7 +127,7 @@ joints.append({
 })
 
 write("limits.json", {
-    "machine": "ned", "units": "mm and degrees",
+    "machine": "ned", "units": "mm and degrees", "read_by": "Production",
     "generated_by": "ned:tools/publish_machine_facts.py",
     "read_this_first": [
         "The JOINT limits are the real stops. Size any program against those.",
@@ -152,9 +152,10 @@ NAMES = [("G54", 5221), ("G55", 5241), ("G56", 5261), ("G57", 5281),
          ("G58", 5301), ("G59", 5321), ("G59.1", 5341), ("G59.2", 5361), ("G59.3", 5381)]
 PURPOSE = {
     "G54": "the operator's manual jogging space. Holds whatever was last set by "
-           "hand. Flat work may legitimately use it; a rotary setup must not.",
-    "G55": "the rotary work offset. A rotary program on G54 runs against whatever "
-           "the operator last jogged.",
+           "hand. Flat work may legitimately use it; a rotary setup must not. "
+           "The rule that owns this is safety/machining-rules.md R5.",
+    "G55": "the rotary work offset. A rotary program must name it -- "
+           "safety/machining-rules.md R5.",
 }
 zj = next(j for j in joints if j["axis"] == "Z")
 z_min, z_max = zj["min_limit"], zj["max_limit"]
@@ -179,6 +180,17 @@ for name, base in NAMES:
 
 write("work_offsets.json", {
     "machine": "ned", "units": "mm and degrees",
+    "read_by": "Machining only. NOT a Production input.",
+    "why_not_production": [
+        "Production names a work offset. It never needs to know where that offset "
+        "is -- that is what a work offset is for. If a generator needed the numeric "
+        "origin, the offset would not be doing its job.",
+        "What Production needs is the rule about WHICH offset to name, and that is "
+        "a safety rule, not a measurement: 418ops/safety/machining-rules.md R5. It "
+        "is checked by tools/gcode-lint/lint_ngc.py:238 (W1/W2/W3).",
+        "These origins change whenever ned is homed or re-set. A number copied out "
+        "of here into a generator is wrong the next time the machine is homed.",
+    ],
     "frame": "machine coordinates, relative to the physically homed position",
     "generated_by": "ned:tools/publish_machine_facts.py",
     "source": "ned:" + VAR, "verified": verified(VAR),
@@ -214,7 +226,7 @@ for fn in sorted(os.listdir(os.path.join(NED, FIXDIR))):
     fixtures.append(rec)
 
 write("fixtures.json", {
-    "machine": "ned", "units": "mm",
+    "machine": "ned", "units": "mm", "read_by": "Production",
     "generated_by": "ned:tools/publish_machine_facts.py",
     "read_this_first": [
         "A fixture record is geometry -- what bolts to what. It is NOT a setup "
@@ -227,6 +239,7 @@ write("fixtures.json", {
 # ----------------------------------------------------------- tool_table.json
 TT = "docs/tool_library/tool_table.json"
 tt = json.load(open(os.path.join(NED, TT)))
+tt["read_by"] = "Production"
 tt["source"] = "ned:" + TT
 tt["verified"] = verified(TT)
 tt["read_this_first"] = [

@@ -234,6 +234,50 @@ setp joint.2.jog-vel-mode 0
 setp joint.3.jog-vel-mode 0
 setp joint.4.jog-vel-mode 1
 setp joint.5.jog-vel-mode 0
+
+# --- JOG TARGET: where each axis ENDS UP once its queue drains --------------
+# tools/live/jogtarget.comp. Motion publishes only teleop_tp.curr_pos (as
+# axis.N.pos-cmd) -- where the axis has already got to. The queued target,
+# teleop_tp.pos_cmd, is a planner variable with no pin, and the gap between
+# them is exactly what the operator could not see: the wheel accepts counts far
+# faster than the axis executes them. Operator 2026-08-18: "a 3rd col in both
+# DROs that show the final destination assuming feed and accel was infinity if
+# the queue is cleared".
+# It runs the planner's own line (axis.c:406) against the same three inputs
+# motion reads, in the servo thread, so no count is missed. jt.r is the ROTARY
+# SLOT -- axis.c normally, axis.b under -xyzab -- wired at the bottom of each
+# file where that choice is already made.
+loadrt jogtarget names=jt.x,jt.y,jt.z,jt.a,jt.r
+addf jt.x servo-thread
+addf jt.y servo-thread
+addf jt.z servo-thread
+addf jt.a servo-thread
+addf jt.r servo-thread
+
+net sig-jogc-x        =>  jt.x.counts
+net mpg-scale-lin     =>  jt.x.scale
+net sig-mpg-sel-x     =>  jt.x.enable
+net jt-pos-x          axis.x.pos-cmd  =>  jt.x.pos-cmd
+
+net sig-jogc-y        =>  jt.y.counts
+net mpg-scale-lin     =>  jt.y.scale
+net sig-mpg-sel-y     =>  jt.y.enable
+net jt-pos-y          axis.y.pos-cmd  =>  jt.y.pos-cmd
+
+net sig-jogc-z        =>  jt.z.counts
+net sig-zjog-scale    =>  jt.z.scale
+net sig-mpg-sel-z     =>  jt.z.enable
+net jt-pos-z          axis.z.pos-cmd  =>  jt.z.pos-cmd
+
+net sig-mpg-counts    =>  jt.a.counts
+net mpg-scale-ang     =>  jt.a.scale
+net mpg-sel-a         =>  jt.a.enable
+net jt-pos-a          axis.a.pos-cmd  =>  jt.a.pos-cmd
+
+net sig-mpg-counts    =>  jt.r.counts
+net mpg-scale-ang     =>  jt.r.scale
+net mpg-sel-c         =>  jt.r.enable
+net jt-pos-r          axis.c.pos-cmd  =>  jt.r.pos-cmd
 # ============================================================================
 
 # --- Z JOG CLAMP: GUI supplies arm state and the floor --------------------

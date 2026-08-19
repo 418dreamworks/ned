@@ -861,11 +861,10 @@ class UserTab(QWidget):
             row.addWidget(edit)
             bl.addLayout(row)
 
-            note = QLabel('MPG jogging of Z is held between Zlow and the\n'
-                          'machine Z ceiling. Jogging back UP always works.\n'
-                          'Affects JOG only -- g-code is untouched.')
-            note.setStyleSheet('color: rgb(160,160,160); font: 9pt;')
-            bl.addWidget(note)
+            # NO EXPLANATORY TEXT IN THE CLAMP BOX (operator 2026-08-18:
+            # "for the clamp, i want all the text removed"). Three lines of
+            # prose describing what the clamp does sat permanently under the
+            # Zlow field. The control is the documentation.
 
             status = QLabel('')
             status.setObjectName('zclamp_status')
@@ -4079,9 +4078,16 @@ class UserTab(QWidget):
                 # wire it in with other stuff later on") -- the tool table
                 # carries NO flute count today (columns: tool/tool_mill,
                 # checked 2026-08-02), so nothing real can be computed yet.
+                # FORMATTING COMES FROM THE APP QSS, NOT FROM HERE (operator
+                # 2026-08-18: "for chipload and surface speed, i want
+                # formatting to be consistent with the other text in that
+                # area"). This used to carry a hand-written
+                # 'color: rgb(200,200,200); font: 9pt;' which made it the only
+                # text in the bar that did not match its neighbours. Setting
+                # no stylesheet at all lets it inherit exactly what every
+                # other label there uses.
                 lbl = QLabel('CHIP LOAD  --\nSURFACE    --')
                 lbl.setObjectName('ned_chipload')
-                lbl.setStyleSheet('color: rgb(200,200,200); font: 9pt;')
                 m.parentWidget().layout().replaceWidget(m, lbl)
                 m.hide()
                 self._chipload_lbl = lbl
@@ -4476,6 +4482,13 @@ class UserTab(QWidget):
             for w in (rerack, entry, call):
                 w.setMinimumHeight(ROW_H)
                 w.setMaximumHeight(ROW_H)
+            # THE T FIELD IS SHORTER THAN THE BUTTONS (operator 2026-08-18:
+            # "i want the text box shorter. its too tall for the tool number").
+            # The loop above gives every widget in the row the button height,
+            # which on a two-character number field reads as a slab. Height
+            # only -- the width is left exactly as it was.
+            entry.setMinimumHeight(ROW_H - 12)
+            entry.setMaximumHeight(ROW_H - 12)
             # ONE ROW, not two. Two rows plus a header needed ~94 px and the
             # MANUAL half leaves about 75 inside frame_17's fixed 250, so the
             # box clipped and drew its three children on top of each other.
