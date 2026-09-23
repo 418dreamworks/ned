@@ -161,3 +161,15 @@ and stationary, and that is the last moment before it is trusted.
 CATCHES THE OPPOSITE MISTAKE TOO: a tool so short it cannot reach the work.
 
 NOT BUILT. Columns exist; nothing computes the difference yet.
+
+## KIV: LinuxCNC push notifications — not evaluated
+
+https://github.com/bucklevision/Linuxcnc-notify
+
+Operator flagged it 2026-09-19 as something to look at later. Nothing has been
+read, run or checked against ned -- no view on whether it fits, what it needs,
+or whether it survives a LinuxCNC upgrade (`docs/update_survival.md`).
+
+Why it is interesting here: ned runs unattended for long cycles and the
+operator is not always at the machine, so a program finishing, aborting on a
+guard, or faulting is currently only visible on the screen.
