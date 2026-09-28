@@ -13,3 +13,4 @@ refuses a program whose workholding has no such record.
 | name | |
 |---|---|
 | [RotaryFixturePlate](RotaryFixturePlate.md) | 95.250 sq × 19.050, 4 × M6 on an 81.7796 square |
+| [BedTnutSlots](BedTnutSlots.md) | the bed's six T-nut slots, 16.725 wide (0.658 in, NOT 3/4), and the 24 bolt locations on them |
