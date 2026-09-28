@@ -23,3 +23,4 @@ value (comment-preserving; derived scales/velocities computed from
 ned_params.sh cross-check), `write` (regenerate the .inc files),
 `extract` (one-time bootstrap, refuses if MASTER exists). head_zero.inc
 is EXCLUDED (ned_brain writes it at zero capture).
+| `test_ac_adopt.py` | Guard on A/C homing: proves the home still checks the adopted angle against the Yaskawa drive and re-reads it after the move. Pure, no machine. Run by `.git/hooks/pre-commit` on any ned_controls.py commit. 2026-09-28: a Home All declared A at 0 while the drive read +20.996. |

@@ -51,6 +51,59 @@ LOG = logger.getLogger(__name__)
 NJ = 7 if os.environ.get('NED_MODE', '') == 'xyzab' else 6
 
 
+AC_ADOPT_TOL_DEFAULT = 0.05
+
+
+def ac_adopt_verdict(joint_deg, drive_deg, drive_ok, tol=AC_ADOPT_TOL_DEFAULT):
+    """Did the home actually adopt what the drive is reporting?
+
+    PURE ON PURPOSE. No HAL, no linuxcnc, no Qt -- so it can be tested
+    offline, and so the refusal cannot be quietly deleted without
+    tools/live/test_ac_adopt.py going red. Returns (ok, reason).
+
+    ============================================================
+    DO NOT REMOVE THIS CHECK. READ THIS FIRST IF YOU ARE ABOUT TO.
+    ============================================================
+    Operator 2026-09-28, after a Home All left the head 21 deg off with the
+    DRO reading 0: "the 4 steps are. read (eg, 21). set to 21. move -21.
+    check that new position is zero." This function is steps 2 and 4. It
+    exists because step 2 FAILED SILENTLY and step 4 did not exist:
+
+        ned_brain:  HEADREAD A: +20.996 deg          <- step 1, correct
+        HOME A:     adopted +0.0000 deg (no motion)  <- step 2, WRONG
+        HOME A:     already at zero, nothing to move <- step 3, SKIPPED
+                    (nothing checked anything)       <- step 4, ABSENT
+
+    C did exactly the same thing with -0.0351 and nobody could see it,
+    because the error was the size of the noise. Both axes, one function,
+    jn = 4 or 5.
+
+    HOW THE ADOPT CAN COME BACK WRONG. ini.N.home_offset reaches motion only
+    when the PIN VALUE CHANGES -- inihal.cc:347-349 gates the push on
+    CHANGED_IDX(joint_home_offset,idx). A head that has not moved gives a
+    bit-stable reading (six samples of deg-a on 2026-09-28, every one
+    20.99606), so there is nothing for that gate to notice, and motion keeps
+    the INI's HOME_OFFSET = 0.0 (joint_a.inc:46, joint_c.inc:37). homing.c
+    then sets the joint to H[].home_offset, which is still 0.
+
+    So the joint number is NOT evidence of where the head is. The drive is
+    the only thing on this machine that knows, and it must be asked after
+    the adopt, every time, on both axes.
+    """
+    if not drive_ok or drive_deg is None:
+        return False, ('the drive reading is not valid -- the adopt cannot '
+                       'be checked, so nothing moves')
+    if joint_deg is None:
+        return False, 'no joint position to check the drive against'
+    gap = abs(joint_deg - drive_deg)
+    if gap > tol:
+        return False, ('adopt landed at %+.4f but the drive says %+.4f '
+                       '(%.4f deg apart, tolerance %.4f). The head is NOT '
+                       'where LinuxCNC thinks it is.'
+                       % (joint_deg, drive_deg, gap, tol))
+    return True, 'adopt agrees with the drive within %.4f deg' % tol
+
+
 class _PreHomeInputGate(QObject):
     """Swallow every user input except the survivors.
 
@@ -9761,6 +9814,29 @@ QTabBar::tab:only-one {
     # watchable -- never the unannounced 100 deg swing that homing itself
     # used to produce when a bad offset became travel.
     AC_ZERO_VEL = 5.0          # deg/s, HOME_FINAL_VEL's old value
+    AC_ADOPT_TOL = 0.05        # deg. The same "at zero" tolerance M6 uses.
+
+
+    def _head_drive_deg(self, ax):
+        """The Yaskawa absolute angle for A or C, straight off the PktUART
+        stream. Returns (deg, ok). This is the ONLY source of truth for where
+        the head physically is -- see ac_adopt_verdict()."""
+        import subprocess
+        base = 'hm2_7i97.0.pktuart.0.deg-' + ax
+        try:
+            r = subprocess.run(['timeout', '5', 'halcmd', '-s', 'getp', base],
+                               capture_output=True, text=True)
+            if r.returncode:
+                return None, False
+            deg = float(r.stdout.strip())
+            k = subprocess.run(['timeout', '5', 'halcmd', '-s', 'getp',
+                                base + '-ok'], capture_output=True, text=True)
+            ok = (k.returncode == 0
+                  and k.stdout.strip().upper() in ('TRUE', '1'))
+            return deg, ok
+        except Exception as e:
+            LOG.error('_head_drive_deg(%s) failed: %s', ax, e)
+            return None, False
 
     def ac_to_zero(self, ax):
         """Adopt the encoder for this head axis, then joint-jog it to 0."""
@@ -9825,11 +9901,26 @@ QTabBar::tab:only-one {
             self._teleop_restore_when_still(label)
             return False
         here = s.joint[jn]['output']
+        # ---- STEP 2 CHECK. ASK THE DRIVE, DO NOT TRUST THE ADOPT. ----
+        # See ac_adopt_verdict() for why this is here and why it must stay.
+        # Short version: on 2026-09-28 the adopt returned +0.0000 while the
+        # drive read +20.996, and the code believed the 0 -- so step 3 was
+        # skipped as "already at zero" and the head stood 21 deg off with
+        # the DRO reading zero.
+        drive, drive_ok = self._head_drive_deg(ax)
+        ok, why = ac_adopt_verdict(here, drive, drive_ok, self.AC_ADOPT_TOL)
+        if not ok:
+            c.error_msg('%s REFUSED: %s Nothing moved.' % (label, why))
+            LOG.error('%s REFUSED: %s', label, why)
+            self._teleop_restore_when_still(label)
+            return False
+        LOG.info('%s: adopt VERIFIED against the drive -- joint %+.4f, '
+                 'drive %+.4f (%s)', label, here, drive, why)
         LOG.info('%s: adopted %+.4f deg (no motion); now joint-jogging to 0',
                  label, here)
         if abs(here) < 0.001:
             LOG.info('%s: already at zero, nothing to move', label)
-            self._teleop_restore_when_still(label)
+            self._teleop_restore_when_still(label, verify_ax=ax)
             return True
         # 2. move. RE-ASSERT JOINT MODE HERE -- THE ADOPT ITSELF UNDID IT.
         #    Completing a home while motion is in FREE makes motion switch
@@ -9864,10 +9955,12 @@ QTabBar::tab:only-one {
         c.jog(linuxcnc.JOG_INCREMENT, True, jn, self.AC_ZERO_VEL, -here)
         LOG.info('%s: joint jog %+.4f deg at %.1f deg/s issued',
                  label, -here, self.AC_ZERO_VEL)
-        self._teleop_restore_when_still(label)
+        # STEP 4 runs once motion is still -- the drive is read again there
+        # and must say zero. A move that was issued is not a move that landed.
+        self._teleop_restore_when_still(label, verify_ax=ax)
         return True
 
-    def _teleop_restore_when_still(self, label):
+    def _teleop_restore_when_still(self, label, verify_ax=None):
         """Put motion back in TELEOP once the joint jog has finished.
 
         WHY THIS EXISTS. ac_to_zero drops teleop so it can issue a JOINT jog,
@@ -9909,6 +10002,34 @@ QTabBar::tab:only-one {
                 if any(st.joint[j]['homing'] for j in range(st.joints)):
                     return
                 t.stop()
+                # ---- STEP 4. THE DRIVE MUST NOW SAY ZERO. ----
+                # Operator 2026-09-28: "check that new position is zero."
+                # Motion is still, so this is the real end state, not an
+                # intention. Loud either way -- a silent pass here is what
+                # let a 21 deg error stand as "homed".
+                if verify_ax is not None:
+                    d2, ok2 = self._head_drive_deg(verify_ax)
+                    if not ok2 or d2 is None:
+                        LOG.error('%s: STEP 4 FAILED -- cannot read the '
+                                  'drive after the move. %s is NOT confirmed '
+                                  'at zero.', label, verify_ax.upper())
+                    elif abs(d2) > self.AC_ADOPT_TOL:
+                        LOG.error('%s: STEP 4 FAILED -- the drive reads '
+                                  '%+.4f deg after the move, not zero '
+                                  '(tolerance %.4f). %s IS NOT HOMED.',
+                                  label, d2, self.AC_ADOPT_TOL,
+                                  verify_ax.upper())
+                        try:
+                            linuxcnc.command().error_msg(
+                                '%s: the drive reads %+.4f deg after the '
+                                'move, not zero. %s IS NOT AT ZERO.'
+                                % (label, d2, verify_ax.upper()))
+                        except Exception:
+                            pass
+                    else:
+                        LOG.info('%s: STEP 4 OK -- the drive reads %+.4f deg, '
+                                 'zero within %.4f', label, d2,
+                                 self.AC_ADOPT_TOL)
                 if not all(st.homed[:st.joints]):
                     LOG.info('%s: not all joints homed -- leaving motion in '
                              'joint mode, which is correct there', label)
