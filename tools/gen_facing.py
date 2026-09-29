@@ -13,6 +13,10 @@ EVERYTHING BEFORE IT THEN PROCEEDS TO THE FACING."  One lap of the rectangle
 at Z5, cutting nothing, before anything goes down.
 """
 import math
+import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from ngc_revision import revision_lines
 
 # ---- the numbers the operator sets -----------------------------------------
 # THE TOOL CENTRE PATH, not the cut boundary. Operator 2026-09-29: 'TOOL
@@ -36,6 +40,8 @@ Z_LAP       = 5.0      # mm, the confidence lap
 Z_FACE      = 0.0      # mm, the finished surface. The operator zeroes here
 HELIX_DIA   = 76.2     # mm, 3 in, one cutter diameter
 DWELL       = 3.0      # s, spindle settle before the first move
+CHANGED     = ('helix removed, confidence lap commented out, '
+               'cuts one direction only')   # rule 3.7, one line
 
 R = TOOL_DIA / 2.0
 STEP = TOOL_DIA - OVERLAP
@@ -199,4 +205,7 @@ w('M5')
 w('G0 Z#<z_rapid>')
 w('M30')
 w('%')
-print('\n'.join(L))
+# RULE 3.7: the revision header goes on top, and its md5 is of everything
+# below it -- computed last, inserted first.
+_hdr = revision_lines(L[1:], 'gen_facing.py', CHANGED)
+print('\n'.join([L[0]] + _hdr + L[1:]))

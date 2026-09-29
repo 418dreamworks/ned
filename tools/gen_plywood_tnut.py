@@ -1,3 +1,7 @@
+import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from ngc_revision import revision_lines
 #!/usr/bin/env python3
 """Generate the plywood hold-down program: counterbore + through hole, 12 places.
 
@@ -94,4 +98,9 @@ for ri, y in enumerate(ROWS):
         L.append("")
 
 L += ["M5", "G0 Z%.4f" % PLANE, "M30", "%"]
-print("\n".join(L))
+# RULE 3.7: the revision header goes on top, and its md5 is of everything
+# below it -- computed last, inserted first.
+CHANGED = ("G53 G0 Z0 before the start XY; aborts when no tool length "
+           "is applied")
+_hdr = revision_lines(L[1:], 'gen_plywood_tnut.py', CHANGED)
+print("\n".join([L[0]] + _hdr + L[1:]))

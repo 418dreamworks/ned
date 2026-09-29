@@ -87,6 +87,50 @@ every argument carries a default.
 
 ---
 
+### 3.6 A setup program is title, PARAMETERS, DESCRIPTION, body -- in that order
+
+Operator 2026-09-29: *"i want it to follow all the rules, have parameters i can
+set right away second, and a clear description of the code after that before
+the code body."*
+
+The numbers come before the prose because the numbers are what gets changed.
+
+### 3.7 Every program carries a REVISION header, and it changes when the file does
+
+Operator 2026-09-29: *"we always have version contorl on top of files whenever
+we are editing like this so that i know what is happening."*
+
+```gcode
+(REVISION 2026-09-29 11:04:22  md5 8d5bfbc2  gen_facing.py @ 9f9d0ec)
+(CHANGED  helix removed, confidence lap commented out, cuts one direction)
+```
+
+- **The md5 is of the file as generated**, so what is on screen can be matched
+  to what is on disk without trusting a filename or a timestamp.
+- **`CHANGED` says what moved since the last revision**, in one line. Not a
+  changelog -- the git history is the changelog. This is the one sentence the
+  operator needs before pressing start.
+
+**Why it is a rule and not a nicety.** On 2026-09-29 a corrected `face_bed.ngc`
+sat in `/tmp` while the old one was still on disk and running. The operator
+watched it traverse to the start without the `G53 G0 Z0` that had just been
+added, and there was nothing on screen that could have told him which version
+he had. A revision line on the first page would have.
+
+### 3.8 A declared parameter must drive the body
+
+Operator 2026-09-29: *"parameter changes MUST always alter the file. check
+before greenlighting"* ... *"if it doesnt alter the file, it should not be a
+parameter."*
+
+`face_bed.ngc` shipped with a `PARAMETERS` block over a body of literals. The
+operator set `#<centre_x>` from 2470 to 2570, saved, and the toolpath still ran
+to 2470. The header even promised *"Every move below is built from these"*.
+
+A parameter that drives nothing is worse than no parameter: it reads as a
+guarantee. Enforced as `E2` -- every `#<name> = ...` must be read somewhere
+after it. `#<_name>` globals are exempt, since other files read those.
+
 ## 4. Motion
 
 ### 4.1 A corner costs speed
@@ -94,6 +138,28 @@ Bare `G64`, or the machine default `G64 P0.001`, cannot round anything: the
 planner must arrive exactly on the corner point, so path velocity — and
 every axis with it — goes to zero. Either give it a real tolerance or
 remove the corner by moving the axes together.
+
+### 4.5 Machine Z0 before the first XY of any path
+
+Operator 2026-09-29: *"whenever going to start of path. it MUST always, go to
+mscZ0, go to start XY. then do wahtever after that"* ... *"EVERY FUCKING FILE
+we run must have that check"* ... *"i don't care who made it."*
+
+```gcode
+G53 G0 Z0          (its own move -- no X or Y on this line)
+G0 X.. Y..
+```
+
+`G53 Z0` is the top of Z travel. It is the one height at which no XY traverse
+can strike anything, and the **only** retract whose safety does not depend on a
+work offset being right -- and the work offset is exactly what goes wrong. The
+same morning, a `G49` silently redefined Z0 as the spindle nose while the DRO
+went on reading plausible numbers; a work-frame retract measured from that
+would have been 102 mm of nothing.
+
+Checked at the start of the program and after every `M6`. A combined
+`G53 G0 Z0 X.. Y..` does **not** count: that traverses XY at whatever height it
+started from. Enforced as `E3`.
 
 ### 4.2 `F` governs the linear axes
 On a block with both linear and rotary words, `F` is the linear feed and the
