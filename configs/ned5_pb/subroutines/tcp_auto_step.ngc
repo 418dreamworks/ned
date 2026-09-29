@@ -31,6 +31,16 @@ o<tcp_auto_step> sub
   #<fast>   = 200.0
   #<latch>  = 10.0
   #<back>   = 0.8
+  ; STANDOFF BEFORE THE LATCH. Operator 2026-09-28: "i would back off more
+  ; than just contact release." G38.5 stops the instant contact breaks, so
+  ; the slow probe below used to re-approach over nothing but the probe's
+  ; own hysteresis band -- and whatever varied in that band landed straight
+  ; in #5063. Measured on the 20:11 survey: five reference touches at the
+  ; SAME pose spread 0.0450 mm, sd 0.0150. A 10 mm/min latch on a rigid
+  ; puck should repeat to single-digit microns.
+  ; 0.5 mm at 10 mm/min is a 3 s run-up, so the axis is at steady feed and
+  ; well clear of the release band before it touches.
+  #<standoff> = 0.5
   ; SLOW (operator 2026-08-05: "move slowly to get there"). The tilt moves
   ; the tip by the pivot ERROR, and that error is largest on the first
   ; steps -- exactly when speed would hurt most.
@@ -76,12 +86,17 @@ o<tcp_auto_step> sub
     ; back-off (three in a row killed the 09:43 run at pair 19). G38.5
     ; stops the moment the contact releases and cannot trip-error.
     G38.5 Z[#<back>] F[#<fast>]
-    G38.2 Z-[#<back> + 0.2] F[#<latch>]
+    ; NOW a fixed clearance past release. A plain G1 is safe HERE and only
+    ; here: G38.5 above guarantees the probe is open, which is exactly what
+    ; the old plain-G1 back-off could not guarantee ("Probe tripped during
+    ; non-probe move", three in a row at pair 19 on 2026-08-05).
+    G1 Z#<standoff> F[#<trav>]
+    G38.2 Z-[#<standoff> + 0.3] F[#<latch>]
     #<xt> = #5061
     #<yt> = #5062
     #<zt> = #5063
     #<at> = #5064
-    G38.5 Z[#<back> + 0.2] F[#<latch>]
+    G38.5 Z[#<standoff> + 0.3] F[#<latch>]
     ; RETRACT. On the REFERENCE probe there is no start pose yet -- the GUI
     ; passes sz = 0, and retracting to absolute Z0 sent the head hundreds of
     ; mm up and aborted before the callback, so the sweep never got its
