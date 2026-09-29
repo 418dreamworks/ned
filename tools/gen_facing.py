@@ -22,7 +22,8 @@ CENTRE_X    = 2470.0   # mm, centre travels X0 -> X2470. 4043.725 available
 CENTRE_Y    = 1500.0   # mm, centre travels Y0 -> Y1500. 1788.000 available
 TOOL        = 1        # T1, the 3 in face mill
 TOOL_DIA    = 76.2     # mm, must match the tool table DIAMETER
-STEPOVER_PC = 70.0     # % of the cutter
+OVERLAP     = 12.7     # mm, 0.5 in. Operator 2026-09-29: '.5in overlap
+                       # should do'. STEPOVER is derived: dia - overlap
 SPINDLE_RPM = 5000     # operator 2026-09-29: 'LETS RUN IT AT 5000 rpm.
                        # that should be plenty for this 3in face mill.'
                        # Vc = pi * 76.2 * 5000 / 1000 = 1197 m/min
@@ -37,7 +38,7 @@ HELIX_DIA   = 76.2     # mm, 3 in, one cutter diameter
 DWELL       = 3.0      # s, spindle settle before the first move
 
 R = TOOL_DIA / 2.0
-STEP = TOOL_DIA * STEPOVER_PC / 100.0
+STEP = TOOL_DIA - OVERLAP
 L = []
 def w(s=''):
     L.append(s)
@@ -54,7 +55,7 @@ w('#<centre_x>   = %.4f   (mm, the TOOL CENTRE runs X0 to here. 4043.725 of trav
 w('#<centre_y>   = %.4f   (mm, the TOOL CENTRE runs Y0 to here. 1788.000 -- the tight one)' % CENTRE_Y)
 w('#<tool>       = %d        (T%d, the 3 in face mill)' % (TOOL, TOOL))
 w('#<tool_dia>   = %.4f     (mm, must match the tool table DIAMETER)' % TOOL_DIA)
-w('#<stepover>   = %.4f     (mm, %.0f percent of the cutter)' % (STEP, STEPOVER_PC))
+w('#<stepover>   = %.4f     (mm, = dia %.1f minus %.1f overlap)' % (STEP, TOOL_DIA, OVERLAP))
 w('#<rpm>        = %d        (Vc = pi x dia x rpm / 1000 = %.0f m/min)'
   % (SPINDLE_RPM, math.pi * TOOL_DIA * SPINDLE_RPM / 1000.0))
 w('#<feed>       = %.4f   (mm/min, %.4f mm/tooth at 6 flutes)'
