@@ -23,8 +23,12 @@ CENTRE_Y    = 1500.0   # mm, centre travels Y0 -> Y1500. 1788.000 available
 TOOL        = 1        # T1, the 3 in face mill
 TOOL_DIA    = 76.2     # mm, must match the tool table DIAMETER
 STEPOVER_PC = 70.0     # % of the cutter
-SPINDLE_RPM = 4000     # Vc = pi * 76.2 * 4000 / 1000 = 957 m/min
-FEED        = 4800.0   # mm/min = 0.200 mm/tooth at 6 flutes and 4000 rpm
+SPINDLE_RPM = 5000     # operator 2026-09-29: 'LETS RUN IT AT 5000 rpm.
+                       # that should be plenty for this 3in face mill.'
+                       # Vc = pi * 76.2 * 5000 / 1000 = 1197 m/min
+FEED        = 6000.0   # mm/min = 0.200 mm/tooth at 6 flutes and 5000 rpm.
+                       # DERIVED from the rpm to hold the chip load -- raising
+                       # S without F would have thinned it to 0.160
 PLUNGE_FEED = 600.0    # mm/min, the helix
 Z_RAPID     = 10.0     # mm, the height every rapid runs at
 Z_LAP       = 5.0      # mm, the confidence lap
