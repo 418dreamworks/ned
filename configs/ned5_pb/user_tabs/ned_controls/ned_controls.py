@@ -755,6 +755,7 @@ class UserTab(QWidget):
         self._btn_labels = {}
         QTimer.singleShot(0, self._wire_load)
         QTimer.singleShot(0, self._relabel_buttons)
+        QTimer.singleShot(0, self._wire_mcs_z0)
         # after the UI settles -- it inserts into a core layout it must find
         QTimer.singleShot(1500, self._build_declaration)
         QTimer.singleShot(1600, self._hide_spare_mdi)
@@ -4558,7 +4559,9 @@ class UserTab(QWidget):
     # GO TO ZERO / GO TO HOME is the easy mix-up: one is the active work
     # system, the other is machine zero (operator 2026-08-03).
     RELABEL = {
-        'go_to_zero_button_2': 'WCS X0Y0',
+        # go_to_zero_button_2 is NOT here any more -- it is rebound, not
+        # relabelled, and _wire_mcs_z0 sets its text. Leaving it in this dict
+        # as well would have two places setting one label.
         'go_to_home_button':   'MCS HOME',
     }
 
@@ -9223,6 +9226,81 @@ QTabBar::tab:only-one {
         # ships; LOAD SPINDLE remains the spindle-record path meanwhile.
         LOG.info('DECLARATION: the spindle badge owns it now')
         self._build_spindle_editor()
+
+    def _wire_mcs_z0(self):
+        """WCS X0Y0 becomes MCS Z0 -- lift the tool to the top of Z travel.
+
+        Operator 2026-09-29: "change the WCSXoYo to MCSZ0 this is above the
+        MCS hoe button. useful to lift the tool."
+
+        WHY IT IS WORTH THE BUTTON. G53 Z0 is the one height at which no XY
+        move can strike anything, and it is the only retract that does not
+        depend on a work offset being right -- which is exactly what went
+        wrong three times today. Rule 4.5 already makes every program start
+        with it; this puts it under his thumb between programs.
+
+        THE OLD BINDING IS SEVERED, NOT SHADOWED. go_to_zero_button_2 is a
+        stock ActionButton whose action drives the machine to the WCS origin
+        in X and Y. Leaving that connected and adding a second handler would
+        send the tool to X0 Y0 AS WELL as lifting it -- a silent double bind
+        is what racked the gantry on 2026-08-01. disconnect() first, verify
+        the button was found, and say so in the log either way.
+        """
+        win = self.window()
+        b = win.findChild(QWidget, 'go_to_zero_button_2') if win else None
+        if b is None:
+            LOG.error('MCS Z0: go_to_zero_button_2 NOT FOUND -- the button '
+                      'still carries its stock WCS X0Y0 action')
+            return
+        try:
+            b.clicked.disconnect()          # severs the stock go-to-zero
+        except Exception:
+            pass
+        for attr in ('actionName', 'setActionName'):
+            if hasattr(b, attr):
+                try:
+                    b.setActionName('')     # and the qtpyvcp action binding
+                except Exception:
+                    pass
+                break
+        if hasattr(b, 'setText'):
+            b.setText('MCS Z0')
+        b.clicked.connect(lambda _=False: self._mcs_z0_click())
+        LOG.info('MCS Z0: go_to_zero_button_2 rebound -- stock action severed, '
+                 'now issues G53 G0 Z0')
+
+    def _mcs_z0_click(self):
+        """G53 G0 Z0, and nothing else.
+
+        No XY. No work offset. It refuses rather than queueing behind a
+        running program, because a lift that arrives late is a lift into
+        whatever the program is doing now.
+        """
+        try:
+            import linuxcnc
+            st = linuxcnc.stat()
+            st.poll()
+            if st.task_state != linuxcnc.STATE_ON:
+                msg = 'MCS Z0 refused: machine is not ON'
+            elif st.interp_state != linuxcnc.INTERP_IDLE:
+                msg = 'MCS Z0 refused: a program is running'
+            elif not all(st.homed[:NJ]):
+                msg = ('MCS Z0 refused: the machine is not fully homed, so '
+                       'LinuxCNC will not accept an MDI command')
+            else:
+                msg = None
+            if msg:
+                LOG.error(msg)
+                linuxcnc.command().error_msg(msg)
+                return
+            c = linuxcnc.command()
+            c.mode(linuxcnc.MODE_MDI)
+            c.wait_complete(2.0)
+            c.mdi('G53 G0 Z0')
+            LOG.info('MCS Z0: G53 G0 Z0 issued')
+            self._hand_back_manual(c, 'MCS Z0')
+        except Exception as e:
+            LOG.exception('MCS Z0 failed: %s', e)
 
     def _relabel_buttons(self):
         """Retext core buttons at RUNTIME, never by editing probe_basic.ui.
