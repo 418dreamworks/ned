@@ -5579,6 +5579,29 @@ class UserTab(QWidget):
                 except Exception:
                     LOG.exception('SURVEY: table row failed -- data is in '
                                   'the ndjson regardless')
+                # THE IMPUTED CORRECTION, from this pair's own angles.
+                # mp came from A = +SVY_TILT + ofs, mn from -SVY_TILT + ofs,
+                # so each side gets its own (1 - cos A) rather than a nominal
+                # 30. Averaging the two cancels the odd part -- an A-zero
+                # error shows up in (mp - mn), never in the mean.
+                try:
+                    dp = 1.0 - math.cos(math.radians(self.SVY_TILT + v['ofs']))
+                    dm = 1.0 - math.cos(math.radians(-self.SVY_TILT + v['ofs']))
+                    dL = 0.5 * ((mp / dp) + (mn / dm))
+                    v['dL'] = dL
+                    v.setdefault('dL_hist', []).append(dL)
+                    v['next_L'] = v['L'] - self.SVY_GAIN * dL
+                    LOG.error('SURVEY pair %d: miss %+.4f/%+.4f -> dL %+.4f, '
+                              'L %.4f -> %.4f (gain %.2f)', v['n'], mp, mn,
+                              dL, v['L'], v['next_L'], self.SVY_GAIN)
+                    self._tcp_say('pair %d: imputes dL %+.4f -> nose %.3f; '
+                                  'stepping %.0f%% to nose %.3f'
+                                  % (v['n'], dL, v['L'] - dL - _to,
+                                     self.SVY_GAIN * 100,
+                                     v['next_L'] - _to))
+                except Exception:
+                    LOG.exception('SURVEY: newton step failed -- holding L')
+                    v['next_L'] = v['L']
                 sm = abs(mp) + abs(mn)
                 if v.get('best_sum') is None or sm < v['best_sum']:
                     v['best_sum'] = sm
@@ -5703,7 +5726,7 @@ class UserTab(QWidget):
             LOG.exception('SURVEY: data line NOT saved')
 
     def _tcp_survey_next(self):
-        import random
+        import math, random
         v = self._svy
         st = v['step']
         if st == 'ref-issue':
@@ -5716,9 +5739,22 @@ class UserTab(QWidget):
                 self._tcp_auto_stop('SURVEY complete: %d pairs -> %s'
                                     % (v['n'], v['log']))
                 return
-            b = v['best_L']
-            h = b * self.SVY_HALF_PCT / 100.0
-            v['L'] = random.uniform(b - h, b + h)
+            # CONVERGED = STOP. The old loop ran all 500 pairs whatever
+            # happened, so a finished calibration was indistinguishable from
+            # one still hunting.
+            recent = v.get('dL_hist', [])[-self.SVY_DONE_N:]
+            if len(recent) >= self.SVY_DONE_N:
+                m = sum(recent) / len(recent)
+                if abs(m) < self.SVY_DONE:
+                    self._tcp_auto_stop(
+                        'SURVEY CONVERGED after %d pairs: mean dL over the '
+                        'last %d is %+.4f mm, under %.3f. nose = %.4f -- '
+                        'press SAVE PIVOT TO MACHINE.'
+                        % (v['n'], len(recent), m, self.SVY_DONE,
+                           v['L'] - self._tcp_tooloff()))
+                    return
+            # THE STEP, not a draw. See SVY_GAIN.
+            v['L'] = v.get('next_L', v['best_L'])
             v['ofs'] = random.uniform(*self.SVY_OFS)
             # the sub ended the last touch at A0; the pivot write goes
             # through the guarded tick path, which calls back here
@@ -5799,6 +5835,30 @@ class UserTab(QWidget):
     # 20, not 35 (operator 2026-08-06): jerk persists at soft accel, so
     # the tilt comes down while backlash is chased
     SVY_TILT = 30.0
+    # DAMPED NEWTON, not a random draw. Operator 2026-09-28: "lets do the one
+    # where it imputes it, but goes only 30pct of the way there. eg, if its
+    # 100 and imputes 160, it updates to 120 instead of 160."
+    #
+    # WHY THE RANDOM SEARCH COULD NOT WORK. It drew L uniformly within
+    # +-SVY_HALF_PCT of the running best and kept whatever lowered the miss.
+    # On 2026-09-28 the first 14 pairs sat at a mean miss of 1.7263 mm, which
+    # is a 12.886 mm error in L -- and the draw band was +-0.605 mm, 21.3x too
+    # narrow to reach it. 500 pairs at 40 s each is 5.5 hours of groping.
+    #
+    # THE MISS IS THE GRADIENT AND IT INVERTS IN CLOSED FORM:
+    #     miss = (L_used - L_true) * (1 - cos A)
+    # so dL = miss / (1 - cos A), measured at the REAL A of each touch. The
+    # old code threw that away. Gain 0.30 damps it because the probe has its
+    # own scatter and the model is only exact at C=0 with a point contact.
+    SVY_GAIN = 0.30            # fraction of the imputed correction per step
+    # STOP ON THE ROLLING MEAN, NOT ONE SAMPLE. The 2026-09-28 run gives the
+    # noise directly: 17 pairs, imputed dL mean 12.798, sd 0.532. So a single
+    # pair cannot resolve better than about half a millimetre and a threshold
+    # under that would never trip -- the sweep would run all 500 pairs with
+    # the answer already in hand. The mean of 5 has noise 0.238, so 0.25 is
+    # the tightest honest stop.
+    SVY_DONE = 0.25            # mm, |mean of the last SVY_DONE_N dL| -> stop
+    SVY_DONE_N = 5
     SVY_OFS = (-0.30, 0.30)      # A offset draw, deg
 
     def _tcp_tooloff(self):
