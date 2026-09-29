@@ -22,7 +22,9 @@ from ngc_revision import revision_lines
 # THE TOOL CENTRE PATH, not the cut boundary. Operator 2026-09-29: 'TOOL
 # CENTER FROM Y = 0 TO 1500 WILL DO'. The cutter EDGE therefore overhangs
 # by one radius on every side, so the swept surface is R bigger all round.
-CENTRE_X    = 2570.0   # mm, centre travels X0 -> X2570. 4043.725 available
+START_X     = -75.0    # mm, operator 2026-09-29: 'make it start from
+                       # x=-75'. The cut begins here, not at X0
+CENTRE_X    = 2570.0   # mm, centre travels START_X -> here. 4043.725 available
 CENTRE_Y    = 1500.0   # mm, centre travels Y0 -> Y1500. 1788.000 available
 TOOL        = 1        # T1, the 3 in face mill
 TOOL_DIA    = 76.2     # mm, must match the tool table DIAMETER
@@ -40,8 +42,7 @@ Z_LAP       = 5.0      # mm, the confidence lap
 Z_FACE      = 0.0      # mm, the finished surface. The operator zeroes here
 HELIX_DIA   = 76.2     # mm, 3 in, one cutter diameter
 DWELL       = 3.0      # s, spindle settle before the first move
-CHANGED     = ('helix removed, confidence lap commented out, '
-               'cuts one direction only')   # rule 3.7, one line
+CHANGED     = 'X now starts at -75.0 instead of 0'   # rule 3.7, one line
 
 R = TOOL_DIA / 2.0
 STEP = TOOL_DIA - OVERLAP
@@ -57,7 +58,8 @@ w()
 w('(=== PARAMETERS -- set these before you run ============================)')
 w('(  Change a number here and nothing else. Every move below is built from)')
 w('(  these, so the file stays true to whatever you set.)')
-w('#<centre_x>   = %.4f   (mm, the TOOL CENTRE runs X0 to here. 4043.725 of travel)' % CENTRE_X)
+w('#<start_x>    = %.4f    (mm, the TOOL CENTRE starts here, not at X0)' % START_X)
+w('#<centre_x>   = %.4f   (mm, and runs to here. 4043.725 of travel)' % CENTRE_X)
 w('#<centre_y>   = %.4f   (mm, the TOOL CENTRE runs Y0 to here. 1788.000 -- the tight one)' % CENTRE_Y)
 w('#<tool>       = %d        (T%d, the 3 in face mill)' % (TOOL, TOOL))
 w('#<tool_dia>   = %.4f     (mm, must match the tool table DIAMETER)' % TOOL_DIA)
@@ -76,11 +78,11 @@ w('(  Z0 IS THE FINISHED SURFACE. You touch off on where you want the bed)')
 w('(  to END UP, with T%d already in the holder. The program never asks how)' % TOOL)
 w('(  much stock is above that -- it faces to Z0 and stops.)')
 w('( )')
-w('(  X0 Y0 is where the TOOL CENTRE starts. It runs to X%s Y%s. The edge)'
-  % (f'{CENTRE_X:.1f}', f'{CENTRE_Y:.1f}'))
+w('(  The TOOL CENTRE starts at X%s Y0 and runs to X%s Y%s. The edge)'
+  % (f'{START_X:.1f}', f'{CENTRE_X:.1f}', f'{CENTRE_Y:.1f}'))
 w('(  overhangs %.4f all round, so the surface actually swept is)' % R)
 w('(  X%.4f to X%.4f by Y%.4f to Y%.4f.)'
-  % (-R, CENTRE_X + R, -R, CENTRE_Y + R))
+  % (START_X - R, CENTRE_X + R, -R, CENTRE_Y + R))
 w('( )')
 w('(  1. REFUSE unless T%d is actually in the spindle and its diameter)' % TOOL)
 w('(     matches. Z0 means nothing if a different cutter touched it off.)')
@@ -135,7 +137,7 @@ w('o102 endif')
 w()
 w('(THE TOOL CENTRE PATH. Not inset -- these ARE the parameters above. The)')
 w('(cutter EDGE overhangs by one radius on every side.)')
-w('#<x0> = 0.0000')
+w('#<x0> = #<start_x>')
 w('#<y0> = 0.0000')
 w('#<x1> = #<centre_x>')
 w('#<y1> = #<centre_y>')
