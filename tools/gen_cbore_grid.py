@@ -148,7 +148,8 @@ w('G53 G0 Z0')
 w('M30')
 w('%')
 
-CHANGED = ('new: %d x %d counterbore grid, %s dia x %s deep, T%d at S%d'
-           % (NX, NY, f'{CB_DIA:.1f}', f'{CB_DEPTH:.1f}', TOOL, SPINDLE_RPM))
+CHANGED = ('%d x %d holes, X %.1f to %.1f, Y %.1f to %.1f, %s dia x %s deep'
+           % (NX, NY, X0, X1, Y0, Y1,
+              f'{CB_DIA:.1f}', f'{CB_DEPTH:.1f}'))
 _hdr = revision_lines(L[1:], 'gen_cbore_grid.py', CHANGED)
 print('\n'.join([L[0]] + _hdr + L[1:]))
