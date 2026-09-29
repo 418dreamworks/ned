@@ -68,7 +68,13 @@ def split(lines, plane, clear, plunge):
 
         if (mode == 0 and mz and not is_g53 and not canned
                 and float(mz.group(1)) < plane - 1e-9):
-            target = float(mz.group(1))
+            # THE ORIGINAL Z STRING, NOT A REFORMATTED FLOAT. Writing
+            # "%.4f" would silently round a post that emits five decimals,
+            # and Design's question is exactly this: does the feed-down END
+            # WHERE THE RAPID ENDED, or merely somewhere below the plane?
+            # Carrying the characters through makes it the same number by
+            # construction rather than by tolerance. 2026-09-29.
+            target = mz.group(1)
             body = raw.rstrip("\n")
             # the same line, but held at the clear height
             across = re.sub(r"\bZ-?\d*\.?\d+", "Z%.4f" % (plane + clear),
@@ -78,7 +84,7 @@ def split(lines, plane, clear, plunge):
                 across = re.sub(r"^(\s*(?:N\d+\s*)?)", r"\1G0 ", across,
                                 count=1)
             out.append(across + "\n")
-            out.append("G1 Z%.4f F%.1f\n" % (target, plunge))
+            out.append("G1 Z%s F%.1f\n" % (target, plunge))
             n_split += 1
             pending_restore = True
             continue
