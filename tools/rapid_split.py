@@ -29,6 +29,7 @@ MODAL SAFETY. Emitting a G1 changes the modal group. Any following motion
 block that carried no G-word was relying on the old modal G0, so it is given
 an explicit G0. Nothing is left to inference.
 """
+import os
 import re
 import sys
 
@@ -105,7 +106,22 @@ def main():
     sys.stderr.write("rapid_split: %d rapid(s) below Z%.4f split into "
                      "across-at-Z%.4f + feed-down at F%.1f\n"
                      % (n, plane, plane + clear, plunge))
-    sys.stdout.write("".join(out))
+    # A HEADER OF ITS OWN. Rule 3.7 -- and a transformed file is not the
+    # file that was delivered, so it has to say so on its own first page.
+    # Operator 2026-09-29: 'i need to know what is at the top of the file i
+    # know thats the one you intend for me to run'.
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from ngc_revision import revision_lines
+    changed = ('rapid_split from %s: %d rapids below Z%.4f split into '
+               'across-at-Z%.4f + feed-down at F%.1f'
+               % (os.path.basename(path), n, plane, plane + clear, plunge))
+    hdr = revision_lines(out, 'rapid_split.py', changed)
+    body = ''.join(out)
+    if body.lstrip().startswith('%'):
+        first, rest = body.split('\n', 1)
+        sys.stdout.write(first + '\n' + '\n'.join(hdr) + '\n' + rest)
+    else:
+        sys.stdout.write('\n'.join(hdr) + '\n' + body)
     return 0
 
 
