@@ -18,8 +18,9 @@ from ngc_revision import revision_lines
 
 # ---- the numbers the operator sets -----------------------------------------
 X0, Y0      = 0.0, 0.0      # mm, the first hole
-X1, Y1      = 1167.0, 878.0 # mm, the last hole -- his current position
-NX, NY      = 5, 4          # holes along X, holes along Y
+X1, Y1      = 1170.0, 1500.0 # mm, the last hole. Operator 2026-09-29:
+                            # 'Y space 1500, X span 1200'
+NX, NY      = 5, 6          # 'holes in X 5, holes in Y 6'
 CB_DIA      = 12.7          # mm, 1/2 in counterbore
 CB_DEPTH    = 12.7          # mm, 1/2 in deep
 TOOL        = 12            # T12, the 1/4 in end mill, already loaded
