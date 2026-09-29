@@ -15,11 +15,31 @@ import time
 
 
 def _git_rev(path):
+    """The generator version, and whether it is the COMMITTED one.
+
+    Operator 2026-09-29, quoting a header back at me:
+
+        (REVISION 2026-09-29 12:24:17  gen_cbore_grid.py @ 48a9840)
+
+    48a9840 was the last commit touching that generator -- and it had been
+    edited since and not committed, so the line named a version that does
+    NOT contain the change which produced the file. A sha pointing at the
+    wrong source is worse than no sha: it reads as traceable and is not.
+    Same failure as an md5 slot carrying a placeholder, and the whole
+    reason rule 3.7 exists.
+    """
+    root = '/home/brains/Documents/ned'
     try:
-        r = subprocess.run(['git', '-C', '/home/brains/Documents/ned',
-                            'log', '-1', '--format=%h', '--', path],
+        r = subprocess.run(['git', '-C', root, 'log', '-1', '--format=%h',
+                            '--', path],
                            capture_output=True, text=True, timeout=10)
-        return r.stdout.strip() or 'uncommitted'
+        sha = r.stdout.strip() or 'uncommitted'
+        d = subprocess.run(['git', '-C', root, 'status', '--porcelain',
+                            '--', path],
+                           capture_output=True, text=True, timeout=10)
+        if d.stdout.strip():
+            return sha + '+UNCOMMITTED-EDITS'
+        return sha
     except Exception:
         return 'unknown'
 
