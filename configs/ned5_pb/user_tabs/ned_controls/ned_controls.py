@@ -977,7 +977,7 @@ class UserTab(QWidget):
 
             b1, b1l = _mkbox('1   PUCK CENTRE')
             self._cal_btn = {}
-            def _mkbtn(key, cap, cls, w=None, hint=None):
+            def _mkbtn(key, cap, cls, w=None):
                 b = QPushButton(cap)
                 b.setMinimumHeight(62)      # 15 mm at 3.71 px/mm -- gloved
                 b.setStyleSheet(self.CAL_QSS[cls])
@@ -985,43 +985,8 @@ class UserTab(QWidget):
                 self._cal_btn[key] = b
                 if w:
                     b.setFixedWidth(w)
-                if hint:
-                    # SETUP INSTRUCTION ON THE FACE. Operator 2026-09-28,
-                    # after START PUCK ran from wherever the head happened
-                    # to be: "i need some instrucitons on that screen ...
-                    # put, 10mm above puck first. in tiny font in the start
-                    # puck button."
-                    #
-                    # Same precedent as SET C REF two rows down, whose
-                    # two-press protocol "used to exist only in a tooltip,
-                    # which a touchscreen never shows -- it is on the face
-                    # now". A tooltip is not an instruction on a machine
-                    # nobody hovers a mouse over.
-                    #
-                    # A CHILD LABEL, because a QPushButton draws its text
-                    # through QStyle as PLAIN text -- no rich text, so one
-                    # font per button and \n cannot be made smaller. The
-                    # label is the only way to get a second size inside the
-                    # button face. Font cloned from the panel's own status
-                    # line (tcp_cal_status, 11pt) rather than invented.
-                    from PyQt5.QtWidgets import QVBoxLayout as _QVB
-                    from PyQt5.QtCore import Qt as _Qt
-                    lay = _QVB(b)
-                    lay.setContentsMargins(4, 0, 4, 4)
-                    lay.addStretch(1)
-                    h = QLabel(hint, b)
-                    h.setObjectName('cal_hint_' + key)
-                    h.setAlignment(_Qt.AlignHCenter | _Qt.AlignBottom)
-                    h.setAttribute(_Qt.WA_TransparentForMouseEvents, True)
-                    h.setStyleSheet('background: transparent; border: none;'
-                                    ' color: rgb(200,208,205); font: 9pt;')
-                    lay.addWidget(h)
-                    b.setMinimumHeight(78)
-                    LOG.info('CAL HINT: %r wired onto the %s button face',
-                             hint, key)
                 return b
-            b1l.addWidget(_mkbtn('puck', 'START PUCK', 'measure',
-                                 hint='park the tip 10 mm above the puck first'))
+            b1l.addWidget(_mkbtn('puck', 'START PUCK', 'measure'))
             c0.addWidget(b1)
 
             b2, b2l = _mkbox('2   A / C ZERO')
@@ -1030,19 +995,8 @@ class UserTab(QWidget):
             # touchscreen never shows -- it is on the face now and the label
             # tracks the state.
             r = QHBoxLayout(); r.setSpacing(8)
-            # ORDER ON THE FACE. Operator 2026-09-28, having run START C
-            # straight after START A: "inside StartA. 'after start puck'" /
-            # "then you said to do start C, what do i need to do?"
-            # START C's first press after SET C REF is the CAPTURE of the
-            # jogged pose (cal_c_ref.ngc:7 -- "THE OPERATOR THEN PRESSES
-            # StartC, AND THAT captures the jogged pose"). Pressed without
-            # it, it replays whatever #3058/#3060/#3061 still hold -- which
-            # tonight was a teach against an L of 273 against today's 302.55,
-            # so the tip went 20.8 mm wide of the puck.
-            r.addWidget(_mkbtn('a', 'START A', 'measure',
-                               hint='after START PUCK'))
-            r.addWidget(_mkbtn('c', 'START C', 'measure',
-                               hint='SET C REF and jog the tip first'))
+            r.addWidget(_mkbtn('a', 'START A', 'measure'))
+            r.addWidget(_mkbtn('c', 'START C', 'measure'))
             b2l.addLayout(r)
             b2l.addWidget(_mkbtn('ac', 'START AC', 'measure'))
             r = QHBoxLayout(); r.setSpacing(8)
