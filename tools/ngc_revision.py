@@ -10,6 +10,7 @@ AFTER the rest of the file exists and inserted at the top -- so what is on
 screen can be matched to what is on disk without trusting a filename or a
 timestamp.
 """
+import random
 import subprocess
 import time
 
@@ -52,6 +53,15 @@ def revision_lines(body_lines, generator, changed):
     changed    -- ONE line saying what moved since the last revision
     """
     rev = _git_rev('tools/' + generator)
-    return ['(REVISION %s  %s @ %s)'
+    # A THREE-LETTER CODE, FIRST LINE, FRESH EVERY GENERATION.
+    # Operator 2026-09-29: 'i need to know what is at the top of the file i
+    # know thats the one you intend for me to run' ... 'a random 3 letter
+    # code is enough'. A timestamp and a sha are both readable and neither
+    # is GLANCEABLE -- he has to compare fourteen characters against what I
+    # typed. Three letters he can check in one look, and I can quote them
+    # without asking him to trust a checksum he cannot see.
+    code = ''.join(random.choice('ABCDEFGHJKLMNPQRSTUVWXYZ') for _ in range(3))
+    return ['(=== %s ===)' % code,
+            '(REVISION %s  %s @ %s)'
             % (time.strftime('%Y-%m-%d %H:%M:%S'), generator, rev),
             '(CHANGED  %s)' % changed]

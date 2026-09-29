@@ -736,7 +736,7 @@ class UserTab(QWidget):
         # widget, for the click-test harness (and future ones)
         QTimer.singleShot(9000, self._jp_dump_coords)
 
-        # UNLOAD SPINDLE (core button remove_tool_2): 5 s countdown, second
+        # UNLOAD SPINDLE (core button remove_tool_2): 3 s countdown, second
         # click cancels; then the ned unload_spindle sub (real drawbar release
         # + PB software unload). Deterministic MDI like the zero buttons.
         # Per-button: there are TWO unload buttons (TOOL tab + ATC tab) and
@@ -745,8 +745,9 @@ class UserTab(QWidget):
         QTimer.singleShot(0, self._wire_unload)
 
         # LOAD SPINDLE (core SubCallButtons load_spindle_button[_2]): same
-        # 5 s countdown, second click cancels (operator 2026-08-02 13:5x
-        # "load spindle should also have a 5 second countdown"). The
+        # 3 s countdown, second click cancels. Originally 5 (operator
+        # 2026-08-02: "load spindle should also have a 5 second
+        # countdown"), shortened 2026-09-29 to 3. The
         # countdown then calls the button's OWN callSub() -- PB already
         # resolves the .ngc and pulls the tool number from the paired
         # load_spindle_tool_number[_2] field, so none of that is duplicated.
@@ -4544,7 +4545,7 @@ class UserTab(QWidget):
             b.clicked.connect(lambda _=False, btn=b: self._unload_click(btn))
             wired.append(name)
         if wired:
-            LOG.info('UNLOAD SPINDLE: 5 s countdown wired on %d button(s): %s',
+            LOG.info('UNLOAD SPINDLE: 3 s countdown wired on %d button(s): %s',
                      len(wired), ', '.join(wired))
         if missing:
             # absent = deleted from the .ui by design (2026-08-04 purges);
@@ -9265,7 +9266,7 @@ QTabBar::tab:only-one {
             self._load_labels[b] = b.text()
             wired.append(name)
         if wired:
-            LOG.info('LOAD SPINDLE: 5 s countdown wired on %d button(s): %s',
+            LOG.info('LOAD SPINDLE: 3 s countdown wired on %d button(s): %s',
                      len(wired), ', '.join(wired))
         if missing:
             LOG.info('LOAD SPINDLE: %d name(s) confirmed deleted: %s',
@@ -9476,7 +9477,11 @@ QTabBar::tab:only-one {
         # A real LOAD press: the window has served its purpose, close it.
         self._drawbar_window_cancel('LOAD pressed')
         base = self._btn_base_label(b, 'LOAD SPINDLE')
-        pend = {'text': base, 'left': 5}
+        # 3 s, operator 2026-09-29: '3 seconds will do for timer for spindle
+        # load and unload'. Was 5. The countdown is a chance to change
+        # your mind, not a wait -- and nothing else is usable while it
+        # runs, so length is a cost.
+        pend = {'text': base, 'left': 3}
         timer = QTimer(self)
         pend['timer'] = timer
         self._load_pend[b] = pend
@@ -9525,7 +9530,11 @@ QTabBar::tab:only-one {
             LOG.info('UNLOAD SPINDLE cancelled')
             return
         base = self._btn_base_label(b, 'UNLOAD SPINDLE')
-        pend = {'text': base, 'left': 5}
+        # 3 s, operator 2026-09-29: '3 seconds will do for timer for spindle
+        # load and unload'. Was 5. The countdown is a chance to change
+        # your mind, not a wait -- and nothing else is usable while it
+        # runs, so length is a cost.
+        pend = {'text': base, 'left': 3}
         timer = QTimer(self)
         pend['timer'] = timer
         self._unload_pend[b] = pend
