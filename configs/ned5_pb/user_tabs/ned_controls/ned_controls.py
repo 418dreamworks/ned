@@ -853,6 +853,158 @@ class UserTab(QWidget):
     # to be legible on PB's dark panel, so plain light text on the default bar
     ZCLAMP_OFF_QSS = 'color: rgb(220,220,220); border-radius: 5px;'
 
+    # ==== SETUP tab: the setup-program library ==========================
+    # The list is ordered LAST USED FIRST and the tag buttons filter it.
+    # Everything lives in one JSON file so adding a program is a data edit,
+    # not a code edit -- the same reason the rack map and the tool safety
+    # numbers are parameters rather than literals.
+    SETUP_LIB = ('/home/brains/Documents/ned/configs/ned5_pb/'
+                 'setup_programs.json')
+
+    def _setup_read_lib(self):
+        """Load the library. Returns [] and says so rather than raising --
+        a missing or malformed file must leave the tab usable."""
+        import json
+        try:
+            with open(self.SETUP_LIB) as f:
+                d = json.load(f)
+            progs = d.get('programs', [])
+            if not isinstance(progs, list):
+                raise ValueError('"programs" is not a list')
+            return progs
+        except Exception as e:
+            LOG.error('SETUP: cannot read %s -- %s', self.SETUP_LIB, e)
+            return []
+
+    def _setup_write_lib(self, progs):
+        import json
+        try:
+            with open(self.SETUP_LIB) as f:
+                d = json.load(f)
+        except Exception:
+            d = {}
+        d['programs'] = progs
+        try:
+            with open(self.SETUP_LIB, 'w') as f:
+                json.dump(d, f, indent=2)
+            return True
+        except Exception as e:
+            LOG.error('SETUP: cannot write %s -- %s', self.SETUP_LIB, e)
+            return False
+
+    def _setup_reload(self, rescan):
+        """Read the library, rebuild the tag buttons, refill the list."""
+        from PySide6.QtWidgets import QPushButton
+        self._setup_progs = self._setup_read_lib()
+        # tags, in first-seen order so the row does not reshuffle on reload
+        seen = []
+        for p in self._setup_progs:
+            for t in p.get('tags', []):
+                if t not in seen:
+                    seen.append(t)
+        keep = getattr(self, '_setup_tags', {})
+        row = getattr(self, '_setup_tag_row', None)
+        if row is not None:
+            while row.count():
+                it = row.takeAt(0)
+                w = it.widget()
+                if w is not None:
+                    w.setParent(None)
+            self._setup_tags = {}
+            for t in seen:
+                b = QPushButton(t.upper())
+                b.setObjectName('setup_tag_' + t.replace(' ', '_'))
+                b.setCheckable(True)
+                b.setChecked(keep.get(t, True))   # new tags start ON
+                b.setMinimumHeight(40)
+                b.setStyleSheet(self.CAL_QSS['pose'])
+                b.clicked.connect(lambda _=False: self._setup_refresh())
+                row.addWidget(b)
+                self._setup_tags[t] = b
+            row.addStretch(1)
+        self._setup_refresh()
+        if rescan:
+            LOG.info('SETUP: rescanned -- %d program(s), %d tag(s)',
+                     len(self._setup_progs), len(seen))
+
+    def _setup_visible(self):
+        """The programs whose tags pass the filter, LAST USED FIRST.
+
+        A program shows when ANY of its tags is checked. An untagged program
+        always shows -- there is no button that could bring it back, so
+        hiding it would strand it."""
+        on = {t for t, b in getattr(self, '_setup_tags', {}).items()
+              if b.isChecked()}
+        out = []
+        for p in self._setup_progs:
+            tags = p.get('tags', [])
+            if not tags or (set(tags) & on):
+                out.append(p)
+        # never-used sort last; newest first among the rest
+        return sorted(out, key=lambda p: (p.get('last_used') or ''),
+                      reverse=True)
+
+    def _setup_refresh(self):
+        lst = getattr(self, '_setup_list', None)
+        if lst is None:
+            return
+        lst.clear()
+        self._setup_shown = self._setup_visible()
+        for p in self._setup_shown:
+            used = p.get('last_used') or 'never run from here'
+            tags = ', '.join(p.get('tags', [])) or 'no tags'
+            lst.addItem('%s\n    %s\n    last used: %s'
+                        % (p.get('name', '?'), tags, used))
+        n = len(self._setup_shown)
+        tot = len(getattr(self, '_setup_progs', []))
+        self._setup_say('%d of %d program(s) shown' % (n, tot))
+
+    def _setup_say(self, msg, bad=False):
+        w = getattr(self, '_setup_status', None)
+        if w is not None:
+            w.setText(msg)
+        (LOG.error if bad else LOG.info)('SETUP: %s', msg)
+
+    def _setup_load_selected(self):
+        """Open the selected program in LinuxCNC and stamp last_used.
+
+        REFUSES rather than loading blind: a program that is not on disk, or
+        an interpreter that is busy, gets said out loud. Nothing here starts
+        a cycle -- loading is loading."""
+        import os
+        import time
+        lst = getattr(self, '_setup_list', None)
+        shown = getattr(self, '_setup_shown', [])
+        if lst is None or lst.currentRow() < 0 or lst.currentRow() >= len(shown):
+            self._setup_say('pick a program first', bad=True)
+            return
+        p = shown[lst.currentRow()]
+        path = p.get('path', '')
+        if not os.path.exists(path):
+            self._setup_say('%s is not on disk: %s' % (p.get('name'), path),
+                            bad=True)
+            return
+        try:
+            import linuxcnc
+            st = linuxcnc.stat()
+            st.poll()
+            if st.interp_state != linuxcnc.INTERP_IDLE:
+                self._setup_say('interpreter is busy -- not loading', bad=True)
+                return
+            c = linuxcnc.command()
+            c.mode(linuxcnc.MODE_MDI)
+            c.wait_complete(2.0)
+            c.mode(linuxcnc.MODE_AUTO)
+            c.wait_complete(2.0)
+            c.program_open(path)
+        except Exception as e:
+            self._setup_say('load FAILED: %s' % e, bad=True)
+            return
+        p['last_used'] = time.strftime('%Y-%m-%d %H:%M:%S')
+        self._setup_write_lib(self._setup_progs)
+        self._setup_reload(False)
+        self._setup_say('loaded %s' % p.get('name'))
+
     def _build_subtabs(self):
         """JOG sub-tab with the Z CLAMP section (operator spec 2026-08-02):
         enable/disable button (GREEN when enabled, plain when disabled) and
@@ -1299,6 +1451,68 @@ class UserTab(QWidget):
             tpg.setColumnStretch(1, 1)
             tbl.addWidget(_mkpuck())
             tabs.addTab(tcp_page, 'TCP CALIBRATION')
+
+            # ---- SETUP: the program library -------------------------------
+            # Operator 2026-09-29: "i want a new panel under nedcontrols for
+            # all the setup code. i want this code to be arranged as last used
+            # coming with with tags on them and a few buttons to filter the
+            # tags on and off."
+            #
+            # STOCK WIDGETS ONLY (rule 27): QGroupBox, QListWidget, checkable
+            # QPushButton. The only things decided here are what a button says
+            # and what its click is wired to. No stylesheet is authored -- the
+            # tag buttons use CAL_QSS['pose'], cloned from the pose buttons two
+            # tabs over, and a checkable button shows its state through the
+            # QSS that is already there.
+            try:
+                setup_page = QWidget()
+                sl = QVBoxLayout(setup_page)
+                sl.setContentsMargins(8, 8, 8, 8)
+                sl.setSpacing(6)
+
+                tag_box = QGroupBox('TAGS')
+                self._setup_tag_row = QHBoxLayout(tag_box)
+                self._setup_tag_row.setSpacing(6)
+                sl.addWidget(tag_box)
+
+                from PySide6.QtWidgets import QListWidget
+                lst = QListWidget()
+                lst.setObjectName('setup_program_list')
+                lst.itemDoubleClicked.connect(
+                    lambda _i: self._setup_load_selected())
+                self._setup_list = lst
+                sl.addWidget(lst, 1)
+
+                row = QHBoxLayout()
+                row.setSpacing(8)
+                lb = QPushButton('LOAD')
+                lb.setObjectName('setup_load_btn')
+                lb.setMinimumHeight(52)
+                lb.setStyleSheet(self.CAL_QSS['measure'])
+                lb.clicked.connect(lambda _=False: self._setup_load_selected())
+                row.addWidget(lb)
+                rb = QPushButton('RESCAN')
+                rb.setObjectName('setup_rescan_btn')
+                rb.setMinimumHeight(52)
+                rb.setStyleSheet(self.CAL_QSS['pose'])
+                rb.clicked.connect(lambda _=False: self._setup_reload(True))
+                row.addWidget(rb)
+                sl.addLayout(row)
+
+                st = QLabel('')
+                st.setObjectName('setup_status')
+                st.setWordWrap(True)
+                self._setup_status = st
+                sl.addWidget(st)
+
+                tabs.addTab(setup_page, 'SETUP')
+                self._setup_reload(False)
+                LOG.info('SUBTABS: SETUP tab built -- %d program(s), %d tag(s)'
+                         ' from %s', len(getattr(self, '_setup_progs', [])),
+                         len(getattr(self, '_setup_tags', {})),
+                         self.SETUP_LIB)
+            except Exception:
+                LOG.exception('SUBTABS: SETUP tab FAILED to build')
             self._tcp_state = 'idle'
             self._tcp_pts = []
             self._tcp_load_hist()
