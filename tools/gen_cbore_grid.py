@@ -18,9 +18,18 @@ from ngc_revision import revision_lines
 
 # ---- the numbers the operator sets -----------------------------------------
 X0, Y0      = 0.0, 0.0      # mm, the first hole
-X1, Y1      = 1170.0, 1500.0 # mm, the last hole. Operator 2026-09-29:
-                            # 'Y space 1500, X span 1200'
-NX, NY      = 5, 6          # 'holes in X 5, holes in Y 6'
+X1          = 1170.0        # mm, the last hole along X
+# THE Y ROWS ARE THE BED'S OWN SLOT CENTRES, not an even pitch. Operator
+# 2026-09-29: 'i want the hole pattern in Y to mimic the spacing from the
+# tnut holes' ... 'that way im guaranteed that they will not intefere'.
+# From docs/fixtures/BedTnutSlots.json, centre_pitch_y:
+#     316.725, 250.725, 249.725, 249.725, 309.725
+# uneven because it follows the plate widths -- his 'the first and last
+# spacing are larger. the ones in middle smaller'. Six slots, six rows, so
+# every bolt through a counterbore reaches a T-nut instead of hitting plate.
+Y_ROWS      = [0.0, 316.725, 567.450, 817.175, 1066.900, 1376.625]
+NX          = 5             # holes along X
+NY          = len(Y_ROWS)
 CB_DIA      = 12.7          # mm, 1/2 in counterbore
 CB_DEPTH    = 12.7          # mm, 1/2 in deep
 TOOL        = 12            # T12, the 1/4 in end mill, already loaded
@@ -36,7 +45,6 @@ FEED   = CHIPLOAD * SPINDLE_RPM * FLUTES
 PLUNGE = FEED / 3.0
 ORBIT  = (CB_DIA - TOOL_DIA) / 2.0
 DX     = (X1 - X0) / (NX - 1)
-DY     = (Y1 - Y0) / (NY - 1)
 TURNS  = int(math.ceil(CB_DEPTH / DOC))
 
 L = []
@@ -55,10 +63,10 @@ w('#<x0>       = %.4f      (mm, the first hole)' % X0)
 w('#<y0>       = %.4f      (mm)' % Y0)
 w('#<dx>       = %.4f    (mm, X pitch -- %d holes from %.1f to %.1f)'
   % (DX, NX, X0, X1))
-w('#<dy>       = %.4f    (mm, Y pitch -- %d holes from %.1f to %.1f)'
-  % (DY, NY, Y0, Y1))
+for _i, _y in enumerate(Y_ROWS, 1):
+    w('#<y%d>       = %9.4f   (mm, bed slot %d)' % (_i, _y, _i))
 w('#<nx>       = %d           (holes along X)' % NX)
-w('#<ny>       = %d           (holes along Y)' % NY)
+w('(  %d Y rows above -- the bed slot centres, uneven by design)' % NY)
 w('#<orbit>    = %.4f      (mm, = [cbore %.1f - cutter %.2f] / 2)'
   % (ORBIT, CB_DIA, TOOL_DIA))
 w('#<depth>    = %.4f     (mm, counterbore depth, NEGATIVE going down)' % CB_DEPTH)
@@ -78,10 +86,10 @@ w('(  Z0 IS THE TOP OF THE WORK. You touch off there with T%d in the)' % TOOL)
 w('(  holder. The file refuses unless that tool is still in the spindle and)')
 w('(  unless a tool LENGTH is applied, because Z0 means nothing otherwise.)')
 w('( )')
-w('(  %d holes: %d along X at %.4f pitch, %d along Y at %.4f pitch, from)'
-  % (NX * NY, NX, DX, NY, DY))
-w('(  X%.1f Y%.1f to X%.1f Y%.1f. Column by column, X innermost.)'
-  % (X0, Y0, X1, Y1))
+w('(  %d holes: %d along X at %.4f pitch, on %d Y rows taken from the BED)'
+  % (NX * NY, NX, DX, NY))
+w('(  SLOT CENTRES -- 316.725, 250.725, 249.725, 249.725, 309.725 -- so a)')
+w('(  bolt through any counterbore reaches a T-nut rather than plate.)')
 w('( )')
 w('(  Each hole is a %s dia counterbore cut with a %s cutter, so the tool)'
   % (f'{CB_DIA:.1f}', f'{TOOL_DIA:.2f}'))
@@ -116,40 +124,39 @@ w('M3 S#<rpm>')
 w('G4 P#<dwell>')
 w('G0 Z#<clear>')
 w()
-w('#<jy> = 0')
-w('o110 while [#<jy> LT #<ny>]')
-w('  #<yy> = [#<y0> + #<jy> * #<dy>]')
-w('  #<jx> = 0')
-w('  o120 while [#<jx> LT #<nx>]')
-w('    #<xx> = [#<x0> + #<jx> * #<dx>]')
-w('    G0 Z#<clear>')
-w('    G0 X#<xx> Y#<yy>')
-w('    (move out to the orbit radius at the clearance height, then spiral down)')
-w('    G1 X[#<xx> + #<orbit>] F#<feed>')
-w('    #<zz> = 0')
-w('    o130 while [#<zz> GT [0 - #<depth>]]')
-w('      #<zz> = [#<zz> - #<doc>]')
-w('      o131 if [#<zz> LT [0 - #<depth>]]')
-w('        #<zz> = [0 - #<depth>]')
-w('      o131 endif')
-w('      G3 X[#<xx> + #<orbit>] Y#<yy> I-#<orbit> J0.0 Z#<zz> F#<plunge>')
-w('    o130 endwhile')
-w('    (one flat turn at depth to clean the floor)')
-w('    G3 X[#<xx> + #<orbit>] Y#<yy> I-#<orbit> J0.0 F#<feed>')
-w('    G1 X#<xx> F#<feed>')
-w('    G0 Z#<clear>')
-w('    #<jx> = [#<jx> + 1]')
-w('  o120 endwhile')
-w('  #<jy> = [#<jy> + 1]')
-w('o110 endwhile')
+for _i in range(1, len(Y_ROWS) + 1):
+    w('(--- row %d of %d, at the bed slot centre ---)' % (_i, len(Y_ROWS)))
+    w('#<yy>  = #<y%d>' % _i)
+    w('#<jx>  = 0')
+    w('o%d0 while [#<jx> LT #<nx>]' % (20 + _i))
+    w('  #<xx> = [#<x0> + #<jx> * #<dx>]')
+    w('  G0 Z#<clear>')
+    w('  G0 X#<xx> Y#<yy>')
+    w('  G1 X[#<xx> + #<orbit>] F#<feed>')
+    w('  #<zz> = 0')
+    w('  o%d1 while [#<zz> GT [0 - #<depth>]]' % (20 + _i))
+    w('    #<zz> = [#<zz> - #<doc>]')
+    w('    o%d2 if [#<zz> LT [0 - #<depth>]]' % (20 + _i))
+    w('      #<zz> = [0 - #<depth>]')
+    w('    o%d2 endif' % (20 + _i))
+    w('    G3 X[#<xx> + #<orbit>] Y#<yy> I-#<orbit> J0.0 Z#<zz> F#<plunge>')
+    w('  o%d1 endwhile' % (20 + _i))
+    w('  G3 X[#<xx> + #<orbit>] Y#<yy> I-#<orbit> J0.0 F#<feed>')
+    w('  G1 X#<xx> F#<feed>')
+    w('  G0 Z#<clear>')
+    w('  #<jx> = [#<jx> + 1]')
+    w('o%d0 endwhile' % (20 + _i))
+    w()
+
 w()
 w('M5')
 w('G53 G0 Z0')
 w('M30')
 w('%')
 
-CHANGED = ('%d x %d holes, X %.1f to %.1f, Y %.1f to %.1f, %s dia x %s deep'
-           % (NX, NY, X0, X1, Y0, Y1,
+CHANGED = ('%d x %d holes, X %.1f to %.1f, Y on the BED SLOT CENTRES '
+           '%.1f to %.1f, %s dia x %s deep'
+           % (NX, NY, X0, X1, Y_ROWS[0], Y_ROWS[-1],
               f'{CB_DIA:.1f}', f'{CB_DEPTH:.1f}'))
 _hdr = revision_lines(L[1:], 'gen_cbore_grid.py', CHANGED)
 print('\n'.join([L[0]] + _hdr + L[1:]))
