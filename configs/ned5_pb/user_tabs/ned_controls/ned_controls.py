@@ -10380,9 +10380,13 @@ QTabBar::tab:only-one {
             LOG.error('_head_drive_deg(%s) failed: %s', ax, e)
             return None, False
 
-    def ac_to_zero(self, ax, verify=True):
+    def ac_to_zero(self, ax, verify=True, fresh=False):
         """Adopt the encoder for this head axis, then joint-jog it to 0.
-        verify: True = STEP 4 on this axis, 'ac' = on both, False = none here."""
+        verify: True = STEP 4 on this axis, 'ac' = on both, False = none here.
+        fresh: the caller took a drive read seconds ago with the head still
+        (Home All's forced read). Otherwise ONE fresh read comes first: the
+        pins hold the last SEN snapshot, and on 2026-10-01 Home A adopted
+        +0.0001 from the previous read while the head stood at 2 deg."""
         import linuxcnc
         jn = 4 if ax == 'a' else 5
         label = 'HOME %s' % ax.upper()
@@ -10393,6 +10397,14 @@ QTabBar::tab:only-one {
             c.error_msg('%s refused: a STEP 4 drive read is in progress' % label)
             LOG.error('%s refused: verify read pending', label)
             return False
+        if not fresh:
+            def _go(ok):
+                if ok:
+                    self.ac_to_zero(ax, verify, fresh=True)
+                else:
+                    LOG.error('%s refused: no fresh drive read -- nothing adopted, nothing moved', label)
+            self._fresh_read(label, _go)
+            return True
         if s.task_state != linuxcnc.STATE_ON:
             c.error_msg('%s refused: machine is not ON' % label)
             LOG.error('%s refused: not ON', label)
@@ -10591,6 +10603,19 @@ QTabBar::tab:only-one {
         t = getattr(self, '_verify_timer', None)
         return bool(t is not None and t.isActive())
 
+    def _unhome_head(self, label, ax):
+        """A head axis whose drive disagrees with its DRO is unhomed, so the
+        STALE/unhomed banner says so and nothing trusts the number."""
+        import linuxcnc
+        jn = 4 if ax == 'a' else 5
+        try:
+            c = linuxcnc.command()
+            c.teleop_enable(0); c.wait_complete(1.0)
+            c.unhome(jn); c.wait_complete(1.0)
+            LOG.error('%s: joint %d (%s) UNHOMED -- Home %s again', label, jn, ax.upper(), ax.upper())
+        except Exception as e:
+            LOG.error('%s: could not unhome joint %d: %s', label, jn, e)
+
     def _judge_zero(self, label, ax):
         """STEP 4 verdict for one axis from the (fresh) PktUART pin."""
         import linuxcnc
@@ -10600,9 +10625,10 @@ QTabBar::tab:only-one {
                       '%s is NOT confirmed at zero.', label, ax.upper())
             try:
                 linuxcnc.command().error_msg('%s: cannot read the drive after the move. '
-                                             '%s is NOT confirmed at zero.' % (label, ax.upper()))
+                                             '%s is NOT confirmed at zero -- UNHOMED.' % (label, ax.upper()))
             except Exception:
                 pass
+            self._unhome_head(label, ax)
             return False
         if abs(d2) > self.AC_ADOPT_TOL:
             LOG.error('%s: STEP 4 FAILED -- the drive reads %+.4f deg after the '
@@ -10610,28 +10636,28 @@ QTabBar::tab:only-one {
                       label, d2, self.AC_ADOPT_TOL, ax.upper())
             try:
                 linuxcnc.command().error_msg('%s: the drive reads %+.4f deg after the '
-                                             'move, not zero. %s IS NOT AT ZERO.'
+                                             'move, not zero. %s IS NOT AT ZERO -- UNHOMED.'
                                              % (label, d2, ax.upper()))
             except Exception:
                 pass
+            self._unhome_head(label, ax)
             return False
         LOG.info('%s: STEP 4 OK -- fresh drive read %+.4f deg, zero within %.4f',
                  label, d2, self.AC_ADOPT_TOL)
         return True
 
-    def _verify_wait(self, label, axes, then):
-        """STEP 4 with a REAL read. Pulse ned-tab.verify-out: the brain runs one
-        fresh SEN cycle (both packs baseblocked ~1.5 s each; the head must be
-        still and nothing may jog A/C until `then`) and bumps verify-count-in
-        only when it ACCEPTED both frames. Judge `axes` on that read, then
-        `then(ok)`. A refused, aborted or absent read is a loud FAILED, never a
-        judgement on the old snapshot."""
+    def _fresh_read(self, label, then):
+        """Pulse ned-tab.verify-out: the brain runs ONE fresh SEN cycle (both
+        packs baseblocked ~1.5 s each; head still, nothing may jog A/C until
+        `then`) and bumps verify-count-in only when it ACCEPTED both frames.
+        then(True) once the PktUART pins are fresh, then(False) on a refused,
+        aborted or absent read -- loud, never a judgement on the old snapshot."""
         try:
             before = int(self.comp.getPin('verify-count-in').value)
             self.comp.getPin('verify-out').value = True
             QTimer.singleShot(1000, lambda: self._pin_off('verify-out'))
         except Exception as e:
-            LOG.error('%s: STEP 4 FAILED -- verify pulse not sent (%s)', label, e)
+            LOG.error('%s: fresh drive read not requested (%s)', label, e)
             then(False); return
         t0 = time.monotonic()
         t = QTimer(self); t.setInterval(200)
@@ -10642,9 +10668,8 @@ QTabBar::tab:only-one {
                 if int(self.comp.getPin('verify-count-in').value) == before:
                     if time.monotonic() - t0 <= self.VERIFY_WAIT_S:
                         return
-                    msg = ('%s: STEP 4 FAILED -- no accepted fresh drive read in %.0f s; '
-                           '%s NOT confirmed at zero.' % (label, self.VERIFY_WAIT_S,
-                                                          '/'.join(a.upper() for a in axes)))
+                    msg = ('%s: no accepted fresh drive read in %.0f s -- the PktUART '
+                           'pins still hold the OLD snapshot' % (label, self.VERIFY_WAIT_S))
                     LOG.error(msg)
                     try:
                         import linuxcnc
@@ -10653,15 +10678,19 @@ QTabBar::tab:only-one {
                         pass
                     ok = False
                 else:
-                    ok = all([self._judge_zero(label, ax) for ax in axes])
+                    ok = True
             except Exception as e:
-                LOG.error('%s: STEP 4 FAILED -- verify wait error: %s', label, e)
+                LOG.error('%s: fresh read wait error: %s', label, e)
                 ok = False
             t.stop()
             then(ok)
         t.timeout.connect(_tick)
         self._verify_timer = t
         t.start()
+
+    def _verify_wait(self, label, axes, then):
+        """STEP 4: a fresh read, then each axis in `axes` judged against zero."""
+        self._fresh_read(label, lambda ok: then(ok and all([self._judge_zero(label, ax) for ax in axes])))
 
     # ==================================================================
     # -xyzab LAUNCH SEQUENCE  (operator 2026-08-11)
@@ -10967,13 +10996,17 @@ QTabBar::tab:only-one {
             LOG.error('HOME B failed: %s', e)
 
     def ac_to_zero_both(self):
-        """HOME AC: A to zero, then C, one after the other."""
-        LOG.info('HOME AC: A first, then C')
-        self.ac_to_zero('a', verify=False)      # one fresh read for both, after C
-        self._ac_chain = QTimer(self)
-        self._ac_chain.setSingleShot(True)
-        self._ac_chain.timeout.connect(self._ac_zero_c_when_still)
-        self._ac_chain.start(500)
+        """HOME AC: one fresh read, A to zero, then C, one STEP 4 for both."""
+        def _go(ok):
+            if not ok:
+                LOG.error('HOME AC refused: no fresh drive read'); return
+            LOG.info('HOME AC: A first, then C')
+            self.ac_to_zero('a', verify=False, fresh=True)
+            self._ac_chain = QTimer(self)
+            self._ac_chain.setSingleShot(True)
+            self._ac_chain.timeout.connect(self._ac_zero_c_when_still)
+            self._ac_chain.start(500)
+        self._fresh_read('HOME AC', _go)
 
     def _ac_zero_c_when_still(self):
         """Wait for A to stop before starting C -- never two head joints at
@@ -10986,7 +11019,7 @@ QTabBar::tab:only-one {
             self._ac_chain.start(500)          # still moving; look again
             return
         LOG.info('HOME AC: A settled, starting C')
-        self.ac_to_zero('c', verify='ac')
+        self.ac_to_zero('c', verify='ac', fresh=True)
 
     def request_single_ref(self, ax):
         # REF A / REF C: one-axis REF ALL (operator 2026-08-01). Pulse the
@@ -11134,7 +11167,7 @@ QTabBar::tab:only-one {
                          '(A=%+.4f C=%+.4f) -- sending A to zero',
                          s.joint[4]['output'], s.joint[5]['output'])
                 self._ha_stage = 'jog_a'
-                if not self.ac_to_zero('a', verify=False):
+                if not self.ac_to_zero('a', verify=False, fresh=True):
                     LOG.error('HOME ALL CHAIN: A refused -- chain STOPPED. '
                               'A is at %+.4f, not zero. Nothing further sent.',
                               s.joint[4]['output'])
@@ -11159,7 +11192,7 @@ QTabBar::tab:only-one {
                     return
                 LOG.info('HOME ALL CHAIN: A at %+.4f -- sending C to zero', apos)
                 self._ha_stage = 'jog_c'
-                if not self.ac_to_zero('c', verify=False):
+                if not self.ac_to_zero('c', verify=False, fresh=True):
                     LOG.error('HOME ALL CHAIN: C refused -- chain STOPPED. '
                               'C is at %+.4f', s.joint[5]['output'])
                     self._ha_stage = None
