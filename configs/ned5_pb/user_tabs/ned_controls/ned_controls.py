@@ -3045,7 +3045,7 @@ class UserTab(QWidget):
     # (current work position + delta, house offset math) and sent as one
     # G90 G1 line -- an abort partway can never leave G91 modal.
 
-    _JOG_WIDGETS = ('recover_read_btn', 'recover_retract_btn', 'jp_feed_readout',
+    _JOG_WIDGETS = ('measure_head_btn', 'recover_read_btn', 'recover_retract_btn', 'jp_feed_readout',
                     'jp_p_xy0', 'jp_p_xyz0', 'jp_p_z0',
                     'jp_p_zp10', 'jp_p_xy0z10', 'jp_p_a0c0',
                     'jp_in_x', 'jp_in_y', 'jp_in_z', 'jp_in_a', 'jp_in_c',
@@ -3146,6 +3146,13 @@ class UserTab(QWidget):
             #                 kins' own tip-minus-pivot vector; A, C unchanged
             # Both are DOUBLE-CLICK armed with a 3 s countdown (operator
             # 2026-10-01): see _recover_click.
+            # MEASURE HEAD (operator 2026-10-01: "the ability to measure the
+            # position of AC as many times as you want"): one click = one
+            # fresh drive read, drive vs DRO on screen, nothing moves,
+            # nothing declared. Repeat at will.
+            if w.get('measure_head_btn') is not None:
+                w['measure_head_btn'].clicked.connect(lambda _=False: self._measure_head_click())
+                LOG.info('MEASURE HEAD wired (single click, fresh read, no motion)')
             for name in ('recover_read_btn', 'recover_retract_btn'):
                 if w.get(name) is not None:
                     w[name].clicked.connect(
@@ -9372,6 +9379,44 @@ QTabBar::tab:only-one {
                 self._recover_retract_click()
             return
         QTimer.singleShot(1000, lambda n=name, g=g: self._recover_tick(n, g))
+
+    def _measure_head_click(self):
+        """One fresh SEN read of A and C; report drive vs DRO. No motion."""
+        import linuxcnc
+        b = self._jp_w.get('measure_head_btn')
+        try:
+            st = linuxcnc.stat(); st.poll()
+            if st.task_state != linuxcnc.STATE_ON:
+                linuxcnc.command().error_msg('MEASURE HEAD: machine is not ON (the read needs the packs powered)')
+                return
+        except Exception as e:
+            LOG.error('MEASURE HEAD: status poll failed: %s', e); return
+        if self._verify_active():
+            LOG.info('MEASURE HEAD: a read is already in progress'); return
+        if b is not None:
+            b.setText('MEASURING...')
+
+        def _report(ok):
+            if b is not None:
+                b.setText('MEASURE HEAD')
+            if not ok:
+                return                      # _fresh_read already shouted
+            try:
+                s2 = linuxcnc.stat(); s2.poll()
+                parts = []
+                for ax, jn in (('a', 4), ('c', 5)):
+                    d, dok = self._head_drive_deg(ax)
+                    dro = s2.joint[jn]['output']
+                    if dok and d is not None:
+                        parts.append('%s drive %+.3f / DRO %+.3f (diff %+.3f)' % (ax.upper(), d, dro, d - dro))
+                    else:
+                        parts.append('%s drive UNREADABLE / DRO %+.3f' % (ax.upper(), dro))
+                msg = 'MEASURE HEAD: ' + ' | '.join(parts)
+                LOG.info(msg)
+                linuxcnc.command().error_msg(msg)
+            except Exception as e:
+                LOG.error('MEASURE HEAD: report failed: %s', e)
+        self._fresh_read('MEASURE HEAD', _report)
 
     def _recover_read_click(self):
         """Pulse ned-tab.inplace-out: the brain unhomes A and C, takes a fresh
