@@ -140,6 +140,11 @@ h.newpin('ref-c-in', hal.HAL_BIT, hal.HAL_IN)
 # C, fresh absolute read, declare BOTH where they physically are. ZERO motion,
 # unlike REF A/C which drive to zero. Exactly the power-on path, on demand.
 h.newpin('inplace-in', hal.HAL_BIT, hal.HAL_IN)
+# VERIFY READ (GUI step 4, 2026-10-01): one fresh SEN snapshot of A and C,
+# nothing unhomed, nothing declared. The pack repeats its last snapshot until
+# the next SEN pulse (docs/commissioning/pso_live_read_findings.md UPDATE 2),
+# so a "read after the move" without this pulse returns the pre-move value.
+h.newpin('verify-in', hal.HAL_BIT, hal.HAL_IN)
 # SPINDLE FAULT ANNUNCIATION (operator 2026-08-12). ned5_iron.hal now drops
 # iocontrol.0.emc-enable-in on either of these, which e-stops the machine --
 # but e-stop's own banner says nothing about WHY, and "machine stopped" with
@@ -290,6 +295,8 @@ class Brain(object):
         self.prev_head_homed = {4: False, 5: False}
         self.prev_inplace = False
         self.req_inplace = False     # READ HEAD click latched at tick top
+        self.prev_verify = False
+        self.req_verify = False      # step-4 verify read, latched at tick top
         self.prev_refa = False
         self.prev_refc = False
         # (flip machinery deleted 2026-08-02: sequences are permanent)
@@ -1451,6 +1458,10 @@ class Brain(object):
             if _ip and not self.prev_inplace:
                 self.req_inplace = True
             self.prev_inplace = _ip
+            _vf = bool(h['verify-in'])
+            if _vf and not self.prev_verify:
+                self.req_verify = True
+            self.prev_verify = _vf
         except Exception:
             pass
 
@@ -1693,6 +1704,15 @@ class Brain(object):
         # READ HEAD (inplace-in): unhome both head joints, force a fresh read,
         # and let do_inplace() declare them at the read -- no motion. Refused
         # while anything runs, exactly like a REF.
+        if self.req_verify and on:
+            self.req_verify = False
+            if self.hr_step or self.pending_ref:
+                log('VERIFY read request ignored: a head read is already in progress')
+            else:
+                self.read_armed = False
+                self.want_read = True
+                log('VERIFY read requested (step 4): fresh SEN snapshot of A and C, '
+                    'no unhome, no declare')
         if self.req_inplace and on:
             self.req_inplace = False
             if (s.interp_state != linuxcnc.INTERP_IDLE or not s.inpos
