@@ -27,17 +27,7 @@ set -u
 NED=/home/brains/Documents/ned
 OUT=/tmp/pb_restart.last
 CLOSE_ONLY=0
-# --mode <run5 flags...>: relaunch AS THESE FLAGS instead of .last_run5_mode
-# (operator 2026-10-01: Machine menu "Relaunch XYZAC TCP" passes
-# "--mode -xyzac -tcp"). Everything after --mode goes to run5.sh verbatim.
-MODE_OVERRIDE=""
-while [ $# -gt 0 ]; do
-  case "$1" in
-    --close-only) CLOSE_ONLY=1; shift ;;
-    --mode) shift; MODE_OVERRIDE="$*"; break ;;
-    *) echo "pb_restart: unknown argument '$1'"; exit 1 ;;
-  esac
-done
+[ "${1:-}" = "--close-only" ] && CLOSE_ONLY=1
 
 pids() { { pgrep -f "[b]in/probe_basic"; pgrep -x linuxcncsvr
            pgrep -x milltask; pgrep -x halui; } 2>/dev/null | sort -u; }
@@ -146,12 +136,7 @@ fi
 # That happened on 2026-08-12: the operator started -xyzab, a restart read a
 # stale xyzac and came back with no B axis at all, and the only symptom was a
 # program stopping dead on its first B word.
-if [ -n "$MODE_OVERRIDE" ]; then
-  _MODEFLAGS="$MODE_OVERRIDE"
-  echo "pb_restart: RELAUNCHING AS  $_MODEFLAGS   (from --mode)"
-else
-  echo "pb_restart: RELAUNCHING AS  $_MODEFLAGS   (from .last_run5_mode)"
-fi
+echo "pb_restart: RELAUNCHING AS  $_MODEFLAGS   (from .last_run5_mode)"
 setsid nohup "$NED/tools/run5.sh" $_MODEFLAGS > "$OUT" 2>&1 < /dev/null &
 echo "pb_restart: launching (log: $OUT) -- waiting 60 s"
 sleep 60

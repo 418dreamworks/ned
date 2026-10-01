@@ -11555,8 +11555,6 @@ QTabBar::tab:only-one {
         win = self.window()
         if win is None:
             return
-        if not getattr(self, '_relaunch_menu_done', False):
-            self._install_relaunch_menu(win)
         # left spindle number = COMMANDED speed: the live M3/M4 command x
         # override (nonzero exactly while the spindle is told to turn --
         # "when it spins up ... it should display the commanded speed")
@@ -11626,87 +11624,6 @@ QTabBar::tab:only-one {
                          'NedHomingMenu provider is the single homing path')
         except Exception as e:
             LOG.error('_tick core-touch block failed: %s', e)
-
-    # ---- Machine > Relaunch XYZAC TCP (operator 2026-10-01) ----------------
-    RELAUNCH_FLAGS = ('-xyzac', '-tcp')     # run5.sh mode grammar, spelled out
-
-    def _install_relaunch_menu(self, win):
-        """Operator 2026-10-01: "a shortcut for xyzac tcp in gui, right above
-        or below run program". One QAction inserted ONCE into the Machine
-        menu directly below Run Program (custom_config.yml). Inserting a
-        new action is not the rebind-existing-actions approach that failed
-        on 2026-08-01: nothing stock is touched."""
-        try:
-            from PySide6.QtGui import QAction
-            mb = win.menuBar()
-            if mb is None:
-                return
-            for top in mb.actions():
-                m = top.menu()
-                if m is None or m.title().replace('&', '') != 'Machine':
-                    continue
-                acts = m.actions()
-                for i, a in enumerate(acts):
-                    if a.text().replace('&', '') != 'Run Program':
-                        continue
-                    act = QAction('Relaunch XYZAC TCP', m)
-                    act.setObjectName('action_relaunch_xyzac_tcp')
-                    act.setToolTip('Close this session cleanly (FILE > EXIT) '
-                                   'and start run5.sh -xyzac -tcp')
-                    act.triggered.connect(lambda _=False: self._relaunch_xyzac_tcp())
-                    before = acts[i + 1] if i + 1 < len(acts) else None
-                    if before is not None:
-                        m.insertAction(before, act)
-                    else:
-                        m.addAction(act)
-                    self._relaunch_menu_done = True
-                    LOG.info('RELAUNCH: Machine > "Relaunch XYZAC TCP" inserted '
-                             'below Run Program')
-                    return
-            LOG.warning('RELAUNCH: Machine > Run Program not found; '
-                        'menu item not inserted')
-            self._relaunch_menu_done = True       # do not retry every tick
-        except Exception as e:
-            LOG.error('RELAUNCH: menu insert failed: %s', e)
-            self._relaunch_menu_done = True
-
-    def _relaunch_xyzac_tcp(self):
-        """Detached pb_restart.sh --mode -xyzac -tcp: its idle gate (NML)
-        refuses while a cycle is in flight, it closes PB with CTRL+Q so the
-        GUI settings are written, verifies everything died, then launches
-        run5.sh in its own session. setsid + start_new_session so the chain
-        survives this GUI's exit (pb_restart.sh 2026-08-05 note)."""
-        import subprocess
-        try:
-            import linuxcnc
-            st = linuxcnc.stat()
-            st.poll()
-            if st.interp_state != linuxcnc.INTERP_IDLE:
-                msg = 'RELAUNCH refused: a program or MDI is running'
-                LOG.error(msg)
-                linuxcnc.command().error_msg(msg)
-                return
-        except Exception as e:
-            LOG.warning('RELAUNCH: status poll failed (%s) -- pb_restart.sh '
-                        'gate decides', e)
-        script = '/home/brains/Documents/ned/tools/live/pb_restart.sh'
-        log_path = '/tmp/pb_restart_gui.log'
-        try:
-            with open(log_path, 'ab') as lf:
-                subprocess.Popen(
-                    ['setsid', 'nohup', script, '--mode'] + list(self.RELAUNCH_FLAGS),
-                    stdin=subprocess.DEVNULL, stdout=lf, stderr=subprocess.STDOUT,
-                    start_new_session=True, close_fds=True)
-            LOG.info('RELAUNCH: pb_restart.sh --mode %s started (log %s); '
-                     'this session closes via CTRL+Q', ' '.join(self.RELAUNCH_FLAGS),
-                     log_path)
-        except Exception as e:
-            LOG.error('RELAUNCH failed to start pb_restart.sh: %s', e)
-            try:
-                import linuxcnc
-                linuxcnc.command().error_msg('RELAUNCH failed: %s' % e)
-            except Exception:
-                pass
 
     # ---- safe per-axis homing (Homing menu entries) ----------------------
     def home_x_pair(self):
