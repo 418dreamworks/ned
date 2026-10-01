@@ -9,7 +9,8 @@
 #   mis-place scales. DO NOT run it against configs/ned5. Value below hand-placed.
 TYPE = ANGULAR
 MAX_VELOCITY = 30
-MAX_ACCELERATION = 2
+# 2026-09-30: doubled, operator "let's double the accel for now" (A 4->8, C 2->4).
+MAX_ACCELERATION = 4
 STEPGEN_MAXVEL = 36
 STEPGEN_MAXACCEL = 450
 # SCALE sign = C motion direction (negative: motor turns opposite to encoder/DRO+). Magnitude = ned_params.sh SCALE_C.

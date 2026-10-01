@@ -11,7 +11,8 @@
 # C is deliberately LEFT at 2 -- only A was asked for and only A was reasoned
 # about. STEPGEN_MAXACCEL 450 is nowhere near limiting either.
 MAX_VELOCITY = 30
-MAX_ACCELERATION = 4
+# 2026-09-30: doubled, operator "let's double the accel for now" (A 4->8, C 2->4).
+MAX_ACCELERATION = 8
 # LIMITS DISABLED 2026-08-07 (operator: "disable all axis limits for now").
 # An axis limit bounds the TOOL TIP, not the carriage; under ned_ac_kins
 # the tip sits up to L*(1-cos A) above the joint, so a joint-sized number

@@ -5,7 +5,8 @@
 # NOTE: enforced only AFTER homing, and absolute only if home = true head angle.
 # Bounded (NOT a wrapping/rollover axis) so a +ve->-ve move interpolates through 0.
 MAX_VELOCITY = 30
-MAX_ACCELERATION = 2
+# 2026-09-30: doubled, operator "let's double the accel for now" (A 4->8, C 2->4).
+MAX_ACCELERATION = 4
 # LIMITS DISABLED 2026-08-07 (operator: "disable all axis limits for now").
 # An axis limit bounds the TOOL TIP, not the carriage; under ned_ac_kins
 # the tip sits up to L*(1-cos A) above the joint, so a joint-sized number
