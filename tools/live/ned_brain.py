@@ -147,6 +147,9 @@ h.newpin('inplace-in', hal.HAL_BIT, hal.HAL_IN)
 h.newpin('verify-in', hal.HAL_BIT, hal.HAL_IN)
 # bumps once per ACCEPTED verify read (both frames) -- the GUI judges nothing else
 h.newpin('verify-count', hal.HAL_U32, hal.HAL_OUT)
+# hm2_7i97.0.io_error: the Mesa link is dead. A head read through it returned
+# nothing and rtapi_app then segfaulted twice on 2026-10-01 (18:46, 19:38).
+h.newpin('io-error-in', hal.HAL_BIT, hal.HAL_IN)
 # SPINDLE FAULT ANNUNCIATION (operator 2026-08-12). ned5_iron.hal now drops
 # iocontrol.0.emc-enable-in on either of these, which e-stops the machine --
 # but e-stop's own banner says nothing about WHY, and "machine stopped" with
@@ -1784,6 +1787,15 @@ class Brain(object):
         # start a wanted read once the machine is settled and the reader is free
         if self.want_read and now >= self.on_settled and self.hr_step == 0 \
            and self.hr_cb_delay == 0 and not head_busy:
+            if bool(h['io-error-in']):
+                self.want_read = False
+                self.read_is_verify = False
+                log('HEAD READ refused: Mesa link is down (hm2 io_error) -- relaunch')
+                try:
+                    self.cmd.error_msg('HEAD READ refused: the Mesa link is down. Relaunch.')
+                except Exception:
+                    pass
+                return
             self.want_read = False
             self.hr_start('c', lambda: self.hr_start('a', self.read_done))
             return
