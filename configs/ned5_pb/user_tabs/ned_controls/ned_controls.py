@@ -3144,11 +3144,14 @@ class UserTab(QWidget):
             #                 both where they physically are -- no motion
             #   RETRACT 1/8"  one 3.175 mm move along the tool axis, from the
             #                 kins' own tip-minus-pivot vector; A, C unchanged
-            for name, slot in (('recover_read_btn', self._recover_read_click),
-                               ('recover_retract_btn', self._recover_retract_click)):
+            # Both are DOUBLE-CLICK armed with a 3 s countdown (operator
+            # 2026-10-01): see _recover_click.
+            for name in ('recover_read_btn', 'recover_retract_btn'):
                 if w.get(name) is not None:
-                    w[name].clicked.connect(slot)
-                    LOG.info('RECOVER: %s wired', name)
+                    w[name].clicked.connect(
+                        lambda _=False, n=name: self._recover_click(n))
+                    LOG.info('RECOVER: %s wired (double-click, %d s countdown)',
+                             name, self.RECOVER_COUNT)
                 else:
                     LOG.error('RECOVER: %s NOT FOUND in the JOG panel -- button dead', name)
             # PRESETS: execute IMMEDIATELY on click, no GO.
@@ -9313,6 +9316,54 @@ QTabBar::tab:only-one {
 
     # ---- RECOVER: READ HEAD / RETRACT 1/8" (operator 2026-10-01) ----------
     RETRACT_MM = 3.175          # 1/8 in per click, along the tool axis
+    RECOVER_COUNT = 3           # countdown, same shape as CLEAR C REF / spindle Check
+    RECOVER_DBL_S = 0.6         # second click within this = a double click
+    RECOVER_FACE = {'recover_read_btn': 'READ HEAD',
+                    'recover_retract_btn': 'RETRACT 1/8"'}
+
+    def _recover_click(self, name):
+        """Operator 2026-10-01: "double clicks with 3 seconds countdowns for
+        both". A single click does nothing; a second click within
+        RECOVER_DBL_S arms a countdown shown on the button face (3, 2, 1); a
+        tap while it counts stops it; when it runs out the action fires.
+        Same pattern as the CLEAR C REF and spindle/unload countdowns."""
+        import time
+        b = self._jp_w.get(name)
+        if b is None:
+            return
+        pend = self.__dict__.setdefault('_recover_pend', {})
+        last = self.__dict__.setdefault('_recover_last', {})
+        if pend.get(name, 0) > 0:                       # counting -> stop
+            pend[name] = 0
+            b.setText(self.RECOVER_FACE[name])
+            LOG.info('RECOVER %s: countdown stopped by tap', name)
+            return
+        now = time.monotonic()
+        if now - last.get(name, 0.0) > self.RECOVER_DBL_S:
+            last[name] = now                            # first click: wait
+            LOG.info('RECOVER %s: single click -- double-click arms', name)
+            return
+        last[name] = 0.0
+        pend[name] = self.RECOVER_COUNT
+        LOG.info('RECOVER %s: double-click -- %d s countdown', name, self.RECOVER_COUNT)
+        self._recover_tick(name)
+
+    def _recover_tick(self, name):
+        b = self._jp_w.get(name)
+        pend = self.__dict__.setdefault('_recover_pend', {})
+        n = pend.get(name, 0)
+        if b is None or n <= 0:
+            return
+        b.setText('%s in %d' % (self.RECOVER_FACE[name], n))
+        pend[name] = n - 1
+        if pend[name] <= 0:
+            b.setText(self.RECOVER_FACE[name])
+            if name == 'recover_read_btn':
+                self._recover_read_click()
+            else:
+                self._recover_retract_click()
+            return
+        QTimer.singleShot(1000, lambda n=name: self._recover_tick(n))
 
     def _recover_read_click(self):
         """Pulse ned-tab.inplace-out: the brain unhomes A and C, takes a fresh
