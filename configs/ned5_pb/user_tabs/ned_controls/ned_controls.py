@@ -9366,72 +9366,43 @@ QTabBar::tab:only-one {
         except Exception:
             pass
 
-    def _head_kins_constants(self):
-        """azimuth-offset and tilt-sign exactly as the kins uses them: the live
-        ned_ac_kins pins when that module is loaded, else the values
-        postgui_tcp.hal sets on them (the one place they are written -- not
-        copied here). Returns (az_deg, tilt_sign) or None."""
-        import subprocess
-        import re
-        vals = {}
-        for key in ('azimuth-offset', 'tilt-sign'):
-            try:
-                r = subprocess.run(['timeout', '5', 'halcmd', '-s', 'getp',
-                                    'ned_ac_kins.' + key],
-                                   capture_output=True, text=True)
-                if r.returncode == 0:
-                    vals[key] = float(r.stdout.strip())
-            except Exception:
-                pass
-        if len(vals) < 2:
-            try:
-                hal_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                        '..', '..', 'postgui_tcp.hal')
-                with open(hal_path) as f:
-                    for ln in f:
-                        m = re.match(r'\s*setp\s+ned_ac_kins\.(azimuth-offset|tilt-sign)\s+(\S+)', ln)
-                        if m and m.group(1) not in vals:
-                            vals[m.group(1)] = float(m.group(2))
-            except Exception as e:
-                LOG.error('RETRACT: postgui_tcp.hal unreadable: %s', e)
-        if len(vals) < 2:
-            return None
-        return vals['azimuth-offset'], vals['tilt-sign']
-
     def _recover_retract_click(self):
         """One RETRACT_MM move along the tool axis, A and C unchanged.
 
-        Direction from the kins' own formula (ned_ac_kins.c s2r): the tip
-        sits at r = s2r(L, C + az, 180 - ts*A) from the pivot, so the retract
-        direction is -r_hat; at A0 that is +Z. The target is machine-frame
+        NO head geometry is computed here (operator 2026-10-01: use what
+        exists so a kins update permeates). Under ned_ac_kins LinuxCNC already
+        holds the kins module's own forward transform: world XYZ is the tool
+        tip, joint XYZ is the pivot carriage, so tip - joints IS the tool-axis
+        vector the kins uses (|r| = pivot-length). The retract direction is
+        -r/|r|. Under trivkins world == joints, r == 0: the control does not
+        know where the tool points, so it refuses. The target is machine-frame
         (G53), issued through _jog_issue: ON + fully homed + idle guards,
-        soft-limit pre-check, one fire-and-forget MDI line. Same under every
-        kins: G53 XYZ is the controlled point in both.
+        soft-limit pre-check, one fire-and-forget MDI line.
         """
         import math
         try:
             import linuxcnc
             st = linuxcnc.stat()
             st.poll()
-            k = self._head_kins_constants()
-            if k is None:
-                msg = ('RETRACT refused: azimuth-offset / tilt-sign unknown '
-                       '(no ned_ac_kins pins and postgui_tcp.hal unreadable)')
+            w = st.actual_position
+            jp = st.joint_actual_position
+            r = (w[0] - jp[0], w[1] - jp[1], w[2] - jp[2])
+            L = math.sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2])
+            if L < 1.0:
+                msg = ('RETRACT refused: tip and pivot coincide (|r| = %.3f mm) '
+                       '-- identity kins, the control does not know where the '
+                       'tool points. Relaunch in tool-tip mode (run5.sh -tcp).' % L)
                 LOG.error(msg)
                 linuxcnc.command().error_msg(msg)
                 return
-            az, ts = k
-            pos = st.actual_position
-            x, y, z, a, c = pos[0], pos[1], pos[2], pos[3], pos[5]
-            t = math.radians(c + az)
-            p = math.radians(180.0 - ts * a)
-            u = (-math.sin(p) * math.cos(t), -math.sin(p) * math.sin(t), -math.cos(p))
+            u = (-r[0] / L, -r[1] / L, -r[2] / L)
             d = self.RETRACT_MM
-            tgt = (x + d * u[0], y + d * u[1], z + d * u[2])
-            LOG.info('RETRACT 1/8": A=%.3f C=%.3f az=%g ts=%g -> u=(%.4f, %.4f, %.4f); '
-                     'machine (%.4f, %.4f, %.4f) -> (%.4f, %.4f, %.4f): %.3f mm '
-                     'along the tool axis', a, c, az, ts, u[0], u[1], u[2],
-                     x, y, z, tgt[0], tgt[1], tgt[2], d)
+            tgt = (w[0] + d * u[0], w[1] + d * u[1], w[2] + d * u[2])
+            LOG.info('RETRACT 1/8": tip (%.4f, %.4f, %.4f) pivot (%.4f, %.4f, %.4f) '
+                     '|r| %.3f A=%.3f C=%.3f -> u=(%.4f, %.4f, %.4f); target '
+                     '(%.4f, %.4f, %.4f): %.3f mm along the tool axis',
+                     w[0], w[1], w[2], jp[0], jp[1], jp[2], L, w[3], w[5],
+                     u[0], u[1], u[2], tgt[0], tgt[1], tgt[2], d)
             self._jog_issue('RETRACT 1/8"', [('x', tgt[0]), ('y', tgt[1]), ('z', tgt[2])],
                             g53=True)
         except Exception as e:
