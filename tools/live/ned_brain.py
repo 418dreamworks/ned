@@ -145,6 +145,8 @@ h.newpin('inplace-in', hal.HAL_BIT, hal.HAL_IN)
 # the next SEN pulse (docs/commissioning/pso_live_read_findings.md UPDATE 2),
 # so a "read after the move" without this pulse returns the pre-move value.
 h.newpin('verify-in', hal.HAL_BIT, hal.HAL_IN)
+# bumps once per ACCEPTED verify read (both frames) -- the GUI judges nothing else
+h.newpin('verify-count', hal.HAL_U32, hal.HAL_OUT)
 # SPINDLE FAULT ANNUNCIATION (operator 2026-08-12). ned5_iron.hal now drops
 # iocontrol.0.emc-enable-in on either of these, which e-stops the machine --
 # but e-stop's own banner says nothing about WHY, and "machine stopped" with
@@ -297,6 +299,7 @@ class Brain(object):
         self.req_inplace = False     # READ HEAD click latched at tick top
         self.prev_verify = False
         self.req_verify = False      # step-4 verify read, latched at tick top
+        self.read_is_verify = False  # the read in flight was asked for by the GUI
         self.prev_refa = False
         self.prev_refc = False
         # (flip machinery deleted 2026-08-02: sequences are permanent)
@@ -400,7 +403,8 @@ class Brain(object):
         return True
 
     def head_busy(self):
-        return bool(self.hr_step or self.pending_ref
+        return bool(self.hr_step or self.hr_cb_delay or self.hr_cb
+                    or self.pending_ref
                     or self.pin_wipe
                     or getattr(self, 'inplace_pending', False)
                     or any(self.home_state(j) not in (self.HOME_IDLE, None)
@@ -1345,6 +1349,9 @@ class Brain(object):
             self.read_retries = 0
             log('HEAD READ armed: C={:+.3f} A={:+.3f}'.format(
                 self.hr_deg['c'], self.hr_deg['a']))
+            if self.read_is_verify:
+                self.read_is_verify = False
+                h['verify-count'] = (int(h['verify-count']) + 1) & 0xffffffff
             # STARTUP IN-PLACE HOME: read armed at power-on -> home unhomed
             # A/C joints where they stand. Factored to do_inplace() so the
             # PRE-LAUNCH-read path (ON edge with read already armed) can run
@@ -1697,11 +1704,12 @@ class Brain(object):
         # while anything runs, exactly like a REF.
         if self.req_verify and on:
             self.req_verify = False
-            if self.hr_step or self.pending_ref:
-                log('VERIFY read request ignored: a head read is already in progress')
+            if self.pending_ref:
+                log('VERIFY read request ignored: a REF home is pending and owns the next read')
             else:
                 self.read_armed = False
                 self.want_read = True
+                self.read_is_verify = True
                 log('VERIFY read requested (step 4): fresh SEN snapshot of A and C, '
                     'no unhome, no declare')
         if self.req_inplace and on:

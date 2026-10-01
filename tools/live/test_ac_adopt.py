@@ -102,15 +102,20 @@ settle = re.search(r"def _teleop_restore_when_still\(self, label, "
                    r"verify_ax=None\):.*?\n    def ", src, re.S)
 settle = settle.group(0) if settle else ''
 check('the settle path hands step 4 to a FRESH read (_verify_wait)',
-      '_verify_wait(label, [verify_ax]' in settle)
+      '_verify_wait(label, list(verify_ax)' in settle)
 verify = re.search(r"def _verify_wait\(self, label, axes, then\):.*?\n    # ====", src, re.S)
 verify = verify.group(0) if verify else ''
 check('_verify_wait pulses the brain for a new SEN read',
       "getPin('verify-out').value = True" in verify)
-check('_verify_wait reads the drive only after that read',
-      '_head_drive_deg(ax)' in verify and "head-busy-in" in verify)
+check('_verify_wait judges only a read the brain ACCEPTED (verify-count)',
+      "verify-count-in" in verify and '_judge_zero(label, ax)' in verify)
+judge = re.search(r"def _judge_zero\(self, label, ax\):.*?\n    def ", src, re.S)
+judge = judge.group(0) if judge else ''
+check('_judge_zero reads the drive', '_head_drive_deg(ax)' in judge)
 check('step 4 shouts when the drive is not at zero',
-      'STEP 4 FAILED' in verify)
+      'STEP 4 FAILED' in verify and 'STEP 4 FAILED' in judge)
+check('Home A&C verifies once, after C, never in A\'s baseblock',
+      "ac_to_zero('a', verify=False)" in src and "ac_to_zero('c', verify='ac')" in src)
 check('the Home All chain verifies A and C once, at the end',
       "_verify_wait('HOME ALL CHAIN', ['a', 'c']" in src)
 
