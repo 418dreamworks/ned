@@ -1125,13 +1125,21 @@ class Brain(object):
                         'worse than a following error'
                         .format(self.stat.motion_mode, forced))
                 if forced:
-                    log('SPINDLE RESTORE: teleop was re-enabled {}x during the '
-                        'arm hold (jog pressed?) -- forced off, released in FREE'
-                        .format(forced))
+                    # task itself enters TELEOP on MANUAL once all joints are
+                    # homed (emctask.cc:277-280); forcing it off is expected
+                    log('SPINDLE RESTORE: task auto-TELEOP forced off {}x -- '
+                        'arm released in FREE'.format(forced))
             finally:
                 h['pivot-hold'] = False
                 time.sleep(0.01)    # two servo cycles: the mux has passed the new arm
                                     # before anything downstream may enter TELEOP
+            # Put TELEOP back ourselves: the automatic entry was just forced
+            # off, nothing else restores it, and in FREE the MPG addresses
+            # joints 0/3 -- the synchronised gantry pair, which motion refuses
+            # to wheel-jog ("home_sequence synchronized (-2)", 2026-10-01 13:1x).
+            # Entering TELEOP re-forwards the world command from the joints
+            # with the NEW arm (control.c:927-958): continuous, no jump.
+            self.ensure_teleop()
             self.stat.poll()
             log('SPINDLE RESTORE: T{} re-declared in spindle after reboot '
                 '(sensor-confirmed clamped); tool_in_spindle={} '
