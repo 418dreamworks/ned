@@ -44,7 +44,7 @@ loadrt pid names=pid.x,pid.y,pid.z,pid.w
 # Spindle + drawbar interlock gates, air interlock, and the head-enable gates.
 # (rotary.permit from ned.hal:86 dropped -- no B here.) head.a/c.enable AND the
 # per-axis amp-enable with the 3 s head-ready delay (see section 4).
-loadrt and2 names=spindle.permit,spindle.cw,spindle.ccw,air.permit,head.a.enable,head.c.enable,overtemp,toolrel.permit,sen.gate,tool.mm.unrecR,tool.mm.phanR,tool.mm.unrec,tool.mm.phan,fault.permit
+loadrt and2 names=spindle.permit,spindle.cw,spindle.ccw,air.permit,head.a.enable,head.c.enable,overtemp,toolrel.permit,sen.gate,tool.mm.unrecR,tool.mm.phanR,tool.mm.unrec,tool.mm.phan,fault.permit,pivothold.and
 # air-dip debounce (operator 2026-08-02: drawbar release gulps air, the
 # pressure switch dips ~1 s and the interlock killed power MID-TOOL-CHANGE;
 # switch threshold stays as the operator's pressure-quality indicator)
@@ -95,7 +95,7 @@ loadrt or2 names=limhit.0,limhit.1,limhit.2,limhit.3,limhit.4,sol.ts,sol.blow,so
 # disagreement can lock the machine out, and that is the operator's call.
 loadrt conv_s32_float names=tool.mm.n2f
 loadrt comp names=tool.mm.have
-loadrt mux2 names=zferr.z
+loadrt mux2 names=zferr.z,pivothold   # pivothold: kins arm hold during the tool restore (postgui_tcp.hal)
 loadrt limdir names=limdir.0,limdir.1,limdir.2,limdir.3
 loadrt jogblock names=jogblock.x,jogblock.y,jogblock.z
 # HQD S3 shaft-stop is a PULSE source, not a level (manual:183-185: PNP prox,
@@ -103,7 +103,7 @@ loadrt jogblock names=jogblock.x,jogblock.y,jogblock.z
 # parked level is whatever angle the shaft stopped at. Detect ACTIVITY:
 # edge(both) -> retriggerable oneshot(1 s). oneshot.out-not = truly stopped.
 loadrt edge names=shaft.edge
-loadrt oneshot names=shaft.spin
+loadrt oneshot names=shaft.spin,pivothold.t   # pivothold.t: 15 s ceiling on the kins arm hold (postgui_tcp.hal)
 
 
 # ----------------------------------------------------------------------------

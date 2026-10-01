@@ -164,6 +164,11 @@ h.newpin('hstate-5-in', hal.HAL_S32, hal.HAL_IN)
 # pressing homing any other button until its completely safe ... positive
 # confirmation of whatever process is required to end").
 h.newpin('head-busy', hal.HAL_BIT, hal.HAL_OUT)
+# KINS ARM HOLD (2026-10-01): TRUE only while restore_spindle_tool runs its
+# MDI. postgui_tcp.hal routes arm.out through mux2 `pivothold` (sel = this pin,
+# in1 = its own output) into ned_ac_kins.pivot-length, so the arm cannot step
+# while motion is in COORD. See restore_spindle_tool.
+h.newpin('pivot-hold', hal.HAL_BIT, hal.HAL_OUT)
 # TOOL TABLE SERVED -- the ONLY thing that releases the default motion lock
 # (tool.mm.ntbl -> tool.mm.lock2 -> motion.jog-inhibit + feed-inhibit).
 # FALSE here and FALSE on an unconnected pin, so every way this can fail --
@@ -1062,10 +1067,25 @@ class Brain(object):
                     'is really there)'.format(want))
                 self.tool_settled()
                 return
-            self.cmd.mode(linuxcnc.MODE_MDI)
-            self.cmd.wait_complete()
-            self.cmd.mdi('M61 Q{}'.format(want))
-            self.cmd.wait_complete(4.0)
+            # KINS ARM HOLD (operator 2026-10-01, startup following errors).
+            # M61/G43 change motion.tooloffset.z and with it the kins pivot
+            # length (postgui_tcp.hal: arm = head constant + tool Z offset).
+            # This MDI runs in COORD mode, where motion re-solves every joint
+            # from the standing tool-tip command each cycle (control.c:1350):
+            # a 121 mm longer arm with the head tilted = joint commands that
+            # jump (X -48, Y +33, Z -15 mm at A -28.5) = following errors on
+            # X Y Z X2 with nothing moving. So: hold the arm through the MDI,
+            # drop to MANUAL (motion FREE: joints commanded directly, the
+            # world command follows forward(joints), control.c:1288), THEN
+            # release. The step lands where it cannot move anything, and the
+            # next teleop entry starts from a consistent world command.
+            # Tool changes inside programs are untouched: the hold is only here.
+            h['pivot-hold'] = True
+            try:
+                self.cmd.mode(linuxcnc.MODE_MDI)
+                self.cmd.wait_complete()
+                self.cmd.mdi('M61 Q{}'.format(want))
+                self.cmd.wait_complete(4.0)
             # TIP REFERENCE, ALWAYS (operator 2026-08-12: "no nose reference.
             # always tip reference"). This path restores the tool NUMBER but
             # not its LENGTH: RS274NGC_STARTUP_CODE ends ... G40 G49 G54 ...
@@ -1079,10 +1099,39 @@ class Brain(object):
             # THE MANUAL PATH ALREADY DOES THIS: spindle_declare.ngc:28
             # issues G43 H<n>, which is why LOAD SPINDLE never showed the
             # fault. This is the automatic path catching up with it.
-            self.cmd.mdi('G43')
-            self.cmd.wait_complete(4.0)
-            self.cmd.mode(linuxcnc.MODE_MANUAL)
-            self.cmd.wait_complete()
+                self.cmd.mdi('G43')
+                self.cmd.wait_complete(4.0)
+                self.cmd.mode(linuxcnc.MODE_MANUAL)
+                self.cmd.wait_complete()
+                # release ONLY with motion in FREE; TELEOP would re-solve
+                # the joints from the world command the moment the arm steps
+                # (a GUI jog press re-enables TELEOP -- qtpyvcp
+                # machine_actions.py:1157 -- so keep forcing it off; 10 s,
+                # not 2: the HAL side releases by itself at 15 s anyway)
+                forced = 0
+                for _ in range(200):
+                    self.stat.poll()
+                    if self.stat.motion_mode == linuxcnc.TRAJ_MODE_FREE:
+                        break
+                    if self.stat.motion_mode == linuxcnc.TRAJ_MODE_TELEOP:
+                        self.cmd.teleop_enable(0)
+                        self.cmd.wait_complete()
+                        forced += 1
+                    time.sleep(0.05)
+                else:
+                    log('SPINDLE RESTORE: motion not FREE 10 s after MANUAL '
+                        '(motion_mode {}, teleop forced off {}x) -- releasing '
+                        'the arm hold anyway; a held arm is wrong TCP geometry, '
+                        'worse than a following error'
+                        .format(self.stat.motion_mode, forced))
+                if forced:
+                    log('SPINDLE RESTORE: teleop was re-enabled {}x during the '
+                        'arm hold (jog pressed?) -- forced off, released in FREE'
+                        .format(forced))
+            finally:
+                h['pivot-hold'] = False
+                time.sleep(0.01)    # two servo cycles: the mux has passed the new arm
+                                    # before anything downstream may enter TELEOP
             self.stat.poll()
             log('SPINDLE RESTORE: T{} re-declared in spindle after reboot '
                 '(sensor-confirmed clamped); tool_in_spindle={} '

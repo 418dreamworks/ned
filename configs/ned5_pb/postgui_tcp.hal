@@ -14,6 +14,9 @@
 # block there. This file is CONCATENATED AFTER postgui_pb.hal by run5.sh
 # and sum2 can only be loaded once per HAL session.
 addf arm servo-thread
+addf pivothold.t servo-thread
+addf pivothold.and servo-thread
+addf pivothold servo-thread
 # in0, the head constant, is APPENDED BY run5 from head_pivot.inc when it
 # generates postgui_tcp_all.hal -- so it is set here at HAL load, before
 # the machine can be powered. It is deliberately NOT written at runtime:
@@ -21,7 +24,23 @@ addf arm servo-thread
 # loop commands dL*sin(A) of Y instantly. ned_brain used to do exactly
 # that and jerked the servos on every launch with the head off zero.
 net sig-tool-zoff motion.tooloffset.z => arm.in1
-net sig-pivot-arm arm.out => ned_ac_kins.pivot-length
+# ARM HOLD (2026-10-01): the arm reaches the kins through mux2 `pivothold`
+# (loaded in ned5_iron.hal). sel = brain.pivot-hold, TRUE only while the
+# brain's tool restore runs M61/G43 in MDI (COORD mode re-solves every joint
+# from the tool-tip command each cycle; a 121 mm arm step there = following
+# errors on X Y Z X2). in1 is the mux's own output, so sel=1 holds the last
+# value; sel=0 passes arm.out live, exactly as before. The brain releases in
+# FREE mode, where the step cannot move anything.
+# CEILING (adversary 2026-10-01): if the brain dies with pivot-hold TRUE the
+# pin keeps its last value and the arm would stay frozen -- wrong TCP geometry
+# with no alarm. oneshot pivothold.t limits any hold to 15 s; the mux selects
+# on (hold AND oneshot.out), so the brain's own release is still immediate.
+setp pivothold.t.width 15
+net sig-pivot-arm   arm.out          => pivothold.in0
+net sig-pivot-hold  brain.pivot-hold => pivothold.t.in pivothold.and.in0
+net sig-pivot-hold-t pivothold.t.out => pivothold.and.in1
+net sig-pivot-sel   pivothold.and.out => pivothold.sel
+net sig-pivot-len   pivothold.out    => ned_ac_kins.pivot-length pivothold.in1
 # Discrete geometry, not calibrated numbers: azimuth 90 puts the A tilt in
 # the YZ plane at C=0, tilt-sign matches the physical A direction to the
 # model. Neither is determined by the pivot measurement -- (1-cosA) is even
