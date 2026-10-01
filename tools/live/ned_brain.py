@@ -1082,19 +1082,10 @@ class Brain(object):
                     'is really there)'.format(want))
                 self.tool_settled()
                 return
-            # KINS ARM HOLD (operator 2026-10-01, startup following errors).
-            # M61/G43 change motion.tooloffset.z and with it the kins pivot
-            # length (postgui_tcp.hal: arm = head constant + tool Z offset).
-            # This MDI runs in COORD mode, where motion re-solves every joint
-            # from the standing tool-tip command each cycle (control.c:1350):
-            # a 121 mm longer arm with the head tilted = joint commands that
-            # jump (X -48, Y +33, Z -15 mm at A -28.5) = following errors on
-            # X Y Z X2 with nothing moving. So: hold the arm through the MDI,
-            # drop to MANUAL (motion FREE: joints commanded directly, the
-            # world command follows forward(joints), control.c:1288), THEN
-            # release. The step lands where it cannot move anything, and the
-            # next teleop entry starts from a consistent world command.
-            # Tool changes inside programs are untouched: the hold is only here.
+            # KINS ARM HOLD (2026-10-01): G43 steps the kins pivot length; in
+            # COORD motion re-solves the joints from the tool-tip command
+            # (following errors with the head tilted). Hold the arm through
+            # the MDI, release in FREE where the step moves nothing.
             h['pivot-hold'] = True
             try:
                 self.cmd.mode(linuxcnc.MODE_MDI)
@@ -1122,7 +1113,7 @@ class Brain(object):
                 # the joints from the world command the moment the arm steps
                 # (a GUI jog press re-enables TELEOP -- qtpyvcp
                 # machine_actions.py:1157 -- so keep forcing it off; 10 s,
-                # not 2: the HAL side releases by itself at 15 s anyway)
+                # not 2: the HAL side releases by itself at 40 s anyway)
                 forced = 0
                 for _ in range(200):
                     self.stat.poll()

@@ -206,8 +206,6 @@ STYLE_NOAIR = 'font: 75 18pt; background: rgb(70,70,70); color: rgb(180,180,180)
 # SLOW/MEDIUM/FAST buttons read -- ned_pendant.py has a separate one for the
 # wheel, and editing that one alone changed nothing the operator could feel.
 JOG_SPEEDS = {
-    'slow':   (200.0,   15.0),
-    'medium': (3000.0,  60.0),
     'fast':   (8000.0, 180.0),
 }
 
@@ -225,9 +223,9 @@ JOG_SPEEDS = {
 # so 540 is well inside the limit and the planner never has to clamp it.
 # Anything missing from this table falls back to the shared column above.
 JOG_ANG_SPEEDS = {
-    'A': {'slow': 15.0, 'medium': 60.0, 'fast': 540.0},
-    'C': {'slow': 15.0, 'medium': 60.0, 'fast': 540.0},
-    'B': {'slow': 15.0, 'medium': 60.0, 'fast': 180.0},
+    'A': {'fast': 540.0},
+    'C': {'fast': 540.0},
+    'B': {'fast': 180.0},
 }
 
 # EMC 9-axis order XYZABCUVW -> stat.actual_position/g5x_offset/... index
@@ -3143,7 +3141,7 @@ class UserTab(QWidget):
             # the slots the speed buttons occupied:
             #   READ HEAD     brain: unhome A/C, fresh absolute read, declare
             #                 both where they physically are -- no motion
-            #   RETRACT 1/8"  one 3.175 mm move along the tool axis, from the
+            #   RETRACT 1/2"  one 12.7 mm move along the tool axis, from the
             #                 kins' own tip-minus-pivot vector; A, C unchanged
             # Both are DOUBLE-CLICK armed with a 3 s countdown (operator
             # 2026-10-01): see _recover_click.
@@ -9315,7 +9313,7 @@ QTabBar::tab:only-one {
         except Exception as e:
             LOG.exception('MCS Z0 failed: %s', e)
 
-    # ---- RECOVER: READ HEAD / RETRACT 1/8" (operator 2026-10-01) ----------
+    # ---- RECOVER: READ HEAD / RETRACT 1/2" (operator 2026-10-01) ----------
     RETRACT_MM = 12.7           # 1/2 in per click, along the tool axis (operator 2026-10-01)
     RECOVER_COUNT = 3           # countdown, same shape as CLEAR C REF / spindle Check
     RECOVER_DBL_S = 0.6         # second click within this = a double click
@@ -9398,18 +9396,11 @@ QTabBar::tab:only-one {
                 LOG.error('READ HEAD: no HAL component -- nothing sent')
                 return
             self.comp.getPin('inplace-out').value = True
-            QTimer.singleShot(1000, self._inplace_pin_off)
+            QTimer.singleShot(1000, lambda: self._pin_off('inplace-out'))
             LOG.info('READ HEAD: inplace-out pulsed -- brain unhomes A/C, '
                      'reads, declares in place (no motion)')
         except Exception as e:
             LOG.exception('READ HEAD failed: %s', e)
-
-    def _inplace_pin_off(self):
-        try:
-            if self.comp is not None:
-                self.comp.getPin('inplace-out').value = False
-        except Exception:
-            pass
 
     def _recover_retract_click(self):
         """One RETRACT_MM move along the tool axis, A and C unchanged.
@@ -10604,8 +10595,7 @@ QTabBar::tab:only-one {
         import linuxcnc
         try:
             self.comp.getPin('verify-out').value = True
-            QTimer.singleShot(1000, lambda: setattr(
-                self.comp.getPin('verify-out'), 'value', False))
+            QTimer.singleShot(1000, lambda: self._pin_off('verify-out'))
         except Exception as e:
             LOG.error('%s: STEP 4 FAILED -- verify pulse not sent (%s)', label, e)
             then(); return
