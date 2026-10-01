@@ -284,6 +284,7 @@ class Brain(object):
         # -1.26 deg unflagged when Home A overwrote it, 2026-08-01 13:31)
         self.prev_head_homed = {4: False, 5: False}
         self.prev_inplace = False
+        self.req_inplace = False     # READ HEAD click latched at tick top
         self.prev_refa = False
         self.prev_refc = False
         # (flip machinery deleted 2026-08-02: sequences are permanent)
@@ -1374,6 +1375,16 @@ class Brain(object):
             return
         s = self.stat
         now = time.time()
+        # READ HEAD click LATCHED HERE, before the head-read early returns
+        # below: a 1 s pulse that lands during a 5-12 s read would otherwise
+        # never be seen (the handler further down only runs after the read).
+        try:
+            _ip = bool(h['inplace-in'])
+            if _ip and not self.prev_inplace:
+                self.req_inplace = True
+            self.prev_inplace = _ip
+        except Exception:
+            pass
 
         # ---- SPINDLE FAULT ANNUNCIATION -------------------------------
         # RISING EDGE ONLY. Both pins sit asserted for as long as the fault
@@ -1614,8 +1625,8 @@ class Brain(object):
         # READ HEAD (inplace-in): unhome both head joints, force a fresh read,
         # and let do_inplace() declare them at the read -- no motion. Refused
         # while anything runs, exactly like a REF.
-        _ip = bool(h['inplace-in'])
-        if _ip and not self.prev_inplace and on:
+        if self.req_inplace and on:
+            self.req_inplace = False
             if (s.interp_state != linuxcnc.INTERP_IDLE or not s.inpos
                     or any(s.joint[j]['homing'] for j in range(6))):
                 log('READ HEAD refused: machine is executing/moving')
@@ -1648,7 +1659,6 @@ class Brain(object):
                         'where they stand when it lands (no motion)')
                 except Exception as e:
                     log('READ HEAD request failed: {}'.format(e))
-        self.prev_inplace = _ip
 
         # GUARD: A/C must NEVER home without a fresh read armed (stale offsets
         # command an unearned move). Abort, read now, tell the operator to HOME

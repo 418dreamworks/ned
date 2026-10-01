@@ -9315,11 +9315,11 @@ QTabBar::tab:only-one {
             LOG.exception('MCS Z0 failed: %s', e)
 
     # ---- RECOVER: READ HEAD / RETRACT 1/8" (operator 2026-10-01) ----------
-    RETRACT_MM = 3.175          # 1/8 in per click, along the tool axis
+    RETRACT_MM = 12.7           # 1/2 in per click, along the tool axis (operator 2026-10-01)
     RECOVER_COUNT = 3           # countdown, same shape as CLEAR C REF / spindle Check
     RECOVER_DBL_S = 0.6         # second click within this = a double click
     RECOVER_FACE = {'recover_read_btn': 'READ HEAD',
-                    'recover_retract_btn': 'RETRACT 1/8"'}
+                    'recover_retract_btn': 'RETRACT 1/2"'}
 
     def _recover_click(self, name):
         """Operator 2026-10-01: "double clicks with 3 seconds countdowns for
@@ -9405,44 +9405,72 @@ QTabBar::tab:only-one {
     def _recover_retract_click(self):
         """One RETRACT_MM move along the tool axis, A and C unchanged.
 
-        NO head geometry is computed here (operator 2026-10-01: use what
-        exists so a kins update permeates). Under ned_ac_kins LinuxCNC already
-        holds the kins module's own forward transform: world XYZ is the tool
-        tip, joint XYZ is the pivot carriage, so tip - joints IS the tool-axis
-        vector the kins uses (|r| = pivot-length). The retract direction is
-        -r/|r|. Under trivkins world == joints, r == 0: the control does not
-        know where the tool points, so it refuses. The target is machine-frame
-        (G53), issued through _jog_issue: ON + fully homed + idle guards,
-        soft-limit pre-check, one fire-and-forget MDI line.
+        Geometry comes from the kins module, not from here. ned_ac_kins.c
+        forward: world = joints + (r.x, r.y, pivot_length + r.z), where r is
+        the pivot->tip vector and |r| == pivot_length (the kins' own input
+        pin, head constant + tool length, fed by sig-pivot-arm). So
+            r = world - joints - (0, 0, pivot_length)
+        and the retract direction is -r/|r|. 2026-10-01: the first version
+        used world - joints WITHOUT the pivot-length term and sent the tool
+        2.9 mm sideways and 1.2 mm DOWN at A-45 -- it broke a bit. The |r| ==
+        pivot_length check below is the guard that makes that impossible
+        again: any frame/mode mismatch refuses instead of moving.
+        Issued through _jog_issue (machine-frame G53, soft-limit pre-check,
+        one MDI line).
         """
         import math
+        import subprocess
+        label = 'RETRACT 1/2"'
         try:
             import linuxcnc
+            c = linuxcnc.command()
             st = linuxcnc.stat()
             st.poll()
+            msg = None
+            if st.task_state != linuxcnc.STATE_ON:
+                msg = '%s refused: machine is not ON' % label
+            elif not all(st.homed[:NJ]):
+                msg = '%s refused: not fully homed -- READ HEAD first' % label
+            elif st.interp_state != linuxcnc.INTERP_IDLE or not st.inpos \
+                    or any(st.joint[j]['homing'] for j in range(NJ)):
+                msg = '%s refused: machine is busy' % label
+            if msg:
+                LOG.error(msg)
+                c.error_msg(msg)
+                return
+            r = subprocess.run(['timeout', '5', 'halcmd', '-s', 'getp',
+                                'ned_ac_kins.pivot-length'],
+                               capture_output=True, text=True)
+            if r.returncode:
+                msg = ('%s refused: ned_ac_kins.pivot-length is not readable -- not '
+                       'in tool-tip mode (relaunch with run5.sh -tcp)' % label)
+                LOG.error(msg)
+                c.error_msg(msg)
+                return
+            L = float(r.stdout.strip())
             w = st.actual_position
             jp = st.joint_actual_position
-            r = (w[0] - jp[0], w[1] - jp[1], w[2] - jp[2])
-            L = math.sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2])
-            if L < 1.0:
-                msg = ('RETRACT refused: tip and pivot coincide (|r| = %.3f mm) '
-                       '-- identity kins, the control does not know where the '
-                       'tool points. Relaunch in tool-tip mode (run5.sh -tcp).' % L)
+            rv = (w[0] - jp[0], w[1] - jp[1], w[2] - jp[2] - L)
+            m = math.sqrt(rv[0] * rv[0] + rv[1] * rv[1] + rv[2] * rv[2])
+            if abs(m - L) > 1.0:
+                msg = ('%s refused: geometry mismatch, |tip - pivot - (0,0,L)| = %.3f '
+                       'but pivot-length = %.3f -- the kins frame does not match '
+                       'the pin; nothing sent' % (label, m, L))
                 LOG.error(msg)
-                linuxcnc.command().error_msg(msg)
+                c.error_msg(msg)
                 return
-            u = (-r[0] / L, -r[1] / L, -r[2] / L)
+            u = (-rv[0] / m, -rv[1] / m, -rv[2] / m)
             d = self.RETRACT_MM
             tgt = (w[0] + d * u[0], w[1] + d * u[1], w[2] + d * u[2])
-            LOG.info('RETRACT 1/8": tip (%.4f, %.4f, %.4f) pivot (%.4f, %.4f, %.4f) '
-                     '|r| %.3f A=%.3f C=%.3f -> u=(%.4f, %.4f, %.4f); target '
-                     '(%.4f, %.4f, %.4f): %.3f mm along the tool axis',
-                     w[0], w[1], w[2], jp[0], jp[1], jp[2], L, w[3], w[5],
-                     u[0], u[1], u[2], tgt[0], tgt[1], tgt[2], d)
-            self._jog_issue('RETRACT 1/8"', [('x', tgt[0]), ('y', tgt[1]), ('z', tgt[2])],
+            LOG.info('%s: tip (%.4f, %.4f, %.4f) pivot (%.4f, %.4f, %.4f) L=%.3f |r|=%.3f '
+                     'A=%.3f C=%.3f -> u=(%.4f, %.4f, %.4f); target (%.4f, %.4f, %.4f): '
+                     '%.3f mm along the tool axis', label, w[0], w[1], w[2],
+                     jp[0], jp[1], jp[2], L, m, w[3], w[5], u[0], u[1], u[2],
+                     tgt[0], tgt[1], tgt[2], d)
+            self._jog_issue(label, [('x', tgt[0]), ('y', tgt[1]), ('z', tgt[2])],
                             g53=True)
         except Exception as e:
-            LOG.exception('RETRACT failed: %s', e)
+            LOG.exception('%s failed: %s', label, e)
 
     def _relabel_buttons(self):
         """Retext core buttons at RUNTIME, never by editing probe_basic.ui.
