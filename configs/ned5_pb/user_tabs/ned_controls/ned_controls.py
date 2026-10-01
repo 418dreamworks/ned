@@ -9405,22 +9405,33 @@ QTabBar::tab:only-one {
     def _recover_retract_click(self):
         """One RETRACT_MM move along the tool axis, A and C unchanged.
 
-        Geometry comes from the kins module, not from here. ned_ac_kins.c
-        forward: world = joints + (r.x, r.y, pivot_length + r.z), where r is
-        the pivot->tip vector and |r| == pivot_length (the kins' own input
-        pin, head constant + tool length, fed by sig-pivot-arm). So
-            r = world - joints - (0, 0, pivot_length)
-        and the retract direction is -r/|r|. 2026-10-01: the first version
-        used world - joints WITHOUT the pivot-length term and sent the tool
-        2.9 mm sideways and 1.2 mm DOWN at A-45 -- it broke a bit. The |r| ==
-        pivot_length check below is the guard that makes that impossible
-        again: any frame/mode mismatch refuses instead of moving.
-        Issued through _jog_issue (machine-frame G53, soft-limit pre-check,
-        one MDI line).
+        The tool direction depends on A and C ONLY (operator 2026-10-01: "L
+        cancels out"). It is the kins' own mapping, ned_ac_kins.c s2r():
+            t = C + azimuth_offset,  p = 180 - tilt_sign * A
+            r_hat = (sin p cos t, sin p sin t, cos p)   (pivot -> tip)
+            retract u = -r_hat                           (at A0: +Z)
+        azimuth_offset and tilt_sign are read from the kins' own pins when it
+        is loaded, else from postgui_tcp.hal, the one place they are written.
+        CROSS-CHECK, no dependence on L for the direction: when
+        ned_ac_kins.pivot-length is readable, the kins' live output
+        r = world - joints - (0, 0, L) must have |r| == L within 1 mm and
+        point within 2 deg of r_hat, or the click is REFUSED -- a convention
+        change in the module and this formula can never disagree silently.
+        2026-10-01: the first version used world - joints without the L term
+        and moved the tool 2.9 mm sideways and 1.2 mm DOWN at A-45; it broke a
+        bit. Issued through _jog_issue (machine-frame G53, soft-limit
+        pre-check, one MDI line).
         """
         import math
+        import re
         import subprocess
         label = 'RETRACT 1/2"'
+
+        def getp(pin):
+            r = subprocess.run(['timeout', '5', 'halcmd', '-s', 'getp', pin],
+                               capture_output=True, text=True)
+            return float(r.stdout.strip()) if r.returncode == 0 else None
+
         try:
             import linuxcnc
             c = linuxcnc.command()
@@ -9438,35 +9449,62 @@ QTabBar::tab:only-one {
                 LOG.error(msg)
                 c.error_msg(msg)
                 return
-            r = subprocess.run(['timeout', '5', 'halcmd', '-s', 'getp',
-                                'ned_ac_kins.pivot-length'],
-                               capture_output=True, text=True)
-            if r.returncode:
-                msg = ('%s refused: ned_ac_kins.pivot-length is not readable -- not '
-                       'in tool-tip mode (relaunch with run5.sh -tcp)' % label)
+            az, ts = getp('ned_ac_kins.azimuth-offset'), getp('ned_ac_kins.tilt-sign')
+            src = 'kins pins'
+            if az is None or ts is None:
+                src = 'postgui_tcp.hal'
+                hal_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                        '..', '..', 'postgui_tcp.hal')
+                try:
+                    with open(hal_path) as f:
+                        for ln in f:
+                            m = re.match(r'\s*setp\s+ned_ac_kins\.(azimuth-offset|tilt-sign)\s+(\S+)', ln)
+                            if m:
+                                if m.group(1) == 'azimuth-offset' and az is None:
+                                    az = float(m.group(2))
+                                if m.group(1) == 'tilt-sign' and ts is None:
+                                    ts = float(m.group(2))
+                except Exception as e:
+                    LOG.error('%s: postgui_tcp.hal unreadable: %s', label, e)
+            if az is None or ts is None:
+                msg = '%s refused: azimuth-offset / tilt-sign unknown -- nothing sent' % label
                 LOG.error(msg)
                 c.error_msg(msg)
                 return
-            L = float(r.stdout.strip())
             w = st.actual_position
-            jp = st.joint_actual_position
-            rv = (w[0] - jp[0], w[1] - jp[1], w[2] - jp[2] - L)
-            m = math.sqrt(rv[0] * rv[0] + rv[1] * rv[1] + rv[2] * rv[2])
-            if abs(m - L) > 1.0:
-                msg = ('%s refused: geometry mismatch, |tip - pivot - (0,0,L)| = %.3f '
-                       'but pivot-length = %.3f -- the kins frame does not match '
-                       'the pin; nothing sent' % (label, m, L))
-                LOG.error(msg)
-                c.error_msg(msg)
-                return
-            u = (-rv[0] / m, -rv[1] / m, -rv[2] / m)
+            a, cc = w[3], w[5]
+            t = math.radians(cc + az)
+            p = math.radians(180.0 - ts * a)
+            rhat = (math.sin(p) * math.cos(t), math.sin(p) * math.sin(t), math.cos(p))
+            u = (-rhat[0], -rhat[1], -rhat[2])
+            # cross-check against the kins module's live output, if loaded
+            L = getp('ned_ac_kins.pivot-length')
+            check = 'no kins pin (identity kins): formula only'
+            if L is not None:
+                jp = st.joint_actual_position
+                rk = (w[0] - jp[0], w[1] - jp[1], w[2] - jp[2] - L)
+                mk = math.sqrt(rk[0] ** 2 + rk[1] ** 2 + rk[2] ** 2)
+                if abs(mk - L) > 1.0:
+                    msg = ('%s refused: kins output |tip - pivot - (0,0,L)| = %.3f but '
+                           'pivot-length = %.3f -- frame mismatch, nothing sent' % (label, mk, L))
+                    LOG.error(msg)
+                    c.error_msg(msg)
+                    return
+                dot = max(-1.0, min(1.0, (rk[0] * rhat[0] + rk[1] * rhat[1] + rk[2] * rhat[2]) / mk))
+                ang = math.degrees(math.acos(dot))
+                if ang > 2.0:
+                    msg = ('%s refused: kins output and the A/C formula disagree by %.2f deg '
+                           '(az=%g ts=%g) -- nothing sent' % (label, ang, az, ts))
+                    LOG.error(msg)
+                    c.error_msg(msg)
+                    return
+                check = 'kins output agrees within %.3f deg (L=%.3f)' % (ang, L)
             d = self.RETRACT_MM
             tgt = (w[0] + d * u[0], w[1] + d * u[1], w[2] + d * u[2])
-            LOG.info('%s: tip (%.4f, %.4f, %.4f) pivot (%.4f, %.4f, %.4f) L=%.3f |r|=%.3f '
-                     'A=%.3f C=%.3f -> u=(%.4f, %.4f, %.4f); target (%.4f, %.4f, %.4f): '
-                     '%.3f mm along the tool axis', label, w[0], w[1], w[2],
-                     jp[0], jp[1], jp[2], L, m, w[3], w[5], u[0], u[1], u[2],
-                     tgt[0], tgt[1], tgt[2], d)
+            LOG.info('%s: A=%.3f C=%.3f az=%g ts=%g (%s) -> u=(%.4f, %.4f, %.4f); %s; '
+                     'machine (%.4f, %.4f, %.4f) -> (%.4f, %.4f, %.4f): %.3f mm along the tool axis',
+                     label, a, cc, az, ts, src, u[0], u[1], u[2], check,
+                     w[0], w[1], w[2], tgt[0], tgt[1], tgt[2], d)
             self._jog_issue(label, [('x', tgt[0]), ('y', tgt[1]), ('z', tgt[2])],
                             g53=True)
         except Exception as e:
