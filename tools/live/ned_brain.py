@@ -135,6 +135,11 @@ h.newpin('seq-active-in', hal.HAL_BIT, hal.HAL_IN)   # MODE INTERLOCK
 h.newpin('seq-hb-in', hal.HAL_U32, hal.HAL_IN)       # its liveness beat
 h.newpin('ref-a-in', hal.HAL_BIT, hal.HAL_IN)
 h.newpin('ref-c-in', hal.HAL_BIT, hal.HAL_IN)
+# rising edge = READ HEAD (NED Controls > JOG > RECOVER, operator 2026-10-01:
+# "read it, set the position" -- recovery from a stuck position): unhome A and
+# C, fresh absolute read, declare BOTH where they physically are. ZERO motion,
+# unlike REF A/C which drive to zero. Exactly the power-on path, on demand.
+h.newpin('inplace-in', hal.HAL_BIT, hal.HAL_IN)
 # SPINDLE FAULT ANNUNCIATION (operator 2026-08-12). ned5_iron.hal now drops
 # iocontrol.0.emc-enable-in on either of these, which e-stops the machine --
 # but e-stop's own banner says nothing about WHY, and "machine stopped" with
@@ -278,6 +283,7 @@ class Brain(object):
         # single-ref must never overwrite the first's scope -- C landed
         # -1.26 deg unflagged when Home A overwrote it, 2026-08-01 13:31)
         self.prev_head_homed = {4: False, 5: False}
+        self.prev_inplace = False
         self.prev_refa = False
         self.prev_refc = False
         # (flip machinery deleted 2026-08-02: sequences are permanent)
@@ -1604,6 +1610,45 @@ class Brain(object):
                 except Exception as e:
                     log('REF {} request failed: {}'.format(ax.upper(), e))
             setattr(self, prev_attr, cur)
+
+        # READ HEAD (inplace-in): unhome both head joints, force a fresh read,
+        # and let do_inplace() declare them at the read -- no motion. Refused
+        # while anything runs, exactly like a REF.
+        _ip = bool(h['inplace-in'])
+        if _ip and not self.prev_inplace and on:
+            if (s.interp_state != linuxcnc.INTERP_IDLE or not s.inpos
+                    or any(s.joint[j]['homing'] for j in range(6))):
+                log('READ HEAD refused: machine is executing/moving')
+                try:
+                    self.cmd.error_msg('READ HEAD refused: machine is busy')
+                except Exception:
+                    pass
+            elif self.pending_ref:
+                log('READ HEAD refused: a head cycle is still completing')
+                try:
+                    self.cmd.error_msg('READ HEAD refused: previous head cycle '
+                                       'still completing')
+                except Exception:
+                    pass
+            else:
+                try:
+                    self.cmd.mode(linuxcnc.MODE_MANUAL)
+                    self.cmd.wait_complete()
+                    self.cmd.teleop_enable(0)
+                    self.cmd.wait_complete()
+                    for jn in (4, 5):
+                        if s.homed[jn]:
+                            self.cmd.unhome(jn)
+                            self.cmd.wait_complete()
+                    self.hr_deg = {}
+                    self.read_armed = False
+                    self.want_read = True
+                    self.inplace_pending = True
+                    log('READ HEAD -> A and C unhomed, fresh read, both declared '
+                        'where they stand when it lands (no motion)')
+                except Exception as e:
+                    log('READ HEAD request failed: {}'.format(e))
+        self.prev_inplace = _ip
 
         # GUARD: A/C must NEVER home without a fresh read armed (stale offsets
         # command an unearned move). Abort, read now, tell the operator to HOME

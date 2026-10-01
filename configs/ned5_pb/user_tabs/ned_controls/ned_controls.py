@@ -658,6 +658,9 @@ class UserTab(QWidget):
             # per-axis head REF (REF A / REF C buttons): pulse -> ned_brain
             # runs unhome -> fresh read -> home THAT joint only
             self.comp.addPin('refa-out', 'bit', 'out')
+            # READ HEAD (RECOVER box, operator 2026-10-01): pulse -> ned_brain
+            # unhomes A/C, fresh read, declares BOTH where they stand. No motion.
+            self.comp.addPin('inplace-out', 'bit', 'out')
             self.comp.addPin('refc-out', 'bit', 'out')
             # Z JOG CLAMP: the DIRECTIONAL gate (jogblock.z.lim-neg) reads
             # these. Soft-limit-only stranded the machine when Z landed a few
@@ -1080,6 +1083,27 @@ class UserTab(QWidget):
             bl.addStretch(1)
 
             jl.addWidget(box)
+
+            # RECOVER (operator 2026-10-01: "strictly used to recover machine
+            # from stuck positions"). Two stock buttons, nothing else.
+            #   READ HEAD    brain: unhome A/C, fresh absolute read, declare
+            #                both where they physically are -- no motion
+            #   RETRACT 1/8" one 3.175 mm move along the TOOL AXIS, A and C
+            #                unchanged, so a tilted tool backs out of the cut
+            rbox = QGroupBox('RECOVER')
+            rbox.setObjectName('recover_box')
+            rl = QVBoxLayout(rbox)
+            rb1 = QPushButton('READ HEAD')
+            rb1.setObjectName('recover_read_btn')
+            rb1.clicked.connect(self._recover_read_click)
+            rl.addWidget(rb1)
+            rb2 = QPushButton('RETRACT 1/8"')
+            rb2.setObjectName('recover_retract_btn')
+            rb2.clicked.connect(self._recover_retract_click)
+            rl.addWidget(rb2)
+            jl.addWidget(rbox)
+            LOG.info('RECOVER: READ HEAD + RETRACT 1/8" built on the JOG page '
+                     '(recover_read_btn, recover_retract_btn)')
 
             jl.addStretch(1)
             tabs.addTab(jog_page, 'JOG')
@@ -9301,6 +9325,117 @@ QTabBar::tab:only-one {
             self._hand_back_manual(c, 'MCS Z0')
         except Exception as e:
             LOG.exception('MCS Z0 failed: %s', e)
+
+    # ---- RECOVER: READ HEAD / RETRACT 1/8" (operator 2026-10-01) ----------
+    RETRACT_MM = 3.175          # 1/8 in per click, along the tool axis
+
+    def _recover_read_click(self):
+        """Pulse ned-tab.inplace-out: the brain unhomes A and C, takes a fresh
+        absolute read and declares both where they physically are. NO motion
+        (REF A/C would drive them to zero -- wrong for a stuck tool)."""
+        try:
+            import linuxcnc
+            st = linuxcnc.stat()
+            st.poll()
+            if st.task_state != linuxcnc.STATE_ON:
+                msg = 'READ HEAD refused: machine is not ON'
+            elif st.interp_state != linuxcnc.INTERP_IDLE or not st.inpos:
+                msg = 'READ HEAD refused: a program is running'
+            elif any(st.joint[j]['homing'] for j in range(NJ)):
+                msg = 'READ HEAD refused: a homing cycle is running'
+            else:
+                msg = None
+            if msg:
+                LOG.error(msg)
+                linuxcnc.command().error_msg(msg)
+                return
+            if self.comp is None:
+                LOG.error('READ HEAD: no HAL component -- nothing sent')
+                return
+            self.comp.getPin('inplace-out').value = True
+            QTimer.singleShot(1000, self._inplace_pin_off)
+            LOG.info('READ HEAD: inplace-out pulsed -- brain unhomes A/C, '
+                     'reads, declares in place (no motion)')
+        except Exception as e:
+            LOG.exception('READ HEAD failed: %s', e)
+
+    def _inplace_pin_off(self):
+        try:
+            if self.comp is not None:
+                self.comp.getPin('inplace-out').value = False
+        except Exception:
+            pass
+
+    def _head_kins_constants(self):
+        """azimuth-offset and tilt-sign exactly as the kins uses them: the live
+        ned_ac_kins pins when that module is loaded, else the values
+        postgui_tcp.hal sets on them (the one place they are written -- not
+        copied here). Returns (az_deg, tilt_sign) or None."""
+        import subprocess
+        import re
+        vals = {}
+        for key in ('azimuth-offset', 'tilt-sign'):
+            try:
+                r = subprocess.run(['timeout', '5', 'halcmd', '-s', 'getp',
+                                    'ned_ac_kins.' + key],
+                                   capture_output=True, text=True)
+                if r.returncode == 0:
+                    vals[key] = float(r.stdout.strip())
+            except Exception:
+                pass
+        if len(vals) < 2:
+            try:
+                hal_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                        '..', '..', 'postgui_tcp.hal')
+                with open(hal_path) as f:
+                    for ln in f:
+                        m = re.match(r'\s*setp\s+ned_ac_kins\.(azimuth-offset|tilt-sign)\s+(\S+)', ln)
+                        if m and m.group(1) not in vals:
+                            vals[m.group(1)] = float(m.group(2))
+            except Exception as e:
+                LOG.error('RETRACT: postgui_tcp.hal unreadable: %s', e)
+        if len(vals) < 2:
+            return None
+        return vals['azimuth-offset'], vals['tilt-sign']
+
+    def _recover_retract_click(self):
+        """One RETRACT_MM move along the tool axis, A and C unchanged.
+
+        Direction from the kins' own formula (ned_ac_kins.c s2r): the tip
+        sits at r = s2r(L, C + az, 180 - ts*A) from the pivot, so the retract
+        direction is -r_hat; at A0 that is +Z. The target is machine-frame
+        (G53), issued through _jog_issue: ON + fully homed + idle guards,
+        soft-limit pre-check, one fire-and-forget MDI line. Same under every
+        kins: G53 XYZ is the controlled point in both.
+        """
+        import math
+        try:
+            import linuxcnc
+            st = linuxcnc.stat()
+            st.poll()
+            k = self._head_kins_constants()
+            if k is None:
+                msg = ('RETRACT refused: azimuth-offset / tilt-sign unknown '
+                       '(no ned_ac_kins pins and postgui_tcp.hal unreadable)')
+                LOG.error(msg)
+                linuxcnc.command().error_msg(msg)
+                return
+            az, ts = k
+            pos = st.actual_position
+            x, y, z, a, c = pos[0], pos[1], pos[2], pos[3], pos[5]
+            t = math.radians(c + az)
+            p = math.radians(180.0 - ts * a)
+            u = (-math.sin(p) * math.cos(t), -math.sin(p) * math.sin(t), -math.cos(p))
+            d = self.RETRACT_MM
+            tgt = (x + d * u[0], y + d * u[1], z + d * u[2])
+            LOG.info('RETRACT 1/8": A=%.3f C=%.3f az=%g ts=%g -> u=(%.4f, %.4f, %.4f); '
+                     'machine (%.4f, %.4f, %.4f) -> (%.4f, %.4f, %.4f): %.3f mm '
+                     'along the tool axis', a, c, az, ts, u[0], u[1], u[2],
+                     x, y, z, tgt[0], tgt[1], tgt[2], d)
+            self._jog_issue('RETRACT 1/8"', [('x', tgt[0]), ('y', tgt[1]), ('z', tgt[2])],
+                            g53=True)
+        except Exception as e:
+            LOG.exception('RETRACT failed: %s', e)
 
     def _relabel_buttons(self):
         """Retext core buttons at RUNTIME, never by editing probe_basic.ui.

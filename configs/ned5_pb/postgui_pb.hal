@@ -56,8 +56,37 @@ setp hm2_7i97.0.pktuart.0.gear-c    [HEAD_GEAR]C_GEAR
 setp hm2_7i97.0.pktuart.0.sign-a    [HEAD_GEAR]A_SIGN
 setp hm2_7i97.0.pktuart.0.sign-c    [HEAD_GEAR]C_SIGN
 net sig-r4-select     =>  hm2_7i97.0.pktuart.0.sel-a
-net sig-abs-deg-a     hm2_7i97.0.pktuart.0.deg-a  =>  ini.4.home_offset
-net sig-abs-deg-c     hm2_7i97.0.pktuart.0.deg-c  =>  ini.5.home_offset
+# STATELESS A/C HOMING -- FEED THE DIFFERENCE, NOT THE RAW DRIVE ANGLE.
+# LinuxCNC lands the joint at motor-pos-fb + home_offset. Measured on the live
+# pins 2026-09-29, A and C independently, exact to five decimals:
+#   joint.4.pos-fb -89.99966 = motor-pos-fb -44.99969 + home_offset -44.99996
+#   joint.5.pos-fb 166.26990 = motor-pos-fb  83.13502 + home_offset  83.13491
+# A and C have NO joint encoder: motor-pos-fb is stepgen.03/.02 position-fb,
+# dead reckoning that is 0 at launch. So feeding the raw drive angle is only
+# correct while that count is 0. It is 0 at launch -- which is why the first
+# home of a session has always been exact -- and it is NOT 0 afterwards. The
+# program left A at -45, the drive said -45, HOME A landed -90 and the guard
+# in ac_adopt_verdict() refused it.
+#   home_offset = drive_deg - motor-pos-fb          (sum2, gain1 = -1)
+# At launch that is drive_deg - 0, identical to the old behaviour. After any
+# head motion the count cancels itself and the joint lands on the drive read,
+# which is the only absolute truth A and C have.
+# Both inputs are live pins recomputed every servo cycle: nothing is stored,
+# so nothing can carry over (operator 2026-09-29: "unhome all but it must be
+# stateless after that" ... "NOTHING affects the 4 steps that i outlined").
+# arm is loaded here too because postgui_tcp.hal is CONCATENATED AFTER this
+# file and a second loadrt of the same component fails the whole HAL load.
+loadrt sum2 names=ahomeoff,chomeoff,arm
+addf ahomeoff servo-thread
+addf chomeoff servo-thread
+setp ahomeoff.gain1 -1
+setp chomeoff.gain1 -1
+net sig-abs-deg-a     hm2_7i97.0.pktuart.0.deg-a  =>  ahomeoff.in0
+net sig-abs-deg-c     hm2_7i97.0.pktuart.0.deg-c  =>  chomeoff.in0
+net a-pos-fb          =>  ahomeoff.in1
+net c-pos-fb          =>  chomeoff.in1
+net sig-a-homeoff     ahomeoff.out  =>  ini.4.home_offset
+net sig-c-homeoff     chomeoff.out  =>  ini.5.home_offset
 
 # TOOL TABLE SERVED: the ONLY thing that releases the default motion lock.
 # FALSE until the brain sees a real entry in stat.tool_table.
@@ -132,6 +161,8 @@ net sig-anon-load     ned-tab.anon-load-out
 # per-axis REF A / REF C: unhome -> fresh read -> home that joint only
 net sig-refa          brain.ref-a-in      <=  ned-tab.refa-out
 net sig-refc          brain.ref-c-in      <=  ned-tab.refc-out
+# READ HEAD (NED Controls > JOG > RECOVER): unhome A/C, fresh read, declare in place, no motion
+net sig-inplace       brain.inplace-in    <=  ned-tab.inplace-out
 
 # --- NED GUI components (created by our user tab + user DRO inside the PB
 # process via qtpyvcp.hal; pins exist once the GUI is up, before postgui).
