@@ -1036,9 +1036,17 @@ class Brain(object):
         self._restore_next = now_mono() + 5.0
         try:
             self.stat.poll()
+            # inpos + empty queue + no sequence owning the mode (adversary
+            # 2026-10-01): this is not a one-shot, and the arm hold below
+            # drops teleop -- fired mid-jog it aborts the jog, fired while a
+            # GUI MDI runs it releases the arm in COORD, the fault it exists
+            # to prevent.
             if (self.stat.task_state != linuxcnc.STATE_ON
                     or not all(self.stat.homed[:6])
-                    or self.stat.interp_state != linuxcnc.INTERP_IDLE):
+                    or self.stat.interp_state != linuxcnc.INTERP_IDLE
+                    or not self.stat.inpos
+                    or self.stat.queue != 0
+                    or self.seq_active(now_mono())):
                 return
             want = 0
             with open('/home/brains/Documents/ned/configs/ned5_pb/'
@@ -1139,7 +1147,10 @@ class Brain(object):
             # to wheel-jog ("home_sequence synchronized (-2)", 2026-10-01 13:1x).
             # Entering TELEOP re-forwards the world command from the joints
             # with the NEW arm (control.c:927-958): continuous, no jump.
-            self.ensure_teleop()
+            # Not while a sequence owns the mode (same interlock the tick's
+            # own teleop flip honours).
+            if not self.seq_active(now_mono()):
+                self.ensure_teleop()
             self.stat.poll()
             log('SPINDLE RESTORE: T{} re-declared in spindle after reboot '
                 '(sensor-confirmed clamped); tool_in_spindle={} '

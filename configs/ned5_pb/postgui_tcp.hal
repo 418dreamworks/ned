@@ -33,9 +33,12 @@ net sig-tool-zoff motion.tooloffset.z => arm.in1
 # FREE mode, where the step cannot move anything.
 # CEILING (adversary 2026-10-01): if the brain dies with pivot-hold TRUE the
 # pin keeps its last value and the arm would stay frozen -- wrong TCP geometry
-# with no alarm. oneshot pivothold.t limits any hold to 15 s; the mux selects
-# on (hold AND oneshot.out), so the brain's own release is still immediate.
-setp pivothold.t.width 15
+# with no alarm. oneshot pivothold.t limits any hold to 40 s (the brain's
+# worst case is 28 s: 5+4+4+5 s of wait_complete + the 10 s FREE wait; the
+# ceiling must never fire while the brain still holds, or it releases in
+# COORD); the mux selects on (hold AND oneshot.out), so the brain's own
+# release is still immediate.
+setp pivothold.t.width 40
 net sig-pivot-arm   arm.out          => pivothold.in0
 net sig-pivot-hold  brain.pivot-hold => pivothold.t.in pivothold.and.in0
 net sig-pivot-hold-t pivothold.t.out => pivothold.and.in1
