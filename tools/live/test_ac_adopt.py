@@ -94,12 +94,12 @@ check('ac_to_zero refuses on a bad verdict',
 check('ac_to_zero reads the drive, not just the joint',
       '_head_drive_deg(' in body)
 check('step 4 is armed on the already-at-zero exit',
-      body.count('verify_ax=ax') >= 2,
-      'found %d of 2 verify_ax=ax call sites' % body.count('verify_ax=ax'))
+      body.count('verify_ax=vx') >= 2,
+      'found %d of 2 verify_ax=vx call sites' % body.count('verify_ax=vx'))
 check('_head_drive_deg reads the PktUART absolute stream',
       "hm2_7i97.0.pktuart.0.deg-" in src)
 settle = re.search(r"def _teleop_restore_when_still\(self, label, "
-                   r"verify_ax=None\):.*?\n    def ", src, re.S)
+                   r"verify_ax=None(?:, secs=15\.0)?\):.*?\n    def ", src, re.S)
 settle = settle.group(0) if settle else ''
 check('the settle path hands step 4 to a FRESH read (_verify_wait)',
       '_verify_wait(label, list(verify_ax)' in settle)

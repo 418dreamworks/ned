@@ -10381,12 +10381,18 @@ QTabBar::tab:only-one {
             return None, False
 
     def ac_to_zero(self, ax, verify=True):
-        """Adopt the encoder for this head axis, then joint-jog it to 0."""
+        """Adopt the encoder for this head axis, then joint-jog it to 0.
+        verify: True = STEP 4 on this axis, 'ac' = on both, False = none here."""
         import linuxcnc
         jn = 4 if ax == 'a' else 5
         label = 'HOME %s' % ax.upper()
+        vx = ax if verify is True else (verify or None)
         c, s = linuxcnc.command(), linuxcnc.stat()
         s.poll()
+        if self._verify_active():
+            c.error_msg('%s refused: a STEP 4 drive read is in progress' % label)
+            LOG.error('%s refused: verify read pending', label)
+            return False
         if s.task_state != linuxcnc.STATE_ON:
             c.error_msg('%s refused: machine is not ON' % label)
             LOG.error('%s refused: not ON', label)
@@ -10462,7 +10468,7 @@ QTabBar::tab:only-one {
                  label, here)
         if abs(here) < 0.001:
             LOG.info('%s: already at zero, nothing to move', label)
-            self._teleop_restore_when_still(label, verify_ax=ax if verify is True else (verify or None))
+            self._teleop_restore_when_still(label, verify_ax=vx)
             return True
         # 2. move. RE-ASSERT JOINT MODE HERE -- THE ADOPT ITSELF UNDID IT.
         #    Completing a home while motion is in FREE makes motion switch
@@ -10499,10 +10505,10 @@ QTabBar::tab:only-one {
                  label, -here, self.AC_ZERO_VEL)
         # STEP 4 runs once motion is still -- the drive is read again there
         # and must say zero. A move that was issued is not a move that landed.
-        self._teleop_restore_when_still(label, verify_ax=ax if verify is True else (verify or None))
+        self._teleop_restore_when_still(label, verify_ax=vx, secs=15.0 + abs(here) / self.AC_ZERO_VEL)
         return True
 
-    def _teleop_restore_when_still(self, label, verify_ax=None):
+    def _teleop_restore_when_still(self, label, verify_ax=None, secs=15.0):
         """Put motion back in TELEOP once the joint jog has finished.
 
         WHY THIS EXISTS. ac_to_zero drops teleop so it can issue a JOINT jog,
@@ -10527,7 +10533,7 @@ QTabBar::tab:only-one {
         st = linuxcnc.stat()
         t = QTimer(self)
         t.setInterval(200)
-        deadline = time.monotonic() + 15.0
+        deadline = time.monotonic() + secs     # 15 s plus the jog's own time at AC_ZERO_VEL
 
         def _tick():
             try:
@@ -10535,9 +10541,9 @@ QTabBar::tab:only-one {
                 if time.monotonic() > deadline:
                     t.stop()
                     LOG.error('%s: TELEOP NOT RESTORED -- motion never went '
-                              'still within 15 s. The machine is left in '
+                              'still within %.0f s. The machine is left in '
                               'joint mode and the MPG will refuse joints '
-                              '0 and 3.', label)
+                              '0 and 3.', label, secs)
                     return
                 if abs(st.current_vel) > 0.01:
                     return
@@ -10581,6 +10587,10 @@ QTabBar::tab:only-one {
 
     VERIFY_WAIT_S = 40.0      # two SEN cycles plus callback delays is ~15 s
 
+    def _verify_active(self):
+        t = getattr(self, '_verify_timer', None)
+        return bool(t is not None and t.isActive())
+
     def _judge_zero(self, label, ax):
         """STEP 4 verdict for one axis from the (fresh) PktUART pin."""
         import linuxcnc
@@ -10588,6 +10598,11 @@ QTabBar::tab:only-one {
         if not ok2 or d2 is None:
             LOG.error('%s: STEP 4 FAILED -- cannot read the drive after the move. '
                       '%s is NOT confirmed at zero.', label, ax.upper())
+            try:
+                linuxcnc.command().error_msg('%s: cannot read the drive after the move. '
+                                             '%s is NOT confirmed at zero.' % (label, ax.upper()))
+            except Exception:
+                pass
             return False
         if abs(d2) > self.AC_ADOPT_TOL:
             LOG.error('%s: STEP 4 FAILED -- the drive reads %+.4f deg after the '
@@ -10622,21 +10637,28 @@ QTabBar::tab:only-one {
         t = QTimer(self); t.setInterval(200)
 
         def _tick():
+            ok = None
             try:
                 if int(self.comp.getPin('verify-count-in').value) == before:
-                    if time.monotonic() - t0 > self.VERIFY_WAIT_S:
-                        t.stop()
-                        LOG.error('%s: STEP 4 FAILED -- no accepted fresh read in '
-                                  '%.0f s; the PktUART pins still hold the PRE-MOVE '
-                                  'angle and are not judged.', label, self.VERIFY_WAIT_S)
-                        then(False)
-                    return
-                t.stop()
-                then(all([self._judge_zero(label, ax) for ax in axes]))
+                    if time.monotonic() - t0 <= self.VERIFY_WAIT_S:
+                        return
+                    msg = ('%s: STEP 4 FAILED -- no accepted fresh drive read in %.0f s; '
+                           '%s NOT confirmed at zero.' % (label, self.VERIFY_WAIT_S,
+                                                          '/'.join(a.upper() for a in axes)))
+                    LOG.error(msg)
+                    try:
+                        import linuxcnc
+                        linuxcnc.command().error_msg(msg)
+                    except Exception:
+                        pass
+                    ok = False
+                else:
+                    ok = all([self._judge_zero(label, ax) for ax in axes])
             except Exception as e:
-                t.stop()
                 LOG.error('%s: STEP 4 FAILED -- verify wait error: %s', label, e)
-                then(False)
+                ok = False
+            t.stop()
+            then(ok)
         t.timeout.connect(_tick)
         self._verify_timer = t
         t.start()
@@ -11002,6 +11024,10 @@ QTabBar::tab:only-one {
             s.poll()
             if any(s.joint[j]['homing'] for j in range(NJ)):
                 LOG.error('REF ALL ignored: homing already in progress')
+                return
+            if getattr(self, '_ha_stage', None) is not None or self._verify_active():
+                c.error_msg('HOME ALL refused: the previous Home All is still finishing (A/C to zero or the STEP 4 read)')
+                LOG.error('REF ALL refused: chain stage %r / verify pending', getattr(self, '_ha_stage', None))
                 return
             # X pair synchronized (-1). Y stays +1 in the same |1| phase and
             # LinuxCNC pulls it into the synchronized set during HOME ALL

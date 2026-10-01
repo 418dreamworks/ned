@@ -403,7 +403,7 @@ class Brain(object):
         return True
 
     def head_busy(self):
-        return bool(self.hr_step or self.hr_cb_delay or self.hr_cb
+        return bool(self.hr_step or self.hr_cb_delay
                     or self.pending_ref
                     or self.pin_wipe
                     or getattr(self, 'inplace_pending', False)
@@ -1377,6 +1377,7 @@ class Brain(object):
                 self.want_read = True
             else:
                 self.read_retries = 0
+                self.read_is_verify = False   # the GUI waiter times out loud; no leak into a later read
                 log('HEAD READ FAILED 3x -- NOT armed; A/C homing stays blocked')
                 try:
                     self.cmd.error_msg('Head A/C read FAILED 3x -- A/C homing '
