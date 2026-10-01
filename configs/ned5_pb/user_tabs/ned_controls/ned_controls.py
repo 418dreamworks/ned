@@ -9333,8 +9333,10 @@ QTabBar::tab:only-one {
             return
         pend = self.__dict__.setdefault('_recover_pend', {})
         last = self.__dict__.setdefault('_recover_last', {})
+        gen = self.__dict__.setdefault('_recover_gen', {})
         if pend.get(name, 0) > 0:                       # counting -> stop
             pend[name] = 0
+            gen[name] = gen.get(name, 0) + 1            # orphan the pending tick
             b.setText(self.RECOVER_FACE[name])
             LOG.info('RECOVER %s: countdown stopped by tap', name)
             return
@@ -9345,14 +9347,20 @@ QTabBar::tab:only-one {
             return
         last[name] = 0.0
         pend[name] = self.RECOVER_COUNT
+        # One timer chain per arm: a tap-stop then a re-arm within 1 s left
+        # the old chain alive, two chains decremented one counter and the
+        # action fired ~1 s after re-arm (adversary 2026-10-01). Each arm
+        # gets a new generation; a tick from an older one returns.
+        gen[name] = gen.get(name, 0) + 1
         LOG.info('RECOVER %s: double-click -- %d s countdown', name, self.RECOVER_COUNT)
-        self._recover_tick(name)
+        self._recover_tick(name, gen[name])
 
-    def _recover_tick(self, name):
+    def _recover_tick(self, name, g):
         b = self._jp_w.get(name)
         pend = self.__dict__.setdefault('_recover_pend', {})
+        gen = self.__dict__.setdefault('_recover_gen', {})
         n = pend.get(name, 0)
-        if b is None or n <= 0:
+        if b is None or n <= 0 or g != gen.get(name):
             return
         b.setText('%s in %d' % (self.RECOVER_FACE[name], n))
         pend[name] = n - 1
@@ -9363,7 +9371,7 @@ QTabBar::tab:only-one {
             else:
                 self._recover_retract_click()
             return
-        QTimer.singleShot(1000, lambda n=name: self._recover_tick(n))
+        QTimer.singleShot(1000, lambda n=name, g=g: self._recover_tick(n, g))
 
     def _recover_read_click(self):
         """Pulse ned-tab.inplace-out: the brain unhomes A and C, takes a fresh
