@@ -9405,22 +9405,18 @@ QTabBar::tab:only-one {
     def _recover_retract_click(self):
         """One RETRACT_MM move along the tool axis, A and C unchanged.
 
-        The tool direction depends on A and C ONLY (operator 2026-10-01: "L
-        cancels out"). It is the kins' own mapping, ned_ac_kins.c s2r():
+        The tool direction is a function of A and C only -- the kins' own
+        mapping, ned_ac_kins.c s2r():
             t = C + azimuth_offset,  p = 180 - tilt_sign * A
             r_hat = (sin p cos t, sin p sin t, cos p)   (pivot -> tip)
             retract u = -r_hat                           (at A0: +Z)
-        azimuth_offset and tilt_sign are read from the kins' own pins when it
-        is loaded, else from postgui_tcp.hal, the one place they are written.
-        CROSS-CHECK, no dependence on L for the direction: when
-        ned_ac_kins.pivot-length is readable, the kins' live output
-        r = world - joints - (0, 0, L) must have |r| == L within 1 mm and
-        point within 2 deg of r_hat, or the click is REFUSED -- a convention
-        change in the module and this formula can never disagree silently.
-        2026-10-01: the first version used world - joints without the L term
-        and moved the tool 2.9 mm sideways and 1.2 mm DOWN at A-45; it broke a
-        bit. Issued through _jog_issue (machine-frame G53, soft-limit
-        pre-check, one MDI line).
+        azimuth_offset / tilt_sign come from the kins' own pins when it is
+        loaded, else from postgui_tcp.hal (where they are set), else the
+        module defaults (90, 1). Checked against the kins' live output on the
+        real 2026-10-01 move (A-45.543 C89.323): identical to 4 decimals.
+        No geometry refusal (operator: "get it right and that's it");
+        _jog_issue applies the same guards every jog button has (ON, homed,
+        idle, soft limits) and sends one machine-frame G53 line.
         """
         import math
         import re
@@ -9434,21 +9430,8 @@ QTabBar::tab:only-one {
 
         try:
             import linuxcnc
-            c = linuxcnc.command()
             st = linuxcnc.stat()
             st.poll()
-            msg = None
-            if st.task_state != linuxcnc.STATE_ON:
-                msg = '%s refused: machine is not ON' % label
-            elif not all(st.homed[:NJ]):
-                msg = '%s refused: not fully homed -- READ HEAD first' % label
-            elif st.interp_state != linuxcnc.INTERP_IDLE or not st.inpos \
-                    or any(st.joint[j]['homing'] for j in range(NJ)):
-                msg = '%s refused: machine is busy' % label
-            if msg:
-                LOG.error(msg)
-                c.error_msg(msg)
-                return
             az, ts = getp('ned_ac_kins.azimuth-offset'), getp('ned_ac_kins.tilt-sign')
             src = 'kins pins'
             if az is None or ts is None:
@@ -9459,51 +9442,26 @@ QTabBar::tab:only-one {
                     with open(hal_path) as f:
                         for ln in f:
                             m = re.match(r'\s*setp\s+ned_ac_kins\.(azimuth-offset|tilt-sign)\s+(\S+)', ln)
-                            if m:
-                                if m.group(1) == 'azimuth-offset' and az is None:
-                                    az = float(m.group(2))
-                                if m.group(1) == 'tilt-sign' and ts is None:
-                                    ts = float(m.group(2))
+                            if m and m.group(1) == 'azimuth-offset' and az is None:
+                                az = float(m.group(2))
+                            if m and m.group(1) == 'tilt-sign' and ts is None:
+                                ts = float(m.group(2))
                 except Exception as e:
                     LOG.error('%s: postgui_tcp.hal unreadable: %s', label, e)
             if az is None or ts is None:
-                msg = '%s refused: azimuth-offset / tilt-sign unknown -- nothing sent' % label
-                LOG.error(msg)
-                c.error_msg(msg)
-                return
+                az = 90.0 if az is None else az       # ned_ac_kins.c defaults
+                ts = 1.0 if ts is None else ts
+                src += ' + kins defaults'
             w = st.actual_position
             a, cc = w[3], w[5]
             t = math.radians(cc + az)
             p = math.radians(180.0 - ts * a)
-            rhat = (math.sin(p) * math.cos(t), math.sin(p) * math.sin(t), math.cos(p))
-            u = (-rhat[0], -rhat[1], -rhat[2])
-            # cross-check against the kins module's live output, if loaded
-            L = getp('ned_ac_kins.pivot-length')
-            check = 'no kins pin (identity kins): formula only'
-            if L is not None:
-                jp = st.joint_actual_position
-                rk = (w[0] - jp[0], w[1] - jp[1], w[2] - jp[2] - L)
-                mk = math.sqrt(rk[0] ** 2 + rk[1] ** 2 + rk[2] ** 2)
-                if abs(mk - L) > 1.0:
-                    msg = ('%s refused: kins output |tip - pivot - (0,0,L)| = %.3f but '
-                           'pivot-length = %.3f -- frame mismatch, nothing sent' % (label, mk, L))
-                    LOG.error(msg)
-                    c.error_msg(msg)
-                    return
-                dot = max(-1.0, min(1.0, (rk[0] * rhat[0] + rk[1] * rhat[1] + rk[2] * rhat[2]) / mk))
-                ang = math.degrees(math.acos(dot))
-                if ang > 2.0:
-                    msg = ('%s refused: kins output and the A/C formula disagree by %.2f deg '
-                           '(az=%g ts=%g) -- nothing sent' % (label, ang, az, ts))
-                    LOG.error(msg)
-                    c.error_msg(msg)
-                    return
-                check = 'kins output agrees within %.3f deg (L=%.3f)' % (ang, L)
+            u = (-math.sin(p) * math.cos(t), -math.sin(p) * math.sin(t), -math.cos(p))
             d = self.RETRACT_MM
             tgt = (w[0] + d * u[0], w[1] + d * u[1], w[2] + d * u[2])
-            LOG.info('%s: A=%.3f C=%.3f az=%g ts=%g (%s) -> u=(%.4f, %.4f, %.4f); %s; '
+            LOG.info('%s: A=%.3f C=%.3f az=%g ts=%g (%s) -> u=(%.4f, %.4f, %.4f); '
                      'machine (%.4f, %.4f, %.4f) -> (%.4f, %.4f, %.4f): %.3f mm along the tool axis',
-                     label, a, cc, az, ts, src, u[0], u[1], u[2], check,
+                     label, a, cc, az, ts, src, u[0], u[1], u[2],
                      w[0], w[1], w[2], tgt[0], tgt[1], tgt[2], d)
             self._jog_issue(label, [('x', tgt[0]), ('y', tgt[1]), ('z', tgt[2])],
                             g53=True)
