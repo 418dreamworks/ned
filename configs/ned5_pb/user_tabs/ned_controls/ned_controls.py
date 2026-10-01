@@ -4963,7 +4963,7 @@ class UserTab(QWidget):
     # controls. Those are how you GET homed; disabling them is a trap.
     HOMING_GATED = (
         'm6_tool_call_button_main_panel',
-        'remove_tool_2', 'ned_rerack_button',
+        'ned_rerack_button',   # remove_tool_2 taken out 2026-10-01: UNLOAD is gated by a spinning spindle and nothing else (operator)
         'tool_touch_off_button',
         'go_to_zero_button_2', 'go_to_g30_button', 'go_to_home_button',
     )
@@ -9802,7 +9802,8 @@ QTabBar::tab:only-one {
             timer.stop()
             b.setText(pend['text'])
             self._unload_pend.pop(b, None)
-            self._unload_run()
+            if not self._unload_run():
+                return          # release failed: no window, the message said why
             # DRAWBAR IS NOW OPEN. For 10 s the operator may load a tool and
             # NOTHING ELSE (operator 2026-08-10: "during the 10 second, LOAD
             # spindle becomes useable. everything else stays unused").
@@ -9825,10 +9826,10 @@ QTabBar::tab:only-one {
                s.interp_state != linuxcnc.INTERP_IDLE:
                 c.error_msg('UNLOAD SPINDLE ignored: machine off or program running')
                 return
-            if not all(s.homed[:NJ]):
-                c.error_msg('UNLOAD SPINDLE needs a HOMED machine (MDI is '
-                            'homed-gated on gantry kinematics). Home All (Homing menu) or resume first.')
-                return
+            # No homed gate (operator 2026-10-01: "gated by a spinning spindle
+            # and nothing else"). The routine itself stops the spindle and
+            # waits for the shaft (unload_spindle.ngc); if LinuxCNC refuses
+            # the MDI unhomed, its own message says so.
             if not self._take_mdi(c, 'UNLOAD SPINDLE'):
                 return
             c.mdi('o<unload_spindle> call')
@@ -9840,10 +9841,23 @@ QTabBar::tab:only-one {
             s.poll()
             if all(s.homed[:NJ]):
                 c.teleop_enable(1)
-            LOG.info('UNLOAD SPINDLE executed (drawbar released if sensors agreed)')
+            # SAY WHAT HAPPENED (operator 2026-10-01 read "nothing was loaded"
+            # as an empty spindle after a release that never happened). The
+            # routine re-clamps when the tool RELEASED sensor, digital-in-01
+            # (unload_spindle.ngc header), never confirms -- check it here.
+            if not bool(s.din[1]):
+                msg = ('UNLOAD SPINDLE: RELEASE FAILED -- tool still clamped '
+                       '(released sensor never confirmed; drawbar re-clamped)')
+                LOG.error(msg)
+                c.error_msg(msg)
+                return False
+            LOG.info('UNLOAD SPINDLE executed: released sensor confirms the '
+                     'drawbar is open')
             self._drawbar_window_start()
+            return True
         except Exception as e:
             LOG.error('UNLOAD SPINDLE failed: %s', e)
+            return False
 
     # ---- toolprobe -------------------------------------------------------
     def _click(self):
