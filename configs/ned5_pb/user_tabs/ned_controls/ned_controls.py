@@ -726,7 +726,7 @@ class UserTab(QWidget):
         # JOG & PRESETS panel -- the visible NED tab content. All widgets
         # live in ned_controls.ui (no runtime layout surgery); wire + count
         # them LOUDLY here.
-        self._jog_speed = 'medium'
+        self._jog_speed = 'fast'    # the ONLY jog speed (operator 2026-10-01: "i only want the fast speed. nothing else")
         self._jog_wire()
         # 6000 ms like _number_badges: a singleShot(0) reparent during
         # window construction spun Qt at 95% CPU and PB never finished
@@ -1083,27 +1083,6 @@ class UserTab(QWidget):
             bl.addStretch(1)
 
             jl.addWidget(box)
-
-            # RECOVER (operator 2026-10-01: "strictly used to recover machine
-            # from stuck positions"). Two stock buttons, nothing else.
-            #   READ HEAD    brain: unhome A/C, fresh absolute read, declare
-            #                both where they physically are -- no motion
-            #   RETRACT 1/8" one 3.175 mm move along the TOOL AXIS, A and C
-            #                unchanged, so a tilted tool backs out of the cut
-            rbox = QGroupBox('RECOVER')
-            rbox.setObjectName('recover_box')
-            rl = QVBoxLayout(rbox)
-            rb1 = QPushButton('READ HEAD')
-            rb1.setObjectName('recover_read_btn')
-            rb1.clicked.connect(self._recover_read_click)
-            rl.addWidget(rb1)
-            rb2 = QPushButton('RETRACT 1/8"')
-            rb2.setObjectName('recover_retract_btn')
-            rb2.clicked.connect(self._recover_retract_click)
-            rl.addWidget(rb2)
-            jl.addWidget(rbox)
-            LOG.info('RECOVER: READ HEAD + RETRACT 1/8" built on the JOG page '
-                     '(recover_read_btn, recover_retract_btn)')
 
             jl.addStretch(1)
             tabs.addTab(jog_page, 'JOG')
@@ -3066,7 +3045,7 @@ class UserTab(QWidget):
     # (current work position + delta, house offset math) and sent as one
     # G90 G1 line -- an abort partway can never leave G91 modal.
 
-    _JOG_WIDGETS = ('jp_slow', 'jp_medium', 'jp_fast', 'jp_feed_readout',
+    _JOG_WIDGETS = ('recover_read_btn', 'recover_retract_btn', 'jp_feed_readout',
                     'jp_p_xy0', 'jp_p_xyz0', 'jp_p_z0',
                     'jp_p_zp10', 'jp_p_xy0z10', 'jp_p_a0c0',
                     'jp_in_x', 'jp_in_y', 'jp_in_z', 'jp_in_a', 'jp_in_c',
@@ -3155,17 +3134,23 @@ class UserTab(QWidget):
             self._jog_stat_nml = None  # status-strip stat channel
             self._jog_status_warned = False
             self._jog_last_state = None
-            # SPEED toggles: exclusive group, amber = selected; every toggle
-            # updates the live readout. Selection persists between moves.
-            self._jog_speed_grp = QButtonGroup(self)
-            self._jog_speed_grp.setExclusive(True)
-            for key in ('slow', 'medium', 'fast'):
-                b = w.get('jp_' + key)
-                if b is None:
-                    continue
-                self._jog_speed_grp.addButton(b)
-                b.toggled.connect(
-                    lambda on, k=key: on and self._jog_set_speed(k))
+            # SPEED: fixed FAST, no controls (operator 2026-10-01: "remove all
+            # the speed controls from jog. i only want the fast speed. nothing
+            # else"). jp_slow/jp_medium/jp_fast and their caption are gone
+            # from the .ui; the readout still shows the one speed.
+            # RECOVER (operator 2026-10-01, stuck-position recovery only), in
+            # the slots the speed buttons occupied:
+            #   READ HEAD     brain: unhome A/C, fresh absolute read, declare
+            #                 both where they physically are -- no motion
+            #   RETRACT 1/8"  one 3.175 mm move along the tool axis, from the
+            #                 kins' own tip-minus-pivot vector; A, C unchanged
+            for name, slot in (('recover_read_btn', self._recover_read_click),
+                               ('recover_retract_btn', self._recover_retract_click)):
+                if w.get(name) is not None:
+                    w[name].clicked.connect(slot)
+                    LOG.info('RECOVER: %s wired', name)
+                else:
+                    LOG.error('RECOVER: %s NOT FOUND in the JOG panel -- button dead', name)
             # PRESETS: execute IMMEDIATELY on click, no GO.
             for name, label, vals, zlift in self._JOG_PRESETS:
                 if w.get(name) is not None:
