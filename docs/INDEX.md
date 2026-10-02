@@ -16,4 +16,3 @@ Machining needs to check a program are published to `~/418ops/machine/`
 | [fixtures/](fixtures/) | fixtures and setup records |
 | [tool_library/](tool_library/) | tool table export (json, csv) |
 | [to_buy.md](to_buy.md), [todo.md](todo.md), [plans/grumble_index.md](plans/grumble_index.md), [migration.md](migration.md) | SPLIT pending: Machining marks its KEEP lines, Controls cuts the rest |
-| `mesa/`, `fagor/`, `power/` | manuals, proposed MOVE to Controls (pass 2) |
