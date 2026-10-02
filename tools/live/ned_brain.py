@@ -140,16 +140,6 @@ h.newpin('ref-c-in', hal.HAL_BIT, hal.HAL_IN)
 # C, fresh absolute read, declare BOTH where they physically are. ZERO motion,
 # unlike REF A/C which drive to zero. Exactly the power-on path, on demand.
 h.newpin('inplace-in', hal.HAL_BIT, hal.HAL_IN)
-# VERIFY READ (GUI step 4, 2026-10-01): one fresh SEN snapshot of A and C,
-# nothing unhomed, nothing declared. The pack repeats its last snapshot until
-# the next SEN pulse (docs/commissioning/pso_live_read_findings.md UPDATE 2),
-# so a "read after the move" without this pulse returns the pre-move value.
-h.newpin('verify-in', hal.HAL_BIT, hal.HAL_IN)
-# bumps once per ACCEPTED verify read (both frames) -- the GUI judges nothing else
-h.newpin('verify-count', hal.HAL_U32, hal.HAL_OUT)
-# hm2_7i97.0.io_error: the Mesa link is dead. A head read through it returned
-# nothing and rtapi_app then segfaulted twice on 2026-10-01 (18:46, 19:38).
-h.newpin('io-error-in', hal.HAL_BIT, hal.HAL_IN)
 # SPINDLE FAULT ANNUNCIATION (operator 2026-08-12). ned5_iron.hal now drops
 # iocontrol.0.emc-enable-in on either of these, which e-stops the machine --
 # but e-stop's own banner says nothing about WHY, and "machine stopped" with
@@ -300,9 +290,6 @@ class Brain(object):
         self.prev_head_homed = {4: False, 5: False}
         self.prev_inplace = False
         self.req_inplace = False     # READ HEAD click latched at tick top
-        self.prev_verify = False
-        self.req_verify = False      # step-4 verify read, latched at tick top
-        self.read_is_verify = False  # the read in flight was asked for by the GUI
         self.prev_refa = False
         self.prev_refc = False
         # (flip machinery deleted 2026-08-02: sequences are permanent)
@@ -406,8 +393,7 @@ class Brain(object):
         return True
 
     def head_busy(self):
-        return bool(self.hr_step or self.hr_cb_delay
-                    or self.pending_ref
+        return bool(self.hr_step or self.pending_ref
                     or self.pin_wipe
                     or getattr(self, 'inplace_pending', False)
                     or any(self.home_state(j) not in (self.HOME_IDLE, None)
@@ -1089,10 +1075,19 @@ class Brain(object):
                     'is really there)'.format(want))
                 self.tool_settled()
                 return
-            # KINS ARM HOLD (2026-10-01): G43 steps the kins pivot length; in
-            # COORD motion re-solves the joints from the tool-tip command
-            # (following errors with the head tilted). Hold the arm through
-            # the MDI, release in FREE where the step moves nothing.
+            # KINS ARM HOLD (operator 2026-10-01, startup following errors).
+            # M61/G43 change motion.tooloffset.z and with it the kins pivot
+            # length (postgui_tcp.hal: arm = head constant + tool Z offset).
+            # This MDI runs in COORD mode, where motion re-solves every joint
+            # from the standing tool-tip command each cycle (control.c:1350):
+            # a 121 mm longer arm with the head tilted = joint commands that
+            # jump (X -48, Y +33, Z -15 mm at A -28.5) = following errors on
+            # X Y Z X2 with nothing moving. So: hold the arm through the MDI,
+            # drop to MANUAL (motion FREE: joints commanded directly, the
+            # world command follows forward(joints), control.c:1288), THEN
+            # release. The step lands where it cannot move anything, and the
+            # next teleop entry starts from a consistent world command.
+            # Tool changes inside programs are untouched: the hold is only here.
             h['pivot-hold'] = True
             try:
                 self.cmd.mode(linuxcnc.MODE_MDI)
@@ -1120,7 +1115,7 @@ class Brain(object):
                 # the joints from the world command the moment the arm steps
                 # (a GUI jog press re-enables TELEOP -- qtpyvcp
                 # machine_actions.py:1157 -- so keep forcing it off; 10 s,
-                # not 2: the HAL side releases by itself at 40 s anyway)
+                # not 2: the HAL side releases by itself at 15 s anyway)
                 forced = 0
                 for _ in range(200):
                     self.stat.poll()
@@ -1352,9 +1347,6 @@ class Brain(object):
             self.read_retries = 0
             log('HEAD READ armed: C={:+.3f} A={:+.3f}'.format(
                 self.hr_deg['c'], self.hr_deg['a']))
-            if self.read_is_verify:
-                self.read_is_verify = False
-                h['verify-count'] = (int(h['verify-count']) + 1) & 0xffffffff
             # STARTUP IN-PLACE HOME: read armed at power-on -> home unhomed
             # A/C joints where they stand. Factored to do_inplace() so the
             # PRE-LAUNCH-read path (ON edge with read already armed) can run
@@ -1380,7 +1372,6 @@ class Brain(object):
                 self.want_read = True
             else:
                 self.read_retries = 0
-                self.read_is_verify = False   # the GUI waiter times out loud; no leak into a later read
                 log('HEAD READ FAILED 3x -- NOT armed; A/C homing stays blocked')
                 try:
                     self.cmd.error_msg('Head A/C read FAILED 3x -- A/C homing '
@@ -1460,10 +1451,6 @@ class Brain(object):
             if _ip and not self.prev_inplace:
                 self.req_inplace = True
             self.prev_inplace = _ip
-            _vf = bool(h['verify-in'])
-            if _vf and not self.prev_verify:
-                self.req_verify = True
-            self.prev_verify = _vf
         except Exception:
             pass
 
@@ -1706,16 +1693,6 @@ class Brain(object):
         # READ HEAD (inplace-in): unhome both head joints, force a fresh read,
         # and let do_inplace() declare them at the read -- no motion. Refused
         # while anything runs, exactly like a REF.
-        if self.req_verify and on:
-            self.req_verify = False
-            if self.pending_ref:
-                log('VERIFY read request ignored: a REF home is pending and owns the next read')
-            else:
-                self.read_armed = False
-                self.want_read = True
-                self.read_is_verify = True
-                log('VERIFY read requested (step 4): fresh SEN snapshot of A and C, '
-                    'no unhome, no declare')
         if self.req_inplace and on:
             self.req_inplace = False
             if (s.interp_state != linuxcnc.INTERP_IDLE or not s.inpos
@@ -1787,15 +1764,6 @@ class Brain(object):
         # start a wanted read once the machine is settled and the reader is free
         if self.want_read and now >= self.on_settled and self.hr_step == 0 \
            and self.hr_cb_delay == 0 and not head_busy:
-            if bool(h['io-error-in']):
-                self.want_read = False
-                self.read_is_verify = False
-                log('HEAD READ refused: Mesa link is down (hm2 io_error) -- relaunch')
-                try:
-                    self.cmd.error_msg('HEAD READ refused: the Mesa link is down. Relaunch.')
-                except Exception:
-                    pass
-                return
             self.want_read = False
             self.hr_start('c', lambda: self.hr_start('a', self.read_done))
             return

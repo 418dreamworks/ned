@@ -85,7 +85,7 @@ ok, _ = verdict(0.0, 0.051, True)
 check('0.051 deg apart is outside tolerance', not ok)
 
 # ---- the wiring: the check must actually be CALLED -------------------------
-body = re.search(r"def ac_to_zero\(self, ax(?:, verify=True)?(?:, fresh=False)?\):.*?\n    def ", src, re.S)
+body = re.search(r"def ac_to_zero\(self, ax\):.*?\n    def ", src, re.S)
 body = body.group(0) if body else ''
 check('ac_to_zero calls ac_adopt_verdict',
       'ac_adopt_verdict(' in body)
@@ -94,35 +94,17 @@ check('ac_to_zero refuses on a bad verdict',
 check('ac_to_zero reads the drive, not just the joint',
       '_head_drive_deg(' in body)
 check('step 4 is armed on the already-at-zero exit',
-      body.count('verify_ax=vx') >= 2,
-      'found %d of 2 verify_ax=vx call sites' % body.count('verify_ax=vx'))
+      body.count('verify_ax=ax') >= 2,
+      'found %d of 2 verify_ax=ax call sites' % body.count('verify_ax=ax'))
 check('_head_drive_deg reads the PktUART absolute stream',
       "hm2_7i97.0.pktuart.0.deg-" in src)
 settle = re.search(r"def _teleop_restore_when_still\(self, label, "
-                   r"verify_ax=None(?:, secs=15\.0)?\):.*?\n    def ", src, re.S)
+                   r"verify_ax=None\):.*?\n    def ", src, re.S)
 settle = settle.group(0) if settle else ''
-check('the settle path hands step 4 to a FRESH read (_verify_wait)',
-      '_verify_wait(label, list(verify_ax)' in settle)
-verify = re.search(r"def _verify_wait\(self, label, axes, then\):.*?\n    # ====", src, re.S)
-verify = verify.group(0) if verify else ''
-fresh = re.search(r"def _fresh_read\(self, label, then\):.*?\n    def ", src, re.S)
-fresh = fresh.group(0) if fresh else ''
-check('_fresh_read waits for a read the brain ACCEPTED (verify-count)',
-      "verify-count-in" in fresh and "getPin('verify-out').value = True" in fresh)
-check('_verify_wait judges only on that fresh read',
-      '_fresh_read(label' in verify and '_judge_zero(label, ax)' in verify)
-judge = re.search(r"def _judge_zero\(self, label, ax\):.*?\n    def ", src, re.S)
-judge = judge.group(0) if judge else ''
-check('_judge_zero reads the drive', '_head_drive_deg(ax)' in judge)
+check('the settle path performs the step-4 re-read',
+      '_head_drive_deg(verify_ax)' in settle)
 check('step 4 shouts when the drive is not at zero',
-      'STEP 4 FAILED' in judge)
-check('Home A&C verifies once, after C, never in A\'s baseblock',
-      "ac_to_zero('a', verify=False, fresh=True)" in src and "ac_to_zero('c', verify='ac', fresh=True)" in src)
-check('a single-axis home takes a FRESH drive read before the adopt',
-      'self._fresh_read(label, _go)' in body and 'fresh=True)' in body)
-check('a failed STEP 4 unhomes the axis', '_unhome_head(label, ax)' in judge)
-check('the Home All chain verifies A and C once, at the end',
-      "_verify_wait('HOME ALL CHAIN', ['a', 'c']" in src)
+      'STEP 4 FAILED' in settle)
 
 print()
 if fails:
