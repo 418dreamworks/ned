@@ -1,0 +1,52 @@
+#!/bin/bash
+# Rule 21 backstop: never COMMIT config changes made while the machine is live.
+# The gate in cfg_edit.sh can be bypassed by editing files directly; this
+# cannot be, because it runs on every commit automatically.
+# A/C HOMING GUARD. Operator 2026-09-28: "somehow, protect that code so your
+# future fucking self doesn't break it." ned_controls.py's A/C home must keep
+# checking the adopted joint angle against the Yaskawa drive, and must keep
+# re-reading the drive after the move. tools/live/test_ac_adopt.py proves both;
+# it needs no machine, so it runs on every commit that touches the file.
+if git diff --cached --name-only | grep -q 'ned_controls/ned_controls.py'; then
+    if ! python3 /home/brains/Documents/ned/tools/live/test_ac_adopt.py; then
+        echo "" >&2
+        echo "COMMIT REFUSED: the A/C homing drive-check is broken." >&2
+        echo "On 2026-09-28 a Home All declared A at 0 while the drive read" >&2
+        echo "+20.996 -- the head stood 21 deg off with the DRO reading zero." >&2
+        echo "That check is what catches it. Read ac_adopt_verdict()'s" >&2
+        echo "docstring before changing anything here." >&2
+        exit 1
+    fi
+fi
+
+# HEAD-READ GUARD. Operator 2026-10-01: "take notes on this. protect this code."
+# Every A/C drive read needs its own SEN low-then-high edge and must be judged
+# fresh against the PktUART frame counter; without that the pack repeats its
+# old snapshot and the number is wrong with no error. On 2026-10-01 this code
+# took seven reads in one session. tools/live/test_head_read_sequence.py proves
+# the sequence is intact; no machine needed.
+if git diff --cached --name-only | grep -qE 'tools/live/ned_brain.py|tools/live/pso_live.comp|configs/ned5/ned5_iron.hal'; then
+    if ! python3 /home/brains/Documents/ned/tools/live/test_head_read_sequence.py >/tmp/head_read_seq.out 2>&1; then
+        grep -E 'FAIL|CHECK' /tmp/head_read_seq.out >&2
+        echo "" >&2
+        echo "COMMIT REFUSED: the A/C head-read sequence is broken." >&2
+        echo "Read the docstring of tools/live/test_head_read_sequence.py and" >&2
+        echo "~/Documents/controls/docs/head_read_quickref.md before changing it." >&2
+        exit 1
+    fi
+fi
+
+STAGED=$(git diff --cached --name-only | grep -E '^configs/' || true)
+[ -z "$STAGED" ] && exit 0
+if ! /home/brains/Documents/ned/tools/machine_idle.sh >/dev/null 2>&1; then
+    echo "COMMIT REFUSED (CLAUDE.md rule 21):" >&2
+    /home/brains/Documents/ned/tools/machine_idle.sh >&2
+    echo "" >&2
+    echo "Config files are staged while a cycle is in flight:" >&2
+    echo "$STAGED" | sed 's/^/  /' >&2
+    echo "" >&2
+    echo "Those edits may already have been read mid-cycle. Stop, check the" >&2
+    echo "machine, and re-verify the files before committing." >&2
+    exit 1
+fi
+exit 0

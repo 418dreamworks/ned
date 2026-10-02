@@ -5,6 +5,8 @@
 | File | Role |
 |---|---|
 | `ned_brain.py` | Userspace HAL comp `brain` (loadusr in postgui_pb.hal): head A/C absolute reads, homing guards + post-home verify, per-axis REF handling, MANUAL/teleop restore after programs, X-pair sequence watchdog, stored-home saver, gui.md event log. |
+| `test_head_read_sequence.py` | PROTECTS the A/C head-read sequence (own SEN edge per read, frame-counter freshness, pso-live placement, IFDELAY). No machine. Run by `.git/hooks/pre-commit` on commits touching `ned_brain.py`, `pso_live.comp`, `ned5_iron.hal`. Owner: Controls |
+| `head_multi_read_test.py` | IRON TEST: five A/C drive reads in one PB session with A/C jogged between; part of commissioning any homing change. Moves A/C up to 1.5 deg. Owner: Controls |
 | `ned_pendant.py` | Userspace HAL comp `pendant` (loadusr in postgui_pb.hal): MPG state machine — tap/double-tap axis cycle (skips locked A/C), press+wheel jump size (10 detents/step), double-tap+hold jog speed. |
 | `pso_live.comp` | RT comp: queued PktUART reader for the head Yaskawa PSO stream (install via halcompile; loaded by iron HAL). |
 | `jogblock.comp` | RT comp: gates MPG jog counts against tripped limit direction (iron HAL). |
