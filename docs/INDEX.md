@@ -17,4 +17,3 @@ Machining needs to check a program are published to `~/418ops/machine/`
 | [tool_library/](tool_library/) | tool table export (json, csv) |
 | [admission.md](admission.md) | the joint-travel check before every run (numbers from ~/418ops/machine/) |
 | [todo.md](todo.md) | run-side to-do: rotary roughing strategy, collet engagement warning |
-| [plans/grumble_index.md](plans/grumble_index.md) | SPLIT pending: Machining extracts its sections into optimum_fs.md, Controls takes the PB build sections |
