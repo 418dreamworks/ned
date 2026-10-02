@@ -33,9 +33,10 @@ comment and the rest of the line becomes g-code.
 ### 1.3 `;` comments run to end of line
 They may contain anything, parentheses included. Only `(...)` has to balance.
 
-### 1.4 `.ngc` uses both; `.hal` uses `#` only
-`;` is NOT a comment in HAL — text after it is parsed as arguments. Adjacent
-files, opposite rules, which is exactly why it keeps happening.
+### 1.4 `.ngc` takes both `(...)` and `;`
+Other file types next to it in the repo do not, and they are not mine. If a
+rule is about a file the control loads rather than a program ned runs, it
+belongs with Controls, not here.
 
 ---
 
