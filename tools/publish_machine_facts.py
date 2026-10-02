@@ -121,7 +121,19 @@ joints.append({
 
 SP = "configs/params/spindle_0.inc"
 sp = ini_values(SP)
+# The control's floor (MIN_FORWARD_VELOCITY) is not the operator's. His ruling
+# is recorded in Machining's docs/optimum_fs.md ("minimum spindle is 4000.
+# nothing lower. thats what im comfortable with", 2026-09-30) and is read from
+# there, not typed here. A program's S must respect operator_min_rpm.
+FS = "docs/optimum_fs.md"
+m = re.search(r"THE SPINDLE FLOOR IS (\d+)", open(os.path.join(NED, FS)).read())
+if not m:
+    sys.exit("publish_machine_facts: operator spindle floor not found in " + FS)
 spindle = {
+    "operator_min_rpm": int(m.group(1)),
+    "operator_min_rpm_source": "ned:" + FS + " (operator ruling 2026-09-30, verbatim there)",
+    "operator_min_rpm_verified": verified(FS),
+    "read_this": "program S against operator_min_rpm; min_rpm is only what the control accepts",
     "min_rpm": num(sp["MIN_FORWARD_VELOCITY"]),
     "max_rpm": num(sp["MAX_FORWARD_VELOCITY"]),
     "max_reverse_rpm": num(sp["MAX_REVERSE_VELOCITY"]),
