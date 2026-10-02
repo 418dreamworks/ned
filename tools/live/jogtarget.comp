@@ -1,0 +1,94 @@
+component jogtarget """Where an axis WILL end up once its jog queue drains.
+
+WHY THIS EXISTS. Operator 2026-08-18: "what i really want is a 3rd col in both
+DROs that show the final destination assuming feed and accel was infinity if
+the queue is cleared" ... "not distance to go, i find that useless".
+
+Motion does not publish that number. The queued target is
+axis->teleop_tp.pos_cmd, a variable inside the trajectory planner; every pin it
+does export -- axis.N.pos-cmd, axis.N.teleop-pos-cmd, joint.N.pos-cmd -- is
+teleop_tp.curr_pos, which is where the axis has ALREADY got to. The difference
+between the two IS the queue, and it is exactly what the operator cannot see:
+the wheel accepts counts far faster than the axis executes them, so an axis can
+be tens of millimetres short of where it is going with nothing on screen
+saying so.
+
+HOW IT STAYS EXACT. It runs the planner's own arithmetic, axis.c:406,
+    pos = teleop_tp.pos_cmd + delta * jog_scale
+against the same inputs motion reads -- axis.N.jog-counts, axis.N.jog-scale,
+axis.N.jog-enable -- in the servo thread, so no count is ever missed. A GUI
+poll cannot do this: at 10 Hz it would drop counts and drift without bound.
+
+HOW IT RE-SYNCS. Whenever the axis is not being fed AND has stopped moving,
+there is by definition nothing queued, so target is snapped back to pos-cmd.
+That costs nothing when the two already agree and it is what recovers the
+number after a JOG_STOP, which abandons the planner's target without telling
+anyone (axis_jog_abort, axis.c:321-333).
+
+The value is MACHINE coordinates, same frame as axis.N.pos-cmd. The DRO
+subtracts g5x_offset and g92_offset to show it in the active WCS.""";
+
+pin in s32 counts "axis.N.jog-counts -- the same counts motion is fed";
+pin in float scale "axis.N.jog-scale -- mm (or deg) per count";
+pin in bit enable "axis.N.jog-enable -- counts only accumulate while this is true";
+pin in float pos_cmd "axis.N.pos-cmd -- where the axis has actually got to";
+
+pin out float target "where it ends up once the queue drains, MACHINE coords";
+pin out float queued "target - pos_cmd, the outstanding distance";
+
+variable int last_c = 0;
+variable int started = 0;
+variable double prev_pos = 0.0;
+variable int still_n = 0;
+
+function _ "Mirror the planner's jog target";
+license "GPL";
+;;
+
+#include <rtapi_math.h>
+
+FUNCTION(_) {
+    int d;
+
+    if (!started) {
+        last_c = counts;
+        target = pos_cmd;
+        prev_pos = pos_cmd;
+        queued = 0.0;
+        started = 1;
+        return;
+    }
+
+    d = counts - last_c;
+    last_c = counts;
+
+    /* Same line as axis.c:406. The enable check is axis.c:394 -- counts only
+       land while the axis is selected. */
+    if (enable && d != 0) {
+        target += d * scale;
+    }
+
+    /* NOTHING ARRIVING AND NOTHING MOVING == NOTHING QUEUED.
+       NOT gated on `enable`: the selected axis sits enabled and idle most of
+       the time, and gating on it left target stuck at whatever it happened to
+       hold on the first pass -- seeded 0 against a pos-cmd of -54.57 because
+       HAL pins start at zero and this runs before motion has written one.
+       A DWELL, not a single cycle: the count arrives one servo cycle before
+       the axis starts moving, so an instant snap would erase the target that
+       count had just created. still_n counts consecutive cycles with no
+       counts AND no movement; 100 of them is 0.1 s at the 1 kHz servo rate,
+       far longer than that gap and far shorter than any real queue.
+       This is also what recovers the number after a JOG_STOP, a mode change,
+       an e-stop or a g-code move -- none of which come through jog-counts. */
+    if (d == 0 && fabs(pos_cmd - prev_pos) < 1e-9) {
+        if (still_n < 100) still_n++;
+    } else {
+        still_n = 0;
+    }
+    if (still_n >= 100) {
+        target = pos_cmd;
+    }
+    prev_pos = pos_cmd;
+
+    queued = target - pos_cmd;
+}

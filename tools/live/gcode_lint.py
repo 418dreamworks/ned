@@ -264,12 +264,28 @@ def check(path):
                         'rule 6.2: no motion at all before this M6 -- it must '
                         'be preceded by G53 G0 Z0'))
         else:
-            ln, g53, ax = before[-1]
-            if not (g53 and ax == {'Z'}):
+            # Walk back past moves that DO NOT TOUCH Z. The rule is that Z is
+            # fully retracted when the change runs, not that the retract is
+            # the literally last block. Operator 2026-10-01 fixed the order as
+            #     G53 G0 Z0.  ->  G53 G0 X.. Y..  ->  G0 A.. C..  ->  M6
+            # so that a rotation never precedes an XY. The XY and the rotation
+            # both happen AT machine Z0 and leave Z where the retract put it.
+            # Anything that moves Z in that gap is still an error.
+            j = len(before) - 1
+            while j >= 0 and 'Z' not in before[j][2]:
+                j -= 1
+            if j < 0:
                 bad.append((n, 'M6 NOT BRACKETED',
-                            'rule 6.2: the move before this M6 is line %d '
-                            '(%s%s) -- it must be G53 G0 Z0 with no X or Y'
-                            % (ln, 'G53 ' if g53 else '', ''.join(sorted(ax)))))
+                            'rule 6.2: nothing retracts Z before this M6 -- it '
+                            'must be preceded by G53 G0 Z0'))
+            else:
+                ln, g53, ax = before[j]
+                if not (g53 and ax == {'Z'}):
+                    bad.append((n, 'M6 NOT BRACKETED',
+                                'rule 6.2: the last move to touch Z before this '
+                                'M6 is line %d (%s%s) -- it must be G53 G0 Z0 '
+                                'with no X or Y'
+                                % (ln, 'G53 ' if g53 else '', ''.join(sorted(ax)))))
         # --- the three-step return that must FOLLOW it ---
         want = [('G53 G0 Z0 alone', lambda g, a: g and a == {'Z'}),
                 ('G0 X.. Y.. with no Z', lambda g, a: 'Z' not in a and (a & {'X', 'Y'})),

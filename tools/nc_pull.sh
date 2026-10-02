@@ -14,7 +14,10 @@
 # The gate is the same one Production runs, plus rs274, so a program cannot
 # reach the machine by a route that skips either.
 set -u
-SRC_HOST=tzuohann@sleight
+# Overridable: the tailnet name is the default, but Tailscale has been down
+# while the LAN was up (2026-09-30, sleight offline on the tailnet since
+# 05:41 and answering fine on sleight.local). Set SRC_HOST to switch route.
+SRC_HOST=${SRC_HOST:-tzuohann@sleight}
 SRC_ROOT='C:/Users/tzuohann/Documents/418dreamworks/Production'
 NC=/home/brains/linuxcnc/nc_files/Production
 LINT=/home/brains/418ops/machine/gcode-lint/lint_ngc.py
