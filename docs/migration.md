@@ -182,33 +182,11 @@ It says which number it used and refuses an implausibly small one. Pairs with
 
 ---
 
-## 6. Linter rule E1 — travel box in the header
+## 6, 9 and 10 moved to Machining
 
-Operator: *"i want the max box of travel from its datum in program comments at
-the top ... make it a rule."*
-
-Written and working in the sandbox against both live programs. Declared as one
-header line, same shape as `BLANK ASSUMED` and `STOCK TOP Z`:
-
-```
-(TRAVEL BOX X <min> TO <max> Y <min> TO <max> Z <min> TO <max>)
-```
-
-**Checked, not trusted** — recomputed from every move and it must contain
-them. Proven both ways on a copy of `swarf5`: a true box passes, a box 15 mm
-short on Z is refused by line and axis.
-
-**Why it is worth a rule:** whether a program fits is decided at the machine
-against an offset the program cannot know. Tonight that meant reading 2909
-lines twice, and the answer *changed* when the pivot length changed. A box in
-the header makes it arithmetic the operator can do at the control.
-
-It bounds the **tip**, in program coordinates. Not joint travel — under
-`ned_ac_kins` the linears swing wider by the pivot length and no linter knows
-the pivot or the tool. Soft limits still want the joint check.
-
-**Not landed:** 1 of 31 existing fixtures fails, because E1 now demands a
-header none of them carry. Every fixture needs the line before this ships.
+The travel box (E1), the joint-travel check and the feeds-and-speeds
+table are the admission check and live in `ned/docs/admission.md`.
+Moved 2026-10-01 with the setup/maintenance split.
 
 ---
 
@@ -258,3 +236,6 @@ retracts climb to Z 98.5008 against a stock top of 17.4625 -- 81.04 mm
 Constraint for whatever comes back: faster links must not become rapids below
 the stock top (safety rule R7, linter `D3`). In air it does not matter; at the
 machine it does.
+
+---
+
