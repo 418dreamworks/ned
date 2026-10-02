@@ -119,6 +119,15 @@ joints.append({
     "source": "ned:" + AB + " [JOINT_6]", "verified": verified(AB),
 })
 
+SP = "configs/params/spindle_0.inc"
+sp = ini_values(SP)
+spindle = {
+    "min_rpm": num(sp["MIN_FORWARD_VELOCITY"]),
+    "max_rpm": num(sp["MAX_FORWARD_VELOCITY"]),
+    "max_reverse_rpm": num(sp["MAX_REVERSE_VELOCITY"]),
+    "source": "ned:" + SP, "verified": verified(SP),
+}
+
 write("limits.json", {
     "machine": "ned", "units": "mm and degrees", "read_by": "Production",
     "generated_by": "ned:tools/publish_machine_facts.py",
@@ -135,7 +144,40 @@ write("limits.json", {
     ],
     "kinematics": "ned_ac_kins -- 5 axis, A tilt about X, C spin about Z, plus an "
                   "independent B rotary on JOINT_6",
-    "joints": joints, "axes": axes,
+    "joints": joints, "axes": axes, "spindle": spindle,
+})
+
+# ------------------------------------------------------------ kinematics.json
+# Machining's admission check needs the tool-tip -> joint arithmetic and the
+# pivot length without opening a config (handover 2026-10-01). Verified against
+# linuxcnc/src/emc/kinematics/ned_ac_kins.c kinematicsInverse: joint = tip - r,
+# r = s2r(L, C + azimuth_offset, 180 - tilt_sign*A).
+PIV = "configs/params/head_pivot.inc"
+TCP = "configs/ned5_pb/postgui_tcp.hal"
+pivot = num(ini_values(PIV)["PIVOT_LENGTH"])
+setp = {}
+for line in open(os.path.join(NED, TCP)):
+    m = re.match(r"^\s*setp\s+ned_ac_kins\.(azimuth-offset|tilt-sign)\s+(\S+)", line)
+    if m:
+        setp[m.group(1)] = num(m.group(2))
+write("kinematics.json", {
+    "machine": "ned", "units": "mm and degrees", "read_by": "Machining, Production",
+    "generated_by": "ned:tools/publish_machine_facts.py",
+    "module": "ned_ac_kins coordinates=XYZXAC (tool-tip programming, no G43.4; G43 must stay live)",
+    "pivot_length_mm": pivot,
+    "pivot_source": "ned:" + PIV, "pivot_verified": verified(PIV),
+    "live_pivot": "ned_ac_kins.pivot-length = PIVOT_LENGTH + motion.tooloffset.z (postgui_tcp.hal sum2 arm)",
+    "azimuth_offset_deg": setp.get("azimuth-offset"), "tilt_sign": setp.get("tilt-sign"),
+    "convention_source": "ned:" + TCP, "convention_verified": verified(TCP),
+    "inverse_with_azimuth_90_tilt_sign_1": [
+        "L = pivot_length_mm + tool_length_z",
+        "joint X = tipX + L*sin(A)*sin(C)",
+        "joint Y = tipY - L*sin(A)*cos(C)",
+        "joint Z = tipZ - L*(1 - cos(A))",
+        "A and C joints = A and C words",
+    ],
+    "forward_z": "tipZ = jointZ + L*(1 - cos(A))",
+    "check": "size every program against limits.json JOINT limits using these joint values; the DRO shows the tip, the limit is on the joint",
 })
 
 # ------------------------------------------------------------ fixtures.json
