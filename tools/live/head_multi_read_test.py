@@ -119,12 +119,14 @@ print('start: joint A %+.4f  joint C %+.4f' % (a0, c0))
 
 n = 1
 ok = read_head(n, a0, c0)
-for da, dc in PLAN + [None]:
+for leg in PLAN + [None]:
     if not ok:
         break
     s.poll()
-    if da is None:                               # last leg: back to the start
+    if leg is None:                              # last leg: back to the start
         da, dc = a0 - s.joint_actual_position[4], c0 - s.joint_actual_position[5]
+    else:
+        da, dc = leg
     if not (jog(4, da) and jog(5, dc)):
         break
     c.teleop_enable(1)
