@@ -15,4 +15,6 @@ Machining needs to check a program are published to `~/418ops/machine/`
 | [fusion_tool_mapping.md](fusion_tool_mapping.md) | tool table <-> Fusion 360 library |
 | [fixtures/](fixtures/) | fixtures and setup records |
 | [tool_library/](tool_library/) | tool table export (json, csv) |
-| [to_buy.md](to_buy.md), [todo.md](todo.md), [plans/grumble_index.md](plans/grumble_index.md), [migration.md](migration.md) | SPLIT pending: Machining marks its KEEP lines, Controls cuts the rest |
+| [admission.md](admission.md) | the joint-travel check before every run (numbers from ~/418ops/machine/) |
+| [todo.md](todo.md) | run-side to-do: rotary roughing strategy, collet engagement warning |
+| [plans/grumble_index.md](plans/grumble_index.md) | SPLIT pending: Machining extracts its sections into optimum_fs.md, Controls takes the PB build sections |
