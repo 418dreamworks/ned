@@ -1,5 +1,7 @@
 # tools/live/ — needed to RUN the machine (read-first enumerator)
 
+**Ownership (operator ruling 2026-10-01):** the HAL components, the brain, pso_live, the launcher, latency/CPU tooling and anything that builds or configures the control are **Controls'**; Machining owns the g-code checking and lint, nc_pull and the program-side tooling. The code stays in place because run5.sh and cfg_edit.sh depend on these paths; the setup notes that described it moved to ~/Documents/controls/.
+
 | File | Role |
 |---|---|
 | `ned_brain.py` | Userspace HAL comp `brain` (loadusr in postgui_pb.hal): head A/C absolute reads, homing guards + post-home verify, per-axis REF handling, MANUAL/teleop restore after programs, X-pair sequence watchdog, stored-home saver, gui.md event log. |

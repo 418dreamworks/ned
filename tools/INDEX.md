@@ -1,5 +1,7 @@
 # tools/ — READ THIS FIRST (and live/INDEX.md + groundtruth/INDEX.md)
 
+**Ownership (operator ruling 2026-10-01):** the HAL components, the brain, pso_live, the launcher, latency/CPU tooling and anything that builds or configures the control are **Controls'**; Machining owns the g-code checking and lint, nc_pull and the program-side tooling. The code stays in place because run5.sh and cfg_edit.sh depend on these paths; the setup notes that described it moved to ~/Documents/controls/.
+
 Layout (operator, 2026-08-01):
 - `tools/` root = **staging** — things being built/tried before they earn a
   home, plus the launcher. Keep it near-empty; an unorganized root is a bug.
