@@ -11,7 +11,6 @@ Machining needs to check a program are published to `~/418ops/machine/`
 |---|---|
 | [gcode_rules.md](gcode_rules.md) | ned g-code rules |
 | [optimum_fs.md](optimum_fs.md) | **the only feeds and speeds source** — material x operation x tool, the effective-feed method, and how a number here gets set |
-| [optimum_fs.md](optimum_fs.md) | optimum F and S |
 | [fusion_tool_mapping.md](fusion_tool_mapping.md) | tool table <-> Fusion 360 library |
 | [fixtures/](fixtures/) | fixtures and setup records |
 | [tool_library/](tool_library/) | tool table export (json, csv) |
