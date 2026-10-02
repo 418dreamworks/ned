@@ -29,8 +29,10 @@ OUT=/tmp/pb_restart.last
 CLOSE_ONLY=0
 [ "${1:-}" = "--close-only" ] && CLOSE_ONLY=1
 
+# rtapi_app is part of the session: a close that leaves it behind makes the
+# next launch fail ("processes still alive", 2026-10-02 05:17).
 pids() { { pgrep -f "[b]in/probe_basic"; pgrep -x linuxcncsvr
-           pgrep -x milltask; pgrep -x halui; } 2>/dev/null | sort -u; }
+           pgrep -x milltask; pgrep -x halui; pgrep -x rtapi_app; } 2>/dev/null | sort -u; }
 
 if ! timeout 10 "$NED/tools/machine_idle.sh" 2>&1 | grep -qE 'safe to write|not running'; then
   echo "pb_restart: REFUSED -- machine is not idle (cycle in flight)."
@@ -69,11 +71,13 @@ if [ -n "$P" ]; then
     # 120 s. 60 was still not enough -- every close this session timed out
     # and escalated to kill -9, which is exactly the case where the GUI
     # settings are NOT written, so the wait defeated its own purpose.
-    for _ in $(seq 1 120); do sleep 1; [ -z "$(pids)" ] && break; done
+    # 20 s, not 120: in E-stop or unhomed the PRE-HOME gate swallows the key
+    # and PB never sees it (measured 2026-10-02 05:19: CTRL+Q, PB still up).
+    for _ in $(seq 1 20); do sleep 1; [ -z "$(pids)" ] && break; done
     if [ -z "$(pids)" ]; then
       echo "pb_restart: closed cleanly -- persistent settings written"
     else
-      echo "pb_restart: window close did not finish in 120 s -- escalating"
+      echo "pb_restart: window close did not finish in 20 s -- escalating"
     fi
   else
     echo "pb_restart: no Probe Basic window found -- cannot close cleanly"
@@ -81,8 +85,26 @@ if [ -n "$P" ]; then
   P=$(pids)
 fi
 if [ -n "$P" ]; then
+  # FIRST the display alone: when probe_basic exits, the stock `linuxcnc`
+  # script runs its own Cleanup (task, io, halui, realtime unload, NML), which
+  # is the orderly shutdown. Killing everything at once left rtapi_app behind.
+  PB=$(pgrep -f "[b]in/probe_basic")
+  if [ -n "$PB" ]; then
+    echo "pb_restart: SIGTERM probe_basic ($(echo $PB | tr '\n' ' ')) -- linuxcnc cleans up after its display"
+    # shellcheck disable=SC2086
+    kill $PB 2>/dev/null
+    for _ in $(seq 1 8); do sleep 1; pgrep -f "[b]in/probe_basic" >/dev/null || break; done
+    # probe_basic does not act on SIGTERM (measured 2026-10-02 05:25: 40 s, still up)
+    PB=$(pgrep -f "[b]in/probe_basic")
+    # shellcheck disable=SC2086
+    [ -n "$PB" ] && { echo "pb_restart: probe_basic ignored SIGTERM -- kill -9 the display only"; kill -9 $PB 2>/dev/null; }
+    # now linuxcnc's Cleanup runs; it starts short-lived rtapi_app helpers, so
+    # wait for the whole set to be gone rather than judging one sample
+    for _ in $(seq 1 40); do sleep 1; [ -z "$(pids)" ] && break; done
+  fi
+  P=$(pids)
   # shellcheck disable=SC2086
-  kill $P 2>/dev/null
+  [ -n "$P" ] && kill $P 2>/dev/null
   for _ in $(seq 1 10); do sleep 1; [ -z "$(pids)" ] && break; done
   R=$(pids)
   if [ -n "$R" ]; then
@@ -91,6 +113,7 @@ if [ -n "$P" ]; then
     kill -9 $R 2>/dev/null
     sleep 2
   fi
+  for _ in 1 2 3 4 5; do [ -z "$(pids)" ] && break; sleep 1; done
   if [ -n "$(pids)" ]; then
     echo "pb_restart: ABORT -- session did NOT die: $(pids | tr '\n' ' ')"
     echo "pb_restart: launching over survivors makes a zombie. Nothing launched."
@@ -99,7 +122,7 @@ if [ -n "$P" ]; then
 fi
 pkill -f "[n]ed_brain.py"   2>/dev/null
 pkill -f "[n]ed_pendant.py" 2>/dev/null
-pkill -f "live/dro2.py" 2>/dev/null   # the second-monitor DRO restarts with PB
+pkill -f "[l]ive/dro2.py" 2>/dev/null   # the second-monitor DRO restarts with PB
 sleep 1
 
 if [ "$CLOSE_ONLY" = "1" ]; then
